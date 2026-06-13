@@ -203,6 +203,73 @@ def fetch_power_curve(activity_id: int) -> dict:
     return client.get_activity_hr_in_timezones(activity_id)
 
 
+TRACKS_DIR = Path("data/tracks")
+
+
+def _parse_gpx(gpx_bytes: bytes) -> list:
+    """Parse GPX bytes → list of {lat, lon, ele} dicts, downsampled to ≤600 pts."""
+    import xml.etree.ElementTree as ET
+    ns = {"g": "http://www.topografix.com/GPX/1/1"}
+    try:
+        root = ET.fromstring(gpx_bytes)
+    except ET.ParseError:
+        return []
+    pts = []
+    for tp in root.findall(".//g:trkpt", ns):
+        try:
+            lat = float(tp.get("lat"))
+            lon = float(tp.get("lon"))
+        except (TypeError, ValueError):
+            continue
+        ele_el = tp.find("g:ele", ns)
+        ele = float(ele_el.text) if ele_el is not None and ele_el.text else 0.0
+        pts.append({"lat": lat, "lon": lon, "ele": ele})
+    # Downsample for map performance
+    if len(pts) > 600:
+        step = max(1, len(pts) // 600)
+        pts = pts[::step]
+    return pts
+
+
+def fetch_activity_gps(activity_id: int,
+                       email: str = None, password: str = None) -> list:
+    """
+    Download and cache the GPS track for a single activity.
+    Returns list of {lat, lon, ele} or [] if unavailable / no GPS.
+    Result is cached in data/tracks/{activity_id}.json.
+    Pass email/password explicitly to avoid os.getenv() timing issues in Streamlit.
+    """
+    TRACKS_DIR.mkdir(parents=True, exist_ok=True)
+    cache_file = TRACKS_DIR / f"{activity_id}.json"
+
+    if cache_file.exists():
+        try:
+            pts = json.loads(cache_file.read_text())
+            if isinstance(pts, list) and pts:
+                return pts
+        except Exception:
+            pass
+
+    from garminconnect import Garmin
+
+    _email = email or os.getenv("GARMIN_EMAIL")
+    _pw    = password or os.getenv("GARMIN_PASSWORD")
+    if not _email or not _pw:
+        raise ValueError("GARMIN_EMAIL / GARMIN_PASSWORD not set")
+
+    fresh = Garmin(_email, _pw)
+    fresh.login()
+    gpx_bytes = fresh.download_activity(
+        activity_id, dl_fmt=Garmin.ActivityDownloadFormat.GPX
+    )
+    pts = _parse_gpx(gpx_bytes)
+    log.info("GPS fetch activity %s: %d points", activity_id, len(pts))
+
+    if pts:
+        cache_file.write_text(json.dumps(pts))
+    return pts
+
+
 def build_training_load(df_activities: pd.DataFrame, ftp: float, threshold_run_sec: float) -> pd.DataFrame:
     """
     Compute daily TSS for each sport and aggregate into a load timeline.

@@ -3417,21 +3417,30 @@ elif page == "🗺️ Training Detail":
     act = _acts.iloc[_sel]
 
     # ── Extract metrics ────────────────────────────────────────────────────────
+    def _fv(col):
+        """Safe float: returns None for NaN, None, or 0."""
+        v = act.get(col)
+        try:
+            x = float(v)
+            return None if (x != x or x == 0) else x   # x!=x catches NaN
+        except Exception:
+            return None
+
     _sport      = act.get("sport", "bike")
     _dur_sec    = float(act.get("duration_sec") or 0)
     _dist_m     = float(act.get("distance_m") or 0)
-    _avg_hr     = float(act.get("avg_hr") or 0) or None
-    _max_hr     = float(act.get("max_hr") or 0) or None
-    _calories   = float(act.get("calories") or 0) or None
-    _avg_pwr    = float(act.get("avg_power") or 0) or None
-    _norm_pwr   = float(act.get("norm_power") or 0) or None
-    _tss_v      = float(act.get("tss") or 0) or None
-    _if_val     = float(act.get("if_factor") or 0) or None
-    _avg_pace   = float(act.get("avg_pace_sec_km") or 0) or None
-    _avg_pace_sw= float(act.get("avg_pace_100m") or 0) or None
-    _avg_cad    = float(act.get("avg_cadence") or 0) or None
-    _swolf_v    = float(act.get("swolf") or 0) or None
-    _aer_te     = float(act.get("aerobic_te") or 0) or None
+    _avg_hr     = _fv("avg_hr")
+    _max_hr     = _fv("max_hr")
+    _calories   = _fv("calories")
+    _avg_pwr    = _fv("avg_power")
+    _norm_pwr   = _fv("norm_power")
+    _tss_v      = _fv("tss")
+    _if_val     = _fv("if_factor")
+    _avg_pace   = _fv("avg_pace_sec_km")
+    _avg_pace_sw= _fv("avg_pace_100m")
+    _avg_cad    = _fv("avg_cadence")
+    _swolf_v    = _fv("swolf")
+    _aer_te     = _fv("aerobic_te")
     _act_col    = SPORT_COLORS.get(_sport, ACCENT)
     _act_icon   = SPORT_ICONS.get(_sport, "📊")
     _act_nm     = str(act.get("name") or _sport)
@@ -3472,26 +3481,73 @@ elif page == "🗺️ Training Detail":
     _map_col, _stat_col = st.columns([3, 2], gap="large")
 
     with _map_col:
-        section("Ruta", "GPS track simulado · datos reales disponibles al conectar Garmin")
         if _sport == "swim":
-            st.info("🏊 Natación en piscina — sin ruta GPS")
+            section("Ruta", "Natación en piscina")
+            st.info("🏊 Sin ruta GPS — actividad en piscina")
         else:
-            _seed    = int(abs(hash(str(act.get("activity_id", 0)))) % 9999)
-            _lats, _lons = _gen_activity_route(_dist_m or 8000, _sport, seed=_seed)
-            _clat    = sum(_lats) / len(_lats)
-            _clon    = sum(_lons) / len(_lons)
-            _zoom    = 12 if _dist_m < 15000 else 11 if _dist_m < 40000 else 10
+            # ── Auto-load real GPS from Garmin (cached locally) ────────────────
+            _act_id   = int(act.get("activity_id") or 0)
+            _track_f  = DATA_DIR / "tracks" / f"{_act_id}.json"
+            _gps_real = False
 
-            _n_pts  = len(_lats)
-            _sizes  = [10 if i in (0, _n_pts - 1) else 2 for i in range(_n_pts)]
-            _colors = [_act_col] * _n_pts
+            if _act_id and _track_f.exists():
+                # Already cached — load instantly
+                import json as _json
+                try:
+                    _pts = _json.loads(_track_f.read_text())
+                    if _pts:
+                        _lats = [p["lat"] for p in _pts]
+                        _lons = [p["lon"] for p in _pts]
+                        _elev = [p.get("ele", 0) for p in _pts]
+                        _gps_real = True
+                except Exception:
+                    pass
+
+            if not _gps_real and _act_id:
+                # Not cached yet — fetch from Garmin with spinner
+                with st.spinner("Cargando GPS desde Garmin Connect…"):
+                    try:
+                        from garmin_connector import fetch_activity_gps
+                        _g_email = os.environ.get("GARMIN_EMAIL", "")
+                        _g_pw    = os.environ.get("GARMIN_PASSWORD", "")
+                        _pts = fetch_activity_gps(_act_id,
+                                                  email=_g_email or None,
+                                                  password=_g_pw or None)
+                        if _pts:
+                            _lats = [p["lat"] for p in _pts]
+                            _lons = [p["lon"] for p in _pts]
+                            _elev = [p.get("ele", 0) for p in _pts]
+                            _gps_real = True
+                        else:
+                            st.warning("⚠️ Esta actividad no tiene GPS (ej: piscina / trainer indoor).")
+                    except Exception as _gps_err:
+                        st.error(f"❌ Error GPS: {_gps_err}")
+
+            if not _gps_real:
+                # Fallback: simulated route
+                _seed    = int(abs(hash(str(_act_id))) % 9999)
+                _lats, _lons = _gen_activity_route(_dist_m or 8000, _sport, seed=_seed)
+                _elev    = [0] * len(_lats)
+
+            _map_src = "GPS real · Garmin Connect" if _gps_real else "GPS simulado"
+            section("Ruta", _map_src)
+
+            _clat  = sum(_lats) / len(_lats)
+            _clon  = sum(_lons) / len(_lons)
+            _zoom  = 12 if _dist_m < 15000 else 11 if _dist_m < 40000 else 10
+            _n_pts = len(_lats)
+            _sizes = [10 if i in (0, _n_pts - 1) else 3 for i in range(_n_pts)]
 
             _fig_map = go.Figure(go.Scattermapbox(
                 lat=_lats, lon=_lons,
                 mode="lines+markers",
                 line=dict(width=3, color=_act_col),
-                marker=dict(size=_sizes, color=_colors, opacity=0.85),
-                hovertemplate="Lat %{lat:.4f} · Lon %{lon:.4f}<extra></extra>",
+                marker=dict(size=_sizes, color=_act_col, opacity=0.85),
+                customdata=_elev,
+                hovertemplate=(
+                    "Lat %{lat:.5f} · Lon %{lon:.5f}<br>"
+                    "Alt %{customdata:.0f} m<extra></extra>"
+                ),
                 name="Ruta",
             ))
             _fig_map.update_layout(
@@ -3547,6 +3603,15 @@ elif page == "🗺️ Training Detail":
     section("Análisis de Rendimiento", "Potencia · FC · Altitud · Velocidad — datos simulados calibrados")
 
     _ts = _gen_timeseries_td(_dur_sec, _sport, _avg_pwr, _avg_hr, _max_hr, _avg_pace)
+
+    # Overlay real elevation from GPS track when available
+    if _gps_real and len(_elev) >= 4:
+        import numpy as _np2
+        _elev_arr = _np2.array(_elev, dtype=float)
+        _n_ts     = len(_ts["altitude"])
+        # Resample elevation to match timeseries length
+        _idx = _np2.linspace(0, len(_elev_arr) - 1, _n_ts).astype(int)
+        _ts["altitude"] = _elev_arr[_idx].round(0).astype(int).tolist()
 
     _fig_perf = make_subplots(
         rows=2, cols=1,

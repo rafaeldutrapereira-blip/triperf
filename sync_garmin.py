@@ -15,6 +15,7 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 
+import pandas as pd
 import schedule
 
 logging.basicConfig(
@@ -74,6 +75,40 @@ def sync():
 
         log.info("Sync complete. Activities: %d rows, Load: %d days",
                  len(df_act), len(df_load))
+
+        # ── GPS tracks: download for outdoor activities of last 30 days ──────
+        try:
+            from garmin_connector import fetch_activity_gps
+            email    = os.getenv("GARMIN_EMAIL", "")
+            password = os.getenv("GARMIN_PASSWORD", "")
+            outdoor  = df_act[
+                df_act["sport"].isin(["bike", "run"]) &
+                df_act["date"] >= pd.Timestamp(end - timedelta(days=30))
+            ].copy() if not df_act.empty else pd.DataFrame()
+
+            gps_ok = 0
+            for _, row in outdoor.iterrows():
+                act_id = int(row.get("activity_id") or 0)
+                if not act_id:
+                    continue
+                track_f = Path("data/tracks") / f"{act_id}.json"
+                if track_f.exists() and track_f.stat().st_size > 10:
+                    continue   # already cached
+                try:
+                    pts = fetch_activity_gps(act_id,
+                                             email=email or None,
+                                             password=password or None)
+                    if pts:
+                        gps_ok += 1
+                        log.info("GPS cached: activity %s (%d pts)", act_id, len(pts))
+                    else:
+                        log.info("GPS empty (indoor?): activity %s", act_id)
+                except Exception as eg:
+                    log.warning("GPS skip activity %s: %s", act_id, eg)
+
+            log.info("GPS sync done: %d tracks downloaded", gps_ok)
+        except Exception as eg2:
+            log.warning("GPS sync block failed: %s", eg2)
 
     except Exception as e:
         log.error("Sync failed: %s", e, exc_info=True)

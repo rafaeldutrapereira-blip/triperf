@@ -1,0 +1,41 @@
+name: Sync Garmin Data
+
+on:
+  schedule:
+    - cron: "0 10 * * *"   # 10:00 UTC = 07:00 Santiago (Chile, UTC-3)
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Garmin sync (activities + GPS tracks)
+        env:
+          GARMIN_EMAIL:    ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+        run: python sync_garmin.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/activities.csv data/training_load.csv \
+                  data/sleep.csv data/hrv.csv \
+                  data/tracks/*.json || true
+          git diff --cached --quiet || \
+            git commit -m "chore: auto sync Garmin data $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
