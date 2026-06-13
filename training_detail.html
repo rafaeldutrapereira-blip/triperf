@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KonaLabs — Queen K Intervals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+  line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
+.nav-logo .acc{color:var(--orange)}
+.nav-logo svg{width:22px;height:22px;color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.on{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:.85rem}
+.sync-btn{display:flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--aqua);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:.45rem 1rem;cursor:pointer;transition:all var(--ease)}
+.sync-btn:hover{background:rgba(34,211,238,.15);border-color:var(--aqua)}
+.sync-btn svg{width:13px;height:13px}
+.sync-btn.spin svg{animation:spin360 1s linear infinite}
+@keyframes spin360{to{transform:rotate(360deg)}}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
+.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}
+.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+@media(max-width:860px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
+
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.badge{display:inline-block;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px}
+.b-o{background:rgba(255,101,53,.12);color:var(--orange);border:1px solid rgba(255,101,53,.25)}
+
+.ah{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ah-inner{padding:1.5rem 0}
+.back-btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:1.1rem;transition:color var(--ease)}
+.back-btn:hover{color:var(--muted)}
+.ah-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:800;line-height:1;letter-spacing:.02em;margin-bottom:.6rem}
+.ah-meta{display:flex;align-items:center;gap:.75rem;font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap;margin-bottom:1.25rem}
+.ah-meta span{display:flex;align-items:center;gap:.3rem}
+.ah-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);border-radius:var(--radius);overflow:hidden}
+@media(max-width:600px){.ah-stats{grid-template-columns:repeat(2,1fr)}}
+.ah-stat{background:var(--surface);padding:1rem 1.25rem}
+.ah-stat-lbl{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.25rem}
+.ah-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+.ah-stat-unit{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--muted);margin-top:.1rem}
+
+.main{padding:2rem 0 4rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.mt2{margin-top:2rem}
+
+.map-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative}
+.map-label{position:absolute;top:12px;left:14px;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:2}
+.map-overlay{position:absolute;top:10px;right:14px;background:rgba(4,8,15,.75);border:1px solid var(--border2);border-radius:6px;padding:.4rem .75rem;z-index:2;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.7}
+
+.chart-section{padding:0}
+.chart-block{border-bottom:1px solid var(--border2)}
+.chart-block:last-child{border-bottom:none}
+.chart-lbl{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.4rem .2rem;flex-wrap:wrap;gap:.5rem}
+.chart-name{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.chart-anns{display:flex;gap:1rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap}
+.chart-ann{display:flex;align-items:center;gap:.3rem}
+.chart-ann-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.chart-svg{display:block;width:100%;height:130px}
+
+.zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border2)}
+@media(max-width:640px){.zone-grid{grid-template-columns:1fr}}
+.zone-col{background:var(--bg);padding:1.25rem 1.4rem}
+.zone-title{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.zone-row{display:grid;grid-template-columns:140px 1fr 42px 42px;align-items:center;gap:.6rem;margin-bottom:.65rem}
+.zone-name{font-size:.75rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.04em;white-space:nowrap}
+.zone-bar-bg{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.zone-bar-f{height:100%;border-radius:3px;transform:scaleX(0);transform-origin:left;transition:transform .9s cubic-bezier(.4,0,.2,1)}
+.zone-pct{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);text-align:right}
+.zone-min{font-size:.68rem;color:var(--dim);text-align:right;white-space:nowrap}
+
+.splits-tbl{width:100%;border-collapse:collapse}
+.splits-tbl th{font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
+.splits-tbl td{padding:.75rem 1rem;font-size:.82rem;border-bottom:1px solid var(--border2)}
+.splits-tbl tr:last-child td{font-weight:600;color:var(--muted)}
+.splits-tbl tr.best td{background:rgba(255,101,53,.06)}
+.splits-tbl tr:hover:not(.best) td{background:rgba(8,116,174,.05)}
+
+.sr{opacity:0;transform:translateY(20px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.vis{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="landing.html" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Kona<span class="acc">Labs</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="landing.html#disciplines">Disciplinas</a></li>
+      <li><a href="landing.html#calendar">Carreras</a></li>
+      <li><a href="landing.html#plans">Planes</a></li>
+      <li><a href="dashboard.html" class="on">Dashboard</a></li>
+      <li><a href="training_plan.html">Plan</a></li>
+      <li><a href="blood_labs.html">Labs</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="sync-btn" onclick="syncBtn(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Sync Garmin
+      </button>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="nav-avatar">R</div>
+        <div>
+          <div class="nav-uname">Rafael</div>
+          <div class="nav-urole">Ironman 70.3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="ah">
+  <div class="c">
+    <div class="ah-inner">
+      <a href="dashboard.html" class="back-btn">&#8592; Volver al Dashboard</a>
+      <div class="ah-title">Queen K Intervals</div>
+      <div class="ah-meta">
+        <span>🚴 Ciclismo</span>
+        <span>·</span>
+        <span>13 Jun 2026</span>
+        <span>·</span>
+        <span>1h 23m</span>
+        <span>·</span>
+        <span>42.3 km</span>
+        <span>·</span>
+        <span class="badge b-o">Ciclismo</span>
+      </div>
+      <div class="ah-stats">
+        <div class="ah-stat">
+          <div class="ah-stat-lbl">Potencia NP</div>
+          <div class="ah-stat-val" style="color:var(--orange)">248</div>
+          <div class="ah-stat-unit">Watts</div>
+        </div>
+        <div class="ah-stat">
+          <div class="ah-stat-lbl">IF (Intensity Factor)</div>
+          <div class="ah-stat-val" style="color:var(--gold)">1.03</div>
+          <div class="ah-stat-unit">FTP 240W</div>
+        </div>
+        <div class="ah-stat">
+          <div class="ah-stat-lbl">FC Media</div>
+          <div class="ah-stat-val" style="color:var(--coral)">158</div>
+          <div class="ah-stat-unit">bpm</div>
+        </div>
+        <div class="ah-stat">
+          <div class="ah-stat-lbl">TSS</div>
+          <div class="ah-stat-val" style="color:var(--purple)">140</div>
+          <div class="ah-stat-unit">Training Stress Score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="c">
+
+    <div class="map-panel sr" id="s-map" style="height:320px">
+      <div class="map-label">🌺 Queen K Highway · Kailua-Kona, Hawai'i</div>
+      <div class="map-overlay">
+        <div>⚡ 248W NP</div>
+        <div>↑ 1,240m</div>
+        <div>30.4 km/h</div>
+      </div>
+      <svg id="map-svg" width="100%" height="320" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="panel mt2 sr" id="s-charts">
+      <div class="chart-section">
+        <div class="chart-block">
+          <div class="chart-lbl">
+            <span class="chart-name" style="color:var(--orange)">Potencia (W)</span>
+            <div class="chart-anns">
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--orange)"></div>NP: 248W</div>
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--red)"></div>Max: 341W</div>
+            </div>
+          </div>
+          <svg class="chart-svg" id="c-pow" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chart-block">
+          <div class="chart-lbl">
+            <span class="chart-name" style="color:var(--red)">Frecuencia Cardíaca (bpm)</span>
+            <div class="chart-anns">
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--red)"></div>Media: 158bpm</div>
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--coral)"></div>Max: 172bpm</div>
+            </div>
+          </div>
+          <svg class="chart-svg" id="c-hr" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chart-block">
+          <div class="chart-lbl">
+            <span class="chart-name" style="color:var(--green)">Altitud (m)</span>
+            <div class="chart-anns">
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--green)"></div>↑ 1,240m gain</div>
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--muted)"></div>↓ 1,198m loss</div>
+            </div>
+          </div>
+          <svg class="chart-svg" id="c-alt" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chart-block">
+          <div class="chart-lbl">
+            <span class="chart-name" style="color:var(--aqua)">Velocidad (km/h)</span>
+            <div class="chart-anns">
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--aqua)"></div>Media: 30.4 km/h</div>
+              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--cyan)"></div>Max: 52.1 km/h</div>
+            </div>
+          </div>
+          <svg class="chart-svg" id="c-spd" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
+          <div style="display:flex;justify-content:space-between;padding:.3rem 1.4rem .8rem;font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.06em">
+            <span>0</span><span>15min</span><span>30min</span><span>45min</span><span>1h</span><span>1h15</span><span>1h23</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt2 sr" id="s-zones">
+      <div class="panel-head"><div class="panel-title">Distribución de Zonas</div></div>
+      <div class="zone-grid">
+        <div class="zone-col">
+          <div class="zone-title">Zonas de Potencia</div>
+          <div class="zone-row">
+            <div class="zone-name">Z1 Recovery &lt;132W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="8" style="background:#3D6880"></div></div>
+            <div class="zone-pct">8%</div>
+            <div class="zone-min">7min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z2 Endurance 132-180W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="17" style="background:var(--cyan)"></div></div>
+            <div class="zone-pct">17%</div>
+            <div class="zone-min">14min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z3 Tempo 180-216W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="20" style="background:var(--green)"></div></div>
+            <div class="zone-pct">20%</div>
+            <div class="zone-min">17min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z4 Threshold 216-252W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="35" style="background:var(--gold)"></div></div>
+            <div class="zone-pct">35%</div>
+            <div class="zone-min">29min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z5 VO₂Max 252-288W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="15" style="background:var(--orange)"></div></div>
+            <div class="zone-pct">15%</div>
+            <div class="zone-min">12min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z6 Anaeróbico &gt;288W</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="5" style="background:var(--red)"></div></div>
+            <div class="zone-pct">5%</div>
+            <div class="zone-min">4min</div>
+          </div>
+        </div>
+        <div class="zone-col">
+          <div class="zone-title">Zonas de FC</div>
+          <div class="zone-row">
+            <div class="zone-name">Z1 &lt;114bpm</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="3" style="background:#3D6880"></div></div>
+            <div class="zone-pct">3%</div>
+            <div class="zone-min">2min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z2 114-133bpm</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="12" style="background:var(--cyan)"></div></div>
+            <div class="zone-pct">12%</div>
+            <div class="zone-min">10min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z3 133-152bpm</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="18" style="background:var(--green)"></div></div>
+            <div class="zone-pct">18%</div>
+            <div class="zone-min">15min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z4 152-171bpm</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="58" style="background:var(--orange)"></div></div>
+            <div class="zone-pct">58%</div>
+            <div class="zone-min">48min</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Z5 &gt;171bpm</div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="9" style="background:var(--red)"></div></div>
+            <div class="zone-pct">9%</div>
+            <div class="zone-min">8min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt2 sr" id="s-splits">
+      <div class="panel-head"><div class="panel-title">Vueltas / Splits</div></div>
+      <div style="overflow-x:auto">
+        <table class="splits-tbl">
+          <thead>
+            <tr>
+              <th>Vuelta</th>
+              <th>Dist</th>
+              <th>Tiempo</th>
+              <th>NP</th>
+              <th>IF</th>
+              <th>FC Media</th>
+              <th>Vel Media</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>7 km</td><td>14:20</td><td>195W</td><td>0.81</td><td>148 bpm</td><td>29.3 km/h</td><td style="color:var(--dim);font-size:.75rem">Recovery</td></tr>
+            <tr class="best"><td style="color:var(--orange);font-weight:700">2 ★</td><td>7 km</td><td>13:05</td><td style="color:var(--orange)">270W</td><td>1.13</td><td>163 bpm</td><td>32.1 km/h</td><td style="color:var(--orange);font-size:.75rem">Mejor vuelta</td></tr>
+            <tr><td>3</td><td>7 km</td><td>13:28</td><td>265W</td><td>1.10</td><td>165 bpm</td><td>31.2 km/h</td><td></td></tr>
+            <tr><td>4</td><td>7 km</td><td>13:12</td><td>272W</td><td>1.13</td><td>167 bpm</td><td>31.8 km/h</td><td></td></tr>
+            <tr><td>5</td><td>7 km</td><td>13:18</td><td>268W</td><td>1.12</td><td>166 bpm</td><td>31.6 km/h</td><td></td></tr>
+            <tr><td>6</td><td>7.3 km</td><td>15:37</td><td>180W</td><td>0.75</td><td>148 bpm</td><td>28.0 km/h</td><td style="color:var(--dim);font-size:.75rem">Cooldown</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td>TOTAL</td><td>42.3 km</td><td>1h 23m</td><td style="color:var(--orange)">248W NP</td><td style="color:var(--gold)">1.03</td><td style="color:var(--coral)">158 bpm</td><td style="color:var(--aqua)">30.4 km/h</td><td></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer style="border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center">
+  <div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em">
+    KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; TRAINING DETAIL &nbsp;·&nbsp; IRONMAN 70.3
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+function syncBtn(b){b.classList.add('spin');setTimeout(()=>b.classList.remove('spin'),2200)}
+
+function genPower(){
+  const d=[];
+  for(let i=0;i<83;i++){
+    if(i<10){d.push(110+i*4+Math.random()*20)}
+    else if(i>=78){d.push(120+Math.random()*30)}
+    else{
+      const blk=Math.floor((i-10)/12);
+      const pos=(i-10)%12;
+      if(pos<8){d.push(280+Math.random()*30)}
+      else{d.push(130+Math.random()*20)}
+    }
+  }
+  return d;
+}
+function genHR(){
+  const d=[];
+  for(let i=0;i<83;i++){
+    if(i<10){d.push(110+i*3+Math.random()*5)}
+    else if(i>=78){d.push(145+Math.random()*8)}
+    else{
+      const blk=Math.floor((i-10)/12);
+      const pos=(i-10)%12;
+      if(pos<8){d.push(160+Math.random()*12)}
+      else{d.push(148+Math.random()*8)}
+    }
+  }
+  return d;
+}
+function genAlt(){
+  const d=[];
+  for(let i=0;i<83;i++){
+    const t=i/82;
+    const base=t<0.5?t*2*250:(1-(t-0.5)*2)*250;
+    d.push(base+Math.random()*15);
+  }
+  return d;
+}
+function genSpd(pow){return pow.map(p=>Math.max(15,Math.min(55,(p/240)*30+Math.random()*4)))}
+
+const POW=genPower(),HR=genHR(),ALT=genAlt(),SPD=genSpd(POW);
+
+function smooth(arr){
+  return arr.map((v,i)=>{
+    const s=Math.max(0,i-2),e=Math.min(arr.length-1,i+2);
+    let sum=0;for(let j=s;j<=e;j++)sum+=arr[j];
+    return sum/(e-s+1);
+  });
+}
+
+function drawChart(id,data,color,minV,maxV,filled){
+  const svg=document.getElementById(id);
+  const W=900,H=130,PAD={l:44,r:10,t:10,b:20};
+  const cW=W-PAD.l-PAD.r,cH=H-PAD.t-PAD.b;
+  const sm=smooth(data);
+  function xP(i){return PAD.l+(i/(sm.length-1))*cW}
+  function yP(v){return PAD.t+(1-(v-minV)/(maxV-minV))*cH}
+
+  let html='';
+  for(let v=minV;v<=maxV;v+=(maxV-minV)/4){
+    const yv=yP(v);
+    html+=`<line x1="${PAD.l}" y1="${yv}" x2="${W-PAD.r}" y2="${yv}" stroke="rgba(8,116,174,.08)" stroke-width="1"/>`;
+    html+=`<text x="${PAD.l-4}" y="${yv+4}" text-anchor="end" font-size="9" fill="#3D6880" font-family="Oswald,sans-serif">${Math.round(v)}</text>`;
+  }
+
+  if(id==='c-pow'){
+    const zones=[[0,132,'rgba(61,104,128,.08)'],[132,180,'rgba(14,165,233,.06)'],[180,216,'rgba(16,185,129,.06)'],[216,252,'rgba(240,165,0,.07)'],[252,288,'rgba(255,101,53,.08)'],[288,400,'rgba(239,68,68,.08)']];
+    zones.forEach(([lo,hi,c])=>{
+      const y1=Math.max(PAD.t,yP(Math.min(hi,maxV)));
+      const y2=Math.min(H-PAD.b,yP(Math.max(lo,minV)));
+      if(y2>y1)html+=`<rect x="${PAD.l}" y="${y1}" width="${cW}" height="${y2-y1}" fill="${c}"/>`;
+    });
+  }
+
+  let pts=sm.map((v,i)=>`${xP(i)},${yP(v)}`).join(' ');
+  if(filled){
+    html+=`<defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".4"/><stop offset="100%" stop-color="${color}" stop-opacity=".02"/></linearGradient></defs>`;
+    const areaPath=`M${xP(0)},${yP(sm[0])} `+sm.slice(1).map((v,i)=>`L${xP(i+1)},${yP(v)}`).join(' ')+` L${xP(sm.length-1)},${H-PAD.b} L${xP(0)},${H-PAD.b} Z`;
+    html+=`<path d="${areaPath}" fill="url(#g${id})"/>`;
+  }
+
+  svg.innerHTML=html;
+
+  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  line.setAttribute('points',pts);
+  line.setAttribute('fill','none');
+  line.setAttribute('stroke',color);
+  line.setAttribute('stroke-width','2');
+  line.setAttribute('stroke-linejoin','round');
+  svg.appendChild(line);
+
+  const len=line.getTotalLength();
+  line.style.strokeDasharray=len;
+  line.style.strokeDashoffset=len;
+  line.style.transition='stroke-dashoffset 2s cubic-bezier(.4,0,.2,1)';
+  setTimeout(()=>line.style.strokeDashoffset='0',200);
+}
+
+function drawMap(){
+  const svg=document.getElementById('map-svg');
+  const W=900,H=320;
+  let html='';
+
+  html+=`<defs>
+    <radialGradient id="mapBg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#060E1C"/>
+      <stop offset="100%" stop-color="#04080F"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  html+=`<rect width="${W}" height="${H}" fill="url(#mapBg)"/>`;
+
+  for(let x=0;x<W;x+=60)html+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(14,165,233,.06)" stroke-width="1"/>`;
+  for(let y=0;y<H;y+=60)html+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(14,165,233,.06)" stroke-width="1"/>`;
+
+  const route=[
+    [80,220],[130,210],[190,195],[250,180],[300,160],[350,140],[400,125],[440,110],
+    [480,120],[510,135],[540,160],[570,175],[610,165],[650,150],[690,140],[730,155],
+    [770,170],[810,185],[840,200],[820,230]
+  ];
+
+  const routePts=route.map(p=>p.join(',')).join(' ');
+  html+=`<polyline points="${routePts}" fill="none" stroke="rgba(255,101,53,.25)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>`;
+
+  const routeLine=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  routeLine.setAttribute('points',routePts);
+  routeLine.setAttribute('fill','none');
+  routeLine.setAttribute('stroke','#FF6535');
+  routeLine.setAttribute('stroke-width','2.5');
+  routeLine.setAttribute('stroke-linecap','round');
+  routeLine.setAttribute('stroke-linejoin','round');
+
+  const markers=[
+    [route[5][0],route[5][1],'10km'],
+    [route[9][0],route[9][1],'20km'],
+    [route[14][0],route[14][1],'30km'],
+    [route[18][0],route[18][1],'40km']
+  ];
+  markers.forEach(([x,y,lbl])=>{
+    html+=`<circle cx="${x}" cy="${y}" r="4" fill="rgba(240,165,0,.7)" stroke="var(--gold)" stroke-width="1"/>`;
+    html+=`<text x="${x}" y="${y-10}" text-anchor="middle" font-size="10" fill="#F0A500" font-family="Oswald,sans-serif" letter-spacing="1">${lbl}</text>`;
+  });
+
+  const [sx,sy]=route[0];
+  const [ex,ey]=route[route.length-1];
+  html+=`<circle cx="${sx}" cy="${sy}" r="7" fill="#10B981" opacity=".9"/>`;
+  html+=`<text x="${sx}" y="${sy-14}" text-anchor="middle" font-size="10" fill="#10B981" font-family="Oswald,sans-serif">Inicio</text>`;
+  html+=`<circle cx="${ex}" cy="${ey}" r="7" fill="#EF4444" opacity=".9"/>`;
+  html+=`<text x="${ex}" y="${ey+20}" text-anchor="middle" font-size="10" fill="#EF4444" font-family="Oswald,sans-serif">Fin</text>`;
+
+  svg.innerHTML=html;
+  svg.appendChild(routeLine);
+
+  const len=routeLine.getTotalLength();
+  routeLine.style.strokeDasharray=len;
+  routeLine.style.strokeDashoffset=len;
+  routeLine.style.transition='stroke-dashoffset 2.5s cubic-bezier(.4,0,.2,1)';
+  setTimeout(()=>routeLine.style.strokeDashoffset='0',300);
+}
+
+let chartsDrawn=false;
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('vis');
+      if(e.target.id==='s-map') drawMap();
+      if(e.target.id==='s-charts'&&!chartsDrawn){
+        chartsDrawn=true;
+        setTimeout(()=>{
+          drawChart('c-pow',POW,'#FF6535',0,360,false);
+          drawChart('c-hr',HR,'#EF4444',90,185,false);
+          drawChart('c-alt',ALT,'#10B981',0,300,true);
+          drawChart('c-spd',SPD,'#22D3EE',10,60,false);
+        },100);
+      }
+      if(e.target.id==='s-zones'){
+        e.target.querySelectorAll('.zone-bar-f[data-w]').forEach((b,i)=>{
+          setTimeout(()=>{b.style.transform=`scaleX(${+b.dataset.w/100})`},i*60);
+        });
+      }
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

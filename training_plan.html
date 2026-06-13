@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KonaLabs — Plan de Entrenamiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+  line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
+.nav-logo .acc{color:var(--orange)}
+.nav-logo svg{width:22px;height:22px;color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.on{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:.85rem}
+.sync-btn{display:flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--aqua);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:.45rem 1rem;cursor:pointer;transition:all var(--ease)}
+.sync-btn:hover{background:rgba(34,211,238,.15);border-color:var(--aqua)}
+.sync-btn svg{width:13px;height:13px}
+.sync-btn.spin svg{animation:spin360 1s linear infinite}
+@keyframes spin360{to{transform:rotate(360deg)}}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
+.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}
+.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+@media(max-width:860px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
+
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-p{background:var(--orange);color:#fff}
+.btn-p:hover{background:var(--orange2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,101,53,.28)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.42rem .95rem;font-size:.74rem}
+
+.ph{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:1.8rem 0 1.6rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.25rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:800;line-height:1;letter-spacing:.02em}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--muted);letter-spacing:.08em;margin-top:.4rem}
+.ph-chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
+.chip{font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .85rem;border-radius:20px;background:rgba(8,116,174,.12);border:1px solid rgba(8,116,174,.2);color:var(--muted)}
+.chip-g{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--green)}
+.wk-nav{display:flex;align-items:center;gap:.6rem}
+.wk-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all var(--ease)}
+.wk-btn:hover{border-color:var(--orange);color:var(--orange)}
+
+.main{padding:2rem 0 4rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border2)}
+.cal-day{background:var(--bg);padding:.85rem .75rem;min-height:160px;display:flex;flex-direction:column;gap:.5rem;transition:background var(--ease)}
+.cal-day:hover{background:var(--surface2)}
+.cal-day.today{background:rgba(255,101,53,.05);outline:1px solid rgba(255,101,53,.35) inset}
+.cal-hd{display:flex;align-items:baseline;gap:.4rem;margin-bottom:.2rem}
+.cal-dow{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.cal-day.today .cal-dow{color:var(--orange)}
+.cal-date{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;color:var(--muted)}
+.cal-day.today .cal-date{color:var(--orange)}
+.sess{display:flex;align-items:center;gap:.35rem;font-size:.72rem;padding:.28rem .5rem;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);line-height:1.2;cursor:pointer;transition:border-color var(--ease)}
+.sess:hover{border-color:rgba(255,101,53,.35)}
+.sess.done{opacity:.6}
+.sess.done .sess-name::after{content:'✓';color:var(--green);margin-left:.3rem;font-weight:700}
+.sess-ico{font-size:.85rem;flex-shrink:0}
+.sess-name{color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess-dur{color:var(--dim);font-size:.65rem;white-space:nowrap}
+.cal-tss{margin-top:auto;font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.08em;text-align:right}
+@media(max-width:860px){.cal-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:560px){.cal-grid{grid-template-columns:repeat(2,1fr)}}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border2)}
+.tab{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.75rem 1.4rem;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;transition:all var(--ease)}
+.tab.on{color:var(--orange);border-bottom-color:var(--orange)}
+.tab:hover:not(.on){color:var(--muted)}
+.sess-tbl{width:100%;border-collapse:collapse}
+.sess-tbl th{font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
+.sess-tbl td{padding:.75rem 1rem;font-size:.82rem;border-bottom:1px solid var(--border2)}
+.sess-tbl tr:last-child td{border-bottom:none}
+.sess-tbl tr:hover td{background:rgba(8,116,174,.05)}
+.badge{display:inline-block;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px}
+.b-g{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.b-o{background:rgba(255,101,53,.12);color:var(--orange);border:1px solid rgba(255,101,53,.25)}
+.b-d{background:rgba(61,104,128,.12);color:var(--dim);border:1px solid rgba(61,104,128,.2)}
+
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2)}
+@media(max-width:760px){.sum-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.sum-grid{grid-template-columns:1fr}}
+.sum-card{background:var(--bg);padding:1.25rem 1.4rem}
+.sum-disc{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem}
+.sum-ico{font-size:1.3rem}
+.sum-label{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sum-vals{display:flex;justify-content:space-between;margin-bottom:.5rem;font-size:.78rem;color:var(--dim)}
+.sum-pct{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;color:var(--text);margin-bottom:.5rem}
+.bar-bg{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.bar-f{height:100%;border-radius:3px;transform:scaleX(0);transform-origin:left;transition:transform 1s cubic-bezier(.4,0,.2,1)}
+
+.sr{opacity:0;transform:translateY(20px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.vis{opacity:1;transform:none}
+
+.modal-ov{position:fixed;inset:0;background:rgba(4,8,15,.85);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:520px;overflow:hidden}
+.modal-head{padding:1.25rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.modal-close{width:28px;height:28px;border-radius:6px;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all var(--ease)}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.modal-body{padding:1.4rem}
+.form-row{margin-bottom:1rem}
+.form-label{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.4rem}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .9rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.85rem;transition:border-color var(--ease)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--orange)}
+.form-select{appearance:none}
+.form-textarea{resize:vertical;min-height:72px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.modal-foot{padding:1rem 1.4rem;border-top:1px solid var(--border2);display:flex;gap:.75rem;justify-content:flex-end}
+
+.mt2{margin-top:2rem}
+.s1{margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="landing.html" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Kona<span class="acc">Labs</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="landing.html#disciplines">Disciplinas</a></li>
+      <li><a href="landing.html#calendar">Carreras</a></li>
+      <li><a href="landing.html#plans">Planes</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="training_plan.html" class="on">Plan</a></li>
+      <li><a href="blood_labs.html">Labs</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="sync-btn" onclick="syncBtn(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Sync Garmin
+      </button>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="nav-avatar">R</div>
+        <div>
+          <div class="nav-uname">Rafael</div>
+          <div class="nav-urole">Ironman 70.3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-title">PLAN DE ENTRENAMIENTO</div>
+        <div class="ph-sub">SEMANA 24 &nbsp;·&nbsp; 9–15 JUN 2026 &nbsp;·&nbsp; FASE 3 DE 4 &nbsp;·&nbsp; CICLO BASE</div>
+        <div class="ph-chips">
+          <span class="chip">⏱ 14.5h planificadas</span>
+          <span class="chip">📊 520 TSS objetivo</span>
+          <span class="chip chip-g">✓ 11/11 sesiones</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+        <div class="wk-nav">
+          <button class="wk-btn">&#8592;</button>
+          <span style="font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--muted);letter-spacing:.08em">SEM 24</span>
+          <button class="wk-btn">&#8594;</button>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="openModal()">+ Agregar Sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="c">
+
+    <div class="panel sr" id="s-cal">
+      <div class="cal-grid">
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">LUN</span><span class="cal-date">9 Jun</span></div>
+          <div class="sess done"><span class="sess-ico">🏊</span><span class="sess-name">Recovery 3km</span><span class="sess-dur">45'</span></div>
+          <div class="sess done"><span class="sess-ico">🏃</span><span class="sess-name">Easy 8km</span><span class="sess-dur">45'</span></div>
+          <div class="cal-tss">TSS 65</div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">MAR</span><span class="cal-date">10 Jun</span></div>
+          <div class="sess done"><span class="sess-ico">🚴</span><span class="sess-name">Queen K Intervals</span><span class="sess-dur">1h30</span></div>
+          <div class="sess done"><span class="sess-ico">💪</span><span class="sess-name">Core+Glúteos</span><span class="sess-dur">45'</span></div>
+          <div class="cal-tss">TSS 110</div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">MIÉ</span><span class="cal-date">11 Jun</span></div>
+          <div class="sess done"><span class="sess-ico">🏊</span><span class="sess-name">CSS Pace 4km</span><span class="sess-dur">58'</span></div>
+          <div class="sess done"><span class="sess-ico">🏃</span><span class="sess-name">Tempo 12km</span><span class="sess-dur">52'</span></div>
+          <div class="cal-tss">TSS 95</div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">JUE</span><span class="cal-date">12 Jun</span></div>
+          <div class="sess done"><span class="sess-ico">🚴</span><span class="sess-name">LT Endurance 80km</span><span class="sess-dur">2h45</span></div>
+          <div class="sess" style="opacity:.35"><span class="sess-ico">🏃</span><span class="sess-name">REST</span></div>
+          <div class="cal-tss">TSS 130</div>
+        </div>
+        <div class="cal-day today">
+          <div class="cal-hd"><span class="cal-dow">VIE — HOY</span><span class="cal-date">13 Jun</span></div>
+          <div class="sess done"><span class="sess-ico">💪</span><span class="sess-name">Hip Stability</span><span class="sess-dur">30'</span></div>
+          <div class="sess done"><span class="sess-ico">🚴</span><span class="sess-name">Queen K done</span><span class="sess-dur">1h23</span></div>
+          <div class="cal-tss">TSS 55</div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">SÁB</span><span class="cal-date">14 Jun</span></div>
+          <div class="sess"><span class="sess-ico">🏊</span><span class="sess-name">Open Water 3.8km</span><span class="sess-dur">1h10</span></div>
+          <div class="sess"><span class="sess-ico">🚴</span><span class="sess-name">Brick 45min</span><span class="sess-dur">45'</span></div>
+          <div class="cal-tss">TSS 90</div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-hd"><span class="cal-dow">DOM</span><span class="cal-date">15 Jun</span></div>
+          <div class="sess"><span class="sess-ico">🏃</span><span class="sess-name">Long Run 20km</span><span class="sess-dur">1h45</span></div>
+          <div class="cal-tss">TSS 75</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt2 sr" id="s-tbl">
+      <div class="panel-head">
+        <div class="panel-title">Sesiones</div>
+        <div class="tabs">
+          <div class="tab on">Semana</div>
+          <div class="tab">Mes</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="sess-tbl">
+          <thead>
+            <tr>
+              <th>Disciplina</th>
+              <th>Nombre</th>
+              <th>Fecha</th>
+              <th>Duración</th>
+              <th>Distancia</th>
+              <th>TSS obj</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>🏊 Natación</td><td>Recovery</td><td>9 Jun</td><td>45min</td><td>3 km</td><td>30</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🏃 Carrera</td><td>Easy Run</td><td>9 Jun</td><td>45min</td><td>8 km</td><td>35</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🚴 Ciclismo</td><td>Queen K Intervals</td><td>10 Jun</td><td>1h30</td><td>42 km</td><td>90</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>💪 Fuerza</td><td>Core+Glúteos</td><td>10 Jun</td><td>45min</td><td>—</td><td>20</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🏊 Natación</td><td>CSS Pace</td><td>11 Jun</td><td>58min</td><td>4 km</td><td>55</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🏃 Carrera</td><td>Tempo</td><td>11 Jun</td><td>52min</td><td>12 km</td><td>40</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🚴 Ciclismo</td><td>LT Endurance</td><td>12 Jun</td><td>2h45</td><td>80 km</td><td>130</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>💪 Fuerza</td><td>Hip Stability</td><td>13 Jun</td><td>30min</td><td>—</td><td>15</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🚴 Ciclismo</td><td>Queen K — Detalle</td><td>13 Jun</td><td>1h23</td><td>42.3 km</td><td>40</td><td><span class="badge b-g">Completada</span></td></tr>
+            <tr><td>🏊 Natación</td><td>Open Water</td><td>14 Jun</td><td>1h10</td><td>3.8 km</td><td>50</td><td><span class="badge b-o">Pendiente</span></td></tr>
+            <tr><td>🚴 Ciclismo</td><td>Brick</td><td>14 Jun</td><td>45min</td><td>20 km</td><td>40</td><td><span class="badge b-o">Pendiente</span></td></tr>
+            <tr><td>🏃 Carrera</td><td>Long Run</td><td>15 Jun</td><td>1h45</td><td>20 km</td><td>75</td><td><span class="badge b-o">Pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel mt2 sr" id="s-sum">
+      <div class="panel-head"><div class="panel-title">Resumen Semanal por Disciplina</div></div>
+      <div class="sum-grid">
+        <div class="sum-card">
+          <div class="sum-disc"><span class="sum-ico">🏊</span><span class="sum-label" style="color:var(--cyan)">Natación</span></div>
+          <div class="sum-pct" style="color:var(--cyan)">48%</div>
+          <div class="sum-vals"><span>5.2 km realizados</span><span>10.8 km plan</span></div>
+          <div class="bar-bg"><div class="bar-f" data-w="48" style="background:var(--cyan)"></div></div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-disc"><span class="sum-ico">🚴</span><span class="sum-label" style="color:var(--orange)">Ciclismo</span></div>
+          <div class="sum-pct" style="color:var(--orange)">69%</div>
+          <div class="sum-vals"><span>142 km realizados</span><span>205 km plan</span></div>
+          <div class="bar-bg"><div class="bar-f" data-w="69" style="background:var(--orange)"></div></div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-disc"><span class="sum-ico">🏃</span><span class="sum-label" style="color:var(--green)">Carrera</span></div>
+          <div class="sum-pct" style="color:var(--green)">70%</div>
+          <div class="sum-vals"><span>28 km realizados</span><span>40 km plan</span></div>
+          <div class="bar-bg"><div class="bar-f" data-w="70" style="background:var(--green)"></div></div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-disc"><span class="sum-ico">💪</span><span class="sum-label" style="color:var(--purple)">Fuerza</span></div>
+          <div class="sum-pct" style="color:var(--purple)">50%</div>
+          <div class="sum-vals"><span>1 sesión realizada</span><span>2 plan</span></div>
+          <div class="bar-bg"><div class="bar-f" data-w="50" style="background:var(--purple)"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-ov" id="modal-ov" onclick="closeModalOv(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">+ Agregar Sesión</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label">Disciplina</label>
+        <select class="form-select">
+          <option>Natación</option>
+          <option>Ciclismo</option>
+          <option>Carrera</option>
+          <option>Fuerza</option>
+        </select>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-input">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Tipo</label>
+          <input type="text" class="form-input" placeholder="Intervals / Endurance...">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Duración (HH:MM)</label>
+          <input type="time" class="form-input">
+        </div>
+        <div class="form-row">
+          <label class="form-label">TSS Objetivo</label>
+          <input type="number" class="form-input" placeholder="75">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Distancia</label>
+          <input type="number" class="form-input" placeholder="20">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Unidad</label>
+          <select class="form-select"><option>km</option><option>m</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Notas</label>
+        <textarea class="form-textarea" placeholder="Detalles de la sesión..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p btn-sm">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<footer style="border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center">
+  <div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em">
+    KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; PLAN DE ENTRENAMIENTO &nbsp;·&nbsp; IRONMAN 70.3
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+function openModal(){document.getElementById('modal-ov').classList.add('open')}
+function closeModal(){document.getElementById('modal-ov').classList.remove('open')}
+function closeModalOv(e){if(e.target===document.getElementById('modal-ov'))closeModal()}
+
+function syncBtn(b){
+  b.classList.add('spin');
+  setTimeout(()=>b.classList.remove('spin'),2200);
+}
+
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('vis');
+      e.target.querySelectorAll('.bar-f[data-w]').forEach(b=>{
+        setTimeout(()=>{b.style.transform=`scaleX(${+b.dataset.w/100})`},200);
+      });
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    t.closest('.tabs').querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+  });
+});
+</script>
+</body>
+</html>
