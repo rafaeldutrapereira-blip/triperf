@@ -1,4 +1,4 @@
-﻿"""TriPerf â€” Triathlon Performance Dashboard"""
+"""TriPerf — Triathlon Performance Dashboard"""
 
 import os, sys, subprocess
 from datetime import date, timedelta, datetime
@@ -28,15 +28,307 @@ from utils.formulas import (
     caloric_expenditure_swim, swolf_to_efficiency_rating,
 )
 
-# â”€â”€ Page config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="TriPerf",
-    page_icon="âš¡",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# â”€â”€ CSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Landing page (disabled — app loads directly) ────────────────────────────────
+if False:
+    import streamlit.components.v1 as components
+
+    st.markdown("""<style>
+[data-testid="stSidebar"],[data-testid="stHeader"],[data-testid="stToolbar"],
+[data-testid="stDecoration"],footer,#MainMenu { display:none !important; }
+.stApp { background:#FFFFFF !important; }
+.block-container { padding:0 !important; max-width:100vw !important; }
+iframe { display:block !important; border:none !important; }
+div[data-testid="stVerticalBlock"] > div { gap:0 !important; }
+div[data-testid="column"] { padding:0 !important; }
+
+div[data-testid="stButton"] > button {
+    background:#2563EB !important; color:#FFFFFF !important;
+    border:none !important; border-radius:8px !important;
+    font-family:'Inter',sans-serif !important; font-size:1.05rem !important;
+    font-weight:700 !important; letter-spacing:.02em !important;
+    padding:16px 40px !important; width:100% !important;
+    transition:background .15s !important; cursor:pointer !important;
+}
+div[data-testid="stButton"] > button:hover { background:#1D4ED8 !important; }
+</style>""", unsafe_allow_html=True)
+
+    # ── Hero section (nav + headline + badges) — no CTA button inside iframe ──
+    _HERO_HTML = """<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#fff}
+.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.97);border-bottom:1px solid #E5E7EB;
+  padding:.9rem 5vw;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.logo{font-size:1.15rem;font-weight:800;color:#111827;letter-spacing:-.02em}
+.logo span{color:#2563EB}
+.links{display:flex;gap:2rem;font-size:.82rem;font-weight:500;color:#6B7280}
+.badge{font-size:.78rem;font-weight:600;color:#2563EB;border:1.5px solid #2563EB;border-radius:5px;padding:.4rem 1rem}
+.hero{background:linear-gradient(135deg,#EFF6FF 0%,#FFFFFF 60%,#F0FDF4 100%);
+  padding:4rem 5vw 3.5rem;position:relative;overflow:hidden}
+.bg1{position:absolute;top:-60px;right:-80px;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(37,99,235,.06) 0%,transparent 70%);pointer-events:none}
+.bg2{position:absolute;bottom:-40px;left:10%;width:400px;height:400px;
+  background:radial-gradient(circle,rgba(16,185,129,.05) 0%,transparent 70%);pointer-events:none}
+.inner{max-width:720px;position:relative}
+.pill{display:inline-flex;align-items:center;gap:.5rem;background:#EFF6FF;border:1px solid #BFDBFE;
+  border-radius:20px;padding:.3rem .9rem;margin-bottom:1.5rem}
+.dot{width:7px;height:7px;background:#2563EB;border-radius:50%;display:inline-block}
+.pill-txt{font-size:.72rem;font-weight:600;color:#2563EB;letter-spacing:.05em;text-transform:uppercase}
+h1{font-size:clamp(2.4rem,5.5vw,4rem);font-weight:900;color:#111827;line-height:1.08;
+  margin:0 0 1.2rem;letter-spacing:-.03em}
+.sub{font-size:1.05rem;color:#4B5563;line-height:1.7;max-width:520px;margin:0 0 2rem}
+.badges{display:flex;flex-wrap:wrap;gap:.7rem}
+.sp{display:flex;align-items:center;gap:.45rem;border-radius:5px;padding:.45rem 1rem;border:1px solid;
+  font-size:.8rem;font-weight:600}
+.sw{background:#F0F9FF;border-color:#BAE6FD;color:#0369A1}
+.bk{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+.rn{background:#F0FDF4;border-color:#BBF7D0;color:#166534}
+.st{background:#FAF5FF;border-color:#E9D5FF;color:#7C3AED}
+</style></head><body>
+<nav class="nav">
+  <div class="logo">Tri<span>Perf</span></div>
+  <div class="links"><span>Plan</span><span>Train</span><span>Analyze</span><span>Predict</span></div>
+  <div class="badge">Garmin Connected &#10003;</div>
+</nav>
+<section class="hero">
+  <div class="bg1"></div><div class="bg2"></div>
+  <div class="inner">
+    <div class="pill"><span class="dot"></span>
+      <span class="pill-txt">Garmin Connect &middot; Rafael Dutra &middot; 2026</span></div>
+    <h1>Your complete<br>triathlon platform.</h1>
+    <p class="sub">Built for the complete triathlete. Track every session, plan with precision,
+      analyze your load, and race smarter &mdash; all connected to Garmin.</p>
+    <div class="badges">
+      <div class="sp sw"><span>&#127946;</span>Swimming</div>
+      <div class="sp bk"><span>&#128692;</span>Cycling</div>
+      <div class="sp rn"><span>&#127939;</span>Running</div>
+      <div class="sp st"><span>&#127947;</span>Strength</div>
+    </div>
+  </div>
+</section>
+</body></html>"""
+
+    # ── Bottom section (stats + pillars + features + why + footer) ─────────────
+    _BOTTOM_HTML = """<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#fff;color:#111827}
+.stats{background:#111827;padding:2rem 5vw}
+.stats-inner{display:flex;flex-wrap:wrap;gap:0;justify-content:space-around;max-width:900px;margin:0 auto}
+.stat{text-align:center;padding:0 2rem;border-right:1px solid rgba(255,255,255,.1)}
+.stat:last-child{border-right:none}
+.snum{font-size:2.4rem;font-weight:800;color:#fff;line-height:1}
+.slbl{font-size:.7rem;font-weight:500;color:#9CA3AF;margin:.3rem 0 0;text-transform:uppercase;letter-spacing:.1em}
+.pillars{background:#F9FAFB;padding:4rem 5vw}
+.sec-title{text-align:center;margin-bottom:3rem}
+.eyebrow{font-size:.72rem;font-weight:600;color:#2563EB;text-transform:uppercase;letter-spacing:.12em;margin:0 0 .6rem}
+h2{font-size:2rem;font-weight:800;color:#111827;letter-spacing:-.02em}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;max-width:960px;margin:0 auto}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:1.8rem}
+.ctit{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;margin:0 0 .5rem}
+.csub{font-size:.88rem;font-weight:600;color:#111827;margin:0 0 .5rem}
+.cdesc{font-size:.8rem;color:#6B7280;line-height:1.6}
+.features{background:#fff}
+.frow{padding:4rem 5vw;display:flex;align-items:center;gap:4rem;flex-wrap:wrap}
+.frow.alt{background:#F9FAFB;flex-direction:row-reverse}
+.ftxt{flex:1;min-width:260px}
+.fey{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;margin:0 0 .7rem}
+h3{font-size:1.7rem;font-weight:800;color:#111827;margin:0 0 1rem;letter-spacing:-.02em}
+.fp{font-size:.9rem;color:#4B5563;line-height:1.7;margin:0 0 1.2rem}
+.checks{display:flex;flex-direction:column;gap:.5rem}
+.chk{display:flex;align-items:center;gap:.6rem}
+.chk-ico{font-weight:700}
+.chk-txt{font-size:.83rem;color:#374151}
+.fcard{flex:1;min-width:260px;border-radius:12px;padding:2rem;border:1px solid #E5E7EB}
+.krow{display:flex;justify-content:space-between;margin-bottom:1.2rem}
+.kpi{text-align:center}
+.knum{font-size:1.8rem;font-weight:800}
+.klbl{font-size:.65rem;color:#6B7280;margin:.2rem 0 0;text-transform:uppercase;letter-spacing:.08em}
+.bwrap{background:#DBEAFE;border-radius:6px;height:6px;margin-bottom:.4rem;overflow:hidden}
+.bfill{background:#2563EB;height:100%;width:68%;border-radius:6px}
+.blbl{font-size:.72rem;color:#6B7280}
+.slist{display:flex;flex-direction:column;gap:.7rem}
+.sess{display:flex;align-items:center;justify-content:space-between;border-radius:7px;padding:.7rem .9rem;border-left:3px solid}
+.sleft{display:flex;align-items:center;gap:.6rem}
+.sname{font-size:.8rem;font-weight:600;color:#111827}
+.sdet{font-size:.7rem;color:#6B7280}
+.sdur{font-size:.72rem;font-weight:600}
+.rlist{display:flex;flex-direction:column;gap:.6rem}
+.race{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border:1px solid #E5E7EB;border-radius:7px}
+.race.hi{border:2px solid #2563EB;background:#EFF6FF}
+.rname{font-size:.82rem;font-weight:600;color:#374151}
+.race.hi .rname{color:#1D4ED8;font-weight:700}
+.rtime{font-size:.82rem;font-weight:700;color:#2563EB}
+.race.hi .rtime{color:#1D4ED8}
+.why{background:#111827;padding:4rem 5vw}
+.why-title{text-align:center;margin-bottom:3rem}
+.why h2{color:#fff}
+.why-sub{font-size:.95rem;color:#9CA3AF;max-width:500px;margin:.5rem auto 0;line-height:1.6}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;max-width:960px;margin:0 auto}
+.wcard{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:1.5rem}
+.wico{font-size:1.4rem;margin:0 0 .6rem}
+.wttl{font-size:.9rem;font-weight:700;color:#fff;margin:0 0 .4rem}
+.wdesc{font-size:.78rem;color:#9CA3AF;line-height:1.55}
+footer{background:#0F172A;padding:2rem 5vw;display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:space-between;gap:1rem;border-top:1px solid rgba(255,255,255,.06)}
+.flogo{font-size:1rem;font-weight:800;color:#fff}
+.flogo span{color:#3B82F6}
+.fmid{font-size:.72rem;color:#6B7280}
+.fright{font-size:.72rem;color:#4B5563}
+</style></head><body>
+
+<section class="stats">
+  <div class="stats-inner">
+    <div class="stat"><div class="snum">240</div><div class="slbl">FTP Watts</div></div>
+    <div class="stat"><div class="snum">168+</div><div class="slbl">Activities tracked</div></div>
+    <div class="stat"><div class="snum">4</div><div class="slbl">Disciplines</div></div>
+    <div class="stat"><div class="snum">57</div><div class="slbl">VO&#8322;Max Bike</div></div>
+    <div class="stat"><div class="snum">9</div><div class="slbl">Dashboard pages</div></div>
+  </div>
+</section>
+
+<section class="pillars">
+  <div class="sec-title">
+    <p class="eyebrow">All-in-one, for the complete triathlete</p>
+    <h2>Everything you need. Nothing you don't.</h2>
+  </div>
+  <div class="grid4">
+    <div class="card" style="border-top:3px solid #2563EB"><p class="ctit" style="color:#2563EB">PLAN.</p>
+      <p class="csub">Structured training plans</p>
+      <p class="cdesc">Coach uploads sessions by discipline. Planned vs actual comparison built-in.</p></div>
+    <div class="card" style="border-top:3px solid #10B981"><p class="ctit" style="color:#10B981">TRAIN.</p>
+      <p class="csub">Garmin-connected. Always in sync.</p>
+      <p class="cdesc">Every session auto-synced. Swim, bike, run, strength &mdash; all in one place.</p></div>
+    <div class="card" style="border-top:3px solid #F59E0B"><p class="ctit" style="color:#F59E0B">ANALYZE.</p>
+      <p class="csub">Real progress. No guesswork.</p>
+      <p class="cdesc">CTL, ATL, TSB, ACWR, power zones, pace zones &mdash; science-backed metrics.</p></div>
+    <div class="card" style="border-top:3px solid #A855F7"><p class="ctit" style="color:#A855F7">PREDICT.</p>
+      <p class="csub">Race ready. Every time.</p>
+      <p class="cdesc">Physics-based race predictions for Sprint, Olympic, 70.3, and Ironman.</p></div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="frow">
+    <div class="ftxt">
+      <p class="fey" style="color:#2563EB">Training Load</p>
+      <h3>Real progress.<br>No guesswork.</h3>
+      <p class="fp">Track your fitness with Coggan's PMC model. CTL tells you your fitness level,
+        ATL shows your fatigue, and TSB reveals your form. Know exactly when you're ready to race.</p>
+      <div class="checks">
+        <div class="chk"><span class="chk-ico" style="color:#2563EB">&#10003;</span><span class="chk-txt">Performance Management Chart (90 days)</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#2563EB">&#10003;</span><span class="chk-txt">ACWR injury risk monitoring</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#2563EB">&#10003;</span><span class="chk-txt">Weekly TSS by discipline</span></div>
+      </div>
+    </div>
+    <div class="fcard" style="background:linear-gradient(135deg,#EFF6FF,#F0FDF4)">
+      <div class="krow">
+        <div class="kpi"><div class="knum" style="color:#2563EB">55</div><div class="klbl">CTL</div></div>
+        <div class="kpi"><div class="knum" style="color:#EF4444">62</div><div class="klbl">ATL</div></div>
+        <div class="kpi"><div class="knum" style="color:#8B5CF6">-7</div><div class="klbl">TSB</div></div>
+        <div class="kpi"><div class="knum" style="color:#F59E0B">1.13</div><div class="klbl">ACWR</div></div>
+      </div>
+      <div class="bwrap"><div class="bfill"></div></div>
+      <p class="blbl">Training Phase &mdash; building fitness</p>
+    </div>
+  </div>
+  <div class="frow alt">
+    <div class="ftxt">
+      <p class="fey" style="color:#10B981">Training Plan</p>
+      <h3>Expertise.<br>No guesswork.</h3>
+      <p class="fp">Coaches upload structured sessions for each discipline. Athletes train with
+        purpose. Compare planned vs actual automatically &mdash; see what's working.</p>
+      <div class="checks">
+        <div class="chk"><span class="chk-ico" style="color:#10B981">&#10003;</span><span class="chk-txt">Sessions for Swim &middot; Bike &middot; Run &middot; Strength</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#10B981">&#10003;</span><span class="chk-txt">Planned vs actual comparison</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#10B981">&#10003;</span><span class="chk-txt">Weekly calendar view</span></div>
+      </div>
+    </div>
+    <div class="fcard" style="background:#fff">
+      <p style="font-size:.7rem;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.1em;margin:0 0 1rem">Upcoming sessions</p>
+      <div class="slist">
+        <div class="sess" style="background:#EFF6FF;border-color:#06B6D4">
+          <div class="sleft"><span>&#127946;</span><div><p class="sname">CSS Threshold</p><p class="sdet">4x400m on 20s rest</p></div></div>
+          <span class="sdur" style="color:#2563EB">60 min</span></div>
+        <div class="sess" style="background:#FFFBEB;border-color:#F59E0B">
+          <div class="sleft"><span>&#128692;</span><div><p class="sname">FTP Intervals</p><p class="sdet">3x10min @ 240W</p></div></div>
+          <span class="sdur" style="color:#D97706">90 min</span></div>
+        <div class="sess" style="background:#F0FDF4;border-color:#10B981">
+          <div class="sleft"><span>&#127939;</span><div><p class="sname">Tempo Run</p><p class="sdet">10km @ 4:20/km</p></div></div>
+          <span class="sdur" style="color:#059669">50 min</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="ftxt">
+      <p class="fey" style="color:#A855F7">Race Predictor</p>
+      <h3>Race ready.<br>Every time.</h3>
+      <p class="fp">Physics-based race time predictions for all triathlon distances.
+        Riegel model for swim and run, Newton-Raphson bike physics.</p>
+      <div class="checks">
+        <div class="chk"><span class="chk-ico" style="color:#A855F7">&#10003;</span><span class="chk-txt">Sprint &middot; Olympic &middot; 70.3 &middot; Ironman</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#A855F7">&#10003;</span><span class="chk-txt">FTP sensitivity analysis</span></div>
+        <div class="chk"><span class="chk-ico" style="color:#A855F7">&#10003;</span><span class="chk-txt">Brick run fatigue simulator</span></div>
+      </div>
+    </div>
+    <div class="fcard" style="background:#fff">
+      <p style="font-size:.7rem;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.1em;margin:0 0 1rem">Race predictions &middot; FTP 240W</p>
+      <div class="rlist">
+        <div class="race"><span class="rname">Sprint</span><span class="rtime">1:02:30</span></div>
+        <div class="race"><span class="rname">Olympic</span><span class="rtime">2:11:00</span></div>
+        <div class="race hi"><span class="rname">70.3</span><span class="rtime">4:48:00</span></div>
+        <div class="race"><span class="rname">Ironman</span><span class="rtime">10:30:00</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="why-title">
+    <h2>Why TriPerf?</h2>
+    <p class="why-sub">Everything TrainingPeaks does &mdash; built specifically for you, connected to your Garmin data.</p>
+  </div>
+  <div class="wgrid">
+    <div class="wcard"><p class="wico">&#9889;</p><p class="wttl">Garmin native</p>
+      <p class="wdesc">Direct sync from Garmin Connect. Real data, no manual entry.</p></div>
+    <div class="wcard"><p class="wico">&#128202;</p><p class="wttl">Science-backed</p>
+      <p class="wdesc">Coggan PMC, Riegel model, Newton-Raphson bike physics, Laursen fatigue.</p></div>
+    <div class="wcard"><p class="wico">&#127947;</p><p class="wttl">4 disciplines</p>
+      <p class="wdesc">Swim, bike, run, and strength &mdash; complete triathlete tracking.</p></div>
+    <div class="wcard"><p class="wico">&#127919;</p><p class="wttl">Coach + athlete</p>
+      <p class="wdesc">Plan sessions, track execution, compare planned vs actual automatically.</p></div>
+  </div>
+</section>
+
+<footer>
+  <span class="flogo">Tri<span>Perf</span></span>
+  <span class="fmid">Powered by Garmin Connect &middot; Streamlit &middot; Python &middot; Plotly</span>
+  <span class="fright">2026 &middot; Rafael Dutra &middot; Ironman Triathlete</span>
+</footer>
+</body></html>"""
+
+    components.html(_HERO_HTML, height=490, scrolling=False)
+    _c1, _c2, _c3 = st.columns([2, 3, 2])
+    with _c2:
+        if st.button("⚡  Enter Dashboard  →", use_container_width=True, key="cta_enter"):
+            st.session_state.entered = True
+            st.rerun()
+    components.html(_BOTTOM_HTML, height=2700, scrolling=False)
+    st.stop()
+
+# ── CSS ────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 /* Ocultar barra superior de Streamlit */
@@ -94,7 +386,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# â”€â”€ Constantes de color â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Constantes de color ────────────────────────────────────────────────────────
 CARD = "#FFFFFF"
 TEXT2 = "#64748B"
 ACCENT = "#3B82F6"
@@ -106,10 +398,10 @@ COL_BIKE = "#F59E0B"
 COL_RUN  = "#10B981"
 COL_STR  = "#A855F7"
 SPORT_COLORS = {"swim": COL_SWIM, "bike": COL_BIKE, "run": COL_RUN, "str": COL_STR}
-SPORT_ICONS  = {"swim": "ðŸŠ", "bike": "ðŸš´", "run": "ðŸƒ", "str": "ðŸ‹ï¸"}
+SPORT_ICONS  = {"swim": "🏊", "bike": "🚴", "run": "🏃", "str": "🏋️"}
 RACE_LABELS  = {"sprint": "Sprint", "olympic": "Olympic", "703": "70.3", "ironman": "Ironman"}
 
-# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def _parse_pace(s, default=260.0):
     try:
         p = s.strip().split(":")
@@ -126,12 +418,12 @@ def _fmt_dur(sec):
     return f"{h}h {m:02d}m" if h else f"{m}m {s:02d}s"
 
 def section(title, sub=""):
-    st.caption(f"**{title.upper()}**{'  Â·  ' + sub if sub else ''}")
+    st.caption(f"**{title.upper()}**{'  ·  ' + sub if sub else ''}")
 
-# â”€â”€ KPI helper functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── KPI helper functions ────────────────────────────────────────────────────────
 
 def _readiness_score(tsb: float, hrv_df: pd.DataFrame, sleep_df: pd.DataFrame):
-    """Daily Readiness Score 0â€“100. Returns (score, label, color, components)."""
+    """Daily Readiness Score 0–100. Returns (score, label, color, components)."""
     # TSB component: optimal range -5 to +20
     if -5 <= tsb <= 20:
         tsb_s = 85 + min(15, (tsb + 5) / 25 * 15)
@@ -188,7 +480,7 @@ def _ef_run(df: pd.DataFrame) -> pd.DataFrame:
 
 def _race_readiness(tsb: float, hrv_df: pd.DataFrame, sleep_df: pd.DataFrame,
                     compliance_pct: float):
-    """Race Readiness Index 0â€“100. Returns (score, label, color)."""
+    """Race Readiness Index 0–100. Returns (score, label, color)."""
     # TSB: ideal +5 to +15 before race
     if 5 <= tsb <= 15:     tsb_s = 100
     elif 0 <= tsb < 5:     tsb_s = 80
@@ -214,10 +506,10 @@ def _race_readiness(tsb: float, hrv_df: pd.DataFrame, sleep_df: pd.DataFrame,
     comp_s = min(100, round(compliance_pct))
 
     total = round(min(100, max(0, 0.30*tsb_s + 0.20*hrv_s + 0.15*sleep_s + 0.25*comp_s + 0.10*75)))
-    if total >= 85:   lbl, col = "ðŸ† Peak Race Readiness",  "#10B981"
-    elif total >= 70: lbl, col = "âœ“ Ready to Race",         "#3B82F6"
-    elif total >= 50: lbl, col = "âš¡ Building Fitness",     "#F59E0B"
-    else:             lbl, col = "ðŸ”„ Recovery Phase",       "#EF4444"
+    if total >= 85:   lbl, col = "🏆 Peak Race Readiness",  "#10B981"
+    elif total >= 70: lbl, col = "✓ Ready to Race",         "#3B82F6"
+    elif total >= 50: lbl, col = "⚡ Building Fitness",     "#F59E0B"
+    else:             lbl, col = "🔄 Recovery Phase",       "#EF4444"
     return total, lbl, col
 
 def _load_blood_tests() -> dict:
@@ -227,7 +519,7 @@ def _load_blood_tests() -> dict:
         return {}
     return _json.loads(p.read_text(encoding="utf-8"))
 
-# â”€â”€ Training Detail helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Training Detail helpers ────────────────────────────────────────────────────
 
 def _gen_activity_route(distance_m: float, sport: str, seed: int = 42):
     """Generate a simulated GPS loop route as lat/lon lists."""
@@ -320,7 +612,7 @@ def chart(fig, height=300, margin=None):
     fig.update_yaxes(showgrid=True, gridcolor="#F1F5F9", tickfont_size=10, zeroline=False)
     return fig
 
-# â”€â”€ Data & Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Data & Profile ────────────────────────────────────────────────────────────
 DATA_DIR    = Path(__file__).parent / "data"
 PROFILE_PATH = DATA_DIR / "athlete_profile.json"
 
@@ -379,9 +671,9 @@ def last_sync():
     p = DATA_DIR / "activities.csv"
     if p.exists():
         return datetime.fromtimestamp(p.stat().st_mtime).strftime("%b %d %H:%M")
-    return "â€”"
+    return "—"
 
-# â”€â”€ Load athlete profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Load athlete profile ───────────────────────────────────────────────────────
 _prof  = load_profile()
 ftp    = int(_prof["ftp_w"])
 t_run  = str(_prof["threshold_run"])
@@ -390,18 +682,18 @@ weight = float(_prof["weight_kg"])
 vo2r   = float(_prof["vo2max_run"])
 vo2b   = float(_prof["vo2max_bike"])
 
-# â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## âš¡ TriPerf")
+    st.markdown("## ⚡ TriPerf")
     st.caption("Triathlon Performance Dashboard")
     st.markdown("---")
 
     page = st.radio(
         "nav",
-        ["ðŸ‘¤ Athlete Profile", "ðŸ“‹ Training Plan", "ðŸ“Š Dashboard",
-         "ðŸ“ˆ Training Load", "ðŸŠ Swimming", "ðŸš´ Cycling",
-         "ðŸƒ Running", "ðŸŽ Nutrition", "ðŸ† Race Predictor",
-         "ðŸ©¸ Blood Labs", "ðŸ—ºï¸ Training Detail"],
+        ["👤 Athlete Profile", "📋 Training Plan", "📊 Dashboard",
+         "📈 Training Load", "🏊 Swimming", "🚴 Cycling",
+         "🏃 Running", "🍎 Nutrition", "🏆 Race Predictor",
+         "🩸 Blood Labs", "🗺️ Training Detail"],
         label_visibility="collapsed",
     )
 
@@ -411,14 +703,14 @@ with st.sidebar:
     st.caption("ATHLETE")
     st.markdown(f"**{_prof['name']}**")
     st.caption(
-        f"FTP {ftp}W  Â·  {weight:.0f} kg\n\n"
-        f"Run {t_run}/km  Â·  Swim {t_swim}/100m\n\n"
-        f"VOâ‚‚ run {vo2r:.0f}  Â·  bike {vo2b:.0f}"
+        f"FTP {ftp}W  ·  {weight:.0f} kg\n\n"
+        f"Run {t_run}/km  ·  Swim {t_swim}/100m\n\n"
+        f"VO₂ run {vo2r:.0f}  ·  bike {vo2b:.0f}"
     )
 
     st.markdown("---")
-    if st.button("ðŸ”„ Sync Garmin", use_container_width=True):
-        with st.spinner("Syncing Garminâ€¦"):
+    if st.button("🔄 Sync Garmin", use_container_width=True):
+        with st.spinner("Syncing Garmin…"):
             try:
                 python = sys.executable
                 res = subprocess.run(
@@ -438,7 +730,7 @@ with st.sidebar:
     st.markdown(" ")
     st.caption(f"Last sync: {last_sync()}")
 
-# â”€â”€ Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Setup ──────────────────────────────────────────────────────────────────────
 profile = AthleteProfile(
     ftp_w=ftp,
     threshold_run_sec_km=_parse_pace(t_run),
@@ -449,31 +741,31 @@ predictor = TriathlonPredictor(profile, riegel_weight=0.35)
 df_load, df_act, df_sleep, df_hrv = load_data()
 has_data = not df_act.empty
 
-# â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Page header ────────────────────────────────────────────────────────────────
 PAGE_TITLES = {
-    "ðŸ“Š Dashboard": "Performance Dashboard",
-    "ðŸ“‹ Training Plan": "Training Plan",
-    "ðŸ“ˆ Training Load": "Training Load",
-    "ðŸŠ Swimming": "Swimming",
-    "ðŸš´ Cycling": "Cycling",
-    "ðŸƒ Running": "Running",
-    "ðŸŽ Nutrition": "Nutrition",
-    "ðŸ‘¤ Athlete Profile": "Athlete Profile",
-    "ðŸ† Race Predictor": "Race Predictor",
-    "ðŸ©¸ Blood Labs":       "Blood Labs Â· Biochemistry",
-    "ðŸ—ºï¸ Training Detail": "Training Detail Â· Activity Analysis",
+    "📊 Dashboard": "Performance Dashboard",
+    "📋 Training Plan": "Training Plan",
+    "📈 Training Load": "Training Load",
+    "🏊 Swimming": "Swimming",
+    "🚴 Cycling": "Cycling",
+    "🏃 Running": "Running",
+    "🍎 Nutrition": "Nutrition",
+    "👤 Athlete Profile": "Athlete Profile",
+    "🏆 Race Predictor": "Race Predictor",
+    "🩸 Blood Labs":       "Blood Labs · Biochemistry",
+    "🗺️ Training Detail": "Training Detail · Activity Analysis",
 }
 col_h, col_s = st.columns([5, 1])
 col_h.markdown(f"## {PAGE_TITLES.get(page, page)}")
-col_h.caption(f"Last sync: {last_sync()}  Â·  {len(df_act)} activities")
+col_h.caption(f"Last sync: {last_sync()}  ·  {len(df_act)} activities")
 if has_data:
-    col_s.success("â— Live")
+    col_s.success("● Live")
 else:
-    col_s.warning("â— No data")
+    col_s.warning("● No data")
 st.divider()
 
 
-# â”€â”€ Training Plan helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Training Plan helpers ──────────────────────────────────────────────────────
 PLAN_PATH = DATA_DIR / "training_plan.csv"
 PLAN_COLS  = ["id","date","sport","workout_type","description",
               "target_duration_min","target_distance_km","target_intensity",
@@ -486,7 +778,7 @@ WORKOUT_TYPES = {
     "str":  ["Full Body","Upper Body","Lower Body","Core","Power / Olympic","Mobility","Circuit"],
 }
 INTENSITY_OPTS = ["Z1 Recovery","Z2 Base","Z3 Tempo","Z4 Threshold","Z5 VO2Max","Race Pace"]
-INTENSITY_STR  = ["Light (RPE 4â€“5)","Moderate (RPE 6â€“7)","Heavy (RPE 8â€“9)","Max Effort (RPE 10)"]
+INTENSITY_STR  = ["Light (RPE 4–5)","Moderate (RPE 6–7)","Heavy (RPE 8–9)","Max Effort (RPE 10)"]
 
 def _load_plan() -> pd.DataFrame:
     if PLAN_PATH.exists() and PLAN_PATH.stat().st_size > 5:
@@ -503,7 +795,7 @@ def _save_plan(df: pd.DataFrame):
 df_plan = _load_plan()
 
 def _match_actual(plan_row: pd.Series, df_act: pd.DataFrame) -> pd.Series | None:
-    """Return actual activity matching the planned sport and date (Â±1 day)."""
+    """Return actual activity matching the planned sport and date (±1 day)."""
     if df_act.empty:
         return None
     d = pd.Timestamp(plan_row["date"])
@@ -513,24 +805,24 @@ def _match_actual(plan_row: pd.Series, df_act: pd.DataFrame) -> pd.Series | None
     matched = df_act[mask]
     return matched.iloc[0] if not matched.empty else None
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ“‹ TRAINING PLAN
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-if page == "ðŸ“‹ Training Plan":
+# ══════════════════════════════════════════════════════════════════════════════
+# 📋 TRAINING PLAN
+# ══════════════════════════════════════════════════════════════════════════════
+if page == "📋 Training Plan":
 
-    # â”€â”€ Tabs: Agregar / Ver plan / Comparar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Tabs: Agregar / Ver plan / Comparar ───────────────────────────────────
     tab_add, tab_week, tab_compare = st.tabs(
-        ["âž• Add Workout", "ðŸ“… Weekly View", "ðŸ“Š Planned vs Actual"]
+        ["➕ Add Workout", "📅 Weekly View", "📊 Planned vs Actual"]
     )
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ──────────────────────────────────────────────────────────────────────────
     with tab_add:
         section("New Workout", "Fill in the targets for the session")
         st.markdown(" ")
 
         f1, f2, f3 = st.columns(3)
         w_date  = f1.date_input("Date", value=date.today() + timedelta(days=1))
-        _disc_labels = {"swim":"ðŸŠ Swim","bike":"ðŸš´ Bike","run":"ðŸƒ Run","str":"ðŸ‹ï¸ Strength"}
+        _disc_labels = {"swim":"🏊 Swim","bike":"🚴 Bike","run":"🏃 Run","str":"🏋️ Strength"}
         w_sport = f2.selectbox("Discipline", ["swim","bike","run","str"],
                                format_func=lambda s: _disc_labels[s])
         w_type  = f3.selectbox("Workout type", WORKOUT_TYPES[w_sport])
@@ -545,26 +837,26 @@ if page == "ðŸ“‹ Training Plan":
             w_inten = f6.selectbox("Intensity (RPE)", INTENSITY_STR)
             w_dist  = 0.0
 
-        # Zone targets segÃºn disciplina
+        # Zone targets según disciplina
         st.markdown(" ")
         z1, z2 = st.columns(2)
         if w_sport == "bike":
-            w_zones = z1.text_input("Power target (W or %FTP)", placeholder="e.g.  240W  or  88â€“95%FTP")
-            w_desc  = z2.text_input("Description", placeholder="e.g.  3Ã—10min @ threshold")
+            w_zones = z1.text_input("Power target (W or %FTP)", placeholder="e.g.  240W  or  88–95%FTP")
+            w_desc  = z2.text_input("Description", placeholder="e.g.  3×10min @ threshold")
         elif w_sport == "run":
-            w_zones = z1.text_input("Pace target (/km)", placeholder="e.g.  4:10â€“4:30/km")
+            w_zones = z1.text_input("Pace target (/km)", placeholder="e.g.  4:10–4:30/km")
             w_desc  = z2.text_input("Description", placeholder="e.g.  10km tempo progression")
         elif w_sport == "str":
-            w_zones = z1.text_input("Key exercises", placeholder="e.g.  Squat 4Ã—6 Â· Deadlift 3Ã—5 Â· Pull-ups")
+            w_zones = z1.text_input("Key exercises", placeholder="e.g.  Squat 4×6 · Deadlift 3×5 · Pull-ups")
             w_desc  = z2.text_input("Focus / Goal", placeholder="e.g.  Lower body strength, pre-race activation")
         else:
-            w_zones = z1.text_input("Pace target (/100m)", placeholder="e.g.  1:45â€“1:55/100m")
-            w_desc  = z2.text_input("Description", placeholder="e.g.  4Ã—400m on 20s rest")
+            w_zones = z1.text_input("Pace target (/100m)", placeholder="e.g.  1:45–1:55/100m")
+            w_desc  = z2.text_input("Description", placeholder="e.g.  4×400m on 20s rest")
 
-        w_notes = st.text_area("Coach notes (optional)", height=80, placeholder="Technique cues, RPE targets, equipmentâ€¦")
+        w_notes = st.text_area("Coach notes (optional)", height=80, placeholder="Technique cues, RPE targets, equipment…")
 
         st.markdown(" ")
-        if st.button("ðŸ’¾  Save Workout", use_container_width=False):
+        if st.button("💾  Save Workout", use_container_width=False):
             new_id  = int(df_plan["id"].max() + 1) if not df_plan.empty else 1
             new_row = pd.DataFrame([{
                 "id":                   new_id,
@@ -580,10 +872,10 @@ if page == "ðŸ“‹ Training Plan":
             }])
             df_plan = pd.concat([df_plan, new_row], ignore_index=True)
             _save_plan(df_plan)
-            st.success(f"Workout saved â€” {w_sport.upper()} on {w_date}")
+            st.success(f"Workout saved — {w_sport.upper()} on {w_date}")
             st.rerun()
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ──────────────────────────────────────────────────────────────────────────
     with tab_week:
         section("Upcoming Plan", "Next 14 days")
 
@@ -596,12 +888,12 @@ if page == "ðŸ“‹ Training Plan":
             if window.empty:
                 st.info("No upcoming workouts. Add new sessions in the **Add Workout** tab.")
             else:
-                sport_icon = {"swim":"ðŸŠ","bike":"ðŸš´","run":"ðŸƒ","str":"ðŸ‹ï¸"}
+                sport_icon = {"swim":"🏊","bike":"🚴","run":"🏃","str":"🏋️"}
                 sport_col  = {"swim":COL_SWIM,"bike":COL_BIKE,"run":COL_RUN,"str":COL_STR}
 
                 for _, row in window.iterrows():
                     sp   = row["sport"]
-                    icon = sport_icon.get(sp,"ðŸ”µ")
+                    icon = sport_icon.get(sp,"🔵")
                     col  = sport_col.get(sp,"#94A3B8")
                     dt   = pd.Timestamp(row["date"])
                     label= "Tomorrow" if dt.date() == date.today()+timedelta(1) else dt.strftime("%a %b %d")
@@ -616,22 +908,22 @@ if page == "ðŸ“‹ Training Plan":
                             parts.append(f"{int(row['target_duration_min'])} min")
                         if pd.notna(row.get("target_distance_km")) and row["target_distance_km"]:
                             parts.append(f"{row['target_distance_km']:.1f} km")
-                        cc.caption("  Â·  ".join(parts) if parts else "â€”")
+                        cc.caption("  ·  ".join(parts) if parts else "—")
 
-                        cd.caption(str(row.get("target_zones","")) or str(row.get("target_intensity","")) or "â€”")
+                        cd.caption(str(row.get("target_zones","")) or str(row.get("target_intensity","")) or "—")
 
-                        if ce.button("ðŸ—‘", key=f"del_{row['id']}", help="Delete"):
+                        if ce.button("🗑", key=f"del_{row['id']}", help="Delete"):
                             df_plan = df_plan[df_plan["id"] != row["id"]]
                             _save_plan(df_plan)
                             st.rerun()
                     st.divider()
 
             # Full plan table
-            with st.expander("ðŸ“‹ Full plan (all workouts)", expanded=False):
+            with st.expander("📋 Full plan (all workouts)", expanded=False):
                 if not df_plan.empty:
                     display = df_plan.copy()
                     display["date"] = display["date"].dt.strftime("%Y-%m-%d")
-                    display["sport"] = display["sport"].map({"swim":"ðŸŠ Swim","bike":"ðŸš´ Bike","run":"ðŸƒ Run"})
+                    display["sport"] = display["sport"].map({"swim":"🏊 Swim","bike":"🚴 Bike","run":"🏃 Run"})
                     st.dataframe(
                         display[["date","sport","workout_type","target_duration_min",
                                   "target_distance_km","target_zones","description","notes"]],
@@ -648,7 +940,7 @@ if page == "ðŸ“‹ Training Plan":
                         }
                     )
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ──────────────────────────────────────────────────────────────────────────
     with tab_compare:
         section("Planned vs Actual", "Sessions completed in the last 30 days")
 
@@ -670,7 +962,7 @@ if page == "ðŸ“‹ Training Plan":
                 if actual is not None:
                     act_dur  = round(actual["duration_sec"] / 60, 1)
                     act_dist = round(actual["distance_m"]   / 1000, 2)
-                    status   = "âœ… Done"
+                    status   = "✅ Done"
 
                     # Delta
                     dur_delta  = ""
@@ -686,21 +978,21 @@ if page == "ðŸ“‹ Training Plan":
                         act_detail = f"{actual.get('norm_power') or actual.get('avg_power') or 0:.0f}W NP"
                     elif sp == "run":
                         act_detail = (_fmt_pace(actual["avg_pace_sec_km"]) + "/km"
-                                      if actual.get("avg_pace_sec_km") else "â€”")
+                                      if actual.get("avg_pace_sec_km") else "—")
                     else:
                         act_detail = f"{act_dist:.2f} km"
                 else:
-                    act_dur = act_dist = "â€”"
+                    act_dur = act_dist = "—"
                     dur_delta = dist_delta = act_detail = ""
-                    status = "âŒ Missed"
+                    status = "❌ Missed"
 
                 rows_cmp.append({
                     "Date":          pd.Timestamp(p["date"]).strftime("%b %d"),
-                    "Sport":         {"swim":"ðŸŠ","bike":"ðŸš´","run":"ðŸƒ","str":"ðŸ‹ï¸"}.get(sp, sp),
+                    "Sport":         {"swim":"🏊","bike":"🚴","run":"🏃","str":"🏋️"}.get(sp, sp),
                     "Planned type":  p["workout_type"],
-                    "Planned dur":   f"{int(planned_dur)} min" if pd.notna(planned_dur) and planned_dur else "â€”",
-                    "Actual dur":    f"{act_dur} min" if act_dur != "â€”" else "â€”",
-                    "Î” Duration":    dur_delta,
+                    "Planned dur":   f"{int(planned_dur)} min" if pd.notna(planned_dur) and planned_dur else "—",
+                    "Actual dur":    f"{act_dur} min" if act_dur != "—" else "—",
+                    "Δ Duration":    dur_delta,
                     "Actual detail": act_detail,
                     "Status":        status,
                 })
@@ -713,14 +1005,14 @@ if page == "ðŸ“‹ Training Plan":
                     "Planned type": st.column_config.TextColumn("Planned",     width=150),
                     "Planned dur":  st.column_config.TextColumn("Plan",        width=70),
                     "Actual dur":   st.column_config.TextColumn("Actual",      width=70),
-                    "Î” Duration":   st.column_config.TextColumn("Delta",       width=75),
+                    "Δ Duration":   st.column_config.TextColumn("Delta",       width=75),
                     "Actual detail":st.column_config.TextColumn("Detail",      width=100),
                     "Status":       st.column_config.TextColumn("Status",      width=80),
                 })
 
             # Summary
-            n_done   = sum(1 for r in rows_cmp if "âœ…" in r["Status"])
-            n_missed = sum(1 for r in rows_cmp if "âŒ" in r["Status"])
+            n_done   = sum(1 for r in rows_cmp if "✅" in r["Status"])
+            n_missed = sum(1 for r in rows_cmp if "❌" in r["Status"])
             st.markdown(" ")
             s1, s2, s3 = st.columns(3)
             s1.metric("Sessions planned",   len(rows_cmp))
@@ -731,7 +1023,7 @@ if page == "ðŸ“‹ Training Plan":
         st.markdown("---")
         section("Push to Garmin", "Send planned workouts to the athlete's device")
         st.info("""
-**Coming soon** â€” The Garmin Connect API supports structured workout push via `add_workout()`.
+**Coming soon** — The Garmin Connect API supports structured workout push via `add_workout()`.
 
 To enable this, the `garminconnect` library needs to be extended with:
 - Structured workout format (FIT file or JSON payload per sport)
@@ -741,10 +1033,10 @@ For now, workouts are saved locally and compared against synced Garmin data.
         """)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ“Š DASHBOARD
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ“Š Dashboard":
+# ══════════════════════════════════════════════════════════════════════════════
+# 📊 DASHBOARD
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "📊 Dashboard":
     latest = df_load.iloc[-1] if not df_load.empty else {}
     prev   = df_load.iloc[-8] if len(df_load) > 7 else {}
 
@@ -755,14 +1047,14 @@ elif page == "ðŸ“Š Dashboard":
     ctl_d = ctl - float(prev.get("ctl", ctl))
     atl_d = atl - float(prev.get("atl", atl))
 
-    # â”€â”€ Daily Readiness Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Daily Readiness Score ─────────────────────────────────────────────────
     rdy, rdy_lbl, rdy_color, rdy_cmp = _readiness_score(tsb, df_hrv, df_sleep)
 
-    # â”€â”€ Fila 1: Readiness + sus 3 componentes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    def _dot(v): return "ðŸŸ¢" if v >= 70 else "ðŸŸ¡" if v >= 50 else "ðŸ”´"
+    # ── Fila 1: Readiness + sus 3 componentes ────────────────────────────────
+    def _dot(v): return "🟢" if v >= 70 else "🟡" if v >= 50 else "🔴"
     section("Daily Readiness", "How ready are you to train today?")
     rd0, rd1, rd2, rd3 = st.columns(4)
-    rd0.metric("âš¡ Readiness Score", f"{rdy} / 100", rdy_lbl)
+    rd0.metric("⚡ Readiness Score", f"{rdy} / 100", rdy_lbl)
     rd1.metric(f"{_dot(rdy_cmp['TSB'])}  Form (TSB)",
                f"{rdy_cmp['TSB']:.0f} / 100",
                "Optimal" if 60 <= rdy_cmp['TSB'] <= 100 else "High fatigue" if rdy_cmp['TSB'] < 40 else "")
@@ -775,15 +1067,15 @@ elif page == "ðŸ“Š Dashboard":
 
     st.markdown(" ")
 
-    # â”€â”€ Fila 2: Training load KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Fila 2: Training load KPIs ────────────────────────────────────────────
     section("Training Load", "Last 7 days vs previous week")
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("CTL â€” Fitness",  f"{ctl:.1f}",  f"{ctl_d:+.1f} vs last week")
-    c2.metric("ATL â€” Fatigue",  f"{atl:.1f}",  f"{atl_d:+.1f}")
-    c3.metric("TSB â€” Form",     f"{tsb:.1f}",
-              "Race Ready âœ“" if tsb > 10 else "Training" if tsb > -15 else "âš  Fatigue")
+    c1.metric("CTL — Fitness",  f"{ctl:.1f}",  f"{ctl_d:+.1f} vs last week")
+    c2.metric("ATL — Fatigue",  f"{atl:.1f}",  f"{atl_d:+.1f}")
+    c3.metric("TSB — Form",     f"{tsb:.1f}",
+              "Race Ready ✓" if tsb > 10 else "Training" if tsb > -15 else "⚠ Fatigue")
     c4.metric("ACWR",           f"{acwr:.2f}",
-              "Safe âœ“" if 0.8 <= acwr <= 1.3 else "âš  Injury risk")
+              "Safe ✓" if 0.8 <= acwr <= 1.3 else "⚠ Injury risk")
 
     st.markdown(" ")
     left, right = st.columns([2, 1], gap="medium")
@@ -805,13 +1097,13 @@ elif page == "ðŸ“Š Dashboard":
             fig.update_yaxes(title_text="TSB",     secondary_y=True,  title_font_size=10)
             st.plotly_chart(chart(fig, 320, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
         else:
-            st.info("No training load data â€” click Sync Garmin in the sidebar.")
+            st.info("No training load data — click Sync Garmin in the sidebar.")
 
     with right:
         today = pd.Timestamp.today().normalize()
         since = today - timedelta(days=6)
         df_week = df_act[df_act["date"] >= since].copy() if has_data else pd.DataFrame()
-        section("This Week", since.strftime("%b %d") + " â€“ " + today.strftime("%b %d"))
+        section("This Week", since.strftime("%b %d") + " – " + today.strftime("%b %d"))
 
         REF = {"swim": 15, "bike": 250, "run": 60}
         for sp in ["swim", "bike", "run"]:
@@ -823,17 +1115,17 @@ elif page == "ðŸ“Š Dashboard":
             ca.markdown(f"**{SPORT_ICONS[sp]} {sp.title()}**")
             cb.markdown(f"**{km:.1f} km**")
             st.progress(min(1.0, km / REF[sp]))
-            st.caption(f"{n} sessions Â· {_fmt_dur(sec_t)}" if n else "No sessions")
+            st.caption(f"{n} sessions · {_fmt_dur(sec_t)}" if n else "No sessions")
 
-        # Strength â€” sin distancia, mostramos sesiones y tiempo
+        # Strength — sin distancia, mostramos sesiones y tiempo
         str_sub  = df_week[df_week["sport"] == "str"] if not df_week.empty else pd.DataFrame()
         str_n    = len(str_sub)
         str_sec  = str_sub["duration_sec"].sum() if not str_sub.empty else 0
         ca, cb = st.columns([3, 1])
-        ca.markdown(f"**ðŸ‹ï¸ Strength**")
+        ca.markdown(f"**🏋️ Strength**")
         cb.markdown(f"**{str_n} sess**")
         st.progress(min(1.0, str_n / 3))   # referencia: 3 sesiones/semana
-        st.caption(f"{str_n} sessions Â· {_fmt_dur(str_sec)}" if str_n else "No sessions")
+        st.caption(f"{str_n} sessions · {_fmt_dur(str_sec)}" if str_n else "No sessions")
 
         st.divider()
         tss_tot = df_week["tss"].fillna(0).sum() if not df_week.empty else 0
@@ -869,7 +1161,7 @@ elif page == "ðŸ“Š Dashboard":
 
         section("Race Readiness Index",
                 f"Target: {RACE_LABELS.get(target_race, target_race)}"
-                + (f"  Â·  {days_to_race}d away" if days_to_race and days_to_race > 0 else ""))
+                + (f"  ·  {days_to_race}d away" if days_to_race and days_to_race > 0 else ""))
 
         rri_a, rri_b = st.columns([1, 1])
         with rri_a:
@@ -897,9 +1189,9 @@ elif page == "ðŸ“Š Dashboard":
         ]
         for lbl, desc, val, lo, hi in comp_labels:
             v_ok = (val is not None and lo is not None and lo <= val <= hi)
-            icon = "âœ…" if v_ok else ("â€”" if val is None else "âš ï¸")
-            v_str = f"{val:.0f}" if val is not None else "â€”"
-            st.caption(f"{icon} **{lbl}** â€” {desc}")
+            icon = "✅" if v_ok else ("—" if val is None else "⚠️")
+            v_str = f"{val:.0f}" if val is not None else "—"
+            st.caption(f"{icon} **{lbl}** — {desc}")
 
     with bot_r:
         section("Recent Activities", "Last 10")
@@ -915,7 +1207,7 @@ elif page == "ðŸ“Š Dashboard":
                     detail = f"{r.get('norm_power') or r.get('avg_power') or 0:.0f}W"
                 elif sp == "run":
                     detail = (_fmt_pace(r["avg_pace_sec_km"]) + "/km"
-                              if r.get("avg_pace_sec_km") else "â€”")
+                              if r.get("avg_pace_sec_km") else "—")
                 else:
                     detail = f"{r['distance_m']/1000:.1f} km"
                 rows.append({
@@ -938,11 +1230,11 @@ elif page == "ðŸ“Š Dashboard":
                 },
             )
         else:
-            st.info("No activities â€” click Sync Garmin in the sidebar.")
+            st.info("No activities — click Sync Garmin in the sidebar.")
 
-    # â”€â”€ Strength KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Strength KPIs ─────────────────────────────────────────────────────────
     st.markdown(" ")
-    section("ðŸ‹ï¸ Strength & Conditioning", "Last 30 days")
+    section("🏋️ Strength & Conditioning", "Last 30 days")
 
     df_str = df_act[df_act["sport"] == "str"].copy() if has_data else pd.DataFrame()
     today_ts  = pd.Timestamp.today().normalize()
@@ -955,7 +1247,7 @@ elif page == "ðŸ“Š Dashboard":
     last_str_label = (
         "Today"     if last_str and last_str.date() == date.today()     else
         "Yesterday" if last_str and last_str.date() == date.today() - timedelta(1) else
-        last_str.strftime("%b %d") if last_str else "â€”"
+        last_str.strftime("%b %d") if last_str else "—"
     )
     # Frecuencia: sesiones por semana (rolling 4 sem)
     freq_4w = len(df_str30) / 4 if not df_str30.empty else 0
@@ -965,7 +1257,7 @@ elif page == "ðŸ“Š Dashboard":
     sk1.metric("Sessions this week",  len(df_str7),               "goal: 3/wk")
     sk2.metric("Sessions last 30d",   len(df_str30))
     sk3.metric("Avg frequency",       f"{freq_4w:.1f} /wk",       "rolling 4 weeks")
-    sk4.metric("Avg session length",  f"{avg_dur:.0f} min" if avg_dur else "â€”",
+    sk4.metric("Avg session length",  f"{avg_dur:.0f} min" if avg_dur else "—",
                f"last: {last_str_label}")
 
     if not df_str30.empty:
@@ -1002,13 +1294,13 @@ elif page == "ðŸ“Š Dashboard":
             st.plotly_chart(chart(fig_d, 240, dict(l=0, r=0, t=14, b=0)),
                             use_container_width=True)
     else:
-        st.info("No strength sessions in the last 30 days. Add them manually in **ðŸ“‹ Training Plan** or sync from Garmin.")
+        st.info("No strength sessions in the last 30 days. Add them manually in **📋 Training Plan** or sync from Garmin.")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ“ˆ TRAINING LOAD
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ“ˆ Training Load":
+# ══════════════════════════════════════════════════════════════════════════════
+# 📈 TRAINING LOAD
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "📈 Training Load":
     if df_load.empty:
         st.info("No training load data. Sync Garmin from the sidebar.")
         st.stop()
@@ -1021,8 +1313,8 @@ elif page == "ðŸ“ˆ Training Load":
     c1.metric("CTL", f"{ctl:.1f}", "Chronic Load")
     c2.metric("ATL", f"{atl:.1f}", "Acute Load")
     c3.metric("TSB", f"{tsb:.1f}",
-              "Race Ready âœ“" if tsb > 10 else "Training" if tsb > -15 else "âš  Fatigue")
-    c4.metric("ACWR", f"{acwr:.2f}", "Safe âœ“" if 0.8 <= acwr <= 1.3 else "âš  Injury risk")
+              "Race Ready ✓" if tsb > 10 else "Training" if tsb > -15 else "⚠ Fatigue")
+    c4.metric("ACWR", f"{acwr:.2f}", "Safe ✓" if 0.8 <= acwr <= 1.3 else "⚠ Injury risk")
 
     st.markdown(" ")
     section("Performance Management Chart", "CTL / ATL / TSB / Daily TSS")
@@ -1055,7 +1347,7 @@ elif page == "ðŸ“ˆ Training Load":
             st.plotly_chart(chart(fig2, 280, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
 
     with c2:
-        section("ACWR", "Safe zone 0.8â€“1.3")
+        section("ACWR", "Safe zone 0.8–1.3")
         fig3 = go.Figure()
         fig3.add_hrect(y0=0.8, y1=1.3, fillcolor="rgba(16,185,129,0.07)", line_width=0)
         fig3.add_hrect(y0=1.3, y1=3.0, fillcolor="rgba(239,68,68,0.05)",  line_width=0)
@@ -1072,10 +1364,10 @@ elif page == "ðŸ“ˆ Training Load":
         st.plotly_chart(chart(fig3, 280, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸŠ SWIMMING
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸŠ Swimming":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🏊 SWIMMING
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🏊 Swimming":
     df_s = df_act[df_act["sport"] == "swim"].sort_values("date").copy() if has_data else pd.DataFrame()
     if df_s.empty:
         st.info("No swim sessions. Sync Garmin from the sidebar.")
@@ -1088,7 +1380,7 @@ elif page == "ðŸŠ Swimming":
     c1.metric("Sessions",   str(len(df_s)))
     c2.metric("Total Dist", f"{df_s['distance_m'].sum() / 1000:.0f} km")
     c3.metric("Total Time", _fmt_dur(df_s["duration_sec"].sum()))
-    c4.metric("Avg SWOLF",  f"{avg_sw:.0f}" if swolf_ok else "â€”",
+    c4.metric("Avg SWOLF",  f"{avg_sw:.0f}" if swolf_ok else "—",
               swolf_to_efficiency_rating(int(avg_sw)) if swolf_ok else "")
 
     st.markdown(" ")
@@ -1120,10 +1412,10 @@ elif page == "ðŸŠ Swimming":
             st.info("No pace data in swim sessions.")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸš´ CYCLING
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸš´ Cycling":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🚴 CYCLING
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🚴 Cycling":
     df_b = df_act[df_act["sport"] == "bike"].sort_values("date").copy() if has_data else pd.DataFrame()
     if df_b.empty:
         st.info("No cycling sessions. Sync Garmin from the sidebar.")
@@ -1144,15 +1436,15 @@ elif page == "ðŸš´ Cycling":
     c2.metric("Total Dist", f"{df_b['distance_m'].sum() / 1000:.0f} km")
     c3.metric("Total Time", _fmt_dur(df_b["duration_sec"].sum()))
     c4.metric("FTP W/kg",   f"{wkg_ftp:.2f}",
-              "Cat 2 âœ“" if wkg_ftp >= 4.0 else "Cat 3 âœ“" if wkg_ftp >= 3.2 else "Building")
-    c5.metric("Aerobic EF", f"{ef_b_now:.3f}" if ef_b_now else "â€”",
+              "Cat 2 ✓" if wkg_ftp >= 4.0 else "Cat 3 ✓" if wkg_ftp >= 3.2 else "Building")
+    c5.metric("Aerobic EF", f"{ef_b_now:.3f}" if ef_b_now else "—",
               (f"{ef_b_delta:+.1f}%" if ef_b_delta else "") + " trend")
 
     st.markdown(" ")
     c1, c2 = st.columns(2, gap="medium")
 
     with c1:
-        section("Power", f"NP Â· Avg Â· FTP {ftp}W")
+        section("Power", f"NP · Avg · FTP {ftp}W")
         df_pw = df_b.dropna(subset=["avg_power"])
         if not df_pw.empty:
             fig = go.Figure()
@@ -1198,12 +1490,12 @@ elif page == "ðŸš´ Cycling":
         secondary_y=True)
     st.plotly_chart(chart(fig3, 260, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
 
-    # â”€â”€ KPI 2 + 3: Aerobic EF Trend + W/kg Monthly Trend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── KPI 2 + 3: Aerobic EF Trend + W/kg Monthly Trend ─────────────────────
     st.markdown(" ")
     ef_col, wkg_col = st.columns(2, gap="medium")
 
     with ef_col:
-        section("Aerobic Efficiency Factor", "NP / HR â€” higher is better")
+        section("Aerobic Efficiency Factor", "NP / HR — higher is better")
         if not ef_b_df.empty:
             ef_b_plot = ef_b_df.tail(90)
             ef_ma = ef_b_plot["ef"].rolling(5, min_periods=1).mean()
@@ -1223,9 +1515,9 @@ elif page == "ðŸš´ Cycling":
             st.plotly_chart(chart(fig_ef, 280, dict(l=0, r=0, t=14, b=0)),
                             use_container_width=True)
             if ef_b_delta:
-                trend_txt = ("ðŸ“ˆ Aerobic efficiency improving" if ef_b_delta > 3
-                             else "âž¡ï¸ Stable aerobic base" if ef_b_delta > -3
-                             else "ðŸ“‰ Efficiency declining â€” increase Z2 work")
+                trend_txt = ("📈 Aerobic efficiency improving" if ef_b_delta > 3
+                             else "➡️ Stable aerobic base" if ef_b_delta > -3
+                             else "📉 Efficiency declining — increase Z2 work")
                 st.caption(trend_txt)
         else:
             st.info("Need HR + power data to compute EF.")
@@ -1258,10 +1550,10 @@ elif page == "ðŸš´ Cycling":
             st.info("Need power data for W/kg trend.")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸƒ RUNNING
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸƒ Running":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🏃 RUNNING
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🏃 Running":
     df_r = df_act[df_act["sport"] == "run"].sort_values("date").copy() if has_data else pd.DataFrame()
     if df_r.empty:
         st.info("No running sessions. Sync Garmin from the sidebar.")
@@ -1279,10 +1571,10 @@ elif page == "ðŸƒ Running":
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Sessions",    str(len(df_r)))
     c2.metric("Total Dist",  f"{df_r['distance_m'].sum() / 1000:.0f} km")
-    c3.metric("Avg Pace",    _fmt_pace(avg_pace) + "/km" if avg_pace else "â€”")
-    c4.metric("Avg Cadence", f"{avg_cad:.0f} spm" if avg_cad else "â€”",
-              "âœ“" if avg_cad and 175 <= avg_cad <= 185 else ("â†‘ High" if avg_cad and avg_cad > 185 else "â†“ Low" if avg_cad else ""))
-    c5.metric("Run Aero EF", f"{ef_r_now:.4f}" if ef_r_now else "â€”",
+    c3.metric("Avg Pace",    _fmt_pace(avg_pace) + "/km" if avg_pace else "—")
+    c4.metric("Avg Cadence", f"{avg_cad:.0f} spm" if avg_cad else "—",
+              "✓" if avg_cad and 175 <= avg_cad <= 185 else ("↑ High" if avg_cad and avg_cad > 185 else "↓ Low" if avg_cad else ""))
+    c5.metric("Run Aero EF", f"{ef_r_now:.4f}" if ef_r_now else "—",
               (f"{ef_r_delta:+.1f}% trend" if ef_r_delta else ""))
 
     st.markdown(" ")
@@ -1331,7 +1623,7 @@ elif page == "ðŸƒ Running":
         st.plotly_chart(chart(fig3, 260, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
 
     with ef_r_col:
-        section("Aerobic Efficiency Factor", "Speed / HR â€” higher = more aerobic")
+        section("Aerobic Efficiency Factor", "Speed / HR — higher = more aerobic")
         if not ef_r_df.empty:
             ef_r_plot = ef_r_df.tail(90)
             ef_r_ma   = ef_r_plot["ef"].rolling(5, min_periods=1).mean()
@@ -1347,22 +1639,22 @@ elif page == "ðŸƒ Running":
                 line=dict(color=COL_CTL, width=2.5)))
             fig_efr.add_hline(y=ef_r_base, line_dash="dot", line_color="#94A3B8",
                 annotation_text=f"Avg {ef_r_base:.4f}", annotation_font_size=9)
-            fig_efr.update_yaxes(title_text="EF (mÂ·sâ»Â¹/bpm)")
+            fig_efr.update_yaxes(title_text="EF (m·s⁻¹/bpm)")
             st.plotly_chart(chart(fig_efr, 260, dict(l=0, r=0, t=14, b=0)),
                             use_container_width=True)
             if ef_r_delta:
-                trend_txt = ("ðŸ“ˆ Run economy improving" if ef_r_delta > 3
-                             else "âž¡ï¸ Stable run base" if ef_r_delta > -3
-                             else "ðŸ“‰ Declining â€” add Z2 / easy runs")
+                trend_txt = ("📈 Run economy improving" if ef_r_delta > 3
+                             else "➡️ Stable run base" if ef_r_delta > -3
+                             else "📉 Declining — add Z2 / easy runs")
                 st.caption(trend_txt)
         else:
             st.info("Need pace + HR data to compute Run EF.")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸŽ NUTRITION
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸŽ Nutrition":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🍎 NUTRITION
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🍎 Nutrition":
     section("Caloric Expenditure", "Weekly by sport")
     if has_data:
         df_cal = df_act.copy()
@@ -1383,18 +1675,18 @@ elif page == "ðŸŽ Nutrition":
 
     st.markdown(" ")
     section("Race Nutrition Calculator",
-            "Plan personalizado basado en tu predicciÃ³n de carrera")
+            "Plan personalizado basado en tu predicción de carrera")
 
-    # â”€â”€ Selector + personalizaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Selector + personalización ────────────────────────────────────────────
     _sel1, _sel2, _sel3 = st.columns([2, 1, 1])
     race_sel   = _sel1.selectbox("Distancia objetivo", list(RACE_LABELS.keys()),
                                   format_func=lambda k: RACE_LABELS[k])
-    _sweat_opt = _sel2.selectbox("SudoraciÃ³n",
+    _sweat_opt = _sel2.selectbox("Sudoración",
                                    ["Normal (~600 ml/hr)", "Alta (~900 ml/hr)",
                                     "Muy alta (~1.2 L/hr)"])
     _heat_opt  = _sel3.selectbox("Temperatura ambiente",
-                                   ["FrÃ­o/Templado (<20Â°C)", "CÃ¡lido (20-28Â°C)",
-                                    "Caluroso (>28Â°C)"])
+                                   ["Frío/Templado (<20°C)", "Cálido (20-28°C)",
+                                    "Caluroso (>28°C)"])
 
     pred     = predictor.predict(race_sel)
     total_h  = pred.total_sec / 3600
@@ -1407,8 +1699,8 @@ elif page == "ðŸŽ Nutrition":
     # Adjustment factors
     _sweat_ml  = {"Normal (~600 ml/hr)": 600, "Alta (~900 ml/hr)": 900,
                   "Muy alta (~1.2 L/hr)": 1200}[_sweat_opt]
-    _heat_f    = {"FrÃ­o/Templado (<20Â°C)": 1.0, "CÃ¡lido (20-28Â°C)": 1.15,
-                  "Caluroso (>28Â°C)": 1.30}[_heat_opt]
+    _heat_f    = {"Frío/Templado (<20°C)": 1.0, "Cálido (20-28°C)": 1.15,
+                  "Caluroso (>28°C)": 1.30}[_heat_opt]
     _fluid_hr  = int(_sweat_ml * _heat_f)
     _cho_hr    = {"sprint": 35, "olympic": 60, "703": 75, "ironman": 85}[race_sel]
     _sod_hr    = int({"sprint": 200, "olympic": 450, "703": 750, "ironman": 900}[race_sel]
@@ -1417,20 +1709,20 @@ elif page == "ðŸŽ Nutrition":
     _fl_total  = int(_fluid_hr * total_h)
     _sod_total = int(_sod_hr  * total_h)
 
-    # â”€â”€ Top KPI strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Top KPI strip ─────────────────────────────────────────────────────────
     _k1, _k2, _k3, _k4, _k5, _k6 = st.columns(6)
-    _k1.metric("â± Tiempo est.",  pred.total_display)
-    _k2.metric("ðŸ”¥ EnergÃ­a",     f"{tot_kcal:.0f} kcal")
-    _k3.metric("ðŸ¯ CHO total",   f"{_cho_total} g",    f"~{_cho_hr} g/hr")
-    _k4.metric("ðŸ’§ Fluidos",     f"{_fl_total/1000:.1f} L", f"~{_fluid_hr} ml/hr")
-    _k5.metric("ðŸ§‚ Sodio",       f"{_sod_total:,} mg",  f"~{_sod_hr} mg/hr")
-    _k6.metric("âš¡ Ratio CHO",
+    _k1.metric("⏱ Tiempo est.",  pred.total_display)
+    _k2.metric("🔥 Energía",     f"{tot_kcal:.0f} kcal")
+    _k3.metric("🍯 CHO total",   f"{_cho_total} g",    f"~{_cho_hr} g/hr")
+    _k4.metric("💧 Fluidos",     f"{_fl_total/1000:.1f} L", f"~{_fluid_hr} ml/hr")
+    _k5.metric("🧂 Sodio",       f"{_sod_total:,} mg",  f"~{_sod_hr} mg/hr")
+    _k6.metric("⚡ Ratio CHO",
                "2:1 gluc:fruc" if total_h > 2.5 else "1:1 / libre",
                "Necesario >2.5h" if total_h > 2.5 else "")
 
     st.markdown(" ")
 
-    # â”€â”€ Segment timing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Segment timing ────────────────────────────────────────────────────────
     _sw_min = pred.swim.time_sec / 60
     _t1_min = {"sprint": 4.0, "olympic": 5.0, "703": 7.0, "ironman": 8.0}[race_sel]
     _bk_min = pred.bike.time_sec / 60
@@ -1444,7 +1736,7 @@ elif page == "ðŸŽ Nutrition":
         "run":  _sw_min + _t1_min + _bk_min + _t2_min,
     }
 
-    # â”€â”€ Build hour-by-hour plan checkpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Build hour-by-hour plan checkpoints ───────────────────────────────────
     # Each checkpoint: what to consume FROM previous checkpoint TO here
     # cho_g / fluid_ml / sodium_mg refer to intake IN the interval ending here
     def _cp(t_min, seg, interval_lbl, cho, fluid, sodium, action, examples):
@@ -1452,59 +1744,59 @@ elif page == "ðŸŽ Nutrition":
                     cho_g=cho, fluid_ml=fluid, sodium_mg=sodium,
                     action=action, examples=examples)
 
-    _SEG_ICON = {"swim": "ðŸŠ", "t1": "âš¡T1", "bike": "ðŸš´",
-                 "t2": "âš¡T2", "run": "ðŸƒ"}
+    _SEG_ICON = {"swim": "🏊", "t1": "⚡T1", "bike": "🚴",
+                 "t2": "⚡T2", "run": "🏃"}
 
     if race_sel == "sprint":
         _plan_rows = [
-            _cp(_ss["swim"],  "swim", "NataciÃ³n",
+            _cp(_ss["swim"],  "swim", "Natación",
                 0, 0, 0,
                 "Sin ingesta. Hidrata bien en los 10min previos.",
                 "200ml agua T-10min"),
             _cp(_ss["t1"],    "t1",   "T1",
                 0, 0, 0,
-                "TransiciÃ³n rÃ¡pida. No comas en T1.",
-                "â€”"),
+                "Transición rápida. No comas en T1.",
+                "—"),
             _cp(_ss["bike"] + _bk_min * 0.5, "bike", f"Bici ~{_ss['bike']+_bk_min*0.5:.0f}min",
                 22, 300, 100,
-                "Ãšnico gel en bici + botella isotÃ³nica. No esperes a tener sed.",
-                "1 gel GU/Maurten Â· 300ml Gatorade"),
+                "Único gel en bici + botella isotónica. No esperes a tener sed.",
+                "1 gel GU/Maurten · 300ml Gatorade"),
             _cp(_ss["t2"],    "t2",   "T2",
                 0, 100, 0,
-                "PequeÃ±o sorbo. No gel en T2.",
+                "Pequeño sorbo. No gel en T2.",
                 "100ml agua"),
             _cp(_ss["run"] + _rn_min * 0.5, "run", f"Run ~{_ss['run']+_rn_min*0.5:.0f}min",
                 0, 200, 50,
                 "Agua en los puestos de avituallamiento cada 1km.",
                 "200ml agua"),
-            _cp(_tot_min,     "run",  "META ðŸ",
+            _cp(_tot_min,     "run",  "META 🏁",
                 0, 200, 100,
-                "HidrataciÃ³n y CHO de recuperaciÃ³n inmediata.",
-                "PlÃ¡tano + 500ml isotÃ³nico"),
+                "Hidratación y CHO de recuperación inmediata.",
+                "Plátano + 500ml isotónico"),
         ]
     elif race_sel == "olympic":
         _plan_rows = [
-            _cp(_ss["swim"],  "swim", f"NataciÃ³n ({_sw_min:.0f}min)",
+            _cp(_ss["swim"],  "swim", f"Natación ({_sw_min:.0f}min)",
                 0, 0, 0,
                 "No es posible consumir nada. Nadar relajado los primeros 200m.",
-                "â€”"),
+                "—"),
             _cp(_ss["t1"],    "t1",   "T1",
                 22, 150, 100,
-                "Gel al salir del agua + pequeÃ±o sorbo de isotÃ³nico mientras te cambias.",
-                "1 gel Â· 150ml Maurten/Gatorade"),
+                "Gel al salir del agua + pequeño sorbo de isotónico mientras te cambias.",
+                "1 gel · 150ml Maurten/Gatorade"),
             _cp(_ss["bike"] + _bk_min * 0.33, "bike",
                 f"Bici km~{DISTANCES['olympic']['bike']//3//1000:.0f}",
                 35, 400, 200,
-                "Primer bloque bici. Gel + botella isotÃ³nica completa.",
-                "1 gel + 400ml isotÃ³nico"),
+                "Primer bloque bici. Gel + botella isotónica completa.",
+                "1 gel + 400ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.66, "bike",
                 f"Bici km~{DISTANCES['olympic']['bike']*2//3//1000:.0f}",
                 30, 350, 200,
-                "Segunda botella o recarga de hidrataciÃ³n. Â½ barra energÃ©tica.",
-                "Â½ barra Clif/Powerbar + 350ml agua"),
+                "Segunda botella o recarga de hidratación. ½ barra energética.",
+                "½ barra Clif/Powerbar + 350ml agua"),
             _cp(_ss["t2"],    "t2",   "T2",
                 22, 100, 0,
-                "Gel rÃ¡pido al bajar de la bici.",
+                "Gel rápido al bajar de la bici.",
                 "1 gel"),
             _cp(_ss["run"] + _rn_min * 0.35, "run",
                 f"Run km~{DISTANCES['olympic']['run'] * 0.35 // 1000:.0f}",
@@ -1516,45 +1808,45 @@ elif page == "ðŸŽ Nutrition":
                 0, 200, 100,
                 "Solo agua. El gel anterior sigue activo.",
                 "200ml agua"),
-            _cp(_tot_min,     "run",  "META ðŸ",
+            _cp(_tot_min,     "run",  "META 🏁",
                 0, 300, 200,
-                "RecuperaciÃ³n inmediata. CHO + proteÃ­na en 30min.",
-                "PlÃ¡tano + isotÃ³nico + barrita proteÃ­na"),
+                "Recuperación inmediata. CHO + proteína en 30min.",
+                "Plátano + isotónico + barrita proteína"),
         ]
     elif race_sel == "703":
         _plan_rows = [
-            _cp(_ss["swim"],  "swim", f"NataciÃ³n ({_sw_min:.0f}min)",
+            _cp(_ss["swim"],  "swim", f"Natación ({_sw_min:.0f}min)",
                 0, 0, 0,
                 "Sin ingesta. Usa traje adecuado y nada en calma los 400m iniciales.",
-                "â€”"),
+                "—"),
             _cp(_ss["t1"],    "t1",   "T1",
                 22, 200, 150,
-                "Gel + sorbo de isotÃ³nico. Bolsillo especial bike ya cargado.",
-                "1 gel Â· 200ml isotÃ³nico"),
+                "Gel + sorbo de isotónico. Bolsillo especial bike ya cargado.",
+                "1 gel · 200ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.20, "bike",
                 f"Bici km~{DISTANCES['703']['bike'] * 0.2 // 1000:.0f}",
                 int(70 * _heat_f), int(700 * _heat_f), int(700 * _heat_f),
                 "Primer bloque. Ritmo moderado, activa la ingesta temprano.",
-                "2 geles + 700ml isotÃ³nico"),
+                "2 geles + 700ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.40, "bike",
                 f"Bici km~{DISTANCES['703']['bike'] * 0.4 // 1000:.0f}",
                 int(70 * _heat_f), int(700 * _heat_f), int(700 * _heat_f),
-                "Barra sÃ³lida si toleras bien. MantÃ©n cadencia de ingesta.",
-                "1 barra Clif + 1 gel + 700ml isotÃ³nico"),
+                "Barra sólida si toleras bien. Mantén cadencia de ingesta.",
+                "1 barra Clif + 1 gel + 700ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.60, "bike",
                 f"Bici km~{DISTANCES['703']['bike'] * 0.6 // 1000:.0f}",
                 int(70 * _heat_f), int(700 * _heat_f), int(700 * _heat_f),
-                "Mitad de la bici. MantÃ©n el plan aunque no tengas apetito.",
-                "2 geles + 700ml isotÃ³nico"),
+                "Mitad de la bici. Mantén el plan aunque no tengas apetito.",
+                "2 geles + 700ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.80, "bike",
                 f"Bici km~{DISTANCES['703']['bike'] * 0.8 // 1000:.0f}",
                 int(60 * _heat_f), int(600 * _heat_f), int(600 * _heat_f),
-                "Ãšltimo bloque bici. Reduce sÃ³lidos, prioriza geles fluidos.",
+                "Último bloque bici. Reduce sólidos, prioriza geles fluidos.",
                 "2 geles + 600ml agua+electrolitos"),
             _cp(_ss["t2"],    "t2",   "T2",
                 22, 200, 200,
-                "Gel + cola si la hubiera. PrepÃ¡rate para el run.",
-                "1 gel Â· 200ml cola"),
+                "Gel + cola si la hubiera. Prepárate para el run.",
+                "1 gel · 200ml cola"),
             _cp(_ss["run"] + _rn_min * 0.25, "run",
                 f"Run km~{DISTANCES['703']['run'] * 0.25 // 1000:.0f}",
                 int(50 * _heat_f), int(500 * _heat_f), int(600 * _heat_f),
@@ -1568,38 +1860,38 @@ elif page == "ðŸŽ Nutrition":
             _cp(_ss["run"] + _rn_min * 0.80, "run",
                 f"Run km~{DISTANCES['703']['run'] * 0.8 // 1000:.0f}",
                 int(25 * _heat_f), int(350 * _heat_f), int(400 * _heat_f),
-                "Ãšltimos km. Solo lo que toleras: gel, agua, cola.",
+                "Últimos km. Solo lo que toleras: gel, agua, cola.",
                 "1 gel o cola + agua"),
-            _cp(_tot_min,     "run",  "META ðŸ",
+            _cp(_tot_min,     "run",  "META 🏁",
                 0, 400, 500,
-                "RecuperaciÃ³n: CHO + proteÃ­na + sal en <30min post-meta.",
-                "IsotÃ³nico + plÃ¡tano + proteÃ­na"),
+                "Recuperación: CHO + proteína + sal en <30min post-meta.",
+                "Isotónico + plátano + proteína"),
         ]
     else:  # ironman
         _plan_rows = [
-            _cp(_ss["swim"],  "swim", f"NataciÃ³n ({_sw_min:.0f}min)",
+            _cp(_ss["swim"],  "swim", f"Natación ({_sw_min:.0f}min)",
                 0, 0, 0,
-                "Sin ingesta. Arranca suave los primeros 500m. Ahorra glucÃ³geno.",
-                "â€”"),
+                "Sin ingesta. Arranca suave los primeros 500m. Ahorra glucógeno.",
+                "—"),
             _cp(_ss["t1"],    "t1",   "T1",
                 25, 300, 200,
-                "Gel + banana en T1. Empieza isotÃ³nico. Bolsos especiales ya preparados.",
-                "1 gel + Â½ banana Â· 300ml isotÃ³nico"),
+                "Gel + banana en T1. Empieza isotónico. Bolsos especiales ya preparados.",
+                "1 gel + ½ banana · 300ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.12, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.12 // 1000:.0f}",
                 int(65 * _heat_f), int(700 * _heat_f), int(800 * _heat_f),
                 "Inicio bici: ritmo conservador, activa ingesta temprano.",
-                "2 geles + 700ml isotÃ³nico Maurten 320"),
+                "2 geles + 700ml isotónico Maurten 320"),
             _cp(_ss["bike"] + _bk_min * 0.25, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.25 // 1000:.0f}",
                 int(80 * _heat_f), int(800 * _heat_f), int(900 * _heat_f),
-                "Hora 2 de bici. Alterna geles y sÃ³lidos segÃºn tolerancia.",
-                "1 barra + 1 gel + 800ml isotÃ³nico"),
+                "Hora 2 de bici. Alterna geles y sólidos según tolerancia.",
+                "1 barra + 1 gel + 800ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.38, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.38 // 1000:.0f}",
                 int(80 * _heat_f), int(800 * _heat_f), int(900 * _heat_f),
-                "MantÃ©n ritmo de ingesta. Puesto especial de avituallamiento.",
-                "2 geles + 800ml isotÃ³nico Â· bolso especial"),
+                "Mantén ritmo de ingesta. Puesto especial de avituallamiento.",
+                "2 geles + 800ml isotónico · bolso especial"),
             _cp(_ss["bike"] + _bk_min * 0.50, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.5 // 1000:.0f}",
                 int(80 * _heat_f), int(800 * _heat_f), int(900 * _heat_f),
@@ -1608,17 +1900,17 @@ elif page == "ðŸŽ Nutrition":
             _cp(_ss["bike"] + _bk_min * 0.63, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.63 // 1000:.0f}",
                 int(80 * _heat_f), int(800 * _heat_f), int(900 * _heat_f),
-                "Hora 5. MÃ¡xima ingesta antes de transiciÃ³n a run.",
-                "2 geles + 800ml isotÃ³nico"),
+                "Hora 5. Máxima ingesta antes de transición a run.",
+                "2 geles + 800ml isotónico"),
             _cp(_ss["bike"] + _bk_min * 0.80, "bike",
                 f"Bici km~{DISTANCES['ironman']['bike'] * 0.8 // 1000:.0f}",
                 int(70 * _heat_f), int(700 * _heat_f), int(800 * _heat_f),
-                "Reduce sÃ³lidos. Solo geles fluidos y bebida.",
-                "2 geles + 700ml isotÃ³nico"),
+                "Reduce sólidos. Solo geles fluidos y bebida.",
+                "2 geles + 700ml isotónico"),
             _cp(_ss["t2"],    "t2",   "T2",
                 30, 300, 300,
                 "Gel + cola en T2. Ajusta medias si hay ampollas.",
-                "1 gel Â· 300ml cola"),
+                "1 gel · 300ml cola"),
             _cp(_ss["run"] + _rn_min * 0.14, "run",
                 f"Run km~{DISTANCES['ironman']['run'] * 0.14 // 1000:.0f}",
                 int(45 * _heat_f), int(500 * _heat_f), int(700 * _heat_f),
@@ -1633,7 +1925,7 @@ elif page == "ðŸŽ Nutrition":
                 f"Run km~{DISTANCES['ironman']['run'] * 0.5 // 1000:.0f}",
                 int(35 * _heat_f), int(450 * _heat_f), int(700 * _heat_f),
                 "Mitad del run. Alterna cola, agua y sal. Electrolitos si tienes calambres.",
-                "Cola + sal + agua Â· pretzels si los tolerÃ¡s"),
+                "Cola + sal + agua · pretzels si los tolerás"),
             _cp(_ss["run"] + _rn_min * 0.70, "run",
                 f"Run km~{DISTANCES['ironman']['run'] * 0.7 // 1000:.0f}",
                 int(30 * _heat_f), int(400 * _heat_f), int(700 * _heat_f),
@@ -1642,12 +1934,12 @@ elif page == "ðŸŽ Nutrition":
             _cp(_ss["run"] + _rn_min * 0.88, "run",
                 f"Run km~{DISTANCES['ironman']['run'] * 0.88 // 1000:.0f}",
                 int(20 * _heat_f), int(300 * _heat_f), int(400 * _heat_f),
-                "Ãšltimos km. Cola para el sprint final. Cero sÃ³lidos.",
+                "Últimos km. Cola para el sprint final. Cero sólidos.",
                 "300ml cola"),
-            _cp(_tot_min,     "run",  "META ðŸ",
+            _cp(_tot_min,     "run",  "META 🏁",
                 0, 500, 500,
-                "FINISH LINE. RecuperaciÃ³n: isotÃ³nico + proteÃ­na + sal inmediato.",
-                "IsotÃ³nico + plÃ¡tano + batido proteÃ­na"),
+                "FINISH LINE. Recuperación: isotónico + proteína + sal inmediato.",
+                "Isotónico + plátano + batido proteína"),
         ]
 
     _plan_df = pd.DataFrame(_plan_rows)
@@ -1657,49 +1949,49 @@ elif page == "ðŸŽ Nutrition":
     _plan_df["cum_na"]    = _plan_df["sodium_mg"].cumsum()
     _plan_df["seg_icon"]  = _plan_df["seg"].map(_SEG_ICON)
 
-    # â”€â”€ TABS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    _nt1, _nt2, _nt3 = st.tabs(["ðŸ“Š Resumen", "ðŸ• Plan Hora a Hora", "ðŸ“‹ Pre-Carrera"])
+    # ── TABS ─────────────────────────────────────────────────────────────────
+    _nt1, _nt2, _nt3 = st.tabs(["📊 Resumen", "🕐 Plan Hora a Hora", "📋 Pre-Carrera"])
 
-    # â”€â”€ TAB 1: Resumen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── TAB 1: Resumen ────────────────────────────────────────────────────────
     with _nt1:
         _rc1, _rc2 = st.columns(2, gap="medium")
         with _rc1:
             _fig_pie = go.Figure(go.Pie(
-                labels=["NataciÃ³n", "Ciclismo", "Corrida"],
+                labels=["Natación", "Ciclismo", "Corrida"],
                 values=[s_kcal, b_kcal, r_kcal],
                 marker_colors=[COL_SWIM, COL_BIKE, COL_RUN],
                 hole=0.50, textinfo="label+percent", textfont_size=12,
             ))
             _fig_pie.update_layout(showlegend=False,
-                                   title_text="DistribuciÃ³n de energÃ­a por disciplina",
+                                   title_text="Distribución de energía por disciplina",
                                    title_font_size=12)
             st.plotly_chart(chart(_fig_pie, 280, dict(l=0, r=0, t=36, b=0)),
                             use_container_width=True)
         with _rc2:
             _guidelines = {
                 "sprint":  (
-                    "**CHO:** 30-45 g total  Â·  Depende casi 100% del glucÃ³geno almacenado\n\n"
-                    "**Fluidos:** 400-600 ml totales Â· Sin tiempo para hidratarse en nado\n\n"
-                    "**Sodio:** MÃ­nimo (~200 mg). El tiempo es muy corto para pÃ©rdidas crÃ­ticas\n\n"
-                    "**Estrategia clave:** 1 gel en bici es suficiente. No sobre-nutras: mÃ¡s peso = mÃ¡s lento"
+                    "**CHO:** 30-45 g total  ·  Depende casi 100% del glucógeno almacenado\n\n"
+                    "**Fluidos:** 400-600 ml totales · Sin tiempo para hidratarse en nado\n\n"
+                    "**Sodio:** Mínimo (~200 mg). El tiempo es muy corto para pérdidas críticas\n\n"
+                    "**Estrategia clave:** 1 gel en bici es suficiente. No sobre-nutras: más peso = más lento"
                 ),
                 "olympic": (
-                    "**CHO:** 60-90 g total  Â·  1:1 glucosa:fructosa\n\n"
-                    "**Fluidos:** 800-1200 ml totales  Â·  ~500ml/hr\n\n"
-                    "**Sodio:** 400-600 mg total Â· Bebida isotÃ³nica es suficiente\n\n"
+                    "**CHO:** 60-90 g total  ·  1:1 glucosa:fructosa\n\n"
+                    "**Fluidos:** 800-1200 ml totales  ·  ~500ml/hr\n\n"
+                    "**Sodio:** 400-600 mg total · Bebida isotónica es suficiente\n\n"
                     "**Estrategia clave:** Gel en T1 + gel/barra en bici + gel en run km 3-4. Total: 3-4 geles"
                 ),
                 "703":     (
-                    "**CHO:** 250-360 g total  Â·  2:1 glucosa:fructosa obligatorio\n\n"
-                    "**Fluidos:** 2.5-3.5 L totales  Â·  700ml/hr en bici\n\n"
-                    "**Sodio:** 3000-5000 mg  Â·  Sal en cada hora de bici\n\n"
-                    "**Estrategia clave:** Bici es la ventana de alimentaciÃ³n principal (60-70g/hr). "
-                    "Run: mÃ¡ximo geles + cola. Nunca pases >45min sin comer en la bici."
+                    "**CHO:** 250-360 g total  ·  2:1 glucosa:fructosa obligatorio\n\n"
+                    "**Fluidos:** 2.5-3.5 L totales  ·  700ml/hr en bici\n\n"
+                    "**Sodio:** 3000-5000 mg  ·  Sal en cada hora de bici\n\n"
+                    "**Estrategia clave:** Bici es la ventana de alimentación principal (60-70g/hr). "
+                    "Run: máximo geles + cola. Nunca pases >45min sin comer en la bici."
                 ),
                 "ironman": (
-                    "**CHO:** 600-900 g total  Â·  2:1 glucosa:fructosa obligatorio (hasta 90g/hr)\n\n"
-                    "**Fluidos:** 6-8 L totales  Â·  800ml/hr + ajuste por calor\n\n"
-                    "**Sodio:** 7000-12000 mg  Â·  700-1000mg/hr durante toda la carrera\n\n"
+                    "**CHO:** 600-900 g total  ·  2:1 glucosa:fructosa obligatorio (hasta 90g/hr)\n\n"
+                    "**Fluidos:** 6-8 L totales  ·  800ml/hr + ajuste por calor\n\n"
+                    "**Sodio:** 7000-12000 mg  ·  700-1000mg/hr durante toda la carrera\n\n"
                     "**Estrategia clave:** Come cuando no tengas hambre. Para Ironman el problema "
                     "no es comer demasiado, sino comer muy poco. Bolso especial km 90 bici y km 21 run."
                 ),
@@ -1707,25 +1999,25 @@ elif page == "ðŸŽ Nutrition":
             st.info(_guidelines[race_sel])
             st.markdown(" ")
             _split_data = [
-                ("ðŸŠ NataciÃ³n", _fmt_dur(pred.swim.time_sec), f"{s_kcal:.0f} kcal", "Sin ingesta"),
-                ("ðŸš´ Ciclismo", _fmt_dur(pred.bike.time_sec), f"{b_kcal:.0f} kcal",
+                ("🏊 Natación", _fmt_dur(pred.swim.time_sec), f"{s_kcal:.0f} kcal", "Sin ingesta"),
+                ("🚴 Ciclismo", _fmt_dur(pred.bike.time_sec), f"{b_kcal:.0f} kcal",
                  f"{'~' + str(int(b_kcal * 0.5)) + ' g CHO'} inyectados"),
-                ("ðŸƒ Corrida",  _fmt_dur(pred.run.time_sec),  f"{r_kcal:.0f} kcal",
+                ("🏃 Corrida",  _fmt_dur(pred.run.time_sec),  f"{r_kcal:.0f} kcal",
                  "Geles + cola principalmente"),
             ]
             for _icon, _time, _kcal_s, _note in _split_data:
-                st.caption(f"**{_icon}**  {_time}  Â·  {_kcal_s}  Â·  {_note}")
+                st.caption(f"**{_icon}**  {_time}  ·  {_kcal_s}  ·  {_note}")
 
-    # â”€â”€ TAB 2: Plan Hora a Hora â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── TAB 2: Plan Hora a Hora ───────────────────────────────────────────────
     with _nt2:
-        # â”€â”€ Chart 1: Race timeline (segment Gantt) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("Timeline de carrera + puntos de alimentaciÃ³n")
+        # ── Chart 1: Race timeline (segment Gantt) ────────────────────────────
+        section("Timeline de carrera + puntos de alimentación")
         _seg_defs = [
-            ("swim", "ðŸŠ NataciÃ³n",  _ss["swim"],  _sw_min,  COL_SWIM),
+            ("swim", "🏊 Natación",  _ss["swim"],  _sw_min,  COL_SWIM),
             ("t1",   "T1",           _ss["t1"],    _t1_min,  "#94A3B8"),
-            ("bike", "ðŸš´ Ciclismo",  _ss["bike"],  _bk_min,  COL_BIKE),
+            ("bike", "🚴 Ciclismo",  _ss["bike"],  _bk_min,  COL_BIKE),
             ("t2",   "T2",           _ss["t2"],    _t2_min,  "#94A3B8"),
-            ("run",  "ðŸƒ Corrida",   _ss["run"],   _rn_min,  COL_RUN),
+            ("run",  "🏃 Corrida",   _ss["run"],   _rn_min,  COL_RUN),
         ]
         _fig_tl = go.Figure()
         for _sk, _sl, _start, _dur, _col in _seg_defs:
@@ -1734,7 +2026,7 @@ elif page == "ðŸŽ Nutrition":
                 marker_color=_col, name=_sl,
                 text=f"{_sl} {_fmt_dur(_dur * 60)}", textposition="inside",
                 textfont=dict(color="#FFFFFF", size=10, family="Inter"),
-                hovertemplate=f"<b>{_sl}</b><br>Inicio: {_start:.0f}min<br>DuraciÃ³n: {_dur:.0f}min<extra></extra>",
+                hovertemplate=f"<b>{_sl}</b><br>Inicio: {_start:.0f}min<br>Duración: {_dur:.0f}min<extra></extra>",
             ))
         # Nutrition markers on the timeline
         for _, _row in _plan_df[_plan_df["cho_g"] > 0].iterrows():
@@ -1759,9 +2051,9 @@ elif page == "ðŸŽ Nutrition":
 
         st.markdown(" ")
 
-        # â”€â”€ Chart 2: CHO + Fluids per interval â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("CHO e HidrataciÃ³n por intervalo",
-                "Barras = CHO (g) Â· LÃ­nea = Fluidos acumulados (ml)")
+        # ── Chart 2: CHO + Fluids per interval ───────────────────────────────
+        section("CHO e Hidratación por intervalo",
+                "Barras = CHO (g) · Línea = Fluidos acumulados (ml)")
         _race_rows = _plan_df[_plan_df["seg"] != "pre"].copy()
         _fig_nu = make_subplots(specs=[[{"secondary_y": True}]])
         _bar_colors = [
@@ -1793,14 +2085,14 @@ elif page == "ðŸŽ Nutrition":
 
         st.markdown(" ")
 
-        # â”€â”€ Detailed plan table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("Plan detallado cronolÃ³gico", "Datos ajustados por condiciones y sudoraciÃ³n")
+        # ── Detailed plan table ───────────────────────────────────────────────
+        section("Plan detallado cronológico", "Datos ajustados por condiciones y sudoración")
         _display_df = _plan_df[["seg_icon", "interval", "cho_g", "fluid_ml",
                                   "sodium_mg", "cum_cho", "cum_fluid", "action",
                                   "examples"]].copy()
         _display_df.columns = [
             "Seg", "Checkpoint", "CHO (g)", "Fluidos (ml)", "Sodio (mg)",
-            "CHO acum. (g)", "Fluido acum. (ml)", "AcciÃ³n", "Ejemplos"
+            "CHO acum. (g)", "Fluido acum. (ml)", "Acción", "Ejemplos"
         ]
         st.dataframe(
             _display_df,
@@ -1818,7 +2110,7 @@ elif page == "ðŸŽ Nutrition":
                 "Fluido acum. (ml)":st.column_config.ProgressColumn(
                                         min_value=0, max_value=int(_plan_df["cum_fluid"].max()),
                                         format="%d ml", width="medium"),
-                "AcciÃ³n":           st.column_config.TextColumn(width="large"),
+                "Acción":           st.column_config.TextColumn(width="large"),
                 "Ejemplos":         st.column_config.TextColumn(width="large"),
             }
         )
@@ -1835,141 +2127,141 @@ elif page == "ðŸŽ Nutrition":
         _tot_cols[3].metric("Checkpoints",       f"{len(_plan_df)} puntos",
                              f"c/ ~{_tot_min/len(_plan_df):.0f} min")
 
-    # â”€â”€ TAB 3: Pre-Carrera â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── TAB 3: Pre-Carrera ────────────────────────────────────────────────────
     with _nt3:
         _pre_race_plans = {
             "sprint": [
-                ("T-24h (dÃ­a anterior)",    "Cena normal",
-                 "Pasta/arroz 80g seco + proteÃ­na + verdura",
+                ("T-24h (día anterior)",    "Cena normal",
+                 "Pasta/arroz 80g seco + proteína + verdura",
                  "6-7 g CHO/kg peso corporal. Sin cambios radicales en la dieta.",
                  "#F1F5F9"),
                 ("T-3h",                    "Desayuno pre-carrera",
-                 "Avena 60g + plÃ¡tano + cafÃ© Â· 2-3 tostadas con mermelada",
+                 "Avena 60g + plátano + café · 2-3 tostadas con mermelada",
                  "60-90g CHO. Bajo en fibra y grasa. Conocido y probado en entrenamientos.",
                  "#FFFFFF"),
                 ("T-60min",                 "Snack ligero",
-                 "Barra de arroz o banana pequeÃ±a (25g CHO)",
-                 "Opcional si el desayuno fue pequeÃ±o. Evita azÃºcares simples sin fibra.",
+                 "Barra de arroz o banana pequeña (25g CHO)",
+                 "Opcional si el desayuno fue pequeño. Evita azúcares simples sin fibra.",
                  "#F1F5F9"),
-                ("T-30min",                 "HidrataciÃ³n activa",
-                 "400-500ml agua o isotÃ³nico diluido",
-                 "Objetivo: orina amarillo pÃ¡lido. No tomar mÃ¡s de 500ml para evitar necesidad de baÃ±o.",
+                ("T-30min",                 "Hidratación activa",
+                 "400-500ml agua o isotónico diluido",
+                 "Objetivo: orina amarillo pálido. No tomar más de 500ml para evitar necesidad de baño.",
                  "#FFFFFF"),
-                ("T-15min",                 "Gel de activaciÃ³n (opcional)",
-                 "1 gel cafeÃ­na (100mg) si usas cafeÃ­na en entrenos",
-                 "Solo si estÃ¡ probado en entrenamiento. No probar nada nuevo el dÃ­a de carrera.",
+                ("T-15min",                 "Gel de activación (opcional)",
+                 "1 gel cafeína (100mg) si usas cafeína en entrenos",
+                 "Solo si está probado en entrenamiento. No probar nada nuevo el día de carrera.",
                  "#F1F5F9"),
-                ("T-0 (lÃ­nea de salida)",   "Lista final",
-                 "Gel en bolsillo listo. Botella montada en bici. Ãšltimos 100ml agua.",
-                 "Revisa: electrolitos guardados, geles accesibles, bidÃ³n lleno.",
+                ("T-0 (línea de salida)",   "Lista final",
+                 "Gel en bolsillo listo. Botella montada en bici. Últimos 100ml agua.",
+                 "Revisa: electrolitos guardados, geles accesibles, bidón lleno.",
                  "#EFF6FF"),
             ],
             "olympic": [
-                ("T-24h (dÃ­a anterior)",    "Carga suave de carbohidratos",
+                ("T-24h (día anterior)",    "Carga suave de carbohidratos",
                  "Arroz/pasta 100g seco + pollo + verdura cocida. Cena temprana.",
                  "7-8 g CHO/kg. Evita alimentos nuevos, picantes o con alto contenido en fibra.",
                  "#F1F5F9"),
                 ("T-12h (noche anterior)",  "Snack nocturno",
-                 "Yogur + miel + plÃ¡tano (30g CHO)",
-                 "Opcional. Ãštil si la carrera es muy temprano y el desayuno serÃ¡ pequeÃ±o.",
+                 "Yogur + miel + plátano (30g CHO)",
+                 "Opcional. Útil si la carrera es muy temprano y el desayuno será pequeño.",
                  "#FFFFFF"),
                 ("T-3h",                    "Desayuno pre-carrera",
-                 "Avena 80g + miel + plÃ¡tano + cafÃ© Â· o arroz con mermelada",
+                 "Avena 80g + miel + plátano + café · o arroz con mermelada",
                  "90-120g CHO. Bajo en fibra. Probado en entrenamientos largos previos.",
                  "#F1F5F9"),
                 ("T-60min",                 "Snack CHO",
-                 "Barra energÃ©tica o 2 tostadas con miel (40-50g CHO)",
+                 "Barra energética o 2 tostadas con miel (40-50g CHO)",
                  "Mantiene glucosa estable sin sobrecargar. Con ~250ml agua.",
                  "#FFFFFF"),
-                ("T-30min",                 "HidrataciÃ³n pre-race",
-                 "500ml isotÃ³nico diluido (50%) + sal si hace calor",
-                 "Si temperatura >22Â°C: aÃ±ade 500mg sal. No mÃ¡s de 500ml.",
+                ("T-30min",                 "Hidratación pre-race",
+                 "500ml isotónico diluido (50%) + sal si hace calor",
+                 "Si temperatura >22°C: añade 500mg sal. No más de 500ml.",
                  "#F1F5F9"),
-                ("T-15min",                 "Gel de activaciÃ³n + cafeÃ­na",
-                 "1 gel cafeÃ­na (SIS Caffeine, GU Roctane) 22g CHO + 75mg cafeÃ­na",
+                ("T-15min",                 "Gel de activación + cafeína",
+                 "1 gel cafeína (SIS Caffeine, GU Roctane) 22g CHO + 75mg cafeína",
                  "Activa el sistema nervioso. Timing preciso: 15min antes del agua.",
                  "#FFFFFF"),
-                ("T-0 (lÃ­nea de salida)",   "Checklist final",
-                 "2 geles accesibles Â· bidÃ³n lleno Â· sal en bolsillo Â· Ãºltimos 100ml",
-                 "Revisa que el bidÃ³n estÃ© en porta-bidÃ³n. PosiciÃ³n cinta de corazÃ³n.",
+                ("T-0 (línea de salida)",   "Checklist final",
+                 "2 geles accesibles · bidón lleno · sal en bolsillo · últimos 100ml",
+                 "Revisa que el bidón esté en porta-bidón. Posición cinta de corazón.",
                  "#EFF6FF"),
             ],
             "703": [
-                ("T-48h (2 dÃ­as antes)",    "Inicio carga de carbohidratos",
-                 "8-10 g CHO/kg/dÃ­a. Arroz, pasta, pan, plÃ¡tanos, jugos. Reduce entrenamiento.",
-                 "Satura glucÃ³geno muscular y hepÃ¡tico. Reduce grasas y fibra estos 2 dÃ­as.",
+                ("T-48h (2 días antes)",    "Inicio carga de carbohidratos",
+                 "8-10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos. Reduce entrenamiento.",
+                 "Satura glucógeno muscular y hepático. Reduce grasas y fibra estos 2 días.",
                  "#F1F5F9"),
                 ("T-24h",                   "Cena carga final",
                  "Pasta/arroz 150g seco + pollo 200g + aceite oliva + pan",
-                 "Ãšltima gran comida. Cena temprana (no despuÃ©s de las 20h). Sin alcohol.",
+                 "Última gran comida. Cena temprana (no después de las 20h). Sin alcohol.",
                  "#FFFFFF"),
                 ("T-4h",                    "Desayuno pre-carrera",
-                 "Arroz 120g + miel + plÃ¡tano 2 uds + cafÃ© con leche Â· o avena especial",
-                 "140-180g CHO. Conocido. Sin fibra, sin grasa. Tiempo suficiente para digestiÃ³n.",
+                 "Arroz 120g + miel + plátano 2 uds + café con leche · o avena especial",
+                 "140-180g CHO. Conocido. Sin fibra, sin grasa. Tiempo suficiente para digestión.",
                  "#F1F5F9"),
                 ("T-2h",                    "Snack de mantenimiento",
-                 "Barra energÃ©tica o arroz con miel (60g CHO) + 300ml agua",
-                 "Evita el bajÃ³n de glucosa en la espera. Solo si toleras bien.",
+                 "Barra energética o arroz con miel (60g CHO) + 300ml agua",
+                 "Evita el bajón de glucosa en la espera. Solo si toleras bien.",
                  "#FFFFFF"),
-                ("T-60min",                 "HidrataciÃ³n activa",
-                 "500-600ml isotÃ³nico completo + 500mg sal extra si caluroso",
-                 "Orina amarillo pÃ¡lido. Ajusta sodio segÃºn temperatura.",
+                ("T-60min",                 "Hidratación activa",
+                 "500-600ml isotónico completo + 500mg sal extra si caluroso",
+                 "Orina amarillo pálido. Ajusta sodio según temperatura.",
                  "#F1F5F9"),
                 ("T-30min",                 "Gel + electrolitos",
-                 "1 gel Maurten 100 + 1 pastilla electrolÃ­tica (Precision Hydration/SIS)",
-                 "Ãšltimos CHO antes del agua. La cÃ¡psula de sodio puede reducir calambres.",
+                 "1 gel Maurten 100 + 1 pastilla electrolítica (Precision Hydration/SIS)",
+                 "Últimos CHO antes del agua. La cápsula de sodio puede reducir calambres.",
                  "#FFFFFF"),
-                ("T-15min",                 "Gel de activaciÃ³n",
-                 "1 gel cafeÃ­na (100mg) Â· Ãºltimos 200ml agua",
-                 "Si usas cafeÃ­na: timing perfecto para pico en inicio de bici.",
+                ("T-15min",                 "Gel de activación",
+                 "1 gel cafeína (100mg) · últimos 200ml agua",
+                 "Si usas cafeína: timing perfecto para pico en inicio de bici.",
                  "#F1F5F9"),
-                ("T-0 (lÃ­nea de salida)",   "Checklist final 70.3",
-                 "3 geles en bolsillos Â· 2 bidones llenos (1 isotÃ³nico, 1 agua) Â· sal tabs Â· bolso especial preparado",
+                ("T-0 (línea de salida)",   "Checklist final 70.3",
+                 "3 geles en bolsillos · 2 bidones llenos (1 isotónico, 1 agua) · sal tabs · bolso especial preparado",
                  "Bolso especial: 3 geles + barra + 2 salt tabs + cambio calcetines.",
                  "#EFF6FF"),
             ],
             "ironman": [
-                ("T-72h (3 dÃ­as antes)",    "Inicio protocolo carga",
-                 "8-10 g CHO/kg/dÃ­a. Arroz, pasta, pan, plÃ¡tanos, jugos, batatas.",
-                 "ReducciÃ³n de entrenamiento (taper). Hydra extra: 1ml/kcal consumida.",
+                ("T-72h (3 días antes)",    "Inicio protocolo carga",
+                 "8-10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos, batatas.",
+                 "Reducción de entrenamiento (taper). Hydra extra: 1ml/kcal consumida.",
                  "#F1F5F9"),
-                ("T-48h",                   "DÃ­a carga alta",
-                 "10 g CHO/kg mÃ­nimo. Cada comida incluye CHO: desayuno/almuerzo/cena + snacks",
-                 "Evita grasas saturadas, fibra >30g, alcohol. Puede haber hinchazÃ³n: es normal (glucÃ³geno = agua).",
+                ("T-48h",                   "Día carga alta",
+                 "10 g CHO/kg mínimo. Cada comida incluye CHO: desayuno/almuerzo/cena + snacks",
+                 "Evita grasas saturadas, fibra >30g, alcohol. Puede haber hinchazón: es normal (glucógeno = agua).",
                  "#FFFFFF"),
-                ("T-24h",                   "Cena pre-race clÃ¡sica",
+                ("T-24h",                   "Cena pre-race clásica",
                  "Pasta 200g seco + salsa tomate simple + pollo 200g + pan + arroz con leche",
                  "Sin sorpresas. Nada nuevo. Sin picante. Sin mariscos. Cena antes de las 19h.",
                  "#F1F5F9"),
                 ("T-5h",                    "Desayuno Ironman",
-                 "Avena 150g + 3 plÃ¡tanos + 2 rebanadas pan miel + 2 cafÃ©s con leche + zumo",
-                 "200-250g CHO. El desayuno mÃ¡s grande del aÃ±o. Tiempo amplio para digestiÃ³n.",
+                 "Avena 150g + 3 plátanos + 2 rebanadas pan miel + 2 cafés con leche + zumo",
+                 "200-250g CHO. El desayuno más grande del año. Tiempo amplio para digestión.",
                  "#FFFFFF"),
                 ("T-3h",                    "Snack intermedio",
-                 "Barra de arroz casera 80g CHO Â· o 2 plÃ¡tanos + miel + tostada",
-                 "Mantiene glucosa sin sobrecargar. Con 400ml isotÃ³nico diluido.",
+                 "Barra de arroz casera 80g CHO · o 2 plátanos + miel + tostada",
+                 "Mantiene glucosa sin sobrecargar. Con 400ml isotónico diluido.",
                  "#F1F5F9"),
                 ("T-90min",                 "Hydra activa",
-                 "600ml isotÃ³nico completo + pastilla sodio (500-1000mg)",
-                 "Ajusta segÃºn temperatura. >28Â°C: aÃ±ade 1000mg sodio.",
+                 "600ml isotónico completo + pastilla sodio (500-1000mg)",
+                 "Ajusta según temperatura. >28°C: añade 1000mg sodio.",
                  "#FFFFFF"),
                 ("T-45min",                 "Gel + salt tabs",
                  "2 geles Maurten 100 (50g CHO) + 2 salt tabs Precision Hydration",
                  "Carga final de CHO. El sodio extra ayuda a retener fluidos iniciales.",
                  "#F1F5F9"),
-                ("T-20min",                 "Gel cafeÃ­na",
-                 "1 gel cafeÃ­na 150mg (GU Roctane / Maurten caffeÃ­na) + 150ml agua",
+                ("T-20min",                 "Gel cafeína",
+                 "1 gel cafeína 150mg (GU Roctane / Maurten caffeína) + 150ml agua",
                  "Timing para pico en inicio de bici (~90min post-ingesta).",
                  "#FFFFFF"),
-                ("T-0 (lÃ­nea de salida)",   "Checklist final IRONMAN",
-                 "Bici: 2 bidones (Maurten 320) + barra sÃ³lida Â· Bolso especial: 4 geles + 2 barras + 4 salt tabs + vaseline + cambio calcetines",
-                 "TransiciÃ³n especial (km 90 bici / km 21 run): verifica que el bolso llegÃ³ antes que tÃº.",
+                ("T-0 (línea de salida)",   "Checklist final IRONMAN",
+                 "Bici: 2 bidones (Maurten 320) + barra sólida · Bolso especial: 4 geles + 2 barras + 4 salt tabs + vaseline + cambio calcetines",
+                 "Transición especial (km 90 bici / km 21 run): verifica que el bolso llegó antes que tú.",
                  "#EFF6FF"),
             ],
         }
 
         section("Protocolo Pre-Carrera",
-                f"{RACE_LABELS[race_sel]} â€” {pred.total_display} estimado")
+                f"{RACE_LABELS[race_sel]} — {pred.total_display} estimado")
         st.markdown(" ")
 
         for _timing, _category, _food, _note, _bg in _pre_race_plans[race_sel]:
@@ -1977,43 +2269,43 @@ elif page == "ðŸŽ Nutrition":
             with st.container():
                 _pc1, _pc2, _pc3 = st.columns([1.2, 2, 3])
                 _pc1.markdown(
-                    f"**{'ðŸ ' if _is_start else ''}{_timing}**"
+                    f"**{'🏁 ' if _is_start else ''}{_timing}**"
                 )
                 _pc2.markdown(f"*{_category}*")
                 _pc3.markdown(f"**{_food}**")
                 if _note:
-                    st.caption(f"â†³ {_note}")
+                    st.caption(f"↳ {_note}")
                 st.divider()
 
         st.markdown(" ")
         st.info(
-            f"**ðŸ“Œ Regla de oro para {RACE_LABELS[race_sel]}:**  "
-            f"No pruebes nada nuevo el dÃ­a de la carrera. "
+            f"**📌 Regla de oro para {RACE_LABELS[race_sel]}:**  "
+            f"No pruebes nada nuevo el día de la carrera. "
             f"Toda la estrategia nutricional debe estar practicada en entrenamientos largos. "
             f"Coloca los geles en el mismo lugar siempre (bolsillo jersey, tri-suit, aero-bag)."
         )
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ‘¤ ATHLETE PROFILE
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ‘¤ Athlete Profile":
+# ══════════════════════════════════════════════════════════════════════════════
+# 👤 ATHLETE PROFILE
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "👤 Athlete Profile":
     import json as _json
 
     # Load current values
     _p = load_profile()
 
-    # â”€â”€ KPI summary (top) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── KPI summary (top) ─────────────────────────────────────────────────────
     k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("FTP",            f"{int(_p['ftp_w'])} W")
     k2.metric("Weight",         f"{_p['weight_kg']:.1f} kg")
     k3.metric("Run threshold",  f"{_p['threshold_run']}/km")
     k4.metric("CSS Swim",       f"{_p['css_swim']}/100m")
-    k5.metric("VOâ‚‚Max Bike",    f"{_p['vo2max_bike']:.0f}")
+    k5.metric("VO₂Max Bike",    f"{_p['vo2max_bike']:.0f}")
 
     st.markdown(" ")
 
-    # â”€â”€ Edit form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Edit form ─────────────────────────────────────────────────────────────
     with st.form("profile_form"):
         section("Personal")
         p1, p2, p3, p4 = st.columns(4)
@@ -2032,8 +2324,8 @@ elif page == "ðŸ‘¤ Athlete Profile":
                                  help="Critical Swim Speed, e.g. 1:50")
 
         b4, b5, b6 = st.columns(3)
-        e_vo2r  = b4.number_input("VOâ‚‚Max Run",   20.0, 90.0, float(_p["vo2max_run"]), 0.5)
-        e_vo2b  = b5.number_input("VOâ‚‚Max Bike",  20.0, 90.0, float(_p["vo2max_bike"]), 0.5)
+        e_vo2r  = b4.number_input("VO₂Max Run",   20.0, 90.0, float(_p["vo2max_run"]), 0.5)
+        e_vo2b  = b5.number_input("VO₂Max Bike",  20.0, 90.0, float(_p["vo2max_bike"]), 0.5)
         e_lthr  = b6.number_input("LTHR (bpm)",   100, 220, int(_p["lthr"]))
 
         st.markdown(" ")
@@ -2050,7 +2342,7 @@ elif page == "ðŸ‘¤ Athlete Profile":
         e_notes = st.text_area("Coach / personal notes", value=_p.get("notes",""), height=80)
 
         st.markdown(" ")
-        saved = st.form_submit_button("ðŸ’¾  Save Profile", use_container_width=False)
+        saved = st.form_submit_button("💾  Save Profile", use_container_width=False)
 
     if saved:
         new_prof = {
@@ -2070,10 +2362,10 @@ elif page == "ðŸ‘¤ Athlete Profile":
             "garmin_email":  _p.get("garmin_email",""),
         }
         save_profile(new_prof)
-        st.success("Profile saved â€” changes will apply on next page load.")
+        st.success("Profile saved — changes will apply on next page load.")
         st.rerun()
 
-    # â”€â”€ Training zones (auto-calculated) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Training zones (auto-calculated) ──────────────────────────────────────
     st.markdown(" ")
     st.divider()
     section("Training Zones", "Calculated from your benchmarks")
@@ -2081,33 +2373,33 @@ elif page == "ðŸ‘¤ Athlete Profile":
     z_col1, z_col2, z_col3 = st.columns(3, gap="medium")
 
     with z_col1:
-        st.markdown("**ðŸš´ Bike Power Zones** (FTP based)")
+        st.markdown("**🚴 Bike Power Zones** (FTP based)")
         zones_bike = power_zones(ftp)
         rows_b = []
         for zname, (lo, hi) in zones_bike.items():
             hi_str = f"{hi:.0f}" if hi < 9999 else "MAX"
-            rows_b.append({"Zone": zname, "Range (W)": f"{lo:.0f} â€“ {hi_str}"})
+            rows_b.append({"Zone": zname, "Range (W)": f"{lo:.0f} – {hi_str}"})
         st.dataframe(pd.DataFrame(rows_b), hide_index=True, use_container_width=True)
 
     with z_col2:
-        st.markdown("**ðŸƒ Run Pace Zones** (threshold based)")
+        st.markdown("**🏃 Run Pace Zones** (threshold based)")
         thr_s = _parse_pace(t_run)
         run_zones = [
             ("Z1 Recovery",   thr_s * 1.30, 9999),
             ("Z2 Base",       thr_s * 1.15, thr_s * 1.30),
             ("Z3 Tempo",      thr_s * 1.05, thr_s * 1.15),
             ("Z4 Threshold",  thr_s * 0.98, thr_s * 1.05),
-            ("Z5 VOâ‚‚Max",     0,             thr_s * 0.98),
+            ("Z5 VO₂Max",     0,             thr_s * 0.98),
         ]
         rows_r = []
         for zname, lo, hi in run_zones:
-            lo_s = _fmt_pace(lo) if lo > 0 else "â€”"
+            lo_s = _fmt_pace(lo) if lo > 0 else "—"
             hi_s = _fmt_pace(hi) if hi < 9999 else "MAX"
-            rows_r.append({"Zone": zname, "Pace (/km)": f"{lo_s} â€“ {hi_s}"})
+            rows_r.append({"Zone": zname, "Pace (/km)": f"{lo_s} – {hi_s}"})
         st.dataframe(pd.DataFrame(rows_r), hide_index=True, use_container_width=True)
 
     with z_col3:
-        st.markdown("**ðŸŠ Swim Pace Zones** (CSS based)")
+        st.markdown("**🏊 Swim Pace Zones** (CSS based)")
         css_s = _parse_pace(t_swim, 110.0)
         swim_zones = [
             ("Z1 Recovery",   css_s * 1.20, 9999),
@@ -2118,52 +2410,52 @@ elif page == "ðŸ‘¤ Athlete Profile":
         ]
         rows_s = []
         for zname, lo, hi in swim_zones:
-            lo_s = _fmt_pace(lo) if lo > 0 else "â€”"
+            lo_s = _fmt_pace(lo) if lo > 0 else "—"
             hi_s = _fmt_pace(hi) if hi < 9999 else "MAX"
-            rows_s.append({"Zone": zname, "Pace (/100m)": f"{lo_s} â€“ {hi_s}"})
+            rows_s.append({"Zone": zname, "Pace (/100m)": f"{lo_s} – {hi_s}"})
         st.dataframe(pd.DataFrame(rows_s), hide_index=True, use_container_width=True)
 
-    # â”€â”€ HR zones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── HR zones ──────────────────────────────────────────────────────────────
     st.markdown(" ")
     lthr_val = int(_p["lthr"])
-    st.markdown(f"**â¤ï¸ HR Zones** (LTHR {lthr_val} bpm)")
+    st.markdown(f"**❤️ HR Zones** (LTHR {lthr_val} bpm)")
     hr_zones = [
         ("Z1 Recovery",   int(lthr_val * 0.68), int(lthr_val * 0.75)),
         ("Z2 Base",       int(lthr_val * 0.75), int(lthr_val * 0.82)),
         ("Z3 Tempo",      int(lthr_val * 0.82), int(lthr_val * 0.89)),
         ("Z4 Threshold",  int(lthr_val * 0.89), int(lthr_val * 0.97)),
-        ("Z5 VOâ‚‚Max",     int(lthr_val * 0.97), int(lthr_val * 1.05)),
+        ("Z5 VO₂Max",     int(lthr_val * 0.97), int(lthr_val * 1.05)),
     ]
     hc = st.columns(5)
     for i, (zname, lo, hi) in enumerate(hr_zones):
-        hc[i].metric(zname, f"{lo}â€“{hi}", "bpm")
+        hc[i].metric(zname, f"{lo}–{hi}", "bpm")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ† RACE PREDICTOR
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ† Race Predictor":
-    section("Model", "Physics bike Â· Riegel Â· T2 fatigue")
+# ══════════════════════════════════════════════════════════════════════════════
+# 🏆 RACE PREDICTOR
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🏆 Race Predictor":
+    section("Model", "Physics bike · Riegel · T2 fatigue")
     st.markdown(" ")
 
     preds = predictor.predict_all()
     dist_lbl = {
-        "sprint":  "750m Â· 20km Â· 5km",
-        "olympic": "1.5km Â· 40km Â· 10km",
-        "703":     "1.9km Â· 90km Â· 21km",
-        "ironman": "3.8km Â· 180km Â· 42km",
+        "sprint":  "750m · 20km · 5km",
+        "olympic": "1.5km · 40km · 10km",
+        "703":     "1.9km · 90km · 21km",
+        "ironman": "3.8km · 180km · 42km",
     }
     cols = st.columns(4, gap="medium")
     for i, (key, label) in enumerate(RACE_LABELS.items()):
         p = preds[key]
         cols[i].metric(
-            f"{label}  Â·  {dist_lbl[key]}",
+            f"{label}  ·  {dist_lbl[key]}",
             p.total_display,
-            f"IF {p.bike.target_if:.2f} Â· {p.bike.target_power}W NP",
+            f"IF {p.bike.target_if:.2f} · {p.bike.target_power}W NP",
         )
 
     st.markdown(" ")
-    section("Split Detail", "Swim Â· T1 Â· Bike Â· T2 Â· Run")
+    section("Split Detail", "Swim · T1 · Bike · T2 · Run")
     rows = []
     for key, label in RACE_LABELS.items():
         p = preds[key]
@@ -2180,7 +2472,7 @@ elif page == "ðŸ† Race Predictor":
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
     st.markdown(" ")
-    tab1, tab2 = st.tabs(["ðŸ“Š FTP Sensitivity", "ðŸ§± Brick Simulator"])
+    tab1, tab2 = st.tabs(["📊 FTP Sensitivity", "🧱 Brick Simulator"])
 
     with tab1:
         c1, _ = st.columns([1, 2])
@@ -2202,17 +2494,17 @@ elif page == "ðŸ† Race Predictor":
         diff = deg - base
         dm, ds = int(diff) // 60, int(diff) % 60
         b3, b4, b5 = st.columns(3)
-        b3.metric("Bike IF",   f"{sim_if:.2f}", "âœ“ OK" if sim_if <= rec_if + 0.03 else "âš  Over")
+        b3.metric("Bike IF",   f"{sim_if:.2f}", "✓ OK" if sim_if <= rec_if + 0.03 else "⚠ Over")
         b4.metric("Run Pace",  f"{_fmt_pace(deg)}/km", f"+{dm}:{ds:02d} vs solo")
         b5.metric("Fatigue",   f"x{fat:.3f}")
         if sim_if > rec_if + 0.03:
-            st.warning(f"âš  IF {sim_if:.2f} > recommended {rec_if:.2f} for {RACE_LABELS[sim_dist]}. Run will suffer.")
+            st.warning(f"⚠ IF {sim_if:.2f} > recommended {rec_if:.2f} for {RACE_LABELS[sim_dist]}. Run will suffer.")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ©¸ BLOOD LABS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ©¸ Blood Labs":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🩸 BLOOD LABS
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🩸 Blood Labs":
     _bt = _load_blood_tests()
     if not _bt or not _bt.get("exams"):
         st.info("No blood test data found. Add exams to `data/blood_tests.json`.")
@@ -2223,7 +2515,7 @@ elif page == "ðŸ©¸ Blood Labs":
     _latest = _exams[-1]
     _prev   = _exams[-2] if len(_exams) >= 2 else None
 
-    # â”€â”€ Build tidy DataFrame for trend charts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Build tidy DataFrame for trend charts ─────────────────────────────────
     _bt_rows = []
     for _e in _exams:
         _row = {"date": pd.to_datetime(_e["date"]), "context": _e.get("context", "")}
@@ -2232,7 +2524,7 @@ elif page == "ðŸ©¸ Blood Labs":
     _bt_df = pd.DataFrame(_bt_rows).sort_values("date").reset_index(drop=True)
     _exam_dates = _bt_df["date"].tolist()
 
-    # â”€â”€ Helper: score a single marker 0-100 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Helper: score a single marker 0-100 ───────────────────────────────────
     def _score(val, key):
         if val is None or key not in _bm:
             return None
@@ -2261,7 +2553,7 @@ elif page == "ðŸ©¸ Blood Labs":
             else:
                 return max(0, round(70 - (val - hi) / half * 55))
 
-    # â”€â”€ Helper: ref range label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Helper: ref range label ────────────────────────────────────────────────
     def _ref_label(key):
         bm = _bm[key]
         lo, hi, d = bm["ref_low"], bm["ref_high"], bm.get("direction", "range")
@@ -2269,32 +2561,32 @@ elif page == "ðŸ©¸ Blood Labs":
         if d == "higher": return f"> {lo:.0f}"
         lo_str = f"{lo:.0f}" if lo == int(lo) else str(lo)
         hi_str = f"{hi:.0f}" if hi == int(hi) else str(hi)
-        return f"{lo_str} â€“ {hi_str}"
+        return f"{lo_str} – {hi_str}"
 
-    # â”€â”€ Helper: status badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Helper: status badge ───────────────────────────────────────────────────
     def _status_badge(val, key):
-        if val is None: return "â€”"
+        if val is None: return "—"
         bm = _bm[key]
         lo, hi = bm["ref_low"], bm["ref_high"]
         d  = bm.get("direction", "range")
         if d == "lower":
-            if val > hi:           return "ðŸ”´ Alto"
-            if val > hi * 0.85:    return "ðŸŸ¡ LÃ­mite"
-            return "âœ… OK"
+            if val > hi:           return "🔴 Alto"
+            if val > hi * 0.85:    return "🟡 Límite"
+            return "✅ OK"
         elif d == "higher":
-            if val < lo:           return "ðŸ”´ Bajo"
-            if val < lo * 1.10:    return "ðŸŸ¡ LÃ­mite"
-            return "âœ… OK"
+            if val < lo:           return "🔴 Bajo"
+            if val < lo * 1.10:    return "🟡 Límite"
+            return "✅ OK"
         else:
-            if val < lo or val > hi:        return "ðŸ”´ Fuera rango"
-            if val < lo * 1.08 or val > hi * 0.92: return "ðŸŸ¡ LÃ­mite"
-            return "âœ… Normal"
+            if val < lo or val > hi:        return "🔴 Fuera rango"
+            if val < lo * 1.08 or val > hi * 0.92: return "🟡 Límite"
+            return "✅ Normal"
 
-    # â”€â”€ Helper: render a trend line chart for a list of marker keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Helper: render a trend line chart for a list of marker keys ────────────
     def _trend_chart(keys, title, height=300):
         cols_available = [k for k in keys if k in _bt_df.columns]
         if not cols_available:
-            st.caption("Sin datos para esta categorÃ­a.")
+            st.caption("Sin datos para esta categoría.")
             return
         section(title)
         # one chart per marker so each gets its own y-axis + ref band
@@ -2321,11 +2613,11 @@ elif page == "ðŸ©¸ Blood Labs":
                                   annotation_font_color="#64748B")
                 elif hi is not None and d == "lower":
                     fig.add_hline(y=hi, line_dash="dot", line_color="#EF4444",
-                                  annotation_text=f"LÃ­mite {hi} {unit}",
+                                  annotation_text=f"Límite {hi} {unit}",
                                   annotation_font_size=9)
                 elif lo is not None and d == "higher":
                     fig.add_hline(y=lo, line_dash="dot", line_color="#EF4444",
-                                  annotation_text=f"MÃ­n {lo} {unit}",
+                                  annotation_text=f"Mín {lo} {unit}",
                                   annotation_font_size=9)
                 # Data line
                 line_color = "#3B82F6" if len(vals) < 2 else (
@@ -2350,25 +2642,25 @@ elif page == "ðŸ©¸ Blood Labs":
                 st.plotly_chart(chart(fig, height, dict(l=0, r=8, t=22, b=0)),
                                 use_container_width=True)
 
-    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    # ══════════════════════════════════════════════════════════════════════════
     # KPI COMPUTATION (used across tabs)
-    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    # ══════════════════════════════════════════════════════════════════════════
     lv = _latest["values"]
 
-    # KPI 1 â€” RecuperaciÃ³n Muscular (CK + LDH)
+    # KPI 1 — Recuperación Muscular (CK + LDH)
     _ck_s   = _score(lv.get("ck"),  "ck")
     _ldh_s  = _score(lv.get("ldh"), "ldh")
     _scores_muscle = [s for s in [_ck_s, _ldh_s] if s is not None]
     _kpi_muscle = round(sum(_scores_muscle) / len(_scores_muscle)) if _scores_muscle else None
 
-    # KPI 2 â€” Transporte de O2 (Hb + Hct)
+    # KPI 2 — Transporte de O2 (Hb + Hct)
     _hb_s   = _score(lv.get("hemoglobina"),  "hemoglobina")
     _hct_s  = _score(lv.get("hematocrito"),  "hematocrito")
     _eri_s  = _score(lv.get("eritrocitos"),  "eritrocitos")
     _scores_o2 = [s for s in [_hb_s, _hct_s, _eri_s] if s is not None]
     _kpi_o2 = round(sum(_scores_o2) / len(_scores_o2)) if _scores_o2 else None
 
-    # KPI 3 â€” Micronutrientes & Hormonal (VitD + B12 + TSH)
+    # KPI 3 — Micronutrientes & Hormonal (VitD + B12 + TSH)
     _vitd_s = _score(lv.get("vitamina_d"),   "vitamina_d")
     _b12_s  = _score(lv.get("vitamina_b12"), "vitamina_b12")
     _tsh_s  = _score(lv.get("tsh"),          "tsh") if lv.get("tsh") else None
@@ -2380,10 +2672,10 @@ elif page == "ðŸ©¸ Blood Labs":
         if s >= 88:   return ("Excelente",   "#10B981")
         if s >= 74:   return ("Bueno",       "#3B82F6")
         if s >= 58:   return ("Monitorear",  "#F59E0B")
-        if s >= 42:   return ("AtenciÃ³n",    "#F97316")
+        if s >= 42:   return ("Atención",    "#F97316")
         return             ("Alerta",        "#EF4444")
 
-    # Notable changes (|Î”%| > 12%) for alerts
+    # Notable changes (|Δ%| > 12%) for alerts
     _alerts = []
     if _prev:
         pv = _prev["values"]
@@ -2395,7 +2687,7 @@ elif page == "ðŸ©¸ Blood Labs":
             _delta_pct = (_v_new - _v_old) / abs(_v_old) * 100
             if abs(_delta_pct) > 12:
                 _direction = "sube" if _delta_pct > 0 else "baja"
-                _icon = "ðŸ“ˆ" if _delta_pct > 0 else "ðŸ“‰"
+                _icon = "📈" if _delta_pct > 0 else "📉"
                 _bm_dir = _bm_def.get("direction", "range")
                 # Determine if this direction is concerning
                 _concern = (
@@ -2415,79 +2707,79 @@ elif page == "ðŸ©¸ Blood Labs":
                 })
         _alerts.sort(key=lambda a: abs(a["delta_pct"]), reverse=True)
 
-    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    # ══════════════════════════════════════════════════════════════════════════
     # TABS
-    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    _t1, _t2, _t3, _t4 = st.tabs(["ðŸ¥ Resumen ClÃ­nico", "ðŸ“ˆ Tendencias", "ðŸ”— CorrelaciÃ³n Garmin", "ðŸ“¥ Importar Examen"])
+    # ══════════════════════════════════════════════════════════════════════════
+    _t1, _t2, _t3, _t4 = st.tabs(["🏥 Resumen Clínico", "📈 Tendencias", "🔗 Correlación Garmin", "📥 Importar Examen"])
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    # TAB 1 â€” RESUMEN CLÃNICO
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB 1 — RESUMEN CLÍNICO
+    # ─────────────────────────────────────────────────────────────────────────
     with _t1:
-        # â”€â”€ Exam metadata strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _lbl1, _lbl2 = f"Ãšltimo: **{_latest['date']}**", (f"Anterior: **{_prev['date']}**" if _prev else "Sin examen anterior")
-        st.caption(f"{_lbl1}  Â·  {_lbl2}  Â·  {_latest.get('context','')}")
+        # ── Exam metadata strip ───────────────────────────────────────────────
+        _lbl1, _lbl2 = f"Último: **{_latest['date']}**", (f"Anterior: **{_prev['date']}**" if _prev else "Sin examen anterior")
+        st.caption(f"{_lbl1}  ·  {_lbl2}  ·  {_latest.get('context','')}")
         st.markdown(" ")
 
-        # â”€â”€ 3 KPI cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("Indicadores Clave de Rendimiento", "Basados en Ãºltimo examen")
+        # ── 3 KPI cards ───────────────────────────────────────────────────────
+        section("Indicadores Clave de Rendimiento", "Basados en último examen")
         _ka, _kb, _kc = st.columns(3, gap="medium")
 
         def _kpi_card(col, title, score, icon, lines):
             _lbl, _col = _score_label(score)
             col.metric(f"{icon}  {title}",
-                       f"{score} / 100" if score else "â€”",
+                       f"{score} / 100" if score else "—",
                        f"{_lbl}")
             for _ln in lines:
                 col.caption(_ln)
 
-        _kpi_card(_ka, "RecuperaciÃ³n Muscular", _kpi_muscle, "ðŸ’ª",
-                  [f"CK: {lv.get('ck','â€”')} U/L  Â·  LDH: {lv.get('ldh','â€”')} U/L",
-                   "CK refleja daÃ±o muscular post-esfuerzo"])
-        _kpi_card(_kb, "Transporte de OxÃ­geno", _kpi_o2, "ðŸ«€",
-                  [f"Hb: {lv.get('hemoglobina','â€”')} g/dL  Â·  Hct: {lv.get('hematocrito','â€”')}%",
-                   f"Eritrocitos: {lv.get('eritrocitos','â€”')} Ã—10â¶/ÂµL"])
-        _kpi_card(_kc, "Micronutrientes", _kpi_micro, "ðŸ§¬",
-                  [f"Vit D: {lv.get('vitamina_d','â€”')} ng/mL  Â·  B12: {lv.get('vitamina_b12','â€”')} pg/mL",
-                   f"TSH: {lv.get('tsh','â€”')} uU/mL"])
+        _kpi_card(_ka, "Recuperación Muscular", _kpi_muscle, "💪",
+                  [f"CK: {lv.get('ck','—')} U/L  ·  LDH: {lv.get('ldh','—')} U/L",
+                   "CK refleja daño muscular post-esfuerzo"])
+        _kpi_card(_kb, "Transporte de Oxígeno", _kpi_o2, "🫀",
+                  [f"Hb: {lv.get('hemoglobina','—')} g/dL  ·  Hct: {lv.get('hematocrito','—')}%",
+                   f"Eritrocitos: {lv.get('eritrocitos','—')} ×10⁶/µL"])
+        _kpi_card(_kc, "Micronutrientes", _kpi_micro, "🧬",
+                  [f"Vit D: {lv.get('vitamina_d','—')} ng/mL  ·  B12: {lv.get('vitamina_b12','—')} pg/mL",
+                   f"TSH: {lv.get('tsh','—')} uU/mL"])
 
         st.markdown(" ")
 
-        # â”€â”€ Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Alerts ────────────────────────────────────────────────────────────
         if _alerts:
-            section("Variaciones Notables", f"Î” > 12% entre {_prev['date'] if _prev else 'â€”'} y {_latest['date']}")
+            section("Variaciones Notables", f"Δ > 12% entre {_prev['date'] if _prev else '—'} y {_latest['date']}")
             _alert_concern  = [a for a in _alerts if a["concern"]]
             _alert_positive = [a for a in _alerts if not a["concern"]]
 
             if _alert_concern:
-                _msg = "  Â·  ".join(
-                    f"**{a['label']}** {a['icon']} {a['old']} â†’ {a['new']} {a['unit']} ({a['delta_pct']:+.1f}%)"
+                _msg = "  ·  ".join(
+                    f"**{a['label']}** {a['icon']} {a['old']} → {a['new']} {a['unit']} ({a['delta_pct']:+.1f}%)"
                     for a in _alert_concern[:4]
                 )
-                st.warning(f"âš ï¸ Requiere atenciÃ³n:  {_msg}")
+                st.warning(f"⚠️ Requiere atención:  {_msg}")
             if _alert_positive:
-                _msg = "  Â·  ".join(
-                    f"**{a['label']}** {a['icon']} {a['old']} â†’ {a['new']} {a['unit']} ({a['delta_pct']:+.1f}%)"
+                _msg = "  ·  ".join(
+                    f"**{a['label']}** {a['icon']} {a['old']} → {a['new']} {a['unit']} ({a['delta_pct']:+.1f}%)"
                     for a in _alert_positive[:4]
                 )
-                st.success(f"âœ… Mejoras registradas:  {_msg}")
+                st.success(f"✅ Mejoras registradas:  {_msg}")
 
         st.markdown(" ")
 
-        # â”€â”€ Full biomarker table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Full biomarker table ──────────────────────────────────────────────
         section("Tabla Completa de Biomarcadores")
         _cat_order = ["hemograma", "muscular", "lipidos", "enzimas",
                       "renal", "bioquimica", "vitaminas", "electrolitos", "hormonal"]
         _cat_labels = {
-            "hemograma":    "ðŸ©¸ Hemograma",
-            "muscular":     "ðŸ’ª Muscular",
-            "lipidos":      "ðŸ«€ Perfil LipÃ­dico",
-            "enzimas":      "âš—ï¸ Enzimas",
-            "renal":        "ðŸ«˜ FunciÃ³n Renal",
-            "bioquimica":   "ðŸ”¬ BioquÃ­mica",
-            "vitaminas":    "ðŸŒŸ Vitaminas",
-            "electrolitos": "âš¡ Electrolitos",
-            "hormonal":     "ðŸ§ª Hormonal",
+            "hemograma":    "🩸 Hemograma",
+            "muscular":     "💪 Muscular",
+            "lipidos":      "🫀 Perfil Lipídico",
+            "enzimas":      "⚗️ Enzimas",
+            "renal":        "🫘 Función Renal",
+            "bioquimica":   "🔬 Bioquímica",
+            "vitaminas":    "🌟 Vitaminas",
+            "electrolitos": "⚡ Electrolitos",
+            "hormonal":     "🧪 Hormonal",
         }
         for _cat in _cat_order:
             _cat_keys = [k for k, v in _bm.items() if v.get("category") == _cat]
@@ -2498,17 +2790,17 @@ elif page == "ðŸ©¸ Blood Labs":
                 _v_old  = _prev["values"].get(_k) if _prev else None
                 if _v_new is None and _v_old is None:
                     continue
-                _delta_str = "â€”"
+                _delta_str = "—"
                 if _v_new is not None and _v_old is not None and _v_old != 0:
                     _dp = (_v_new - _v_old) / abs(_v_old) * 100
-                    _arrow = "â–²" if _dp > 0 else "â–¼"
+                    _arrow = "▲" if _dp > 0 else "▼"
                     _delta_str = f"{_arrow} {abs(_dp):.1f}%"
                 _cat_rows.append({
                     "Marcador":         _bm_def["label"],
                     "Referencia":       _ref_label(_k) + f" {_bm_def['unit']}",
-                    _prev["date"] if _prev else "Anterior":  _v_old if _v_old is not None else "â€”",
-                    _latest["date"]:    _v_new if _v_new is not None else "â€”",
-                    "Î”":               _delta_str,
+                    _prev["date"] if _prev else "Anterior":  _v_old if _v_old is not None else "—",
+                    _latest["date"]:    _v_new if _v_new is not None else "—",
+                    "Δ":               _delta_str,
                     "Estado":          _status_badge(_v_new, _k),
                 })
             if _cat_rows:
@@ -2516,16 +2808,16 @@ elif page == "ðŸ©¸ Blood Labs":
                     st.dataframe(pd.DataFrame(_cat_rows), hide_index=True,
                                  use_container_width=True)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    # TAB 2 â€” TENDENCIAS
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB 2 — TENDENCIAS
+    # ─────────────────────────────────────────────────────────────────────────
     with _t2:
-        st.caption(f"EvoluciÃ³n temporal  Â·  {len(_exams)} exÃ¡menes  Â·  {_exam_dates[0].strftime('%b %Y')} â†’ {_exam_dates[-1].strftime('%b %Y')}")
+        st.caption(f"Evolución temporal  ·  {len(_exams)} exámenes  ·  {_exam_dates[0].strftime('%b %Y')} → {_exam_dates[-1].strftime('%b %Y')}")
         st.markdown(" ")
 
         _trend_cats = st.tabs([
-            "ðŸ©¸ Hemograma", "ðŸ’ª Muscular", "ðŸ«€ LÃ­pidos",
-            "ðŸŒŸ Vitaminas", "ðŸ«˜ Renal", "ðŸ§ª Hormonal", "âš¡ Electrolitos",
+            "🩸 Hemograma", "💪 Muscular", "🫀 Lípidos",
+            "🌟 Vitaminas", "🫘 Renal", "🧪 Hormonal", "⚡ Electrolitos",
         ])
 
         with _trend_cats[0]:
@@ -2533,20 +2825,20 @@ elif page == "ðŸ©¸ Blood Labs":
             st.markdown(" ")
             _trend_chart(["eritrocitos", "leucocitos", "plaquetas"], "Series Celulares", 260)
             st.markdown(" ")
-            _trend_chart(["vcm", "hcm", "chcm"], "Ãndices Eritrocitarios", 250)
+            _trend_chart(["vcm", "hcm", "chcm"], "Índices Eritrocitarios", 250)
             st.markdown(" ")
-            _trend_chart(["sedimentacion"], "SedimentaciÃ³n (InflamaciÃ³n)", 230)
+            _trend_chart(["sedimentacion"], "Sedimentación (Inflamación)", 230)
 
         with _trend_cats[1]:
-            _trend_chart(["ck", "ldh"], "CK & LDH â€” Marcadores Musculares", 300)
+            _trend_chart(["ck", "ldh"], "CK & LDH — Marcadores Musculares", 300)
             st.markdown(" ")
             _trend_chart(["got_ast", "gpt_alt", "ggt", "fosfatasas_alc"],
-                         "Enzimas HepÃ¡ticas & Musculares", 280)
+                         "Enzimas Hepáticas & Musculares", 280)
 
         with _trend_cats[2]:
             _trend_chart(["colesterol_total", "hdl", "ldl"], "Perfil de Colesterol", 300)
             st.markdown(" ")
-            _trend_chart(["trigliceridos", "ac_urico"], "TriglicÃ©ridos & Ãcido Ãšrico", 260)
+            _trend_chart(["trigliceridos", "ac_urico"], "Triglicéridos & Ácido Úrico", 260)
 
         with _trend_cats[3]:
             _trend_chart(["vitamina_d", "vitamina_b12"], "Vitaminas D & B12", 300)
@@ -2554,26 +2846,26 @@ elif page == "ðŸ©¸ Blood Labs":
         with _trend_cats[4]:
             _trend_chart(["creatinina", "tfge"], "Creatinina & TFGe", 280)
             st.markdown(" ")
-            _trend_chart(["nitrogeno_ureico", "urea"], "NitrÃ³geno Ureico & Urea", 260)
+            _trend_chart(["nitrogeno_ureico", "urea"], "Nitrógeno Ureico & Urea", 260)
 
         with _trend_cats[5]:
-            _trend_chart(["tsh", "ft4"], "Tiroides â€” TSH & FT4", 280)
+            _trend_chart(["tsh", "ft4"], "Tiroides — TSH & FT4", 280)
             st.markdown(" ")
             _trend_chart(["psa_total"], "PSA Total", 230)
 
         with _trend_cats[6]:
             _trend_chart(["na", "k", "cl"], "Sodio, Potasio & Cloro", 280)
             st.markdown(" ")
-            _trend_chart(["calcio", "fosforo"], "Calcio & FÃ³sforo", 260)
+            _trend_chart(["calcio", "fosforo"], "Calcio & Fósforo", 260)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    # TAB 3 â€” CORRELACIÃ“N GARMIN
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB 3 — CORRELACIÓN GARMIN
+    # ─────────────────────────────────────────────────────────────────────────
     with _t3:
-        st.caption("SuperposiciÃ³n de biomarcadores con mÃ©tricas Garmin Connect")
+        st.caption("Superposición de biomarcadores con métricas Garmin Connect")
         st.markdown(" ")
 
-        # â”€â”€ 1. CK / LDH vs ATL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── 1. CK / LDH vs ATL ───────────────────────────────────────────────
         section("Marcadores Musculares vs Carga Aguda (ATL)",
                 "CK & LDH medidos en fechas de examen superpuestos con ATL")
 
@@ -2643,9 +2935,9 @@ elif page == "ðŸ©¸ Blood Labs":
             st.plotly_chart(chart(_fig_ck, 340, dict(l=0, r=0, t=14, b=0)),
                             use_container_width=True)
             st.caption(
-                "**InterpretaciÃ³n:** CK baja (120 U/L) con ATL moderado indica recuperaciÃ³n completa. "
-                "CK > 500 sostenido con ATL > 60 seÃ±ala sobreentrenamiento. "
-                "Las lÃ­neas punteadas verticales marcan fechas de extracciÃ³n."
+                "**Interpretación:** CK baja (120 U/L) con ATL moderado indica recuperación completa. "
+                "CK > 500 sostenido con ATL > 60 señala sobreentrenamiento. "
+                "Las líneas punteadas verticales marcan fechas de extracción."
             )
         else:
             st.info("Sincroniza Garmin para ver ATL superpuesto con CK/LDH.")
@@ -2653,9 +2945,9 @@ elif page == "ðŸ©¸ Blood Labs":
         st.markdown(" ")
         st.divider()
 
-        # â”€â”€ 2. Hemoglobina / Hematocrito vs VO2max â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("Hemoglobina & Hematocrito vs VOâ‚‚max estimado por Garmin",
-                "Capacidad de transporte de O2 y fitness aerÃ³bico")
+        # ── 2. Hemoglobina / Hematocrito vs VO2max ───────────────────────────
+        section("Hemoglobina & Hematocrito vs VO₂max estimado por Garmin",
+                "Capacidad de transporte de O2 y fitness aeróbico")
 
         _hb_vals_list  = [(pd.to_datetime(e["date"]), e["values"].get("hemoglobina"))
                           for e in _exams if e["values"].get("hemoglobina")]
@@ -2678,7 +2970,7 @@ elif page == "ðŸ©¸ Blood Labs":
             ), secondary_y=False)
             _fig_hb.add_hrect(y0=15.5, y1=17.5,
                                fillcolor="rgba(16,185,129,0.08)", line_width=0,
-                               annotation_text="Ã“ptimo atleta 15.5-17.5",
+                               annotation_text="Óptimo atleta 15.5-17.5",
                                annotation_position="bottom right",
                                annotation_font_size=9)
             _fig_hb.add_trace(go.Scatter(
@@ -2707,33 +2999,33 @@ elif page == "ðŸ©¸ Blood Labs":
             _hb_latest = lv.get("hemoglobina", 0) or 0
             _hct_latest = lv.get("hematocrito", 0) or 0
 
-            # Fick equation approximation: VO2max âˆ [Hb] Ã— CO (cardiac output)
-            # Empirical: each 1 g/dL Hb change â‰ˆ ~2-3% change in VO2max
+            # Fick equation approximation: VO2max ∝ [Hb] × CO (cardiac output)
+            # Empirical: each 1 g/dL Hb change ≈ ~2-3% change in VO2max
             _hb_ref = 15.5
             _hb_factor = round((_hb_latest - _hb_ref) / _hb_ref * 100, 1)
 
-            st.metric("VOâ‚‚max Run (Garmin)", f"{_vo2r_val:.0f} mL/kg/min",
+            st.metric("VO₂max Run (Garmin)", f"{_vo2r_val:.0f} mL/kg/min",
                       "Excelente (>60)" if _vo2r_val >= 60 else
                       "Bueno (55-60)" if _vo2r_val >= 55 else "Promedio")
-            st.metric("VOâ‚‚max Bike (Garmin)", f"{_vo2b_val:.0f} mL/kg/min")
+            st.metric("VO₂max Bike (Garmin)", f"{_vo2b_val:.0f} mL/kg/min")
             st.metric("Hb vs referencia atleta",
                       f"{_hb_latest} g/dL",
-                      f"â‰ˆ {_hb_factor:+.1f}% impacto en VOâ‚‚max")
+                      f"≈ {_hb_factor:+.1f}% impacto en VO₂max")
             st.markdown(" ")
             st.caption(
-                "**EcuaciÃ³n de Fick:**\n\n"
-                "VOâ‚‚max = CO Ã— (CaOâ‚‚ âˆ’ CvOâ‚‚)\n\n"
-                "Donde CaOâ‚‚ âˆ [Hb]. Una caÃ­da de 0.5 g/dL Hb "
-                "(17.0â†’16.5) representa â‰ˆ 1-2% reducciÃ³n teÃ³rica en VOâ‚‚max. "
-                "Tu nivel actual sigue siendo Ã©lite."
+                "**Ecuación de Fick:**\n\n"
+                "VO₂max = CO × (CaO₂ − CvO₂)\n\n"
+                "Donde CaO₂ ∝ [Hb]. Una caída de 0.5 g/dL Hb "
+                "(17.0→16.5) representa ≈ 1-2% reducción teórica en VO₂max. "
+                "Tu nivel actual sigue siendo élite."
             )
 
         st.markdown(" ")
         st.divider()
 
-        # â”€â”€ 3. Vitamina D vs Sleep Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("Vitamina D vs Calidad de SueÃ±o",
-                "Promedio sleep score Â± 14 dÃ­as antes de cada examen")
+        # ── 3. Vitamina D vs Sleep Score ──────────────────────────────────────
+        section("Vitamina D vs Calidad de Sueño",
+                "Promedio sleep score ± 14 días antes de cada examen")
 
         _vitd_sleep_rows = []
         for _e in _exams:
@@ -2765,11 +3057,11 @@ elif page == "ðŸ©¸ Blood Labs":
             # Vitamin D optimal band
             _fig_vd.add_hrect(y0=40, y1=70,
                                fillcolor="rgba(16,185,129,0.08)", line_width=0,
-                               annotation_text="Ã“ptimo atleta (40-70)",
+                               annotation_text="Óptimo atleta (40-70)",
                                annotation_position="top right",
                                annotation_font_size=9)
             _fig_vd.add_hline(y=30, line_dash="dot", line_color="#F59E0B",
-                               annotation_text="MÃ­nimo suficiente (30)",
+                               annotation_text="Mínimo suficiente (30)",
                                annotation_position="bottom right",
                                annotation_font_size=9)
             _fig_vd.add_trace(go.Scatter(
@@ -2805,64 +3097,64 @@ elif page == "ðŸ©¸ Blood Labs":
             _vd_delta  = _vd_latest - _vd_prev if _vd_prev else 0
 
             if _vd_latest < 30:
-                _vd_status = "ðŸ”´ Insuficiente â€” suplementar"
+                _vd_status = "🔴 Insuficiente — suplementar"
             elif _vd_latest < 40:
-                _vd_status = "ðŸŸ¡ SubÃ³ptimo para atleta"
+                _vd_status = "🟡 Subóptimo para atleta"
             elif _vd_latest < 60:
-                _vd_status = "âœ… Ã“ptimo"
+                _vd_status = "✅ Óptimo"
             else:
-                _vd_status = "âš ï¸ Revisar"
+                _vd_status = "⚠️ Revisar"
 
             st.metric("Vitamina D actual", f"{_vd_latest} ng/mL",
                       f"{_vd_delta:+.1f} ng/mL vs anterior" if _vd_prev else None)
             st.markdown(" ")
             st.caption(
                 f"**Estado:** {_vd_status}\n\n"
-                "**Â¿Por quÃ© importa para triatlÃ³n?**\n\n"
-                "- Fuerza muscular y potencia (â†“Vit D â†’ â†“ contractilidad)\n"
-                "- Inmunidad (â†“Vit D â†’ mayor riesgo ITRS post-esfuerzo)\n"
-                "- RecuperaciÃ³n Ã³sea (estrÃ©s repetitivo: run + bike)\n"
-                "- Calidad de sueÃ±o (receptores VDR en hipocampo)\n\n"
-                "**RecomendaciÃ³n:** Con {:.0f} ng/mL considera 2000â€“4000 UI/dÃ­a "
-                "de D3 + K2 hasta prÃ³ximo control.".format(_vd_latest)
+                "**¿Por qué importa para triatlón?**\n\n"
+                "- Fuerza muscular y potencia (↓Vit D → ↓ contractilidad)\n"
+                "- Inmunidad (↓Vit D → mayor riesgo ITRS post-esfuerzo)\n"
+                "- Recuperación ósea (estrés repetitivo: run + bike)\n"
+                "- Calidad de sueño (receptores VDR en hipocampo)\n\n"
+                "**Recomendación:** Con {:.0f} ng/mL considera 2000–4000 UI/día "
+                "de D3 + K2 hasta próximo control.".format(_vd_latest)
             )
 
         st.markdown(" ")
         st.divider()
 
-        # â”€â”€ 4. Correlation explanation table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        section("GuÃ­a de Correlaciones BioquÃ­micas Ã— Garmin", "Marco de referencia")
+        # ── 4. Correlation explanation table ─────────────────────────────────
+        section("Guía de Correlaciones Bioquímicas × Garmin", "Marco de referencia")
         _corr_data = [
             {"Biomarcador": "CK (Creatinquinasa)",
-             "SeÃ±al Garmin":    "ATL (Carga Aguda)",
-             "CorrelaciÃ³n esperada": "CK sube 24-48h post-esfuerzo intenso (ATL alto). CK basal <200 = buena recuperaciÃ³n.",
-             "AcciÃ³n si correlaciona": "Si CK > 400 con ATL > 60 por >5 dÃ­as â†’ reducir carga"},
+             "Señal Garmin":    "ATL (Carga Aguda)",
+             "Correlación esperada": "CK sube 24-48h post-esfuerzo intenso (ATL alto). CK basal <200 = buena recuperación.",
+             "Acción si correlaciona": "Si CK > 400 con ATL > 60 por >5 días → reducir carga"},
             {"Biomarcador": "LDH",
-             "SeÃ±al Garmin":    "TSB (Forma)",
-             "CorrelaciÃ³n esperada": "LDH elevado con TSB muy negativo indica fatiga acumulada.",
-             "AcciÃ³n si correlaciona": "TSB < -20 + LDH > 260 â†’ semana recuperaciÃ³n activa"},
+             "Señal Garmin":    "TSB (Forma)",
+             "Correlación esperada": "LDH elevado con TSB muy negativo indica fatiga acumulada.",
+             "Acción si correlaciona": "TSB < -20 + LDH > 260 → semana recuperación activa"},
             {"Biomarcador": "Hemoglobina / Hematocrito",
-             "SeÃ±al Garmin":    "VOâ‚‚max estimado",
-             "CorrelaciÃ³n esperada": "R â‰ˆ 0.7â€“0.85. Cada +1 g/dL Hb â‰ˆ +2-3% VOâ‚‚max.",
-             "AcciÃ³n si correlaciona": "Hb < 14.5 con plateau en VOâ‚‚ â†’ revisar fe sÃ©rico"},
+             "Señal Garmin":    "VO₂max estimado",
+             "Correlación esperada": "R ≈ 0.7–0.85. Cada +1 g/dL Hb ≈ +2-3% VO₂max.",
+             "Acción si correlaciona": "Hb < 14.5 con plateau en VO₂ → revisar fe sérico"},
             {"Biomarcador": "Vitamina D",
-             "SeÃ±al Garmin":    "Sleep Score / Body Battery",
-             "CorrelaciÃ³n esperada": "VitD bajo (<30) asocia a peor calidad de sueÃ±o y Body Battery reducida.",
-             "AcciÃ³n si correlaciona": "VitD < 30 + Sleep < 65 â†’ suplementaciÃ³n + revisar luz solar"},
+             "Señal Garmin":    "Sleep Score / Body Battery",
+             "Correlación esperada": "VitD bajo (<30) asocia a peor calidad de sueño y Body Battery reducida.",
+             "Acción si correlaciona": "VitD < 30 + Sleep < 65 → suplementación + revisar luz solar"},
             {"Biomarcador": "TSH / FT4 (Tiroides)",
-             "SeÃ±al Garmin":    "Resting HR / HRV",
-             "CorrelaciÃ³n esperada": "Hipotiroidismo â†’ HR elevada en reposo, HRV baja. Hipertiroidismo â†’ HR > 70 en reposo.",
-             "AcciÃ³n si correlaciona": "TSH > 3.5 + RHR elevada â†’ evaluaciÃ³n mÃ©dica"},
-            {"Biomarcador": "Ãcido Ãšrico",
-             "SeÃ±al Garmin":    "Carga semanal total (TSS)",
-             "CorrelaciÃ³n esperada": "Se eleva con semanas de TSS > 600 (catabolismo celular intenso).",
-             "AcciÃ³n si correlaciona": "Ac. Ãšrico > 6.5 en perÃ­odo de alta carga â†’ hidrataciÃ³n y descanso"},
+             "Señal Garmin":    "Resting HR / HRV",
+             "Correlación esperada": "Hipotiroidismo → HR elevada en reposo, HRV baja. Hipertiroidismo → HR > 70 en reposo.",
+             "Acción si correlaciona": "TSH > 3.5 + RHR elevada → evaluación médica"},
+            {"Biomarcador": "Ácido Úrico",
+             "Señal Garmin":    "Carga semanal total (TSS)",
+             "Correlación esperada": "Se eleva con semanas de TSS > 600 (catabolismo celular intenso).",
+             "Acción si correlaciona": "Ac. Úrico > 6.5 en período de alta carga → hidratación y descanso"},
         ]
         st.dataframe(pd.DataFrame(_corr_data), hide_index=True, use_container_width=True)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    # TAB 4 â€” IMPORTAR EXAMEN
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB 4 — IMPORTAR EXAMEN
+    # ─────────────────────────────────────────────────────────────────────────
     with _t4:
         import json as _json
         from utils.lab_parser import (
@@ -2871,7 +3163,7 @@ elif page == "ðŸ©¸ Blood Labs":
             generate_csv_template, generate_xlsx_template,
         )
 
-        # â”€â”€ Save helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Save helper ───────────────────────────────────────────────────────
         def _save_blood_exam(date_str: str, context: str,
                               lab_name: str, values: dict) -> tuple[bool, str]:
             p = DATA_DIR / "blood_tests.json"
@@ -2881,7 +3173,7 @@ elif page == "ðŸ©¸ Blood Labs":
                 data = {"biomarkers": _bm, "exams": []}
             new_exam = {
                 "date": date_str,
-                "lab": lab_name or "Laboratorio ClÃ­nico",
+                "lab": lab_name or "Laboratorio Clínico",
                 "context": context,
                 "values": {k: v for k, v in values.items()
                            if v is not None and v != 0.0},
@@ -2900,28 +3192,28 @@ elif page == "ðŸ©¸ Blood Labs":
             p.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
             return True, msg
 
-        # â”€â”€ Category groups for the review form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Category groups for the review form ───────────────────────────────
         _FORM_CATS = [
-            ("ðŸ©¸ Hemograma",         ["hemoglobina", "hematocrito", "eritrocitos",
+            ("🩸 Hemograma",         ["hemoglobina", "hematocrito", "eritrocitos",
                                        "vcm", "hcm", "chcm",
                                        "leucocitos", "plaquetas", "sedimentacion"]),
-            ("ðŸ’ª Muscular",           ["ck", "ldh"]),
-            ("ðŸ«€ LÃ­pidos",            ["colesterol_total", "hdl", "ldl",
+            ("💪 Muscular",           ["ck", "ldh"]),
+            ("🫀 Lípidos",            ["colesterol_total", "hdl", "ldl",
                                        "trigliceridos", "ac_urico"]),
-            ("âš—ï¸ Enzimas",            ["got_ast", "gpt_alt", "ggt",
+            ("⚗️ Enzimas",            ["got_ast", "gpt_alt", "ggt",
                                        "fosfatasas_alc", "bilirrubina_total"]),
-            ("ðŸ«˜ Renal",              ["creatinina", "tfge",
+            ("🫘 Renal",              ["creatinina", "tfge",
                                        "nitrogeno_ureico", "urea"]),
-            ("ðŸ”¬ BioquÃ­mica",         ["glucosa", "proteinas_totales",
+            ("🔬 Bioquímica",         ["glucosa", "proteinas_totales",
                                        "albumina", "globulinas"]),
-            ("ðŸŒŸ Vitaminas",          ["vitamina_d", "vitamina_b12"]),
-            ("âš¡ Electrolitos",       ["na", "k", "cl", "calcio", "fosforo"]),
-            ("ðŸ§ª Hormonal",           ["tsh", "ft4", "psa_total"]),
+            ("🌟 Vitaminas",          ["vitamina_d", "vitamina_b12"]),
+            ("⚡ Electrolitos",       ["na", "k", "cl", "calcio", "fosforo"]),
+            ("🧪 Hormonal",           ["tsh", "ft4", "psa_total"]),
         ]
 
-        # â”€â”€ UI: header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── UI: header ────────────────────────────────────────────────────────
         st.caption("Sube el informe de tu laboratorio (PDF, CSV o Excel) "
-                   "para actualizar automÃ¡ticamente el historial.")
+                   "para actualizar automáticamente el historial.")
         st.markdown(" ")
 
         _dl_col, _up_col = st.columns([1, 2], gap="large")
@@ -2931,12 +3223,12 @@ elif page == "ðŸ©¸ Blood Labs":
             _tpl_csv  = generate_csv_template(_bm)
             _tpl_xlsx = generate_xlsx_template(_bm)
             st.download_button(
-                "ðŸ“„ Plantilla CSV",
+                "📄 Plantilla CSV",
                 _tpl_csv, "plantilla_examen.csv", "text/csv",
                 use_container_width=True,
             )
             st.download_button(
-                "ðŸ“Š Plantilla Excel (.xlsx)",
+                "📊 Plantilla Excel (.xlsx)",
                 _tpl_xlsx,
                 "plantilla_examen.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2948,12 +3240,12 @@ elif page == "ðŸ©¸ Blood Labs":
                 "1. Descarga plantilla Excel\n"
                 "2. Abre el PDF de tu laboratorio\n"
                 "3. Copia los valores a la columna **valor**\n"
-                "4. Sube el Excel aquÃ­\n\n"
-                "O sube directamente el PDF del informe y el sistema intentarÃ¡ extraer los valores automÃ¡ticamente."
+                "4. Sube el Excel aquí\n\n"
+                "O sube directamente el PDF del informe y el sistema intentará extraer los valores automáticamente."
             )
 
         with _up_col:
-            section("Subir informe", "PDF Â· CSV Â· Excel")
+            section("Subir informe", "PDF · CSV · Excel")
             _uploaded_file = st.file_uploader(
                 "Arrastra o selecciona el archivo",
                 type=["pdf", "csv", "xlsx", "xls"],
@@ -2964,13 +3256,13 @@ elif page == "ðŸ©¸ Blood Labs":
         st.markdown(" ")
         st.divider()
 
-        # â”€â”€ Process upload â†’ extract values into session_state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Process upload → extract values into session_state ────────────────
         if _uploaded_file is not None:
             _file_sig = f"{_uploaded_file.name}_{_uploaded_file.size}"
             if st.session_state.get("bl_file_sig") != _file_sig:
                 _raw_bytes = _uploaded_file.read()
                 _ext = _uploaded_file.name.rsplit(".", 1)[-1].lower()
-                with st.spinner(f"Procesando {_uploaded_file.name}â€¦"):
+                with st.spinner(f"Procesando {_uploaded_file.name}…"):
                     if _ext == "pdf":
                         _raw_text  = extract_text_pdf(_raw_bytes)
                         _extracted = parse_lab_values(_raw_text)
@@ -2982,7 +3274,7 @@ elif page == "ðŸ©¸ Blood Labs":
                 st.session_state["bl_file_sig"]   = _file_sig
                 st.session_state["bl_file_name"]  = _uploaded_file.name
 
-        # â”€â”€ Extraction summary banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Extraction summary banner ─────────────────────────────────────────
         _extracted_vals: dict = st.session_state.get("bl_extracted", {})
         _n_found   = len(_extracted_vals)
         _n_total   = len(_bm)
@@ -2992,7 +3284,7 @@ elif page == "ðŸ©¸ Blood Labs":
             _pct = _n_found / _n_total * 100
             _bar_color = "#10B981" if _pct >= 60 else "#F59E0B" if _pct >= 30 else "#EF4444"
             st.success(
-                f"**{_file_name}** â€” {_n_found} / {_n_total} marcadores extraÃ­dos ({_pct:.0f}%) Â· "
+                f"**{_file_name}** — {_n_found} / {_n_total} marcadores extraídos ({_pct:.0f}%) · "
                 f"Revisa y corrige los valores antes de guardar."
             )
         elif _uploaded_file is None and not _extracted_vals:
@@ -3000,15 +3292,15 @@ elif page == "ðŸ©¸ Blood Labs":
 
         st.markdown(" ")
 
-        # â”€â”€ Review + manual entry form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Review + manual entry form ────────────────────────────────────────
         section("Revisar y completar valores",
-                "Corrige los extraÃ­dos Â· Agrega los faltantes Â· Deja en blanco los no medidos")
+                "Corrige los extraídos · Agrega los faltantes · Deja en blanco los no medidos")
 
         # Form key changes when a new file is uploaded (forces re-render with new defaults)
         _form_key = f"exam_form_{st.session_state.get('bl_file_sig', 'manual')}"
 
         with st.form(_form_key, border=True):
-            # â”€â”€ Exam metadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Exam metadata ─────────────────────────────────────────────────
             _meta_c1, _meta_c2, _meta_c3 = st.columns([1, 2, 1])
             _exam_date_input = _meta_c1.date_input(
                 "Fecha del examen",
@@ -3018,21 +3310,21 @@ elif page == "ðŸ©¸ Blood Labs":
             _context_input = _meta_c2.text_input(
                 "Contexto / nota",
                 value="Control de rutina",
-                placeholder="ej: Pre-temporada, post-Ironman, control anualâ€¦",
+                placeholder="ej: Pre-temporada, post-Ironman, control anual…",
             )
             _lab_input = _meta_c3.text_input(
                 "Laboratorio",
-                value="Laboratorio ClÃ­nico",
+                value="Laboratorio Clínico",
             )
 
             st.markdown(" ")
 
-            # â”€â”€ Biomarker inputs grouped by category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Biomarker inputs grouped by category ──────────────────────────
             _form_values: dict[str, Any] = {}
             for _cat_label, _cat_keys in _FORM_CATS:
                 with st.expander(
                     _cat_label + (
-                        f"  Â·  {sum(1 for k in _cat_keys if k in _extracted_vals)} extraÃ­dos"
+                        f"  ·  {sum(1 for k in _cat_keys if k in _extracted_vals)} extraídos"
                         if _extracted_vals else ""
                     ),
                     expanded=any(k in _extracted_vals for k in _cat_keys) or not _extracted_vals,
@@ -3043,7 +3335,7 @@ elif page == "ðŸ©¸ Blood Labs":
                         _lbl      = _bm_def.get("label", _key)
                         _unit     = _bm_def.get("unit", "")
                         _was_extr = _key in _extracted_vals
-                        _prefix   = "âœ… " if _was_extr else ""
+                        _prefix   = "✅ " if _was_extr else ""
                         _default  = float(_extracted_vals[_key]) if _was_extr else None
 
                         _v = _grid[_ci % 3].number_input(
@@ -3052,28 +3344,28 @@ elif page == "ðŸ©¸ Blood Labs":
                             min_value=0.0,
                             step=0.01,
                             format="%g",
-                            help=f"{_unit}  Â·  Ref: {_bm_def.get('ref_low','?')}â€“{_bm_def.get('ref_high','?')}  {_unit}\n\n{_bm_def.get('athlete_note','')}",
+                            help=f"{_unit}  ·  Ref: {_bm_def.get('ref_low','?')}–{_bm_def.get('ref_high','?')}  {_unit}\n\n{_bm_def.get('athlete_note','')}",
                             key=f"bl_{_form_key}_{_key}",
                         )
                         _form_values[_key] = _v
 
             st.markdown(" ")
 
-            # â”€â”€ Extracted-but-not-in-form catch-all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Extracted-but-not-in-form catch-all ───────────────────────────
             _leftover = {k: v for k, v in _extracted_vals.items()
                          if not any(k in ck for _, ck in _FORM_CATS)}
             if _leftover:
-                with st.expander(f"ðŸ” Otros valores extraÃ­dos ({len(_leftover)})"):
+                with st.expander(f"🔍 Otros valores extraídos ({len(_leftover)})"):
                     for _k, _v in _leftover.items():
                         st.caption(f"**{_k}**: {_v}")
 
-            # â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Submit ────────────────────────────────────────────────────────
             _save_col, _clear_col, _ = st.columns([2, 1, 3])
             _do_save  = _save_col.form_submit_button(
-                "ðŸ’¾  Guardar examen", use_container_width=True, type="primary"
+                "💾  Guardar examen", use_container_width=True, type="primary"
             )
             _do_clear = _clear_col.form_submit_button(
-                "ðŸ—‘ Limpiar", use_container_width=True
+                "🗑 Limpiar", use_container_width=True
             )
 
             if _do_save:
@@ -3082,7 +3374,7 @@ elif page == "ðŸ©¸ Blood Labs":
                     _date_str, _context_input, _lab_input, _form_values
                 )
                 if _ok:
-                    st.success(f"âœ… {_msg}")
+                    st.success(f"✅ {_msg}")
                     # Clear upload state so next visit is clean
                     for _sk in ("bl_extracted", "bl_file_sig", "bl_file_name"):
                         st.session_state.pop(_sk, None)
@@ -3095,26 +3387,26 @@ elif page == "ðŸ©¸ Blood Labs":
                     st.session_state.pop(_sk, None)
                 st.rerun()
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# ðŸ—ºï¸ TRAINING DETAIL
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-elif page == "ðŸ—ºï¸ Training Detail":
+# ══════════════════════════════════════════════════════════════════════════════
+# 🗺️ TRAINING DETAIL
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🗺️ Training Detail":
 
     if not has_data:
         st.info("No activities found. Sync Garmin from the sidebar.")
         st.stop()
 
-    # â”€â”€ Activity selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Activity selector ──────────────────────────────────────────────────────
     _acts = df_act.head(60).reset_index(drop=True)
 
     def _act_lbl(r):
-        ic  = SPORT_ICONS.get(r["sport"], "ðŸ“Š")
+        ic  = SPORT_ICONS.get(r["sport"], "📊")
         dt  = pd.Timestamp(r["date"]).strftime("%d %b %Y")
         d_m = float(r.get("distance_m") or 0)
         d_s = f"  {d_m/1000:.1f} km" if d_m > 100 else ""
         dur = _fmt_dur(float(r.get("duration_sec") or 0))
         nm  = str(r.get("name") or r["sport"])[:35]
-        return f"{ic}  {dt}  Â·  {nm}{d_s}  Â·  {dur}"
+        return f"{ic}  {dt}  ·  {nm}{d_s}  ·  {dur}"
 
     _sel = st.selectbox(
         "Actividad",
@@ -3124,7 +3416,7 @@ elif page == "ðŸ—ºï¸ Training Detail":
     )
     act = _acts.iloc[_sel]
 
-    # â”€â”€ Extract metrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Extract metrics ────────────────────────────────────────────────────────
     def _fv(col):
         """Safe float: returns None for NaN, None, or 0."""
         v = act.get(col)
@@ -3150,42 +3442,42 @@ elif page == "ðŸ—ºï¸ Training Detail":
     _swolf_v    = _fv("swolf")
     _aer_te     = _fv("aerobic_te")
     _act_col    = SPORT_COLORS.get(_sport, ACCENT)
-    _act_icon   = SPORT_ICONS.get(_sport, "ðŸ“Š")
+    _act_icon   = SPORT_ICONS.get(_sport, "📊")
     _act_nm     = str(act.get("name") or _sport)
-    _act_dt     = pd.Timestamp(act["date"]).strftime("%A, %d %b %Y Â· %H:%M")
+    _act_dt     = pd.Timestamp(act["date"]).strftime("%A, %d %b %Y · %H:%M")
 
-    # â”€â”€ Activity header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Activity header ────────────────────────────────────────────────────────
     st.markdown(f"### {_act_icon} {_act_nm}")
     st.caption(f"{_act_dt}")
     st.markdown(" ")
 
-    # â”€â”€ KPI row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── KPI row ────────────────────────────────────────────────────────────────
     _kc1, _kc2, _kc3, _kc4, _kc5, _kc6 = st.columns(6)
-    _kc1.metric("â± Tiempo",    _fmt_dur(_dur_sec))
-    _kc2.metric("ðŸ“ Distancia", f"{_dist_m/1000:.2f} km" if _dist_m > 100 else "â€”")
+    _kc1.metric("⏱ Tiempo",    _fmt_dur(_dur_sec))
+    _kc2.metric("📍 Distancia", f"{_dist_m/1000:.2f} km" if _dist_m > 100 else "—")
 
     if _sport == "bike" and _avg_pace and _avg_pace > 0:
-        _kc3.metric("âš¡ Vel. Media", f"{3600.0 / _avg_pace:.1f} km/h")
+        _kc3.metric("⚡ Vel. Media", f"{3600.0 / _avg_pace:.1f} km/h")
     elif _sport == "run" and _avg_pace and _avg_pace > 0:
-        _kc3.metric("ðŸƒ Ritmo",     _fmt_pace(_avg_pace) + " /km")
+        _kc3.metric("🏃 Ritmo",     _fmt_pace(_avg_pace) + " /km")
     elif _sport == "swim" and _avg_pace_sw and _avg_pace_sw > 0:
-        _kc3.metric("ðŸŠ Ritmo",     _fmt_pace(_avg_pace_sw) + " /100m")
+        _kc3.metric("🏊 Ritmo",     _fmt_pace(_avg_pace_sw) + " /100m")
     else:
-        _kc3.metric("âš¡ Vel. Media", "â€”")
+        _kc3.metric("⚡ Vel. Media", "—")
 
     if _avg_hr and _max_hr:
-        _kc4.metric("â¤ FC",       f"{int(_avg_hr)} / {int(_max_hr)} bpm", "avg / max")
+        _kc4.metric("❤ FC",       f"{int(_avg_hr)} / {int(_max_hr)} bpm", "avg / max")
     elif _avg_hr:
-        _kc4.metric("â¤ FC Media", f"{int(_avg_hr)} bpm")
+        _kc4.metric("❤ FC Media", f"{int(_avg_hr)} bpm")
     else:
-        _kc4.metric("â¤ FC", "â€”")
+        _kc4.metric("❤ FC", "—")
 
-    _kc5.metric("ðŸ“Š TSS", f"{_tss_v:.0f}" if _tss_v else "â€”",
+    _kc5.metric("📊 TSS", f"{_tss_v:.0f}" if _tss_v else "—",
                 f"IF {_if_val:.2f}" if _if_val else None)
-    _kc6.metric("ðŸ”¥ CalorÃ­as", f"{int(_calories)}" if _calories else "â€”")
+    _kc6.metric("🔥 Calorías", f"{int(_calories)}" if _calories else "—")
     st.markdown(" ")
 
-    # â”€â”€ Map + performance breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Map + performance breakdown ────────────────────────────────────────────
     _gps_real = False
     _elev     = []
     _lats     = []
@@ -3195,16 +3487,16 @@ elif page == "ðŸ—ºï¸ Training Detail":
 
     with _map_col:
         if _sport == "swim":
-            section("Ruta", "NataciÃ³n en piscina")
-            st.info("ðŸŠ Sin ruta GPS â€” actividad en piscina")
+            section("Ruta", "Natación en piscina")
+            st.info("🏊 Sin ruta GPS — actividad en piscina")
         else:
-            # â”€â”€ Auto-load real GPS from Garmin (cached locally) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Auto-load real GPS from Garmin (cached locally) ────────────────
             _act_id   = int(act.get("activity_id") or 0)
             _track_f  = DATA_DIR / "tracks" / f"{_act_id}.json"
             _gps_real = False
 
             if _act_id and _track_f.exists():
-                # Already cached â€” load instantly
+                # Already cached — load instantly
                 import json as _json
                 try:
                     _pts = _json.loads(_track_f.read_text())
@@ -3217,8 +3509,8 @@ elif page == "ðŸ—ºï¸ Training Detail":
                     pass
 
             if not _gps_real and _act_id:
-                # Not cached yet â€” fetch from Garmin with spinner
-                with st.spinner("Cargando GPS desde Garmin Connectâ€¦"):
+                # Not cached yet — fetch from Garmin with spinner
+                with st.spinner("Cargando GPS desde Garmin Connect…"):
                     try:
                         from garmin_connector import fetch_activity_gps
                         _g_email = os.environ.get("GARMIN_EMAIL", "")
@@ -3232,9 +3524,9 @@ elif page == "ðŸ—ºï¸ Training Detail":
                             _elev = [p.get("ele", 0) for p in _pts]
                             _gps_real = True
                         else:
-                            st.warning("âš ï¸ Esta actividad no tiene GPS (ej: piscina / trainer indoor).")
+                            st.warning("⚠️ Esta actividad no tiene GPS (ej: piscina / trainer indoor).")
                     except Exception as _gps_err:
-                        st.error(f"âŒ Error GPS: {_gps_err}")
+                        st.error(f"❌ Error GPS: {_gps_err}")
 
             if not _gps_real:
                 # Fallback: simulated route
@@ -3242,7 +3534,7 @@ elif page == "ðŸ—ºï¸ Training Detail":
                 _lats, _lons = _gen_activity_route(_dist_m or 8000, _sport, seed=_seed)
                 _elev    = [0] * len(_lats)
 
-            _map_src = "GPS real Â· Garmin Connect" if _gps_real else "GPS simulado"
+            _map_src = "GPS real · Garmin Connect" if _gps_real else "GPS simulado"
             section("Ruta", _map_src)
 
             _clat  = sum(_lats) / len(_lats)
@@ -3258,7 +3550,7 @@ elif page == "ðŸ—ºï¸ Training Detail":
                 marker=dict(size=_sizes, color=_act_col, opacity=0.85),
                 customdata=_elev,
                 hovertemplate=(
-                    "Lat %{lat:.5f} Â· Lon %{lon:.5f}<br>"
+                    "Lat %{lat:.5f} · Lon %{lon:.5f}<br>"
                     "Alt %{customdata:.0f} m<extra></extra>"
                 ),
                 name="Ruta",
@@ -3276,30 +3568,30 @@ elif page == "ðŸ—ºï¸ Training Detail":
             st.plotly_chart(_fig_map, use_container_width=True)
 
     with _stat_col:
-        section("Performance", "MÃ©tricas detalladas de la sesiÃ³n")
+        section("Performance", "Métricas detalladas de la sesión")
         st.markdown(" ")
 
         _detail_stats = []
-        if _avg_pwr:   _detail_stats.append(("ðŸ’ª Pot. Media",    f"{int(_avg_pwr)} W"))
-        if _norm_pwr:  _detail_stats.append(("âš™ Pot. Norm. (NP)", f"{int(_norm_pwr)} W"))
-        if _if_val:    _detail_stats.append(("ðŸ“ˆ Intensidad (IF)", f"{_if_val:.2f}"))
-        if _tss_v:     _detail_stats.append(("ðŸ“Š TSS",             f"{_tss_v:.0f}"))
+        if _avg_pwr:   _detail_stats.append(("💪 Pot. Media",    f"{int(_avg_pwr)} W"))
+        if _norm_pwr:  _detail_stats.append(("⚙ Pot. Norm. (NP)", f"{int(_norm_pwr)} W"))
+        if _if_val:    _detail_stats.append(("📈 Intensidad (IF)", f"{_if_val:.2f}"))
+        if _tss_v:     _detail_stats.append(("📊 TSS",             f"{_tss_v:.0f}"))
         if _avg_cad and _sport == "bike":
-            _detail_stats.append(("ðŸ”„ Cadencia",  f"{int(_avg_cad)} rpm"))
+            _detail_stats.append(("🔄 Cadencia",  f"{int(_avg_cad)} rpm"))
         elif _avg_cad and _sport == "run":
-            _detail_stats.append(("ðŸ‘£ Cadencia",  f"{int(_avg_cad)} spm"))
-        if _swolf_v:   _detail_stats.append(("ðŸŒ€ SWOLF",          f"{_swolf_v:.1f}"))
-        if _aer_te:    _detail_stats.append(("ðŸ« Aerobic TE",      f"{_aer_te:.1f}"))
-        if _calories:  _detail_stats.append(("ðŸ”¥ CalorÃ­as",        f"{int(_calories)} kcal"))
+            _detail_stats.append(("👣 Cadencia",  f"{int(_avg_cad)} spm"))
+        if _swolf_v:   _detail_stats.append(("🌀 SWOLF",          f"{_swolf_v:.1f}"))
+        if _aer_te:    _detail_stats.append(("🫁 Aerobic TE",      f"{_aer_te:.1f}"))
+        if _calories:  _detail_stats.append(("🔥 Calorías",        f"{int(_calories)} kcal"))
 
         # W/kg if bike + has power
         if _sport == "bike" and _avg_pwr and weight > 0:
-            _detail_stats.append(("âš– W/kg",  f"{_avg_pwr / weight:.2f}"))
+            _detail_stats.append(("⚖ W/kg",  f"{_avg_pwr / weight:.2f}"))
         # Zone label
         if _sport == "bike" and _avg_pwr and ftp > 0:
             _pz = power_zones(ftp)
-            _zn = next((k for k, (lo, hi) in _pz.items() if lo <= _avg_pwr < hi), "â€”")
-            _detail_stats.append(("ðŸŽ¯ Zona Potencia", _zn[:18]))
+            _zn = next((k for k, (lo, hi) in _pz.items() if lo <= _avg_pwr < hi), "—")
+            _detail_stats.append(("🎯 Zona Potencia", _zn[:18]))
 
         if _detail_stats:
             for _di in range(0, len(_detail_stats), 2):
@@ -3308,12 +3600,12 @@ elif page == "ðŸ—ºï¸ Training Detail":
                 if _di + 1 < len(_detail_stats):
                     _dc2.metric(_detail_stats[_di + 1][0], _detail_stats[_di + 1][1])
         else:
-            st.caption("Conecta Garmin con datos de potencia y HR para ver mÃ©tricas detalladas.")
+            st.caption("Conecta Garmin con datos de potencia y HR para ver métricas detalladas.")
 
     st.markdown(" ")
 
-    # â”€â”€ Synchronized performance charts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    section("AnÃ¡lisis de Rendimiento", "Potencia Â· FC Â· Altitud Â· Velocidad â€” datos simulados calibrados")
+    # ── Synchronized performance charts ───────────────────────────────────────
+    section("Análisis de Rendimiento", "Potencia · FC · Altitud · Velocidad — datos simulados calibrados")
 
     _ts = _gen_timeseries_td(_dur_sec, _sport, _avg_pwr, _avg_hr, _max_hr, _avg_pace)
 
@@ -3331,10 +3623,10 @@ elif page == "ðŸ—ºï¸ Training Detail":
         shared_xaxes=True,
         vertical_spacing=0.10,
         subplot_titles=[
-            ("âš¡ Potencia (W) & Frecuencia CardÃ­aca (bpm)"
+            ("⚡ Potencia (W) & Frecuencia Cardíaca (bpm)"
              if _sport == "bike" and _ts["power"]
-             else "â¤ Frecuencia CardÃ­aca (bpm)"),
-            "â›° Altitud (m) & Velocidad (km/h)",
+             else "❤ Frecuencia Cardíaca (bpm)"),
+            "⛰ Altitud (m) & Velocidad (km/h)",
         ],
         specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
     )
@@ -3407,10 +3699,10 @@ elif page == "ðŸ—ºï¸ Training Detail":
     _fig_perf.update_yaxes(showgrid=True, gridcolor="#F1F5F9", tickfont_size=10)
     st.plotly_chart(_fig_perf, use_container_width=True)
 
-    # â”€â”€ Power zone distribution (bike + power only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Power zone distribution (bike + power only) ───────────────────────────
     if _sport == "bike" and _ts["power"] and ftp > 0:
         st.markdown(" ")
-        section("DistribuciÃ³n de Zonas", "% de tiempo en cada zona de potencia")
+        section("Distribución de Zonas", "% de tiempo en cada zona de potencia")
 
         _pz      = power_zones(ftp)
         _pw_arr  = _ts["power"]
