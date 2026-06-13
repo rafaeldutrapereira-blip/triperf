@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KonaLabs — Dashboard del Atleta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+
+<style>
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── KONA PALETTE ────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #04080F;
+  --surface:   #08121E;
+  --surface2:  #0C1D30;
+  --border:    rgba(8,116,174,.18);
+  --border2:   rgba(8,116,174,.10);
+  --orange:    #FF6535;
+  --orange2:   #E8490A;
+  --gold:      #F0A500;
+  --coral:     #FF8C61;
+  --cyan:      #0EA5E9;
+  --aqua:      #22D3EE;
+  --green:     #10B981;
+  --red:       #EF4444;
+  --purple:    #A855F7;
+  --text:      #F0F9FF;
+  --muted:     #7FB3CC;
+  --dim:       #3D6880;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --ease:      220ms cubic-bezier(.4,0,.2,1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(4,8,15,.93);
+  backdrop-filter: blur(22px) saturate(160%);
+  border-bottom: 1px solid rgba(8,145,178,.15);
+}
+.nav-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 clamp(1.25rem,4vw,2.5rem);
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.nav-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem; font-weight: 800;
+  display: flex; align-items: center; gap: .35rem;
+}
+.nav-logo .acc { color: var(--orange); }
+.nav-logo svg { width: 22px; height: 22px; color: var(--orange); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a {
+  font-family: 'Oswald', sans-serif;
+  font-size: .82rem; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); transition: color var(--ease);
+  display: flex; align-items: center; gap: .3rem;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-links a.on { color: var(--orange); }
+.nav-right { display: flex; align-items: center; gap: .85rem; }
+.sync-btn {
+  display: flex; align-items: center; gap: .4rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: .75rem; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--aqua);
+  background: rgba(34,211,238,.08); border: 1px solid rgba(34,211,238,.2);
+  border-radius: 6px; padding: .45rem 1rem;
+  cursor: pointer; transition: all var(--ease);
+}
+.sync-btn:hover { background: rgba(34,211,238,.15); border-color: var(--aqua); }
+.sync-btn svg { width: 13px; height: 13px; }
+.sync-btn.spin svg { animation: spin360 1s linear infinite; }
+@keyframes spin360 { to { transform: rotate(360deg); } }
+.nav-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.05rem; font-weight: 900; color: #fff; flex-shrink: 0;
+}
+.nav-uname { font-size: .82rem; font-weight: 600; line-height: 1.1; }
+.nav-urole { font-size: .62rem; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .nav-uname, .nav-urole { display: none; }
+}
+
+/* ── CONTAINER ───────────────────────────────────────────────────────────── */
+.c { max-width: 1280px; margin: 0 auto; padding: 0 clamp(1.25rem,4vw,2.5rem); }
+
+/* ── BTN ─────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: .82rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; padding: .7rem 1.5rem;
+  border-radius: 6px; border: none; cursor: pointer;
+  transition: all var(--ease);
+}
+.btn-p { background: var(--orange); color: #fff; }
+.btn-p:hover { background: var(--orange2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,101,53,.28); }
+.btn-g { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+.btn-g:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-sm { padding: .42rem .95rem; font-size: .74rem; }
+
+/* ── DASH HEADER ─────────────────────────────────────────────────────────── */
+.dh {
+  padding-top: 64px;
+  background: linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);
+  border-bottom: 1px solid var(--border2);
+}
+.dh-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.25rem; flex-wrap: wrap;
+  padding: 1.5rem 0 1.4rem;
+}
+.dh-eye {
+  font-family: 'Oswald', sans-serif;
+  font-size: .68rem; font-weight: 500; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: .2rem;
+}
+.dh-h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.7rem,3.5vw,2.25rem);
+  font-weight: 900; letter-spacing: -.01em;
+  text-transform: uppercase; line-height: 1.05;
+}
+.dh-h1 em { color: var(--orange); font-style: normal; }
+.dh-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: .82rem; font-weight: 400; color: var(--muted);
+  letter-spacing: .02em; text-transform: none;
+  display: block; margin-top: .2rem;
+}
+.chip-row { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; }
+.chip {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .42rem .9rem; font-size: .78rem; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); white-space: nowrap;
+}
+.chip strong { color: var(--text); font-weight: 600; }
+.dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  animation: blink 2s ease-in-out infinite;
+}
+.dot-g  { background: var(--green);  box-shadow: 0 0 7px var(--green); }
+.dot-o  { background: var(--orange); box-shadow: 0 0 7px var(--orange); animation-duration: 2.4s; }
+.dot-c  { background: var(--aqua);   box-shadow: 0 0 7px var(--aqua);  animation: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── KPI CARDS ───────────────────────────────────────────────────────────── */
+.kpi-sec { padding: 1.5rem 0; }
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6,1fr);
+  gap: 1rem;
+}
+@media (max-width:1100px){ .kpi-grid { grid-template-columns: repeat(3,1fr); } }
+@media (max-width:580px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+
+.kc {
+  background: linear-gradient(145deg,#08121E,#060E1C);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  transition: all var(--ease); position: relative; overflow: hidden; cursor: default;
+}
+.kc::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--kc,var(--orange));
+  transform: scaleX(0); transform-origin: left; transition: transform var(--ease);
+}
+.kc:hover { border-color: var(--kc,var(--orange)); transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,.4); }
+.kc:hover::before { transform: scaleX(1); }
+.kc-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .7rem; }
+.kc-icon { width: 26px; height: 26px; color: var(--kc,var(--orange)); opacity: .85; }
+.badge {
+  font-size: .64rem; font-weight: 700; padding: .15rem .48rem;
+  border-radius: 4px; display: flex; align-items: center; gap: .18rem;
+}
+.badge svg { width: 9px; height: 9px; }
+.b-up   { color: var(--green);  background: rgba(16,185,129,.12); }
+.b-dn   { color: var(--red);    background: rgba(239,68,68,.12); }
+.b-warn { color: var(--gold);   background: rgba(240,165,0,.12); }
+.kc-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.3rem; font-weight: 900; line-height: 1; color: var(--text); margin-bottom: .2rem;
+}
+.kc-val .u { font-size: 1rem; color: var(--muted); margin-left: .05rem; }
+.kc-name { font-family:'Oswald',sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--dim); }
+.kc-sub  { font-size:.68rem; color:var(--dim); margin-top:.22rem; }
+
+/* ── MAIN GRID ───────────────────────────────────────────────────────────── */
+.ms { padding: 0 0 1.5rem; }
+.mg {
+  display: grid;
+  grid-template-columns: 1fr 346px;
+  gap: 1.25rem; align-items: start;
+}
+@media (max-width:1060px){ .mg { grid-template-columns: 1fr; } }
+
+/* ── PANEL ───────────────────────────────────────────────────────────────── */
+.panel {
+  background: linear-gradient(145deg,#08121E,#060E1C);
+  border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden;
+}
+.ph {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border2);
+  gap: 1rem; flex-wrap: wrap;
+}
+.pt {
+  font-family: 'Oswald', sans-serif;
+  font-size: .82rem; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.pt strong { color: var(--text); }
+.legend { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.leg {
+  display: flex; align-items: center; gap: .32rem;
+  font-size: .67rem; color: var(--dim); letter-spacing: .04em;
+}
+.ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.lb { width: 14px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── PMC ─────────────────────────────────────────────────────────────────── */
+.pmc-wrap { padding: .75rem 1.4rem 1.2rem; }
+#pmc { width: 100%; display: block; overflow: visible; }
+
+/* ── DISCIPLINE CARDS ────────────────────────────────────────────────────── */
+.dg {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1rem; margin-top: 1.25rem;
+}
+@media (max-width:800px){ .dg { grid-template-columns: repeat(2,1fr); } }
+@media (max-width:440px){ .dg { grid-template-columns: 1fr; } }
+
+.dc {
+  background: linear-gradient(145deg,#08121E,#060E1C);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  transition: all var(--ease); position: relative; overflow: hidden;
+}
+.dc::after {
+  content:''; position:absolute; top:0; left:0; bottom:0;
+  width:3px; background:var(--dc,var(--orange)); border-radius:0 3px 3px 0;
+}
+.dc:hover { border-color:var(--dc,var(--orange)); transform:translateY(-2px); }
+.dc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.8rem; }
+.dc-icon {
+  width:34px; height:34px; border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.04);
+  display:flex; align-items:center; justify-content:center;
+}
+.dc-icon svg { width:17px; height:17px; color:var(--dc,var(--orange)); }
+.dc-pct { font-family:'Barlow Condensed',sans-serif; font-size:1.25rem; font-weight:900; color:var(--dc,var(--orange)); }
+.dc-name { font-family:'Oswald',sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--dim); margin-bottom:.28rem; }
+.dc-val { font-family:'Barlow Condensed',sans-serif; font-size:1.85rem; font-weight:900; line-height:1; color:var(--text); }
+.dc-val span { font-size:.88rem; color:var(--muted); }
+.dc-tgt { font-size:.7rem; color:var(--dim); margin-bottom:.7rem; }
+.bar-t { height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; margin-bottom:.6rem; }
+.bar-f { height:100%; border-radius:2px; background:var(--dc,var(--orange)); width:0; transition:width 1.3s cubic-bezier(.4,0,.2,1); }
+.dc-stats { display:flex; gap:.8rem; flex-wrap:wrap; }
+.dc-stat { font-size:.68rem; color:var(--dim); display:flex; align-items:center; gap:.2rem; }
+.dc-stat svg { width:10px; height:10px; }
+.dc-stat strong { color:var(--muted); }
+
+/* ── RIGHT COL ───────────────────────────────────────────────────────────── */
+.rc { display:flex; flex-direction:column; gap:1.25rem; }
+
+/* Gauge */
+.gb { padding:1.3rem 1.4rem 1.1rem; display:flex; flex-direction:column; align-items:center; }
+.g-status {
+  font-family:'Oswald',sans-serif; font-size:.68rem; font-weight:700;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--green); margin-bottom:.8rem;
+}
+.g-svg { position:relative; width:164px; height:164px; margin:0 auto .85rem; }
+.g-svg svg { width:100%; height:100%; }
+.g-ctr {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+}
+.g-num {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:2.9rem; font-weight:900; line-height:1;
+  background:linear-gradient(135deg,var(--green),var(--aqua));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.g-lbl { font-family:'Oswald',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); margin-top:.1rem; }
+.g-rows { width:100%; display:flex; flex-direction:column; gap:.58rem; }
+.g-row { display:flex; align-items:center; gap:.65rem; }
+.g-rn { font-size:.72rem; color:var(--muted); min-width:80px; }
+.g-rb { flex:1; height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+.g-rf { height:100%; border-radius:2px; background:var(--gc,var(--green)); width:0; transition:width 1.4s cubic-bezier(.4,0,.2,1); }
+.g-rv { font-family:'Barlow Condensed',sans-serif; font-size:.85rem; font-weight:700; color:var(--text); min-width:2.5rem; text-align:right; }
+
+/* Next race */
+.nr-body { padding:1.2rem 1.4rem 1.3rem; }
+.nr-eye { font-family:'Oswald',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--aqua); margin-bottom:.28rem; }
+.nr-name { font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; font-weight:900; text-transform:uppercase; line-height:1.05; margin-bottom:.18rem; }
+.nr-meta { font-size:.72rem; color:var(--dim); margin-bottom:.95rem; }
+.cd4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.48rem; margin-bottom:.95rem; }
+.cd-b {
+  text-align:center; background:var(--surface2);
+  border:1px solid var(--border); border-radius:var(--radius-sm); padding:.48rem .15rem;
+}
+.cd-b .cn { font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; font-weight:900; line-height:1; color:var(--orange); display:block; }
+.cd-b .cl { font-size:.54rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); display:block; margin-top:.1rem; }
+
+/* TSS panel */
+.tp { padding:1.2rem 1.4rem 1.3rem; display:flex; flex-direction:column; gap:.75rem; }
+.tr { display:flex; flex-direction:column; gap:.3rem; }
+.tr-h { display:flex; justify-content:space-between; align-items:center; }
+.tr-n { font-size:.72rem; color:var(--muted); display:flex; align-items:center; gap:.28rem; }
+.tr-n svg { width:11px; height:11px; }
+.tr-v { font-size:.72rem; color:var(--text); font-weight:600; }
+.tb-t { height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+.tb-f { height:100%; border-radius:2px; background:var(--tc,var(--orange)); width:0; transition:width 1.25s cubic-bezier(.4,0,.2,1); }
+.t-tot { display:flex; justify-content:space-between; align-items:center; padding-top:.55rem; border-top:1px solid var(--border2); }
+.t-tot-l { font-size:.72rem; color:var(--muted); }
+.t-tot-v { font-family:'Barlow Condensed',sans-serif; font-size:1.48rem; font-weight:900; color:var(--text); }
+.t-tot-v span { font-size:.78rem; color:var(--dim); font-family:'Inter',sans-serif; font-weight:400; }
+.tm-t { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; margin-top:.38rem; }
+.tm-f { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--green),var(--cyan)); width:0; transition:width 1.4s cubic-bezier(.4,0,.2,1); }
+
+/* ── ACTIVITIES ──────────────────────────────────────────────────────────── */
+.as { padding-bottom:2.5rem; }
+.as-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:.95rem; gap:1rem; }
+.as-h2 { font-family:'Oswald',sans-serif; font-size:.86rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.as-h2 strong { color:var(--text); }
+.day-sep { font-family:'Oswald',sans-serif; font-size:.67rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); padding:.32rem 0; border-bottom:1px solid var(--border2); margin-bottom:.45rem; margin-top:.2rem; }
+.al { display:flex; flex-direction:column; gap:.65rem; }
+.ac {
+  display:grid; grid-template-columns:42px 1fr auto;
+  gap:1rem; align-items:center;
+  background:linear-gradient(145deg,#08121E,#060E1C);
+  border:1px solid var(--border2); border-radius:var(--radius);
+  padding:.88rem 1.2rem; cursor:default; transition:all var(--ease);
+}
+.ac:hover { border-color:rgba(8,145,178,.3); transform:translateX(3px); }
+.ac-icon { width:42px; height:42px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ac-icon svg { width:19px; height:19px; }
+.ac-name { font-family:'Oswald',sans-serif; font-size:.87rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; margin-bottom:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ac-meta { display:flex; gap:1.1rem; flex-wrap:wrap; font-size:.7rem; color:var(--dim); }
+.ac-meta span { display:flex; align-items:center; gap:.2rem; }
+.ac-meta svg { width:10px; height:10px; }
+.ac-meta strong { color:var(--muted); }
+.ac-tss { text-align:right; flex-shrink:0; }
+.ac-tv { font-family:'Barlow Condensed',sans-serif; font-size:1.52rem; font-weight:900; line-height:1; color:var(--text); }
+.ac-tl { font-family:'Oswald',sans-serif; font-size:.55rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+
+/* ── FOOTER ──────────────────────────────────────────────────────────────── */
+.foot { background:linear-gradient(180deg,#060E1C 0%,#04080F 100%); border-top:1px solid rgba(8,145,178,.1); padding:1.5rem 0; }
+.foot-in { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.foot-brand { font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; font-weight:900; display:flex; align-items:center; gap:.3rem; }
+.foot-brand span { color:var(--orange); }
+.foot-info { font-size:.74rem; color:var(--dim); }
+.foot-kona { font-size:.74rem; color:var(--orange); font-weight:600; }
+
+/* ── SCROLL-REVEAL ───────────────────────────────────────────────────────── */
+.sr { opacity:0; transform:translateY(20px); transition:opacity .55s ease,transform .55s ease; }
+.sr.vis { opacity:1; transform:none; }
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:3px; }
+
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ NAV ════════════════════════════════════════ -->
+<nav id="nav" role="navigation" aria-label="Navegación principal">
+  <div class="nav-inner">
+    <a href="landing.html" class="nav-logo" aria-label="KonaLabs inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      Kona<span class="acc">Labs</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="landing.html#disciplines">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>
+        Disciplinas
+      </a></li>
+      <li><a href="landing.html#calendar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Carreras
+      </a></li>
+      <li><a href="landing.html#plans">Planes</a></li>
+      <li><a href="#" class="on">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a></li>
+    </ul>
+
+    <div class="nav-right">
+      <button class="sync-btn" id="sync-btn" onclick="syncGarmin(this)" aria-label="Sincronizar Garmin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
+          <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>Sync Garmin</span>
+      </button>
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <div class="nav-avatar" aria-hidden="true">R</div>
+        <div>
+          <div class="nav-uname">Rafael</div>
+          <div class="nav-urole">Ironman 70.3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════ DASH HEADER ═════════════════════════════════ -->
+<div class="dh" role="banner">
+  <div class="c">
+    <div class="dh-inner">
+      <div>
+        <div class="dh-eye" id="date-lbl">Cargando...</div>
+        <h1 class="dh-h1">
+          Buenos días, <em>Rafael</em> 🌺
+          <span class="dh-sub">Semana de construcción &middot; Fase 3 de 4 &middot; Ciclo base</span>
+        </h1>
+      </div>
+      <div class="chip-row" role="status" aria-live="polite">
+        <div class="chip"><span class="dot dot-g"></span>Readiness <strong>78 / 100</strong></div>
+        <div class="chip"><span class="dot dot-o"></span>Próx. carrera <strong id="days-chip">-- días</strong></div>
+        <div class="chip" style="border-color:rgba(34,211,238,.22)">
+          <span class="dot dot-c"></span>
+          <span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span>
+          <span>hace 2h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════ KPI CARDS ═════════════════════════════════ -->
+<section class="kpi-sec" aria-label="Indicadores clave de rendimiento">
+  <div class="c">
+    <div class="kpi-grid">
+
+      <div class="kc sr" style="--kc:#10B981">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <div class="badge b-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-t="72">0</span></div>
+        <div class="kc-name">CTL — Fitness</div>
+        <div class="kc-sub">Carga crónica · 42 días</div>
+      </div>
+
+      <div class="kc sr" style="--kc:#FF6535">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-t="85">0</span></div>
+        <div class="kc-name">ATL — Fatiga</div>
+        <div class="kc-sub">Carga aguda · 7 días</div>
+      </div>
+
+      <div class="kc sr" style="--kc:#F0A500">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <div class="badge b-warn">Construyendo</div>
+        </div>
+        <div class="kc-val" style="color:var(--gold)">−<span class="cu" data-t="13">0</span></div>
+        <div class="kc-name">TSB — Forma</div>
+        <div class="kc-sub">CTL − ATL · meta: 0 → +5</div>
+      </div>
+
+      <div class="kc sr" style="--kc:#22D3EE">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="badge b-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+4ms</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-t="62">0</span><span class="u">ms</span></div>
+        <div class="kc-name">HRV Score</div>
+        <div class="kc-sub">Promedio 7 días</div>
+      </div>
+
+      <div class="kc sr" style="--kc:#A855F7">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div class="badge b-warn">93% meta</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-t="487">0</span></div>
+        <div class="kc-name">TSS Semana</div>
+        <div class="kc-sub">Meta: 520 TSS</div>
+      </div>
+
+      <div class="kc sr" style="--kc:#0EA5E9">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <div class="badge b-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+1.2</div>
+        </div>
+        <div class="kc-val">54<span class="u">.2</span></div>
+        <div class="kc-name">VO₂ Max</div>
+        <div class="kc-sub">ml/kg/min · Garmin</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ MAIN: PMC + RIGHT COL ═════════════════════════════ -->
+<section class="ms">
+  <div class="c">
+    <div class="mg">
+
+      <!-- LEFT -->
+      <div>
+        <!-- PMC Chart -->
+        <div class="panel sr">
+          <div class="ph">
+            <div class="pt">Performance Management Chart — <strong>16 Semanas</strong></div>
+            <div class="legend">
+              <span class="leg"><span class="ld" style="background:#10B981"></span>CTL Fitness</span>
+              <span class="leg"><span class="ld" style="background:#FF6535"></span>ATL Fatiga</span>
+              <span class="leg"><span class="ld" style="background:#0EA5E9"></span>TSB Forma</span>
+              <span class="leg"><span class="lb" style="background:rgba(168,85,247,.45)"></span>TSS</span>
+            </div>
+          </div>
+          <div class="pmc-wrap">
+            <svg id="pmc" height="280" role="img" aria-label="Gráfico PMC 16 semanas: CTL, ATL, TSB"></svg>
+          </div>
+        </div>
+
+        <!-- Discipline Breakdown -->
+        <div class="dg">
+
+          <div class="dc sr" style="--dc:#0EA5E9">
+            <div class="dc-head">
+              <div class="dc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/>
+                  <path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/>
+                  <circle cx="17.5" cy="5.5" r="2.5"/>
+                </svg>
+              </div>
+              <div class="dc-pct">87%</div>
+            </div>
+            <div class="dc-name">Natación</div>
+            <div class="dc-val">5.2<span> km</span></div>
+            <div class="dc-tgt">meta: 6.0 km</div>
+            <div class="bar-t"><div class="bar-f" data-w="87"></div></div>
+            <div class="dc-stats">
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>48</strong> TSS</span>
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>1:45</strong>/100m</span>
+            </div>
+          </div>
+
+          <div class="dc sr" style="--dc:#FF6535">
+            <div class="dc-head">
+              <div class="dc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                  <path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/>
+                  <path d="M5.5 17.5l3-8 3 3 2-5.5"/>
+                </svg>
+              </div>
+              <div class="dc-pct">89%</div>
+            </div>
+            <div class="dc-name">Ciclismo</div>
+            <div class="dc-val">142<span> km</span></div>
+            <div class="dc-tgt">meta: 160 km</div>
+            <div class="bar-t"><div class="bar-f" data-w="89"></div></div>
+            <div class="dc-stats">
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>312</strong> TSS</span>
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>240W</strong> FTP</span>
+            </div>
+          </div>
+
+          <div class="dc sr" style="--dc:#22C55E">
+            <div class="dc-head">
+              <div class="dc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+                  <path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/>
+                  <path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/>
+                </svg>
+              </div>
+              <div class="dc-pct">80%</div>
+            </div>
+            <div class="dc-name">Carrera</div>
+            <div class="dc-val">28<span> km</span></div>
+            <div class="dc-tgt">meta: 35 km</div>
+            <div class="bar-t"><div class="bar-f" data-w="80"></div></div>
+            <div class="dc-stats">
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>98</strong> TSS</span>
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>4:18</strong>/km</span>
+            </div>
+          </div>
+
+          <div class="dc sr" style="--dc:#A855F7">
+            <div class="dc-head">
+              <div class="dc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 8.5v7M18 8.5v7"/>
+                </svg>
+              </div>
+              <div class="dc-pct" style="color:var(--green)">100%</div>
+            </div>
+            <div class="dc-name">Fuerza</div>
+            <div class="dc-val">2<span> ses.</span></div>
+            <div class="dc-tgt">meta: 2 sesiones ✓</div>
+            <div class="bar-t"><div class="bar-f" data-w="100" style="background:var(--green)"></div></div>
+            <div class="dc-stats">
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><strong>Core + Glúteos</strong></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="rc">
+
+        <!-- Readiness Gauge -->
+        <div class="panel sr">
+          <div class="ph">
+            <div class="pt">Estado del <strong>Atleta</strong></div>
+            <span id="today-lbl" style="font-size:.7rem;color:var(--dim)">Hoy</span>
+          </div>
+          <div class="gb">
+            <div class="g-status">✓ BUENO — Apto para entrenar</div>
+            <div class="g-svg" aria-label="Readiness 78 de 100">
+              <svg viewBox="0 0 164 164" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="gG" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#10B981"/>
+                    <stop offset="100%" stop-color="#22D3EE"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="82" cy="82" r="68" stroke="rgba(8,145,178,.08)" stroke-width="11"/>
+                <circle cx="82" cy="82" r="68"
+                  stroke="url(#gG)" stroke-width="11" stroke-linecap="round"
+                  stroke-dasharray="427.26 427.26"
+                  stroke-dashoffset="427.26"
+                  transform="rotate(-90 82 82)"
+                  id="g-arc"
+                  style="transition:stroke-dashoffset 1.55s cubic-bezier(.4,0,.2,1)"/>
+              </svg>
+              <div class="g-ctr">
+                <div class="g-num" id="g-num">0</div>
+                <div class="g-lbl">/ 100</div>
+              </div>
+            </div>
+            <div class="g-rows">
+              <div class="g-row"><span class="g-rn">Sueño</span><div class="g-rb"><div class="g-rf" data-w="82" style="--gc:#10B981"></div></div><span class="g-rv">8.2h</span></div>
+              <div class="g-row"><span class="g-rn">HRV</span><div class="g-rb"><div class="g-rf" data-w="75" style="--gc:#22D3EE"></div></div><span class="g-rv">62ms</span></div>
+              <div class="g-row"><span class="g-rn">FC Reposo</span><div class="g-rb"><div class="g-rf" data-w="88" style="--gc:#0EA5E9"></div></div><span class="g-rv">42bpm</span></div>
+              <div class="g-row"><span class="g-rn">Fatiga musc.</span><div class="g-rb"><div class="g-rf" data-w="55" style="--gc:#F0A500"></div></div><span class="g-rv">Media</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Race -->
+        <div class="panel sr">
+          <div class="ph">
+            <div class="pt">Próxima <strong>Carrera</strong></div>
+            <span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.2);padding:.18rem .52rem;border-radius:4px">Olímpico</span>
+          </div>
+          <div class="nr-body">
+            <div class="nr-eye">🏊 · 🚴 · 🏃 &nbsp;Agosto 2026</div>
+            <div class="nr-name">Triatlón<br>Concón</div>
+            <div class="nr-meta">23 AGO · Concón, V Región, Chile</div>
+            <div class="cd4" role="timer" aria-label="Cuenta regresiva">
+              <div class="cd-b"><span class="cn" id="cd-d">--</span><span class="cl">días</span></div>
+              <div class="cd-b"><span class="cn" id="cd-h">--</span><span class="cl">hrs</span></div>
+              <div class="cd-b"><span class="cn" id="cd-m">--</span><span class="cl">min</span></div>
+              <div class="cd-b"><span class="cn" id="cd-s">--</span><span class="cl">seg</span></div>
+            </div>
+            <a href="landing.html#calendar" class="btn btn-p" style="width:100%;justify-content:center;font-size:.78rem">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Ver Calendario Completo
+            </a>
+          </div>
+        </div>
+
+        <!-- TSS vs Meta -->
+        <div class="panel sr">
+          <div class="ph">
+            <div class="pt">TSS <strong>vs Meta</strong></div>
+            <span style="font-size:.8rem;color:var(--green);font-weight:700">487 / 520</span>
+          </div>
+          <div class="tp">
+
+            <div class="tr">
+              <div class="tr-h">
+                <span class="tr-n"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" aria-hidden="true"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>Natación</span>
+                <span class="tr-v">48 TSS</span>
+              </div>
+              <div class="tb-t"><div class="tb-f" data-w="10" style="--tc:var(--cyan)"></div></div>
+            </div>
+
+            <div class="tr">
+              <div class="tr-h">
+                <span class="tr-n"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/></svg>Ciclismo</span>
+                <span class="tr-v">312 TSS</span>
+              </div>
+              <div class="tb-t"><div class="tb-f" data-w="64" style="--tc:var(--orange)"></div></div>
+            </div>
+
+            <div class="tr">
+              <div class="tr-h">
+                <span class="tr-n"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" aria-hidden="true"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/><path d="M11 12l-2 6"/></svg>Carrera</span>
+                <span class="tr-v">98 TSS</span>
+              </div>
+              <div class="tb-t"><div class="tb-f" data-w="20" style="--tc:var(--green)"></div></div>
+            </div>
+
+            <div>
+              <div class="t-tot">
+                <span class="t-tot-l">Total esta semana</span>
+                <span class="t-tot-v">487 <span>/ 520</span></span>
+              </div>
+              <div class="tm-t"><div class="tm-f" data-w="93.6"></div></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ RECENT ACTIVITIES ═════════════════════════════════ -->
+<section class="as" aria-label="Actividades recientes">
+  <div class="c">
+    <div class="as-row">
+      <h2 class="as-h2"><strong>Actividades</strong> Recientes</h2>
+      <button class="btn btn-g btn-sm">Ver historial</button>
+    </div>
+
+    <div class="al">
+
+      <div class="day-sep">Hoy &middot; Viernes 13 Jun 2026</div>
+      <div class="ac sr">
+        <div class="ac-icon" style="background:rgba(255,101,53,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/></svg>
+        </div>
+        <div>
+          <div class="ac-name">Queen K Intervals</div>
+          <div class="ac-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>1h 23m</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>42 km</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>248W</strong> NP</span>
+            <span>FC: <strong>158bpm</strong></span>
+          </div>
+        </div>
+        <div class="ac-tss"><div class="ac-tv">140</div><div class="ac-tl">TSS</div></div>
+      </div>
+
+      <div class="day-sep">Ayer &middot; Jueves 12 Jun</div>
+      <div class="ac sr">
+        <div class="ac-icon" style="background:rgba(14,165,233,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>
+        </div>
+        <div>
+          <div class="ac-name">CSS Pace Set &mdash; Kailua Bay</div>
+          <div class="ac-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>58min</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>3.8 km</strong></span>
+            <span>CSS: <strong>1:45</strong>/100m</span>
+            <span>SWOLF: <strong>38</strong></span>
+          </div>
+        </div>
+        <div class="ac-tss"><div class="ac-tv">42</div><div class="ac-tl">TSS</div></div>
+      </div>
+
+      <div class="day-sep">Miércoles 11 Jun</div>
+      <div class="ac sr">
+        <div class="ac-icon" style="background:rgba(34,197,94,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/><path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/></svg>
+        </div>
+        <div>
+          <div class="ac-name">Tempo Threshold &middot; Ali'i Drive</div>
+          <div class="ac-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>52min</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>12 km</strong></span>
+            <span>Pace: <strong>4:18</strong>/km</span>
+            <span>FC: <strong>164bpm</strong></span>
+          </div>
+        </div>
+        <div class="ac-tss"><div class="ac-tv">65</div><div class="ac-tl">TSS</div></div>
+      </div>
+
+      <div class="day-sep">Martes 10 Jun</div>
+      <div class="ac sr">
+        <div class="ac-icon" style="background:rgba(255,101,53,.08)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/></svg>
+        </div>
+        <div>
+          <div class="ac-name">LT Endurance &mdash; Queen K Highway</div>
+          <div class="ac-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>2h 45m</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>80 km</strong></span>
+            <span>NP: <strong>198W</strong></span>
+            <span>IF: <strong>0.82</strong></span>
+          </div>
+        </div>
+        <div class="ac-tss"><div class="ac-tv">182</div><div class="ac-tl">TSS</div></div>
+      </div>
+
+      <div class="day-sep">Lunes 9 Jun</div>
+      <div class="ac sr">
+        <div class="ac-icon" style="background:rgba(14,165,233,.07)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>
+        </div>
+        <div>
+          <div class="ac-name">Recovery Swim &mdash; Técnica Brazada</div>
+          <div class="ac-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>38min</strong></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>2.4 km</strong></span>
+            <span>CSS: <strong>1:52</strong>/100m</span>
+            <span style="color:var(--green);font-weight:600">Recovery ↓</span>
+          </div>
+        </div>
+        <div class="ac-tss"><div class="ac-tv">28</div><div class="ac-tl">TSS</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FOOTER ════════════════════════════════════ -->
+<footer class="foot">
+  <div class="c">
+    <div class="foot-in">
+      <div class="foot-brand">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Kona<span>Labs</span>
+      </div>
+      <p class="foot-info">Dashboard v1.0 &middot; <span id="foot-d"></span> &middot; Datos Garmin Connect</p>
+      <p class="foot-kona">Route to Kona 🌺</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════ JS ═════════════════════════════════════════ -->
+<script>
+/* ── Date labels ── */
+(function(){
+  var D=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var MS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var n=new Date(), d=n.getDate(), mo=n.getMonth(), y=n.getFullYear();
+  document.getElementById('date-lbl').textContent = D[n.getDay()]+', '+d+' '+M[mo]+' '+y+' · KonaLabs Dashboard';
+  document.getElementById('today-lbl').textContent = D[n.getDay()]+' '+d+' '+MS[mo];
+  document.getElementById('foot-d').textContent = d+' '+MS[mo]+' '+y;
+})();
+
+/* ── Countdown ── */
+function tick(){
+  var t=new Date('2026-08-23T07:00:00-04:00'), now=new Date(), diff=t-now;
+  if(diff<=0){['cd-d','cd-h','cd-m','cd-s'].forEach(function(i){document.getElementById(i).textContent='00';});return;}
+  var d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000),
+      m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  document.getElementById('cd-d').textContent=String(d).padStart(2,'0');
+  document.getElementById('cd-h').textContent=String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent=String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent=String(s).padStart(2,'0');
+  document.getElementById('days-chip').textContent=d+' días';
+}
+tick(); setInterval(tick,1000);
+
+/* ── Sync ── */
+function syncGarmin(btn){
+  btn.classList.add('spin');
+  var sp=btn.querySelector('span'); if(sp) sp.textContent='Sincronizando...';
+  setTimeout(function(){btn.classList.remove('spin'); if(sp) sp.textContent='Sync Garmin';},2800);
+}
+
+/* ── Count-up ── */
+function countUp(el,target,dur){
+  dur=dur||1200; var start=null;
+  (function step(ts){
+    if(!start) start=ts;
+    var p=Math.min((ts-start)/dur,1), e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(e*target);
+    if(p<1) requestAnimationFrame(step);
+  })(0);
+  requestAnimationFrame(function(ts){ start=ts; (function step(ts){ if(!start) start=ts; var p=Math.min((ts-start)/dur,1),e=1-Math.pow(1-p,3); el.textContent=Math.round(e*target); if(p<1) requestAnimationFrame(step); })(ts); });
+}
+
+/* ── Gauge ── */
+function animGauge(score){
+  var arc=document.getElementById('g-arc'), numEl=document.getElementById('g-num');
+  var C=2*Math.PI*68, end=C-(score/100)*C, st=null, dur=1550;
+  requestAnimationFrame(function step(ts){
+    if(!st) st=ts;
+    var p=Math.min((ts-st)/dur,1), e=1-Math.pow(1-p,3);
+    arc.style.strokeDashoffset=C-(C-end)*e;
+    numEl.textContent=Math.round(e*score);
+    if(p<1) requestAnimationFrame(step);
+  });
+}
+
+/* ── PMC Chart ── */
+var PMC=[
+  {l:'S1', ctl:45,atl:52,tss:380},{l:'S2', ctl:47,atl:68,tss:490},
+  {l:'S3', ctl:50,atl:55,tss:350},{l:'S4', ctl:52,atl:72,tss:525},
+  {l:'S5', ctl:55,atl:80,tss:595},{l:'S6', ctl:57,atl:58,tss:385},
+  {l:'S7', ctl:59,atl:84,tss:630},{l:'S8', ctl:62,atl:90,tss:665},
+  {l:'S9', ctl:63,atl:62,tss:415},{l:'S10',ctl:65,atl:88,tss:670},
+  {l:'S11',ctl:68,atl:94,tss:705},{l:'S12',ctl:69,atl:68,tss:445},
+  {l:'S13',ctl:70,atl:86,tss:645},{l:'S14',ctl:71,atl:88,tss:660},
+  {l:'S15',ctl:72,atl:91,tss:690},{l:'HOY',ctl:72,atl:85,tss:487}
+];
+
+function drawPMC(){
+  var el=document.getElementById('pmc'); if(!el) return;
+  var W=el.parentElement.clientWidth||640, H=280;
+  var pl=44,pr=14,pt=18,pb=36, CW=W-pl-pr, CH=H-pt-pb, n=PMC.length;
+  var YN=28,YX=100,TN=750;
+  function xS(i){return pl+(i/(n-1))*CW;}
+  function yS(v){return pt+CH-((v-YN)/(YX-YN))*CH;}
+  function yT(v){return pt+CH*0.56-(v/26)*(CH*0.4);}
+  function smooth(arr,fn){
+    var d='';
+    for(var i=0;i<arr.length;i++){
+      var x=xS(i).toFixed(1),y=fn(arr[i]).toFixed(1);
+      if(i===0){d+='M'+x+','+y;continue;}
+      var cx=((xS(i-1)+xS(i))/2).toFixed(1);
+      d+=' C'+cx+','+fn(arr[i-1]).toFixed(1)+' '+cx+','+y+' '+x+','+y;
+    }
+    return d;
+  }
+  var ctl=PMC.map(function(d){return d.ctl;}), atl=PMC.map(function(d){return d.atl;}), tsb=PMC.map(function(d){return d.ctl-d.atl;});
+  var lC=smooth(ctl,yS), lA=smooth(atl,yS), lT=smooth(tsb,yT);
+  var base=(pt+CH).toFixed(1), x0=pl.toFixed(1), xN=xS(n-1).toFixed(1);
+  var aC=lC+' L'+xN+','+base+' L'+x0+','+base+' Z';
+  var aA=lA+' L'+xN+','+base+' L'+x0+','+base+' Z';
+  var o='<defs>'
+    +'<linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10B981" stop-opacity=".2"/><stop offset="100%" stop-color="#10B981" stop-opacity=".01"/></linearGradient>'
+    +'<linearGradient id="gA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF6535" stop-opacity=".15"/><stop offset="100%" stop-color="#FF6535" stop-opacity=".01"/></linearGradient>'
+    +'</defs>';
+  [40,55,70,85,100].forEach(function(v){
+    var y=yS(v).toFixed(1);
+    o+='<line x1="'+pl+'" y1="'+y+'" x2="'+(pl+CW)+'" y2="'+y+'" stroke="rgba(61,104,128,.13)" stroke-width="1" stroke-dasharray="3 6"/>';
+    o+='<text x="'+(pl-5)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" fill="#3D6880" font-size="9.5" font-family="Oswald,sans-serif" font-weight="500">'+v+'</text>';
+  });
+  var tzy=yT(0).toFixed(1);
+  o+='<line x1="'+pl+'" y1="'+tzy+'" x2="'+(pl+CW)+'" y2="'+tzy+'" stroke="rgba(14,165,233,.18)" stroke-width="1" stroke-dasharray="4 4"/>';
+  PMC.forEach(function(d,i){
+    var bH=(d.tss/TN)*CH, bx=(xS(i)-8).toFixed(1), by=(pt+CH-bH).toFixed(1);
+    o+='<rect x="'+bx+'" y="'+by+'" width="16" height="'+bH.toFixed(1)+'" rx="2" fill="rgba(168,85,247,.11)"/>';
+  });
+  o+='<path d="'+aC+'" fill="url(#gC)"/><path d="'+aA+'" fill="url(#gA)"/>';
+  o+='<path id="lc" d="'+lC+'" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>';
+  o+='<path id="la" d="'+lA+'" fill="none" stroke="#FF6535" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="5 3"/>';
+  o+='<path id="lt" d="'+lT+'" fill="none" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round"/>';
+  var li=n-1, lx=xS(li).toFixed(1);
+  o+='<circle cx="'+lx+'" cy="'+yS(PMC[li].ctl).toFixed(1)+'" r="5.5" fill="#10B981"/>';
+  o+='<circle cx="'+lx+'" cy="'+yS(PMC[li].ctl).toFixed(1)+'" r="10" fill="rgba(16,185,129,.14)"/>';
+  o+='<circle cx="'+lx+'" cy="'+yS(PMC[li].atl).toFixed(1)+'" r="4" fill="#FF6535"/>';
+  o+='<circle cx="'+lx+'" cy="'+yT(PMC[li].ctl-PMC[li].atl).toFixed(1)+'" r="4" fill="#0EA5E9"/>';
+  PMC.forEach(function(d,i){
+    if(i%2===0||i===n-1){
+      var last=i===n-1;
+      o+='<text x="'+xS(i).toFixed(1)+'" y="'+(pt+CH+16)+'" text-anchor="middle" fill="'+(last?'#F0F9FF':'#3D6880')+'" font-size="'+(last?'10.5':'9.5')+'" font-family="Oswald,sans-serif" font-weight="'+(last?'700':'500')+'">'+d.l+'</text>';
+    }
+  });
+  el.setAttribute('viewBox','0 0 '+W+' '+H);
+  el.innerHTML=o;
+  setTimeout(function(){
+    ['lc','la','lt'].forEach(function(id){
+      var p=document.getElementById(id); if(!p) return;
+      try{
+        var len=p.getTotalLength();
+        p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+        p.style.transition='stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)';
+        requestAnimationFrame(function(){p.style.strokeDashoffset='0';});
+      }catch(e){}
+    });
+  },100);
+}
+
+/* ── Intersection Observer ── */
+var gaugeDone=false, pmcDone=false;
+var io=new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){
+    if(!entry.isIntersecting) return;
+    var el=entry.target;
+    el.classList.add('vis');
+    el.querySelectorAll('.cu').forEach(function(c){
+      var t=parseInt(c.dataset.t,10)||0; var st=null;
+      requestAnimationFrame(function step(ts){
+        if(!st) st=ts;
+        var p=Math.min((ts-st)/1200,1), e=1-Math.pow(1-p,3);
+        c.textContent=Math.round(e*t);
+        if(p<1) requestAnimationFrame(step);
+      });
+    });
+    el.querySelectorAll('.bar-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},200); });
+    el.querySelectorAll('.g-rf').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},300); });
+    el.querySelectorAll('.tb-f,.tm-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},250); });
+    if(!gaugeDone && el.querySelector('#g-arc')){
+      gaugeDone=true; setTimeout(function(){animGauge(78);},150);
+    }
+    if(!pmcDone && el.querySelector('#pmc')){
+      pmcDone=true; drawPMC();
+    }
+    io.unobserve(el);
+  });
+},{threshold:0.1});
+
+document.querySelectorAll('.sr').forEach(function(el){io.observe(el);});
+window.addEventListener('resize',function(){drawPMC();});
+</script>
+
+</body>
+</html>
