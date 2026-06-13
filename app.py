@@ -519,6 +519,87 @@ def _load_blood_tests() -> dict:
         return {}
     return _json.loads(p.read_text(encoding="utf-8"))
 
+# ── Training Detail helpers ────────────────────────────────────────────────────
+
+def _gen_activity_route(distance_m: float, sport: str, seed: int = 42):
+    """Generate a simulated GPS loop route as lat/lon lists."""
+    import numpy as _np
+    rng  = _np.random.default_rng(seed)
+    lat0, lon0 = 38.72, -9.14           # Lisbon area; override as needed
+    km   = max(1.0, float(distance_m) / 1000.0)
+    r_lat = (km / (2 * 3.14159)) / 111.0
+    r_lon = r_lat / max(0.01, float(_np.cos(_np.radians(lat0))))
+    n    = 100
+    ang  = _np.linspace(0, 2 * _np.pi, n + 1)
+    # Cumulative noise gives a more realistic irregular loop
+    noise_l = rng.normal(0, 0.14, n + 1).cumsum() * r_lat * 0.11
+    noise_o = rng.normal(0, r_lon * 0.12, n + 1)
+    lats = (lat0 + r_lat * _np.sin(ang) + noise_l).tolist()
+    lons = (lon0 + r_lon * _np.cos(ang) + noise_o).tolist()
+    return lats, lons
+
+
+def _gen_timeseries_td(dur_sec: float, sport: str,
+                       avg_pwr=None, avg_hr=None, max_hr=None, avg_pace=None):
+    """Simulated per-30s time-series scaled to real activity stats."""
+    import numpy as _np
+    n   = min(200, max(40, int(float(dur_sec) / 30)))
+    rng = _np.random.default_rng(17)
+    t   = _np.linspace(0, 1, n)
+
+    warm = _np.clip(t / 0.12, 0, 1)
+    cool = _np.clip((1.0 - t) / 0.10, 0, 1)
+    blk1 = _np.clip(_np.sin(_np.pi * _np.clip((t - 0.20) / 0.22, 0, 1)), 0, 1)
+    blk2 = _np.clip(_np.sin(_np.pi * _np.clip((t - 0.62) / 0.22, 0, 1)), 0, 1)
+    ci   = warm * cool * (0.65 + _np.maximum(blk1, blk2) * 0.35) + rng.normal(0, 0.025, n)
+    ci   = _np.clip(ci, 0, 1)
+
+    # Power (bike only)
+    if sport == "bike" and avg_pwr and float(avg_pwr) > 0:
+        pw = float(avg_pwr) * 0.78 + ci * float(avg_pwr) * 0.74 + rng.normal(0, 18, n)
+        power = pw.clip(0).round(0).astype(int).tolist()
+    elif sport == "bike":
+        power = (140 + ci * 145 + rng.normal(0, 20, n)).clip(0).round(0).astype(int).tolist()
+    else:
+        power = None
+
+    # HR
+    hr_base = float(avg_hr or 135) * 0.78
+    hr_peak = float(max_hr or (float(avg_hr or 155) * 1.10))
+    hr_list = (hr_base + ci * (hr_peak - hr_base) + rng.normal(0, 3, n))\
+              .clip(50, 220).round(0).astype(int).tolist()
+
+    # Altitude (m)
+    ag  = 420 if sport == "bike" else 160 if sport == "run" else 0
+    alt = (80 + _np.sin(t * _np.pi) * ag * 0.68
+           + _np.sin(t * _np.pi * 4) * ag * 0.12
+           + rng.normal(0, 5, n)).clip(0)
+    altitude = alt.round(0).astype(int).tolist()
+
+    # Speed (km/h)
+    if sport == "bike":
+        bs  = 3600.0 / float(avg_pace) if avg_pace and float(avg_pace) > 0 else 36.0
+        spd = (bs * (0.62 + ci * 0.58) + rng.normal(0, 1.8, n)).clip(5)
+    elif sport == "run":
+        bs  = 3600.0 / float(avg_pace) if avg_pace and float(avg_pace) > 0 else 12.0
+        spd = (bs * (0.88 + ci * 0.22) + rng.normal(0, 0.35, n)).clip(3)
+    elif sport == "swim":
+        spd = (3.2 + ci * 1.5 + rng.normal(0, 0.12, n)).clip(1)
+    else:
+        spd = (8.0 + ci * 6.0 + rng.normal(0, 0.8, n)).clip(0)
+    speed = spd.round(1).tolist()
+
+    # Time labels (MM:SS or H:MM:SS)
+    labels = []
+    for i in range(n):
+        s = int(i * float(dur_sec) / n)
+        labels.append(f"{s//3600}:{(s%3600)//60:02d}:{s%60:02d}"
+                      if dur_sec >= 3600 else f"{s//60:02d}:{s%60:02d}")
+
+    return {"time": labels, "power": power, "hr": hr_list,
+            "altitude": altitude, "speed": speed}
+
+
 def chart(fig, height=300, margin=None):
     m = margin or dict(l=4, r=4, t=12, b=4)
     fig.update_layout(
@@ -612,7 +693,7 @@ with st.sidebar:
         ["👤 Athlete Profile", "📋 Training Plan", "📊 Dashboard",
          "📈 Training Load", "🏊 Swimming", "🚴 Cycling",
          "🏃 Running", "🍎 Nutrition", "🏆 Race Predictor",
-         "🩸 Blood Labs"],
+         "🩸 Blood Labs", "🗺️ Training Detail"],
         label_visibility="collapsed",
     )
 
@@ -671,7 +752,8 @@ PAGE_TITLES = {
     "🍎 Nutrition": "Nutrition",
     "👤 Athlete Profile": "Athlete Profile",
     "🏆 Race Predictor": "Race Predictor",
-    "🩸 Blood Labs":     "Blood Labs · Biochemistry",
+    "🩸 Blood Labs":       "Blood Labs · Biochemistry",
+    "🗺️ Training Detail": "Training Detail · Activity Analysis",
 }
 col_h, col_s = st.columns([5, 1])
 col_h.markdown(f"## {PAGE_TITLES.get(page, page)}")
@@ -3304,3 +3386,282 @@ elif page == "🩸 Blood Labs":
                 for _sk in ("bl_extracted", "bl_file_sig", "bl_file_name"):
                     st.session_state.pop(_sk, None)
                 st.rerun()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🗺️ TRAINING DETAIL
+# ══════════════════════════════════════════════════════════════════════════════
+elif page == "🗺️ Training Detail":
+
+    if not has_data:
+        st.info("No activities found. Sync Garmin from the sidebar.")
+        st.stop()
+
+    # ── Activity selector ──────────────────────────────────────────────────────
+    _acts = df_act.head(60).reset_index(drop=True)
+
+    def _act_lbl(r):
+        ic  = SPORT_ICONS.get(r["sport"], "📊")
+        dt  = pd.Timestamp(r["date"]).strftime("%d %b %Y")
+        d_m = float(r.get("distance_m") or 0)
+        d_s = f"  {d_m/1000:.1f} km" if d_m > 100 else ""
+        dur = _fmt_dur(float(r.get("duration_sec") or 0))
+        nm  = str(r.get("name") or r["sport"])[:35]
+        return f"{ic}  {dt}  ·  {nm}{d_s}  ·  {dur}"
+
+    _sel = st.selectbox(
+        "Actividad",
+        range(len(_acts)),
+        format_func=lambda i: _act_lbl(_acts.iloc[i]),
+        label_visibility="collapsed",
+    )
+    act = _acts.iloc[_sel]
+
+    # ── Extract metrics ────────────────────────────────────────────────────────
+    _sport      = act.get("sport", "bike")
+    _dur_sec    = float(act.get("duration_sec") or 0)
+    _dist_m     = float(act.get("distance_m") or 0)
+    _avg_hr     = float(act.get("avg_hr") or 0) or None
+    _max_hr     = float(act.get("max_hr") or 0) or None
+    _calories   = float(act.get("calories") or 0) or None
+    _avg_pwr    = float(act.get("avg_power") or 0) or None
+    _norm_pwr   = float(act.get("norm_power") or 0) or None
+    _tss_v      = float(act.get("tss") or 0) or None
+    _if_val     = float(act.get("if_factor") or 0) or None
+    _avg_pace   = float(act.get("avg_pace_sec_km") or 0) or None
+    _avg_pace_sw= float(act.get("avg_pace_100m") or 0) or None
+    _avg_cad    = float(act.get("avg_cadence") or 0) or None
+    _swolf_v    = float(act.get("swolf") or 0) or None
+    _aer_te     = float(act.get("aerobic_te") or 0) or None
+    _act_col    = SPORT_COLORS.get(_sport, ACCENT)
+    _act_icon   = SPORT_ICONS.get(_sport, "📊")
+    _act_nm     = str(act.get("name") or _sport)
+    _act_dt     = pd.Timestamp(act["date"]).strftime("%A, %d %b %Y · %H:%M")
+
+    # ── Activity header ────────────────────────────────────────────────────────
+    st.markdown(f"### {_act_icon} {_act_nm}")
+    st.caption(f"{_act_dt}")
+    st.markdown(" ")
+
+    # ── KPI row ────────────────────────────────────────────────────────────────
+    _kc1, _kc2, _kc3, _kc4, _kc5, _kc6 = st.columns(6)
+    _kc1.metric("⏱ Tiempo",    _fmt_dur(_dur_sec))
+    _kc2.metric("📍 Distancia", f"{_dist_m/1000:.2f} km" if _dist_m > 100 else "—")
+
+    if _sport == "bike" and _avg_pace and _avg_pace > 0:
+        _kc3.metric("⚡ Vel. Media", f"{3600.0 / _avg_pace:.1f} km/h")
+    elif _sport == "run" and _avg_pace and _avg_pace > 0:
+        _kc3.metric("🏃 Ritmo",     _fmt_pace(_avg_pace) + " /km")
+    elif _sport == "swim" and _avg_pace_sw and _avg_pace_sw > 0:
+        _kc3.metric("🏊 Ritmo",     _fmt_pace(_avg_pace_sw) + " /100m")
+    else:
+        _kc3.metric("⚡ Vel. Media", "—")
+
+    if _avg_hr and _max_hr:
+        _kc4.metric("❤ FC",       f"{int(_avg_hr)} / {int(_max_hr)} bpm", "avg / max")
+    elif _avg_hr:
+        _kc4.metric("❤ FC Media", f"{int(_avg_hr)} bpm")
+    else:
+        _kc4.metric("❤ FC", "—")
+
+    _kc5.metric("📊 TSS", f"{_tss_v:.0f}" if _tss_v else "—",
+                f"IF {_if_val:.2f}" if _if_val else None)
+    _kc6.metric("🔥 Calorías", f"{int(_calories)}" if _calories else "—")
+    st.markdown(" ")
+
+    # ── Map + performance breakdown ────────────────────────────────────────────
+    _map_col, _stat_col = st.columns([3, 2], gap="large")
+
+    with _map_col:
+        section("Ruta", "GPS track simulado · datos reales disponibles al conectar Garmin")
+        if _sport == "swim":
+            st.info("🏊 Natación en piscina — sin ruta GPS")
+        else:
+            _seed    = int(abs(hash(str(act.get("activity_id", 0)))) % 9999)
+            _lats, _lons = _gen_activity_route(_dist_m or 8000, _sport, seed=_seed)
+            _clat    = sum(_lats) / len(_lats)
+            _clon    = sum(_lons) / len(_lons)
+            _zoom    = 12 if _dist_m < 15000 else 11 if _dist_m < 40000 else 10
+
+            _n_pts  = len(_lats)
+            _sizes  = [10 if i in (0, _n_pts - 1) else 2 for i in range(_n_pts)]
+            _colors = [_act_col] * _n_pts
+
+            _fig_map = go.Figure(go.Scattermapbox(
+                lat=_lats, lon=_lons,
+                mode="lines+markers",
+                line=dict(width=3, color=_act_col),
+                marker=dict(size=_sizes, color=_colors, opacity=0.85),
+                hovertemplate="Lat %{lat:.4f} · Lon %{lon:.4f}<extra></extra>",
+                name="Ruta",
+            ))
+            _fig_map.update_layout(
+                mapbox=dict(
+                    style="open-street-map",
+                    center=dict(lat=_clat, lon=_clon),
+                    zoom=_zoom,
+                ),
+                height=360,
+                margin=dict(l=0, r=0, t=0, b=0),
+                showlegend=False,
+            )
+            st.plotly_chart(_fig_map, use_container_width=True)
+
+    with _stat_col:
+        section("Performance", "Métricas detalladas de la sesión")
+        st.markdown(" ")
+
+        _detail_stats = []
+        if _avg_pwr:   _detail_stats.append(("💪 Pot. Media",    f"{int(_avg_pwr)} W"))
+        if _norm_pwr:  _detail_stats.append(("⚙ Pot. Norm. (NP)", f"{int(_norm_pwr)} W"))
+        if _if_val:    _detail_stats.append(("📈 Intensidad (IF)", f"{_if_val:.2f}"))
+        if _tss_v:     _detail_stats.append(("📊 TSS",             f"{_tss_v:.0f}"))
+        if _avg_cad and _sport == "bike":
+            _detail_stats.append(("🔄 Cadencia",  f"{int(_avg_cad)} rpm"))
+        elif _avg_cad and _sport == "run":
+            _detail_stats.append(("👣 Cadencia",  f"{int(_avg_cad)} spm"))
+        if _swolf_v:   _detail_stats.append(("🌀 SWOLF",          f"{_swolf_v:.1f}"))
+        if _aer_te:    _detail_stats.append(("🫁 Aerobic TE",      f"{_aer_te:.1f}"))
+        if _calories:  _detail_stats.append(("🔥 Calorías",        f"{int(_calories)} kcal"))
+
+        # W/kg if bike + has power
+        if _sport == "bike" and _avg_pwr and weight > 0:
+            _detail_stats.append(("⚖ W/kg",  f"{_avg_pwr / weight:.2f}"))
+        # Zone label
+        if _sport == "bike" and _avg_pwr and ftp > 0:
+            _pz = power_zones(ftp)
+            _zn = next((k for k, (lo, hi) in _pz.items() if lo <= _avg_pwr < hi), "—")
+            _detail_stats.append(("🎯 Zona Potencia", _zn[:18]))
+
+        if _detail_stats:
+            for _di in range(0, len(_detail_stats), 2):
+                _dc1, _dc2 = st.columns(2)
+                _dc1.metric(_detail_stats[_di][0], _detail_stats[_di][1])
+                if _di + 1 < len(_detail_stats):
+                    _dc2.metric(_detail_stats[_di + 1][0], _detail_stats[_di + 1][1])
+        else:
+            st.caption("Conecta Garmin con datos de potencia y HR para ver métricas detalladas.")
+
+    st.markdown(" ")
+
+    # ── Synchronized performance charts ───────────────────────────────────────
+    section("Análisis de Rendimiento", "Potencia · FC · Altitud · Velocidad — datos simulados calibrados")
+
+    _ts = _gen_timeseries_td(_dur_sec, _sport, _avg_pwr, _avg_hr, _max_hr, _avg_pace)
+
+    _fig_perf = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.10,
+        subplot_titles=[
+            ("⚡ Potencia (W) & Frecuencia Cardíaca (bpm)"
+             if _sport == "bike" and _ts["power"]
+             else "❤ Frecuencia Cardíaca (bpm)"),
+            "⛰ Altitud (m) & Velocidad (km/h)",
+        ],
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+    )
+
+    if _sport == "bike" and _ts["power"]:
+        # Row 1 primary: Power (area)
+        _fig_perf.add_trace(go.Scatter(
+            x=_ts["time"], y=_ts["power"],
+            name="Potencia",
+            fill="tozeroy", fillcolor="rgba(245,158,11,0.15)",
+            line=dict(color=COL_BIKE, width=1.8),
+            hovertemplate="%{y} W<extra>Potencia</extra>",
+        ), row=1, col=1, secondary_y=False)
+        # Row 1 secondary: HR (line)
+        _fig_perf.add_trace(go.Scatter(
+            x=_ts["time"], y=_ts["hr"],
+            name="FC",
+            line=dict(color=COL_ATL, width=1.8, dash="solid"),
+            hovertemplate="%{y} bpm<extra>FC</extra>",
+        ), row=1, col=1, secondary_y=True)
+        # FTP reference
+        _fig_perf.add_hline(y=ftp, line_dash="dash", line_color="#94A3B8",
+                            annotation_text=f"FTP {ftp}W",
+                            annotation_font_size=9,
+                            row=1, col=1, secondary_y=False)
+        _fig_perf.update_yaxes(title_text="Watts", row=1, col=1, secondary_y=False)
+        _fig_perf.update_yaxes(title_text="bpm",   row=1, col=1, secondary_y=True,
+                               showgrid=False)
+    else:
+        # Row 1 primary: HR only (area)
+        _fig_perf.add_trace(go.Scatter(
+            x=_ts["time"], y=_ts["hr"],
+            name="FC",
+            fill="tozeroy", fillcolor="rgba(239,68,68,0.12)",
+            line=dict(color=COL_ATL, width=1.8),
+            hovertemplate="%{y} bpm<extra>FC</extra>",
+        ), row=1, col=1, secondary_y=False)
+        _fig_perf.update_yaxes(title_text="bpm", row=1, col=1, secondary_y=False)
+
+    # Row 2 primary: Altitude (area)
+    _fig_perf.add_trace(go.Scatter(
+        x=_ts["time"], y=_ts["altitude"],
+        name="Altitud",
+        fill="tozeroy", fillcolor="rgba(6,182,212,0.18)",
+        line=dict(color=COL_SWIM, width=1.8),
+        hovertemplate="%{y} m<extra>Altitud</extra>",
+    ), row=2, col=1, secondary_y=False)
+    # Row 2 secondary: Speed (line)
+    _fig_perf.add_trace(go.Scatter(
+        x=_ts["time"], y=_ts["speed"],
+        name="Velocidad",
+        line=dict(color=COL_RUN, width=1.8),
+        hovertemplate="%{y} km/h<extra>Vel.</extra>",
+    ), row=2, col=1, secondary_y=True)
+
+    _fig_perf.update_yaxes(title_text="m alt.", row=2, col=1, secondary_y=False)
+    _fig_perf.update_yaxes(title_text="km/h",   row=2, col=1, secondary_y=True,
+                           showgrid=False)
+
+    _fig_perf.update_layout(
+        height=500,
+        template="plotly_white",
+        margin=dict(l=4, r=4, t=32, b=4),
+        plot_bgcolor=CARD, paper_bgcolor=CARD,
+        font=dict(family="Inter, sans-serif", size=11, color=TEXT2),
+        legend=dict(orientation="h", y=1.06, font_size=11, bgcolor="rgba(0,0,0,0)"),
+        hovermode="x unified",
+    )
+    _fig_perf.update_xaxes(showgrid=True, gridcolor="#F1F5F9", tickfont_size=10)
+    _fig_perf.update_yaxes(showgrid=True, gridcolor="#F1F5F9", tickfont_size=10)
+    st.plotly_chart(_fig_perf, use_container_width=True)
+
+    # ── Power zone distribution (bike + power only) ───────────────────────────
+    if _sport == "bike" and _ts["power"] and ftp > 0:
+        st.markdown(" ")
+        section("Distribución de Zonas", "% de tiempo en cada zona de potencia")
+
+        _pz      = power_zones(ftp)
+        _pw_arr  = _ts["power"]
+        _z_names  = list(_pz.keys())
+        _z_counts = [sum(1 for p in _pw_arr if lo <= p < hi) for lo, hi in _pz.values()]
+        _z_total  = sum(_z_counts) or 1
+        _z_pcts   = [round(c / _z_total * 100, 1) for c in _z_counts]
+        _z_cols   = ["#94A3B8","#22C55E","#F59E0B","#F97316","#EF4444","#8B5CF6","#C026D3"]
+
+        _fig_z = go.Figure()
+        for _zn, _zp, _zc in zip(_z_names, _z_pcts, _z_cols):
+            _fig_z.add_trace(go.Bar(
+                x=[_zp], y=["Zonas"],
+                name=_zn,
+                orientation="h",
+                marker_color=_zc,
+                text=f"{_zp:.0f}%" if _zp >= 4 else "",
+                textposition="inside",
+                insidetextanchor="middle",
+                hovertemplate=f"{_zn}: {_zp:.1f}%<extra></extra>",
+            ))
+        _fig_z.update_layout(
+            barmode="stack", height=88,
+            margin=dict(l=0, r=0, t=0, b=0),
+            template="plotly_white",
+            plot_bgcolor=CARD, paper_bgcolor=CARD,
+            legend=dict(orientation="h", y=-0.6, font_size=10, bgcolor="rgba(0,0,0,0)"),
+        )
+        _fig_z.update_xaxes(visible=False)
+        _fig_z.update_yaxes(visible=False)
+        st.plotly_chart(_fig_z, use_container_width=True)
+
