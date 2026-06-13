@@ -24,8 +24,12 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _CLIENT = None
 
 
-def _get_client():
-    """Return a cached Garmin client, authenticating only on first call."""
+def _get_client(email: str = None, password: str = None):
+    """
+    Return a cached Garmin client, authenticating only when needed.
+    Pass email/password explicitly to work in Streamlit context where
+    os.getenv() may not reflect values set after process start.
+    """
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
@@ -35,13 +39,13 @@ def _get_client():
     except ImportError:
         raise ImportError("Run: pip install garminconnect")
 
-    email = os.getenv("GARMIN_EMAIL")
-    password = os.getenv("GARMIN_PASSWORD")
-    if not email or not password:
+    _email = email or os.getenv("GARMIN_EMAIL")
+    _pw    = password or os.getenv("GARMIN_PASSWORD")
+    if not _email or not _pw:
         raise ValueError("Set GARMIN_EMAIL and GARMIN_PASSWORD in your .env file")
 
     log.info("Authenticating with Garmin Connect...")
-    client = Garmin(email, password)
+    client = Garmin(_email, _pw)
     client.login()
     _CLIENT = client
     log.info("Authentication successful.")
@@ -234,36 +238,31 @@ def _parse_gpx(gpx_bytes: bytes) -> list:
 def fetch_activity_gps(activity_id: int,
                        email: str = None, password: str = None) -> list:
     """
-    Download and cache the GPS track for a single activity.
-    Returns list of {lat, lon, ele} or [] if unavailable / no GPS.
-    Result is cached in data/tracks/{activity_id}.json.
-    Pass email/password explicitly to avoid os.getenv() timing issues in Streamlit.
+    Download and cache GPS track for one activity.
+    Returns list of {lat, lon, ele} or [] if no GPS data.
+    Cached in data/tracks/{activity_id}.json (only when non-empty).
     """
     TRACKS_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = TRACKS_DIR / f"{activity_id}.json"
 
-    if cache_file.exists():
+    # Return cached result only if file is non-empty
+    if cache_file.exists() and cache_file.stat().st_size > 10:
         try:
             pts = json.loads(cache_file.read_text())
             if isinstance(pts, list) and pts:
+                log.info("GPS cache hit: activity %s (%d pts)", activity_id, len(pts))
                 return pts
         except Exception:
             pass
 
     from garminconnect import Garmin
-
-    _email = email or os.getenv("GARMIN_EMAIL")
-    _pw    = password or os.getenv("GARMIN_PASSWORD")
-    if not _email or not _pw:
-        raise ValueError("GARMIN_EMAIL / GARMIN_PASSWORD not set")
-
-    fresh = Garmin(_email, _pw)
-    fresh.login()
-    gpx_bytes = fresh.download_activity(
+    client    = _get_client(email, password)
+    gpx_bytes = client.download_activity(
         activity_id, dl_fmt=Garmin.ActivityDownloadFormat.GPX
     )
     pts = _parse_gpx(gpx_bytes)
-    log.info("GPS fetch activity %s: %d points", activity_id, len(pts))
+    log.info("GPS downloaded: activity %s → %d points (raw %d bytes)",
+             activity_id, len(pts), len(gpx_bytes) if gpx_bytes else 0)
 
     if pts:
         cache_file.write_text(json.dumps(pts))

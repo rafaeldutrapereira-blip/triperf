@@ -3478,6 +3478,11 @@ elif page == "🗺️ Training Detail":
     st.markdown(" ")
 
     # ── Map + performance breakdown ────────────────────────────────────────────
+    _gps_real = False
+    _elev     = []
+    _lats     = []
+    _lons     = []
+
     _map_col, _stat_col = st.columns([3, 2], gap="large")
 
     with _map_col:
