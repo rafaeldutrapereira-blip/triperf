@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KonaLabs — Plan de Entrenamiento</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
@@ -152,19 +153,20 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
       <li><a href="landing.html#calendar">Carreras</a></li>
       <li><a href="landing.html#plans">Planes</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="training_plan.html" class="on">Plan</a></li>
-      <li><a href="blood_labs.html">Labs</a></li>
+      <li><a href="training_plan.html" class="on" data-kl-module="training_plan">Plan</a></li>
+      <li><a href="blood_labs.html" data-kl-module="blood_labs">Labs</a></li>
     </ul>
     <div class="nav-right">
       <button class="sync-btn" onclick="syncBtn(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         Sync Garmin
       </button>
+      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
       <div style="display:flex;align-items:center;gap:.5rem">
-        <div class="nav-avatar">R</div>
+        <div class="nav-avatar" id="kl-avatar">R</div>
         <div>
-          <div class="nav-uname">Rafael</div>
-          <div class="nav-urole">Ironman 70.3</div>
+          <div class="nav-uname" id="kl-uname">Rafael</div>
+          <div class="nav-urole" id="kl-urole">Ironman 70.3</div>
         </div>
       </div>
     </div>
@@ -411,5 +413,8 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 </script>
+<script src="auth.js"></script>
+<script>KL.guard('training_plan');</script>
+<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
 </body>
 </html>
