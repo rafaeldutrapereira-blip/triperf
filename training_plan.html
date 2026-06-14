@@ -178,7 +178,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
     <div class="ph-inner">
       <div>
         <div class="ph-title">PLAN DE ENTRENAMIENTO</div>
-        <div class="ph-sub">SEMANA 24 &nbsp;·&nbsp; 9–15 JUN 2026 &nbsp;·&nbsp; FASE 3 DE 4 &nbsp;·&nbsp; CICLO BASE</div>
+        <div class="ph-sub" id="week-sub">SEMANA 24 &nbsp;·&nbsp; 9–15 JUN 2026 &nbsp;·&nbsp; FASE 3 DE 4 &nbsp;·&nbsp; CICLO BASE</div>
         <div class="ph-chips">
           <span class="chip">⏱ 14.5h planificadas</span>
           <span class="chip">📊 520 TSS objetivo</span>
@@ -384,6 +384,25 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+// Dynamic week header
+(function(){
+  var now = new Date();
+  var day = now.getDay() || 7; // Mon=1..Sun=7
+  var mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  // ISO week number
+  var jan4 = new Date(now.getFullYear(), 0, 4);
+  var wk = Math.ceil(((now - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+  var MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  var monS = mon.getDate() + ' ' + MONTHS[mon.getMonth()];
+  var sunS = sun.getDate() + ' ' + MONTHS[sun.getMonth()] + ' ' + sun.getFullYear();
+  var el = document.getElementById('week-sub');
+  if(el) el.innerHTML = 'SEMANA ' + wk + ' &nbsp;&middot;&nbsp; ' + monS + '&ndash;' + sunS + ' &nbsp;&middot;&nbsp; FASE 3 DE 4 &nbsp;&middot;&nbsp; CICLO BASE';
+  // Also update nav SEM badge
+  var semEl = document.querySelector('.wk-nav span');
+  if(semEl) semEl.textContent = 'SEM ' + wk;
+})();
 
 function openModal(){document.getElementById('modal-ov').classList.add('open')}
 function closeModal(){document.getElementById('modal-ov').classList.remove('open')}
