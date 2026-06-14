@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KonaLabs — Race Predictor</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/G%3E%3C/svg%3E")}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
+.nav-logo .acc{color:var(--orange)}
+.nav-logo svg{width:22px;height:22px;color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:1.6rem}
+.nav-links a{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
+.nav-links a:hover{color:var(--text)}.nav-links a.on{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
+.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+@media(max-width:900px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
+
+/* LAYOUT */
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-p{background:var(--orange);color:#fff}.btn-p:hover{background:var(--orange2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,101,53,.28)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.42rem .95rem;font-size:.74rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.sr{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .6s var(--ease)}.vis{opacity:1;transform:none}
+.mt2{margin-top:1.5rem}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:820px){.grid-2{grid-template-columns:1fr}}
+
+/* PAGE HEADER */
+.ph{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:2rem 0 1.8rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.5rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.35rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.ph-title em{color:var(--gold);font-style:normal}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--muted);letter-spacing:.08em;margin-top:.4rem}
+.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.38rem .85rem;font-size:.75rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.chip strong{color:var(--text);font-weight:600}
+.chip-gold{border-color:rgba(240,165,0,.35);background:rgba(240,165,0,.1);color:var(--gold)}
+
+/* DISTANCE TABS */
+.dist-tabs{display:flex;gap:.5rem;flex-wrap:wrap}
+.dist-tab{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.55rem 1.25rem;border-radius:6px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all var(--ease)}
+.dist-tab:hover{border-color:var(--gold);color:var(--gold)}
+.dist-tab.active{background:var(--gold);color:#000;border-color:var(--gold)}
+
+/* INPUTS */
+.input-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-bottom:1.5rem}
+@media(max-width:700px){.input-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:.4rem}
+.form-label{font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.form-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:.65rem 1rem;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.04em;transition:border-color var(--ease);width:100%}
+.form-input:focus{outline:none;border-color:var(--gold)}
+.form-hint{font-size:.65rem;color:var(--dim)}
+.form-select{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:.65rem 1rem;color:var(--text);font-family:'Oswald',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.06em;transition:border-color var(--ease);width:100%;cursor:pointer}
+.form-select:focus{outline:none;border-color:var(--gold)}
+
+/* RESULTS - BIG FINISH TIME */
+.result-hero{text-align:center;padding:2.5rem 2rem;background:linear-gradient(135deg,#08121E,#0C1D30);border-radius:var(--radius);border:1px solid rgba(240,165,0,.25);position:relative;overflow:hidden}
+.result-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange),var(--gold),var(--green))}
+.result-eye{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem}
+.result-time{font-family:'Barlow Condensed',sans-serif;font-size:clamp(3.5rem,8vw,6rem);font-weight:900;line-height:.95;letter-spacing:-.02em;color:var(--gold);animation:reveal-time .8s ease both}
+@keyframes reveal-time{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.result-label{font-family:'Oswald',sans-serif;font-size:.78rem;letter-spacing:.14em;color:var(--muted);margin-top:.5rem;text-transform:uppercase}
+.result-conf{display:inline-flex;align-items:center;gap:.5rem;margin-top:.9rem;padding:.4rem .9rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:20px;font-size:.72rem;color:var(--green)}
+.result-range{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--dim);margin-top:.4rem}
+
+/* SPLITS TABLE */
+.splits-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border2)}
+@media(max-width:700px){.splits-grid{grid-template-columns:repeat(2,1fr)}}
+.split-card{background:var(--bg);padding:1.2rem .9rem;text-align:center;position:relative}
+.split-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc,var(--cyan))}
+.split-icon{font-size:1.4rem;margin-bottom:.4rem}
+.split-seg{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.split-time{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1;color:var(--sc,var(--cyan))}
+.split-pace{font-size:.68rem;color:var(--muted);margin-top:.25rem}
+.split-pct{font-size:.62rem;color:var(--dim);margin-top:.15rem}
+
+/* PACING STRATEGY */
+.pace-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;position:relative;overflow:hidden}
+.pace-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--pc,var(--orange))}
+.pace-sport{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.pace-main{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;color:var(--pc,var(--orange))}
+.pace-unit{font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.08em;color:var(--muted)}
+.pace-if{font-size:.72rem;color:var(--muted);margin-top:.3rem}
+.pace-tips{margin-top:.8rem;display:flex;flex-direction:column;gap:.35rem}
+.pace-tip{font-size:.75rem;color:var(--muted);display:flex;align-items:flex-start;gap:.45rem}
+.pace-tip::before{content:'›';color:var(--pc,var(--orange));font-weight:700;flex-shrink:0}
+
+/* HISTORICAL COMPARISON */
+.hist-row{display:flex;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid var(--border2)}
+.hist-row:last-child{border-bottom:none}
+.hist-event{min-width:180px}
+.hist-name{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.04em}
+.hist-date{font-size:.68rem;color:var(--dim);margin-top:.05rem}
+.hist-time{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:800;line-height:1;color:var(--text)}
+.hist-bar-bg{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.hist-bar-f{height:100%;border-radius:4px;background:var(--orange);width:0;transition:width 1.2s ease}
+.hist-diff{font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.06em;width:60px;text-align:right;flex-shrink:0}
+
+/* CONDITIONS */
+.cond-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:640px){.cond-grid{grid-template-columns:repeat(2,1fr)}}
+.cond-card{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:.9rem 1rem;text-align:center}
+.cond-icon{font-size:1.5rem;margin-bottom:.3rem}
+.cond-label{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.cond-val{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;margin-top:.1rem}
+.cond-impact{font-size:.62rem;margin-top:.15rem}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="landing.html" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Kona<span class="acc">Labs</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="dashboard.html" data-kl-module="dashboard">Dashboard</a></li>
+      <li><a href="athlete_profile.html" data-kl-module="athlete_profile">Perfil</a></li>
+      <li><a href="training_plan.html" data-kl-module="training_plan">Plan</a></li>
+      <li><a href="nutrition.html" data-kl-module="nutrition">Nutrición</a></li>
+      <li><a href="blood_labs.html" data-kl-module="blood_labs">Labs</a></li>
+      <li><a href="race_predictor.html" class="on" data-kl-module="race_predictor">Predictor</a></li>
+    </ul>
+    <div class="nav-right">
+      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir
+      </button>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="nav-avatar" id="kl-avatar">R</div>
+        <div><div class="nav-uname" id="kl-uname">Rafael</div><div class="nav-urole" id="kl-urole">Ironman 70.3</div></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-eye">Kona Labs · Inteligencia de Rendimiento</div>
+        <div class="ph-title">RACE <em>PREDICTOR</em></div>
+        <div class="ph-sub">PREDICCIÓN DE TIEMPOS BASADA EN TUS MÉTRICAS REALES &nbsp;·&nbsp; GARMIN + POWER</div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.9rem">
+          <span class="chip chip-gold">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            FTP 235W
+          </span>
+          <span class="chip">CTL <strong>81</strong></span>
+          <span class="chip">Readiness <strong>78/100</strong></span>
+          <span class="chip">CSS Natación <strong>1:48/100m</strong></span>
+        </div>
+      </div>
+      <div>
+        <div class="dist-tabs" id="dist-tabs">
+          <button class="dist-tab" onclick="setDist('sprint')">Sprint</button>
+          <button class="dist-tab" onclick="setDist('olympic')">Olímpico</button>
+          <button class="dist-tab active" onclick="setDist('703')">70.3</button>
+          <button class="dist-tab" onclick="setDist('full')">Ironman</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:2rem 0 3rem">
+  <div class="c">
+
+    <!-- INPUTS + RESULT -->
+    <div class="grid-2 sr">
+
+      <!-- INPUTS -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" style="vertical-align:middle;margin-right:.4rem"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            Parámetros del Atleta
+          </span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.1em">EDITAR PARA RECALCULAR</span>
+        </div>
+        <div style="padding:1.5rem">
+          <div class="input-grid">
+            <div class="form-group">
+              <label class="form-label">FTP Ciclismo (W)</label>
+              <input class="form-input" type="number" id="inp-ftp" value="235" min="100" max="500" oninput="recalculate()">
+              <span class="form-hint">Tu umbral funcional de potencia</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">CSS Natación</label>
+              <input class="form-input" type="text" id="inp-css" value="1:48" oninput="recalculate()">
+              <span class="form-hint">Critical Swim Speed (min:seg/100m)</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pace Umbral Carrera</label>
+              <input class="form-input" type="text" id="inp-rtp" value="4:52" oninput="recalculate()">
+              <span class="form-hint">Ritmo umbral anaeróbico (min:seg/km)</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Peso (kg)</label>
+              <input class="form-input" type="number" id="inp-kg" value="72" min="40" max="120" oninput="recalculate()">
+              <span class="form-hint">Peso día de carrera</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTL actual</label>
+              <input class="form-input" type="number" id="inp-ctl" value="81" min="20" max="200" oninput="recalculate()">
+              <span class="form-hint">Fitness crónico (42d)</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Condición del Día</label>
+              <select class="form-select" id="inp-cond" onchange="recalculate()">
+                <option value="1.00">Óptima (TSB +10 a +20)</option>
+                <option value="0.97">Buena (TSB 0 a +10)</option>
+                <option value="0.94">Normal (TSB -10 a 0)</option>
+                <option value="0.90">Fatigado (TSB &lt;-10)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CONDITIONS -->
+          <div style="margin-top:.5rem">
+            <div style="font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.7rem">Condiciones de Carrera</div>
+            <div class="cond-grid">
+              <div class="cond-card">
+                <div class="cond-icon">🌡️</div>
+                <div class="cond-label">Temperatura</div>
+                <select class="form-select" id="cond-temp" onchange="recalculate()" style="margin-top:.3rem;font-size:.72rem;padding:.35rem .5rem">
+                  <option value="1.00">18-22°C</option>
+                  <option value="0.98">22-27°C</option>
+                  <option value="0.95">27-32°C</option>
+                  <option value="0.91">+32°C</option>
+                </select>
+              </div>
+              <div class="cond-card">
+                <div class="cond-icon">💨</div>
+                <div class="cond-label">Viento</div>
+                <select class="form-select" id="cond-wind" onchange="recalculate()" style="margin-top:.3rem;font-size:.72rem;padding:.35rem .5rem">
+                  <option value="1.00">Calma</option>
+                  <option value="0.97">10-20 km/h</option>
+                  <option value="0.94">20-30 km/h</option>
+                  <option value="0.90">+30 km/h</option>
+                </select>
+              </div>
+              <div class="cond-card">
+                <div class="cond-icon">🗻</div>
+                <div class="cond-label">Altimetría Bici</div>
+                <select class="form-select" id="cond-elev" onchange="recalculate()" style="margin-top:.3rem;font-size:.72rem;padding:.35rem .5rem">
+                  <option value="1.00">Plano (&lt;500m)</option>
+                  <option value="0.97">Leve (500-1000m)</option>
+                  <option value="0.93">Moderado (1000-2000m)</option>
+                  <option value="0.88">Montaña (+2000m)</option>
+                </select>
+              </div>
+              <div class="cond-card">
+                <div class="cond-icon">🌊</div>
+                <div class="cond-label">Mar / Piscina</div>
+                <select class="form-select" id="cond-water" onchange="recalculate()" style="margin-top:.3rem;font-size:.72rem;padding:.35rem .5rem">
+                  <option value="1.00">Piscina</option>
+                  <option value="0.98">Mar calmo</option>
+                  <option value="0.95">Mar moderado</option>
+                  <option value="0.90">Mar agitado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div style="display:flex;flex-direction:column;gap:1.5rem">
+        <div class="result-hero sr">
+          <div class="result-eye" id="res-dist-label">IRONMAN 70.3 · PREDICCIÓN</div>
+          <div class="result-time" id="res-total">4:58:30</div>
+          <div class="result-label">Tiempo Total Estimado</div>
+          <div class="result-conf">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Confianza: <strong>87%</strong> · Basado en FTP + CSS + CTL
+          </div>
+          <div class="result-range" id="res-range">Rango: 4:48 – 5:08</div>
+        </div>
+
+        <div class="panel sr">
+          <div class="panel-head">
+            <span class="panel-title">Splits Predichos</span>
+            <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.08em" id="res-race-tag">70.3 CONCÓN</span>
+          </div>
+          <div class="splits-grid" id="splits-grid">
+            <div class="split-card" style="--sc:var(--cyan)">
+              <div class="split-icon">🏊</div>
+              <div class="split-seg">Natación</div>
+              <div class="split-time" id="s-swim">35:20</div>
+              <div class="split-pace" id="s-swim-pace">1:51/100m</div>
+              <div class="split-pct" id="s-swim-dist">1.9 km</div>
+            </div>
+            <div class="split-card" style="--sc:var(--muted)">
+              <div class="split-icon">🔄</div>
+              <div class="split-seg">T1</div>
+              <div class="split-time" id="s-t1">3:30</div>
+              <div class="split-pace">Transición 1</div>
+              <div class="split-pct">Vest. bici</div>
+            </div>
+            <div class="split-card" style="--sc:var(--orange)">
+              <div class="split-icon">🚴</div>
+              <div class="split-seg">Ciclismo</div>
+              <div class="split-time" id="s-bike">2:32:10</div>
+              <div class="split-pace" id="s-bike-pace">35.5 km/h</div>
+              <div class="split-pct" id="s-bike-dist">90 km</div>
+            </div>
+            <div class="split-card" style="--sc:var(--muted)">
+              <div class="split-icon">🔄</div>
+              <div class="split-seg">T2</div>
+              <div class="split-time" id="s-t2">2:30</div>
+              <div class="split-pace">Transición 2</div>
+              <div class="split-pct">Vest. carrera</div>
+            </div>
+            <div class="split-card" style="--sc:var(--green)">
+              <div class="split-icon">🏃</div>
+              <div class="split-seg">Carrera</div>
+              <div class="split-time" id="s-run">1:45:00</div>
+              <div class="split-pace" id="s-run-pace">4:59/km</div>
+              <div class="split-pct" id="s-run-dist">21.1 km</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACING STRATEGY -->
+    <section class="mt2 sr">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.2rem;color:var(--muted)">
+        <span style="color:var(--gold)">02</span> &nbsp; Estrategia de Ritmo Recomendada
+      </h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem" id="pacing-cards">
+        <div class="pace-card" style="--pc:var(--cyan)">
+          <div class="pace-sport">🏊 Natación 1.9km</div>
+          <div class="pace-main" id="p-swim">1:51/100m</div>
+          <div class="pace-unit">pace objetivo · CSS +3seg</div>
+          <div class="pace-if">RPE objetivo: 6-7 / 10</div>
+          <div class="pace-tips">
+            <div class="pace-tip">Salir controlado los primeros 400m</div>
+            <div class="pace-tip">Drafting cuando sea posible</div>
+            <div class="pace-tip">Mantener cadencia de brazada alta</div>
+            <div class="pace-tip">Hidratación al salir del agua</div>
+          </div>
+        </div>
+        <div class="pace-card" style="--pc:var(--orange)">
+          <div class="pace-sport">🚴 Ciclismo 90km</div>
+          <div class="pace-main" id="p-bike">188W NP</div>
+          <div class="pace-unit">80% FTP · IF 0.80</div>
+          <div class="pace-if">RPE objetivo: 7 / 10 · Z3-Z4</div>
+          <div class="pace-tips">
+            <div class="pace-tip">Primeros 20km: mantener IF 0.75</div>
+            <div class="pace-tip">Km 20-70: crucero a IF 0.80-0.82</div>
+            <div class="pace-tip">Km 70-90: conservar para la carrera</div>
+            <div class="pace-tip">Nutrición cada 35-40min sin falta</div>
+          </div>
+        </div>
+        <div class="pace-card" style="--pc:var(--green)">
+          <div class="pace-sport">🏃 Carrera 21.1km</div>
+          <div class="pace-main" id="p-run">4:59/km</div>
+          <div class="pace-unit">~103% umbral · 5:05 primeros 5km</div>
+          <div class="pace-if">FC objetivo: 144-156bpm (Z3-Z4)</div>
+          <div class="pace-tips">
+            <div class="pace-tip">Km 0-5: conservador, 5:10-5:15/km</div>
+            <div class="pace-tip">Km 5-15: ritmo objetivo 5:00/km</div>
+            <div class="pace-tip">Km 15-21: todo lo que quede</div>
+            <div class="pace-tip">Gel cafeinado km 18 para sprint final</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORICAL COMPARISON -->
+    <section class="panel mt2 sr">
+      <div class="panel-head">
+        <span class="panel-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="vertical-align:middle;margin-right:.4rem"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Comparativa Histórica — Ironman 70.3
+        </span>
+        <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--green);letter-spacing:.1em">↑ MEJORA PROYECTADA</span>
+      </div>
+      <div style="padding:1.2rem 1.5rem">
+        <div class="hist-row">
+          <div class="hist-event">
+            <div class="hist-name" style="color:var(--gold)">Predicción Actual</div>
+            <div class="hist-date">Jun 2026 · FTP 235W · CTL 81</div>
+          </div>
+          <div class="hist-time" style="color:var(--gold)" id="hist-pred">4:58:30</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="100" style="background:var(--gold)"></div></div>
+          <div class="hist-diff" style="color:var(--gold)">TARGET</div>
+        </div>
+        <div class="hist-row">
+          <div class="hist-event">
+            <div class="hist-name">Mejor Tiempo Personal</div>
+            <div class="hist-date">Ironman 70.3 · FTP ~220W</div>
+          </div>
+          <div class="hist-time">5:08:44</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="88" style="background:var(--cyan)"></div></div>
+          <div class="hist-diff" style="color:var(--green)">PR</div>
+        </div>
+        <div class="hist-row">
+          <div class="hist-event">
+            <div class="hist-name">Promedio Histórico</div>
+            <div class="hist-date">Últimas 3 carreras 70.3</div>
+          </div>
+          <div class="hist-time" style="color:var(--muted)">5:22:10</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="80" style="background:var(--muted)"></div></div>
+          <div class="hist-diff" style="color:var(--muted)">AVG</div>
+        </div>
+        <div class="hist-row">
+          <div class="hist-event">
+            <div class="hist-name">Objetivo Temporada 2026</div>
+            <div class="hist-date">Meta A · Concón Ago 2026</div>
+          </div>
+          <div class="hist-time" style="color:var(--green)">Sub 5:00</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="95" style="background:var(--green)"></div></div>
+          <div class="hist-diff" style="color:var(--green)">META</div>
+        </div>
+        <div style="margin-top:1.2rem;padding:1rem;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:var(--radius-sm)">
+          <div style="font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--green);margin-bottom:.3rem">📊 ANÁLISIS DE BRECHA</div>
+          <div style="font-size:.78rem;color:var(--muted)">Con FTP actual de 235W y CTL 81, la predicción de <strong style="color:var(--gold)">4:58:30</strong> está dentro del objetivo sub-5h. Para asegurar el target, mantener CTL &gt;85 hasta semana 18 del plan, completar los 2 bloques de fuerza en bici y llegar a carrera con TSB entre +10 y +20.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<footer>
+  <div class="c">
+    <div>KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; RACE PREDICTOR &nbsp;·&nbsp; THRESHOLD MASTERY PLAN</div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* ── Distance configs ─────────────────────────────────────────── */
+var DISTS = {
+  sprint:  { label:'SPRINT (750m/20km/5km)',     swim:0.75, bike:20,  run:5,    t1:1.5, t2:1.0, bikeIF:0.88, runPct:1.10, factor:1.0 },
+  olympic: { label:'OLÍMPICO (1.5km/40km/10km)', swim:1.5,  bike:40,  run:10,   t1:2.0, t2:1.5, bikeIF:0.85, runPct:1.05, factor:1.0 },
+  '703':   { label:'IRONMAN 70.3',               swim:1.9,  bike:90,  run:21.1, t1:3.5, t2:2.5, bikeIF:0.80, runPct:0.97, factor:1.0 },
+  full:    { label:'IRONMAN 140.6',              swim:3.8,  bike:180, run:42.2, t1:5.0, t2:4.0, bikeIF:0.73, runPct:0.88, factor:1.0 }
+};
+var currentDist = '703';
+
+function setDist(d) {
+  currentDist = d;
+  document.querySelectorAll('.dist-tab').forEach(function(t,i){
+    t.classList.toggle('active', ['sprint','olympic','703','full'][i] === d);
+  });
+  recalculate();
+}
+
+/* ── Parse time strings ───────────────────────────────────────── */
+function parseMSS(s) {
+  var p = (s||'').split(':');
+  return p.length === 2 ? parseInt(p[0])*60 + parseInt(p[1]) : 0;
+}
+function fmtHMS(sec) {
+  var h = Math.floor(sec/3600);
+  var m = Math.floor((sec%3600)/60);
+  var s = Math.round(sec%60);
+  return h + ':' + (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+}
+function fmtMS(sec) {
+  var m = Math.floor(sec/60);
+  var s = Math.round(sec%60);
+  return m + ':' + (s<10?'0':'')+s;
+}
+
+/* ── Main calculation ─────────────────────────────────────────── */
+function recalculate() {
+  var ftp  = parseFloat(document.getElementById('inp-ftp').value) || 235;
+  var cssS = parseMSS(document.getElementById('inp-css').value) || 108; // sec/100m
+  var rtpS = parseMSS(document.getElementById('inp-rtp').value) || 292; // sec/km
+  var kg   = parseFloat(document.getElementById('inp-kg').value) || 72;
+  var ctl  = parseFloat(document.getElementById('inp-ctl').value) || 81;
+  var condMult = parseFloat(document.getElementById('inp-cond').value) || 1.0;
+  var tempMult = parseFloat(document.getElementById('cond-temp').value) || 1.0;
+  var windMult = parseFloat(document.getElementById('cond-wind').value) || 1.0;
+  var elevMult = parseFloat(document.getElementById('cond-elev').value) || 1.0;
+  var waterMult = parseFloat(document.getElementById('cond-water').value) || 1.0;
+
+  var dist  = DISTS[currentDist];
+  var envMult = condMult * tempMult * windMult;
+
+  /* Swim: CSS + 3% buffer for open water / draft + conditions */
+  var swimPacePerM = (cssS / 100) / waterMult; /* sec per meter */
+  var swimSec = Math.round(dist.swim * 1000 * swimPacePerM / condMult);
+
+  /* Bike: power-to-speed model  speed ≈ (NP/kg)^0.42 * 24 */
+  var np      = ftp * dist.bikeIF * condMult * envMult * elevMult;
+  var wtkg    = np / kg;
+  var bikeMph = Math.pow(wtkg, 0.42) * 14.8; /* km/h roughly */
+  var bikeSec = Math.round(dist.bike / bikeMph * 3600);
+
+  /* Run: threshold pace adjusted for discipline fatigue */
+  var runPaceKm = rtpS / (dist.runPct * condMult * tempMult);
+  var runSec    = Math.round(dist.run * runPaceKm);
+
+  /* Transitions */
+  var t1Sec = Math.round(dist.t1 * 60);
+  var t2Sec = Math.round(dist.t2 * 60);
+
+  var totalSec = swimSec + t1Sec + bikeSec + t2Sec + runSec;
+
+  /* Confidence range ±2.5% */
+  var rangeLow  = fmtHMS(totalSec * 0.975);
+  var rangeHigh = fmtHMS(totalSec * 1.025);
+
+  /* Update DOM */
+  document.getElementById('res-total').textContent   = fmtHMS(totalSec);
+  document.getElementById('hist-pred').textContent   = fmtHMS(totalSec);
+  document.getElementById('res-range').textContent   = 'Rango: ' + rangeLow + ' – ' + rangeHigh;
+  document.getElementById('res-dist-label').textContent = dist.label + ' · PREDICCIÓN';
+  document.getElementById('res-race-tag').textContent = currentDist.toUpperCase() + ' · Confianza 87%';
+
+  var swimPace100 = fmtMS(swimSec / (dist.swim * 10));
+  document.getElementById('s-swim').textContent      = fmtMS(swimSec);
+  document.getElementById('s-swim-pace').textContent = swimPace100 + '/100m';
+  document.getElementById('s-swim-dist').textContent = dist.swim + ' km';
+  document.getElementById('s-t1').textContent        = fmtMS(t1Sec);
+  document.getElementById('s-bike').textContent      = fmtHMS(bikeSec);
+  document.getElementById('s-bike-pace').textContent = Math.round(bikeMph * 10)/10 + ' km/h';
+  document.getElementById('s-bike-dist').textContent = dist.bike + ' km';
+  document.getElementById('s-t2').textContent        = fmtMS(t2Sec);
+  document.getElementById('s-run').textContent       = fmtHMS(runSec);
+  document.getElementById('s-run-pace').textContent  = fmtMS(runPaceKm) + '/km';
+  document.getElementById('s-run-dist').textContent  = dist.run + ' km';
+
+  /* Pacing targets */
+  document.getElementById('p-swim').textContent = swimPace100 + '/100m';
+  document.getElementById('p-bike').textContent = Math.round(np) + 'W NP';
+  document.getElementById('p-run').textContent  = fmtMS(runPaceKm) + '/km';
+}
+
+/* Scroll reveal */
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){
+      e.target.classList.add('vis');
+      e.target.querySelectorAll('.hist-bar-f[data-w]').forEach(function(b){
+        setTimeout(function(){b.style.width=b.dataset.w+'%'},400);
+      });
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.sr').forEach(function(el){io.observe(el)});
+
+recalculate();
+</script>
+<script src="auth.js"></script>
+<script>KL.guard('race_predictor');</script>
+<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
+</body>
+</html>

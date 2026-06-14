@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KonaLabs — Perfil del Atleta</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
+.nav-logo .acc{color:var(--orange)}
+.nav-logo svg{width:22px;height:22px;color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:1.6rem}
+.nav-links a{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.on{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
+.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}
+.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+@media(max-width:900px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
+
+/* LAYOUT */
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-p{background:var(--orange);color:#fff}
+.btn-p:hover{background:var(--orange2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,101,53,.28)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.42rem .95rem;font-size:.74rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.panel-body{padding:1.4rem}
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .65rem;border-radius:20px;border:1px solid}
+.sr{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.vis{opacity:1;transform:none}
+.mt2{margin-top:1.5rem}
+
+/* PAGE HEADER */
+.ph{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:2rem 0 1.8rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.5rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.35rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.ph-title em{color:var(--orange);font-style:normal}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--muted);letter-spacing:.08em;margin-top:.4rem}
+.ph-chips{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
+.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.38rem .85rem;font-size:.75rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);white-space:nowrap}
+.chip strong{color:var(--text);font-weight:600}
+.chip-o{border-color:rgba(255,101,53,.3);background:rgba(255,101,53,.08);color:var(--coral)}
+.chip-g{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08);color:var(--green)}
+.chip-gold{border-color:rgba(240,165,0,.35);background:rgba(240,165,0,.1);color:var(--gold)}
+
+/* HERO PROFILE CARD */
+.hero-card{background:linear-gradient(135deg,#08121E 0%,#0C1828 50%,#08121E 100%);border:1px solid var(--border);border-radius:var(--radius);padding:2rem 2.5rem;display:grid;grid-template-columns:auto 1fr auto;gap:2.5rem;align-items:center;position:relative;overflow:hidden;margin-top:2rem}
+.hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange),var(--gold),var(--cyan))}
+.hero-card::after{content:'ÉLITE';position:absolute;top:1.2rem;right:1.5rem;font-family:'Barlow Condensed',sans-serif;font-size:4rem;font-weight:900;letter-spacing:.05em;color:rgba(240,165,0,.04);pointer-events:none;line-height:1}
+@media(max-width:780px){.hero-card{grid-template-columns:1fr;text-align:center}.hero-stats-grid{justify-content:center}}
+
+/* AVATAR */
+.avatar-wrap{display:flex;flex-direction:column;align-items:center;gap:.85rem}
+.avatar-ring{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:3.5rem;font-weight:900;color:#fff;box-shadow:0 0 0 4px rgba(240,165,0,.2),0 0 40px rgba(255,101,53,.25);position:relative}
+.avatar-ring::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(240,165,0,.3);animation:pulse-ring 3s ease-in-out infinite}
+@keyframes pulse-ring{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.5}}
+.plan-pill{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:.28rem .8rem;border-radius:20px;border:1px solid rgba(240,165,0,.4);background:rgba(240,165,0,.12);color:var(--gold)}
+
+/* HERO INFO */
+.hero-name{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.2rem,4vw,3.2rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:.95;margin-bottom:.3rem}
+.hero-name em{color:var(--orange);font-style:normal}
+.hero-role{font-family:'Oswald',sans-serif;font-size:.85rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1.1rem}
+.hero-stats-grid{display:flex;gap:2rem;flex-wrap:wrap}
+.hs-item{display:flex;flex-direction:column;gap:.1rem}
+.hs-val{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:800;line-height:1}
+.hs-lbl{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+/* HERO GOALS */
+.hero-goals{min-width:200px}
+.goal-title{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.85rem}
+.goal-item{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--border2)}
+.goal-item:last-child{border-bottom:none}
+.goal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.goal-text{font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.04em}
+.goal-date{font-size:.68rem;color:var(--dim);display:block;margin-top:.05rem}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;padding:2rem 0}
+@media(max-width:1050px){.main-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.main-grid{grid-template-columns:1fr}}
+.two-col{grid-column:span 2}
+@media(max-width:1050px){.two-col{grid-column:span 1}}
+
+/* ZONE TABLE */
+.zone-row{display:grid;grid-template-columns:2fr 3fr 1fr 1fr;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border2)}
+.zone-row:last-child{border-bottom:none}
+.zone-row:first-child{padding-top:0}
+.zone-name{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em}
+.zone-bar-bg{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.zone-bar-f{height:100%;border-radius:3px;width:0;transition:width 1s ease}
+.zone-pct{font-size:.72rem;color:var(--muted);text-align:right}
+.zone-range{font-size:.68rem;color:var(--dim)}
+
+/* PR CARD */
+.pr-grid{display:flex;flex-direction:column;gap:.85rem}
+.pr-item{display:flex;align-items:center;gap:1rem;padding:.85rem 1rem;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2);transition:border-color var(--ease)}
+.pr-item:hover{border-color:var(--border)}
+.pr-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pr-icon svg{width:18px;height:18px}
+.pr-label{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.pr-time{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;line-height:1.1}
+.pr-dist{font-size:.68rem;color:var(--dim);margin-top:.08rem}
+.pr-best{margin-left:auto;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--gold)}
+
+/* BIOMETRICS */
+.bio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.bio-item{padding:.9rem 1rem;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2)}
+.bio-val{font-family:'Barlow Condensed',sans-serif;font-size:1.65rem;font-weight:800;line-height:1}
+.bio-lbl{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
+.bio-note{font-size:.65rem;color:var(--muted);margin-top:.2rem}
+.edit-bio{font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--cyan);letter-spacing:.08em;cursor:pointer;margin-top:.85rem;display:inline-flex;align-items:center;gap:.3rem}
+
+/* SEASON CHART */
+.season-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:80px;padding-top:.5rem}
+.s-bar{flex:1;background:rgba(14,165,233,.18);border-radius:3px 3px 0 0;position:relative;transition:background var(--ease);cursor:default;min-width:0}
+.s-bar:hover{background:rgba(14,165,233,.35)}
+.s-bar.peak{background:rgba(255,101,53,.45)}
+.s-bar.peak:hover{background:rgba(255,101,53,.65)}
+.s-bar.current{background:rgba(240,165,0,.55);animation:bar-pulse 2s ease-in-out infinite}
+@keyframes bar-pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.season-labels{display:flex;gap:4px;margin-top:.4rem}
+.s-lbl{flex:1;font-family:'Oswald',sans-serif;font-size:.55rem;letter-spacing:.06em;text-align:center;color:var(--dim);min-width:0;overflow:hidden;text-overflow:ellipsis}
+
+/* TRAINING LOAD GAUGE */
+.load-row{display:flex;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid var(--border2)}
+.load-row:last-child{border-bottom:none}
+.load-label{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em;width:60px;flex-shrink:0}
+.load-bar-bg{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.load-bar-f{height:100%;border-radius:4px;width:0;transition:width 1.2s ease}
+.load-val{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;width:42px;text-align:right;flex-shrink:0}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="landing.html" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Kona<span class="acc">Labs</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="dashboard.html" data-kl-module="dashboard">Dashboard</a></li>
+      <li><a href="athlete_profile.html" class="on" data-kl-module="athlete_profile">Perfil</a></li>
+      <li><a href="training_plan.html" data-kl-module="training_plan">Plan</a></li>
+      <li><a href="nutrition.html" data-kl-module="nutrition">Nutrición</a></li>
+      <li><a href="blood_labs.html" data-kl-module="blood_labs">Labs</a></li>
+      <li><a href="race_predictor.html" data-kl-module="race_predictor">Predictor</a></li>
+    </ul>
+    <div class="nav-right">
+      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir
+      </button>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="nav-avatar" id="kl-avatar">R</div>
+        <div>
+          <div class="nav-uname" id="kl-uname">Rafael</div>
+          <div class="nav-urole" id="kl-urole">Ironman 70.3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-eye">Kona Labs · Temporada 2026</div>
+        <div class="ph-title">PERFIL DEL <em>ATLETA</em></div>
+        <div class="ph-sub">THRESHOLD MASTERY PLAN &nbsp;·&nbsp; IRONMAN 70.3</div>
+        <div class="ph-chips">
+          <span class="chip chip-gold">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Plan Élite
+          </span>
+          <span class="chip chip-g">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            CTL <strong>81</strong>
+          </span>
+          <span class="chip chip-o">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            FTP <strong>235W</strong>
+          </span>
+          <span class="chip">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            FCMax <strong>180bpm</strong>
+          </span>
+        </div>
+      </div>
+      <div style="display:flex;gap:.65rem;flex-wrap:wrap;align-items:flex-start">
+        <button class="btn btn-g btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar Perfil
+        </button>
+        <a href="dashboard.html" class="btn btn-p btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Ver Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:0 0 3rem">
+  <div class="c">
+
+    <!-- HERO CARD -->
+    <div class="hero-card sr">
+      <div class="avatar-wrap">
+        <div class="avatar-ring" id="kl-avatar-big">R</div>
+        <span class="plan-pill" id="kl-plan-badge">Élite</span>
+      </div>
+
+      <div>
+        <div class="hero-name" id="kl-fullname">RAFAEL <em>DUTRA</em></div>
+        <div class="hero-role" id="kl-role-tag">Ironman 70.3 · Triatleta de Resistencia</div>
+        <div class="hero-stats-grid">
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--orange)">235</span>
+            <span class="hs-lbl">FTP (W)</span>
+          </div>
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--cyan)">54.2</span>
+            <span class="hs-lbl">VO₂Max</span>
+          </div>
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--red)">180</span>
+            <span class="hs-lbl">FCMax (bpm)</span>
+          </div>
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--gold)">81</span>
+            <span class="hs-lbl">CTL actual</span>
+          </div>
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--green)">3.26</span>
+            <span class="hs-lbl">W/kg</span>
+          </div>
+          <div class="hs-item">
+            <span class="hs-val" style="color:var(--purple)">78</span>
+            <span class="hs-lbl">Readiness</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-goals">
+        <div class="goal-title">Objetivos Temporada</div>
+        <div class="goal-item">
+          <div class="goal-dot" style="background:var(--orange)"></div>
+          <div>
+            <div class="goal-text">Ironman 70.3 — Meta A</div>
+            <span class="goal-date">Sub 5:00h · Concón, Chile · Ago 2026</span>
+          </div>
+        </div>
+        <div class="goal-item">
+          <div class="goal-dot" style="background:var(--gold)"></div>
+          <div>
+            <div class="goal-text">FTP ≥ 250W</div>
+            <span class="goal-date">+15W desde hoy · Julio 2026</span>
+          </div>
+        </div>
+        <div class="goal-item">
+          <div class="goal-dot" style="background:var(--cyan)"></div>
+          <div>
+            <div class="goal-text">CTL pico ≥ 95</div>
+            <span class="goal-date">Semana 20 del plan</span>
+          </div>
+        </div>
+        <div class="goal-item">
+          <div class="goal-dot" style="background:var(--green)"></div>
+          <div>
+            <div class="goal-text">Peso objetivo: 71 kg</div>
+            <span class="goal-date">Raza: 3.38 W/kg proyectado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- BIOMETRICS -->
+      <div class="panel sr">
+        <div class="panel-head">
+          <span class="panel-title">Datos Físicos</span>
+          <span class="edit-bio">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Actualizar
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="bio-grid">
+            <div class="bio-item">
+              <div class="bio-val">72 <span style="font-size:.9rem;color:var(--dim)">kg</span></div>
+              <div class="bio-lbl">Peso</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val">177 <span style="font-size:.9rem;color:var(--dim)">cm</span></div>
+              <div class="bio-lbl">Altura</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val" style="color:var(--orange)">235 <span style="font-size:.9rem;color:var(--dim)">W</span></div>
+              <div class="bio-lbl">FTP Bici</div>
+              <div class="bio-note">3.26 W/kg</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val" style="color:var(--cyan)">54.2</div>
+              <div class="bio-lbl">VO₂Max est.</div>
+              <div class="bio-note">ml/kg/min</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val" style="color:var(--red)">180 <span style="font-size:.9rem;color:var(--dim)">bpm</span></div>
+              <div class="bio-lbl">FC Máxima</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val" style="color:var(--green)">141 <span style="font-size:.9rem;color:var(--dim)">bpm</span></div>
+              <div class="bio-lbl">FC Umbral</div>
+              <div class="bio-note">78% FCMax</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val">1:48 <span style="font-size:.9rem;color:var(--dim)">/100m</span></div>
+              <div class="bio-lbl">CSS Natación</div>
+            </div>
+            <div class="bio-item">
+              <div class="bio-val">4:52 <span style="font-size:.9rem;color:var(--dim)">/km</span></div>
+              <div class="bio-lbl">Umbral Carrera</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ZONAS FC -->
+      <div class="panel sr">
+        <div class="panel-head">
+          <span class="panel-title">Zonas de FC</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.08em">FCMax 180 bpm</span>
+        </div>
+        <div class="panel-body">
+          <div class="zone-row">
+            <div>
+              <div class="zone-name" style="color:#3D6880">Z1 · Recuperación</div>
+              <div class="zone-range">&lt;108 bpm</div>
+            </div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="15" style="background:#3D6880"></div></div>
+            <div class="zone-pct">15%</div>
+          </div>
+          <div class="zone-row">
+            <div>
+              <div class="zone-name" style="color:var(--cyan)">Z2 · Base Aeróbica</div>
+              <div class="zone-range">108–126 bpm</div>
+            </div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="40" style="background:var(--cyan)"></div></div>
+            <div class="zone-pct">40%</div>
+          </div>
+          <div class="zone-row">
+            <div>
+              <div class="zone-name" style="color:var(--green)">Z3 · Tempo</div>
+              <div class="zone-range">126–144 bpm</div>
+            </div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="25" style="background:var(--green)"></div></div>
+            <div class="zone-pct">25%</div>
+          </div>
+          <div class="zone-row">
+            <div>
+              <div class="zone-name" style="color:var(--orange)">Z4 · Umbral</div>
+              <div class="zone-range">144–162 bpm</div>
+            </div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="15" style="background:var(--orange)"></div></div>
+            <div class="zone-pct">15%</div>
+          </div>
+          <div class="zone-row">
+            <div>
+              <div class="zone-name" style="color:var(--red)">Z5 · VO₂Max</div>
+              <div class="zone-range">&gt;162 bpm</div>
+            </div>
+            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="5" style="background:var(--red)"></div></div>
+            <div class="zone-pct">5%</div>
+          </div>
+
+          <div style="margin-top:1.4rem;padding-top:1.1rem;border-top:1px solid var(--border2)">
+            <div class="panel-title" style="font-size:.88rem;margin-bottom:.9rem">Zonas de Potencia</div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:#3D6880">Z1 · Rec.</div><div class="zone-range">&lt;141W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="10" style="background:#3D6880"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:var(--cyan)">Z2 · Resistencia</div><div class="zone-range">141–176W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="50" style="background:var(--cyan)"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:var(--green)">Z3 · Tempo</div><div class="zone-range">176–211W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="35" style="background:var(--green)"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:var(--gold)">Z4 · Umbral</div><div class="zone-range">211–247W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="20" style="background:var(--gold)"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:var(--orange)">Z5 · VO₂Max</div><div class="zone-range">247–282W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="8" style="background:var(--orange)"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+            <div class="zone-row">
+              <div><div class="zone-name" style="color:var(--red)">Z6 · Anaeróbico</div><div class="zone-range">&gt;282W</div></div>
+              <div class="zone-bar-bg"><div class="zone-bar-f" data-w="3" style="background:var(--red)"></div></div>
+              <div class="zone-pct">–</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERSONAL RECORDS -->
+      <div class="panel sr">
+        <div class="panel-head">
+          <span class="panel-title">Records Personales</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--gold);letter-spacing:.1em">★ MEJORES</span>
+        </div>
+        <div class="panel-body">
+          <div class="pr-grid">
+
+            <div class="pr-item">
+              <div class="pr-icon" style="background:rgba(14,165,233,.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <div class="pr-label">Natación 1.9km</div>
+                <div class="pr-time" style="color:var(--cyan)">34:20</div>
+                <div class="pr-dist">1:48/100m · Aguas abiertas</div>
+              </div>
+              <div class="pr-best">PR</div>
+            </div>
+
+            <div class="pr-item">
+              <div class="pr-icon" style="background:rgba(14,165,233,.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <div class="pr-label">Natación 750m</div>
+                <div class="pr-time" style="color:var(--cyan)">12:55</div>
+                <div class="pr-dist">1:43/100m · Sprint</div>
+              </div>
+              <div class="pr-best">PR</div>
+            </div>
+
+            <div class="pr-item">
+              <div class="pr-icon" style="background:rgba(255,101,53,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/></svg>
+              </div>
+              <div>
+                <div class="pr-label">Ciclismo 90km</div>
+                <div class="pr-time" style="color:var(--orange)">2:28:15</div>
+                <div class="pr-dist">36.4 km/h · 248W NP</div>
+              </div>
+              <div class="pr-best">PR</div>
+            </div>
+
+            <div class="pr-item">
+              <div class="pr-icon" style="background:rgba(16,185,129,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/><path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/></svg>
+              </div>
+              <div>
+                <div class="pr-label">Carrera 21.1km</div>
+                <div class="pr-time" style="color:var(--green)">1:46:30</div>
+                <div class="pr-dist">5:02/km · Maratón medio</div>
+              </div>
+              <div class="pr-best">PR</div>
+            </div>
+
+            <div class="pr-item">
+              <div class="pr-icon" style="background:rgba(240,165,0,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div>
+                <div class="pr-label">Ironman 70.3</div>
+                <div class="pr-time" style="color:var(--gold)">5:08:44</div>
+                <div class="pr-dist">Mejor resultado total</div>
+              </div>
+              <div class="pr-best">★ BEST</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- CARGA DE ENTRENAMIENTO -->
+      <div class="panel sr two-col">
+        <div class="panel-head">
+          <span class="panel-title">Carga de Entrenamiento — Actual</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.08em">PMC Fitness · Fatiga · Forma</span>
+        </div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+            <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2)">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:900;color:var(--cyan)">81</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.14em;color:var(--dim);margin-top:.1rem">CTL · FITNESS</div>
+              <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Carga crónica (42 días)</div>
+            </div>
+            <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2)">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:900;color:var(--orange)">69</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.14em;color:var(--dim);margin-top:.1rem">ATL · FATIGA</div>
+              <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Carga aguda (7 días)</div>
+            </div>
+            <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid rgba(16,185,129,.2)">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:900;color:var(--green)">+12</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.14em;color:var(--dim);margin-top:.1rem">TSB · FORMA</div>
+              <div style="font-size:.7rem;color:var(--green);margin-top:.3rem">Zona óptima de carrera</div>
+            </div>
+          </div>
+
+          <div class="load-row">
+            <div class="load-label" style="color:var(--cyan)">Natación</div>
+            <div class="load-bar-bg"><div class="load-bar-f" data-w="48" style="background:var(--cyan)"></div></div>
+            <div class="load-val" style="color:var(--cyan)">8.8<span style="font-size:.65rem;color:var(--dim)">km</span></div>
+          </div>
+          <div class="load-row">
+            <div class="load-label" style="color:var(--orange)">Bici</div>
+            <div class="load-bar-bg"><div class="load-bar-f" data-w="85" style="background:var(--orange)"></div></div>
+            <div class="load-val" style="color:var(--orange)">138<span style="font-size:.65rem;color:var(--dim)">km</span></div>
+          </div>
+          <div class="load-row">
+            <div class="load-label" style="color:var(--green)">Carrera</div>
+            <div class="load-bar-bg"><div class="load-bar-f" data-w="12" style="background:var(--green)"></div></div>
+            <div class="load-val" style="color:var(--green)">0<span style="font-size:.65rem;color:var(--dim)">km</span></div>
+          </div>
+          <div class="load-row">
+            <div class="load-label" style="color:var(--purple)">Fuerza</div>
+            <div class="load-bar-bg"><div class="load-bar-f" data-w="20" style="background:var(--purple)"></div></div>
+            <div class="load-val" style="color:var(--purple)">2<span style="font-size:.65rem;color:var(--dim)">ses</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEASON OVERVIEW -->
+      <div class="panel sr">
+        <div class="panel-head">
+          <span class="panel-title">Temporada 2026</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.08em">TSS semanal</span>
+        </div>
+        <div class="panel-body">
+          <div class="season-bar-wrap" id="season-bars"></div>
+          <div class="season-labels" id="season-labels"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1.2rem">
+            <div style="padding:.7rem;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text)">13</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.1em">SEMANAS EN PLAN</div>
+            </div>
+            <div style="padding:.7rem;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--orange)">378</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.1em">TSS ESTA SEMANA</div>
+            </div>
+            <div style="padding:.7rem;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--cyan)">71</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.1em">DÍAS PARA LA CARRERA</div>
+            </div>
+            <div style="padding:.7rem;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--green)">94%</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.1em">SESIONES COMPLETADAS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="c">
+    <div>KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; PERFIL DEL ATLETA &nbsp;·&nbsp; IRONMAN 70.3</div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// Season bars (PMC weeks from KL_DATA if available, else demo)
+var pmc = (window.KL_DATA && window.KL_DATA.pmc) ? window.KL_DATA.pmc : [
+  {l:'S1',tss:320},{l:'S2',tss:450},{l:'S3',tss:390},{l:'S4',tss:510},
+  {l:'S5',tss:480},{l:'S6',tss:540},{l:'S7',tss:320},{l:'S8',tss:590},
+  {l:'S9',tss:610},{l:'S10',tss:570},{l:'S11',tss:540},{l:'S12',tss:280},
+  {l:'HOY',tss:378}
+];
+var maxT = Math.max.apply(null, pmc.map(function(p){return p.tss||0}));
+var barsEl = document.getElementById('season-bars');
+var lblsEl = document.getElementById('season-labels');
+pmc.forEach(function(p,i){
+  var h = maxT > 0 ? Math.round((p.tss||0)/maxT*100) : 0;
+  var bar = document.createElement('div');
+  bar.className = 's-bar' + (p.l==='HOY'?' current':i===pmc.indexOf(pmc.reduce(function(a,b){return (a.tss||0)>(b.tss||0)?a:b}))?' peak':'');
+  bar.style.height = h + '%';
+  bar.title = p.l + ': ' + (p.tss||0) + ' TSS';
+  barsEl.appendChild(bar);
+  var lbl = document.createElement('div');
+  lbl.className = 's-lbl';
+  lbl.textContent = p.l;
+  lblsEl.appendChild(lbl);
+});
+
+// Scroll reveal
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){
+      e.target.classList.add('vis');
+      e.target.querySelectorAll('.zone-bar-f[data-w],.load-bar-f[data-w]').forEach(function(b){
+        setTimeout(function(){b.style.width=b.dataset.w+'%'},250);
+      });
+    }
+  });
+},{threshold:.12});
+document.querySelectorAll('.sr').forEach(function(el){io.observe(el)});
+
+// Sync kl-avatar-big with session initial
+var s = KL && KL.getSession ? KL.getSession() : null;
+if(s){
+  var big = document.getElementById('kl-avatar-big');
+  if(big) big.textContent = s.initials || 'R';
+}
+</script>
+<script src="data/dashboard_data.js" onerror="void 0"></script>
+<script src="auth.js"></script>
+<script>KL.guard('athlete_profile');</script>
+<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
+</body>
+</html>

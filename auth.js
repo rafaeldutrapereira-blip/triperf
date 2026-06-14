@@ -29,25 +29,29 @@
     basic: {
       label:   'Básico',
       color:   '#0EA5E9',
-      modules: ['dashboard']
+      modules: ['dashboard', 'athlete_profile']
     },
     pro: {
       label:   'Pro',
       color:   '#A855F7',
-      modules: ['dashboard', 'training_plan']
+      modules: ['dashboard', 'athlete_profile', 'training_plan', 'nutrition']
     },
     elite: {
       label:   'Élite',
       color:   '#F0A500',
-      modules: ['dashboard', 'training_plan', 'blood_labs', 'training_detail']
+      modules: ['dashboard', 'athlete_profile', 'training_plan', 'nutrition',
+                'blood_labs', 'training_detail', 'race_predictor']
     }
   };
 
   var MODULES = {
     dashboard:       'dashboard.html',
+    athlete_profile: 'athlete_profile.html',
     training_plan:   'training_plan.html',
+    nutrition:       'nutrition.html',
     blood_labs:      'blood_labs.html',
-    training_detail: 'training_detail.html'
+    training_detail: 'training_detail.html',
+    race_predictor:  'race_predictor.html'
   };
 
   /* ── Session ──────────────────────────────────────────────── */
@@ -111,7 +115,12 @@
       if (el) {
         el.textContent = plan.label;
         el.style.color = plan.color;
+        el.style.borderColor = plan.color + '55';
+        el.style.background = plan.color + '18';
       }
+      /* also update profile page hero if present */
+      el = document.getElementById('kl-fullname'); if (el) el.textContent = s.name;
+      el = document.getElementById('kl-role-tag'); if (el) el.textContent = s.role;
 
       /* lock nav links the user can't access */
       document.querySelectorAll('[data-kl-module]').forEach(function(link) {
@@ -121,7 +130,7 @@
           link.href = '#';
           link.onclick = function(e) {
             e.preventDefault();
-            showUpgradeToast(mod);
+            showUpgradeToast(mod, plan.label);
           };
         }
       });
@@ -135,7 +144,7 @@
   }
 
   /* ── Upgrade Toast ────────────────────────────────────────── */
-  function showUpgradeToast(mod) {
+  function showUpgradeToast(mod, currentPlan) {
     var existing = document.getElementById('kl-toast');
     if (existing) existing.remove();
 
@@ -145,7 +154,7 @@
       '<div style="display:flex;align-items:center;gap:.75rem">' +
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0A500" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
         '<div>' +
-          '<div style="font-family:Oswald,sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.08em;color:#F0F9FF">Módulo no incluido</div>' +
+          '<div style="font-family:Oswald,sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.08em;color:#F0F9FF">Módulo no incluido en plan ' + currentPlan + '</div>' +
           '<div style="font-size:.75rem;color:#7FB3CC;margin-top:.1rem">Actualiza tu plan para acceder a este módulo.</div>' +
         '</div>' +
         '<a href="landing.html#plans" style="margin-left:auto;font-family:Oswald,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#FF6535;white-space:nowrap">Ver Planes ›</a>' +
