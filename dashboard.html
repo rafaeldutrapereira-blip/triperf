@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KonaLabs — Dashboard del Atleta</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<script src="data/dashboard_data.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
@@ -459,7 +460,7 @@ ul { list-style: none; }
         </h1>
       </div>
       <div class="chip-row" role="status" aria-live="polite">
-        <div class="chip"><span class="dot dot-g"></span>Readiness <strong>78 / 100</strong></div>
+        <div class="chip"><span class="dot dot-g"></span>Readiness <strong id="readiness-chip-val">78 / 100</strong></div>
         <div class="chip"><span class="dot dot-o"></span>Próx. carrera <strong id="days-chip">-- días</strong></div>
         <div class="chip" style="border-color:rgba(34,211,238,.22)">
           <span class="dot dot-c"></span>
@@ -479,9 +480,9 @@ ul { list-style: none; }
       <div class="kc sr" style="--kc:#10B981">
         <div class="kc-row">
           <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <div class="badge b-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
+          <div class="badge b-up" id="badge-ctl-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
         </div>
-        <div class="kc-val"><span class="cu" data-t="72">0</span></div>
+        <div class="kc-val"><span class="cu" data-kl="ctl" data-t="72">0</span></div>
         <div class="kc-name">CTL — Fitness</div>
         <div class="kc-sub">Carga crónica · 42 días</div>
       </div>
@@ -491,7 +492,7 @@ ul { list-style: none; }
           <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <div class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</div>
         </div>
-        <div class="kc-val"><span class="cu" data-t="85">0</span></div>
+        <div class="kc-val"><span class="cu" data-kl="atl" data-t="85">0</span></div>
         <div class="kc-name">ATL — Fatiga</div>
         <div class="kc-sub">Carga aguda · 7 días</div>
       </div>
@@ -501,7 +502,7 @@ ul { list-style: none; }
           <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
           <div class="badge b-warn">Construyendo</div>
         </div>
-        <div class="kc-val" style="color:var(--gold)">−<span class="cu" data-t="13">0</span></div>
+        <div class="kc-val" id="tsb-val" style="color:var(--gold)">−<span class="cu" data-kl="tsb" data-t="13">0</span></div>
         <div class="kc-name">TSB — Forma</div>
         <div class="kc-sub">CTL − ATL · meta: 0 → +5</div>
       </div>
@@ -521,7 +522,7 @@ ul { list-style: none; }
           <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <div class="badge b-warn">93% meta</div>
         </div>
-        <div class="kc-val"><span class="cu" data-t="487">0</span></div>
+        <div class="kc-val"><span class="cu" data-kl="tss_week" data-t="487">0</span></div>
         <div class="kc-name">TSS Semana</div>
         <div class="kc-sub">Meta: 520 TSS</div>
       </div>
@@ -771,7 +772,7 @@ ul { list-style: none; }
       <button class="btn btn-g btn-sm">Ver historial</button>
     </div>
 
-    <div class="al">
+    <div class="al" id="activities-list">
 
       <div class="day-sep">Hoy &middot; Viernes 13 Jun 2026</div>
       <div class="ac sr">
@@ -935,7 +936,116 @@ function animGauge(score){
   });
 }
 
-/* ── PMC Chart ── */
+/* ── Patch real Garmin data ── */
+function patchData(){
+  var d = window.KL_DATA;
+  if(!d) return;
+
+  // KPI count-up targets
+  var map = {ctl:'ctl', atl:'atl', tss_week:'tss_week'};
+  Object.keys(map).forEach(function(key){
+    var el = document.querySelector('[data-kl="'+key+'"]');
+    if(el && d[map[key]] != null) el.setAttribute('data-t', d[map[key]]);
+  });
+
+  // TSB — sign changes based on positive/negative
+  var tsbEl = document.querySelector('[data-kl="tsb"]');
+  var tsbWrap = document.getElementById('tsb-val');
+  if(tsbEl && d.tsb != null){
+    var absT = Math.abs(d.tsb);
+    tsbEl.setAttribute('data-t', Math.round(absT));
+    if(tsbWrap){
+      var sign = d.tsb >= 0 ? '+' : '−';
+      tsbWrap.innerHTML = '<span style="font-size:1.4rem">' + sign + '</span>' +
+        '<span class="cu" data-kl="tsb" data-t="'+Math.round(absT)+'">0</span>';
+    }
+  }
+
+  // CTL change badge
+  var bCtl = document.getElementById('badge-ctl-change');
+  if(bCtl && d.ctl_change != null){
+    var arrow = d.ctl_change >= 0
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
+    bCtl.className = 'badge ' + (d.ctl_change >= 0 ? 'b-up' : 'b-dn');
+    bCtl.innerHTML = arrow + (d.ctl_change >= 0 ? '+' : '') + d.ctl_change;
+  }
+
+  // Readiness chip
+  var rChip = document.getElementById('readiness-chip-val');
+  if(rChip && d.readiness != null) rChip.textContent = d.readiness + ' / 100';
+
+  // PMC array
+  if(d.pmc && d.pmc.length){
+    PMC = d.pmc.map(function(p){
+      return {l:p.l, ctl:p.ctl||0, atl:p.atl||0, tss:p.tss||0};
+    });
+  }
+
+  // Gauge
+  if(d.readiness != null) window._gaugeScore = d.readiness;
+
+  // Activities list
+  renderActivities(d.activities || []);
+}
+
+function renderActivities(acts){
+  var wrap = document.getElementById('activities-list');
+  if(!wrap || !acts.length) return;
+
+  var sportSVG = {
+    swim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>',
+    bike: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/></svg>',
+    run:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/><path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/></svg>',
+    strength: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 6.5h11"/><path d="M6 12h12"/><path d="M6.5 17.5h11"/><line x1="4" y1="6.5" x2="6.5" y2="6.5"/><line x1="4" y1="17.5" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="20" y2="6.5"/><line x1="17.5" y1="17.5" x2="20" y2="17.5"/></svg>'
+  };
+  function normSport(s){
+    if(!s) return 'bike';
+    s=s.toLowerCase();
+    if(s.indexOf('swim')>=0||s==='pool_swimming'||s==='open_water') return 'swim';
+    if(s.indexOf('run')>=0||s==='trail_run') return 'run';
+    if(s.indexOf('strength')>=0) return 'strength';
+    return 'bike';
+  }
+  function getSvg(s){ return sportSVG[normSport(s)] || sportSVG.bike; }
+  function durStr(m){ if(m<60) return m+'min'; return Math.floor(m/60)+'h'+(m%60?(' '+m%60+'min'):''); }
+
+  var lastDate = '';
+  var html = '';
+  acts.forEach(function(a){
+    if(a.date_iso !== lastDate){
+      lastDate = a.date_iso;
+      html += '<div class="day-sep">'+a.date_label+'</div>';
+    }
+    var meta = '';
+    if(a.dur_min) meta += '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>'+durStr(a.dur_min)+'</strong></span>';
+    if(a.dist_km) meta += '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><strong>'+a.dist_km+' km</strong></span>';
+    if(a.avg_power) meta += '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong>'+a.avg_power+'W</strong> NP</span>';
+    if(a.avg_hr) meta += '<span>FC: <strong>'+a.avg_hr+'bpm</strong></span>';
+    if(a.pace_str) meta += '<span>Pace: <strong>'+a.pace_str+'</strong></span>';
+    if(a.swim_pace) meta += '<span>Paso: <strong>'+a.swim_pace+'</strong></span>';
+    if(a.calories) meta += '<span>'+a.calories+' kcal</span>';
+
+    var detail_link = a.activity_id ? 'training_detail.html' : '#';
+    html +=
+      '<a href="'+detail_link+'" class="ac" style="text-decoration:none;color:inherit">'+
+        '<div class="ac-icon" style="background:'+a.color+'">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="'+a.stroke+'" stroke-width="1.8" stroke-linecap="round">'+getSvg(a.sport).replace(/<svg[^>]*>/,'').replace('</svg>','')+'</svg>'+
+        '</div>'+
+        '<div style="min-width:0">'+
+          '<div class="ac-name">'+a.name+'</div>'+
+          '<div class="ac-meta">'+meta+'</div>'+
+        '</div>'+
+        '<div class="ac-tss">'+
+          '<div class="ac-tv">'+(a.tss != null ? a.tss : '—')+'</div>'+
+          '<div class="ac-tl">TSS</div>'+
+        '</div>'+
+      '</a>';
+  });
+  wrap.innerHTML = html;
+}
+
+/* ── PMC Chart (fallback data — overwritten by patchData if KL_DATA present) ── */
 var PMC=[
   {l:'S1', ctl:45,atl:52,tss:380},{l:'S2', ctl:47,atl:68,tss:490},
   {l:'S3', ctl:50,atl:55,tss:350},{l:'S4', ctl:52,atl:72,tss:525},
@@ -946,6 +1056,7 @@ var PMC=[
   {l:'S13',ctl:70,atl:86,tss:645},{l:'S14',ctl:71,atl:88,tss:660},
   {l:'S15',ctl:72,atl:91,tss:690},{l:'HOY',ctl:72,atl:85,tss:487}
 ];
+patchData();
 
 function drawPMC(){
   var el=document.getElementById('pmc'); if(!el) return;
@@ -1035,7 +1146,7 @@ var io=new IntersectionObserver(function(entries){
     el.querySelectorAll('.g-rf').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},300); });
     el.querySelectorAll('.tb-f,.tm-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},250); });
     if(!gaugeDone && el.querySelector('#g-arc')){
-      gaugeDone=true; setTimeout(function(){animGauge(78);},150);
+      gaugeDone=true; setTimeout(function(){animGauge(window._gaugeScore||78);},150);
     }
     if(!pmcDone && el.querySelector('#pmc')){
       pmcDone=true; drawPMC();
