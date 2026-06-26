@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Comunidad</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:       #04080F;
+  --surface:  #08121E;
+  --surface2: #0C1D30;
+  --border:   rgba(8,116,174,.18);
+  --border2:  rgba(8,116,174,.10);
+  --orange:   #FF6535;
+  --orange2:  #E8490A;
+  --gold:     #F0A500;
+  --cyan:     #0EA5E9;
+  --aqua:     #22D3EE;
+  --green:    #10B981;
+  --red:      #EF4444;
+  --purple:   #A855F7;
+  --text:     #F0F9FF;
+  --muted:    #7FB3CC;
+  --dim:      #3D6880;
+  --radius:   12px;
+  --ease:     220ms cubic-bezier(.4,0,.2,1);
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg); color:var(--text);
+  line-height:1.6; overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+
+/* ── Container ─────────────────────────────────────── */
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+
+/* ── Page header ───────────────────────────────────── */
+.ph-comm{
+  background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);
+  border-bottom:1px solid var(--border2);
+  padding:1.5rem 0 1.2rem;
+}
+.ph-comm-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.ph-eyebrow{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.6rem,3vw,2rem);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:1.05}
+.ph-title em{color:var(--orange);font-style:normal}
+
+/* Stats chips */
+.stat-chips{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.stat-chip{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.35rem .8rem;font-size:.78rem;color:var(--muted);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;white-space:nowrap;cursor:pointer;
+  transition:border-color var(--ease);
+}
+.stat-chip:hover{border-color:var(--cyan)}
+.stat-chip strong{color:var(--text);font-weight:700}
+.stat-chip.clickable:hover{border-color:var(--orange)}
+
+/* Sport filter pills */
+.sport-pills{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem}
+.sport-pill{
+  font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:.28rem .7rem;border-radius:20px;
+  border:1px solid var(--border2);background:transparent;color:var(--dim);
+  cursor:pointer;transition:all var(--ease);
+}
+.sport-pill:hover{border-color:var(--orange);color:var(--orange)}
+.sport-pill.on{border-color:var(--orange);background:rgba(255,101,53,.12);color:var(--orange)}
+
+/* ── Layout ────────────────────────────────────────── */
+.comm-layout{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:1.5rem;
+  padding:1.5rem 0 3rem;
+  align-items:start;
+}
+@media(max-width:1060px){.comm-layout{grid-template-columns:1fr}}
+@media(max-width:1060px){.comm-aside{display:none}}
+
+/* ── Panel base ────────────────────────────────────── */
+.panel{
+  background:linear-gradient(145deg,#08121E,#060E1C);
+  border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;
+}
+.panel-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.85rem 1.2rem;border-bottom:1px solid var(--border2);
+}
+.panel-title{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.panel-title strong{color:var(--text)}
+
+/* ── Feed cards ────────────────────────────────────── */
+.feed{display:flex;flex-direction:column;gap:1rem}
+
+.fc{
+  background:linear-gradient(145deg,#08121E,#060E1C);
+  border:1px solid var(--border2);border-radius:var(--radius);
+  overflow:hidden;transition:border-color var(--ease);
+  position:relative;
+}
+.fc::before{
+  content:'';position:absolute;top:0;left:0;bottom:0;width:3px;
+  background:var(--fc-color,var(--orange));border-radius:0 3px 3px 0;
+}
+.fc:hover{border-color:rgba(8,116,174,.3)}
+
+/* Card header */
+.fc-head{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.85rem 1.1rem .6rem;
+}
+.fc-avatar{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--fc-color,var(--orange)),rgba(255,255,255,.1));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:#fff;
+  text-transform:uppercase;
+}
+.fc-meta{flex:1;min-width:0}
+.fc-author{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.04em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-date{font-size:.65rem;color:var(--dim);margin-top:.05rem}
+.fc-sport-badge{
+  display:flex;align-items:center;gap:.3rem;
+  font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--fc-color,var(--orange));
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:6px;padding:.2rem .5rem;flex-shrink:0;
+}
+.fc-sport-badge svg{width:11px;height:11px}
+
+/* Follow button inside card */
+.fc-follow-btn{
+  font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:.22rem .6rem;border-radius:12px;border:1px solid rgba(255,101,53,.4);
+  background:transparent;color:var(--orange);cursor:pointer;
+  transition:all var(--ease);flex-shrink:0;
+}
+.fc-follow-btn:hover{background:rgba(255,101,53,.12)}
+.fc-follow-btn.following{border-color:var(--dim);color:var(--dim)}
+.fc-follow-btn.following:hover{border-color:var(--red);color:var(--red)}
+
+/* Card body */
+.fc-body{padding:.2rem 1.1rem .9rem}
+.fc-act-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.01em;line-height:1.1;
+  color:var(--text);margin-bottom:.6rem;
+}
+.fc-metrics{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.65rem}
+.fc-metric{
+  display:flex;align-items:center;gap:.28rem;
+  padding:.25rem .6rem;border-radius:6px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);
+  font-size:.72rem;
+}
+.fc-metric svg{width:11px;height:11px;opacity:.7}
+.fc-metric-val{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--text);line-height:1}
+.fc-metric-lbl{font-family:'Oswald',sans-serif;font-size:.52rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.fc-notes{font-size:.72rem;color:var(--dim);font-style:italic;margin-bottom:.5rem;padding:.5rem .7rem;background:rgba(255,255,255,.02);border-radius:6px;border-left:2px solid var(--border)}
+
+/* Card actions bar */
+.fc-actions{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.1rem .7rem;
+  border-top:1px solid var(--border2);
+}
+.fc-kudo-btn{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.35rem .8rem;border-radius:8px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--muted);font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;transition:all var(--ease);
+}
+.fc-kudo-btn:hover{border-color:var(--orange);color:var(--orange)}
+.fc-kudo-btn.active{background:rgba(255,101,53,.1);border-color:var(--orange);color:var(--orange)}
+.fc-kudo-btn svg{width:14px;height:14px;transition:transform var(--ease)}
+.fc-kudo-btn.active svg{transform:scale(1.2)}
+.fc-kudo-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.fc-cmt-btn{
+  display:flex;align-items:center;gap:.35rem;
+  padding:.35rem .7rem;border-radius:8px;
+  border:1px solid transparent;background:transparent;
+  color:var(--dim);font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;transition:color var(--ease);margin-left:auto;
+}
+.fc-cmt-btn:hover{color:var(--cyan)}
+.fc-cmt-btn svg{width:13px;height:13px}
+
+/* Inline comments section */
+.fc-comments{display:none;border-top:1px solid var(--border2);padding:.8rem 1.1rem}
+.fc-comments.open{display:block}
+.fc-comment-item{
+  display:flex;gap:.6rem;align-items:flex-start;
+  padding:.5rem 0;border-bottom:1px solid rgba(61,104,128,.1);
+}
+.fc-comment-item:last-of-type{border-bottom:none}
+.fc-c-avatar{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:900;color:#fff;text-transform:uppercase;
+}
+.fc-c-content{flex:1;min-width:0}
+.fc-c-author{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;color:var(--muted);letter-spacing:.04em;margin-bottom:.05rem}
+.fc-c-body{font-size:.78rem;color:var(--text);line-height:1.45;word-break:break-word}
+.fc-c-meta{font-size:.6rem;color:var(--dim);margin-top:.15rem}
+.fc-c-delete{
+  background:transparent;border:none;color:var(--dim);cursor:pointer;
+  padding:.1rem;transition:color var(--ease);flex-shrink:0;margin-top:.15rem;
+}
+.fc-c-delete:hover{color:var(--red)}
+.fc-c-delete svg{width:11px;height:11px}
+
+/* Comment input */
+.fc-cmt-form{display:flex;gap:.5rem;margin-top:.65rem;align-items:flex-end}
+.fc-cmt-inp{
+  flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.8rem;
+  outline:none;resize:none;min-height:36px;max-height:100px;overflow-y:auto;
+  transition:border-color var(--ease);line-height:1.5;
+}
+.fc-cmt-inp:focus{border-color:rgba(14,165,233,.45)}
+.fc-cmt-inp::placeholder{color:var(--dim)}
+.fc-cmt-send{
+  background:var(--orange);border:none;border-radius:8px;color:#fff;
+  padding:.5rem .8rem;cursor:pointer;transition:all var(--ease);flex-shrink:0;
+  display:flex;align-items:center;
+}
+.fc-cmt-send:hover{background:var(--orange2);transform:translateY(-1px)}
+.fc-cmt-send svg{width:14px;height:14px}
+.fc-cmt-loading{
+  font-family:'Oswald',sans-serif;font-size:.64rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim);padding:.5rem 0;
+}
+
+/* ── Skeleton ───────────────────────────────────────── */
+.skel{animation:skel-pulse 1.6s ease-in-out infinite}
+@keyframes skel-pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+.skel-block{background:var(--surface2);border-radius:6px}
+.skel-card{background:linear-gradient(145deg,#08121E,#060E1C);border:1px solid var(--border2);border-radius:var(--radius);padding:1.1rem;margin-bottom:1rem}
+
+/* ── Empty state ────────────────────────────────────── */
+.empty-feed{
+  display:flex;flex-direction:column;align-items:center;
+  gap:.85rem;padding:3rem 1rem;text-align:center;
+}
+.empty-feed svg{color:var(--dim);opacity:.4}
+.empty-feed h3{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.empty-feed p{font-size:.82rem;color:var(--dim);max-width:280px;line-height:1.5}
+
+/* Load more */
+.load-more-wrap{text-align:center;margin-top:1.2rem}
+.load-more-btn{
+  font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  padding:.7rem 2rem;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;transition:all var(--ease);
+}
+.load-more-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.load-more-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Aside panels ───────────────────────────────────── */
+.comm-aside{display:flex;flex-direction:column;gap:1rem;position:sticky;top:1.2rem}
+
+/* Social stats card */
+.social-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.ss-stat{
+  text-align:center;padding:.9rem .5rem;cursor:pointer;
+  border-right:1px solid var(--border2);transition:background var(--ease);
+}
+.ss-stat:last-child{border-right:none}
+.ss-stat:hover{background:rgba(255,255,255,.025)}
+.ss-val{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;line-height:1;color:var(--text)}
+.ss-lbl{font-family:'Oswald',sans-serif;font-size:.56rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+
+/* Discover list */
+.disc-list{padding:.5rem 0}
+.disc-item{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.6rem 1.1rem;transition:background var(--ease);
+}
+.disc-item:hover{background:rgba(255,255,255,.025)}
+.disc-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:900;color:#fff;text-transform:uppercase;
+}
+.disc-info{flex:1;min-width:0}
+.disc-name{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.disc-sub{font-size:.64rem;color:var(--dim)}
+.disc-follow-btn{
+  font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:.25rem .65rem;border-radius:12px;border:1px solid rgba(255,101,53,.45);
+  background:transparent;color:var(--orange);cursor:pointer;transition:all var(--ease);flex-shrink:0;
+}
+.disc-follow-btn:hover{background:rgba(255,101,53,.12)}
+.disc-follow-btn.following{border-color:var(--dim);color:var(--dim)}
+.disc-follow-btn.following:hover{border-color:var(--red);color:var(--red)}
+.disc-empty{font-size:.75rem;color:var(--dim);text-align:center;padding:1.2rem;font-family:'Oswald',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+
+/* ── Toast ──────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(1.5rem);
+  background:var(--green);color:#fff;font-family:'Oswald',sans-serif;font-size:.82rem;
+  font-weight:600;letter-spacing:.08em;padding:.65rem 1.4rem;border-radius:8px;
+  z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.error{background:var(--red)}
+
+/* ── Scroll-reveal ──────────────────────────────────── */
+.sr-item{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}
+.sr-item.vis{opacity:1;transform:none}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+</style>
+<link rel="stylesheet" href="nav.css">
+</head>
+<body>
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────── -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <a href="landing.html" class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Lab<span>X</span>
+    </a>
+    <div class="sb-tagline">Where Champions Are Built</div>
+  </div>
+  <nav class="sb-nav" aria-label="Módulos">
+    <span class="sb-sect">Módulos</span>
+    <a href="dashboard.html" class="sb-lnk" data-kl-module="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="athlete_profile.html" class="sb-lnk" data-kl-module="athlete_profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Perfil
+    </a>
+    <a href="training_plan.html" class="sb-lnk" data-kl-module="training_plan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Plan
+    </a>
+    <a href="nutrition.html" class="sb-lnk" data-kl-module="nutrition">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/></svg>
+      Nutrición
+    </a>
+    <a href="blood_labs.html" class="sb-lnk" data-kl-module="blood_labs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l5.5 9.5A6.5 6.5 0 1 1 6.5 11.5z"/></svg>
+      Labs
+    </a>
+    <a href="race_predictor.html" class="sb-lnk" data-kl-module="race_predictor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+      Predictor
+    </a>
+    <a href="training_detail.html" class="sb-lnk" data-kl-module="training_detail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Sesión
+    </a>
+    <a href="community.html" class="sb-lnk on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>
+      Comunidad
+    </a>
+    <div class="sb-sep"></div>
+    <button class="sb-sync" id="sync-btn" onclick="syncGarmin(this)" aria-label="Sync Garmin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Sync Garmin
+    </button>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="sb-avatar" id="kl-sb-avatar">R</div>
+      <div>
+        <div class="sb-uname" id="kl-sb-uname">Rafael</div>
+        <div class="sb-urole" id="kl-sb-urole">Atleta</div>
+      </div>
+    </div>
+    <button onclick="KL.logout()" class="sb-logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Salir
+    </button>
+  </div>
+</aside>
+
+<!-- ── TOPBAR MOBILE ─────────────────────────────────────────────── -->
+<header class="sb-topbar">
+  <button class="sb-hamburger" id="sb-ham" onclick="sbToggle()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a href="landing.html" class="sb-tb-logo">Lab<span>X</span></a>
+  <div class="sb-tb-av" id="kl-sb-av-tb">R</div>
+</header>
+<div class="sb-overlay" id="sb-overlay" onclick="sbClose()"></div>
+
+<!-- ── PAGE HEADER ──────────────────────────────────────────────── -->
+<div class="ph-comm">
+  <div class="c">
+    <div class="ph-comm-inner">
+      <div>
+        <div class="ph-eyebrow">Red Social</div>
+        <h1 class="ph-title">Comunidad <em>LabX</em></h1>
+      </div>
+      <div>
+        <div class="stat-chips" id="stat-chips">
+          <div class="stat-chip">Siguiendo <strong id="sc-following">—</strong></div>
+          <div class="stat-chip">Seguidores <strong id="sc-followers">—</strong></div>
+          <div class="stat-chip">Sesiones <strong id="sc-logs">—</strong></div>
+        </div>
+        <div class="sport-pills" id="sport-pills">
+          <button class="sport-pill on" data-sport="">Todas</button>
+          <button class="sport-pill" data-sport="swim">Natación</button>
+          <button class="sport-pill" data-sport="bike">Ciclismo</button>
+          <button class="sport-pill" data-sport="run">Carrera</button>
+          <button class="sport-pill" data-sport="str">Fuerza</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ─────────────────────────────────────────────── -->
+<div class="c">
+  <div class="comm-layout">
+
+    <!-- FEED -->
+    <main>
+      <div class="feed" id="feed">
+        <!-- Skeleton loader -->
+        <div class="skel-card skel" id="skel-1">
+          <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:.9rem">
+            <div class="skel-block" style="width:36px;height:36px;border-radius:50%"></div>
+            <div style="flex:1">
+              <div class="skel-block" style="height:10px;width:40%;margin-bottom:.4rem"></div>
+              <div class="skel-block" style="height:8px;width:25%"></div>
+            </div>
+          </div>
+          <div class="skel-block" style="height:14px;width:65%;margin-bottom:.7rem"></div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.9rem">
+            <div class="skel-block" style="height:30px;width:70px;border-radius:6px"></div>
+            <div class="skel-block" style="height:30px;width:70px;border-radius:6px"></div>
+            <div class="skel-block" style="height:30px;width:60px;border-radius:6px"></div>
+          </div>
+          <div class="skel-block" style="height:1px;width:100%;margin-bottom:.7rem"></div>
+          <div style="display:flex;gap:.5rem">
+            <div class="skel-block" style="height:28px;width:90px;border-radius:8px"></div>
+            <div class="skel-block" style="height:28px;width:80px;border-radius:8px"></div>
+          </div>
+        </div>
+        <div class="skel-card skel" id="skel-2" style="animation-delay:.2s">
+          <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:.9rem">
+            <div class="skel-block" style="width:36px;height:36px;border-radius:50%"></div>
+            <div style="flex:1">
+              <div class="skel-block" style="height:10px;width:50%;margin-bottom:.4rem"></div>
+              <div class="skel-block" style="height:8px;width:30%"></div>
+            </div>
+          </div>
+          <div class="skel-block" style="height:14px;width:55%;margin-bottom:.7rem"></div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.9rem">
+            <div class="skel-block" style="height:30px;width:80px;border-radius:6px"></div>
+            <div class="skel-block" style="height:30px;width:65px;border-radius:6px"></div>
+          </div>
+          <div class="skel-block" style="height:1px;width:100%;margin-bottom:.7rem"></div>
+          <div style="display:flex;gap:.5rem">
+            <div class="skel-block" style="height:28px;width:90px;border-radius:8px"></div>
+            <div class="skel-block" style="height:28px;width:70px;border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state (hidden by default) -->
+      <div class="empty-feed" id="empty-feed" style="display:none">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>
+        <h3>Tu feed está vacío</h3>
+        <p>Sigue a otros atletas para ver sus entrenamientos aquí. ¡Empieza explorando la comunidad!</p>
+      </div>
+
+      <!-- Load more -->
+      <div class="load-more-wrap" id="load-more-wrap" style="display:none">
+        <button class="load-more-btn" id="load-more-btn">
+          Cargar más actividades
+        </button>
+      </div>
+    </main>
+
+    <!-- ASIDE -->
+    <aside class="comm-aside">
+
+      <!-- Social stats -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <span class="panel-title">Tu <strong>Red</strong></span>
+        </div>
+        <div class="social-stats-grid">
+          <div class="ss-stat" title="Ver seguidos">
+            <div class="ss-val" id="aside-following">—</div>
+            <div class="ss-lbl">Siguiendo</div>
+          </div>
+          <div class="ss-stat" title="Ver seguidores">
+            <div class="ss-val" id="aside-followers">—</div>
+            <div class="ss-lbl">Seguidores</div>
+          </div>
+          <div class="ss-stat">
+            <div class="ss-val" id="aside-logs">—</div>
+            <div class="ss-lbl">Sesiones</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discover -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <span class="panel-title">Descubrir <strong>Atletas</strong></span>
+        </div>
+        <div class="disc-list" id="disc-list">
+          <!-- JS renders here -->
+          <div class="disc-empty skel skel-block" style="height:120px;margin:.8rem;border-radius:8px"></div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
+const API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
+const KL  = {
+  s:      () => JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null'),
+  token:  () => localStorage.getItem('lx_co_token') || sessionStorage.getItem('lx_co_token') || '',
+  logout: () => {
+    ['kl_s','lx_co_token','lx_co_rol','lx_co_nombre','lx_ath_token','lx_ath_portal_token']
+      .forEach(k => { sessionStorage.removeItem(k); localStorage.removeItem(k); });
+    location.href = 'login.html';
+  },
+};
+const ME = KL.s() || {};
+
+const SPORT_ICONS = {
+  swim: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><circle cx="17.5" cy="5.5" r="2.5"/></svg>`,
+  bike: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/></svg>`,
+  run:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="13" cy="4" r="1"/><path d="m7 21 2-6 3 3 3-4 2 4"/><path d="m11 11 1-3 3 2"/></svg>`,
+  str:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M9 12h6"/></svg>`,
+  strength: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M9 12h6"/></svg>`,
+};
+
+/* ════════════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════════ */
+function authH() {
+  return { 'Authorization': 'Bearer ' + KL.token(), 'Content-Type': 'application/json' };
+}
+
+function fmtDur(min) {
+  if (!min) return null;
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? h + 'h ' + (m ? m + 'min' : '') : m + ' min';
+}
+
+function fmtDist(km) {
+  if (km == null) return null;
+  return km % 1 === 0 ? km + ' km' : km.toFixed(1) + ' km';
+}
+
+function timeAgo(isoStr) {
+  const d = new Date(isoStr), now = Date.now();
+  const s = Math.floor((now - d) / 1000);
+  if (s < 60)  return 'hace un momento';
+  if (s < 3600) return 'hace ' + Math.floor(s / 60) + ' min';
+  if (s < 86400) return 'hace ' + Math.floor(s / 3600) + 'h';
+  const days = Math.floor(s / 86400);
+  return days === 1 ? 'ayer' : 'hace ' + days + ' días';
+}
+
+function initials(nombre) {
+  return (nombre || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = 'toast'; }, 2800);
+}
+
+function srObserve() {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.sr-item:not(.vis)').forEach(el => io.observe(el));
+}
+
+/* ════════════════════════════════════════════════════════════
+   FEED STATE
+═══════════════════════════════════════════════════════════ */
+let feedCursor  = null;
+let feedLoading = false;
+let feedDone    = false;
+let feedSport   = '';
+
+/* ════════════════════════════════════════════════════════════
+   LOAD FEED
+═══════════════════════════════════════════════════════════ */
+async function loadFeed(reset) {
+  if (feedLoading || (feedDone && !reset)) return;
+  if (reset) { feedCursor = null; feedDone = false; }
+  feedLoading = true;
+
+  const btn = document.getElementById('load-more-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
+
+  try {
+    let url = API + '/social/feed?limit=10';
+    if (feedCursor) url += '&cursor=' + encodeURIComponent(feedCursor);
+    if (feedSport)  url += '&sport='  + encodeURIComponent(feedSport);
+
+    const res  = await fetch(url, { headers: authH() });
+    const data = await res.json();
+
+    // Remove skeleton
+    document.getElementById('skel-1') && document.getElementById('skel-1').remove();
+    document.getElementById('skel-2') && document.getElementById('skel-2').remove();
+
+    if (reset) document.getElementById('feed').innerHTML = '';
+
+    if (!data.data || data.data.length === 0) {
+      if (reset) document.getElementById('empty-feed').style.display = 'flex';
+      feedDone = true;
+    } else {
+      document.getElementById('empty-feed').style.display = 'none';
+      data.data.forEach(item => document.getElementById('feed').appendChild(buildCard(item)));
+    }
+
+    feedCursor = data.next_cursor || null;
+    feedDone   = !data.has_more;
+
+    const lmw = document.getElementById('load-more-wrap');
+    lmw.style.display = feedDone ? 'none' : 'block';
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Cargar más actividades'; }
+    setTimeout(srObserve, 80);
+  } catch (err) {
+    console.error(err);
+    showToast('Error al cargar el feed', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
+  } finally {
+    feedLoading = false;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUILD FEED CARD
+═══════════════════════════════════════════════════════════ */
+function buildCard(item) {
+  const isMe    = item.author.id === ME.user_id;
+  const color   = item.sport_color || '#FF6535';
+  const icon    = SPORT_ICONS[item.sport] || SPORT_ICONS.run;
+  const metrics = [];
+
+  if (item.dist_real != null) metrics.push({ icon: distIcon(), val: fmtDist(item.dist_real), lbl: 'Dist' });
+  if (item.dur_real  != null) metrics.push({ icon: durIcon(),  val: fmtDur(item.dur_real),   lbl: 'Duración' });
+  if (item.tss_real  != null) metrics.push({ icon: tssIcon(),  val: item.tss_real,            lbl: 'TSS' });
+  if (item.rpe       != null) metrics.push({ icon: rpeIcon(),  val: item.rpe + '/10',         lbl: 'RPE' });
+
+  const metricsHTML = metrics.map(m => `
+    <div class="fc-metric">
+      <span style="color:${color}">${m.icon}</span>
+      <div>
+        <div class="fc-metric-val">${m.val}</div>
+        <div class="fc-metric-lbl">${m.lbl}</div>
+      </div>
+    </div>`).join('');
+
+  const notesHTML = item.notas
+    ? `<div class="fc-notes">"${escHtml(item.notas)}"</div>`
+    : '';
+
+  const followBtn = !isMe
+    ? `<button class="fc-follow-btn" data-uid="${item.author.id}" data-following="false" onclick="toggleFollow(this)">Seguir</button>`
+    : '';
+
+  const div = document.createElement('div');
+  div.className = 'fc sr-item';
+  div.id = 'fc-' + item.log_id;
+  div.style.setProperty('--fc-color', color);
+  div.innerHTML = `
+    <div class="fc-head">
+      <div class="fc-avatar" style="background:linear-gradient(135deg,${color}cc,${color}44)">
+        ${initials(item.author.nombre)}
+      </div>
+      <div class="fc-meta">
+        <div class="fc-author">${escHtml(item.author.nombre)}</div>
+        <div class="fc-date">${timeAgo(item.logged_at)}</div>
+      </div>
+      <div class="fc-sport-badge" style="color:${color};border-color:${color}33">
+        ${icon} ${escHtml(item.sport_label)}
+      </div>
+      ${followBtn}
+    </div>
+    <div class="fc-body">
+      <div class="fc-act-name">${escHtml(item.activity_name)}</div>
+      <div class="fc-metrics">${metricsHTML}</div>
+      ${notesHTML}
+    </div>
+    <div class="fc-actions">
+      <button class="fc-kudo-btn${item.my_kudo ? ' active' : ''}"
+              id="kudo-${item.log_id}"
+              data-log="${item.log_id}"
+              data-active="${item.my_kudo}"
+              onclick="toggleKudo(this)">
+        <svg viewBox="0 0 24 24" fill="${item.my_kudo ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+          <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+        </svg>
+        Kudo &nbsp;<span class="kudo-count">${item.kudos_count}</span>
+      </button>
+      <button class="fc-cmt-btn" data-log="${item.log_id}" onclick="toggleComments(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="cmt-count">${item.comments_count}</span>
+        ${item.comments_count === 1 ? 'comentario' : 'comentarios'}
+      </button>
+    </div>
+    <div class="fc-comments" id="cmts-${item.log_id}">
+      <div class="fc-cmt-loading">Cargando comentarios…</div>
+      <div class="fc-cmt-form" style="margin-top:.65rem">
+        <textarea class="fc-cmt-inp" placeholder="Escribe un comentario…" rows="1"
+                  onkeydown="handleCmtKey(event, '${item.log_id}', this)"></textarea>
+        <button class="fc-cmt-send" onclick="submitComment('${item.log_id}', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  return div;
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Small SVG helpers */
+function distIcon() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>'; }
+function durIcon()  { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'; }
+function tssIcon()  { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'; }
+function rpeIcon()  { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'; }
+
+/* ════════════════════════════════════════════════════════════
+   KUDOS
+═══════════════════════════════════════════════════════════ */
+async function toggleKudo(btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const logId = btn.dataset.log;
+  try {
+    const res  = await fetch(API + '/social/logs/' + logId + '/kudos', { method: 'POST', headers: authH() });
+    const data = await res.json();
+    const added = data.action === 'added';
+    btn.classList.toggle('active', added);
+    btn.dataset.active = String(added);
+    btn.querySelector('.kudo-count').textContent = data.kudos_count;
+    btn.querySelector('svg').setAttribute('fill', added ? 'currentColor' : 'none');
+    showToast(added ? '👏 Kudo enviado' : 'Kudo retirado');
+  } catch (e) {
+    showToast('Error al procesar kudo', true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   COMMENTS
+═══════════════════════════════════════════════════════════ */
+async function toggleComments(btn) {
+  const logId   = btn.dataset.log;
+  const section = document.getElementById('cmts-' + logId);
+  const isOpen  = section.classList.toggle('open');
+
+  if (isOpen && !section.dataset.loaded) {
+    await loadComments(logId, section);
+    section.dataset.loaded = '1';
+  }
+}
+
+async function loadComments(logId, section) {
+  try {
+    const res  = await fetch(API + '/social/logs/' + logId + '/comments', { headers: authH() });
+    const data = await res.json();
+
+    // Clear loading
+    section.querySelector('.fc-cmt-loading') && section.querySelector('.fc-cmt-loading').remove();
+
+    if (data.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'fc-cmt-loading';
+      empty.textContent = 'Sin comentarios aún. ¡Sé el primero!';
+      section.insertBefore(empty, section.querySelector('.fc-cmt-form'));
+    } else {
+      data.forEach(c => section.insertBefore(buildCommentEl(c), section.querySelector('.fc-cmt-form')));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function buildCommentEl(c) {
+  const div = document.createElement('div');
+  div.className = 'fc-comment-item';
+  div.id = 'cmt-' + c.id;
+  div.innerHTML = `
+    <div class="fc-c-avatar">${initials(c.author.nombre)}</div>
+    <div class="fc-c-content">
+      <div class="fc-c-author">${escHtml(c.author.nombre)}</div>
+      <div class="fc-c-body">${escHtml(c.body)}</div>
+      <div class="fc-c-meta">${timeAgo(c.created_at)}</div>
+    </div>
+    ${c.is_mine ? `<button class="fc-c-delete" data-cid="${c.id}" onclick="deleteComment(this)" title="Eliminar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>` : ''}`;
+  return div;
+}
+
+function handleCmtKey(e, logId, ta) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const sendBtn = ta.closest('.fc-cmt-form').querySelector('.fc-cmt-send');
+    submitComment(logId, sendBtn);
+  }
+  // Auto-resize
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
+}
+
+async function submitComment(logId, sendBtn) {
+  const form  = sendBtn.closest('.fc-cmt-form');
+  const ta    = form.querySelector('.fc-cmt-inp');
+  const text  = (ta.value || '').trim();
+  if (!text) return;
+
+  sendBtn.disabled = true;
+  try {
+    const res = await fetch(API + '/social/logs/' + logId + '/comments', {
+      method:  'POST',
+      headers: authH(),
+      body:    JSON.stringify({ body: text }),
+    });
+    if (!res.ok) throw new Error('Error ' + res.status);
+    const comment = await res.json();
+
+    const section = document.getElementById('cmts-' + logId);
+    const emptyMsg = section.querySelector('.fc-cmt-loading');
+    if (emptyMsg) emptyMsg.remove();
+
+    section.insertBefore(buildCommentEl(comment), form);
+    ta.value = ''; ta.style.height = 'auto';
+
+    // Update count in action bar
+    const cntEl = document.querySelector('#fc-' + logId + ' .cmt-count');
+    if (cntEl) cntEl.textContent = parseInt(cntEl.textContent || '0') + 1;
+
+    showToast('Comentario publicado');
+  } catch (e) {
+    showToast('Error al publicar comentario', true);
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+async function deleteComment(btn) {
+  const cid = btn.dataset.cid;
+  try {
+    const res = await fetch(API + '/social/comments/' + cid, { method: 'DELETE', headers: authH() });
+    if (!res.ok) throw new Error();
+    document.getElementById('cmt-' + cid) && document.getElementById('cmt-' + cid).remove();
+    showToast('Comentario eliminado');
+  } catch (e) {
+    showToast('Error al eliminar comentario', true);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   FOLLOWS
+═══════════════════════════════════════════════════════════ */
+async function toggleFollow(btn) {
+  const uid        = btn.dataset.uid;
+  const following  = btn.dataset.following === 'true';
+  const method     = following ? 'DELETE' : 'POST';
+
+  btn.disabled = true;
+  try {
+    const res = await fetch(API + '/social/follows/' + uid, { method, headers: authH() });
+    if (!res.ok) throw new Error();
+    const nowFollowing = !following;
+    btn.dataset.following = String(nowFollowing);
+    btn.textContent       = nowFollowing ? 'Siguiendo' : 'Seguir';
+    btn.classList.toggle('following', nowFollowing);
+    showToast(nowFollowing ? 'Ahora sigues a este atleta' : 'Dejaste de seguir');
+
+    // Refresh stats
+    loadStats();
+  } catch (e) {
+    showToast('Error al actualizar seguimiento', true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════════════ */
+async function loadStats() {
+  try {
+    const res  = await fetch(API + '/social/stats/me', { headers: authH() });
+    const data = await res.json();
+    document.getElementById('sc-following').textContent     = data.following;
+    document.getElementById('sc-followers').textContent     = data.followers;
+    document.getElementById('sc-logs').textContent          = data.total_logs;
+    document.getElementById('aside-following').textContent  = data.following;
+    document.getElementById('aside-followers').textContent  = data.followers;
+    document.getElementById('aside-logs').textContent       = data.total_logs;
+  } catch (e) { /* silent */ }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DISCOVER
+═══════════════════════════════════════════════════════════ */
+async function loadDiscover() {
+  try {
+    const res  = await fetch(API + '/social/discover?limit=6', { headers: authH() });
+    const data = await res.json();
+    const list = document.getElementById('disc-list');
+    list.innerHTML = '';
+
+    if (!data.length) {
+      list.innerHTML = '<div class="disc-empty">¡Ya sigues a todos!</div>';
+      return;
+    }
+
+    data.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'disc-item';
+      div.innerHTML = `
+        <div class="disc-avatar">${initials(u.nombre)}</div>
+        <div class="disc-info">
+          <div class="disc-name">${escHtml(u.nombre)}</div>
+          <div class="disc-sub">${u.followers_count} seguidores · ${u.logs_count} sesiones</div>
+        </div>
+        <button class="disc-follow-btn" data-uid="${u.id}" data-following="false" onclick="toggleFollow(this)">
+          Seguir
+        </button>`;
+      list.appendChild(div);
+    });
+  } catch (e) { /* silent */ }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SPORT FILTER
+═══════════════════════════════════════════════════════════ */
+document.getElementById('sport-pills').addEventListener('click', function(e) {
+  const pill = e.target.closest('.sport-pill');
+  if (!pill) return;
+  document.querySelectorAll('.sport-pill').forEach(p => p.classList.remove('on'));
+  pill.classList.add('on');
+  feedSport = pill.dataset.sport || '';
+  loadFeed(true);
+});
+
+/* ════════════════════════════════════════════════════════════
+   LOAD MORE
+═══════════════════════════════════════════════════════════ */
+document.getElementById('load-more-btn').addEventListener('click', () => loadFeed(false));
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR NAV UTILS
+═══════════════════════════════════════════════════════════ */
+function sbToggle() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('open');
+}
+function sbClose() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+}
+function syncGarmin(btn) {
+  btn.classList.add('spin');
+  setTimeout(() => btn.classList.remove('spin'), 2200);
+  showToast('Sync Garmin iniciado…');
+}
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+(function init() {
+  // Populate sidebar user info
+  const nombre = ME.nombre || 'Atleta';
+  const av     = initials(nombre);
+  document.getElementById('kl-sb-uname') && (document.getElementById('kl-sb-uname').textContent = nombre);
+  document.getElementById('kl-sb-avatar') && (document.getElementById('kl-sb-avatar').textContent = av);
+  document.getElementById('kl-sb-av-tb') && (document.getElementById('kl-sb-av-tb').textContent = av);
+
+  loadStats();
+  loadFeed(true);
+  loadDiscover();
+})();
+</script>
+</body>
+</html>

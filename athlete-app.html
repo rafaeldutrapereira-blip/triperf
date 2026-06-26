@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0F1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LabX">
+<link rel="manifest" href="manifest.json">
+<title>LabX — App Atleta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0B0F1A;
+  --bg2:    #111827;
+  --bg3:    #1C2333;
+  --border: rgba(255,255,255,.08);
+  --text:   #F9FAFB;
+  --dim:    #6B7280;
+  --green:  #10B981;
+  --cyan:   #22D3EE;
+  --orange: #FF6535;
+  --gold:   #F0A500;
+  --purple: #A855F7;
+  --red:    #EF4444;
+  --swim:   #22D3EE;
+  --bike:   #FF6535;
+  --run:    #10B981;
+  --gym:    #A855F7;
+  --safe:   env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Barlow Condensed', sans-serif; overflow: hidden; }
+
+/* ── Layout ── */
+#app { display: flex; flex-direction: column; height: 100%; max-width: 430px; margin: 0 auto; position: relative; }
+#screens { flex: 1; overflow: hidden; position: relative; }
+.screen { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; display: none; flex-direction: column; padding-bottom: 80px; }
+.screen.active { display: flex; }
+
+/* ── Bottom Nav ── */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(17,24,39,.97); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+  z-index: 100;
+}
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center;
+  padding: .55rem .2rem .3rem;
+  background: none; border: none; color: var(--dim); cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif; font-size: .6rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; gap: .15rem;
+  transition: color .15s;
+}
+.nav-btn.active { color: var(--orange); }
+.nav-btn svg { width: 20px; height: 20px; }
+
+/* ── Common ── */
+.topbar {
+  padding: calc(var(--safe) + .75rem) 1rem .75rem;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-title { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.topbar-sub { font-size: .65rem; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
+.topbar-brand { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: .1em; color: var(--orange); }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; }
+.section-pad { padding: 1rem; }
+.section-gap { display: flex; flex-direction: column; gap: .75rem; }
+.divider { height: 1px; background: var(--border); margin: .25rem 0; }
+
+/* ── Screen 1: Hoy ── */
+.today-hero {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 1rem; display: flex; flex-direction: column; gap: .6rem;
+}
+.th-date { font-size: .65rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
+.th-sport { display: flex; align-items: center; gap: .5rem; }
+.th-sport-emoji { font-size: 1.8rem; }
+.th-name { font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 700; line-height: 1.1; }
+.th-tipo { font-size: .7rem; font-weight: 700; padding: .18rem .55rem; border-radius: 20px; text-transform: uppercase; letter-spacing: .08em; }
+.th-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.th-meta-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; text-align: center; }
+.th-meta-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
+.th-meta-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
+
+/* ── Blocks list ── */
+.block-list { display: flex; flex-direction: column; gap: .5rem; padding: 1rem; }
+.workout-block { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; display: flex; gap: .75rem; align-items: flex-start; }
+.wb-bar { width: 3px; border-radius: 2px; align-self: stretch; min-height: 30px; flex-shrink: 0; }
+.wb-body { flex: 1; }
+.wb-type { font-size: .6rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .2rem; }
+.wb-main { font-size: .9rem; font-weight: 600; color: var(--text); }
+.wb-sub { font-size: .75rem; color: var(--dim); margin-top: .1rem; }
+.wb-tag { display: inline-block; font-size: .6rem; font-weight: 700; padding: .1rem .4rem; border-radius: 4px; margin-top: .25rem; }
+
+/* ── Start button ── */
+.start-btn {
+  margin: .75rem 1rem; padding: 1rem;
+  background: var(--orange); border: none; border-radius: 12px;
+  color: #fff; font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  transition: opacity .15s;
+}
+.start-btn:active { opacity: .8; }
+.start-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--dim); font-size: .85rem; }
+
+.coach-notes { margin: 0 1rem; padding: .8rem 1rem; background: rgba(14,165,233,.07); border: 1px solid rgba(14,165,233,.2); border-radius: 10px; }
+.cn-label { font-size: .6rem; font-weight: 700; color: #7DD3FC; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .3rem; }
+.cn-text { font-size: .82rem; color: #D1D5DB; line-height: 1.55; }
+.no-workout { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; text-align: center; gap: 1rem; }
+.no-workout-ico { font-size: 2.5rem; opacity: .4; }
+.no-workout-lbl { font-family: 'Oswald', sans-serif; font-size: 1.1rem; color: var(--dim); }
+
+/* ── Screen 2: Durante ── */
+.timer-display {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 1.5rem 1rem 1rem; text-align: center;
+}
+.timer-val { font-family: 'Oswald', sans-serif; font-size: 3.5rem; font-weight: 700; letter-spacing: .05em; color: var(--text); line-height: 1; }
+.timer-label { font-size: .65rem; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-top: .25rem; }
+.timer-controls { display: flex; gap: .5rem; padding: .75rem 1rem; }
+.timer-btn { flex: 1; padding: .75rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Oswald', sans-serif; font-size: .85rem; font-weight: 700; cursor: pointer; transition: all .15s; }
+.timer-btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+.timer-btn.danger  { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: var(--red); }
+.timer-btn:active { opacity: .7; }
+
+.zone-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .4rem; padding: .75rem 1rem; }
+.zone-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .3rem; text-align: center; cursor: default; transition: all .2s; }
+.zone-card.active { border-width: 2px; transform: scale(1.05); }
+.zone-card .zc-n { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; }
+.zone-card .zc-l { font-size: .55rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin-top: .1rem; }
+.zone-card .zc-r { font-size: .65rem; font-weight: 600; margin-top: .15rem; }
+
+.live-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; padding: 0 1rem .75rem; }
+.lm-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .75rem; }
+.lm-val { font-family: 'Oswald', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.lm-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem; }
+
+/* ── Screen 3: Post-workout ── */
+.rpe-container { padding: 1rem; }
+.rpe-title { font-size: .7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .75rem; }
+.rpe-track { display: grid; grid-template-columns: repeat(10, 1fr); gap: .3rem; }
+.rpe-btn {
+  aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--dim); font-family: 'Oswald', sans-serif;
+  font-size: .95rem; font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.rpe-btn.sel { color: #fff; border-color: transparent; }
+.rpe-desc { margin-top: .6rem; font-size: .8rem; color: var(--dim); text-align: center; min-height: 1.2rem; transition: color .2s; }
+.pw-fields { display: flex; flex-direction: column; gap: .6rem; padding: 0 1rem; }
+.pw-field { display: flex; flex-direction: column; gap: .25rem; }
+.pw-label { font-size: .65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.pw-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .65rem .85rem; color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; width: 100%; transition: border-color .15s; }
+.pw-input:focus { outline: none; border-color: var(--orange); }
+.pw-input::placeholder { color: var(--dim); }
+.pw-submit { margin: .75rem 1rem; padding: 1rem; background: var(--green); border: none; border-radius: 12px; color: #fff; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; width: calc(100% - 2rem); transition: opacity .15s; }
+.pw-submit:active { opacity: .8; }
+.pw-success { display: none; flex-direction: column; align-items: center; padding: 2rem 1rem; gap: 1rem; text-align: center; }
+.pw-success-ico { font-size: 2.5rem; }
+.pw-success-title { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
+.pw-success-sub { font-size: .85rem; color: var(--dim); }
+
+/* ── Screen 4: Semana ── */
+.week-grid { padding: 1rem; display: flex; flex-direction: column; gap: .5rem; }
+.wk-day { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.wk-day-head { display: flex; align-items: center; padding: .6rem .85rem; gap: .6rem; }
+.wk-day-name { font-size: .7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; min-width: 28px; }
+.wk-day-date { font-size: .65rem; color: var(--dim); }
+.wk-day-today .wk-day-name { color: var(--orange); }
+.wk-day-today { border-color: rgba(255,101,53,.3); }
+.wk-day-workouts { padding: .2rem .85rem .65rem; display: flex; flex-direction: column; gap: .4rem; }
+.wk-wo { display: flex; align-items: center; gap: .5rem; font-size: .82rem; }
+.wk-wo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wk-wo-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-wo-tss { font-size: .65rem; color: var(--dim); flex-shrink: 0; }
+.wk-wo-done { opacity: .5; text-decoration: line-through; }
+.wk-rest { padding: .2rem .85rem .65rem; font-size: .75rem; color: var(--dim); font-style: italic; }
+.wk-summary { margin: 0 1rem .5rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .75rem 1rem; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+.wk-sum-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
+.wk-sum-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+
+/* ── Screen 5: Bienestar ── */
+.wellness-grid { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+.wl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem 1rem; }
+.wl-title { font-size: .7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .65rem; }
+.wl-emoji-row { display: flex; justify-content: space-between; gap: .3rem; }
+.wl-emoji-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .2rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .2rem; cursor: pointer; transition: all .15s; }
+.wl-emoji-btn.sel { border-width: 2px; }
+.wl-emoji-btn span { font-size: 1.25rem; }
+.wl-emoji-btn small { font-size: .55rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.wl-sleep-row { display: flex; align-items: center; gap: .75rem; }
+.wl-sleep-val { font-family: 'Oswald', sans-serif; font-size: 1.8rem; font-weight: 700; min-width: 3rem; text-align: center; }
+.wl-sleep-btns { display: flex; flex-direction: column; gap: .25rem; }
+.wl-sleep-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; width: 36px; height: 28px; font-size: 1rem; cursor: pointer; color: var(--text); transition: background .15s; }
+.wl-sleep-btn:active { background: var(--bg2); }
+.wl-submit { margin: 0 1rem .75rem; padding: .9rem; background: var(--cyan); border: none; border-radius: 12px; color: var(--bg); font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; width: calc(100% - 2rem); transition: opacity .15s; }
+.wl-submit:active { opacity: .8; }
+
+/* ── Toast ── */
+#toast { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); background: #1F2937; border: 1px solid var(--border); border-radius: 8px; padding: .55rem 1rem; font-size: .82rem; color: var(--text); white-space: nowrap; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .25s; }
+#toast.show { opacity: 1; }
+#toast.ok { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.12); color: #6EE7B7; }
+
+/* ── PWA splash ── */
+#login-screen { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; padding: 2rem; text-align: center; height: 100%; background: var(--bg); }
+#login-screen.active { display: flex; }
+.login-brand { font-family: 'Oswald', sans-serif; font-size: 2rem; font-weight: 700; color: var(--orange); letter-spacing: .15em; }
+.login-sub { font-size: .9rem; color: var(--dim); }
+.login-token-input { width: 100%; padding: .75rem 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; }
+.login-token-input:focus { outline: none; border-color: var(--orange); }
+.login-btn { width: 100%; padding: .9rem; background: var(--orange); border: none; border-radius: 12px; color: #fff; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div>
+    <div class="login-brand">LabX</div>
+    <div class="login-sub">App del Atleta</div>
+  </div>
+  <p style="font-size:.82rem;color:#6B7280;line-height:1.6">Para usar la app en mobile, pega tu token de sesión (cópialo desde la web en Mi Perfil → Token API).</p>
+  <input type="text" class="login-token-input" id="token-input" placeholder="Pega tu token aquí...">
+  <button class="login-btn" onclick="doLogin()">Entrar →</button>
+  <p style="font-size:.72rem;color:#4B5563">O bien, inicia sesión en la web y regresa aquí — el token se sincroniza automáticamente.</p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div id="screens">
+
+    <!-- SCREEN 1: HOY -->
+    <div class="screen active" id="screen-today">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title" id="s1-topbar-title">Hoy</div>
+          <div class="topbar-sub" id="s1-topbar-date">Cargando...</div>
+        </div>
+        <div class="topbar-brand">LabX</div>
+      </div>
+
+      <div id="today-content">
+        <!-- Filled by JS -->
+        <div class="no-workout">
+          <div class="no-workout-ico">⏳</div>
+          <div class="no-workout-lbl">Cargando plan del día...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: DURANTE -->
+    <div class="screen" id="screen-during">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Durante</div>
+          <div class="topbar-sub" id="s2-sport-lbl">Entrenamiento activo</div>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);text-align:right;letter-spacing:.06em">
+          <div id="s2-workout-name" style="color:var(--text)">—</div>
+          <div>Actividad</div>
+        </div>
+      </div>
+
+      <div class="timer-display">
+        <div class="timer-val" id="timer-val">0:00:00</div>
+        <div class="timer-label">Tiempo transcurrido</div>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn primary" id="timer-toggle-btn" onclick="timerToggle()">▶ Iniciar</button>
+        <button class="timer-btn danger" onclick="timerReset()">↺ Reset</button>
+      </div>
+
+      <div style="padding:.5rem 1rem .25rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Zonas de entrenamiento</div>
+      <div class="zone-grid" id="zone-grid">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="padding:.5rem 1rem .25rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Plan de bloques</div>
+      <div id="s2-blocks" class="block-list" style="padding-top:.25rem">
+        <!-- Filled by JS -->
+      </div>
+
+      <button class="start-btn secondary" onclick="goScreen('screen-log')">Registrar resultado →</button>
+    </div>
+
+    <!-- SCREEN 3: POST-WORKOUT LOG -->
+    <div class="screen" id="screen-log">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Post-Workout</div>
+          <div class="topbar-sub">Registrar resultado</div>
+        </div>
+      </div>
+
+      <div id="pw-form">
+        <div class="rpe-container">
+          <div class="rpe-title">¿Cómo fue el esfuerzo? (RPE 1–10)</div>
+          <div class="rpe-track" id="rpe-track">
+            <!-- Filled by JS -->
+          </div>
+          <div class="rpe-desc" id="rpe-desc">Selecciona tu esfuerzo percibido</div>
+        </div>
+
+        <div class="pw-fields">
+          <div class="pw-field">
+            <div class="pw-label">TSS Real (opcional)</div>
+            <input type="number" class="pw-input" id="pw-tss" placeholder="Calculado automáticamente si vacío" min="0" max="500">
+          </div>
+          <div class="pw-field">
+            <div class="pw-label">Distancia real (km, opcional)</div>
+            <input type="number" class="pw-input" id="pw-dist" placeholder="ej: 42.2" step="0.1" min="0">
+          </div>
+          <div class="pw-field">
+            <div class="pw-label">Duración real (min, opcional)</div>
+            <input type="number" class="pw-input" id="pw-dur" placeholder="ej: 180" min="0">
+          </div>
+          <div class="pw-field">
+            <div class="pw-label">Notas para el coach</div>
+            <textarea class="pw-input" id="pw-notes" rows="3" placeholder="¿Cómo te sentiste? ¿Algo que el coach deba saber?..." style="resize:none"></textarea>
+          </div>
+        </div>
+
+        <button class="pw-submit" onclick="submitLog()">Enviar al Coach →</button>
+      </div>
+
+      <div class="pw-success" id="pw-success">
+        <div class="pw-success-ico">✅</div>
+        <div class="pw-success-title">¡Registrado!</div>
+        <div class="pw-success-sub">Tu coach puede ver el resultado ahora.<br>¡Buen entrenamiento!</div>
+        <button class="start-btn" onclick="goScreen('screen-today');resetLog()" style="margin:0;width:100%;max-width:200px">Ver plan →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: MI SEMANA -->
+    <div class="screen" id="screen-week">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Mi Semana</div>
+          <div class="topbar-sub" id="s4-week-range">Cargando...</div>
+        </div>
+      </div>
+
+      <div class="wk-summary" id="wk-summary">
+        <div><div class="wk-sum-val" id="wk-tss">—</div><div class="wk-sum-lbl">TSS</div></div>
+        <div><div class="wk-sum-val" id="wk-dist">—</div><div class="wk-sum-lbl">km</div></div>
+        <div><div class="wk-sum-val" id="wk-sessions">—</div><div class="wk-sum-lbl">Sesiones</div></div>
+      </div>
+
+      <div class="week-grid" id="week-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- SCREEN 5: BIENESTAR -->
+    <div class="screen" id="screen-wellness">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Check-in</div>
+          <div class="topbar-sub">Bienestar del día</div>
+        </div>
+      </div>
+
+      <div class="wellness-grid">
+
+        <div class="wl-card">
+          <div class="wl-title">Estado General</div>
+          <div class="wl-emoji-row" id="wl-status">
+            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-status')" style="--c:#EF4444"><span>😫</span><small>Mal</small></button>
+            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-status')" style="--c:#F59E0B"><span>😟</span><small>Regular</small></button>
+            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-status')" style="--c:#F0A500"><span>😐</span><small>OK</small></button>
+            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-status')" style="--c:#10B981"><span>😊</span><small>Bien</small></button>
+            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-status')" style="--c:#22D3EE"><span>🤩</span><small>Excelente</small></button>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Fatiga muscular</div>
+          <div class="wl-emoji-row" id="wl-fatigue">
+            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-fatigue')" style="--c:#EF4444"><span>🦵💥</span><small>Muy alta</small></button>
+            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-fatigue')" style="--c:#F59E0B"><span>😓</span><small>Alta</small></button>
+            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-fatigue')" style="--c:#F0A500"><span>😌</span><small>Moderada</small></button>
+            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-fatigue')" style="--c:#10B981"><span>😎</span><small>Baja</small></button>
+            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-fatigue')" style="--c:#22D3EE"><span>⚡</span><small>Fresco</small></button>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Dolor / Molestias</div>
+          <div class="wl-emoji-row" id="wl-soreness">
+            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-soreness')" style="--c:#EF4444"><span>🤕</span><small>Fuerte</small></button>
+            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-soreness')" style="--c:#F59E0B"><span>😣</span><small>Moderado</small></button>
+            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-soreness')" style="--c:#F0A500"><span>😑</span><small>Leve</small></button>
+            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-soreness')" style="--c:#10B981"><span>🙂</span><small>Mínimo</small></button>
+            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-soreness')" style="--c:#22D3EE"><span>✅</span><small>Ninguno</small></button>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Sueño anoche</div>
+          <div class="wl-sleep-row">
+            <div class="wl-sleep-val" id="wl-sleep-val">7<span style="font-size:1rem;font-weight:400">h</span></div>
+            <div class="wl-sleep-btns">
+              <button class="wl-sleep-btn" onclick="wlSleep(1)">▲</button>
+              <button class="wl-sleep-btn" onclick="wlSleep(-1)">▼</button>
+            </div>
+            <div style="font-size:.8rem;color:var(--dim);line-height:1.5">
+              Recomendado: 7–9h<br>para atletas en carga
+            </div>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Notas (opcional)</div>
+          <textarea class="pw-input" id="wl-notes" rows="2" placeholder="Dolor específico, viaje, estrés laboral..." style="resize:none;background:var(--bg3)"></textarea>
+        </div>
+
+      </div>
+
+      <button class="wl-submit" onclick="submitWellness()">Guardar check-in</button>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="goScreen('screen-today')" id="nav-today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Hoy
+    </button>
+    <button class="nav-btn" onclick="goScreen('screen-during')" id="nav-during">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Durante
+    </button>
+    <button class="nav-btn" onclick="goScreen('screen-log')" id="nav-log">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Registrar
+    </button>
+    <button class="nav-btn" onclick="goScreen('screen-week')" id="nav-week">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Semana
+    </button>
+    <button class="nav-btn" onclick="goScreen('screen-wellness')" id="nav-wellness">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      Bienestar
+    </button>
+  </nav>
+</div><!-- /app -->
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════
+   LabX Athlete App — PWA JS
+═══════════════════════════════════════════════════════════ */
+
+/* ── Config ─────────────────────────────────────────────── */
+var API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
+var _token = null;
+var _todayAssign = null;  // assignment loaded for today
+var _selectedRpe = null;
+var _wlData = { status: null, fatigue: null, soreness: null, sleep: 7 };
+
+/* ── Auth ────────────────────────────────────────────────── */
+function getToken(){
+  return localStorage.getItem('lxapp_token')
+    || localStorage.getItem('lx_co_token')
+    || (function(){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); return s&&s.token?s.token:null; }catch(e){return null;} })();
+}
+
+function doLogin(){
+  var t = document.getElementById('token-input').value.trim();
+  if(!t){ toast('Pega tu token primero',''); return; }
+  localStorage.setItem('lxapp_token', t);
+  initApp(t);
+}
+
+function initApp(tok){
+  _token = tok;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  loadToday();
+  loadWeek();
+  renderZones();
+  renderRpe();
+}
+
+/* ── Navigation ──────────────────────────────────────────── */
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if(el) el.classList.add('active');
+  var navMap = {
+    'screen-today':'nav-today','screen-during':'nav-during',
+    'screen-log':'nav-log','screen-week':'nav-week','screen-wellness':'nav-wellness'
+  };
+  var nb = document.getElementById(navMap[id]);
+  if(nb) nb.classList.add('active');
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+function toast(msg, cls){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show'+(cls?' '+cls:'');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.className=''; }, 3000);
+}
+
+/* ── Date helpers ────────────────────────────────────────── */
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(iso){
+  var d = new Date(iso+'T12:00:00');
+  var DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()];
+}
+function weekRange(){
+  var today = new Date();
+  var dow = today.getDay();
+  var diff = (dow===0)?-6:1-dow;
+  var mon = new Date(today); mon.setDate(today.getDate()+diff);
+  var sun = new Date(mon);   sun.setDate(mon.getDate()+6);
+  return { mon: mon.toISOString().slice(0,10), sun: sun.toISOString().slice(0,10) };
+}
+
+/* ── API fetch wrapper ───────────────────────────────────── */
+function apiFetch(path, opts){
+  return fetch(API+path, Object.assign({ headers: { Authorization: 'Bearer '+_token, 'Content-Type':'application/json' } }, opts||{}));
+}
+
+/* ── Screen 1: Hoy ──────────────────────────────────────── */
+var SPORT_EMOJI = {swim:'🏊',bike:'🚴',run:'🏃',strength:'💪'};
+var SPORT_COL   = {swim:'#22D3EE',bike:'#FF6535',run:'#10B981',strength:'#A855F7'};
+var TIPO_COL    = {endurance:'#22D3EE',tempo:'#F59E0B',umbral:'#EF4444',vo2max:'#A855F7',recuperacion:'#10B981',race:'#FF6535',fuerza:'#6B7280'};
+var DAY_ES      = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+var MONTH_ES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function loadToday(){
+  var today = todayIso();
+  var d = new Date(today+'T12:00:00');
+
+  // Update topbar
+  document.getElementById('s1-topbar-title').textContent = DAY_ES[d.getDay()];
+  document.getElementById('s1-topbar-date').textContent = d.getDate()+' de '+MONTH_ES[d.getMonth()];
+
+  if(!_token){ renderNoWorkout('Inicia sesión para ver tu plan'); return; }
+
+  apiFetch('/athlete/plan?start='+today+'&end='+today)
+    .then(function(r){ return r.ok?r.json():[]; })
+    .then(function(assigns){
+      if(!assigns || assigns.length===0){ renderNoWorkout('Día de descanso 🧘'); return; }
+      var a = assigns[0]; // take first assignment of today
+      _todayAssign = a;
+      renderTodayWorkout(a);
+    }).catch(function(){ renderNoWorkout('Sin conexión — plan no disponible'); });
+}
+
+function renderNoWorkout(msg){
+  document.getElementById('today-content').innerHTML =
+    '<div class="no-workout">'
+    +'<div class="no-workout-ico">'+(msg.indexOf('descanso')>-1?'🛌':'📡')+'</div>'
+    +'<div class="no-workout-lbl">'+msg+'</div>'
+    +'</div>';
+}
+
+function renderTodayWorkout(a){
+  var t   = a.template || {};
+  var sp  = t.sport || 'run';
+  var col = SPORT_COL[sp] || '#9CA3AF';
+  var done= a.logs && a.logs.length > 0;
+  var blocks = [];
+  try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
+
+  var html = '';
+
+  // Hero card
+  html += '<div class="today-hero">';
+  html += '<div class="th-date">'+fmtDate(a.date_iso)+'</div>';
+  html += '<div class="th-sport"><span class="th-sport-emoji">'+(SPORT_EMOJI[sp]||'🏋')+'</span>'
+    +'<div><div class="th-name">'+(t.nombre||'Entrenamiento')+'</div>'
+    +(t.tipo?'<span class="th-tipo" style="background:'+((TIPO_COL[t.tipo]||'#6B7280')+'22')+';color:'+(TIPO_COL[t.tipo]||'#9CA3AF')+';border:1px solid '+((TIPO_COL[t.tipo]||'#6B7280')+'44')+'">'+t.tipo.toUpperCase()+'</span>':'')
+    +'</div></div>';
+  html += '<div class="th-meta-grid">'
+    +(t.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+t.dur_min+'</div><div class="th-meta-lbl">min</div></div>':'')
+    +(t.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+t.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
+    +(t.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+t.tss+'</div><div class="th-meta-lbl">TSS</div></div>':'')
+    +'</div>';
+  html += '</div>';
+
+  // Coach notes
+  if(a.notas){
+    html += '<div class="coach-notes"><div class="cn-label">📋 Notas del Coach</div><div class="cn-text">'+a.notas+'</div></div>';
+  }
+
+  // Blocks
+  if(blocks.length){
+    html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Bloques</div>';
+    html += '<div class="block-list" style="padding-top:0">';
+    blocks.forEach(function(b){
+      var bCol = col;
+      var bType = (b.type||b.zone||'bloque').toUpperCase();
+      var bMain = '', bSub = '';
+      if(sp==='bike'){
+        bMain = (b.repeat&&b.repeat>1?b.repeat+'×':'')+' '+(b.on_duration?Math.round(b.on_duration/60)+'min':'')+' @ '+(b.on_power?Math.round(b.on_power*100)+'% FTP':'');
+        if(b.off_duration) bSub = 'Rec: '+Math.round(b.off_duration/60)+'min @ '+Math.round((b.off_power||0.5)*100)+'%';
+      } else if(sp==='run'){
+        if(b.type==='intervals'){
+          bMain = b.repeat+'× '+b.dist_m+'m @ '+(b.pace_min+':'+String(b.pace_sec||0).padStart(2,'0'))+'/km';
+          bSub = 'Rec: '+b.rec_sec+'s';
+        } else {
+          bMain = (b.dur_min||'?')+'min '+(b.zone?'Zona '+(b.zone||1):'');
+          bType = (b.type||'steady').toUpperCase();
+        }
+      } else if(sp==='swim'){
+        if(b.type==='main'){
+          bMain = b.repeat+'× '+b.dist_m+'m @ '+b.css_pct+'% CSS';
+          bSub = 'Descanso: '+b.rest_sec+'s';
+        } else {
+          bMain = b.dist_m+'m @ '+b.css_pct+'% CSS';
+          bType = (b.type||'swim').toUpperCase();
+        }
+      }
+      if(!bMain) bMain = JSON.stringify(b).slice(0,60);
+
+      html += '<div class="workout-block"><div class="wb-bar" style="background:'+bCol+'"></div>'
+        +'<div class="wb-body">'
+        +'<div class="wb-type">'+bType+'</div>'
+        +'<div class="wb-main">'+bMain+'</div>'
+        +(bSub?'<div class="wb-sub">'+bSub+'</div>':'')
+        +'</div></div>';
+    });
+    html += '</div>';
+  } else if(t.notas){
+    html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Descripción</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+t.notas+'</div></div>';
+  }
+
+  // Action buttons
+  if(!done){
+    html += '<button class="start-btn" onclick="startWorkout()">'
+      +'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+      +' Iniciar entrenamiento'
+      +'</button>';
+  } else {
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — reportado al coach</div>';
+  }
+
+  document.getElementById('today-content').innerHTML = html;
+}
+
+function startWorkout(){
+  var t = _todayAssign ? (_todayAssign.template||{}) : {};
+  document.getElementById('s2-workout-name').textContent = t.nombre || 'Entrenamiento';
+  document.getElementById('s2-sport-lbl').textContent = (t.sport||'').toUpperCase();
+
+  // populate blocks in during screen
+  var blocks = [];
+  try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
+  var bHtml = '';
+  if(blocks.length){
+    blocks.forEach(function(b,i){
+      var col = SPORT_COL[t.sport||'run'] || '#9CA3AF';
+      bHtml += '<div class="workout-block"><div class="wb-bar" style="background:'+col+'"></div>'
+        +'<div class="wb-body"><div class="wb-type">'+(b.type||'Bloque '+(i+1)).toUpperCase()+'</div>'
+        +'<div class="wb-main">'+JSON.stringify(b).replace(/[{}"]/g,'').slice(0,80)+'</div>'
+        +'</div></div>';
+    });
+  } else {
+    bHtml = '<div style="padding:.5rem;color:var(--dim);font-size:.82rem">Sigue el plan y registra al finalizar.</div>';
+  }
+  document.getElementById('s2-blocks').innerHTML = bHtml;
+
+  goScreen('screen-during');
+}
+
+/* ── Screen 2: Timer ─────────────────────────────────────── */
+var _timerRunning = false;
+var _timerSecs = 0;
+var _timerInterval = null;
+
+function timerToggle(){
+  _timerRunning = !_timerRunning;
+  var btn = document.getElementById('timer-toggle-btn');
+  if(_timerRunning){
+    btn.textContent = '⏸ Pausar';
+    btn.style.background = 'var(--gold)';
+    _timerInterval = setInterval(function(){
+      _timerSecs++;
+      var h = Math.floor(_timerSecs/3600);
+      var m = Math.floor((_timerSecs%3600)/60);
+      var s = _timerSecs%60;
+      document.getElementById('timer-val').textContent = h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    }, 1000);
+  } else {
+    btn.textContent = '▶ Continuar';
+    btn.style.background = 'var(--green)';
+    clearInterval(_timerInterval);
+  }
+}
+
+function timerReset(){
+  clearInterval(_timerInterval);
+  _timerRunning = false;
+  _timerSecs = 0;
+  document.getElementById('timer-val').textContent = '0:00:00';
+  var btn = document.getElementById('timer-toggle-btn');
+  btn.textContent = '▶ Iniciar';
+  btn.style.background = 'var(--green)';
+}
+
+function renderZones(){
+  var zones = [
+    {n:'Z1',l:'Recuperación',r:'<68% FTP',col:'#6B7280'},
+    {n:'Z2',l:'Aeróbico',   r:'68–79%',  col:'#22D3EE'},
+    {n:'Z3',l:'Tempo',      r:'80–87%',  col:'#10B981'},
+    {n:'Z4',l:'Umbral',     r:'88–94%',  col:'#F59E0B'},
+    {n:'Z5',l:'VO2max',     r:'>105%',   col:'#EF4444'},
+  ];
+  document.getElementById('zone-grid').innerHTML = zones.map(function(z){
+    return '<div class="zone-card" style="border-color:'+z.col+'33">'
+      +'<div class="zc-n" style="color:'+z.col+'">'+z.n+'</div>'
+      +'<div class="zc-l" style="color:'+z.col+'">'+z.l+'</div>'
+      +'<div class="zc-r" style="color:'+z.col+'88">'+z.r+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+/* ── Screen 3: Log ───────────────────────────────────────── */
+var RPE_LABELS = ['','Muy fácil','Fácil','Moderado','Moderado','Moderado-duro','Duro','Muy duro','Muy duro','Extremo','Máximo'];
+var RPE_COLORS = ['','#10B981','#10B981','#22D3EE','#0EA5E9','#F0A500','#F0A500','#FF6535','#EF4444','#EF4444','#7C3AED'];
+
+function renderRpe(){
+  var html = '';
+  for(var i=1;i<=10;i++){
+    html += '<button class="rpe-btn" data-rpe="'+i+'" onclick="selRpe('+i+')" style="border-color:'+(RPE_COLORS[i]||'#6B7280')+'44">'+i+'</button>';
+  }
+  document.getElementById('rpe-track').innerHTML = html;
+}
+
+function selRpe(v){
+  _selectedRpe = v;
+  document.querySelectorAll('.rpe-btn').forEach(function(b){
+    var bv = parseInt(b.dataset.rpe);
+    var col = RPE_COLORS[bv] || '#6B7280';
+    b.classList.toggle('sel', bv===v);
+    if(bv===v){ b.style.background=col; b.style.borderColor=col; }
+    else { b.style.background=''; b.style.borderColor=col+'44'; }
+  });
+  var desc = document.getElementById('rpe-desc');
+  desc.textContent = v+' — '+(RPE_LABELS[v]||'');
+  desc.style.color = RPE_COLORS[v]||'var(--dim)';
+
+  // auto-fill duration from timer if running
+  if(_timerSecs > 0 && !document.getElementById('pw-dur').value){
+    document.getElementById('pw-dur').value = Math.round(_timerSecs/60);
+  }
+}
+
+function submitLog(){
+  if(!_selectedRpe){ toast('Selecciona un RPE primero',''); return; }
+  if(!_todayAssign){ toast('No hay entrenamiento para registrar',''); return; }
+
+  var body = {
+    assignment_id: _todayAssign.id,
+    rpe:          _selectedRpe,
+    completado:   true,
+    tss_real:     parseInt(document.getElementById('pw-tss').value)||null,
+    dist_real:    parseFloat(document.getElementById('pw-dist').value)||null,
+    dur_real:     parseInt(document.getElementById('pw-dur').value)||null,
+    notas:        document.getElementById('pw-notes').value.trim()||null,
+  };
+
+  apiFetch('/athlete/log', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){
+      if(r.ok){
+        document.getElementById('pw-form').style.display='none';
+        document.getElementById('pw-success').style.display='flex';
+        toast('¡Entrenamiento registrado!','ok');
+        loadToday(); // refresh
+      } else {
+        return r.json().then(function(e){ toast('Error: '+(e.detail||'intenta de nuevo'),''); });
+      }
+    }).catch(function(){ toast('Sin conexión',''); });
+}
+
+function resetLog(){
+  _selectedRpe = null;
+  document.getElementById('pw-tss').value='';
+  document.getElementById('pw-dist').value='';
+  document.getElementById('pw-dur').value='';
+  document.getElementById('pw-notes').value='';
+  document.getElementById('pw-form').style.display='';
+  document.getElementById('pw-success').style.display='none';
+  renderRpe();
+}
+
+/* ── Screen 4: Semana ────────────────────────────────────── */
+function loadWeek(){
+  var wr = weekRange();
+  document.getElementById('s4-week-range').textContent = fmtDate(wr.mon)+' – '+fmtDate(wr.sun);
+
+  if(!_token) return;
+
+  apiFetch('/athlete/plan?start='+wr.mon+'&end='+wr.sun)
+    .then(function(r){ return r.ok?r.json():[]; })
+    .then(function(assigns){
+      renderWeekGrid(assigns, wr.mon);
+    }).catch(function(){});
+}
+
+function renderWeekGrid(assigns, monIso){
+  var today = todayIso();
+  var assignByDay = {};
+  (assigns||[]).forEach(function(a){ assignByDay[a.date_iso] = assignByDay[a.date_iso]||[]; assignByDay[a.date_iso].push(a); });
+
+  var totalTss=0, totalDist=0, totalSessions=0;
+  var DAYS_ABR=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var html='';
+
+  for(var i=0;i<7;i++){
+    var d = new Date(monIso+'T12:00:00'); d.setDate(d.getDate()+i);
+    var iso = d.toISOString().slice(0,10);
+    var isToday = iso===today;
+    var dayAssigns = assignByDay[iso]||[];
+
+    html+='<div class="wk-day'+(isToday?' wk-day-today':'')+'"><div class="wk-day-head">'
+      +'<span class="wk-day-name">'+DAYS_ABR[i]+'</span>'
+      +'<span class="wk-day-date">'+d.getDate()+'</span>'
+      +'</div>';
+
+    if(dayAssigns.length){
+      html+='<div class="wk-day-workouts">';
+      dayAssigns.forEach(function(a){
+        var t=a.template||{};
+        var sp=t.sport||'run';
+        var done=a.logs&&a.logs.length>0;
+        if(t.tss) totalTss+=t.tss;
+        if(t.dist_km) totalDist+=t.dist_km;
+        totalSessions++;
+        html+='<div class="wk-wo'+(done?' wk-wo-done':'')+'">'
+          +'<div class="wk-wo-dot" style="background:'+(SPORT_COL[sp]||'#9CA3AF')+'"></div>'
+          +'<div class="wk-wo-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||sp)+'</div>'
+          +(t.tss?'<div class="wk-wo-tss">'+t.tss+' TSS</div>':'')
+          +'</div>';
+      });
+      html+='</div>';
+    } else {
+      html+='<div class="wk-rest">Descanso</div>';
+    }
+    html+='</div>';
+  }
+
+  document.getElementById('week-grid').innerHTML = html;
+  document.getElementById('wk-tss').textContent = Math.round(totalTss)||'—';
+  document.getElementById('wk-dist').textContent = Math.round(totalDist*10)/10||'—';
+  document.getElementById('wk-sessions').textContent = totalSessions||'—';
+}
+
+/* ── Screen 5: Bienestar ─────────────────────────────────── */
+var _wlSleep = 7;
+
+function wlSel(btn, groupId){
+  var grp = document.getElementById(groupId);
+  if(!grp) return;
+  grp.querySelectorAll('.wl-emoji-btn').forEach(function(b){ b.classList.remove('sel'); b.style.borderColor=''; b.style.background=''; });
+  btn.classList.add('sel');
+  var col = getComputedStyle(btn).getPropertyValue('--c').trim() || '#F0A500';
+  btn.style.borderColor = col;
+  btn.style.background  = col+'22';
+  _wlData[groupId.replace('wl-','')] = parseInt(btn.dataset.val);
+}
+
+function wlSleep(delta){
+  _wlSleep = Math.max(3, Math.min(12, _wlSleep+delta));
+  document.getElementById('wl-sleep-val').innerHTML = _wlSleep+'<span style="font-size:1rem;font-weight:400">h</span>';
+  _wlData.sleep = _wlSleep;
+}
+
+function submitWellness(){
+  var notes = (document.getElementById('wl-notes').value||'').trim();
+  var body = {
+    tipo: 'daily',
+    estado: _wlData.status||3,
+    fatiga: _wlData.fatigue||3,
+    dolor:  _wlData.soreness||1,
+    sueno:  _wlData.sleep||7,
+    notas:  notes||null,
+    fecha:  todayIso(),
+  };
+
+  if(!_token){ toast('Inicia sesión para guardar',''); return; }
+
+  apiFetch('/athlete/wellness', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){
+      if(r.ok || r.status===201){ toast('Check-in guardado ✓','ok'); }
+      else { toast('Error al guardar',''); }
+    }).catch(function(){ toast('Guardado localmente (sin conexión)',''); });
+}
+
+/* ── Boot ────────────────────────────────────────────────── */
+(function(){
+  var tok = getToken();
+  if(tok){
+    initApp(tok);
+  } else {
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('login-screen').style.display='';
+  }
+})();
+</script>
+
+<!-- PWA manifest inline check -->
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+
+</body>
+</html>

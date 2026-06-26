@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KonaLabs — Protocolo de Nutrición</title>
+<title>LabX — Nutrición</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,598 +17,1125 @@
   --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
   --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
   --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --swim:#06B6D4;--bike:#F59E0B;--run:#10B981;
   --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
 }
 html{scroll-behavior:smooth}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
 a{color:inherit;text-decoration:none}ul{list-style:none}
 
-/* NAV */
-#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
-.nav-logo .acc{color:var(--orange)}
-.nav-logo svg{width:22px;height:22px;color:var(--orange)}
-.nav-links{display:flex;align-items:center;gap:1.6rem}
-.nav-links a{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
-.nav-links a:hover{color:var(--text)}.nav-links a.on{color:var(--orange)}
-.nav-right{display:flex;align-items:center;gap:.75rem}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
-.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
-@media(max-width:900px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
-
-/* LAYOUT */
 .c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
 .btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
-.btn-p{background:var(--orange);color:#fff}.btn-p:hover{background:var(--orange2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,101,53,.28)}
 .btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
 .btn-sm{padding:.42rem .95rem;font-size:.74rem}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.sr{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .6s var(--ease)}.vis{opacity:1;transform:none}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
-.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem}
-@media(max-width:900px){.grid-3{grid-template-columns:1fr}}
-@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
-.mt2{margin-top:1.5rem}
+.panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem}
+.sr{opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem}
+@media(max-width:1100px){.g6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+@media(max-width:640px){.g6{grid-template-columns:repeat(2,1fr)}}
+.mt2{margin-top:1.5rem}.mt3{margin-top:2.5rem}
+.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
 
-/* PAGE HEADER */
-.ph{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
-.ph-inner{padding:2rem 0 1.8rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.5rem}
-.ph-eye{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.35rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+/* ── CONFIG BAR ── */
+.cfg-bar{background:rgba(6,14,28,.97);border-bottom:1px solid var(--border);padding:.75rem 0;position:sticky;top:0;z-index:100}
+.cfg-inner{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.race-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;flex-shrink:0}
+.rt{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.34rem .78rem;border-radius:5px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
+.rt.on{background:var(--orange);color:#fff;box-shadow:0 2px 12px rgba(255,101,53,.3)}
+.rt:hover:not(.on){color:var(--muted);background:rgba(255,255,255,.04)}
+.cfg-sel{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:flex;flex-direction:column;gap:.16rem}
+.cfg-sel select{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.28rem .6rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.8rem;outline:none;cursor:pointer}
+.cfg-sel select:focus{border-color:rgba(255,101,53,.4)}
+.cfg-ath{display:flex;align-items:center;gap:.6rem;margin-left:auto;background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:7px;padding:.3rem .75rem}
+.cfg-ath-lbl{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.cfg-ath-val{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;color:var(--text)}
+@media(max-width:720px){.cfg-ath{display:none}}
+
+/* ── PAGE HEADER ── */
+.ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:1.6rem 0 1.4rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
 .ph-title em{color:var(--green);font-style:normal}
-.ph-sub{font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--muted);letter-spacing:.08em;margin-top:.4rem}
-.ph-chips{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
-.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.38rem .85rem;font-size:.75rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin-top:.35rem}
+.ph-chips{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;padding:.32rem .72rem;font-size:.72rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
 .chip strong{color:var(--text);font-weight:600}
-.chip-g{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08);color:var(--green)}
-.chip-o{border-color:rgba(255,101,53,.3);background:rgba(255,101,53,.08);color:var(--coral)}
+.chip-g{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.07);color:var(--green)}
+.chip-o{border-color:rgba(255,101,53,.3);background:rgba(255,101,53,.07);color:var(--coral)}
+.chip-c{border-color:rgba(14,165,233,.3);background:rgba(14,165,233,.07);color:var(--cyan)}
+.chip-gg{border-color:rgba(240,165,0,.3);background:rgba(240,165,0,.07);color:var(--gold)}
 
-/* CALORIC CARDS */
-.cal-card{background:linear-gradient(145deg,#08121E,#0A1825);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.6rem;position:relative;overflow:hidden;transition:transform var(--ease),border-color var(--ease)}
-.cal-card:hover{transform:translateY(-4px)}
-.cal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--green))}
-.cal-card-icon{font-size:1.8rem;margin-bottom:.65rem}
-.cal-card-type{font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
-.cal-card-kcal{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;line-height:1;color:var(--card-color,var(--green))}
-.cal-card-unit{font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.08em;color:var(--muted);margin-bottom:1rem}
-.cal-card-macros{display:flex;flex-direction:column;gap:.45rem}
-.macro-row{display:flex;align-items:center;gap:.6rem}
-.macro-bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
-.macro-bar-f{height:100%;border-radius:3px;width:0;transition:width 1.2s ease}
-.macro-lbl{font-family:'Oswald',sans-serif;font-size:.65rem;letter-spacing:.06em;color:var(--dim);width:50px}
-.macro-val{font-size:.7rem;font-weight:600;width:44px;text-align:right}
+/* ── KPI STRIP (6 cards) ── */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center;transition:border-color var(--ease)}
+.kpi:hover{border-color:rgba(255,101,53,.25)}
+.kpi-n{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1}
+.kpi-l{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+.kpi-s{font-size:.68rem;color:var(--muted);margin-top:.06rem}
 
-/* TIMELINE */
-.timeline{position:relative;padding-left:2rem}
-.timeline::before{content:'';position:absolute;left:.75rem;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--green),var(--cyan),var(--orange));opacity:.4}
-.tl-item{position:relative;padding-bottom:1.8rem}
-.tl-item:last-child{padding-bottom:0}
-.tl-dot{position:absolute;left:-1.5rem;top:.3rem;width:14px;height:14px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;background:var(--bg)}
-.tl-time{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.25rem}
-.tl-title{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:.02em;margin-bottom:.2rem}
-.tl-items-list{display:flex;flex-direction:column;gap:.3rem;margin-top:.4rem}
-.tl-row{display:flex;align-items:baseline;gap:.5rem;font-size:.8rem;color:var(--muted)}
-.tl-row span{color:var(--text);font-weight:600}
-.tl-row strong{color:var(--green);font-size:.72rem}
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:1.4rem;width:fit-content}
+.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease)}
+.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.tab-pane{display:none}.tab-pane.on{display:block}
 
-/* SUPPLEMENT TABLE */
-.supp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border2)}
-@media(max-width:640px){.supp-grid{grid-template-columns:1fr}}
-.supp-item{background:var(--bg);padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:.85rem}
-.supp-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
-.supp-name{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.06em}
-.supp-dose{font-size:.72rem;color:var(--muted);margin-top:.1rem}
-.supp-when{font-size:.65rem;color:var(--dim);margin-top:.15rem}
-.supp-badge{display:inline-block;font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.1em;padding:.15rem .45rem;border-radius:3px;margin-top:.25rem}
+/* ── CHART BOXES ── */
+.ch-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem}
+.ch-title{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem}
+.ch-inner{position:relative;height:220px}
+.ch-inner-sm{position:relative;height:160px}
 
-/* HYDRATION */
-.hyd-table{width:100%;border-collapse:collapse}
-.hyd-table th{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.6rem .9rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
-.hyd-table td{padding:.7rem .9rem;font-size:.8rem;border-bottom:1px solid var(--border2)}
-.hyd-table tr:last-child td{border-bottom:none}
-.hyd-table tr:hover td{background:rgba(8,116,174,.05)}
+/* ── SPLITS ── */
+.split-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2);font-size:.8rem}
+.split-row:last-child{border-bottom:none}
+.split-disc{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.06em}
+.split-time{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700}
+.split-kcal{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700}
+.split-note{font-size:.7rem;color:var(--dim);flex:1;text-align:right;padding-left:.5rem}
 
-/* WEEKLY TEMPLATE */
-.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-@media(max-width:700px){.week-grid{grid-template-columns:repeat(3,1fr)}}
-.day-card{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:.8rem .6rem;text-align:center;transition:border-color var(--ease)}
-.day-card:hover{border-color:var(--border)}
-.day-name{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.4rem}
-.day-kcal{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;line-height:1}
-.day-type{font-size:.62rem;color:var(--muted);margin-top:.2rem}
-.day-card.rest-day{border-color:rgba(61,104,128,.3)}
-.day-card.hard-day{border-color:rgba(255,101,53,.3);background:rgba(255,101,53,.05)}
-.day-card.race-day{border-color:rgba(240,165,0,.5);background:rgba(240,165,0,.08)}
+/* ── GUIDELINES BOX ── */
+.guide-box{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.15);border-radius:10px;padding:1rem 1.2rem;font-size:.8rem;color:var(--muted);line-height:1.6}
+.guide-box strong{color:var(--text)}
+.guide-box p{margin-bottom:.5rem}.guide-box p:last-child{margin-bottom:0}
 
-/* FOOTER */
+/* ── GANTT ── */
+.gantt-wrap{position:relative;height:52px;border-radius:8px;overflow:hidden;background:var(--surface2);margin-bottom:.5rem}
+.gantt-seg{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.9);overflow:hidden;white-space:nowrap;transition:opacity var(--ease)}
+.gantt-seg:hover{opacity:.85}
+.gantt-labels{display:flex;font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.06em;margin-bottom:.25rem}
+.nutrition-markers{position:relative;height:22px;margin-top:2px}
+.nut-mark{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:1px}
+.nut-mark-line{width:1px;height:10px;background:var(--purple);opacity:.7}
+.nut-mark-lbl{font-family:'Oswald',sans-serif;font-size:.55rem;color:var(--purple);font-weight:700;white-space:nowrap}
+
+/* ── PLAN TABLE ── */
+.plan-t{width:100%;border-collapse:collapse;font-size:.78rem}
+.plan-t th{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.45rem .7rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
+.plan-t td{padding:.55rem .7rem;border-bottom:1px solid rgba(8,116,174,.06);vertical-align:top}
+.plan-t tr:last-child td{border-bottom:none}
+.plan-t tr:hover td{background:rgba(255,255,255,.015)}
+.seg-icon{font-size:1rem;display:inline-block;width:22px;text-align:center}
+.prog-wrap{background:var(--surface2);border-radius:3px;height:6px;overflow:hidden;margin-top:3px}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.cho-val{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--gold)}
+.fl-val{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--cyan)}
+.na-val{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;color:var(--orange)}
+.plan-action{font-size:.75rem;color:var(--text);line-height:1.4}
+.plan-ex{font-size:.68rem;color:var(--dim);margin-top:.15rem;font-style:italic}
+.plan-zero{color:var(--dim);font-size:.78rem}
+
+/* ── TOTALS STRIP ── */
+.tot-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border2)}
+.tot-item{text-align:center}
+.tot-n{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1}
+.tot-l{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.15rem}
+.tot-s{font-size:.7rem;color:var(--muted);margin-top:.05rem}
+@media(max-width:640px){.tot-strip{grid-template-columns:repeat(2,1fr)}}
+
+/* ── PRE-RACE TIMELINE ── */
+.pre-item{display:grid;grid-template-columns:130px 1fr 1.8fr;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--border2);align-items:start}
+.pre-item:last-child{border-bottom:none}
+.pre-timing{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;letter-spacing:.02em;color:var(--orange);line-height:1.2}
+.pre-timing.finish{color:var(--gold)}
+.pre-cat{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.pre-food{font-size:.8rem;color:var(--text);font-weight:600;line-height:1.4}
+.pre-note{font-size:.72rem;color:var(--dim);margin-top:.25rem;line-height:1.4}
+.golden-rule{background:rgba(240,165,0,.06);border:1px solid rgba(240,165,0,.2);border-radius:10px;padding:.9rem 1.1rem;margin-top:1rem;font-size:.8rem;color:var(--muted);line-height:1.5}
+.golden-rule strong{color:var(--gold)}
+@media(max-width:640px){.pre-item{grid-template-columns:1fr;gap:.35rem}}
+
+/* ── WEEKLY CHART ── */
+.weekly-empty{display:flex;align-items:center;justify-content:center;height:180px;font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+
 footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
-footer div{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
 </style>
+<link rel="stylesheet" href="nav.css">
 </head>
 <body>
 
-<nav id="nav">
-  <div class="nav-inner">
-    <a href="landing.html" class="nav-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Kona<span class="acc">Labs</span>
+<!-- �?�? SIDEBAR �?�? -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <a href="landing.html" class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Lab<span>X</span>
     </a>
-    <ul class="nav-links">
-      <li><a href="dashboard.html" data-kl-module="dashboard">Dashboard</a></li>
-      <li><a href="athlete_profile.html" data-kl-module="athlete_profile">Perfil</a></li>
-      <li><a href="training_plan.html" data-kl-module="training_plan">Plan</a></li>
-      <li><a href="nutrition.html" class="on" data-kl-module="nutrition">Nutrición</a></li>
-      <li><a href="blood_labs.html" data-kl-module="blood_labs">Labs</a></li>
-      <li><a href="race_predictor.html" data-kl-module="race_predictor">Predictor</a></li>
-    </ul>
-    <div class="nav-right">
-      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir
-      </button>
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <div class="nav-avatar" id="kl-avatar">R</div>
-        <div><div class="nav-uname" id="kl-uname">Rafael</div><div class="nav-urole" id="kl-urole">Ironman 70.3</div></div>
+    <div class="sb-tagline" data-i18n="app_tagline">Where Champions Are Built</div>
+  </div>
+  <nav class="sb-nav">
+    <span class="sb-sect" data-i18n="nav_modules">Módulos</span>
+    <a href="dashboard.html"      class="sb-lnk" data-kl-module="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="athlete_profile.html" class="sb-lnk" data-kl-module="athlete_profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</a>
+    <a href="training_plan.html"  class="sb-lnk" data-kl-module="training_plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Plan</a>
+    <a href="nutrition.html"      class="sb-lnk on" data-kl-module="nutrition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/></svg>Nutrición</a>
+    <a href="blood_labs.html"     class="sb-lnk" data-kl-module="blood_labs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l5.5 9.5A6.5 6.5 0 1 1 6.5 11.5z"/></svg>Labs</a>
+    <a href="race_predictor.html" class="sb-lnk" data-kl-module="race_predictor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>Predictor</a>
+    <a href="training_detail.html" class="sb-lnk" data-kl-module="training_detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Sesión</a>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="sb-avatar" id="kl-sb-avatar">R</div>
+      <div><div class="sb-uname" id="kl-sb-uname">Rafael</div><div class="sb-urole" id="kl-sb-urole">Élite</div></div>
+    </div>
+    <button onclick="KL.logout()" class="sb-logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
+  </div>
+</aside>
+<header class="sb-topbar">
+  <button class="sb-hamburger" id="sb-ham" onclick="sbToggle()"><span></span><span></span><span></span></button>
+  <a href="landing.html" class="sb-tb-logo">Lab<span>X</span></a>
+  <div class="sb-tb-av" id="kl-sb-av-tb">R</div>
+</header>
+<div class="sb-overlay" id="sb-overlay" onclick="sbClose()"></div>
+
+<!-- �?�? CONFIG BAR �?�? -->
+<div class="cfg-bar">
+  <div class="c">
+    <div class="cfg-inner">
+      <div class="race-tabs">
+        <button class="rt" onclick="setRace('sprint',this)" data-i18n="nutr_sprint">⚡ Sprint</button>
+        <button class="rt" onclick="setRace('olympic',this)" data-i18n="nutr_olympic">🏊  Olímpico</button>
+        <button class="rt on" onclick="setRace('703',this)" data-i18n="nutr_703">🌊 70.3</button>
+        <button class="rt" onclick="setRace('ironman',this)" data-i18n="nutr_ironman">🔥 Ironman</button>
       </div>
+      <label class="cfg-sel">Sudoración
+        <select id="sel-sweat" onchange="nutCalc()">
+          <option value="600">Normal (~600 ml/h)</option>
+          <option value="900">Alta (~900 ml/h)</option>
+          <option value="1200">Muy alta (~1.2 L/h)</option>
+        </select>
+      </label>
+      <label class="cfg-sel">Temperatura
+        <select id="sel-heat" onchange="nutCalc()">
+          <option value="1.0">Frío/Templado (&lt;20°C)</option>
+          <option value="1.15">Cálido (20–28°C)</option>
+          <option value="1.30">Caluroso (&gt;28°C)</option>
+        </select>
+      </label>
+      <div class="cfg-ath" id="cfg-ath-info">
+        <div><div class="cfg-ath-lbl">FTP</div><div class="cfg-ath-val" id="ca-ftp">240W</div></div>
+        <div style="width:1px;height:28px;background:var(--border2)"></div>
+        <div><div class="cfg-ath-lbl">CSS</div><div class="cfg-ath-val" id="ca-css">1:50/100</div></div>
+        <div style="width:1px;height:28px;background:var(--border2)"></div>
+        <div><div class="cfg-ath-lbl">Run</div><div class="cfg-ath-val" id="ca-run">4:20/km</div></div>
+        <div style="width:1px;height:28px;background:var(--border2)"></div>
+        <div><div class="cfg-ath-lbl">Peso</div><div class="cfg-ath-val" id="ca-weight">72kg</div></div>
+      </div>
+      <span id="nut-save-status" style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);opacity:0;transition:opacity .3s ease;flex-shrink:0"></span>
     </div>
   </div>
-</nav>
+</div>
 
-<!-- PAGE HEADER -->
+<!-- �?�? PAGE HEADER �?�? -->
 <div class="ph">
   <div class="c">
     <div class="ph-inner">
       <div>
-        <div class="ph-eye">Kona Labs · Threshold Mastery Plan</div>
-        <div class="ph-title">PROTOCOLO DE <em>NUTRICIÓN</em></div>
-        <div class="ph-sub">PERIODIZACIÓN NUTRICIONAL &nbsp;·&nbsp; IRONMAN 70.3 &nbsp;·&nbsp; RAFAEL DUTRA</div>
+        <div class="ph-eye">LabX · <span id="ph-race">70.3</span></div>
+        <div class="ph-title">CALCULADORA DE <em>NUTRICIÓN</em></div>
+        <div class="ph-sub">Plan personalizado basado en tu predicción de carrera · <span id="ph-ath">Rafael Dutra</span></div>
         <div class="ph-chips">
-          <span class="chip chip-g">Fase: Construcción de Base</span>
-          <span class="chip chip-o">Peso objetivo: 72 kg</span>
-          <span class="chip">CTL actual: <strong>81</strong></span>
-          <span class="chip">FTP/kg: <strong>3.26 W/kg</strong></span>
+          <span class="chip chip-c">Tiempo est.: <strong id="ch-time">—</strong></span>
+          <span class="chip chip-o">Energía: <strong id="ch-energy">—</strong></span>
+          <span class="chip chip-g">CHO/h: <strong id="ch-cph">—</strong></span>
+          <span class="chip chip-gg">Ratio: <strong id="ch-ratio">—</strong></span>
         </div>
       </div>
-      <div style="display:flex;gap:.65rem;flex-wrap:wrap;align-items:flex-start">
-        <button class="btn btn-g btn-sm">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Ajustar Plan
-        </button>
-      </div>
+      <button class="btn btn-g btn-sm" onclick="window.print()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir
+      </button>
     </div>
   </div>
 </div>
 
-<div style="padding:2rem 0 3rem">
-  <div class="c">
+<!-- �?�? MAIN �?�? -->
+<div style="padding:2rem 0 4rem">
+<div class="c">
 
-    <!-- CALORIC NEEDS -->
-    <section class="sr">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.2rem;color:var(--muted)">
-        <span style="color:var(--green)">01</span> &nbsp; Necesidades Calóricas Diarias
-      </h2>
-      <div class="grid-3">
-        <div class="cal-card" style="--card-color:var(--cyan)">
-          <div class="cal-card-icon">🌊</div>
-          <div class="cal-card-type">Día de Recuperación</div>
-          <div class="cal-card-kcal">2 400</div>
-          <div class="cal-card-unit">kcal · baja carga</div>
-          <div class="cal-card-macros">
-            <div class="macro-row">
-              <span class="macro-lbl">Carbs</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="50" style="background:var(--cyan)"></div></div>
-              <span class="macro-val" style="color:var(--cyan)">300g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Proteína</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="25" style="background:var(--green)"></div></div>
-              <span class="macro-val" style="color:var(--green)">155g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Grasa</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="25" style="background:var(--gold)"></div></div>
-              <span class="macro-val" style="color:var(--gold)">67g</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="cal-card" style="--card-color:var(--orange)">
-          <div class="cal-card-icon">⚡</div>
-          <div class="cal-card-type">Día de Entrenamiento Duro</div>
-          <div class="cal-card-kcal">3 400</div>
-          <div class="cal-card-unit">kcal · carga alta (TSS &gt;300)</div>
-          <div class="cal-card-macros">
-            <div class="macro-row">
-              <span class="macro-lbl">Carbs</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="60" style="background:var(--orange)"></div></div>
-              <span class="macro-val" style="color:var(--orange)">510g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Proteína</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="20" style="background:var(--green)"></div></div>
-              <span class="macro-val" style="color:var(--green)">170g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Grasa</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="20" style="background:var(--gold)"></div></div>
-              <span class="macro-val" style="color:var(--gold)">75g</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="cal-card" style="--card-color:var(--gold)">
-          <div class="cal-card-icon">🏁</div>
-          <div class="cal-card-type">Día de Carrera (70.3)</div>
-          <div class="cal-card-kcal">4 200</div>
-          <div class="cal-card-unit">kcal · carga máxima</div>
-          <div class="cal-card-macros">
-            <div class="macro-row">
-              <span class="macro-lbl">Carbs</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="70" style="background:var(--gold)"></div></div>
-              <span class="macro-val" style="color:var(--gold)">735g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Proteína</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="15" style="background:var(--green)"></div></div>
-              <span class="macro-val" style="color:var(--green)">158g</span>
-            </div>
-            <div class="macro-row">
-              <span class="macro-lbl">Grasa</span>
-              <div class="macro-bar-bg"><div class="macro-bar-f" data-w="15" style="background:var(--coral)"></div></div>
-              <span class="macro-val" style="color:var(--coral)">70g</span>
-            </div>
-          </div>
-        </div>
+<!-- GASTO CALÓRICO SEMANAL -->
+<section class="sr">
+  <div class="sec-h">
+    <span style="color:var(--green)">01</span> &nbsp; Gasto Calórico Semanal <span style="font-size:.75em;color:var(--dim);font-weight:400">· por deporte · datos Garmin</span>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Calorías Quemadas — Últimas 8 Semanas
+      </span>
+      <span id="weekly-sync-info" style="font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.08em"></span>
+    </div>
+    <div style="padding:1rem 1.2rem">
+      <div class="ch-inner" id="weekly-chart-wrap">
+        <div class="weekly-empty" id="weekly-empty">Cargando datos Garmin…</div>
+        <canvas id="ch-weekly" style="display:none"></canvas>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- RACE DAY PROTOCOL -->
-    <section class="mt2 sr">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.2rem;color:var(--muted)">
-        <span style="color:var(--orange)">02</span> &nbsp; Protocolo Día de Carrera — Ironman 70.3
-      </h2>
-      <div class="panel">
-        <div class="panel-head">
-          <span class="panel-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" style="margin-right:.4rem;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Timeline Nutricional — Carrera (5:00h target)
-          </span>
-          <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--gold);letter-spacing:.1em">60-90g CARBS/H EN CARRERA</span>
-        </div>
-        <div style="padding:1.8rem 2rem">
-          <div class="timeline">
+<!-- RACE NUTRITION CALCULATOR -->
+<section class="sr mt3">
+  <div class="sec-h"><span style="color:var(--orange)">02</span> &nbsp; Race Nutrition Calculator</div>
 
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--dim);color:var(--dim)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--dim)">-3h 00min · La Noche Anterior</div>
-              <div class="tl-title">Carga de Carbohidratos</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Pasta / Arroz:<span>150g (cocido)</span></div>
-                <div class="tl-row">Pollo a la plancha:<span>150g</span></div>
-                <div class="tl-row">Pan integral + aceite de oliva:<span>2 rebanadas</span></div>
-                <div class="tl-row">Hidratación nocturna:<span>500ml agua + electrolitos</span></div>
-              </div>
-            </div>
+  <!-- 6 KPI cards -->
+  <div class="g6" id="kpi-grid">
+    <div class="kpi"><div class="kpi-n" style="color:var(--cyan)"   id="kpi-time">—</div><div class="kpi-l">⏱  Tiempo est.</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--orange)" id="kpi-kcal">—</div><div class="kpi-l">🔥 Energía</div><div class="kpi-s" id="kpi-kcal-s"></div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--gold)"   id="kpi-cho">—</div><div class="kpi-l" data-lx-info="nutricion_cho" data-lx-info-val="#kpi-cho">⏱  CHO total</div><div class="kpi-s" id="kpi-cho-s"></div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--aqua)"  id="kpi-fluid">—</div><div class="kpi-l">💧 Fluidos</div><div class="kpi-s" id="kpi-fluid-s"></div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--coral)"  id="kpi-na">—</div><div class="kpi-l" data-lx-info="nutricion_sodio" data-lx-info-val="#kpi-na">🧂 Sodio</div><div class="kpi-s" id="kpi-na-s"></div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--purple)" id="kpi-ratio">—</div><div class="kpi-l" data-lx-info="nutricion_cho">⚡ Ratio CHO</div><div class="kpi-s" id="kpi-ratio-s"></div></div>
+  </div>
 
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--cyan)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--cyan)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--cyan)">-3h · Desayuno Pre-Carrera (5:00 AM)</div>
-              <div class="tl-title">Desayuno Atleta</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Avena cocida:<span>100g + miel + banana</span><strong>~600 kcal</strong></div>
-                <div class="tl-row">Café espresso:<span>1 taza (200mg cafeína)</span></div>
-                <div class="tl-row">Tostada + mantequilla de maní:<span>2 tostadas</span></div>
-                <div class="tl-row">Agua con sal:<span>500ml + 500mg sodio</span></div>
-              </div>
-            </div>
-
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--green)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--green)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--green)">-30min · Pre-Salida</div>
-              <div class="tl-title">Activación</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Gel energético:<span>1 gel (25g carbs)</span><strong>~5min antes</strong></div>
-                <div class="tl-row">Agua:<span>200ml</span></div>
-                <div class="tl-row">Betaína (opcional):<span>2g</span></div>
-              </div>
-            </div>
-
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--cyan)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--cyan)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--cyan)">🏊 Natación — 1.9km (~35min)</div>
-              <div class="tl-title">Sin nutrición en agua</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Carbohidratos acumulados activos:<span>~50g</span></div>
-              </div>
-            </div>
-
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--orange)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--orange)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--orange)">🚴 Ciclismo — 90km (~2:30h)</div>
-              <div class="tl-title">Objetivo: 90g carbos/hora</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Cada 30-35min:<span>1 gel + 1 bidón (500ml)</span><strong>60g carbs/h</strong></div>
-                <div class="tl-row">Bidón 1 (0-45km):<span>Isotónico 500ml + sal</span></div>
-                <div class="tl-row">Bidón 2 (45-90km):<span>Isotónico 500ml + sal</span></div>
-                <div class="tl-row">Barritas (km 30 y 60):<span>1 barrita × 25g carbs c/u</span></div>
-                <div class="tl-row">Sodio total bici:<span>~1500mg</span></div>
-                <div class="tl-row">Cafeína km 75:<span>1 gel cafeinado (75mg)</span><strong>Activar run</strong></div>
-              </div>
-            </div>
-
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--green)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--green)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--green)">🏃 Carrera — 21.1km (~1:48h)</div>
-              <div class="tl-title">Objetivo: 60g carbos/hora · Ritmo 5:05/km</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Cada 5km en avituallamiento:<span>Coca-Cola o gel</span><strong>25g carbs</strong></div>
-                <div class="tl-row">Agua fría en esponjas:<span>cada punto de avit.</span></div>
-                <div class="tl-row">Gel km 7 y km 14:<span>1 gel c/u (sin cafeína)</span></div>
-                <div class="tl-row">Gel km 18:<span>1 gel cafeinado (150mg)</span><strong>Sprint final</strong></div>
-                <div class="tl-row">Sal pastillas:<span>1 pastilla cada 45min</span></div>
-              </div>
-            </div>
-
-            <div class="tl-item">
-              <div class="tl-dot" style="border-color:var(--gold)">
-                <svg width="6" height="6" viewBox="0 0 24 24" fill="var(--gold)"><circle cx="12" cy="12" r="10"/></svg>
-              </div>
-              <div class="tl-time" style="color:var(--gold)">🏁 Post-Carrera · Recuperación</div>
-              <div class="tl-title">Ventana Anabólica (primeros 30min)</div>
-              <div class="tl-items-list">
-                <div class="tl-row">Recovery shake:<span>40g proteína + 60g carbs</span><strong>inmediato</strong></div>
-                <div class="tl-row">Agua + electrolitos:<span>750ml</span></div>
-                <div class="tl-row">Comida completa (2h post):<span>proteína magra + carbos</span></div>
-                <div class="tl-row">Cereza / antioxidantes:<span>250ml jugo concentrado</span></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+  <!-- Tabs -->
+  <div class="panel mt2">
+    <div class="panel-head">
+      <span class="panel-title">Plan de Carrera</span>
+      <div class="tabs-bar">
+        <button class="tab-btn on" onclick="switchTab('res',this)" data-i18n="nutr_summary">📊 Resumen</button>
+        <button class="tab-btn" onclick="switchTab('plan',this)" data-i18n="nutr_plan">📋  Plan Hora a Hora</button>
+        <button class="tab-btn" onclick="switchTab('pre',this)" data-i18n="nutr_prerace">📋 Pre-Carrera</button>
       </div>
-    </section>
+    </div>
+    <div style="padding:1.4rem">
 
-    <!-- HYDRATION + SUPPLEMENTS -->
-    <div class="grid-2 mt2">
-
-      <!-- HYDRATION -->
-      <div class="panel sr">
-        <div class="panel-head">
-          <span class="panel-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5" style="vertical-align:middle;margin-right:.4rem"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
-            Hidratación por Escenario
-          </span>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="hyd-table">
-            <thead>
-              <tr>
-                <th>Escenario</th>
-                <th>Agua</th>
-                <th>Sodio</th>
-                <th>Electrolitos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600">Descanso</td>
-                <td>2.0 L</td>
-                <td>1 000 mg</td>
-                <td>Agua mineral</td>
-              </tr>
-              <tr>
-                <td style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600">Entrenamiento 1-2h</td>
-                <td>2.5–3 L</td>
-                <td>1 500 mg</td>
-                <td>Isotónico 1 bidón</td>
-              </tr>
-              <tr>
-                <td style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600">Entrenamiento 3h+</td>
-                <td>3–4 L</td>
-                <td>2 500 mg</td>
-                <td>2 bidones + sales</td>
-              </tr>
-              <tr>
-                <td style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;color:var(--orange)">Carrera 70.3</td>
-                <td style="color:var(--orange);font-weight:600">4–5 L</td>
-                <td style="color:var(--orange);font-weight:600">3 500 mg</td>
-                <td style="color:var(--orange)">Isotónico + pastillas sal</td>
-              </tr>
-              <tr>
-                <td style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600">Calor extremo</td>
-                <td>+500ml extra/h</td>
-                <td>+500 mg/h</td>
-                <td>Añadir potasio</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div style="padding:1rem 1.4rem;background:rgba(14,165,233,.05);border-top:1px solid var(--border2)">
-          <div style="font-size:.75rem;color:var(--muted)">
-            <strong style="color:var(--cyan)">Regla de pérdida de sudor:</strong> Pesar antes y después de sesiones &gt;90min. 1 kg perdido = 1.5L extra para reponer.
+      <!-- TAB 1: RESUMEN -->
+      <div class="tab-pane on" id="tab-res">
+        <div class="g2">
+          <div>
+            <div class="ch-box">
+              <div class="ch-title">Distribución de energía por disciplina</div>
+              <div class="ch-inner"><canvas id="ch-pie"></canvas></div>
+            </div>
+          </div>
+          <div>
+            <div class="guide-box" id="guide-text"></div>
+            <div style="margin-top:1rem" id="splits-list"></div>
           </div>
         </div>
       </div>
 
-      <!-- SUPPLEMENTS -->
-      <div class="panel sr">
-        <div class="panel-head">
-          <span class="panel-title">Stack de Suplementos</span>
-          <span style="font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--green);letter-spacing:.1em;border:1px solid rgba(16,185,129,.3);padding:.15rem .5rem;border-radius:4px;background:rgba(16,185,129,.08)">BASADO EN EVIDENCIA</span>
+      <!-- TAB 2: PLAN HORA A HORA -->
+      <div class="tab-pane" id="tab-plan">
+        <div class="sec-h" style="font-size:.85rem">Timeline de carrera + puntos de alimentación</div>
+        <div id="gantt-wrap" style="margin-bottom:1.5rem"></div>
+
+        <div class="ch-box mt2">
+          <div class="ch-title">CHO (g) por intervalo · Fluidos acumulados (ml)</div>
+          <div class="ch-inner"><canvas id="ch-cho-fluid"></canvas></div>
         </div>
-        <div class="supp-grid">
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(14,165,233,.12)">💊</div>
-            <div>
-              <div class="supp-name">Hierro + Vitamina C</div>
-              <div class="supp-dose">18mg Fe + 500mg Vit C</div>
-              <div class="supp-when">Mañana · en ayunas</div>
-              <div class="supp-badge" style="background:rgba(255,101,53,.12);color:var(--orange);border:1px solid rgba(255,101,53,.3)">⚠ Ferritina baja</div>
-            </div>
+
+        <div class="mt2">
+          <div class="sec-h" style="font-size:.85rem">Plan detallado cronológico</div>
+          <div style="overflow-x:auto">
+            <table class="plan-t" id="plan-table">
+              <thead>
+                <tr>
+                  <th>Seg</th><th>Checkpoint</th>
+                  <th>CHO (g)</th><th>Fluidos (ml)</th><th>Sodio (mg)</th>
+                  <th>CHO acum.</th><th>Fluido acum.</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="plan-tbody"></tbody>
+            </table>
           </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(240,165,0,.1)">⚡</div>
-            <div>
-              <div class="supp-name">Creatina Monohidrato</div>
-              <div class="supp-dose">5g diarios</div>
-              <div class="supp-when">Post-entreno · con carbs</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Evidencia A</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(168,85,247,.1)">🌙</div>
-            <div>
-              <div class="supp-name">Magnesio Glicinato</div>
-              <div class="supp-dose">400mg</div>
-              <div class="supp-when">Noche · 30min antes dormir</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Sueño + recuperación</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(16,185,129,.1)">🐟</div>
-            <div>
-              <div class="supp-name">Omega-3 (EPA/DHA)</div>
-              <div class="supp-dose">2g EPA + 1g DHA</div>
-              <div class="supp-when">Con comida principal</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Antiinflamatorio</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(255,101,53,.1)">☀️</div>
-            <div>
-              <div class="supp-name">Vitamina D3 + K2</div>
-              <div class="supp-dose">5 000 UI D3 + 100mcg K2</div>
-              <div class="supp-when">Con desayuno + grasa</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Inmunidad + huesos</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(14,165,233,.12)">💪</div>
-            <div>
-              <div class="supp-name">Proteína Whey Isolate</div>
-              <div class="supp-dose">30g (1 scoop)</div>
-              <div class="supp-when">Post-entreno (30min)</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Síntesis proteica</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(240,165,0,.08)">☕</div>
-            <div>
-              <div class="supp-name">Cafeína</div>
-              <div class="supp-dose">3–6mg/kg (216–432mg)</div>
-              <div class="supp-when">60min pre-entreno duro</div>
-              <div class="supp-badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)">✓ Evidencia A</div>
-            </div>
-          </div>
-          <div class="supp-item">
-            <div class="supp-icon" style="background:rgba(239,68,68,.08)">🫀</div>
-            <div>
-              <div class="supp-name">Betaína Anhidra</div>
-              <div class="supp-dose">2.5g</div>
-              <div class="supp-when">Pre-entreno de fuerza</div>
-              <div class="supp-badge" style="background:rgba(14,165,233,.1);color:var(--cyan);border:1px solid rgba(14,165,233,.3)">~ Evidencia B</div>
-            </div>
-          </div>
+          <div class="tot-strip" id="tot-strip"></div>
         </div>
+      </div>
+
+      <!-- TAB 3: PRE-CARRERA -->
+      <div class="tab-pane" id="tab-pre">
+        <div id="pre-race-content"></div>
       </div>
 
     </div>
-
-    <!-- WEEKLY NUTRITION TEMPLATE -->
-    <section class="panel sr mt2">
-      <div class="panel-head">
-        <span class="panel-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" style="vertical-align:middle;margin-right:.4rem"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Plantilla Semanal — Semana Tipo de Entrenamiento
-        </span>
-        <span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.08em">Fase Build · Sem 24</span>
-      </div>
-      <div style="padding:1.4rem">
-        <div class="week-grid">
-          <div class="day-card">
-            <div class="day-name">LUN</div>
-            <div class="day-kcal" style="color:var(--cyan)">2 400</div>
-            <div class="day-type">Natación Z2</div>
-          </div>
-          <div class="day-card hard-day">
-            <div class="day-name">MAR</div>
-            <div class="day-kcal" style="color:var(--orange)">3 200</div>
-            <div class="day-type">Bici Intervalos</div>
-          </div>
-          <div class="day-card">
-            <div class="day-name">MIÉ</div>
-            <div class="day-kcal" style="color:var(--cyan)">2 800</div>
-            <div class="day-type">Natación + Carrera</div>
-          </div>
-          <div class="day-card hard-day">
-            <div class="day-name">JUE</div>
-            <div class="day-kcal" style="color:var(--orange)">3 400</div>
-            <div class="day-type">Bici Larga</div>
-          </div>
-          <div class="day-card">
-            <div class="day-name">VIE</div>
-            <div class="day-kcal" style="color:var(--cyan)">2 600</div>
-            <div class="day-type">Natación Z1-Z2</div>
-          </div>
-          <div class="day-card hard-day">
-            <div class="day-name">SÁB</div>
-            <div class="day-kcal" style="color:var(--orange)">3 600</div>
-            <div class="day-type">Brick Bici+Carrera</div>
-          </div>
-          <div class="day-card rest-day">
-            <div class="day-name">DOM</div>
-            <div class="day-kcal" style="color:var(--muted)">2 200</div>
-            <div class="day-type">Descanso activo</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:1.5rem;margin-top:1.1rem;font-size:.72rem;color:var(--dim)">
-          <span style="display:flex;align-items:center;gap:.4rem"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,101,53,.2);border:1px solid rgba(255,101,53,.4);display:inline-block"></span>Entrenamiento duro</span>
-          <span style="display:flex;align-items:center;gap:.4rem"><span style="width:10px;height:10px;border-radius:2px;background:var(--surface2);border:1px solid var(--border2);display:inline-block"></span>Entrenamiento normal</span>
-          <span style="display:flex;align-items:center;gap:.4rem"><span style="width:10px;height:10px;border-radius:2px;background:var(--surface2);border:1px solid rgba(61,104,128,.35);display:inline-block"></span>Descanso</span>
-        </div>
-      </div>
-    </section>
-
   </div>
+</section>
+
+</div>
 </div>
 
-<footer>
-  <div class="c">
-    <div>KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; PROTOCOLO DE NUTRICIÓN &nbsp;·&nbsp; THRESHOLD MASTERY PLAN</div>
-  </div>
-</footer>
+<footer><div class="c"><div>LABX &copy; <span id="yr"></span> &nbsp;·&nbsp; MÓDULO DE NUTRICIÓN &nbsp;·&nbsp; RACE NUTRITION CALCULATOR</div></div></footer>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="data/dashboard_data.js"></script>
 <script>
-document.getElementById('yr').textContent = new Date().getFullYear();
-var io = new IntersectionObserver(function(entries){
-  entries.forEach(function(e){
-    if(e.isIntersecting){
-      e.target.classList.add('vis');
-      e.target.querySelectorAll('.macro-bar-f[data-w]').forEach(function(b){
-        setTimeout(function(){b.style.width=b.dataset.w+'%'},300);
-      });
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// CONSTANTS (ported from utils/formulas.py)
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var DIST = {
+  sprint:  {swim:750,   bike:20000,  run:5000,  t1:150, t2:60},
+  olympic: {swim:1500,  bike:40000,  run:10000, t1:180, t2:90},
+  '703':   {swim:1900,  bike:90000,  run:21097, t1:240, t2:120},
+  ironman: {swim:3800,  bike:180000, run:42195, t1:300, t2:180}
+};
+var REC_IF = {
+  sprint:  {bike:0.88, run_pct:1.10},
+  olympic: {bike:0.85, run_pct:1.05},
+  '703':   {bike:0.80, run_pct:0.97},
+  ironman: {bike:0.73, run_pct:0.88}
+};
+var CHO_HR  = {sprint:35, olympic:60, '703':75, ironman:85};
+var SOD_HR  = {sprint:200, olympic:450, '703':750, ironman:900};
+var RACE_LABELS = {sprint:'Sprint', olympic:'Olímpico', '703':'70.3', ironman:'Ironman'};
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// FORMULAS
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function parsePaceSec(s) {
+  if(!s) return 260;
+  var p = String(s).split(':');
+  if(p.length === 2) return parseInt(p[0])*60 + parseFloat(p[1]);
+  return parseFloat(s) || 260;
+}
+function fmtTime(sec) {
+  var h = Math.floor(sec/3600);
+  var m = Math.floor((sec%3600)/60);
+  var s = Math.round(sec%60);
+  if(h > 0) return h+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';
+  return m+'m '+String(s).padStart(2,'0')+'s';
+}
+function fmtHM(sec) {
+  var h = Math.floor(sec/3600);
+  var m = Math.floor((sec%3600)/60);
+  var s = Math.round(sec%60);
+  if(h > 0) return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  return '0:'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function fmtPace(secKm) {
+  var m = Math.floor(secKm/60);
+  var s = Math.round(secKm%60);
+  return m+':'+String(s).padStart(2,'0');
+}
+function predictSwim(distM, cssSec) {
+  return (distM/100) * cssSec;
+}
+function predictBike(distM, ftp, ifTarget, weight) {
+  var np = ftp * ifTarget;
+  var cda = 0.32, crr = 0.003, rho = 1.2, g = 9.81;
+  var mass = weight + 8; // +8kg bicicleta
+  var v = 10.0;
+  for(var i=0; i<50; i++) {
+    var f  = 0.5*cda*rho*v*v*v + crr*mass*g*v - np;
+    var df = 1.5*cda*rho*v*v   + crr*mass*g;
+    v -= f/df;
+    if(v < 0) v = 1.0;
+  }
+  return distM / v;
+}
+function predictRun(distM, threshSec, runPct) {
+  return (distM/1000) * (threshSec / runPct);
+}
+function kCalBike(power, durSec) { return (power * durSec) / (0.23 * 4184); }
+function kCalRun(weight, distKm)  { return weight * distKm * 1.04; }
+function kCalSwim(weight, durMin)  { return 8.0 * weight * (durMin/60); }
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// ATHLETE PROFILE (from kl_athlete_data localStorage)
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var ATH = {ftp:235, css:110, run:300, weight:62, name:'Rafael'};
+function loadAth() {
+  try {
+    var d = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
+    if(d.ftp)      ATH.ftp    = parseInt(d.ftp)||235;
+    if(d.css)      ATH.css    = parsePaceSec(d.css);
+    if(d.runPace)  ATH.run    = parsePaceSec(d.runPace);
+    if(d.weight)   ATH.weight = parseFloat(d.weight)||62;
+    if(d.name)     ATH.name   = d.name;
+  } catch(e){}
+  document.getElementById('ca-ftp').textContent    = ATH.ftp+'W';
+  document.getElementById('ca-css').textContent    = fmtPace(ATH.css)+'/100';
+  document.getElementById('ca-run').textContent    = fmtPace(ATH.run)+'/km';
+  document.getElementById('ca-weight').textContent = ATH.weight+'kg';
+  document.getElementById('ph-ath').textContent    = ATH.name;
+}
+
+function loadFromKLData() {
+  if (typeof KL_DATA === 'undefined') return;
+  var profileRaw = {};
+  try { profileRaw = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}'); } catch(e) {}
+  var profileHasCSS     = !!(profileRaw.css     && parsePaceSec(profileRaw.css)     > 0);
+  var profileHasRunPace = !!(profileRaw.runPace  && parsePaceSec(profileRaw.runPace) > 0);
+  var acts = KL_DATA.activities || [];
+  if (!profileHasCSS) {
+    var swimPaces = [];
+    acts.forEach(function(a) {
+      var s = (a.sport || '');
+      if ((s === 'swim' || s === 'pool_swimming' || s === 'open_water') &&
+          a.dist_km >= 1.5 && a.dur_min > 0) {
+        var p = (a.dur_min * 60) / (a.dist_km * 10);
+        if (p > 80 && p < 180) swimPaces.push(p);
+      }
+    });
+    if (swimPaces.length >= 2) {
+      swimPaces.sort(function(a,b){return a-b;});
+      var topN = Math.max(2, Math.ceil(swimPaces.length * 0.4));
+      var css  = swimPaces.slice(0,topN).reduce(function(s,v){return s+v;},0)/topN;
+      if (css > 90 && css < 160) ATH.css = Math.round(css);
+    }
+  }
+  if (!profileHasRunPace) {
+    var runPaces = [];
+    acts.forEach(function(a) {
+      var s = (a.sport || '');
+      if ((s === 'run' || s === 'running') && a.dist_km >= 8 && a.dur_min > 0) {
+        var p = (a.dur_min * 60) / a.dist_km;
+        if (p > 180 && p < 600) runPaces.push(p);
+      }
+    });
+    if (runPaces.length >= 3) {
+      runPaces.sort(function(a,b){return a-b;});
+      var topR = Math.max(2, Math.ceil(runPaces.length * 0.25));
+      var best = runPaces.slice(0,topR).reduce(function(s,v){return s+v;},0)/topR;
+      var derived = Math.round(best + 10);
+      if (derived > 210 && derived < 450) ATH.run = derived;
+    }
+  }
+  document.getElementById('ca-css').textContent    = fmtPace(ATH.css)+'/100';
+  document.getElementById('ca-run').textContent    = fmtPace(ATH.run)+'/km';
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// BUILD CHECKPOINT PLAN
+// T1/T2 son tiempos de carrera reales (alineados con race_predictor)
+// Heat factor: sprint/olympic=none; 703/ironman=bike+run only
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var T1_MIN = {sprint:1.5, olympic:2.0, '703':3.5, ironman:5.0};
+var T2_MIN = {sprint:1.0, olympic:1.5, '703':2.5, ironman:4.0};
+
+function buildPlan(raceKey, pred, sweatMl, heatF) {
+  var sw = pred.swim/60, bk = pred.bike/60, rn = pred.run/60;
+  var t1 = T1_MIN[raceKey], t2 = T2_MIN[raceKey];
+  var ss = {swim:0, t1:sw, bike:sw+t1, t2:sw+t1+bk, run:sw+t1+bk+t2};
+  var tot = sw+t1+bk+t2+rn;
+  var hf = function(v){ return Math.round(v*heatF); };
+  var rows = [];
+  var d = DIST[raceKey];
+
+  function cp(tMin,seg,lbl,cho,fluid,sodium,action,ex){
+    return {tMin:Math.round(tMin*10)/10, seg:seg, lbl:lbl, cho:cho, fluid:fluid, sodium:sodium, action:action, ex:ex};
+  }
+
+  if(raceKey==='sprint'){
+    // No heat factor for sprint
+    rows=[
+      cp(ss.swim,'swim','Natación',0,0,0,'Sin ingesta. Hidrata bien en los 10min previos.','200ml agua T-10min'),
+      cp(ss.t1,'t1','T1',0,0,0,'Transición rápida. No comas en T1.','—'),
+      cp(ss.bike+bk*0.5,'bike','Bici ~'+Math.round(ss.bike+bk*0.5)+'min',22,300,100,'Único gel en bici + botella isotónica. No esperes a tener sed.','1 gel GU/Maurten · 300ml Gatorade'),
+      cp(ss.t2,'t2','T2',0,100,0,'Pequeño sorbo. No gel en T2.','100ml agua'),
+      cp(ss.run+rn*0.5,'run','Run ~'+Math.round(ss.run+rn*0.5)+'min',0,200,50,'Agua en los puestos de avituallamiento cada 1km.','200ml agua'),
+      cp(tot,'run','META 🏁',0,200,100,'Hidratación y CHO de recuperación inmediata.','Plátano + 500ml isotónico')
+    ];
+  } else if(raceKey==='olympic'){
+    // No heat factor for olympic
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'No es posible consumir nada. Nadar relajado los primeros 200m.','—'),
+      cp(ss.t1,'t1','T1',22,150,100,'Gel al salir del agua + pequeño sorbo de isotónico mientras te cambias.','1 gel · 150ml Maurten/Gatorade'),
+      cp(ss.bike+bk*0.33,'bike','Bici km~'+Math.floor(d.bike*0.33/1000),35,400,200,'Primer bloque bici. Gel + botella isotónica completa.','1 gel + 400ml isotónico'),
+      cp(ss.bike+bk*0.66,'bike','Bici km~'+Math.floor(d.bike*0.66/1000),30,350,200,'Segunda botella o recarga de hidratación. ½ barra energética.','½ barra Clif/Powerbar + 350ml agua'),
+      cp(ss.t2,'t2','T2',22,100,0,'Gel rápido al bajar de la bici.','1 gel'),
+      cp(ss.run+rn*0.35,'run','Run km~'+Math.floor(d.run*0.35/1000),22,250,150,'Gel en el primer avituallamiento (~km 3.5).','1 gel + 250ml agua'),
+      cp(ss.run+rn*0.70,'run','Run km~'+Math.floor(d.run*0.7/1000),0,200,100,'Solo agua. El gel anterior sigue activo.','200ml agua'),
+      cp(tot,'run','META 🏁',0,300,200,'Recuperación inmediata. CHO + proteína en 30min.','Plátano + isotónico + barrita proteína')
+    ];
+  } else if(raceKey==='703'){
+    // Heat factor on bike+run segments only; T1/T2/META are fixed
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'Sin ingesta. Usa traje adecuado y nada en calma los 400m iniciales.','—'),
+      cp(ss.t1,'t1','T1',22,200,150,'Gel + sorbo de isotónico. Bolsillo especial bike ya cargado.','1 gel · 200ml isotónico'),
+      cp(ss.bike+bk*0.20,'bike','Bici km~'+Math.floor(d.bike*0.2/1000),hf(70),hf(700),hf(700),'Primer bloque. Ritmo moderado, activa la ingesta temprano.','2 geles + 700ml isotónico'),
+      cp(ss.bike+bk*0.40,'bike','Bici km~'+Math.floor(d.bike*0.4/1000),hf(70),hf(700),hf(700),'Barra sólida si toleras bien. Mantén cadencia de ingesta.','1 barra Clif + 1 gel + 700ml isotónico'),
+      cp(ss.bike+bk*0.60,'bike','Bici km~'+Math.floor(d.bike*0.6/1000),hf(70),hf(700),hf(700),'Mitad de la bici. Mantén el plan aunque no tengas apetito.','2 geles + 700ml isotónico'),
+      cp(ss.bike+bk*0.80,'bike','Bici km~'+Math.floor(d.bike*0.8/1000),hf(60),hf(600),hf(600),'Último bloque bici. Reduce sólidos, prioriza geles fluidos.','2 geles + 600ml agua+electrolitos'),
+      cp(ss.t2,'t2','T2',22,200,200,'Gel + cola si la hubiera. Prepárate para el run.','1 gel · 200ml cola'),
+      cp(ss.run+rn*0.25,'run','Run km~'+Math.floor(d.run*0.25/1000),hf(50),hf(500),hf(600),'Inicia run con suavidad. 2 geles primeros 30min + agua cada puesto.','2 geles + 500ml agua'),
+      cp(ss.run+rn*0.55,'run','Run km~'+Math.floor(d.run*0.55/1000),hf(40),hf(450),hf(600),'Cola en puestos de avituallamiento + gel. Gestiona el calor.','1 gel + cola + 450ml agua'),
+      cp(ss.run+rn*0.80,'run','Run km~'+Math.floor(d.run*0.8/1000),hf(25),hf(350),hf(400),'Últimos km. Solo lo que toleras: gel, agua, cola.','1 gel o cola + agua'),
+      cp(tot,'run','META 🏁',0,400,500,'Recuperación: CHO + proteína + sal en <30min post-meta.','Isotónico + plátano + proteína')
+    ];
+  } else { // ironman
+    // Heat factor on bike+run segments only; T1/T2/META are fixed
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'Sin ingesta. Arranca suave los primeros 500m. Ahorra glucógeno.','—'),
+      cp(ss.t1,'t1','T1',25,300,200,'Gel + banana en T1. Empieza isotónico. Bolsos especiales ya preparados.','1 gel + ½ banana · 300ml isotónico'),
+      cp(ss.bike+bk*0.12,'bike','Bici km~'+Math.floor(d.bike*0.12/1000),hf(65),hf(700),hf(800),'Inicio bici: ritmo conservador, activa ingesta temprano.','2 geles + 700ml isotónico Maurten 320'),
+      cp(ss.bike+bk*0.25,'bike','Bici km~'+Math.floor(d.bike*0.25/1000),hf(80),hf(800),hf(900),'Hora 2 de bici. Alterna geles y sólidos según tolerancia.','1 barra + 1 gel + 800ml isotónico'),
+      cp(ss.bike+bk*0.38,'bike','Bici km~'+Math.floor(d.bike*0.38/1000),hf(80),hf(800),hf(900),'Mantén ritmo de ingesta. Puesto especial de avituallamiento.','2 geles + 800ml isotónico · bolso especial'),
+      cp(ss.bike+bk*0.50,'bike','Bici km~'+Math.floor(d.bike*0.5/1000),hf(80),hf(800),hf(900),'Mitad del Ironman. Come aunque no tengas hambre.','Rice balls / banana + geles + 800ml agua+electrolitos'),
+      cp(ss.bike+bk*0.63,'bike','Bici km~'+Math.floor(d.bike*0.63/1000),hf(80),hf(800),hf(900),'Hora 5. Máxima ingesta antes de transición a run.','2 geles + 800ml isotónico'),
+      cp(ss.bike+bk*0.80,'bike','Bici km~'+Math.floor(d.bike*0.8/1000),hf(70),hf(700),hf(800),'Reduce sólidos. Solo geles fluidos y bebida.','2 geles + 700ml isotónico'),
+      cp(ss.t2,'t2','T2',30,300,300,'Gel + cola en T2. Ajusta medias si hay ampollas.','1 gel · 300ml cola'),
+      cp(ss.run+rn*0.14,'run','Run km~'+Math.floor(d.run*0.14/1000),hf(45),hf(500),hf(700),'Inicio run muy conservador. Geles + cola en cada puesto.','2 geles + 500ml agua + cola'),
+      cp(ss.run+rn*0.30,'run','Run km~'+Math.floor(d.run*0.3/1000),hf(40),hf(500),hf(700),'Cola es tu mejor aliada a esta altura. Mezcla agua.','1 gel + 300ml cola + 200ml agua'),
+      cp(ss.run+rn*0.50,'run','Run km~'+Math.floor(d.run*0.5/1000),hf(35),hf(450),hf(700),'Mitad del run. Alterna cola, agua y sal. Electrolitos si tienes calambres.','Cola + sal + agua · pretzels si los tolerás'),
+      cp(ss.run+rn*0.70,'run','Run km~'+Math.floor(d.run*0.7/1000),hf(30),hf(400),hf(700),'Modo supervivencia. Caldo de pollo si disponible. Cola + agua.','Caldo pollo + cola + 400ml agua'),
+      cp(ss.run+rn*0.88,'run','Run km~'+Math.floor(d.run*0.88/1000),hf(20),hf(300),hf(400),'Últimos km. Cola para el sprint final. Cero sólidos.','300ml cola'),
+      cp(tot,'run','META 🏁',0,500,500,'FINISH LINE. Recuperación: isotónico + proteína + sal inmediato.','Isotónico + plátano + batido proteína')
+    ];
+  }
+
+  // add cumulative totals
+  var cumCho=0, cumFluid=0, cumNa=0;
+  rows.forEach(function(r){
+    cumCho   += r.cho;    r.cumCho   = cumCho;
+    cumFluid += r.fluid;  r.cumFluid = cumFluid;
+    cumNa    += r.sodium; r.cumNa    = cumNa;
+  });
+  return rows;
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// PRE-RACE PROTOCOL DATA (ported from app.py)
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var PRE_RACE = {
+  sprint:[
+    ['T-24h (día anterior)','Cena normal','Pasta/arroz 80g seco + proteína + verdura','6–7 g CHO/kg peso corporal. Sin cambios radicales en la dieta.'],
+    ['T-3h','Desayuno pre-carrera','Avena 60g + plátano + café · 2–3 tostadas con mermelada','60–90g CHO. Bajo en fibra y grasa. Conocido y probado en entrenos.'],
+    ['T-60min','Snack ligero','Barra de arroz o banana pequeña (25g CHO)','Opcional si el desayuno fue pequeño. Evita azúcares simples sin fibra.'],
+    ['T-30min','Hidratación activa','400–500ml agua o isotónico diluido','Objetivo: orina amarillo pálido. No más de 500ml para evitar baño.'],
+    ['T-15min','Gel de activación (opcional)','1 gel cafeína (100mg) si usas cafeína en entrenos','Solo si está probado en entrenamiento. No probar nada nuevo el día de carrera.'],
+    ['T-0 🏁','Lista final','Gel en bolsillo listo. Botella montada en bici. Últimos 100ml agua.','Revisa: electrolitos guardados, geles accesibles, bidón lleno.']
+  ],
+  olympic:[
+    ['T-24h (día anterior)','Carga suave de carbohidratos','Arroz/pasta 100g seco + pollo + verdura cocida. Cena temprana.','7–8 g CHO/kg. Evita alimentos nuevos, picantes o con alto contenido en fibra.'],
+    ['T-12h (noche anterior)','Snack nocturno','Yogur + miel + plátano (30g CHO)','Opcional. Útil si la carrera es muy temprano y el desayuno será pequeño.'],
+    ['T-3h','Desayuno pre-carrera','Avena 80g + miel + plátano + café · o arroz con mermelada','90–120g CHO. Bajo en fibra. Probado en entrenamientos largos previos.'],
+    ['T-60min','Snack CHO','Barra energética o 2 tostadas con miel (40–50g CHO)','Mantiene glucosa estable sin sobrecargar. Con ~250ml agua.'],
+    ['T-30min','Hidratación pre-race','500ml isotónico diluido (50%) + sal si hace calor','Si temperatura >22°C: añade 500mg sal. No más de 500ml.'],
+    ['T-15min','Gel de activación + cafeína','1 gel cafeína (SIS Caffeine, GU Roctane) 22g CHO + 75mg cafeína','Activa el sistema nervioso. Timing preciso: 15min antes del agua.'],
+    ['T-0 🏁','Checklist final','2 geles accesibles · bidón lleno · sal en bolsillo · últimos 100ml','Revisa que el bidón esté en porta-bidón. Posición cinta de corazón.']
+  ],
+  '703':[
+    ['T-48h (2 días antes)','Inicio carga de carbohidratos','8–10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos. Reduce entrenamiento.','Satura glucógeno muscular y hepático. Reduce grasas y fibra estos 2 días.'],
+    ['T-24h','Cena carga final','Pasta/arroz 150g seco + pollo 200g + aceite oliva + pan','Última gran comida. Cena temprana (no después de las 20h). Sin alcohol.'],
+    ['T-4h','Desayuno pre-carrera','Arroz 120g + miel + plátano 2 uds + café con leche · o avena especial','140–180g CHO. Conocido. Sin fibra, sin grasa. Tiempo suficiente para digestión.'],
+    ['T-2h','Snack de mantenimiento','Barra energética o arroz con miel (60g CHO) + 300ml agua','Evita el bajón de glucosa en la espera. Solo si toleras bien.'],
+    ['T-60min','Hidratación activa','500–600ml isotónico completo + 500mg sal extra si caluroso','Orina amarillo pálido. Ajusta sodio según temperatura.'],
+    ['T-30min','Gel + electrolitos','1 gel Maurten 100 + 1 pastilla electrolítica (Precision Hydration/SIS)','Últimos CHO antes del agua. La cápsula de sodio puede reducir calambres.'],
+    ['T-15min','Gel de activación','1 gel cafeína (100mg) · últimos 200ml agua','Si usas cafeína: timing perfecto para pico en inicio de bici.'],
+    ['T-0 🏁','Checklist final 70.3','3 geles en bolsillos · 2 bidones llenos (1 isotónico, 1 agua) · sal tabs · bolso especial preparado','Bolso especial: 3 geles + barra + 2 salt tabs + cambio calcetines.']
+  ],
+  ironman:[
+    ['T-72h (3 días antes)','Inicio protocolo carga','8–10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos, batatas.','Reducción de entrenamiento (taper). Hydra extra: 1ml/kcal consumida.'],
+    ['T-48h','Día carga alta','10 g CHO/kg mínimo. Cada comida incluye CHO: desayuno/almuerzo/cena + snacks','Evita grasas saturadas, fibra >30g, alcohol. Puede haber hinchazón: es normal (glucógeno = agua).'],
+    ['T-24h','Cena pre-race clásica','Pasta 200g seco + salsa tomate simple + pollo 200g + pan + arroz con leche','Sin sorpresas. Nada nuevo. Sin picante. Sin mariscos. Cena antes de las 19h.'],
+    ['T-5h','Desayuno Ironman','Avena 150g + 3 plátanos + 2 rebanadas pan miel + 2 cafés con leche + zumo','200–250g CHO. El desayuno más grande del año. Tiempo amplio para digestión.'],
+    ['T-3h','Snack intermedio','Barra de arroz casera 80g CHO · o 2 plátanos + miel + tostada','Mantiene glucosa sin sobrecargar. Con 400ml isotónico diluido.'],
+    ['T-90min','Hydra activa','600ml isotónico completo + pastilla sodio (500–1000mg)','Ajusta según temperatura. >28°C: añade 1000mg sodio.'],
+    ['T-45min','Gel + salt tabs','2 geles Maurten 100 (50g CHO) + 2 salt tabs Precision Hydration','Carga final de CHO. El sodio extra ayuda a retener fluidos iniciales.'],
+    ['T-20min','Gel cafeína','1 gel cafeína 150mg (GU Roctane / Maurten cafeína) + 150ml agua','Timing para pico en inicio de bici (~90min post-ingesta).'],
+    ['T-0 🏁','Checklist final IRONMAN','Bici: 2 bidones (Maurten 320) + barra sólida · Bolso especial: 4 geles + 2 barras + 4 salt tabs + vaselina + cambio calcetines','Transición especial (km 90 bici / km 21 run): verifica que el bolso llegó antes que tú.']
+  ]
+};
+
+var GUIDELINES = {
+  sprint:'<p><strong>CHO:</strong> 30–45 g total · Depende casi 100% del glucógeno almacenado</p><p><strong>Fluidos:</strong> 400–600 ml totales · Sin tiempo para hidratarse en nado</p><p><strong>Sodio:</strong> Mínimo (~200 mg). El tiempo es muy corto para pérdidas críticas</p><p><strong>Estrategia clave:</strong> 1 gel en bici es suficiente. No sobre-nutras: más peso = más lento</p>',
+  olympic:'<p><strong>CHO:</strong> 60–90 g total · 1:1 glucosa:fructosa</p><p><strong>Fluidos:</strong> 800–1200 ml totales · ~500ml/hr</p><p><strong>Sodio:</strong> 400–600 mg total · Bebida isotónica es suficiente</p><p><strong>Estrategia clave:</strong> Gel en T1 + gel/barra en bici + gel en run km 3–4. Total: 3–4 geles</p>',
+  '703':'<p><strong>CHO:</strong> 250–360 g total · 2:1 glucosa:fructosa obligatorio</p><p><strong>Fluidos:</strong> 2.5–3.5 L totales · 700ml/hr en bici</p><p><strong>Sodio:</strong> 3000–5000 mg · Sal en cada hora de bici</p><p><strong>Estrategia clave:</strong> Bici es la ventana de alimentación principal (60–70g/hr). Run: máximo geles + cola. Nunca pases >45min sin comer en la bici.</p>',
+  ironman:'<p><strong>CHO:</strong> 600–900 g total · 2:1 glucosa:fructosa obligatorio (hasta 90g/hr)</p><p><strong>Fluidos:</strong> 6–8 L totales · 800ml/hr + ajuste por calor</p><p><strong>Sodio:</strong> 7000–12000 mg · 700–1000mg/hr durante toda la carrera</p><p><strong>Estrategia clave:</strong> Come cuando no tengas hambre. Para Ironman el problema no es comer demasiado, sino comer muy poco. Bolso especial km 90 bici y km 21 run.</p>'
+};
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// STATE
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var ST = {race:'703'};
+var CH = {}; // chart instances
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// RACE SWITCH
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function setRace(r, btn) {
+  ST.race = r;
+  document.querySelectorAll('.rt').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  nutCalc();
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// MAIN CALC
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function nutCalc() {
+  var rk = ST.race;
+  var d  = DIST[rk];
+  var rf = REC_IF[rk];
+  var sweatMl = parseInt(document.getElementById('sel-sweat').value)||600;
+  var heatF   = parseFloat(document.getElementById('sel-heat').value)||1.0;
+
+  // Predict swim/bike/run — mismo modelo que race_predictor
+  var swimSec = predictSwim(d.swim, ATH.css);
+  var bikeSec = predictBike(d.bike, ATH.ftp, rf.bike, ATH.weight);
+  var runSec  = predictRun(d.run, ATH.run, rf.run_pct);
+  var t1Min = T1_MIN[rk], t2Min = T2_MIN[rk];
+  var totalSec = swimSec + t1Min*60 + bikeSec + t2Min*60 + runSec;
+  var totalH   = totalSec / 3600;
+
+  // Caloric expenditure
+  var sKcal = kCalSwim(ATH.weight, swimSec/60);
+  var bKcal = kCalBike(ATH.ftp * rf.bike, bikeSec);
+  var rKcal = kCalRun(ATH.weight, d.run/1000);
+  var totKcal = sKcal + bKcal + rKcal;
+
+  // Nutrition targets
+  var choHr   = CHO_HR[rk];
+  var sodHr   = Math.round(SOD_HR[rk] * heatF);
+  var fluidHr = Math.round(sweatMl * heatF);
+  var choTot  = Math.round(choHr * Math.max(0, totalH - 0.5));
+  var flTot   = Math.round(fluidHr * totalH);
+  var naTot   = Math.round(sodHr * totalH);
+  var ratio   = totalH > 2.5 ? '2:1 gluc:fruc' : '1:1 / libre';
+
+  var pred = {swim:swimSec, t1:t1Min*60, bike:bikeSec, t2:t2Min*60, run:runSec, total:totalSec};
+
+  // Build plan
+  var plan = buildPlan(rk, pred, sweatMl, heatF);
+
+  // Update UI
+  updateHeader(rk, fmtHM(totalSec), totKcal, choHr);
+  updateKpis(fmtHM(totalSec), totKcal, choTot, choHr, flTot, fluidHr, naTot, sodHr, ratio, totalH);
+  renderTab1(rk, sKcal, bKcal, rKcal, pred);
+  renderTab2(plan, pred, totalSec/60);
+  renderTab3(rk, fmtHM(totalSec));
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// RENDER FUNCTIONS
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function updateHeader(rk, timeStr, kcal, choHr) {
+  document.getElementById('ph-race').textContent   = RACE_LABELS[rk];
+  document.getElementById('ch-time').textContent   = timeStr;
+  document.getElementById('ch-energy').textContent = Math.round(kcal).toLocaleString('es')+' kcal';
+  document.getElementById('ch-cph').textContent    = CHO_HR[rk]+'g/h';
+  document.getElementById('ch-ratio').textContent  = parseFloat(document.getElementById('sel-heat').value||1)*parseFloat(document.getElementById('sel-sweat').value||600) && choHr > 60 ? '2:1' : '1:1';
+}
+
+function updateKpis(time, kcal, choTot, choHr, flTot, flHr, naTot, naHr, ratio, h) {
+  document.getElementById('kpi-time').textContent    = time;
+  document.getElementById('kpi-kcal').textContent    = Math.round(kcal).toLocaleString('es')+' kcal';
+  document.getElementById('kpi-kcal-s').textContent  = 'energía total estimada';
+  document.getElementById('kpi-cho').textContent     = choTot+'g';
+  document.getElementById('kpi-cho-s').textContent   = '~'+choHr+'g/hr en carrera';
+  document.getElementById('kpi-fluid').textContent   = (flTot/1000).toFixed(1)+'L';
+  document.getElementById('kpi-fluid-s').textContent = '~'+flHr+'ml/hr';
+  document.getElementById('kpi-na').textContent      = naTot.toLocaleString('es')+'mg';
+  document.getElementById('kpi-na-s').textContent    = '~'+naHr+'mg/hr';
+  document.getElementById('kpi-ratio').textContent   = ratio;
+  document.getElementById('kpi-ratio-s').textContent = h > 2.5 ? 'Necesario >2.5h' : '';
+}
+
+function renderTab1(rk, sKcal, bKcal, rKcal, pred) {
+  // Pie chart
+  if(CH.pie){ CH.pie.destroy(); }
+  var ctx = document.getElementById('ch-pie');
+  CH.pie = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels:[(window.i18n?window.i18n.t('opt_swim'):'Natación'),
+        (window.i18n?window.i18n.t('opt_bike'):'Ciclismo'),
+        (window.i18n?window.i18n.t('opt_run'):'Corrida')],
+      datasets:[{
+        data:[Math.round(sKcal), Math.round(bKcal), Math.round(rKcal)],
+        backgroundColor:['rgba(6,182,212,.8)','rgba(245,158,11,.8)','rgba(16,185,129,.8)'],
+        borderColor:['#06B6D4','#F59E0B','#10B981'],
+        borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},padding:14,boxWidth:14}},
+        tooltip:{callbacks:{label:function(c){return c.label+': '+Math.round(c.parsed)+' kcal';}}}
+      }
     }
   });
-},{threshold:.1});
-document.querySelectorAll('.sr').forEach(function(el){io.observe(el)});
+
+  // Guidelines
+  document.getElementById('guide-text').innerHTML = GUIDELINES[rk];
+
+  // Splits
+  var swimSpd = (DIST[rk].swim/100) / (pred.swim/60);
+  var bikeSpd = (DIST[rk].bike/1000) / (pred.bike/3600);
+  var runPace = fmtPace(pred.run / (DIST[rk].run/1000));
+  var splits = [
+    {icon:'🏊',lbl:'Natación',dist:DIST[rk].swim/1000<1?(DIST[rk].swim+'m'):(DIST[rk].swim/1000+'km'),time:fmtHM(pred.swim),kcal:Math.round(sKcal),note:'Sin ingesta',col:'var(--swim)'},
+    {icon:'🚴',lbl:'Ciclismo', dist:DIST[rk].bike/1000+'km', time:fmtHM(pred.bike),kcal:Math.round(bKcal),note:'~'+Math.round(bKcal*0.5)+'g CHO inyectados',col:'var(--bike)'},
+    {icon:'🏊',lbl:'Corrida',  dist:rk==='703'?'21.1km':rk==='ironman'?'42.2km':(DIST[rk].run/1000+'km'), time:fmtHM(pred.run),kcal:Math.round(rKcal),note:'Geles + cola principalmente',col:'var(--run)'}
+  ];
+  document.getElementById('splits-list').innerHTML = splits.map(function(s){
+    return '<div class="split-row"><span class="split-disc" style="color:'+s.col+'">'+s.icon+' '+s.lbl+'</span>' +
+      '<span class="split-time" style="color:'+s.col+'">'+s.time+'</span>' +
+      '<span class="split-kcal" style="color:var(--gold)">'+s.kcal+' kcal</span>' +
+      '<span class="split-note">'+s.note+'</span></div>';
+  }).join('');
+}
+
+function renderTab2(plan, pred, totalMin) {
+  renderGantt(pred, plan, totalMin);
+  renderCHOFluidChart(plan);
+  renderPlanTable(plan);
+}
+
+function renderGantt(pred, plan, totalMin) {
+  var rk = ST.race;
+  var segs = [
+    {key:'swim', lbl:'🏊 Natación', dur:pred.swim/60, color:'rgba(6,182,212,.85)'},
+    {key:'t1',   lbl:'T1',          dur:pred.t1/60,   color:'rgba(100,116,139,.7)'},
+    {key:'bike', lbl:'🚴 Ciclismo', dur:pred.bike/60, color:'rgba(245,158,11,.85)'},
+    {key:'t2',   lbl:'T2',          dur:pred.t2/60,   color:'rgba(100,116,139,.7)'},
+    {key:'run',  lbl:'🏃 Corrida',  dur:pred.run/60,  color:'rgba(16,185,129,.85)'}
+  ];
+  var ganttHTML = '<div class="gantt-wrap">';
+  var offset = 0;
+  segs.forEach(function(s){
+    var pct = s.dur / totalMin * 100;
+    var leftPct = offset / totalMin * 100;
+    ganttHTML += '<div class="gantt-seg" style="left:'+leftPct+'%;width:'+pct+'%;background:'+s.color+'" title="'+s.lbl+' — '+Math.round(s.dur)+'min">'+
+      (pct > 5 ? s.lbl : '')+'</div>';
+    offset += s.dur;
+  });
+  ganttHTML += '</div>';
+  // nutrition markers
+  ganttHTML += '<div class="nutrition-markers">';
+  plan.forEach(function(r){
+    if(r.cho > 0){
+      var pct = r.tMin / totalMin * 100;
+      ganttHTML += '<div class="nut-mark" style="left:'+pct+'%">'+
+        '<div class="nut-mark-line"></div>'+
+        '<div class="nut-mark-lbl">'+r.cho+'g</div>'+
+        '</div>';
+    }
+  });
+  ganttHTML += '</div>';
+  // time labels
+  var nLabels = Math.min(8, Math.floor(totalMin/15));
+  ganttHTML += '<div class="gantt-labels" style="position:relative;height:16px;margin-top:2px">';
+  for(var i=0; i<=nLabels; i++){
+    var t = Math.round(totalMin * i / nLabels);
+    var pct = i / nLabels * 100;
+    ganttHTML += '<span style="position:absolute;left:'+pct+'%;transform:translateX(-50%)">'+t+'min</span>';
+  }
+  ganttHTML += '</div>';
+  document.getElementById('gantt-wrap').innerHTML = ganttHTML;
+}
+
+function renderCHOFluidChart(plan) {
+  if(CH.cf){ CH.cf.destroy(); }
+  var labels  = plan.map(function(r){ return r.lbl; });
+  var choData = plan.map(function(r){ return r.cho; });
+  var flData  = plan.map(function(r){ return r.cumFluid; });
+  var bgColors = plan.map(function(r){
+    if(r.seg==='swim') return 'rgba(6,182,212,.75)';
+    if(r.seg==='bike') return 'rgba(245,158,11,.75)';
+    if(r.seg==='run')  return 'rgba(16,185,129,.75)';
+    return 'rgba(100,116,139,.5)';
+  });
+  var ctx = document.getElementById('ch-cho-fluid');
+  CH.cf = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'CHO (g)',data:choData,backgroundColor:bgColors,borderRadius:4,yAxisID:'y',order:2},
+        {label:'Fluidos acum. (ml)',data:flData,type:'line',borderColor:'#0EA5E9',backgroundColor:'rgba(14,165,233,.1)',pointBackgroundColor:'#0EA5E9',pointRadius:4,borderWidth:2.5,fill:true,yAxisID:'y2',order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{ticks:{color:'#3D6880',font:{size:9},maxRotation:35},grid:{color:'rgba(8,116,174,.06)'}},
+        y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'},title:{display:true,text:'CHO (g)',color:'#3D6880',font:{size:10}}},
+        y2:{position:'right',ticks:{color:'#0EA5E9',font:{size:10}},grid:{display:false},title:{display:true,text:'Fluidos acum. (ml)',color:'#0EA5E9',font:{size:10}}}
+      },
+      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.y||0)+(c.datasetIndex===0?'g':' ml');}}}}
+    }
+  });
+}
+
+var SEG_ICON = {swim:'🏊',t1:'⚡ T1',bike:'🚴',t2:'⚡ T2',run:'🏃'};
+function renderPlanTable(plan) {
+  var maxCHO   = plan[plan.length-1].cumCho   || 1;
+  var maxFluid = plan[plan.length-1].cumFluid || 1;
+  var tbody = plan.map(function(r){
+    var isFinish = r.lbl.indexOf('META')>-1;
+    return '<tr>'
+      +'<td style="text-align:center;font-size:1rem">'+SEG_ICON[r.seg]+'</td>'
+      +'<td style="font-family:\'Oswald\',sans-serif;font-size:.75rem;font-weight:700;color:'+(isFinish?'var(--gold)':'var(--text)')+'">'+r.lbl+'</td>'
+      +'<td><div class="'+(r.cho>0?'cho-val':'plan-zero')+'">'+(r.cho>0?r.cho+'g':'—')+'</div></td>'
+      +'<td><div class="'+(r.fluid>0?'fl-val':'plan-zero')+'">'+(r.fluid>0?r.fluid+'ml':'—')+'</div></td>'
+      +'<td><div class="'+(r.sodium>0?'na-val':'plan-zero')+'">'+(r.sodium>0?r.sodium+'mg':'—')+'</div></td>'
+      +'<td><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.9rem;font-weight:700;color:var(--gold)">'+r.cumCho+'g</div>'
+        +'<div class="prog-wrap"><div class="prog-fill" style="width:'+(r.cumCho/maxCHO*100).toFixed(1)+'%;background:var(--gold)"></div></div></td>'
+      +'<td><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.9rem;font-weight:700;color:var(--cyan)">'+(r.cumFluid/1000).toFixed(2)+'L</div>'
+        +'<div class="prog-wrap"><div class="prog-fill" style="width:'+(r.cumFluid/maxFluid*100).toFixed(1)+'%;background:var(--cyan)"></div></div></td>'
+      +'<td><div class="plan-action">'+r.action+'</div><div class="plan-ex">'+r.ex+'</div></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('plan-tbody').innerHTML = tbody;
+
+  // Totals
+  var last = plan[plan.length-1];
+  var nCps = plan.length;
+  var totalMin = last.tMin;
+  document.getElementById('tot-strip').innerHTML =
+    '<div class="tot-item"><div class="tot-n" style="color:var(--gold)">'+last.cumCho+'g</div><div class="tot-l">CHO total plan</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--cyan)">'+(last.cumFluid/1000).toFixed(1)+'L</div><div class="tot-l">Fluidos totales</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--orange)">'+last.cumNa.toLocaleString('es')+'mg</div><div class="tot-l">Sodio total</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--muted)">'+nCps+'</div><div class="tot-l">Checkpoints</div><div class="tot-s">c/ ~'+Math.round(totalMin/nCps)+'min</div></div>';
+}
+
+function renderTab3(rk, timeStr) {
+  var plan = PRE_RACE[rk];
+  var html = plan.map(function(item){
+    var isFinish = item[0].indexOf('T-0')>-1;
+    return '<div class="pre-item">'
+      +'<div class="pre-timing'+(isFinish?' finish':'')+'">'+item[0]+'</div>'
+      +'<div><div class="pre-cat">'+item[1]+'</div></div>'
+      +'<div><div class="pre-food">'+item[2]+'</div><div class="pre-note">'+item[3]+'</div></div>'
+      +'</div>';
+  }).join('');
+  html += '<div class="golden-rule"><strong>📌 Regla de oro para '+RACE_LABELS[rk]+' ('+timeStr+' est.):</strong> ' +
+    'No pruebes nada nuevo el día de la carrera. ' +
+    'Toda la estrategia nutricional debe estar practicada en entrenamientos largos. ' +
+    'Coloca los geles en el mismo lugar siempre (bolsillo jersey, tri-suit, aero-bag).</div>';
+  document.getElementById('pre-race-content').innerHTML = html;
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// WEEKLY CALORIC CHART (from KL_DATA)
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function renderWeeklyChart() {
+  var emptyEl = document.getElementById('weekly-empty');
+  var canvas  = document.getElementById('ch-weekly');
+  if(typeof window.KL_DATA === 'undefined' || !window.KL_DATA.activities || !window.KL_DATA.activities.length){
+    emptyEl.textContent = 'Sincroniza Garmin para ver el gasto calórico semanal.';
+    return;
+  }
+  var acts = window.KL_DATA.activities;
+  // Group by ISO week, compute kcal per sport
+  var weeks = {};
+  acts.forEach(function(a){
+    if(!a.date_iso) return;
+    var p = a.date_iso.split('-');
+    var d = new Date(+p[0], +p[1]-1, +p[2]); // local midnight — avoid UTC shift
+    var day = d.getDay() || 7; // Mon=1
+    var mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+    var y=mon.getFullYear(),mm=mon.getMonth()+1,dd=mon.getDate();
+    var wk = y+'-'+(mm<10?'0':'')+mm+'-'+(dd<10?'0':'')+dd;
+    if(!weeks[wk]) weeks[wk] = {swim:0,bike:0,run:0};
+    var sp = (a.sport||'').toLowerCase();
+    var kcal = 0;
+    if(sp==='bike')      kcal = kCalBike((a.avg_power||ATH.ftp*0.72), (a.dur_min||0)*60);
+    else if(sp==='run')  kcal = kCalRun(ATH.weight, a.dist_km||0);
+    else if(sp==='swim') kcal = kCalSwim(ATH.weight, a.dur_min||0);
+    if(sp in weeks[wk]) weeks[wk][sp] += kcal;
+  });
+  var sortedWks = Object.keys(weeks).sort().slice(-8);
+  if(!sortedWks.length){ emptyEl.textContent='Sin datos suficientes.'; return; }
+  emptyEl.style.display='none'; canvas.style.display='block';
+  var labels = sortedWks.map(function(w){ return w.slice(5); }); // MM-DD
+  if(CH.wk){ CH.wk.destroy(); }
+  CH.wk = new Chart(canvas, {
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'🏊 Natación', data:sortedWks.map(function(w){return Math.round(weeks[w].swim);}), backgroundColor:'rgba(6,182,212,.75)',borderRadius:3},
+        {label:'🚴 Ciclismo', data:sortedWks.map(function(w){return Math.round(weeks[w].bike);}), backgroundColor:'rgba(245,158,11,.75)',borderRadius:3},
+        {label:'🏃 Corrida',  data:sortedWks.map(function(w){return Math.round(weeks[w].run); }),  backgroundColor:'rgba(16,185,129,.75)',borderRadius:3}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{stacked:true,ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+        y:{stacked:true,ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'},title:{display:true,text:'kcal',color:'#3D6880',font:{size:10}}}
+      },
+      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+Math.round(c.parsed.y)+' kcal';}}}}
+    }
+  });
+  var syncDate = acts[0] && acts[0].date_label ? acts[0].date_label : '';
+  if(syncDate) document.getElementById('weekly-sync-info').textContent = 'Último sync: '+syncDate;
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// TABS
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('on'); });
+  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('on'); });
+  btn.classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// SCROLL ANIMATIONS
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('vis'); });
+},{threshold:.08});
+document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
+
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// INIT
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// API PERSISTENCE — P2
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var NUT_API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
+
+function getNutToken() {
+  try {
+    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+    return (s && s.token) ? s.token : (localStorage.getItem('lx_co_token') || null);
+  } catch(e) { return null; }
+}
+
+function _showNutSaveStatus(ok) {
+  var el = document.getElementById('nut-save-status');
+  if (!el) return;
+  el.textContent = ok ? '✓ Guardado' : '⚠ Sin conexión — offline';
+  el.style.color = ok ? 'var(--green)' : 'var(--gold)';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.style.opacity='0'; }, 2400);
+}
+
+function saveNutritionPlanToAPI(payload) {
+  var tok = getNutToken();
+  if (!tok) return;
+  fetch(NUT_API_BASE + '/athlete/nutrition-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+    body: JSON.stringify(payload)
+  }).then(function(r){ _showNutSaveStatus(r.ok); })
+    .catch(function(){ _showNutSaveStatus(false); });
+}
+
+function loadNutritionPlanFromAPI() {
+  var tok = getNutToken();
+  if (!tok) return;
+  fetch(NUT_API_BASE + '/athlete/nutrition-plan', {
+    headers: { 'Authorization': 'Bearer ' + tok }
+  }).then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(plan){
+    if (!plan || !plan.race_dist) return;
+    // Restore race selection
+    var rk = plan.race_dist;
+    if (['sprint','olympic','70.3','ironman'].indexOf(rk) >= 0) {
+      document.querySelectorAll('.rt').forEach(function(b){
+        b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+rk+"'") >= 0);
+      });
+      ST.race = rk;
+    }
+    // Restore sweat/heat if saved
+    if (plan.params_json) {
+      try {
+        var p = JSON.parse(plan.params_json);
+        if (p.sweat) document.getElementById('sel-sweat').value = p.sweat;
+        if (p.heat)  document.getElementById('sel-heat').value  = p.heat;
+      } catch(e){}
+    }
+    nutCalc();
+  }).catch(function(){});
+}
+
+// Patch nutCalc to auto-save after render
+var _origNutCalc = nutCalc;
+nutCalc = function() {
+  _origNutCalc();
+  // Async save to API
+  var rk = ST.race;
+  var sweat = document.getElementById('sel-sweat') ? document.getElementById('sel-sweat').value : '600';
+  var heat  = document.getElementById('sel-heat')  ? document.getElementById('sel-heat').value  : '1.0';
+  var totKcalEl = document.getElementById('ch-energy');
+  var choTotEl  = document.getElementById('cho-tot');
+  var fluidEl   = document.getElementById('fl-tot');
+  var sodEl     = document.getElementById('na-tot');
+  var payload = {
+    race_dist:  rk,
+    race_name:  (typeof KL_DATA !== 'undefined' && KL_DATA.meta && KL_DATA.meta.race_goal) || null,
+    params_json: JSON.stringify({ sweat: sweat, heat: heat })
+  };
+  if (totKcalEl) payload.total_kcal = parseInt((totKcalEl.textContent||'').replace(/\D/g,''))||null;
+  saveNutritionPlanToAPI(payload);
+};
+
+loadAth();
+loadFromKLData();
+renderWeeklyChart();
+nutCalc();
+// Load saved plan from API after initial render
+setTimeout(loadNutritionPlanFromAPI, 500);
 </script>
 <script src="auth.js"></script>
 <script>KL.guard('nutrition');</script>
 <style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
+<script>
+/* ── Bridge API: sync Garmin → re-render caloric chart + nutrition KPIs ── */
+(function(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  if(!tok) return;
+  var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  fetch(API+'/athlete/dashboard', {headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(data){
+      if(!data||!data.activities||!data.activities.length) return;
+      var swimWords=/nata|swim|piscina|pool/i;
+      data.activities.forEach(function(a){
+        if(a.sport==='other'&&swimWords.test(a.name||'')) a.sport='swim';
+      });
+      window.KL_DATA = window.KL_DATA || {};
+      Object.assign(window.KL_DATA, data);
+      if(typeof loadFromKLData==='function') loadFromKLData();
+      if(typeof renderWeeklyChart==='function') renderWeeklyChart();
+    }).catch(function(){});
+})();
+</script>
+<script src="nav.js"></script>
+
+<script src="i18n.js"></script>
+<script>
+/* ── Nutrición: re-render charts on language change ── */
+document.addEventListener('lx:langchange', function() {
+  // Pie labels (swim/bike/run)
+  if (window.CH && window.CH.pie && !window.CH.pie.destroyed) {
+    var t = window.i18n.t.bind(window.i18n);
+    window.CH.pie.data.labels = [
+      '🏊 ' + t('opt_swim'), '🚴 ' + t('opt_bike'), '🏃 ' + t('opt_run')
+    ];
+    window.CH.pie.update('none');
+  }
+  // Bar chart CHO
+  if (window.CH && window.CH.cf && !window.CH.cf.destroyed) {
+    var t2 = window.i18n.t.bind(window.i18n);
+    if (window.CH.cf.data.datasets[0]) window.CH.cf.data.datasets[0].label = t2('nutr_cho');
+    if (window.CH.cf.data.datasets[1]) window.CH.cf.data.datasets[1].label = t2('nutr_fluid');
+    window.CH.cf.update('none');
+  }
+  // Weekly bar chart
+  if (window.CH && window.CH.wk && !window.CH.wk.destroyed) {
+    var t3 = window.i18n.t.bind(window.i18n);
+    var ds = window.CH.wk.data.datasets;
+    var dsMap = ['opt_swim', 'opt_bike', 'opt_run', 'opt_strength'];
+    ds.forEach(function(d, i){ if(dsMap[i]) d.label = t3(dsMap[i]); });
+    window.CH.wk.update('none');
+  }
+});
+</script>
+<script src="lx-info.js"></script>
 </body>
 </html>
+
