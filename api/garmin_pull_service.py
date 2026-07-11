@@ -847,20 +847,38 @@ class GarminPullService:
     }
 
     @staticmethod
-    def _estimate_planned_tss(workout_segments, ftp, fcmax, run_pace_s_km):
+    def _estimate_planned_tss(workout, sport, ftp, fcmax, run_pace_s_km, css_s_100m):
         """
-        TSS planificado no viene de Garmin (es un cálculo propietario de
+        TSS planificado no viene de Garmin (cálculo propietario de
         TrainingPeaks que no se transmite al empujar el workout a Garmin
-        Connect — la estructura completa de get_workout_by_id no tiene
-        ningún campo de TSS/stress/load). Se estima con la misma lógica
-        que ya usa LabX para actividades reales: IF² × horas × 100, IF
-        derivado del target de cada paso (potencia/FC/ritmo) contra el
-        FTP/FCMax/ritmo umbral real del atleta. Es una aproximación
-        propia, no el número exacto de TrainingPeaks.
+        Connect). Se estima con la misma lógica que ya usa LabX para
+        actividades reales: IF² × horas × 100.
+
+        Diseñado para una plataforma multi-cliente/multi-plataforma
+        (no solo un usuario ni un solo origen de plan) en DOS niveles:
+
+        Nivel 1 — targets numéricos por paso (potencia/FC/ritmo), cuando
+        la plataforma de origen los puebla (targetValueOne/Two).
+
+        Nivel 2 — fallback por PROMEDIO de toda la sesión (distancia
+        total ÷ duración total, campos estándar de Garmin siempre
+        presentes cuando hay distancia real, sin importar la
+        plataforma) contra el benchmark real del atleta (CSS para nado,
+        ritmo umbral para carrera). Necesario porque, en la práctica,
+        algunas plataformas (confirmado con TrainingPeaks) empujan el
+        target del paso como TEXTO LIBRE en la descripción
+        ("Pace 1:31-2:08/100 yards") en vez de valores numéricos —
+        parsear texto libre por plataforma/idioma/unidad no escala para
+        un producto internacional con múltiples orígenes de plan.
+
+        Si ninguno de los dos niveles tiene información real suficiente
+        (ni targets por paso, ni distancia+duración+benchmark), devuelve
+        None — nunca inventa un número sin base real.
         """
+        segments = workout.get("workoutSegments") or []
         total = 0.0
         any_computed = False
-        for seg in (workout_segments or []):
+        for seg in segments:
             for step in (seg.get("workoutSteps") or []):
                 if step.get("type") != "ExecutableStepDTO":
                     continue
@@ -879,16 +897,41 @@ class GarminPullService:
                     intensity = avg_target / ftp
                 elif "heart.rate" in target_key and fcmax:
                     intensity = avg_target / (fcmax * 0.92)
-                elif "pace" in target_key and run_pace_s_km and avg_target:
-                    step_pace_s_km = 1000 / avg_target  # avg_target viene en m/s
-                    intensity = run_pace_s_km / step_pace_s_km
+                elif "pace" in target_key and avg_target:
+                    # avg_target viene en m/s en ambos deportes
+                    if sport == "run" and run_pace_s_km:
+                        step_pace_s_km = 1000 / avg_target
+                        intensity = run_pace_s_km / step_pace_s_km
+                    elif sport == "swim" and css_s_100m:
+                        step_pace_s_100m = 100 / avg_target
+                        intensity = css_s_100m / step_pace_s_100m
                 if intensity is None:
                     continue
 
                 intensity = max(0.3, min(1.3, intensity))
                 total += (dur_s / 3600) * (intensity ** 2) * 100
                 any_computed = True
-        return round(total, 1) if any_computed else None
+
+        if any_computed:
+            return round(total, 1)
+
+        # Nivel 2: promedio de toda la sesión
+        dur_secs = workout.get("estimatedDurationInSecs")
+        dist_m   = workout.get("estimatedDistanceInMeters")
+        if not dur_secs or not dist_m:
+            return None
+        avg_speed_ms = dist_m / dur_secs
+        intensity = None
+        if sport == "run" and run_pace_s_km and avg_speed_ms:
+            avg_pace_s_km = 1000 / avg_speed_ms
+            intensity = run_pace_s_km / avg_pace_s_km
+        elif sport == "swim" and css_s_100m and avg_speed_ms:
+            avg_pace_s_100m = 100 / avg_speed_ms
+            intensity = css_s_100m / avg_pace_s_100m
+        if intensity is None:
+            return None
+        intensity = max(0.3, min(1.3, intensity))
+        return round((dur_secs / 3600) * (intensity ** 2) * 100, 1)
 
     def _sync_planned_workouts(self, client, user_id: str, months_ahead: int = 2, ftp: int = 250) -> None:
         """
@@ -904,13 +947,20 @@ class GarminPullService:
 
         _user_row = db.query(User).filter(User.id == user_id).first()
         _fcmax = _user_row.fcmax if _user_row else None
-        _run_pace_s_km = None
-        if _user_row and _user_row.run_pace:
+
+        def _parse_mmss(val):
+            """'M:SS' → segundos. Formato compartido por run_pace y css
+            en el perfil del atleta (por 1km o por 100m respectivamente)."""
+            if not val:
+                return None
             try:
-                _m, _s = _user_row.run_pace.split(":")
-                _run_pace_s_km = int(_m) * 60 + int(_s)
+                _m, _s = val.split(":")
+                return int(_m) * 60 + int(_s)
             except Exception:
-                _run_pace_s_km = None
+                return None
+
+        _run_pace_s_km  = _parse_mmss(_user_row.run_pace if _user_row else None)
+        _css_s_100m     = _parse_mmss(_user_row.css      if _user_row else None)
 
         # Caché de workout_id → (dur_min, dist_km, sport) resuelto via
         # get_workout_by_id(), para no pedirle a Garmin la misma plantilla
@@ -1043,7 +1093,7 @@ class GarminPullService:
                             wk_dur  = (wk or {}).get("estimatedDurationInSecs") or 0
                             wk_dist = (wk or {}).get("estimatedDistanceInMeters") or 0
                             wk_tss  = self._estimate_planned_tss(
-                                (wk or {}).get("workoutSegments"), ftp, _fcmax, _run_pace_s_km)
+                                wk or {}, sport, ftp, _fcmax, _run_pace_s_km, _css_s_100m)
                             dur_secs = dur_secs or wk_dur
                             dist_m   = dist_m or wk_dist
                             if tss_p is None: tss_p = wk_tss
