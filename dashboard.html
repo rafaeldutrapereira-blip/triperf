@@ -969,9 +969,9 @@ ul { list-style: none; }
       <div class="kc sr" style="--kc:#22D3EE" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV">
         <div class="kc-row">
           <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <div id="badge-hrv" class="badge b-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+4ms</div>
+          <div id="badge-hrv" class="badge">—</div>
         </div>
-        <div class="kc-val"><span class="cu" data-kl="hrv_last_night" data-t="62">0</span><span class="u">ms</span></div>
+        <div class="kc-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></div>
         <div class="kc-name" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</div>
         <div class="kc-sub">Anoche · promedio 7d: <span id="hrv-7d-val">—</span>ms</div>
         <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
@@ -1956,7 +1956,8 @@ function patchData(){
   var map = {ctl:'ctl', atl:'atl', tss_week:'tss_week', hrv_last_night:'hrv_last_night'};
   Object.keys(map).forEach(function(key){
     var el = document.querySelector('[data-kl="'+key+'"]');
-    if(!el || d[map[key]] == null) return;
+    if(!el) return;
+    if(d[map[key]] == null){ el.textContent = '—'; el.removeAttribute('data-t'); return; }
     var val = Math.round(d[map[key]]);
     el.setAttribute('data-t', val);
     (function(target, elem){
@@ -2013,13 +2014,18 @@ function patchData(){
 
   // HRV badge — tendencia
   var bHrv = document.getElementById('badge-hrv');
-  if(bHrv && d.trends && d.trends.hrv != null){
-    var hrvTrendVal = d.trends.hrv;
-    var hrvArrow = hrvTrendVal >= 0
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
-    bHrv.className = 'badge ' + (hrvTrendVal >= 0 ? 'b-up' : 'b-dn');
-    bHrv.innerHTML = hrvArrow + (hrvTrendVal >= 0 ? '+' : '') + hrvTrendVal + 'ms';
+  if(bHrv){
+    if(d.trends && d.trends.hrv != null){
+      var hrvTrendVal = d.trends.hrv;
+      var hrvArrow = hrvTrendVal >= 0
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
+      bHrv.className = 'badge ' + (hrvTrendVal >= 0 ? 'b-up' : 'b-dn');
+      bHrv.innerHTML = hrvArrow + (hrvTrendVal >= 0 ? '+' : '') + hrvTrendVal + 'ms';
+    } else if(d.hrv_last_night == null){
+      bHrv.className = 'badge';
+      bHrv.textContent = 'Sin datos';
+    }
   }
 
   // TSS badge — tendencia vs semana anterior
