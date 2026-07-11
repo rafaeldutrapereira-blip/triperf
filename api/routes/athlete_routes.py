@@ -1065,14 +1065,17 @@ def garmin_sync_status(
     me: User    = Depends(get_current_user),
 ):
     """Devuelve el estado actual del sync Garmin del atleta."""
+    has_credentials = bool(me.garmin_email and me.garmin_password)
     row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
     if not row:
-        return {"status": "never", "last_sync": None, "activities_total": 0}
+        return {"status": "never", "last_sync": None, "activities_total": 0,
+                "has_credentials": has_credentials}
     return {
         "status":           row.status,
         "last_sync":        str(row.last_sync_at)[:16] if row.last_sync_at else None,
         "activities_total": row.activities_total,
         "error":            row.error,
+        "has_credentials":  has_credentials,
     }
 
 

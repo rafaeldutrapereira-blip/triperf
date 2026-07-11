@@ -880,6 +880,7 @@ class GarminPullService:
         db.flush()
 
         inserted = 0
+        seen_sched_ids = set()  # Garmin repite ítems entre meses (relleno de grilla de calendario)
         for (yr, mo) in months_to_fetch:
             try:
                 data = _retry(
@@ -894,8 +895,16 @@ class GarminPullService:
             if isinstance(data, list):
                 items = data
             elif isinstance(data, dict):
-                # Puede venir como {"calendarItems": [...]} u otras estructuras
-                items = data.get("calendarItems") or data.get("workouts") or list(data.values())[0] if data else []
+                # Puede venir como {"calendarItems": [...]} u otras estructuras.
+                # Antes: "a or b or list(d.values())[0] if d else []" — el ternario
+                # se evalúa DESPUÉS del último "or" por precedencia de Python, y
+                # list(d.values())[0] puede ser cualquier tipo (ej. un int en
+                # {"totalCount": 5, ...}), rompiendo el "for item in items" de abajo.
+                candidate = data.get("calendarItems") or data.get("workouts")
+                if candidate is None and data:
+                    first_val = next(iter(data.values()), None)
+                    candidate = first_val if isinstance(first_val, list) else None
+                items = candidate if isinstance(candidate, list) else []
 
             for item in items:
                 if not isinstance(item, dict):
@@ -915,6 +924,10 @@ class GarminPullService:
 
                 # ID único en Garmin
                 sched_id = str(item.get("scheduledWorkoutId") or item.get("id") or "")
+                if sched_id and sched_id in seen_sched_ids:
+                    continue
+                if sched_id:
+                    seen_sched_ids.add(sched_id)
 
                 title = (item.get("title") or item.get("workoutName") or
                          item.get("name") or "Entrenamiento planificado")
