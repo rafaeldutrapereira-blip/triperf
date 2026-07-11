@@ -858,6 +858,21 @@ class GarminPullService:
         db   = self._db
         today = date.today()
 
+        # Caché de workout_id → (dur_min, dist_km, sport) resuelto via
+        # get_workout_by_id(), para no pedirle a Garmin la misma plantilla
+        # dos veces (ni dentro de esta corrida, ni en la próxima sync si ya
+        # quedó guardado en algún registro previo del usuario).
+        _workout_cache: dict[str, dict] = {}
+        _existing_resolved = (
+            db.query(GarminPlannedWorkout)
+              .filter(GarminPlannedWorkout.user_id == user_id,
+                      GarminPlannedWorkout.workout_id.isnot(None),
+                      GarminPlannedWorkout.dur_min.isnot(None))
+              .all()
+        )
+        for r in _existing_resolved:
+            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km}
+
         months_to_fetch = []
         # Mes anterior (para semanas que cruzan fin de mes)
         prev = (today.replace(day=1) - timedelta(days=1))
@@ -932,21 +947,49 @@ class GarminPullService:
                 title = (item.get("title") or item.get("workoutName") or
                          item.get("name") or "Entrenamiento planificado")
 
-                # Deporte
-                act_type = (item.get("activityType") or {})
-                if isinstance(act_type, dict):
-                    type_key = act_type.get("typeKey") or act_type.get("key") or ""
-                else:
-                    type_key = str(act_type)
+                # Deporte — el campo real en las entradas de calendario es
+                # "sportTypeKey" plano (ej. "cycling"), NO "activityType.typeKey"
+                # (ese campo no existe en la respuesta real de Garmin y siempre
+                # caía a "other", sin importar la plataforma de origen).
+                type_key = item.get("sportTypeKey") or ""
+                if not type_key:
+                    act_type = item.get("activityType") or {}
+                    type_key = act_type.get("typeKey") or act_type.get("key") or "" if isinstance(act_type, dict) else str(act_type)
                 sport = self._SPORT_MAP_PLANNED.get(type_key.lower(), "other")
 
-                # Duración y distancia
+                # Duración y distancia — el calendario casi nunca las trae
+                # directo (son null); la plantilla completa vive en
+                # get_workout_by_id(workoutId), sin importar qué plataforma
+                # (TrainingPeaks, TrainerRoad, Garmin Coach, LabX) la haya
+                # empujado a Garmin — todas terminan en la misma API.
                 dur_secs = (item.get("duration") or item.get("estimatedDurationInSecs") or
                             item.get("durationInSeconds") or 0)
-                dur_min  = round(dur_secs / 60, 1) if dur_secs else None
-
                 dist_m  = (item.get("distance") or item.get("estimatedDistanceInMeters") or
                            item.get("distanceInMeters") or 0)
+
+                workout_id = str(item.get("workoutId") or "") or None
+                if workout_id and (not dur_secs or not dist_m):
+                    if workout_id in _workout_cache:
+                        cached = _workout_cache[workout_id]
+                        dur_secs = dur_secs or (cached["dur_min"]*60 if cached["dur_min"] else 0)
+                        dist_m   = dist_m   or (cached["dist_km"]*1000 if cached["dist_km"] else 0)
+                    else:
+                        try:
+                            wk = _retry(lambda w=workout_id: client.get_workout_by_id(w),
+                                        max_attempts=2, base_delay=1.0)
+                            wk_dur  = (wk or {}).get("estimatedDurationInSecs") or 0
+                            wk_dist = (wk or {}).get("estimatedDistanceInMeters") or 0
+                            dur_secs = dur_secs or wk_dur
+                            dist_m   = dist_m or wk_dist
+                            _workout_cache[workout_id] = {
+                                "dur_min": round(wk_dur/60, 1) if wk_dur else None,
+                                "dist_km": round(wk_dist/1000, 2) if wk_dist else None,
+                            }
+                        except Exception as exc:
+                            logger.debug("get_workout_by_id %s user=%s: %s", workout_id, user_id, exc)
+                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None}
+
+                dur_min = round(dur_secs / 60, 1) if dur_secs else None
                 dist_km = round(dist_m / 1000, 2) if dist_m else None
 
                 # TSS planificado (Training Peaks a veces lo incluye)
@@ -964,6 +1007,7 @@ class GarminPullService:
                     user_id             = user_id,
                     date_iso            = date_str,
                     garmin_scheduled_id = sched_id or None,
+                    workout_id          = workout_id,
                     title               = title[:200],
                     sport               = sport,
                     dur_min             = dur_min,

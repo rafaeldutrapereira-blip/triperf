@@ -1925,6 +1925,7 @@ class GarminPlannedWorkout(Base):
     user_id             = Column(String, ForeignKey("users.id"), nullable=False)
     date_iso            = Column(String,  nullable=False)   # YYYY-MM-DD fecha planificada
     garmin_scheduled_id = Column(String,  nullable=True)    # ID en Garmin calendar
+    workout_id          = Column(String,  nullable=True)    # ID de la plantilla (get_workout_by_id)
     title               = Column(String,  nullable=True)    # nombre del workout
     sport               = Column(String,  nullable=True)    # swim/bike/run/strength/other
     dur_min             = Column(Float,   nullable=True)
