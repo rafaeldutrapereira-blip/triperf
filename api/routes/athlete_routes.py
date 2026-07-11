@@ -700,12 +700,17 @@ def athlete_dashboard(
         {"dt": r.date_iso, "bb": r.body_battery_end}
         for r in _health_90 if r.body_battery_end is not None
     ]
-    _vo2_rows = [r for r in reversed(_health_90) if r.vo2max_running or r.vo2max_cycling]
-    vo2max_garmin = (_vo2_rows[0].vo2max_running or _vo2_rows[0].vo2max_cycling) if _vo2_rows else None
-    vo2_history = [
-        {"dt": r.date_iso, "vo2": r.vo2max_running or r.vo2max_cycling}
-        for r in _health_90 if r.vo2max_running is not None or r.vo2max_cycling is not None
-    ]
+    # "running" (generic) es lo que Garmin Connect muestra como "VO2 Max"
+    # en el reloj/app — se prioriza de forma CONSISTENTE en toda la serie
+    # (no por fila) para no mezclar dos métricas distintas en un mismo
+    # gráfico. Solo se usa "cycling" si no hay ningún running en la ventana.
+    _vo2_running_rows = [r for r in _health_90 if r.vo2max_running is not None]
+    if _vo2_running_rows:
+        vo2_history = [{"dt": r.date_iso, "vo2": r.vo2max_running} for r in _vo2_running_rows]
+    else:
+        vo2_history = [{"dt": r.date_iso, "vo2": r.vo2max_cycling}
+                       for r in _health_90 if r.vo2max_cycling is not None]
+    vo2max_garmin = vo2_history[-1]["vo2"] if vo2_history else None
 
     hrv_last_night   = health_today.hrv_last_night    if health_today else None
     hrv_7d_avg       = health_today.hrv_weekly_avg     if health_today else None

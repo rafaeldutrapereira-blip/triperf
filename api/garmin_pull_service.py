@@ -1023,51 +1023,65 @@ class GarminPullService:
         db = self._db
         today = date.today()
 
-        # VO2max cambia lento — se pide una sola vez (no por día) y se guarda
-        # en el registro de hoy.
-        # Garmin solo actualiza el VO2max estimado en días donde corre el
-        # cálculo (tras ciertas actividades) — get_max_metrics(fecha) da []
-        # para la mayoría de los días. Se busca hacia atrás hasta encontrar
-        # el último valor real, pero solo si no tenemos ya uno reciente
-        # guardado (evita 14 requests extra a Garmin en cada sync).
-        vo2max_running = vo2max_cycling = None
-        recent_vo2_cutoff = (today - timedelta(days=7)).isoformat()
-        has_recent_vo2 = db.query(GarminHealthDaily).filter(
-            GarminHealthDaily.user_id == user_id,
-            GarminHealthDaily.date_iso >= recent_vo2_cutoff,
-            (GarminHealthDaily.vo2max_running.isnot(None)) | (GarminHealthDaily.vo2max_cycling.isnot(None)),
-        ).first()
-        if not has_recent_vo2:
-            # "generic" (running/general fitness) es el que Garmin Connect
-            # muestra como "VO2 Max" en el reloj/app — se prioriza sobre
-            # "cycling" (estimación separada, distinta métrica) que puede
-            # venir poblada en días donde "generic" está en None.
-            fallback_cycling = None
-            for back in range(14):
-                try:
-                    d_iso = (today - timedelta(days=back)).isoformat()
-                    mm = _retry(lambda d=d_iso: client.get_max_metrics(d), max_attempts=2, base_delay=1.0)
-                    entry = None
-                    if mm and isinstance(mm, list) and mm:
-                        entry = mm[0]
-                    elif isinstance(mm, dict) and mm:
-                        entry = mm
-                    if entry:
-                        generic = entry.get("generic") or {}
-                        cycling = entry.get("cycling") or {}
-                        run_val = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
-                        cyc_val = cycling.get("vo2MaxValue")
-                        if run_val:
-                            vo2max_running = run_val
-                            vo2max_cycling = cyc_val
-                            break
-                        if cyc_val and fallback_cycling is None:
-                            fallback_cycling = cyc_val
-                except Exception as exc:
-                    logger.debug("VO2max skip %s user=%s: %s", d_iso, user_id, exc)
-            if not vo2max_running and fallback_cycling:
-                vo2max_cycling = fallback_cycling
-            logger.info("VO2max user=%s running=%s cycling=%s", user_id, vo2max_running, vo2max_cycling)
+        # VO2max — histórico real por día (no solo el valor de hoy).
+        # Garmin solo recalcula el VO2max en días puntuales (tras actividades
+        # que califican), así que la mayoría de días da vacío — se guarda
+        # cada valor real bajo SU fecha real para armar un histórico
+        # genuino, en vez de aplastarlo todo contra "hoy".
+        # Incremental: solo se pide desde el último día ya guardado en
+        # adelante (o backfill acotado la primera vez) para no golpear
+        # Garmin con decenas de requests en cada sync.
+        last_vo2_row = (
+            db.query(GarminHealthDaily)
+              .filter(GarminHealthDaily.user_id == user_id,
+                      (GarminHealthDaily.vo2max_running.isnot(None)) |
+                      (GarminHealthDaily.vo2max_cycling.isnot(None)))
+              .order_by(GarminHealthDaily.date_iso.desc())
+              .first()
+        )
+        if last_vo2_row:
+            vo2_start = date.fromisoformat(last_vo2_row.date_iso)
+            vo2_days_back = min(30, max(1, (today - vo2_start).days))
+        else:
+            vo2_days_back = 30  # backfill inicial acotado (una sola vez)
+
+        for back in range(vo2_days_back + 1):
+            d = today - timedelta(days=back)
+            d_iso = d.isoformat()
+            try:
+                mm = _retry(lambda dd=d_iso: client.get_max_metrics(dd), max_attempts=2, base_delay=1.0)
+                entry = None
+                if mm and isinstance(mm, list) and mm:
+                    entry = mm[0]
+                elif isinstance(mm, dict) and mm:
+                    entry = mm
+                if not entry:
+                    continue
+                generic = entry.get("generic") or {}
+                cycling = entry.get("cycling") or {}
+                # "generic" (running/general) es lo que Garmin Connect
+                # muestra como "VO2 Max" en el reloj/app.
+                run_val = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
+                cyc_val = cycling.get("vo2MaxValue")
+                if not run_val and not cyc_val:
+                    continue
+
+                row = db.query(GarminHealthDaily).filter(
+                    GarminHealthDaily.user_id == user_id,
+                    GarminHealthDaily.date_iso == d_iso,
+                ).first()
+                if row:
+                    if run_val: row.vo2max_running = run_val
+                    if cyc_val: row.vo2max_cycling = cyc_val
+                elif run_val or cyc_val:
+                    db.add(GarminHealthDaily(
+                        user_id=user_id, date_iso=d_iso,
+                        vo2max_running=run_val, vo2max_cycling=cyc_val,
+                        synced_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                    ))
+            except Exception as exc:
+                logger.debug("VO2max skip %s user=%s: %s", d_iso, user_id, exc)
+        db.flush()
 
         for delta in range(days):
             target = today - timedelta(days=delta)
@@ -1149,14 +1163,11 @@ class GarminPullService:
             except Exception as exc:
                 logger.debug("TrainingReadiness skip %s user=%s: %s", iso, user_id, exc)
 
-            # ── VO2max: solo se adjunta al día de hoy (delta==0) ───────────
-            day_vo2_running = vo2max_running if delta == 0 else None
-            day_vo2_cycling = vo2max_cycling if delta == 0 else None
-
             # ── Upsert garmin_health_daily ────────────────────────────────
+            # (VO2max se sincroniza aparte, más arriba, con su propio
+            # backfill incremental por fecha real — no depende de este loop)
             has_data = any(v is not None for v in [
                 bb_end, hrv_night, stress_avg, spo2_avg, readiness,
-                day_vo2_running, day_vo2_cycling,
             ])
             if not has_data:
                 continue
@@ -1183,8 +1194,6 @@ class GarminPullService:
                 if resting_hr  is not None: existing.resting_hr        = resting_hr
                 if readiness   is not None: existing.training_readiness = readiness
                 if recovery_h  is not None: existing.recovery_time_h   = recovery_h
-                if day_vo2_running is not None: existing.vo2max_running = day_vo2_running
-                if day_vo2_cycling is not None: existing.vo2max_cycling = day_vo2_cycling
                 existing.synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
             else:
                 db.add(GarminHealthDaily(
@@ -1206,8 +1215,6 @@ class GarminPullService:
                     resting_hr        = resting_hr,
                     training_readiness= readiness,
                     recovery_time_h   = recovery_h,
-                    vo2max_running    = day_vo2_running,
-                    vo2max_cycling    = day_vo2_cycling,
                     synced_at         = datetime.now(timezone.utc).replace(tzinfo=None),
                 ))
 
