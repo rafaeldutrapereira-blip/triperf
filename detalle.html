@@ -1617,88 +1617,103 @@ function goBack() {
       window.KL_DATA = window.KL_DATA || {};
       Object.assign(window.KL_DATA, d);
 
-      // CTL / ATL / TSB from PMC history (puntos semanales de domingos)
-      // Usar fecha LOCAL del navegador (no UTC) para evitar avanzar de día antes de medianoche local
+      // Cada bloque de métrica va en su propio try/catch: si uno falla, no
+      // debe bloquear a los demás ni impedir el render() final. Antes todo
+      // este código compartía un solo .catch() vacío al final de la cadena
+      // — una excepción en CUALQUIER bloque (ej. pmc/ctl) cortaba en
+      // silencio la actualización de TODOS los bloques posteriores
+      // (incluido HRV) y el render() nunca se volvía a llamar, dejando
+      // pegada la curva sintética inicial para siempre.
       var _now = new Date();
       var todayISO = _now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
-      // pmc es autoritativo incluso vacío — reemplaza la curva sintética de
-      // demo (mismo patrón que HRV/VO2) para que "sin actividades reales"
-      // muestre "Sin datos" en vez de un histórico inventado.
-      if(d.pmc){
-        var newCtl = d.pmc.filter(function(p){ return p.ctl != null && p.ctl > 0; })
-                          .map(function(p){ return {date:p.dt, value:Math.round(p.ctl*10)/10}; });
-        var newAtl = d.pmc.filter(function(p){ return p.atl != null; })
-                          .map(function(p){ return {date:p.dt, value:Math.round(p.atl*10)/10}; });
-        var newTsb = d.pmc.map(function(p){
-          var v = p.ctl != null && p.atl != null ? Math.round((p.ctl-p.atl)*10)/10 : null;
-          return {date:p.dt, value:v};
-        }).filter(function(p){ return p.value != null; });
-        ALL.ctl = newCtl;
-        ALL.atl = newAtl;
-        ALL.tsb = newTsb;
-      }
-      // Agregar punto de HOY con valores proyectados (fuera del bloque pmc para que siempre corra)
-      if(d.ctl != null){
-        if(!ALL.ctl.length || ALL.ctl[ALL.ctl.length-1].date < todayISO)
-          ALL.ctl.push({date:todayISO, value:Math.round(d.ctl*10)/10});
-        else if(ALL.ctl[ALL.ctl.length-1].date === todayISO)
-          ALL.ctl[ALL.ctl.length-1].value = Math.round(d.ctl*10)/10;
-      }
-      if(d.atl != null && (!ALL.atl.length || ALL.atl[ALL.atl.length-1].date < todayISO))
-        ALL.atl.push({date:todayISO, value:Math.round(d.atl*10)/10});
-      if(d.tsb != null && (!ALL.tsb.length || ALL.tsb[ALL.tsb.length-1].date < todayISO))
-        ALL.tsb.push({date:todayISO, value:Math.round(d.tsb*10)/10});
-      // ACWR from acwr_history — autoritativo incluso vacío (mismo patrón)
-      if(d.acwr_history){
-        var newAcwr = d.acwr_history.map(function(p){ return {date:p.dt, value:p.acwr}; })
-                                    .filter(function(p){ return p.value != null; });
-        ALL.acwr = newAcwr;
-        if(d.acwr != null && (!ALL.acwr.length || ALL.acwr[ALL.acwr.length-1].date < todayISO))
-          ALL.acwr.push({date:todayISO, value:d.acwr});
-      }
+
+      // CTL / ATL / TSB from PMC history (puntos semanales de domingos)
+      try {
+        if(d.pmc){
+          var newCtl = d.pmc.filter(function(p){ return p.ctl != null && p.ctl > 0; })
+                            .map(function(p){ return {date:p.dt, value:Math.round(p.ctl*10)/10}; });
+          var newAtl = d.pmc.filter(function(p){ return p.atl != null; })
+                            .map(function(p){ return {date:p.dt, value:Math.round(p.atl*10)/10}; });
+          var newTsb = d.pmc.map(function(p){
+            var v = p.ctl != null && p.atl != null ? Math.round((p.ctl-p.atl)*10)/10 : null;
+            return {date:p.dt, value:v};
+          }).filter(function(p){ return p.value != null; });
+          ALL.ctl = newCtl;
+          ALL.atl = newAtl;
+          ALL.tsb = newTsb;
+        }
+        if(d.ctl != null){
+          if(!ALL.ctl.length || ALL.ctl[ALL.ctl.length-1].date < todayISO)
+            ALL.ctl.push({date:todayISO, value:Math.round(d.ctl*10)/10});
+          else if(ALL.ctl[ALL.ctl.length-1].date === todayISO)
+            ALL.ctl[ALL.ctl.length-1].value = Math.round(d.ctl*10)/10;
+        }
+        if(d.atl != null && (!ALL.atl.length || ALL.atl[ALL.atl.length-1].date < todayISO))
+          ALL.atl.push({date:todayISO, value:Math.round(d.atl*10)/10});
+        if(d.tsb != null && (!ALL.tsb.length || ALL.tsb[ALL.tsb.length-1].date < todayISO))
+          ALL.tsb.push({date:todayISO, value:Math.round(d.tsb*10)/10});
+      } catch(e) { console.error('detalle.html: error procesando CTL/ATL/TSB', e); }
+
+      // ACWR from acwr_history — autoritativo incluso vacío
+      try {
+        if(d.acwr_history){
+          var newAcwr = d.acwr_history.map(function(p){ return {date:p.dt, value:p.acwr}; })
+                                      .filter(function(p){ return p.value != null; });
+          ALL.acwr = newAcwr;
+          if(d.acwr != null && (!ALL.acwr.length || ALL.acwr[ALL.acwr.length-1].date < todayISO))
+            ALL.acwr.push({date:todayISO, value:d.acwr});
+        }
+      } catch(e) { console.error('detalle.html: error procesando ACWR', e); }
+
       // HRV from hrv_history — respuesta real de la API es autoritativa,
       // incluso vacía: reemplaza los datos sintéticos de demo (ALL.hrv
       // seed) para que se muestre "Sin datos" en vez de un histórico falso.
-      if(d.hrv_history){
-        var newHrv = d.hrv_history.map(function(p){ return {date:p.dt, value:p.hrv}; })
-                                  .filter(function(p){ return p.value != null; });
-        ALL.hrv = newHrv;
-        if(d.hrv_last_night != null && ALL.hrv.length && ALL.hrv[ALL.hrv.length-1].date < todayISO)
-          ALL.hrv.push({date:todayISO, value:d.hrv_last_night});
-      }
-      // VO2max from vo2_history — mismo patrón que HRV: autoritativo incluso
-      // vacío, reemplaza la curva sintética de demo (nunca conectada antes).
-      if(d.vo2_history){
-        var newVo2 = d.vo2_history.map(function(p){ return {date:p.dt, value:p.vo2}; })
-                                  .filter(function(p){ return p.value != null; });
-        ALL.vo2 = newVo2;
-        if(d.vo2max_garmin != null && ALL.vo2.length && ALL.vo2[ALL.vo2.length-1].date < todayISO)
-          ALL.vo2.push({date:todayISO, value:d.vo2max_garmin});
-      }
-      // Rebuild KL_PMC_ALL for metric=pmc chart
-      if(d.pmc && d.pmc.length){
-        KL_PMC_ALL = d.pmc.map(function(p){
-          return {dt:p.dt, l:p.l||p.dt, ctl:p.ctl||0, atl:p.atl||0, tss:p.tss||0};
-        });
-      }
-      // TSS weekly from PMC weekly totals — autoritativo incluso vacío
-      if(d.pmc){
-        var byWeek = {};
-        d.pmc.forEach(function(p){
-          if(!p.tss) return;
-          var dt = new Date(p.dt);
-          var dow = dt.getDay();
-          var mon = new Date(dt); mon.setDate(dt.getDate() - (dow===0?6:dow-1));
-          var wk = mon.toISOString().slice(0,10);
-          byWeek[wk] = (byWeek[wk]||0) + (p.tss||0);
-        });
-        var tssArr = Object.keys(byWeek).sort().map(function(wk){ return {date:wk, value:Math.round(byWeek[wk])}; });
-        ALL.tss = tssArr;
-      }
+      try {
+        if(d.hrv_history){
+          var newHrv = d.hrv_history.map(function(p){ return {date:p.dt, value:p.hrv}; })
+                                    .filter(function(p){ return p.value != null; });
+          ALL.hrv = newHrv;
+          if(d.hrv_last_night != null && ALL.hrv.length && ALL.hrv[ALL.hrv.length-1].date < todayISO)
+            ALL.hrv.push({date:todayISO, value:d.hrv_last_night});
+        }
+      } catch(e) { console.error('detalle.html: error procesando HRV', e); }
+
+      // VO2max from vo2_history — mismo patrón que HRV
+      try {
+        if(d.vo2_history){
+          var newVo2 = d.vo2_history.map(function(p){ return {date:p.dt, value:p.vo2}; })
+                                    .filter(function(p){ return p.value != null; });
+          ALL.vo2 = newVo2;
+          if(d.vo2max_garmin != null && ALL.vo2.length && ALL.vo2[ALL.vo2.length-1].date < todayISO)
+            ALL.vo2.push({date:todayISO, value:d.vo2max_garmin});
+        }
+      } catch(e) { console.error('detalle.html: error procesando VO2max', e); }
+
+      // Rebuild KL_PMC_ALL for metric=pmc chart + TSS weekly from PMC
+      try {
+        if(d.pmc && d.pmc.length){
+          KL_PMC_ALL = d.pmc.map(function(p){
+            return {dt:p.dt, l:p.l||p.dt, ctl:p.ctl||0, atl:p.atl||0, tss:p.tss||0};
+          });
+        }
+        if(d.pmc){
+          var byWeek = {};
+          d.pmc.forEach(function(p){
+            if(!p.tss) return;
+            var dt = new Date(p.dt);
+            var dow = dt.getDay();
+            var mon = new Date(dt); mon.setDate(dt.getDate() - (dow===0?6:dow-1));
+            var wk = mon.toISOString().slice(0,10);
+            byWeek[wk] = (byWeek[wk]||0) + (p.tss||0);
+          });
+          var tssArr = Object.keys(byWeek).sort().map(function(wk){ return {date:wk, value:Math.round(byWeek[wk])}; });
+          ALL.tss = tssArr;
+        }
+      } catch(e) { console.error('detalle.html: error procesando PMC/TSS', e); }
 
       render();
     })
-    .catch(function(){});
+    .catch(function(e){ console.error('detalle.html: fetch /athlete/dashboard falló', e); });
 })();
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
