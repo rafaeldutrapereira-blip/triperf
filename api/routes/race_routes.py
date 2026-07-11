@@ -658,6 +658,84 @@ def taper_check(
     }
 
 
+@router.get("/dashboard-s19")
+def race_dashboard_s19(
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """Sprint 19 — Race Day Dashboard: next race + fitness + plan + history.
+
+    Registrado antes de /{race_id} a propósito: si va después, FastAPI
+    matchea "dashboard-s19" como race_id y este endpoint nunca es alcanzable.
+    """
+    from ..models import RecoveryScore, RacePlan, RaceResult as _RR
+    today = datetime.now(timezone.utc).replace(tzinfo=None).date().isoformat()
+
+    next_race = (
+        db.query(RaceEvent)
+        .filter(RaceEvent.user_id == me.id, RaceEvent.date_iso >= today)
+        .order_by(RaceEvent.date_iso.asc()).first()
+    )
+    days_to_race = None
+    if next_race:
+        days_to_race = (datetime.strptime(next_race.date_iso, "%Y-%m-%d").date()
+                        - datetime.now(timezone.utc).replace(tzinfo=None).date()).days
+
+    load = (db.query(GarminTrainingLoad)
+            .filter_by(user_id=me.id)
+            .order_by(GarminTrainingLoad.date_iso.desc()).first())
+    rec  = db.query(RecoveryScore).filter_by(user_id=me.id, date_iso=today).first()
+
+    plan = None
+    if next_race:
+        try:
+            plan = (db.query(RacePlan)
+                    .filter_by(user_id=me.id, race_event_id=next_race.id)
+                    .order_by(RacePlan.generated_at.desc()).first())
+        except Exception:
+            pass
+
+    history = []
+    try:
+        results = (db.query(_RR).filter_by(user_id=me.id)
+                   .order_by(_RR.created_at.desc()).limit(5).all())
+        for r in results:
+            evt = db.query(RaceEvent).filter_by(id=r.race_event_id).first() if r.race_event_id else None
+            history.append({
+                "race_name": evt.name if evt else "Carrera",
+                "total_fmt": _fmt_t(r.total_time_s),
+                "total_time_s": r.total_time_s,
+                "distance": evt.distance if evt else None,
+                "pacing_score": r.pacing_score,
+                "dnf": r.dnf,
+            })
+    except Exception:
+        pass
+
+    return {
+        "next_race": {
+            "id": next_race.id if next_race else None,
+            "name": next_race.name if next_race else None,
+            "date": next_race.date_iso if next_race else None,
+            "distance": next_race.distance if next_race else None,
+            "days_to_race": days_to_race,
+            "has_plan": plan is not None,
+        },
+        "fitness": {
+            "ctl": round(load.ctl, 1) if load and load.ctl else None,
+            "tsb": round(load.tsb, 1) if load and load.tsb else None,
+            "atl": round(load.atl, 1) if load and load.atl else None,
+            "recovery_score": rec.score if rec else None,
+        },
+        "plan": {
+            "total_fmt": _fmt_t(plan.total_pred_s) if plan else None,
+            "bike_power": plan.bike_target_power if plan else None,
+            "run_pace": _fmt_pace(plan.run_target_pace) if plan else None,
+        },
+        "history": history,
+    }
+
+
 @router.get("/{race_id}")
 def get_race(
     race_id: str,
@@ -1230,78 +1308,6 @@ class _RaceResultIn(_BM):
     dnf:               bool = False
     dnf_reason:        _Opt[str] = _F(None, max_length=200)
     notes:             _Opt[str] = _F(None, max_length=500)
-
-
-@router.get("/dashboard-s19")
-def race_dashboard_s19(
-    db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
-):
-    """Sprint 19 â€” Race Day Dashboard: next race + fitness + plan + history."""
-    from ..models import RecoveryScore, RacePlan, RaceResult as _RR
-    today = datetime.now(timezone.utc).replace(tzinfo=None).date().isoformat()
-
-    next_race = (
-        db.query(RaceEvent)
-        .filter(RaceEvent.user_id == me.id, RaceEvent.race_date >= today)
-        .order_by(RaceEvent.race_date.asc()).first()
-    )
-    days_to_race = None
-    if next_race:
-        days_to_race = (datetime.strptime(next_race.race_date, "%Y-%m-%d").date()
-                        - datetime.now(timezone.utc).replace(tzinfo=None).date()).days
-
-    load = (db.query(GarminTrainingLoad)
-            .filter_by(user_id=me.id)
-            .order_by(GarminTrainingLoad.date_iso.desc()).first())
-    rec  = db.query(RecoveryScore).filter_by(user_id=me.id, date_iso=today).first()
-
-    plan = None
-    if next_race:
-        try:
-            plan = (db.query(RacePlan)
-                    .filter_by(user_id=me.id, race_event_id=next_race.id)
-                    .order_by(RacePlan.generated_at.desc()).first())
-        except Exception:
-            pass
-
-    history = []
-    try:
-        results = (db.query(_RR).filter_by(user_id=me.id)
-                   .order_by(_RR.created_at.desc()).limit(5).all())
-        for r in results:
-            evt = db.query(RaceEvent).filter_by(id=r.race_event_id).first() if r.race_event_id else None
-            history.append({
-                "race_name": evt.race_name if evt else "Carrera",
-                "total_fmt": _fmt_t(r.total_time_s),
-                "pacing_score": r.pacing_score,
-                "dnf": r.dnf,
-            })
-    except Exception:
-        pass
-
-    return {
-        "next_race": {
-            "id": next_race.id if next_race else None,
-            "name": next_race.race_name if next_race else None,
-            "date": next_race.race_date if next_race else None,
-            "distance": next_race.distance if next_race else None,
-            "days_to_race": days_to_race,
-            "has_plan": plan is not None,
-        },
-        "fitness": {
-            "ctl": round(load.ctl, 1) if load and load.ctl else None,
-            "tsb": round(load.tsb, 1) if load and load.tsb else None,
-            "atl": round(load.atl, 1) if load and load.atl else None,
-            "recovery_score": rec.score if rec else None,
-        },
-        "plan": {
-            "total_fmt": _fmt_t(plan.total_pred_s) if plan else None,
-            "bike_power": plan.bike_target_power if plan else None,
-            "run_pace": _fmt_pace(plan.run_target_pace) if plan else None,
-        },
-        "history": history,
-    }
 
 
 @router.post("/auto-plan")

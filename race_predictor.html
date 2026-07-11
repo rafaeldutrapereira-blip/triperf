@@ -579,22 +579,22 @@ footer div{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);let
           <div class="hist-bar-bg"><div class="hist-bar-f" data-w="100" style="background:var(--gold)"></div></div>
           <div class="hist-diff" style="color:var(--gold)">TARGET</div>
         </div>
-        <div class="hist-row">
+        <div class="hist-row" id="hist-pr-row">
           <div class="hist-event">
             <div class="hist-name">Mejor Tiempo Personal</div>
-            <div class="hist-date">Ironman 70.3 · FTP ~220W</div>
+            <div class="hist-date" id="hist-pr-sub">—</div>
           </div>
-          <div class="hist-time">5:08:44</div>
-          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="88" style="background:var(--cyan)"></div></div>
+          <div class="hist-time" id="hist-pr-time">—</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" style="width:100%;background:var(--cyan)"></div></div>
           <div class="hist-diff" style="color:var(--green)">PR</div>
         </div>
-        <div class="hist-row">
+        <div class="hist-row" id="hist-avg-row">
           <div class="hist-event">
             <div class="hist-name">Promedio Histórico</div>
-            <div class="hist-date">Últimas 3 carreras 70.3</div>
+            <div class="hist-date" id="hist-avg-sub">—</div>
           </div>
-          <div class="hist-time" style="color:var(--muted)">5:22:10</div>
-          <div class="hist-bar-bg"><div class="hist-bar-f" data-w="80" style="background:var(--muted)"></div></div>
+          <div class="hist-time" style="color:var(--muted)" id="hist-avg-time">—</div>
+          <div class="hist-bar-bg"><div class="hist-bar-f" style="width:100%;background:var(--muted)"></div></div>
           <div class="hist-diff" style="color:var(--muted)">AVG</div>
         </div>
         <div class="hist-row">
@@ -1045,6 +1045,43 @@ recalculate();
         }
       }).catch(function(){});
   }
+
+  /* ── Historial real de carreras: PR + promedio (reemplaza filas hardcodeadas) ── */
+  function fmtHMS(sec){
+    if(sec == null) return null;
+    var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.round(sec%60);
+    return h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }
+  function hideHistRow(prefix){
+    var row = document.getElementById(prefix+'-row');
+    if(row){ row.style.display = 'none'; return; }
+    // Fallback: si no hay wrapper con id, ocultar el .hist-row padre del hist-name
+    var nameEl = document.getElementById(prefix+'-name');
+    if(nameEl){ var r = nameEl.closest('.hist-row'); if(r) r.style.display = 'none'; }
+  }
+  fetch(API+'/races/dashboard-s19', {headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(rd){
+      if(!rd || !rd.history || !rd.history.length){
+        hideHistRow('hist-pr'); hideHistRow('hist-avg');
+        return;
+      }
+      var real = rd.history.filter(function(h){ return h.total_time_s != null && !h.dnf; });
+      if(!real.length){ hideHistRow('hist-pr'); hideHistRow('hist-avg'); return; }
+
+      var best = real.reduce(function(a,b){ return b.total_time_s < a.total_time_s ? b : a; });
+      var prTimeEl = document.getElementById('hist-pr-time');
+      var prSubEl  = document.getElementById('hist-pr-sub');
+      if(prTimeEl) prTimeEl.textContent = fmtHMS(best.total_time_s);
+      if(prSubEl)  prSubEl.textContent  = best.race_name + (best.distance ? ' · ' + best.distance : '');
+
+      var last3 = real.slice(0,3);
+      var avgSec = last3.reduce(function(s,h){ return s+h.total_time_s; },0) / last3.length;
+      var avgTimeEl = document.getElementById('hist-avg-time');
+      var avgSubEl  = document.getElementById('hist-avg-sub');
+      if(avgTimeEl) avgTimeEl.textContent = fmtHMS(avgSec);
+      if(avgSubEl)  avgSubEl.textContent  = 'Últimas ' + last3.length + ' carrera' + (last3.length>1?'s':'');
+    }).catch(function(){ hideHistRow('hist-pr'); hideHistRow('hist-avg'); });
 })();
 </script>
 <script src="nav.js"></script>

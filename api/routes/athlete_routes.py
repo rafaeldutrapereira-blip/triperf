@@ -701,6 +701,10 @@ def athlete_dashboard(
     ]
     _vo2_rows = [r for r in reversed(_health_90) if r.vo2max_running or r.vo2max_cycling]
     vo2max_garmin = (_vo2_rows[0].vo2max_running or _vo2_rows[0].vo2max_cycling) if _vo2_rows else None
+    vo2_history = [
+        {"dt": r.date_iso, "vo2": r.vo2max_running or r.vo2max_cycling}
+        for r in _health_90 if r.vo2max_running is not None or r.vo2max_cycling is not None
+    ]
 
     hrv_last_night   = health_today.hrv_last_night    if health_today else None
     hrv_7d_avg       = health_today.hrv_weekly_avg     if health_today else None
@@ -859,6 +863,7 @@ def athlete_dashboard(
         "rhr_history":   rhr_history,
         "bb_history":    bb_history,
         "vo2max_garmin": vo2max_garmin,
+        "vo2_history":   vo2_history,
         # Actividades
         "activities": activities,
         # Resumen semanal por disciplina

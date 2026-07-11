@@ -1664,6 +1664,15 @@ function goBack() {
         if(d.hrv_last_night != null && ALL.hrv.length && ALL.hrv[ALL.hrv.length-1].date < todayISO)
           ALL.hrv.push({date:todayISO, value:d.hrv_last_night});
       }
+      // VO2max from vo2_history — mismo patrón que HRV: autoritativo incluso
+      // vacío, reemplaza la curva sintética de demo (nunca conectada antes).
+      if(d.vo2_history){
+        var newVo2 = d.vo2_history.map(function(p){ return {date:p.dt, value:p.vo2}; })
+                                  .filter(function(p){ return p.value != null; });
+        ALL.vo2 = newVo2;
+        if(d.vo2max_garmin != null && ALL.vo2.length && ALL.vo2[ALL.vo2.length-1].date < todayISO)
+          ALL.vo2.push({date:todayISO, value:d.vo2max_garmin});
+      }
       // Rebuild KL_PMC_ALL for metric=pmc chart
       if(d.pmc && d.pmc.length){
         KL_PMC_ALL = d.pmc.map(function(p){
