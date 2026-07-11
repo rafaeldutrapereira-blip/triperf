@@ -292,8 +292,15 @@ function _ensurePanel(){
       '.li-section-title{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;margin:1.1rem 0 .45rem}',
       '.li-pro-tip{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:.65rem .85rem;font-size:.78rem;color:#7DD3FC;line-height:1.55}',
       '.li-pro-tip::before{content:"💡 ";font-style:normal}',
-      '.lx-info-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#9CA3AF;font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .15s;vertical-align:middle;margin-left:.3rem;line-height:1}',
-      '.lx-info-btn:hover{background:rgba(14,165,233,.2);border-color:rgba(14,165,233,.5);color:#7DD3FC}',
+      '.lx-info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:transparent!important;border:1px solid rgba(127,179,204,.35);color:rgba(127,179,204,.7);font-size:.55rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:border-color .18s,color .18s;vertical-align:middle;margin-left:.3rem;line-height:1;padding:0;box-sizing:border-box;appearance:none;-webkit-appearance:none;-moz-appearance:none;outline:none;-webkit-tap-highlight-color:transparent;box-shadow:none}',
+      '.lx-info-btn svg{width:7px;height:7px;display:block;pointer-events:none;flex-shrink:0}',
+      '.lx-info-btn:hover,.lx-info-btn:focus-visible{background:rgba(14,165,233,.15)!important;border-color:rgba(14,165,233,.55);color:#7DD3FC;box-shadow:none}',
+      '.lx-info-btn:active{background:rgba(14,165,233,.25)!important;border-color:rgba(14,165,233,.7);color:#38BDF8;box-shadow:none}',
+      '.lx-info-btn:focus:not(:focus-visible){outline:none;box-shadow:none;background:transparent!important}',
+      '.kc>.lx-info-btn{position:absolute;top:.45rem;right:.5rem;z-index:2;margin-left:0;width:16px;height:16px;background:transparent!important}',
+      '.kc>.lx-info-btn:hover{background:rgba(14,165,233,.15)!important}',
+      '.kc>.lx-info-btn:focus{background:transparent!important;outline:none}',
+      '.kc>.lx-info-btn svg{width:8px;height:8px}',
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -398,21 +405,29 @@ window.lxInfo = {
     var js = valueOrSelector
       ? ('var _v=typeof '+JSON.stringify(valueOrSelector)+'==="string"&&'+JSON.stringify(valueOrSelector)+'.startsWith("#")?+(document.querySelector('+JSON.stringify(valueOrSelector)+')&&document.querySelector('+JSON.stringify(valueOrSelector)+').textContent.replace(/[^0-9.-]/g,""))||null:'+JSON.stringify(valueOrSelector)+';lxInfo.show('+JSON.stringify(metricId)+',_v)')
       : 'lxInfo.show('+JSON.stringify(metricId)+',null)';
-    return '<button type="button" class="lx-info-btn" onclick="'+js.replace(/"/g,'&quot;')+'" title="¿Qué es '+metricId.toUpperCase()+'?" aria-label="Info sobre '+(METRICS[metricId]?METRICS[metricId].nombre:metricId)+'"'+(extraStyle?' style="'+extraStyle+'"':'')+'>ℹ</button>';
+    return '<button type="button" class="lx-info-btn" onclick="'+js.replace(/"/g,'&quot;')+'" title="¿Qué es '+metricId.toUpperCase()+'?" aria-label="Info sobre '+(METRICS[metricId]?METRICS[metricId].nombre:metricId)+'"'+(extraStyle?' style="'+extraStyle+'"':'')+'><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>';
   },
 
   /** Agrega botón ℹ a todos los elementos que tengan [data-lx-info] */
   autoInit: function(){
     document.querySelectorAll('[data-lx-info]').forEach(function(el){
-      if(el.querySelector('.lx-info-btn')) return; // ya tiene
       var mid   = el.getAttribute('data-lx-info');
       var vsel  = el.getAttribute('data-lx-info-val') || null;
+      // Mount on parent .kc card (top-right corner) when available, else inline
+      var card  = el.closest('.kc');
+      var mount = card || el;
+      if(mount.querySelector('.lx-info-btn')) return; // ya tiene
       var btn   = document.createElement('button');
       btn.type  = 'button';
       btn.className = 'lx-info-btn';
       btn.title = '¿Qué es esto?';
       btn.setAttribute('aria-label','Más información');
-      btn.textContent = 'ℹ';
+      if(card){
+        btn.style.cssText = 'position:absolute;top:.4rem;right:.45rem;z-index:3;margin:0;width:14px;height:14px;flex-shrink:0;background:transparent;border-radius:50%;border:1px solid rgba(127,179,204,.35);color:rgba(127,179,204,.7);padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;outline:none;box-shadow:none;-webkit-appearance:none;appearance:none';
+        btn.onmouseenter = function(){ this.style.background='rgba(14,165,233,.15)'; this.style.borderColor='rgba(14,165,233,.55)'; this.style.color='#7DD3FC'; };
+        btn.onmouseleave = function(){ this.style.background='transparent'; this.style.borderColor='rgba(127,179,204,.35)'; this.style.color='rgba(127,179,204,.7)'; };
+      }
+      btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="7" height="7"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg>';
       btn.addEventListener('click', function(e){
         e.stopPropagation();
         var val = null;
@@ -422,7 +437,7 @@ window.lxInfo = {
         }
         lxInfo.show(mid, val);
       });
-      el.appendChild(btn);
+      mount.appendChild(btn);
     });
   },
 };

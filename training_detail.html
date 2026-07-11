@@ -1,13 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KonaLabs — Queen K Intervals</title>
+<title>LabX — Sesión de Entrenamiento</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -19,540 +21,998 @@
   --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
 }
 html{scroll-behavior:smooth}
-body{
-  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
-  line-height:1.6;overflow-x:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
 a{color:inherit;text-decoration:none}ul{list-style:none}
-
-#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
-.nav-logo .acc{color:var(--orange)}
-.nav-logo svg{width:22px;height:22px;color:var(--orange)}
-.nav-links{display:flex;align-items:center;gap:2rem}
-.nav-links a{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
-.nav-links a:hover{color:var(--text)}
-.nav-links a.on{color:var(--orange)}
-.nav-right{display:flex;align-items:center;gap:.85rem}
-.sync-btn{display:flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--aqua);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:.45rem 1rem;cursor:pointer;transition:all var(--ease)}
-.sync-btn:hover{background:rgba(34,211,238,.15);border-color:var(--aqua)}
-.sync-btn svg{width:13px;height:13px}
-.sync-btn.spin svg{animation:spin360 1s linear infinite}
-@keyframes spin360{to{transform:rotate(360deg)}}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
-.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}
-.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
-@media(max-width:860px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
-
-.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem)}
 .badge{display:inline-block;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px}
 .b-o{background:rgba(255,101,53,.12);color:var(--orange);border:1px solid rgba(255,101,53,.25)}
+.b-g{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.b-c{background:rgba(14,165,233,.12);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}
+.b-p{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.25)}
 
-.ah{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+/* ── ACTIVITY HEADER ── */
+.ah{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
 .ah-inner{padding:1.5rem 0}
-.back-btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:1.1rem;transition:color var(--ease)}
+.back-btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:1.1rem;transition:color var(--ease);cursor:pointer}
 .back-btn:hover{color:var(--muted)}
-.ah-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:800;line-height:1;letter-spacing:.02em;margin-bottom:.6rem}
-.ah-meta{display:flex;align-items:center;gap:.75rem;font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap;margin-bottom:1.25rem}
-.ah-meta span{display:flex;align-items:center;gap:.3rem}
+.back-btn svg{width:14px;height:14px}
+.ah-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.9rem,4vw,3rem);font-weight:800;line-height:1;letter-spacing:.02em;margin-bottom:.55rem}
+.ah-meta{display:flex;align-items:center;gap:.65rem;font-family:'Oswald',sans-serif;font-size:.77rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap;margin-bottom:1.25rem}
+.ah-meta-sep{color:var(--dim)}
 .ah-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);border-radius:var(--radius);overflow:hidden}
-@media(max-width:600px){.ah-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.ah-stats{grid-template-columns:repeat(2,1fr)}}
 .ah-stat{background:var(--surface);padding:1rem 1.25rem}
-.ah-stat-lbl{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.25rem}
-.ah-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
-.ah-stat-unit{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.ah-stat-lbl{font-family:'Oswald',sans-serif;font-size:.66rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem}
+.ah-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:1.75rem;font-weight:800;line-height:1}
+.ah-stat-unit{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--muted);margin-top:.08rem}
 
-.main{padding:2rem 0 4rem}
+/* ── MAIN ── */
+.main{padding:1.75rem 0 4rem}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.mt2{margin-top:2rem}
+.mt2{margin-top:1.5rem}
 
-.map-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative}
-.map-label{position:absolute;top:12px;left:14px;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:2}
-.map-overlay{position:absolute;top:10px;right:14px;background:rgba(4,8,15,.75);border:1px solid var(--border2);border-radius:6px;padding:.4rem .75rem;z-index:2;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.7}
+/* ── MAP ── */
+.map-wrap{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+#map-leaflet{height:320px;background:#04080F}
+/* Dark map overlay: dim Leaflet's light controls */
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--muted)!important;border-color:var(--border)!important}
+.leaflet-control-zoom a:hover{background:var(--surface2)!important;color:var(--text)!important}
+.leaflet-control-attribution{background:rgba(4,8,15,.65)!important;color:var(--dim)!important;font-size:.58rem!important}
+.leaflet-control-attribution a{color:var(--dim)!important}
+.map-badge{position:absolute;top:10px;left:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.75;backdrop-filter:blur(6px)}
+.map-badge strong{color:var(--text);display:block;font-size:.78rem;margin-bottom:.15rem}
+.map-outdoor-label{position:absolute;bottom:10px;right:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.08em;backdrop-filter:blur(6px)}
+/* Indoor / pool visuals */
+.indoor-card{height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:var(--surface);border-radius:var(--radius)}
+.indoor-icon{font-size:4rem;opacity:.6}
+.indoor-label{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:.05em;color:var(--muted)}
+.indoor-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--dim);letter-spacing:.08em}
+.pool-wrap{padding:1.5rem 2rem;background:var(--surface)}
+.pool-svg{display:block;width:100%;max-height:260px}
 
-.chart-section{padding:0}
+/* ── CHARTS ── */
 .chart-block{border-bottom:1px solid var(--border2)}
 .chart-block:last-child{border-bottom:none}
-.chart-lbl{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.4rem .2rem;flex-wrap:wrap;gap:.5rem}
-.chart-name{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
-.chart-anns{display:flex;gap:1rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap}
-.chart-ann{display:flex;align-items:center;gap:.3rem}
+.chart-lbl{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem .15rem;flex-wrap:wrap;gap:.5rem}
+.chart-name{font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.chart-anns{display:flex;gap:.9rem;font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap}
+.chart-ann{display:flex;align-items:center;gap:.28rem}
 .chart-ann-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.chart-svg{display:block;width:100%;height:130px}
+.chart-svg{display:block;width:100%;height:120px}
+.chart-taxis{display:flex;justify-content:space-between;padding:.25rem 1.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.05em}
 
+/* ── ZONES ── */
 .zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border2)}
 @media(max-width:640px){.zone-grid{grid-template-columns:1fr}}
-.zone-col{background:var(--bg);padding:1.25rem 1.4rem}
-.zone-title{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
-.zone-row{display:grid;grid-template-columns:140px 1fr 42px 42px;align-items:center;gap:.6rem;margin-bottom:.65rem}
-.zone-name{font-size:.75rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.04em;white-space:nowrap}
-.zone-bar-bg{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
-.zone-bar-f{height:100%;border-radius:3px;transform:scaleX(0);transform-origin:left;transition:transform .9s cubic-bezier(.4,0,.2,1)}
-.zone-pct{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);text-align:right}
-.zone-min{font-size:.68rem;color:var(--dim);text-align:right;white-space:nowrap}
+.zone-col{background:var(--bg);padding:1.15rem 1.4rem}
+.zone-title{font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
+.zone-row{display:grid;grid-template-columns:150px 1fr 40px 40px;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.zone-name{font-size:.72rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zone-bar-bg{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.zone-bar-f{height:100%;border-radius:3px;width:0;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.zone-pct{font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;color:var(--text);text-align:right}
+.zone-min{font-size:.65rem;color:var(--dim);text-align:right;white-space:nowrap}
 
+/* ── SPLITS ── */
 .splits-tbl{width:100%;border-collapse:collapse}
-.splits-tbl th{font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
-.splits-tbl td{padding:.75rem 1rem;font-size:.82rem;border-bottom:1px solid var(--border2)}
-.splits-tbl tr:last-child td{font-weight:600;color:var(--muted)}
-.splits-tbl tr.best td{background:rgba(255,101,53,.06)}
-.splits-tbl tr:hover:not(.best) td{background:rgba(8,116,174,.05)}
+.splits-tbl th{font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.7rem 1rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
+.splits-tbl td{padding:.7rem 1rem;font-size:.8rem;border-bottom:1px solid var(--border2)}
+.splits-tbl tfoot tr td{font-weight:600;color:var(--muted);border-top:1px solid var(--border2);border-bottom:none}
+.splits-tbl tr.best td{background:rgba(255,101,53,.05)}
+.splits-tbl tr:hover:not(.best) td{background:rgba(8,116,174,.04)}
+.best-lbl{font-size:.65rem;color:var(--orange)}
 
-.sr{opacity:0;transform:translateY(20px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+/* ── EXERCISE LIST (Strength) ── */
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1px;background:var(--border2)}
+.ex-card{background:var(--bg);padding:1rem 1.2rem}
+.ex-name{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.06em;color:var(--text);margin-bottom:.35rem}
+.ex-detail{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;color:var(--purple);line-height:1}
+.ex-sub{font-size:.68rem;color:var(--dim);margin-top:.1rem}
+
+/* ── NO ACTIVITY STATE ── */
+.no-act{padding:4rem 2rem;text-align:center}
+.no-act-icon{font-size:3rem;margin-bottom:1rem;opacity:.4}
+.no-act-title{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:700;color:var(--muted);margin-bottom:.5rem}
+.no-act-sub{font-size:.85rem;color:var(--dim)}
+
+/* ── ANIMATIONS ── */
+.sr{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
 .vis{opacity:1;transform:none}
 </style>
+<link rel="stylesheet" href="nav.css">
 </head>
 <body>
 
-<nav id="nav">
-  <div class="nav-inner">
-    <a href="landing.html" class="nav-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Kona<span class="acc">Labs</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="landing.html#disciplines">Disciplinas</a></li>
-      <li><a href="landing.html#calendar">Carreras</a></li>
-      <li><a href="landing.html#plans">Planes</a></li>
-      <li><a href="dashboard.html" data-kl-module="dashboard">Dashboard</a></li>
-      <li><a href="athlete_profile.html" data-kl-module="athlete_profile">Perfil</a></li>
-      <li><a href="training_plan.html" data-kl-module="training_plan">Plan</a></li>
-      <li><a href="nutrition.html" data-kl-module="nutrition">Nutrición</a></li>
-      <li><a href="blood_labs.html" data-kl-module="blood_labs">Labs</a></li>
-      <li><a href="race_predictor.html" data-kl-module="race_predictor">Predictor</a></li>
-    </ul>
-    <div class="nav-right">
-      <button class="sync-btn" onclick="syncBtn(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        Sync Garmin
-      </button>
-      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <div class="nav-avatar" id="kl-avatar">R</div>
-        <div>
-          <div class="nav-uname" id="kl-uname">Rafael</div>
-          <div class="nav-urole" id="kl-urole">Ironman 70.3</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</nav>
+<!-- SIDEBAR -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
 
-<div class="ah">
+<!-- ACTIVITY HEADER (dynamic) -->
+<div class="ah" id="act-header" style="display:none">
   <div class="c">
     <div class="ah-inner">
-      <a href="dashboard.html" class="back-btn">&#8592; Volver al Dashboard</a>
-      <div class="ah-title">Queen K Intervals</div>
-      <div class="ah-meta">
-        <span>🚴 Ciclismo</span>
-        <span>·</span>
-        <span>13 Jun 2026</span>
-        <span>·</span>
-        <span>1h 23m</span>
-        <span>·</span>
-        <span>42.3 km</span>
-        <span>·</span>
-        <span class="badge b-o">Ciclismo</span>
+      <div class="back-btn" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Volver al Plan
       </div>
-      <div class="ah-stats">
-        <div class="ah-stat">
-          <div class="ah-stat-lbl">Potencia NP</div>
-          <div class="ah-stat-val" style="color:var(--orange)">248</div>
-          <div class="ah-stat-unit">Watts</div>
-        </div>
-        <div class="ah-stat">
-          <div class="ah-stat-lbl">IF (Intensity Factor)</div>
-          <div class="ah-stat-val" style="color:var(--gold)">1.06</div>
-          <div class="ah-stat-unit">FTP 235W</div>
-        </div>
-        <div class="ah-stat">
-          <div class="ah-stat-lbl">FC Media</div>
-          <div class="ah-stat-val" style="color:var(--coral)">158</div>
-          <div class="ah-stat-unit">bpm</div>
-        </div>
-        <div class="ah-stat">
-          <div class="ah-stat-lbl">TSS</div>
-          <div class="ah-stat-val" style="color:var(--purple)">140</div>
-          <div class="ah-stat-unit">Training Stress Score</div>
-        </div>
-      </div>
+      <div class="ah-title" id="act-title">—</div>
+      <div class="ah-meta" id="act-meta"></div>
+      <div class="ah-stats" id="act-kpis"></div>
     </div>
   </div>
 </div>
 
-<div class="main">
+<!-- NO ACTIVITY STATE -->
+<div id="no-act-state" style="display:none">
+  <div class="c">
+    <div class="no-act">
+      <div class="no-act-icon">📊</div>
+      <div class="no-act-title">Selecciona una Actividad</div>
+      <div class="no-act-sub">Haz clic en una sesión desde el Plan de Entrenamiento para ver sus detalles.</div>
+      <br>
+      <a href="training_plan.html" style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.1em;color:var(--orange)">← Ir al Plan de Entrenamiento</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT (dynamic) -->
+<div class="main" id="act-main" style="display:none">
   <div class="c">
 
-    <div class="map-panel sr" id="s-map" style="height:320px">
-      <div class="map-label">🌺 Queen K Highway · Kailua-Kona, Hawai'i</div>
-      <div class="map-overlay">
-        <div>⚡ 248W NP</div>
-        <div>↑ 1,240m</div>
-        <div>30.4 km/h</div>
+    <!-- MAP / INDOOR VISUAL -->
+    <div class="sr" id="s-map">
+      <div class="map-wrap" id="map-wrap">
+        <!-- Leaflet map, indoor card, or pool SVG injected here -->
       </div>
-      <svg id="map-svg" width="100%" height="320" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
 
+    <!-- CHARTS -->
     <div class="panel mt2 sr" id="s-charts">
-      <div class="chart-section">
-        <div class="chart-block">
-          <div class="chart-lbl">
-            <span class="chart-name" style="color:var(--orange)">Potencia (W)</span>
-            <div class="chart-anns">
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--orange)"></div>NP: 248W</div>
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--red)"></div>Max: 341W</div>
-            </div>
-          </div>
-          <svg class="chart-svg" id="c-pow" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="chart-block">
-          <div class="chart-lbl">
-            <span class="chart-name" style="color:var(--red)">Frecuencia Cardíaca (bpm)</span>
-            <div class="chart-anns">
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--red)"></div>Media: 158bpm</div>
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--coral)"></div>Max: 172bpm</div>
-            </div>
-          </div>
-          <svg class="chart-svg" id="c-hr" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="chart-block">
-          <div class="chart-lbl">
-            <span class="chart-name" style="color:var(--green)">Altitud (m)</span>
-            <div class="chart-anns">
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--green)"></div>↑ 1,240m gain</div>
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--muted)"></div>↓ 1,198m loss</div>
-            </div>
-          </div>
-          <svg class="chart-svg" id="c-alt" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="chart-block">
-          <div class="chart-lbl">
-            <span class="chart-name" style="color:var(--aqua)">Velocidad (km/h)</span>
-            <div class="chart-anns">
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--aqua)"></div>Media: 30.4 km/h</div>
-              <div class="chart-ann"><div class="chart-ann-dot" style="background:var(--cyan)"></div>Max: 52.1 km/h</div>
-            </div>
-          </div>
-          <svg class="chart-svg" id="c-spd" viewBox="0 0 900 130" preserveAspectRatio="none"></svg>
-          <div style="display:flex;justify-content:space-between;padding:.3rem 1.4rem .8rem;font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.06em">
-            <span>0</span><span>15min</span><span>30min</span><span>45min</span><span>1h</span><span>1h15</span><span>1h23</span>
-          </div>
-        </div>
-      </div>
+      <div id="charts-inner"></div>
     </div>
 
+    <!-- ZONES -->
     <div class="panel mt2 sr" id="s-zones">
-      <div class="panel-head"><div class="panel-title">Distribución de Zonas</div></div>
-      <div class="zone-grid">
-        <div class="zone-col">
-          <div class="zone-title">Zonas de Potencia</div>
-          <div class="zone-row">
-            <div class="zone-name">Z1 Recovery &lt;132W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="8" style="background:#3D6880"></div></div>
-            <div class="zone-pct">8%</div>
-            <div class="zone-min">7min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z2 Endurance 132-180W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="17" style="background:var(--cyan)"></div></div>
-            <div class="zone-pct">17%</div>
-            <div class="zone-min">14min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z3 Tempo 180-216W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="20" style="background:var(--green)"></div></div>
-            <div class="zone-pct">20%</div>
-            <div class="zone-min">17min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z4 Threshold 216-252W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="35" style="background:var(--gold)"></div></div>
-            <div class="zone-pct">35%</div>
-            <div class="zone-min">29min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z5 VO₂Max 252-288W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="15" style="background:var(--orange)"></div></div>
-            <div class="zone-pct">15%</div>
-            <div class="zone-min">12min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z6 Anaeróbico &gt;288W</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="5" style="background:var(--red)"></div></div>
-            <div class="zone-pct">5%</div>
-            <div class="zone-min">4min</div>
-          </div>
-        </div>
-        <div class="zone-col">
-          <div class="zone-title">Zonas de FC</div>
-          <div class="zone-row">
-            <div class="zone-name">Z1 &lt;108bpm</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="3" style="background:#3D6880"></div></div>
-            <div class="zone-pct">3%</div>
-            <div class="zone-min">2min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z2 108-126bpm</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="12" style="background:var(--cyan)"></div></div>
-            <div class="zone-pct">12%</div>
-            <div class="zone-min">10min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z3 126-144bpm</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="18" style="background:var(--green)"></div></div>
-            <div class="zone-pct">18%</div>
-            <div class="zone-min">15min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z4 144-162bpm</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="58" style="background:var(--orange)"></div></div>
-            <div class="zone-pct">58%</div>
-            <div class="zone-min">48min</div>
-          </div>
-          <div class="zone-row">
-            <div class="zone-name">Z5 &gt;162bpm</div>
-            <div class="zone-bar-bg"><div class="zone-bar-f" data-w="9" style="background:var(--red)"></div></div>
-            <div class="zone-pct">9%</div>
-            <div class="zone-min">8min</div>
-          </div>
-        </div>
-      </div>
+      <div class="panel-head"><div class="panel-title" id="zones-title">Distribución de Zonas</div></div>
+      <div class="zone-grid" id="zones-grid"></div>
     </div>
 
+    <!-- SPLITS / EXERCISES -->
     <div class="panel mt2 sr" id="s-splits">
-      <div class="panel-head"><div class="panel-title">Vueltas / Splits</div></div>
-      <div style="overflow-x:auto">
-        <table class="splits-tbl">
-          <thead>
-            <tr>
-              <th>Vuelta</th>
-              <th>Dist</th>
-              <th>Tiempo</th>
-              <th>NP</th>
-              <th>IF</th>
-              <th>FC Media</th>
-              <th>Vel Media</th>
-              <th>Nota</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>1</td><td>7 km</td><td>14:20</td><td>195W</td><td>0.81</td><td>148 bpm</td><td>29.3 km/h</td><td style="color:var(--dim);font-size:.75rem">Recovery</td></tr>
-            <tr class="best"><td style="color:var(--orange);font-weight:700">2 ★</td><td>7 km</td><td>13:05</td><td style="color:var(--orange)">270W</td><td>1.13</td><td>163 bpm</td><td>32.1 km/h</td><td style="color:var(--orange);font-size:.75rem">Mejor vuelta</td></tr>
-            <tr><td>3</td><td>7 km</td><td>13:28</td><td>265W</td><td>1.10</td><td>165 bpm</td><td>31.2 km/h</td><td></td></tr>
-            <tr><td>4</td><td>7 km</td><td>13:12</td><td>272W</td><td>1.13</td><td>167 bpm</td><td>31.8 km/h</td><td></td></tr>
-            <tr><td>5</td><td>7 km</td><td>13:18</td><td>268W</td><td>1.12</td><td>166 bpm</td><td>31.6 km/h</td><td></td></tr>
-            <tr><td>6</td><td>7.3 km</td><td>15:37</td><td>180W</td><td>0.75</td><td>148 bpm</td><td>28.0 km/h</td><td style="color:var(--dim);font-size:.75rem">Cooldown</td></tr>
-          </tbody>
-          <tfoot>
-            <tr><td>TOTAL</td><td>42.3 km</td><td>1h 23m</td><td style="color:var(--orange)">248W NP</td><td style="color:var(--gold)">1.03</td><td style="color:var(--coral)">158 bpm</td><td style="color:var(--aqua)">30.4 km/h</td><td></td></tr>
-          </tfoot>
-        </table>
-      </div>
+      <div class="panel-head"><div class="panel-title" id="splits-title">Detalles por Segmento</div></div>
+      <div id="splits-inner"></div>
     </div>
 
   </div>
 </div>
 
-<footer style="border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center">
-  <div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em">
-    KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; TRAINING DETAIL &nbsp;·&nbsp; IRONMAN 70.3
+<footer style="border-top:1px solid var(--border2);padding:1.25rem 0;text-align:center">
+  <div style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em">
+    LABX &copy; <span id="yr"></span> &nbsp;·&nbsp; SESIÓN DE ENTRENAMIENTO
   </div>
 </footer>
 
+<script src="data/dashboard_data.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+(function(){
+'use strict';
+
+// ─────────────────────────────────────────────────────
+// SPORT CONFIG
+// ─────────────────────────────────────────────────────
+var SPORT = {
+  bike: {icon:'🚴', label:'Ciclismo',   color:'var(--orange)', badge:'b-o'},
+  run:  {icon:'🏃', label:'Carrera',    color:'var(--green)',  badge:'b-g'},
+  swim: {icon:'🏊', label:'Natación',   color:'var(--cyan)',   badge:'b-c'},
+  str:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'}
+};
+var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ─────────────────────────────────────────────────────
+// URL PARAM → ACTIVITY LOOKUP
+// ─────────────────────────────────────────────────────
+function getURLParam(name){
+  var m = location.search.match(new RegExp('[?&]'+name+'=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+var actId = getURLParam('id');
+var activities = (KL_DATA && KL_DATA.activities) || [];
+
+// Find by activity_id (stored as number in JSON)
+var ACT = null;
+if(actId){
+  var idNum = parseFloat(actId);
+  for(var i=0;i<activities.length;i++){
+    if(activities[i].activity_id == idNum){ ACT = activities[i]; break; }
+  }
+}
+// Fallback: most recent activity
+if(!ACT && activities.length){ ACT = activities[0]; }
+
+if(!ACT){
+  document.getElementById('no-act-state').style.display = 'block';
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  return;
+}
+
+document.getElementById('act-header').style.display = '';
+document.getElementById('act-main').style.display   = '';
 document.getElementById('yr').textContent = new Date().getFullYear();
-function syncBtn(b){b.classList.add('spin');setTimeout(()=>b.classList.remove('spin'),2200)}
 
-function genPower(){
-  const d=[];
-  for(let i=0;i<83;i++){
-    if(i<10){d.push(110+i*4+Math.random()*20)}
-    else if(i>=78){d.push(120+Math.random()*30)}
-    else{
-      const blk=Math.floor((i-10)/12);
-      const pos=(i-10)%12;
-      if(pos<8){d.push(280+Math.random()*30)}
-      else{d.push(130+Math.random()*20)}
+// ─────────────────────────────────────────────────────
+// ATHLETE PROFILE (from localStorage or defaults)
+// ─────────────────────────────────────────────────────
+var ATHLETE = (function(){
+  try{ return JSON.parse(localStorage.getItem('kl_athlete_data')||'{}'); }
+  catch(e){ return {}; }
+})();
+var FTP  = ATHLETE.ftp   || 240;
+var LTHR = ATHLETE.css   || 168;  // using css field as proxy for LTHR
+var CSS  = ATHLETE.css   || 110;  // seg/100m
+
+// ─────────────────────────────────────────────────────
+// SEEDED RNG (LCG, reproducible per activity_id)
+// ─────────────────────────────────────────────────────
+function makeRNG(seed){
+  var s = ((Math.abs(seed % 2147483647)) || 54321);
+  return function(){
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+// ─────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────
+function fmtDur(min){
+  var h=Math.floor(min/60), m=Math.round(min%60);
+  return h ? h+'h '+(m?m+'min':'') : m+'min';
+}
+function fmtPace(secKm){
+  var m=Math.floor(secKm/60), s=Math.round(secKm%60);
+  return m+':'+(s<10?'0':'')+s+'/km';
+}
+function fmtPace100(sec100){
+  var m=Math.floor(sec100/60), s=Math.round(sec100%60);
+  return m+':'+(s<10?'0':'')+s+'/100m';
+}
+function fmtDate(iso){
+  var d=new Date(iso+'T12:00:00');
+  return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+}
+
+// ─────────────────────────────────────────────────────
+// ACTIVITY CONFIG: location + type
+// ─────────────────────────────────────────────────────
+function getActConfig(act){
+  var nm = (act.name||'').toLowerCase();
+  if(nm.indexOf('zwift')>=0)    return {type:'indoor', icon:'🖥️', location:'Zwift — Indoor Trainer'};
+  if(nm.indexOf('piscina')>=0 || act.sport==='swim')
+                                return {type:'pool',   icon:'🏊', location:'Piscina'};
+  if(act.sport==='str')         return {type:'indoor', icon:'🏋️', location:'Gimnasio'};
+  if(nm.indexOf('las condes')>=0 || nm.indexOf('condes')>=0)
+    return {type:'outdoor', lat:-33.408, lng:-70.583, location:'Las Condes, Santiago'};
+  if(nm.indexOf('colina')>=0)
+    return {type:'outdoor', lat:-33.190, lng:-70.695, location:'Colina, Chile'};
+  // generic outdoor Santiago
+  return {type:'outdoor', lat:-33.450, lng:-70.650, location:'Santiago, Chile'};
+}
+
+// ─────────────────────────────────────────────────────
+// GPS ROUTE GENERATOR (seeded, sport-specific)
+// ─────────────────────────────────────────────────────
+function generateRoute(activityId, sport, distKm, baseLat, baseLng){
+  var rng  = makeRNG(activityId % 999983);
+  var dist = (distKm||10)*1000;
+  var step = sport==='bike' ? 220 : sport==='run' ? 70 : 50;
+  var n    = Math.min(500, Math.max(25, Math.round(dist/step)));
+  var cosLat = Math.cos(baseLat*Math.PI/180);
+  var pts  = [[baseLat, baseLng]];
+  var bear = rng()*360;
+
+  for(var i=1;i<n;i++){
+    var t   = i/n;
+    var turn= (rng()-0.5)*(sport==='bike'?14:28);
+
+    if(sport==='bike' && distKm>=40){
+      // Mountain ride: outbound north, return south
+      var target = t<0.44 ? 10 : t>0.56 ? 178 : bear;
+      bear = bear*0.78 + target*0.22 + turn;
+    } else {
+      // Run / short ride: loose loop
+      var loopAngle = t*Math.PI*2;
+      var loopBear  = Math.atan2(Math.sin(loopAngle), Math.cos(loopAngle))*180/Math.PI + 90;
+      bear = bear*0.72 + loopBear*0.28 + turn;
     }
+
+    var stepDeg = step/111000;
+    var lat = pts[i-1][0] + Math.cos(bear*Math.PI/180)*stepDeg;
+    var lng = pts[i-1][1] + Math.sin(bear*Math.PI/180)*stepDeg/cosLat;
+    pts.push([lat, lng]);
   }
-  return d;
+  return pts;
 }
-function genHR(){
-  const d=[];
-  for(let i=0;i<83;i++){
-    if(i<10){d.push(110+i*3+Math.random()*5)}
-    else if(i>=78){d.push(145+Math.random()*8)}
-    else{
-      const blk=Math.floor((i-10)/12);
-      const pos=(i-10)%12;
-      if(pos<8){d.push(160+Math.random()*12)}
-      else{d.push(148+Math.random()*8)}
+
+// ─────────────────────────────────────────────────────
+// RENDER: PAGE HEADER
+// ─────────────────────────────────────────────────────
+var sp = SPORT[ACT.sport]||SPORT.bike;
+document.title = 'LabX — '+(ACT.name||sp.label);
+document.getElementById('act-title').textContent = ACT.name||sp.label;
+
+var d = new Date(ACT.date_iso+'T12:00:00');
+var durH = Math.floor(ACT.dur_min/60), durM = Math.round(ACT.dur_min%60);
+var durStr = durH ? durH+'h '+(durM?durM+'min':'') : durM+'min';
+
+document.getElementById('act-meta').innerHTML =
+  '<span>'+sp.icon+' '+sp.label+'</span>'
+  +'<span class="ah-meta-sep">·</span>'
+  +'<span>'+fmtDate(ACT.date_iso)+'</span>'
+  +'<span class="ah-meta-sep">·</span>'
+  +'<span>'+durStr+'</span>'
+  +(ACT.dist_km?'<span class="ah-meta-sep">·</span><span>'+ACT.dist_km.toFixed(1)+' km</span>':'')
+  +(ACT.avg_hr?'<span class="ah-meta-sep">·</span><span>'+ACT.avg_hr+' bpm avg</span>':'')
+  +'<span class="ah-meta-sep">·</span>'
+  +'<span class="badge '+sp.badge+'">'+sp.label+'</span>';
+
+// KPI Cards (sport-specific)
+var kpis = [];
+if(ACT.sport==='bike'){
+  var np  = ACT.avg_power ? Math.round(ACT.avg_power*1.07) : null;
+  var ifv = np ? (np/FTP).toFixed(2) : null;
+  var tss = ACT.tss || (np ? Math.round((ACT.dur_min*60*np*ifv)/(FTP*3600)*100) : null);
+  var spd = ACT.dist_km ? (ACT.dist_km/(ACT.dur_min/60)).toFixed(1) : null;
+  kpis = [
+    {lbl:'Potencia NP',    val:np||'—',               unit:'Watts',                  col:'var(--orange)'},
+    {lbl:'IF',             val:ifv||'—',               unit:'FTP '+FTP+'W',           col:'var(--gold)'},
+    {lbl:'FC Media',       val:ACT.avg_hr||'—',        unit:'bpm',                    col:'var(--coral)'},
+    {lbl:'Velocidad Media',val:spd||(ACT.avg_power?Math.round(ACT.avg_power/8):' —'),  unit:'km/h',      col:'var(--aqua)'}
+  ];
+} else if(ACT.sport==='run'){
+  var paceS = ACT.dist_km ? Math.round((ACT.dur_min*60)/ACT.dist_km) : null;
+  var cad   = 172 + Math.round((makeRNG(ACT.activity_id)()-0.5)*6);
+  kpis = [
+    {lbl:'Ritmo Medio',    val:paceS?fmtPace(paceS):'—',    unit:'min/km',    col:'var(--green)'},
+    {lbl:'FC Media',       val:ACT.avg_hr||'—',              unit:'bpm',       col:'var(--coral)'},
+    {lbl:'Cadencia',       val:cad,                           unit:'pasos/min', col:'var(--gold)'},
+    {lbl:'Calorías',       val:ACT.calories||'—',             unit:'kcal',      col:'var(--purple)'}
+  ];
+} else if(ACT.sport==='swim'){
+  var paceSwimS = ACT.swim_pace
+    ? (function(s){ var p=s.match(/(\d+):(\d+)/); return p?(+p[1]*60+ +p[2]):null; })(ACT.swim_pace)
+    : (ACT.dur_min && ACT.dist_km ? Math.round((ACT.dur_min*60)/(ACT.dist_km*10)) : null);
+  var distM = ACT.dist_km ? Math.round(ACT.dist_km*1000) : null;
+  kpis = [
+    {lbl:'Ritmo Medio',    val:paceSwimS?fmtPace100(paceSwimS):'—',  unit:'min/100m',  col:'var(--cyan)'},
+    {lbl:'FC Media',       val:ACT.avg_hr||'—',                        unit:'bpm',       col:'var(--coral)'},
+    {lbl:'Distancia',      val:distM?distM+'m':'—',                    unit:'metros',    col:'var(--aqua)'},
+    {lbl:'Calorías',       val:ACT.calories||'—',                      unit:'kcal',      col:'var(--green)'}
+  ];
+} else {
+  // Strength
+  kpis = [
+    {lbl:'Duración',       val:durStr,             unit:'sesión completa', col:'var(--purple)'},
+    {lbl:'FC Media',       val:ACT.avg_hr||'—',    unit:'bpm',             col:'var(--coral)'},
+    {lbl:'Calorías',       val:ACT.calories||'—',  unit:'kcal',            col:'var(--green)'},
+    {lbl:'Tipo',           val:'Fuerza',            unit:'Preparación Física', col:'var(--purple)'}
+  ];
+}
+
+document.getElementById('act-kpis').innerHTML = kpis.map(function(k){
+  return '<div class="ah-stat">'
+    +'<div class="ah-stat-lbl">'+k.lbl+'</div>'
+    +'<div class="ah-stat-val" style="color:'+k.col+'">'+k.val+'</div>'
+    +'<div class="ah-stat-unit">'+k.unit+'</div>'
+    +'</div>';
+}).join('');
+
+// ─────────────────────────────────────────────────────
+// RENDER: MAP
+// ─────────────────────────────────────────────────────
+var cfg = getActConfig(ACT);
+var mapWrap = document.getElementById('map-wrap');
+var leafletMap = null;
+
+function initMap(){
+  if(cfg.type==='indoor'){
+    mapWrap.innerHTML =
+      '<div class="indoor-card">'
+      +'<div class="indoor-icon">'+cfg.icon+'</div>'
+      +'<div class="indoor-label">'+cfg.location+'</div>'
+      +'<div class="indoor-sub">'+(ACT.name||sp.label)+' · '+durStr+(ACT.dist_km?' · '+ACT.dist_km.toFixed(1)+' km':'')+'</div>'
+      +'</div>';
+    return;
+  }
+
+  if(cfg.type==='pool'){
+    // SVG pool visualization
+    var numLanes = ACT.dist_km ? Math.max(2, Math.ceil(ACT.dist_km*10/50)) : 8;
+    var laneH = 28, laneW = 700, padX = 60, padY = 30;
+    var svgH   = numLanes*laneH + padY*2;
+    var svgW   = laneW + padX*2;
+    var svg    = '<svg class="pool-svg" viewBox="0 0 '+svgW+' '+svgH+'" xmlns="http://www.w3.org/2000/svg">';
+    svg += '<rect width="'+svgW+'" height="'+svgH+'" fill="var(--surface)"/>';
+    svg += '<rect x="'+padX+'" y="'+padY+'" width="'+laneW+'" height="'+(numLanes*laneH)+'" rx="4" fill="rgba(14,165,233,.08)" stroke="rgba(14,165,233,.18)" stroke-width="1.5"/>';
+    for(var li=0;li<=numLanes;li++){
+      var ly = padY + li*laneH;
+      svg += '<line x1="'+padX+'" y1="'+ly+'" x2="'+(padX+laneW)+'" y2="'+ly+'" stroke="rgba(14,165,233,.15)" stroke-width="1"/>';
     }
+    // Swimmer path animation
+    for(var si=0;si<Math.min(numLanes,4);si++){
+      var sy = padY + si*laneH + laneH/2;
+      var goRight = si%2===0;
+      var x1 = padX+8, x2 = padX+laneW-8;
+      svg += '<line x1="'+(goRight?x1:x2)+'" y1="'+sy+'" x2="'+(goRight?x2:x1)+'" y2="'+sy+'" stroke="var(--cyan)" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>';
+      svg += '<circle cx="'+(goRight?x2:x1)+'" cy="'+sy+'" r="5" fill="var(--cyan)" opacity="0.8"/>';
+    }
+    svg += '<text x="'+(padX-8)+'" y="'+(padY+laneH/2+4)+'" text-anchor="end" fill="var(--dim)" font-size="9" font-family="Oswald,sans-serif">25m</text>';
+    if(ACT.dist_km){
+      var totalLaps = Math.round(ACT.dist_km*1000/25);
+      svg += '<text x="'+(padX+laneW/2)+'" y="'+(svgH-8)+'" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Oswald,sans-serif" letter-spacing="1">'+totalLaps+' LARGOS · '+(ACT.dist_km*1000).toFixed(0)+'m TOTAL</text>';
+    }
+    svg += '</svg>';
+    mapWrap.innerHTML = '<div class="pool-wrap">'+svg+'</div>';
+    return;
   }
-  return d;
-}
-function genAlt(){
-  const d=[];
-  for(let i=0;i<83;i++){
-    const t=i/82;
-    const base=t<0.5?t*2*250:(1-(t-0.5)*2)*250;
-    d.push(base+Math.random()*15);
+
+  // OUTDOOR: Leaflet map
+  mapWrap.innerHTML = '<div id="map-leaflet"></div><div class="map-badge" id="map-badge"></div><div class="map-outdoor-label" id="map-loc"></div>';
+
+  // Build overlay info
+  var badge = document.getElementById('map-badge');
+  var locEl  = document.getElementById('map-loc');
+  if(ACT.sport==='bike' && ACT.avg_power){
+    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
+      +'⚡ '+ACT.avg_power+'W avg<br>'
+      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
+      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
+  } else if(ACT.sport==='run'){
+    var rPace = ACT.dist_km ? fmtPace(Math.round((ACT.dur_min*60)/ACT.dist_km)) : '—';
+    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
+      +'🏃 '+rPace+'<br>'
+      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
+      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
   }
-  return d;
-}
-function genSpd(pow){return pow.map(p=>Math.max(15,Math.min(55,(p/240)*30+Math.random()*4)))}
+  locEl.textContent = cfg.location;
 
-const POW=genPower(),HR=genHR(),ALT=genAlt(),SPD=genSpd(POW);
-
-function smooth(arr){
-  return arr.map((v,i)=>{
-    const s=Math.max(0,i-2),e=Math.min(arr.length-1,i+2);
-    let sum=0;for(let j=s;j<=e;j++)sum+=arr[j];
-    return sum/(e-s+1);
+  // Initialize Leaflet
+  leafletMap = L.map('map-leaflet', {
+    zoomControl: true,
+    attributionControl: true,
+    scrollWheelZoom: false
   });
-}
 
-function drawChart(id,data,color,minV,maxV,filled){
-  const svg=document.getElementById(id);
-  const W=900,H=130,PAD={l:44,r:10,t:10,b:20};
-  const cW=W-PAD.l-PAD.r,cH=H-PAD.t-PAD.b;
-  const sm=smooth(data);
-  function xP(i){return PAD.l+(i/(sm.length-1))*cW}
-  function yP(v){return PAD.t+(1-(v-minV)/(maxV-minV))*cH}
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(leafletMap);
 
-  let html='';
-  for(let v=minV;v<=maxV;v+=(maxV-minV)/4){
-    const yv=yP(v);
-    html+=`<line x1="${PAD.l}" y1="${yv}" x2="${W-PAD.r}" y2="${yv}" stroke="rgba(8,116,174,.08)" stroke-width="1"/>`;
-    html+=`<text x="${PAD.l-4}" y="${yv+4}" text-anchor="end" font-size="9" fill="#3D6880" font-family="Oswald,sans-serif">${Math.round(v)}</text>`;
-  }
+  // Generate GPS route
+  var route = generateRoute(ACT.activity_id, ACT.sport, ACT.dist_km, cfg.lat, cfg.lng);
 
-  if(id==='c-pow'){
-    const zones=[[0,132,'rgba(61,104,128,.08)'],[132,180,'rgba(14,165,233,.06)'],[180,216,'rgba(16,185,129,.06)'],[216,252,'rgba(240,165,0,.07)'],[252,288,'rgba(255,101,53,.08)'],[288,400,'rgba(239,68,68,.08)']];
-    zones.forEach(([lo,hi,c])=>{
-      const y1=Math.max(PAD.t,yP(Math.min(hi,maxV)));
-      const y2=Math.min(H-PAD.b,yP(Math.max(lo,minV)));
-      if(y2>y1)html+=`<rect x="${PAD.l}" y="${y1}" width="${cW}" height="${y2-y1}" fill="${c}"/>`;
+  // Route color by sport
+  var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
+
+  // Draw route glow (thick, transparent)
+  L.polyline(route, {color:lineColor, weight:10, opacity:.15}).addTo(leafletMap);
+  // Draw route line
+  var poly = L.polyline(route, {color:lineColor, weight:3, opacity:.95}).addTo(leafletMap);
+
+  // Fit map to route
+  leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
+
+  // Custom icon factory
+  function circleIcon(color){
+    return L.divIcon({
+      className:'',
+      html:'<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
+      iconSize:[14,14], iconAnchor:[7,7]
     });
   }
 
-  let pts=sm.map((v,i)=>`${xP(i)},${yP(v)}`).join(' ');
-  if(filled){
-    html+=`<defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".4"/><stop offset="100%" stop-color="${color}" stop-opacity=".02"/></linearGradient></defs>`;
-    const areaPath=`M${xP(0)},${yP(sm[0])} `+sm.slice(1).map((v,i)=>`L${xP(i+1)},${yP(v)}`).join(' ')+` L${xP(sm.length-1)},${H-PAD.b} L${xP(0)},${H-PAD.b} Z`;
-    html+=`<path d="${areaPath}" fill="url(#g${id})"/>`;
+  L.marker(route[0], {icon: circleIcon('#10B981')})
+    .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
+  L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
+    .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
+
+  // Distance markers every N km
+  var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
+  var totalMeters = (ACT.dist_km||0)*1000;
+  var stepsPerKm  = route.length / (ACT.dist_km||1);
+  for(var mk=markerEvery; mk<(ACT.dist_km||0); mk+=markerEvery){
+    var idx = Math.round(mk * stepsPerKm);
+    if(idx < route.length){
+      L.marker(route[idx], {icon: L.divIcon({
+        className:'',
+        html:'<div style="font-family:Oswald,sans-serif;font-size:10px;color:#F0A500;background:rgba(4,8,15,.8);padding:1px 5px;border-radius:4px;border:1px solid rgba(240,165,0,.4);white-space:nowrap">'+mk+' km</div>',
+        iconAnchor:[20,10]
+      })}).addTo(leafletMap);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// CHART DATA GENERATORS (seeded by activity_id)
+// ─────────────────────────────────────────────────────
+function genSeries(n, base, amplitude, rng, fn){
+  fn = fn || function(t,r){ return base + (r-0.5)*amplitude; };
+  var raw = [];
+  for(var i=0;i<n;i++) raw.push(fn(i/n, rng()));
+  // smooth 3-pass
+  for(var p=0;p<3;p++){
+    for(var j=1;j<raw.length-1;j++)
+      raw[j] = (raw[j-1]+raw[j]*2+raw[j+1])/4;
+  }
+  return raw;
+}
+
+function buildChartData(act){
+  var rng = makeRNG(act.activity_id+7);
+  var n   = Math.min(200, Math.max(60, act.dur_min*2));
+
+  if(act.sport==='bike'){
+    var avgP = act.avg_power || 160;
+    var np   = Math.round(avgP*1.07);
+    var pow  = genSeries(n, avgP, 80, rng, function(t,r){
+      if(t<0.1) return avgP*0.5 + avgP*0.5*t/0.1 + (r-0.5)*20;
+      if(t>0.92) return avgP*0.5 + avgP*0.5*(1-t)/0.08 + (r-0.5)*20;
+      var blk = Math.floor((t-0.1)/0.1)%2;
+      return blk===0 ? avgP*1.12+(r-0.5)*45 : avgP*0.55+(r-0.5)*20;
+    });
+    var hr = genSeries(n, act.avg_hr||145, 18, rng, function(t,r){
+      if(t<0.12) return (act.avg_hr||145)*0.72 + (act.avg_hr||145)*0.28*t/0.12 + (r-0.5)*5;
+      return (act.avg_hr||145)*0.9 + (r-0.5)*15 + t*8;
+    });
+    var isColina = (act.name||'').toLowerCase().indexOf('colina')>=0;
+    var altBase  = isColina ? 800 : 450;
+    var altRange = isColina ? 900 : 180;
+    var alt = genSeries(n, altBase, 60, rng, function(t,r){
+      var profile = t<0.45 ? t/0.45 : t<0.55 ? 1 : (1-t)/0.45;
+      return altBase + profile*altRange + (r-0.5)*25;
+    });
+    var spd = pow.map(function(p){ return Math.max(12, Math.min(55, p/8.2 + (rng()-0.5)*3)); });
+    return {
+      charts:[
+        {id:'c-pow', data:pow, color:'#FF6535', label:'Potencia (W)',
+         min:0, max:Math.round(Math.max.apply(null,pow)*1.1/50)*50,
+         anns:['NP: '+np+'W','Max: '+Math.round(Math.max.apply(null,pow))+'W'],
+         annColors:['#FF6535','#EF4444']},
+        {id:'c-hr',  data:hr,  color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
+         min:60, max:Math.round(Math.max.apply(null,hr)*1.05),
+         anns:['Media: '+Math.round(hr.reduce(function(a,b){return a+b;},0)/hr.length)+'bpm',
+               'Max: '+Math.round(Math.max.apply(null,hr))+'bpm'],
+         annColors:['#EF4444','#FF8C61']},
+        {id:'c-alt', data:alt, color:'#10B981', label:'Altitud (m)', filled:true,
+         min:Math.round(Math.min.apply(null,alt)/100)*100,
+         max:Math.round(Math.max.apply(null,alt)/100)*100+100,
+         anns:['↑ '+Math.round((isColina?altRange*0.95:altRange*0.6))+'m gain'],
+         annColors:['#10B981']},
+        {id:'c-spd', data:spd, color:'#22D3EE', label:'Velocidad (km/h)',
+         min:0, max:60,
+         anns:['Media: '+act.dist_km?(act.dist_km/(act.dur_min/60)).toFixed(1)+'km/h':'—',
+               'Max: '+Math.round(Math.max.apply(null,spd))+'km/h'],
+         annColors:['#22D3EE','#0EA5E9'], taxis: true}
+      ],
+      powerForZones: pow
+    };
   }
 
-  svg.innerHTML=html;
+  if(act.sport==='run'){
+    var avgPaceS = act.dist_km ? Math.round((act.dur_min*60)/act.dist_km) : 300;
+    var pace = genSeries(n, avgPaceS, 30, rng, function(t,r){
+      if(t<0.08) return avgPaceS*1.18+(r-0.5)*15;
+      return avgPaceS*0.97+(r-0.5)*22+t*8;
+    });
+    var hrR = genSeries(n, act.avg_hr||148, 15, rng, function(t,r){
+      return (act.avg_hr||148)*0.88 + t*(act.avg_hr||148)*0.15 + (r-0.5)*8;
+    });
+    var altR = genSeries(n, 820, 50, rng, function(t,r){
+      return 820 + Math.sin(t*Math.PI*3)*45 + (r-0.5)*12;
+    });
+    var cadR = genSeries(n, 172, 8, rng);
+    return {
+      charts:[
+        {id:'c-pac', data:pace, color:'#10B981', label:'Ritmo (seg/km)', invertY:true,
+         min:avgPaceS-60, max:avgPaceS+90,
+         anns:[fmtPace(Math.round(pace.reduce(function(a,b){return a+b;},0)/pace.length))],
+         annColors:['#10B981']},
+        {id:'c-hr',  data:hrR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
+         min:80, max:Math.round(Math.max.apply(null,hrR)*1.05),
+         anns:['Media: '+Math.round(hrR.reduce(function(a,b){return a+b;},0)/hrR.length)+'bpm'],
+         annColors:['#EF4444']},
+        {id:'c-alt', data:altR, color:'#22D3EE', label:'Altitud (m)', filled:true,
+         min:780, max:900,
+         anns:['Las Condes · 820-880m'],
+         annColors:['#22D3EE']},
+        {id:'c-cad', data:cadR, color:'#A855F7', label:'Cadencia (pasos/min)',
+         min:155, max:190,
+         anns:['Media: '+Math.round(cadR.reduce(function(a,b){return a+b;},0)/cadR.length)+' spm'],
+         annColors:['#A855F7'], taxis:true}
+      ],
+      hrData: hrR
+    };
+  }
 
-  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
-  line.setAttribute('points',pts);
+  if(act.sport==='swim'){
+    var paceBase = act.swim_pace
+      ? (function(s){ var p=s.match(/(\d+):(\d+)/); return p?(+p[1]*60+ +p[2]):110; })(act.swim_pace)
+      : 110;
+    var swPace = genSeries(n, paceBase, 12, rng);
+    var swHR   = genSeries(n, act.avg_hr||105, 12, rng, function(t,r){
+      return (act.avg_hr||105) + t*8 + (r-0.5)*10;
+    });
+    var swolf  = genSeries(n, 38, 6, rng);
+    return {
+      charts:[
+        {id:'c-pac', data:swPace, color:'#0EA5E9', label:'Ritmo (seg/100m)', invertY:true,
+         min:paceBase-20, max:paceBase+30,
+         anns:[fmtPace100(Math.round(swPace.reduce(function(a,b){return a+b;},0)/swPace.length))],
+         annColors:['#0EA5E9']},
+        {id:'c-hr', data:swHR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
+         min:80, max:Math.round(Math.max.apply(null,swHR)*1.05),
+         anns:['Media: '+Math.round(swHR.reduce(function(a,b){return a+b;},0)/swHR.length)+'bpm'],
+         annColors:['#EF4444']},
+        {id:'c-swolf', data:swolf, color:'#22D3EE', label:'SWOLF (eficiencia)',
+         min:28, max:52,
+         anns:['Media: '+Math.round(swolf.reduce(function(a,b){return a+b;},0)/swolf.length)],
+         annColors:['#22D3EE'], taxis:true}
+      ],
+      hrData: swHR
+    };
+  }
+
+  // Strength: HR only
+  var strHR = genSeries(n, act.avg_hr||90, 25, rng, function(t,r){
+    var blk = Math.floor(t*6)%2;
+    return blk===0 ? (act.avg_hr||90)*1.15+(r-0.5)*15 : (act.avg_hr||90)*0.78+(r-0.5)*8;
+  });
+  return {
+    charts:[
+      {id:'c-hr', data:strHR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
+       min:50, max:Math.round(Math.max.apply(null,strHR)*1.1),
+       anns:['Media: '+Math.round(strHR.reduce(function(a,b){return a+b;},0)/strHR.length)+'bpm',
+             'Max: '+Math.round(Math.max.apply(null,strHR))+'bpm'],
+       annColors:['#EF4444','#FF8C61'], taxis:true}
+    ],
+    hrData: strHR
+  };
+}
+
+// ─────────────────────────────────────────────────────
+// SVG CHART RENDERER
+// ─────────────────────────────────────────────────────
+function drawChart(cfg, parentEl){
+  var block = document.createElement('div');
+  block.className = 'chart-block';
+
+  // Label row
+  var lblDiv = '<div class="chart-lbl">'
+    +'<span class="chart-name" style="color:'+cfg.color+'">'+cfg.label+'</span>'
+    +'<div class="chart-anns">'
+    +cfg.anns.map(function(a,i){
+      return '<div class="chart-ann"><div class="chart-ann-dot" style="background:'+(cfg.annColors[i]||cfg.color)+'"></div>'+a+'</div>';
+    }).join('')
+    +'</div></div>';
+
+  // SVG
+  var W=900,H=120,P={l:44,r:10,t:10,b:20};
+  var cW=W-P.l-P.r, cH=H-P.t-P.b;
+  var data = cfg.data, minV=cfg.min, maxV=cfg.max;
+  if(cfg.invertY){ var tmp=minV; minV=maxV; maxV=tmp; }
+
+  function xP(i){ return P.l + (i/(data.length-1))*cW; }
+  function yP(v){ return P.t + (1-(v-cfg.min)/(cfg.max-cfg.min))*cH; }
+
+  var html='';
+  // Grid lines
+  for(var gi=0;gi<=4;gi++){
+    var gv = cfg.min + gi*(cfg.max-cfg.min)/4;
+    var gy = yP(gv);
+    html+='<line x1="'+P.l+'" y1="'+gy+'" x2="'+(W-P.r)+'" y2="'+gy+'" stroke="rgba(8,116,174,.07)" stroke-width="1"/>';
+    html+='<text x="'+(P.l-4)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="#3D6880" font-family="Oswald,sans-serif">'+Math.round(gv)+'</text>';
+  }
+
+  // Power zone bands (bike power chart)
+  if(cfg.id==='c-pow'){
+    var pZones=[[0,FTP*.55,'rgba(61,104,128,.07)'],[FTP*.55,FTP*.75,'rgba(14,165,233,.05)'],
+                [FTP*.75,FTP*.9,'rgba(16,185,129,.05)'],[FTP*.9,FTP*1.05,'rgba(240,165,0,.06)'],
+                [FTP*1.05,FTP*1.2,'rgba(255,101,53,.07)'],[FTP*1.2,999,'rgba(239,68,68,.07)']];
+    pZones.forEach(function(z){
+      var y1=Math.max(P.t,yP(Math.min(z[1],cfg.max)));
+      var y2=Math.min(H-P.b,yP(Math.max(z[0],cfg.min)));
+      if(y2>y1) html+='<rect x="'+P.l+'" y="'+y1+'" width="'+cW+'" height="'+(y2-y1)+'" fill="'+z[2]+'"/>';
+    });
+  }
+
+  // Area fill
+  if(cfg.filled){
+    var areaD='M'+xP(0)+','+yP(data[0])+' '+data.slice(1).map(function(v,i){ return 'L'+xP(i+1)+','+yP(v); }).join(' ')
+      +' L'+xP(data.length-1)+','+(H-P.b)+' L'+xP(0)+','+(H-P.b)+' Z';
+    html+='<defs><linearGradient id="grd-'+cfg.id+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0%" stop-color="'+cfg.color+'" stop-opacity=".35"/>'
+      +'<stop offset="100%" stop-color="'+cfg.color+'" stop-opacity=".02"/></linearGradient></defs>';
+    html+='<path d="'+areaD+'" fill="url(#grd-'+cfg.id+')"/>';
+  }
+
+  var pts = data.map(function(v,i){ return xP(i)+','+yP(v); }).join(' ');
+
+  var svgStr = '<svg class="chart-svg" id="'+cfg.id+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+html+'</svg>';
+
+  var taxisStr = '';
+  if(cfg.taxis){
+    var labels=[]; var steps=6;
+    for(var ti=0;ti<=steps;ti++) labels.push(Math.round(ACT.dur_min*ti/steps)+'min');
+    taxisStr='<div class="chart-taxis">'+labels.map(function(l){return '<span>'+l+'</span>';}).join('')+'</div>';
+  }
+
+  block.innerHTML = lblDiv+svgStr+taxisStr;
+  parentEl.appendChild(block);
+
+  // Animated polyline via DOM (cannot use innerHTML for SVG namespace)
+  var svg = block.querySelector('#'+cfg.id);
+  var line = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  line.setAttribute('points', pts);
   line.setAttribute('fill','none');
-  line.setAttribute('stroke',color);
+  line.setAttribute('stroke', cfg.color);
   line.setAttribute('stroke-width','2');
   line.setAttribute('stroke-linejoin','round');
   svg.appendChild(line);
 
-  const len=line.getTotalLength();
-  line.style.strokeDasharray=len;
-  line.style.strokeDashoffset=len;
-  line.style.transition='stroke-dashoffset 2s cubic-bezier(.4,0,.2,1)';
-  setTimeout(()=>line.style.strokeDashoffset='0',200);
+  var len = line.getTotalLength();
+  line.style.strokeDasharray = len;
+  line.style.strokeDashoffset= len;
+  line.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)';
+  setTimeout(function(){ line.style.strokeDashoffset='0'; },300);
 }
 
-function drawMap(){
-  const svg=document.getElementById('map-svg');
-  const W=900,H=320;
-  let html='';
+// ─────────────────────────────────────────────────────
+// RENDER: CHARTS
+// ─────────────────────────────────────────────────────
+var chartData = buildChartData(ACT);
+var chartsInner = document.getElementById('charts-inner');
+chartData.charts.forEach(function(c){ drawChart(c, chartsInner); });
 
-  html+=`<defs>
-    <radialGradient id="mapBg" cx="50%" cy="50%" r="60%">
-      <stop offset="0%" stop-color="#060E1C"/>
-      <stop offset="100%" stop-color="#04080F"/>
-    </radialGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>`;
-  html+=`<rect width="${W}" height="${H}" fill="url(#mapBg)"/>`;
+// ─────────────────────────────────────────────────────
+// RENDER: ZONES
+// ─────────────────────────────────────────────────────
+function renderZones(){
+  var zonesGrid = document.getElementById('zones-grid');
+  var dur = ACT.dur_min;
 
-  for(let x=0;x<W;x+=60)html+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(14,165,233,.06)" stroke-width="1"/>`;
-  for(let y=0;y<H;y+=60)html+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(14,165,233,.06)" stroke-width="1"/>`;
+  if(ACT.sport==='bike'){
+    var pZoneDef=[
+      {lbl:'Z1 Recovery',   pct: 8, col:'#3D6880'},
+      {lbl:'Z2 Endurance',  pct:15, col:'var(--cyan)'},
+      {lbl:'Z3 Tempo',      pct:20, col:'var(--green)'},
+      {lbl:'Z4 Threshold',  pct:38, col:'var(--gold)'},
+      {lbl:'Z5 VO₂Max',     pct:14, col:'var(--orange)'},
+      {lbl:'Z6 Anaeróbico', pct: 5, col:'var(--red)'}
+    ];
+    // Adjust based on avg_power vs FTP
+    if(ACT.avg_power){
+      var ratio = ACT.avg_power/FTP;
+      if(ratio<0.6){ pZoneDef[0].pct=25; pZoneDef[1].pct=35; pZoneDef[2].pct=20; pZoneDef[3].pct=12; pZoneDef[4].pct=6; pZoneDef[5].pct=2; }
+      else if(ratio>0.85){ pZoneDef[0].pct=5; pZoneDef[1].pct=10; pZoneDef[2].pct=18; pZoneDef[3].pct=42; pZoneDef[4].pct=18; pZoneDef[5].pct=7; }
+    }
+    var hrZoneDef=[
+      {lbl:'Z1 <108bpm',  pct: 5, col:'#3D6880'},
+      {lbl:'Z2 108-126',  pct:12, col:'var(--cyan)'},
+      {lbl:'Z3 126-144',  pct:20, col:'var(--green)'},
+      {lbl:'Z4 144-162',  pct:55, col:'var(--orange)'},
+      {lbl:'Z5 >162bpm',  pct: 8, col:'var(--red)'}
+    ];
+    zonesGrid.innerHTML =
+      colHtml('Zonas de Potencia', pZoneDef, dur)
+      + colHtml('Zonas de Frecuencia Cardíaca', hrZoneDef, dur);
+  } else if(ACT.sport==='run'){
+    var hrZR=[
+      {lbl:'Z1 Recuperación', pct: 6, col:'#3D6880'},
+      {lbl:'Z2 Aeróbico',     pct:45, col:'var(--cyan)'},
+      {lbl:'Z3 Tempo',        pct:28, col:'var(--green)'},
+      {lbl:'Z4 Umbral',       pct:16, col:'var(--orange)'},
+      {lbl:'Z5 Máximo',       pct: 5, col:'var(--red)'}
+    ];
+    var paceZR=[
+      {lbl:'Muy fácil >6:30',  pct: 8, col:'#3D6880'},
+      {lbl:'Fácil 6:00-6:30',  pct:38, col:'var(--cyan)'},
+      {lbl:'Tempo 5:30-6:00',  pct:30, col:'var(--green)'},
+      {lbl:'Umbral 5:00-5:30', pct:18, col:'var(--orange)'},
+      {lbl:'Rápido <5:00',     pct: 6, col:'var(--red)'}
+    ];
+    zonesGrid.innerHTML = colHtml('Zonas de FC',col2(hrZR,dur)) + colHtml2('Zonas de Ritmo', paceZR, dur);
+    function col2(z,d){ return z; }
+    function colHtml2(t,z,d){ return colHtml(t,z,d); }
+  } else {
+    var hrZS=[
+      {lbl:'Z1 Reposo <80bpm',  pct:15, col:'#3D6880'},
+      {lbl:'Z2 Bajo 80-100',    pct:35, col:'var(--cyan)'},
+      {lbl:'Z3 Moderado 100-120',pct:32, col:'var(--green)'},
+      {lbl:'Z4 Alto 120-140',   pct:14, col:'var(--orange)'},
+      {lbl:'Z5 Máximo >140',    pct: 4, col:'var(--red)'}
+    ];
+    zonesGrid.innerHTML = colHtml('Zonas de FC', hrZS, dur);
+    zonesGrid.style.gridTemplateColumns='1fr';
+  }
 
-  const route=[
-    [80,220],[130,210],[190,195],[250,180],[300,160],[350,140],[400,125],[440,110],
-    [480,120],[510,135],[540,160],[570,175],[610,165],[650,150],[690,140],[730,155],
-    [770,170],[810,185],[840,200],[820,230]
-  ];
-
-  const routePts=route.map(p=>p.join(',')).join(' ');
-  html+=`<polyline points="${routePts}" fill="none" stroke="rgba(255,101,53,.25)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>`;
-
-  const routeLine=document.createElementNS('http://www.w3.org/2000/svg','polyline');
-  routeLine.setAttribute('points',routePts);
-  routeLine.setAttribute('fill','none');
-  routeLine.setAttribute('stroke','#FF6535');
-  routeLine.setAttribute('stroke-width','2.5');
-  routeLine.setAttribute('stroke-linecap','round');
-  routeLine.setAttribute('stroke-linejoin','round');
-
-  const markers=[
-    [route[5][0],route[5][1],'10km'],
-    [route[9][0],route[9][1],'20km'],
-    [route[14][0],route[14][1],'30km'],
-    [route[18][0],route[18][1],'40km']
-  ];
-  markers.forEach(([x,y,lbl])=>{
-    html+=`<circle cx="${x}" cy="${y}" r="4" fill="rgba(240,165,0,.7)" stroke="var(--gold)" stroke-width="1"/>`;
-    html+=`<text x="${x}" y="${y-10}" text-anchor="middle" font-size="10" fill="#F0A500" font-family="Oswald,sans-serif" letter-spacing="1">${lbl}</text>`;
-  });
-
-  const [sx,sy]=route[0];
-  const [ex,ey]=route[route.length-1];
-  html+=`<circle cx="${sx}" cy="${sy}" r="7" fill="#10B981" opacity=".9"/>`;
-  html+=`<text x="${sx}" y="${sy-14}" text-anchor="middle" font-size="10" fill="#10B981" font-family="Oswald,sans-serif">Inicio</text>`;
-  html+=`<circle cx="${ex}" cy="${ey}" r="7" fill="#EF4444" opacity=".9"/>`;
-  html+=`<text x="${ex}" y="${ey+20}" text-anchor="middle" font-size="10" fill="#EF4444" font-family="Oswald,sans-serif">Fin</text>`;
-
-  svg.innerHTML=html;
-  svg.appendChild(routeLine);
-
-  const len=routeLine.getTotalLength();
-  routeLine.style.strokeDasharray=len;
-  routeLine.style.strokeDashoffset=len;
-  routeLine.style.transition='stroke-dashoffset 2.5s cubic-bezier(.4,0,.2,1)';
-  setTimeout(()=>routeLine.style.strokeDashoffset='0',300);
+  function colHtml(title, zones, totalMin){
+    var html='<div class="zone-col"><div class="zone-title">'+title+'</div>';
+    zones.forEach(function(z){
+      var min = Math.round(totalMin*z.pct/100);
+      html+='<div class="zone-row">'
+        +'<div class="zone-name">'+z.lbl+'</div>'
+        +'<div class="zone-bar-bg"><div class="zone-bar-f" data-w="'+z.pct+'" style="background:'+z.col+'"></div></div>'
+        +'<div class="zone-pct">'+z.pct+'%</div>'
+        +'<div class="zone-min">'+min+'min</div>'
+        +'</div>';
+    });
+    return html+'</div>';
+  }
 }
+renderZones();
 
-let chartsDrawn=false;
-const io=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
+// ─────────────────────────────────────────────────────
+// RENDER: SPLITS / EXERCISE LIST
+// ─────────────────────────────────────────────────────
+function renderSplits(){
+  var rng   = makeRNG(ACT.activity_id + 99);
+  var inner = document.getElementById('splits-inner');
+
+  if(ACT.sport==='str'){
+    document.getElementById('splits-title').textContent = 'Ejercicios de la Sesión';
+    var exercises = [
+      {n:'Sentadilla',          sets:'4×8',   peso:'80 kg'},
+      {n:'Peso Muerto',         sets:'3×6',   peso:'100 kg'},
+      {n:'Press Banca',         sets:'4×10',  peso:'70 kg'},
+      {n:'Dominadas',           sets:'3×8',   peso:'Peso Corporal'},
+      {n:'Zancadas',            sets:'3×12',  peso:'30 kg c/u'},
+      {n:'Plancha',             sets:'3×60s', peso:'—'},
+      {n:'Hip Thrust',          sets:'4×12',  peso:'60 kg'},
+      {n:'Core Rotacional',     sets:'3×15',  peso:'5 kg'}
+    ];
+    inner.innerHTML = '<div class="ex-grid">'+exercises.map(function(e){
+      return '<div class="ex-card">'
+        +'<div class="ex-name">'+e.n+'</div>'
+        +'<div class="ex-detail">'+e.sets+'</div>'
+        +'<div class="ex-sub">'+e.peso+'</div>'
+        +'</div>';
+    }).join('')+'</div>';
+    return;
+  }
+
+  if(ACT.sport==='swim'){
+    document.getElementById('splits-title').textContent = 'Parciales por 100m';
+    var dist  = ACT.dist_km ? ACT.dist_km*1000 : 1900;
+    var nLaps  = Math.round(dist/100);
+    var pBase  = ACT.swim_pace
+      ? (function(s){var p=s.match(/(\d+):(\d+)/);return p?(+p[1]*60+ +p[2]):110;})(ACT.swim_pace)
+      : 110;
+    var rows='',best=0,bestT=999;
+    for(var li=0;li<nLaps;li++){
+      var lapPace = pBase + Math.round((rng()-0.5)*14) + (li>nLaps*0.8?6:0);
+      if(lapPace<bestT){bestT=lapPace;best=li;}
+      rows+='<tr'+(li===best?' class="best"':'')+'>'
+        +'<td>'+(li+1)+(li===best?' <span class="best-lbl">★ Mejor</span>':'')+'</td>'
+        +'<td>'+(li*100)+'-'+((li+1)*100)+'m</td>'
+        +'<td>'+fmtPace100(lapPace)+'</td>'
+        +'<td>'+(30+Math.round(rng()*6))+'</td>'
+        +'<td>'+(Math.round(pBase+(rng()-0.5)*8))+'</td>'
+        +'</tr>';
+    }
+    inner.innerHTML='<div style="overflow-x:auto"><table class="splits-tbl">'
+      +'<thead><tr><th>Largo</th><th>Metros</th><th>Ritmo</th><th>Brazadas</th><th>SWOLF</th></tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr><td>TOTAL</td><td>'+Math.round(dist)+'m</td>'
+      +'<td style="color:var(--cyan)">'+fmtPace100(pBase)+'</td>'
+      +'<td>'+Math.round(32+rng()*4)+'</td><td>'+Math.round(36+rng()*4)+'</td></tr></tfoot>'
+      +'</table></div>';
+    return;
+  }
+
+  // Bike / Run: km splits
+  var sport = ACT.sport;
+  document.getElementById('splits-title').textContent = 'Parciales por Kilómetro';
+  var totalKm = ACT.dist_km || 0;
+  var numKm   = Math.round(totalKm);
+  if(numKm<1){
+    inner.innerHTML='<p style="padding:1.5rem;color:var(--dim);font-size:.82rem">Sin datos de parciales disponibles.</p>';
+    return;
+  }
+
+  var avgSpd  = totalKm/(ACT.dur_min/60);
+  var avgPaceS= sport==='run' ? Math.round((ACT.dur_min*60)/totalKm) : null;
+  var avgPow  = ACT.avg_power || null;
+  var bestKm=-1, bestVal=sport==='bike'?0:999;
+  var rows='';
+
+  for(var ki=1;ki<=numKm;ki++){
+    var isWarmup  = ki===1;
+    var isCooldown= ki===numKm;
+    var kmPow     = avgPow ? Math.round(avgPow*(isWarmup||isCooldown?0.72:1.08+(rng()-0.5)*0.22)):null;
+    var kmPace    = avgPaceS ? Math.round(avgPaceS*(isWarmup?1.18:isCooldown?1.12:0.96+(rng()-0.5)*0.12)):null;
+    var kmHR      = Math.round((ACT.avg_hr||148)*(isWarmup?0.82:0.98+(rng()-0.5)*0.08));
+    var kmSpd     = kmPow ? (kmPow/8.2).toFixed(1) : avgSpd?(avgSpd*0.95+(rng()-0.5)*4).toFixed(1):'—';
+    var kmIF      = kmPow ? (kmPow/FTP).toFixed(2) : null;
+
+    if(sport==='bike' && kmPow && kmPow>bestVal){ bestVal=kmPow; bestKm=ki; }
+    if(sport==='run'  && kmPace && kmPace<bestVal){ bestVal=kmPace; bestKm=ki; }
+
+    var note = isWarmup?'<span style="color:var(--dim);font-size:.72rem">Calentamiento</span>'
+              :isCooldown?'<span style="color:var(--dim);font-size:.72rem">Enfriamiento</span>':'';
+
+    rows+='<tr'+(ki===bestKm?' class="best"':'')+'>';
+    rows+='<td>'+ki+(ki===bestKm?' <span class="best-lbl">★</span>':'')+'</td>';
+    if(sport==='bike'){
+      rows+='<td style="color:var(--orange)">'+(kmPow?kmPow+'W':'—')+'</td>';
+      rows+='<td>'+(kmIF||'—')+'</td>';
+    } else {
+      rows+='<td style="color:var(--green)">'+(kmPace?fmtPace(kmPace):'—')+'</td>';
+      rows+='<td style="color:var(--purple)">'+(172+Math.round((rng()-0.5)*8))+'</td>';
+    }
+    rows+='<td style="color:var(--coral)">'+kmHR+'</td>';
+    rows+='<td>'+kmSpd+' km/h</td>';
+    rows+='<td>'+note+'</td></tr>';
+  }
+
+  var thead = sport==='bike'
+    ? '<tr><th>Km</th><th>Potencia</th><th>IF</th><th>FC</th><th>Velocidad</th><th></th></tr>'
+    : '<tr><th>Km</th><th>Ritmo</th><th>Cadencia</th><th>FC</th><th>Velocidad</th><th></th></tr>';
+
+  var avgPowStr  = avgPow?avgPow+'W NP':'—';
+  var avgPaceStr = avgPaceS?fmtPace(avgPaceS):'—';
+  var avgHRStr   = (ACT.avg_hr||'—')+' bpm';
+
+  inner.innerHTML='<div style="overflow-x:auto"><table class="splits-tbl">'
+    +'<thead>'+thead+'</thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td>TOTAL</td>'
+    +(sport==='bike'?'<td style="color:var(--orange)">'+avgPowStr+'</td><td style="color:var(--gold)">'+(avgPow?(avgPow/FTP).toFixed(2):'—')+'</td>'
+                   :'<td style="color:var(--green)">'+avgPaceStr+'</td><td style="color:var(--purple)">172</td>')
+    +'<td style="color:var(--coral)">'+avgHRStr+'</td>'
+    +'<td>'+(totalKm.toFixed(1))+' km</td><td></td></tr></tfoot>'
+    +'</table></div>';
+}
+renderSplits();
+
+// ─────────────────────────────────────────────────────
+// SCROLL ANIMATIONS + ZONE BAR ANIMATION
+// ─────────────────────────────────────────────────────
+var obs = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
     if(e.isIntersecting){
       e.target.classList.add('vis');
-      if(e.target.id==='s-map') drawMap();
-      if(e.target.id==='s-charts'&&!chartsDrawn){
-        chartsDrawn=true;
-        setTimeout(()=>{
-          drawChart('c-pow',POW,'#FF6535',0,360,false);
-          drawChart('c-hr',HR,'#EF4444',90,185,false);
-          drawChart('c-alt',ALT,'#10B981',0,300,true);
-          drawChart('c-spd',SPD,'#22D3EE',10,60,false);
-        },100);
-      }
       if(e.target.id==='s-zones'){
-        e.target.querySelectorAll('.zone-bar-f[data-w]').forEach((b,i)=>{
-          setTimeout(()=>{b.style.transform=`scaleX(${+b.dataset.w/100})`},i*60);
+        e.target.querySelectorAll('.zone-bar-f[data-w]').forEach(function(b,i){
+          setTimeout(function(){ b.style.width = b.dataset.w+'%'; },i*55);
         });
       }
+      if(e.target.id==='s-map') initMap();
     }
   });
-},{threshold:.1});
-document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+},{threshold:.05});
+document.querySelectorAll('.sr').forEach(function(el){ obs.observe(el); });
+
+// ─────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────
+window.goBack = function(){
+  if(document.referrer && document.referrer.indexOf('training_plan')>=0){
+    history.back();
+  } else {
+    location.href='training_plan.html';
+  }
+};
+
+})();
 </script>
 <script src="auth.js"></script>
 <script>KL.guard('training_detail');</script>
-<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
+<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}</style>
+<script src="nav.js"></script>
 </body>
 </html>
+

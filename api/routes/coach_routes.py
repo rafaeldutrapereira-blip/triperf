@@ -3,6 +3,7 @@ from __future__ import annotations
 import threading
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -24,10 +25,32 @@ from ..schemas import (
     ApplyWeekTemplateRequest, CalendarDay, CalendarAthleteDay,
 )
 from ..auth import require_role, hash_password
-from ..crypto import decrypt as _dec
+from ..crypto import decrypt as _dec, encrypt_if_plain, is_encrypted
+from ..permissions import assert_coach_owns_athlete, assert_coach_owns_group
 
 router   = APIRouter(prefix="/coach", tags=["coach"])
 _coach   = require_role("coach", "admin")
+
+
+def _read_garmin_pwd(user: "User", db: "Session") -> str | None:
+    """Descifra contraseña Garmin; si es plaintext legacy la cifra y persiste."""
+    import logging as _logging
+    raw = user.garmin_password
+    if not raw:
+        return None
+    if is_encrypted(raw):
+        return _dec(raw)
+    encrypted = encrypt_if_plain(raw)
+    if encrypted:
+        user.garmin_password = encrypted
+        try:
+            db.commit()
+            _logging.getLogger("labx.coach").warning(
+                "Lazy-migrated plaintext Garmin password for user %s", user.id
+            )
+        except Exception:
+            db.rollback()
+    return raw
 
 
 # ── Athletes under this coach ───────────────────────────────
@@ -193,7 +216,21 @@ def delete_template(template_id: str,
     ).first()
     if not t:
         raise HTTPException(404, "Template no encontrado")
-    db.delete(t); db.commit()
+
+    # B-10: soft-delete de assigned_workouts pendientes (no completados) antes de borrar template.
+    # Las asignaciones con WorkoutLog (ya ejecutadas) se mantienen para historial.
+    from datetime import datetime as _dt, timezone
+    pending_ids = [
+        a.id for a in t.assigned
+        if a.deleted_at is None and not a.logs
+    ]
+    if pending_ids:
+        db.query(AssignedWorkout).filter(
+            AssignedWorkout.id.in_(pending_ids)
+        ).update({"deleted_at": _dt.utcnow()}, synchronize_session=False)
+
+    db.delete(t)
+    db.commit()
 
 
 # ── Assign ──────────────────────────────────────────────────
@@ -226,7 +263,7 @@ def assign_workout(body: AssignRequest,
         for m in members:
             a = AssignedWorkout(
                 template_id = body.template_id,
-                athlete_id  = m.user_id,
+                athlete_id  = m.athlete_id,
                 group_id    = body.group_id,
                 date_iso    = body.date_iso,
                 notas       = body.notas,
@@ -250,9 +287,39 @@ def assign_workout(body: AssignRequest,
                         daemon=True,
                     ).start()
         db.refresh(assignments[0])
+        # SSE + Push a todos los miembros del grupo
+        _evt_data = {"workout_name": tpl.nombre, "date_iso": body.date_iso}
+        try:
+            from ..sse_broker import publish_nowait
+            from .notification_routes import send_push_to_user
+            push_payload = {
+                "type":  "workout_assigned",
+                "title": "Nuevo entrenamiento asignado",
+                "body":  f"{tpl.nombre} · {body.date_iso}",
+                "url":   "/training_plan.html",
+                "icon":  "/icon-192.png",
+            }
+            for a_group in assignments:
+                publish_nowait(a_group.athlete_id, "workout_assigned", _evt_data)
+                threading.Thread(
+                    target=send_push_to_user,
+                    args=(a_group.athlete_id, push_payload, db),
+                    daemon=True,
+                ).start()
+        except Exception:
+            pass
         return assignments[0]
 
-    # Asignación individual
+    # Asignación individual — verificar que el atleta pertenece a un grupo del coach
+    athlete_in_group = db.query(GroupMember).join(
+        Group, Group.id == GroupMember.group_id
+    ).filter(
+        Group.coach_id == coach.id,
+        GroupMember.athlete_id == body.athlete_id,
+    ).first()
+    if not athlete_in_group:
+        raise HTTPException(403, "El atleta no pertenece a ningún grupo tuyo")
+
     a = AssignedWorkout(
         template_id = body.template_id,
         athlete_id  = body.athlete_id,
@@ -262,15 +329,34 @@ def assign_workout(body: AssignRequest,
     )
     db.add(a); db.commit(); db.refresh(a)
     # Auto-entrega si es workout bici con bloques
-    if tpl.sport == "bike" and tpl.blocks_json:
-        athlete = db.query(User).filter(User.id == body.athlete_id).first()
-        if athlete:
-            from ..workout_delivery import deliver_bike_workout
-            threading.Thread(
-                target=deliver_bike_workout,
-                args=(a, athlete, tpl),
-                daemon=True,
-            ).start()
+    athlete = db.query(User).filter(User.id == body.athlete_id).first()
+    if tpl.sport == "bike" and tpl.blocks_json and athlete:
+        from ..workout_delivery import deliver_bike_workout
+        threading.Thread(
+            target=deliver_bike_workout,
+            args=(a, athlete, tpl),
+            daemon=True,
+        ).start()
+    # SSE + Push notification al atleta
+    try:
+        from ..sse_broker import publish_nowait
+        from .notification_routes import send_push_to_user
+        publish_nowait(body.athlete_id, "workout_assigned",
+                       {"workout_name": tpl.nombre, "date_iso": body.date_iso})
+        push_payload = {
+            "type":    "workout_assigned",
+            "title":   "Nuevo entrenamiento asignado",
+            "body":    f"{tpl.nombre} · {body.date_iso}",
+            "url":     "/training_plan.html",
+            "icon":    "/icon-192.png",
+        }
+        threading.Thread(
+            target=send_push_to_user,
+            args=(body.athlete_id, push_payload, db),
+            daemon=True,
+        ).start()
+    except Exception:
+        pass  # SSE/Push no debe bloquear la asignación
     return a
 
 
@@ -283,6 +369,7 @@ def list_assignments_for_athlete(
     coach: User = Depends(_coach)
 ):
     """Asignaciones de un atleta específico (solo templates de este coach)."""
+    assert_coach_owns_athlete(coach.id, athlete_id, db)
     template_ids = [t.id for t in db.query(WorkoutTemplate).filter(WorkoutTemplate.coach_id == coach.id).all()]
     q = db.query(AssignedWorkout).filter(
         AssignedWorkout.athlete_id == athlete_id,
@@ -416,7 +503,325 @@ def copy_week(
     return {"ok": True, "created": created, "target_start": target_start}
 
 
+@router.get("/calendar", operation_id="get_coach_calendar")
+def get_calendar(
+    start:    str           = Query(..., description="YYYY-MM-DD (lunes de la semana o primer día del mes)"),
+    end:      str           = Query(..., description="YYYY-MM-DD"),
+    group_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    Retorna el calendario de asignaciones del coach.
+    Estructura: lista de días, cada uno con lista de atletas y sus workouts.
+    Incluye readiness y TSB del día de cada atleta (desde ai_athlete_context).
+    """
+    from datetime import date as _date_, timedelta
+    from ..models import AIAthleteContext
+
+    # Verificar rango razonable (máx 35 días = vista mes con padding)
+    try:
+        start_d = _date_.fromisoformat(start)
+        end_d   = _date_.fromisoformat(end)
+    except ValueError:
+        raise HTTPException(400, "Fechas inválidas")
+    if (end_d - start_d).days > 35:
+        raise HTTPException(400, "Rango máximo 35 días")
+
+    # Atletas del coach
+    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
+    if group_id:
+        if group_id not in group_ids:
+            raise HTTPException(404, "Grupo no encontrado")
+        group_ids = [group_id]
+
+    athlete_ids = sorted({
+        m.athlete_id
+        for gid in group_ids
+        for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
+    })
+
+    if not athlete_ids:
+        return []
+
+    # Cargar todas las asignaciones del rango de una sola query
+    template_ids = [t.id for t in db.query(WorkoutTemplate).filter(
+        WorkoutTemplate.coach_id == coach.id
+    ).all()]
+
+    assignments = db.query(AssignedWorkout).filter(
+        AssignedWorkout.template_id.in_(template_ids),
+        AssignedWorkout.athlete_id.in_(athlete_ids),
+        AssignedWorkout.date_iso >= start,
+        AssignedWorkout.date_iso <= end,
+    ).all()
+
+    # Agrupar asignaciones por (date, athlete_id)
+    from collections import defaultdict
+    by_date_athlete: dict = defaultdict(lambda: defaultdict(list))
+    for a in assignments:
+        by_date_athlete[a.date_iso][a.athlete_id].append(a)
+
+    # Cargar contexto IA para readiness/TSB de cada atleta (un SELECT por atleta)
+    ctx_by_athlete = {}
+    for uid in athlete_ids:
+        ctx = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == uid).first()
+        if ctx:
+            ctx_by_athlete[uid] = {
+                "readiness": ctx.current_readiness,
+                "tsb":       ctx.current_tsb,
+                "acwr":      ctx.current_acwr,
+                "injury_risk": round(ctx.injury_risk_score, 2) if ctx.injury_risk_score else None,
+            }
+
+    # Cargar nombres de atletas
+    athletes_info = {
+        u.id: u.nombre
+        for u in db.query(User).filter(User.id.in_(athlete_ids)).all()
+    }
+
+    # Construir la respuesta día a día
+    result = []
+    current = start_d
+    while current <= end_d:
+        iso = current.isoformat()
+        athletes_day = []
+        for uid in athlete_ids:
+            day_assigns = by_date_athlete[iso][uid]
+            ctx = ctx_by_athlete.get(uid, {})
+
+            # WorkoutLog para marcar completados
+            log_map = {}
+            if day_assigns:
+                from ..models import WorkoutLog as _WL
+                logs = db.query(_WL).filter(
+                    _WL.athlete_id == uid,
+                    _WL.assignment_id.in_([a.id for a in day_assigns]),
+                ).all()
+                log_map = {l.assignment_id: l for l in logs}
+
+            assignments_out = []
+            for a in day_assigns:
+                t = a.template
+                log = log_map.get(a.id)
+                assignments_out.append({
+                    "id":          a.id,
+                    "template_id": t.id,
+                    "sport":       t.sport,
+                    "nombre":      t.nombre,
+                    "tss":         t.tss,
+                    "dist_km":     t.dist_km,
+                    "dur_min":     t.dur_min,
+                    "notas":       a.notas,
+                    "completed":   log is not None,
+                    "actual_tss":  log.tss_actual if log else None,
+                    "rpe":         log.rpe if log else None,
+                })
+
+            athletes_day.append({
+                "athlete_id":     uid,
+                "athlete_nombre": athletes_info.get(uid, "?"),
+                "readiness":      ctx.get("readiness"),
+                "tsb":            ctx.get("tsb"),
+                "acwr":           ctx.get("acwr"),
+                "injury_risk":    ctx.get("injury_risk"),
+                "assignments":    assignments_out,
+            })
+
+        result.append({
+            "date_iso":       iso,
+            "day_of_week":    current.weekday(),  # 0=lun, 6=dom
+            "athletes":       athletes_day,
+            "total_tss":      sum(
+                a["tss"] or 0
+                for ath in athletes_day
+                for a in ath["assignments"]
+            ),
+        })
+        current += timedelta(days=1)
+
+    return result
+
+
+@router.patch("/calendar/move")
+def move_assignment(
+    body: dict,
+    db:    Session = Depends(get_db),
+    coach: User    = Depends(_coach),
+):
+    """
+    Drag-and-drop: mueve una asignación a otra fecha (y opcionalmente a otro atleta).
+    body: {assignment_id, new_date_iso, new_athlete_id?}
+    """
+    assignment_id = body.get("assignment_id")
+    new_date      = body.get("new_date_iso")
+    new_athlete   = body.get("new_athlete_id")
+
+    if not assignment_id or not new_date:
+        raise HTTPException(422, "assignment_id y new_date_iso requeridos")
+
+    a = db.query(AssignedWorkout).filter(AssignedWorkout.id == assignment_id).first()
+    if not a:
+        raise HTTPException(404, "Asignación no encontrada")
+
+    # Verificar que el template pertenece al coach
+    t = db.query(WorkoutTemplate).filter(
+        WorkoutTemplate.id      == a.template_id,
+        WorkoutTemplate.coach_id == coach.id,
+    ).first()
+    if not t:
+        raise HTTPException(403, "Sin acceso a esta asignación")
+
+    # Validar nueva fecha
+    from datetime import date as _date_
+    try:
+        _date_.fromisoformat(new_date)
+    except ValueError:
+        raise HTTPException(400, "Fecha inválida")
+
+    a.date_iso = new_date
+    if new_athlete:
+        # Verificar que el nuevo atleta pertenece a un grupo del coach
+        group_ids    = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
+        member_ids   = {
+            m.athlete_id
+            for gid in group_ids
+            for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
+        }
+        if new_athlete not in member_ids:
+            raise HTTPException(403, "Atleta no pertenece a tus grupos")
+        a.athlete_id = new_athlete
+
+    db.commit()
+    return {"ok": True, "assignment_id": assignment_id, "new_date": new_date}
+
+
 # ── Adherence / cumplimiento ────────────────────────────────
+@router.get("/status-board")
+def get_status_board(
+    group_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    Athlete Status Board: estado en tiempo real de todos los atletas del coach.
+    Incluye Readiness, CTL/ATL/TSB, ACWR, HRV, injury risk, alertas activas.
+    Fuente principal: ai_athlete_context (ya calculado por el Context Engine).
+    """
+    from ..models import AIAthleteContext, AIInsight, GarminHealthDaily
+    from datetime import date
+
+    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
+    if group_id:
+        if group_id not in group_ids:
+            raise HTTPException(404, "Grupo no encontrado")
+        group_ids = [group_id]
+
+    athlete_ids = sorted({
+        m.athlete_id
+        for gid in group_ids
+        for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
+    })
+
+    if not athlete_ids:
+        return []
+
+    athletes = db.query(User).filter(User.id.in_(athlete_ids)).all()
+    today_iso = date.today().isoformat()
+
+    result = []
+    for athlete in athletes:
+        uid = athlete.id
+
+        # Contexto IA (fuente principal de métricas)
+        ctx = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == uid).first()
+
+        # Health daily de hoy para HRV del día
+        health = db.query(GarminHealthDaily).filter(
+            GarminHealthDaily.user_id  == uid,
+            GarminHealthDaily.date_iso == today_iso,
+        ).first()
+
+        # Insights activos (no dismisseados, no expirados)
+        from datetime import datetime
+        insights = db.query(AIInsight).filter(
+            AIInsight.user_id      == uid,
+            AIInsight.dismissed_at.is_(None),
+            (AIInsight.expires_at.is_(None)) | (AIInsight.expires_at > datetime.now(timezone.utc).replace(tzinfo=None)),
+        ).order_by(AIInsight.severity.desc()).limit(3).all()
+
+        # Compliance últimas 2 semanas
+        from datetime import timedelta
+        two_weeks_ago = (date.today() - timedelta(days=14)).isoformat()
+        from ..models import WorkoutLog as WL
+        template_ids = [t.id for t in db.query(WorkoutTemplate).filter(
+            WorkoutTemplate.coach_id == coach.id
+        ).all()]
+        assigned_count = db.query(AssignedWorkout).filter(
+            AssignedWorkout.athlete_id  == uid,
+            AssignedWorkout.template_id.in_(template_ids),
+            AssignedWorkout.date_iso   >= two_weeks_ago,
+            AssignedWorkout.date_iso   <= today_iso,
+        ).count()
+        completed_count = db.query(WL).filter(
+            WL.athlete_id == uid,
+            WL.logged_at  >= two_weeks_ago,
+        ).count()
+        compliance_pct = round(completed_count / assigned_count * 100) if assigned_count > 0 else None
+
+        # Status global: verde / amarillo / rojo
+        def _compute_status(readiness, acwr, injury_risk):
+            if readiness is None:
+                return "unknown"
+            if (injury_risk and injury_risk > 0.6) or (acwr and acwr > 1.5):
+                return "critical"
+            if readiness < 50 or (acwr and acwr > 1.3) or (injury_risk and injury_risk > 0.3):
+                return "caution"
+            return "optimal"
+
+        readiness   = ctx.current_readiness if ctx else None
+        acwr        = ctx.current_acwr       if ctx else None
+        injury_risk = ctx.injury_risk_score  if ctx else None
+        status      = _compute_status(readiness, acwr, injury_risk)
+
+        result.append({
+            "athlete_id":     uid,
+            "nombre":         athlete.nombre,
+            "email":          athlete.email,
+            "garmin_linked":  bool(athlete.garmin_email),
+            "status":         status,
+            # Métricas de fitness
+            "ctl":            round(ctx.current_ctl, 1)  if ctx and ctx.current_ctl  else None,
+            "atl":            round(ctx.current_atl, 1)  if ctx and ctx.current_atl  else None,
+            "tsb":            round(ctx.current_tsb, 1)  if ctx and ctx.current_tsb  else None,
+            "acwr":           round(acwr, 2)              if acwr                      else None,
+            "readiness":      readiness,
+            # HRV
+            "hrv":            health.hrv_last_night       if health else (ctx.current_hrv if ctx else None),
+            "body_battery":   health.body_battery_end     if health else None,
+            # Riesgo
+            "injury_risk":    round(injury_risk, 2)       if injury_risk else None,
+            "days_to_race":   ctx.days_to_race            if ctx else None,
+            # Compliance
+            "compliance_pct": compliance_pct,
+            "assigned_14d":   assigned_count,
+            "completed_14d":  completed_count,
+            # Alertas activas
+            "alerts": [
+                {"type": i.type, "severity": i.severity, "title": i.title}
+                for i in insights
+            ],
+            "context_age_h": round(
+                (datetime.now(timezone.utc).replace(tzinfo=None) - ctx.context_built_at).total_seconds() / 3600, 1
+            ) if ctx and ctx.context_built_at else None,
+        })
+
+    # Ordenar: crítico primero, luego caution, luego óptimo
+    order = {"critical": 0, "caution": 1, "optimal": 2, "unknown": 3}
+    result.sort(key=lambda x: order.get(x["status"], 3))
+    return result
+
+
 @router.get("/adherence", response_model=List[AthleteAdherence])
 def adherence(
     start: str = Query(..., description="YYYY-MM-DD"),
@@ -434,7 +839,7 @@ def adherence(
         group_ids = [group_id]
 
     athlete_ids = list({
-        m.user_id
+        m.athlete_id
         for gid in group_ids
         for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
     })
@@ -553,7 +958,7 @@ def sync_to_garmin(
             session        = session_dict,
             target_date    = a.date_iso,
             athlete_email  = athlete.garmin_email,
-            athlete_password = _dec(athlete.garmin_password) or athlete.garmin_password,
+            athlete_password = _read_garmin_pwd(athlete, db),
         )
         return GarminSyncResult(
             ok         = True,
@@ -616,7 +1021,7 @@ def sync_group_to_garmin(
                                     "notes": tpl.notas or ""},
                 target_date      = a.date_iso,
                 athlete_email    = athlete.garmin_email,
-                athlete_password = _dec(athlete.garmin_password) or athlete.garmin_password,
+                athlete_password = _read_garmin_pwd(athlete, db),
             )
             results.append(GarminSyncResult(
                 ok         = True,
@@ -641,9 +1046,7 @@ def athlete_garmin_activities(
     Retorna las últimas actividades Garmin del atleta.
     Solo accesible para coaches/admins con atletas en sus grupos.
     """
-    athlete = db.query(User).filter(User.id == athlete_id, User.activo == True).first()
-    if not athlete:
-        raise HTTPException(404, "Atleta no encontrado")
+    athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
     if not athlete.garmin_email or not athlete.garmin_password:
         raise HTTPException(400, "El atleta no tiene Garmin configurado")
 
@@ -653,7 +1056,7 @@ def athlete_garmin_activities(
 
     try:
         from garminconnect import Garmin
-        _pwd = _dec(athlete.garmin_password) or athlete.garmin_password
+        _pwd = _read_garmin_pwd(athlete, db)
         client = Garmin(athlete.garmin_email, _pwd)
         client.login()
         raw = client.get_activities_by_date(start_date, end_date) or []
@@ -703,9 +1106,7 @@ def plan_vs_actual(
     2. Actividad Garmin del mismo día y deporte — si tiene credenciales
     Devuelve status: pending | done_manual | done_garmin | done_both | missed
     """
-    athlete = db.query(User).filter(User.id == athlete_id, User.activo == True).first()
-    if not athlete:
-        raise HTTPException(404, "Atleta no encontrado")
+    athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
 
     # Asignaciones del período
     assignments = (
@@ -736,7 +1137,7 @@ def plan_vs_actual(
     if has_garmin:
         try:
             from garminconnect import Garmin
-            _pwd = _dec(athlete.garmin_password) or athlete.garmin_password
+            _pwd = _read_garmin_pwd(athlete, db)
             client = Garmin(athlete.garmin_email, _pwd)
             client.login()
             raw_acts = client.get_activities_by_date(start, end) or []
@@ -827,9 +1228,7 @@ def athlete_report(
     """
     from datetime import date as _date, timedelta, datetime
 
-    athlete = db.query(User).filter(User.id == athlete_id, User.activo == True).first()
-    if not athlete:
-        raise HTTPException(404, "Atleta no encontrado")
+    athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
 
     # ── Asignaciones del período ──────────────────────────────
     assignments = (
@@ -862,7 +1261,7 @@ def athlete_report(
         ctl_start = (_date.fromisoformat(start) - timedelta(days=84)).isoformat()
         try:
             from garminconnect import Garmin
-            _pwd = _dec(athlete.garmin_password) or athlete.garmin_password
+            _pwd = _read_garmin_pwd(athlete, db)
             client = Garmin(athlete.garmin_email, _pwd)
             client.login()
             garmin_all = client.get_activities_by_date(ctl_start, end) or []
@@ -1048,14 +1447,14 @@ def athlete_report(
 def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     """Atletas con fatigue>=4 o RPE>=8 en últimas 48h. Badge en coach.html."""
     from datetime import datetime, timedelta as _td
-    cutoff_dt  = (datetime.utcnow() - _td(hours=48)).isoformat()
-    cutoff_day = (datetime.utcnow() - _td(hours=48)).date().isoformat()
+    cutoff_dt  = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).isoformat()
+    cutoff_day = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).date().isoformat()
 
     group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
     if not group_ids:
         return {"alerts": [], "count": 0}
     athlete_ids = [
-        m.user_id for m in
+        m.athlete_id for m in
         db.query(GroupMember).filter(GroupMember.group_id.in_(group_ids)).all()
     ]
 
@@ -1148,3 +1547,134 @@ def team_wellness(
             "days_ago":     days_ago,
         })
     return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# I-15: Asignación masiva (batch assign)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BatchAssignItem(BaseModel):
+    template_id: str
+    athlete_id:  Optional[str] = None
+    group_id:    Optional[str] = None
+    date_iso:    str
+    notas:       Optional[str] = None
+
+
+class BatchAssignRequest(BaseModel):
+    assignments: List[BatchAssignItem]
+
+
+@router.post("/assign/batch", status_code=201)
+def assign_batch(
+    body: BatchAssignRequest,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    I-15: Crea múltiples asignaciones en una sola request (hasta 50).
+    Procesa cada item con la misma lógica que /coach/assign individual.
+    Retorna un resumen con created/skipped/errors por item.
+    """
+    if not body.assignments:
+        raise HTTPException(400, "La lista de asignaciones está vacía")
+    if len(body.assignments) > 50:
+        raise HTTPException(400, "Máximo 50 asignaciones por batch")
+
+    coach_template_ids = {
+        t.id for t in db.query(WorkoutTemplate)
+                        .filter(WorkoutTemplate.coach_id == coach.id).all()
+    }
+
+    created = []
+    errors  = []
+
+    for idx, item in enumerate(body.assignments):
+        if item.template_id not in coach_template_ids:
+            errors.append({"index": idx, "reason": f"template {item.template_id} no encontrado"})
+            continue
+
+        if not item.athlete_id and not item.group_id:
+            errors.append({"index": idx, "reason": "Se requiere athlete_id o group_id"})
+            continue
+
+        if item.group_id:
+            # Expandir grupo
+            g = db.query(Group).filter(Group.id == item.group_id, Group.coach_id == coach.id).first()
+            if not g:
+                errors.append({"index": idx, "reason": f"grupo {item.group_id} no encontrado"})
+                continue
+            members = db.query(GroupMember).filter(GroupMember.group_id == item.group_id).all()
+            for m in members:
+                existing = db.query(AssignedWorkout).filter(
+                    AssignedWorkout.template_id == item.template_id,
+                    AssignedWorkout.athlete_id  == m.athlete_id,
+                    AssignedWorkout.date_iso    == item.date_iso,
+                    AssignedWorkout.deleted_at  == None,
+                ).first()
+                if not existing:
+                    db.add(AssignedWorkout(
+                        template_id = item.template_id,
+                        athlete_id  = m.athlete_id,
+                        group_id    = item.group_id,
+                        date_iso    = item.date_iso,
+                        notas       = item.notas,
+                    ))
+                    created.append({"index": idx, "athlete_id": m.athlete_id, "date_iso": item.date_iso})
+        else:
+            existing = db.query(AssignedWorkout).filter(
+                AssignedWorkout.template_id == item.template_id,
+                AssignedWorkout.athlete_id  == item.athlete_id,
+                AssignedWorkout.date_iso    == item.date_iso,
+                AssignedWorkout.deleted_at  == None,
+            ).first()
+            if existing:
+                errors.append({"index": idx, "reason": "Ya existe esta asignación (duplicado)"})
+                continue
+            db.add(AssignedWorkout(
+                template_id = item.template_id,
+                athlete_id  = item.athlete_id,
+                date_iso    = item.date_iso,
+                notas       = item.notas,
+            ))
+            created.append({"index": idx, "athlete_id": item.athlete_id, "date_iso": item.date_iso})
+
+    db.commit()
+
+    return {
+        "ok":      True,
+        "created": len(created),
+        "errors":  len(errors),
+        "detail":  {"created": created, "errors": errors},
+    }
+
+
+# ── Sprint 28: Athlete 360° Intelligence ─────────────────────────────────────
+
+@router.get("/athletes/{athlete_id}/intelligence")
+def get_athlete_intelligence(
+    athlete_id: str,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    360° intelligence snapshot for a single athlete.
+    Aggregates Training + Recovery + Mental + Blood Labs + Nutrition + Prescriptions
+    into a single response — avoids N frontend API calls.
+    """
+    from ..services.athlete_intelligence_service import get_athlete_intelligence as _get_intel
+    athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
+    return _get_intel(athlete, db)
+
+
+@router.get("/squad-overview")
+def squad_overview(
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    Squad command-center: all athletes sorted by risk level (critical → warning → ok).
+    Returns CTL, ACWR, recovery, mental, compliance and days-to-race per athlete.
+    """
+    from ..services.squad_service import get_squad_overview
+    return get_squad_overview(coach, db)

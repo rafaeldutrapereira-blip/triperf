@@ -1,0 +1,1029 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Recuperación Inteligente</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --amber:#F59E0B;--blue:#1D4ED8;--violet:#7C3AED;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+
+  /* Recovery colors */
+  --rc-optimal:#10B981;
+  --rc-good:#22D3EE;
+  --rc-moderate:#F0A500;
+  --rc-low:#F59E0B;
+  --rc-critical:#EF4444;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.42rem .95rem;font-size:.74rem}
+.btn-primary{background:var(--green);color:#fff}.btn-primary:hover{opacity:.88}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem}
+.sr{opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem}
+@media(max-width:1000px){.g5{grid-template-columns:repeat(3,1fr)}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}.g5{grid-template-columns:1fr 1fr}}
+.mt2{margin-top:1.5rem}.mt3{margin-top:2rem}
+.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+
+/* ── PAGE HEADER ── */
+.ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:1.6rem 0 1.4rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.ph-title em{font-style:normal}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin-top:.35rem}
+
+/* ── RECOVERY SCORE WIDGET ── */
+.rc-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.8rem;display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center}
+@media(max-width:600px){.rc-hero{grid-template-columns:1fr;text-align:center}}
+.rc-dial{position:relative;width:140px;height:140px;flex-shrink:0}
+.rc-dial-svg{width:140px;height:140px}
+.rc-dial-score{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rc-score-n{font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:900;line-height:1}
+.rc-score-l{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
+.rc-label{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:.5rem}
+.rc-rec{font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.rc-factors{display:flex;flex-wrap:wrap;gap:.5rem}
+.rc-factor{display:flex;flex-direction:column;align-items:center;gap:.18rem;padding:.45rem .65rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);min-width:68px}
+.rc-factor-n{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;line-height:1}
+.rc-factor-l{font-family:'Oswald',sans-serif;font-size:.56rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.rc-factor-bar{width:100%;height:3px;border-radius:2px;background:var(--surface);margin-top:.15rem;overflow:hidden}
+.rc-factor-fill{height:100%;border-radius:2px;transition:width .8s ease}
+
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;width:fit-content;flex-wrap:wrap}
+.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
+.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.tab-pane{display:none}.tab-pane.on{display:block}
+
+/* ── KPI box ── */
+.kpi-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center}
+.kpi-n{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1}
+.kpi-l{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+.kpi-s{font-size:.68rem;color:var(--muted);margin-top:.06rem}
+
+/* ── WELLNESS STARS ── */
+.well-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid var(--border2);gap:.75rem}
+.well-row:last-child{border-bottom:none}
+.well-label{font-size:.8rem;color:var(--muted);flex:1}
+.well-stars{display:flex;gap:.25rem}
+.star{width:24px;height:24px;cursor:pointer;transition:transform .15s;font-size:1.1rem;line-height:1;border:none;background:none;padding:0}
+.star:hover{transform:scale(1.2)}
+.star.active{color:var(--gold)}
+.star.inactive{color:var(--surface2);filter:brightness(.6)}
+
+/* ── SLEEP PHASES ── */
+.phase-bar{display:flex;height:28px;border-radius:6px;overflow:hidden;margin:.5rem 0}
+.phase-seg{display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.9);overflow:hidden;white-space:nowrap;transition:all .6s}
+
+/* ── MINI CHART ── */
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:48px}
+.mini-bar{flex:1;border-radius:2px 2px 0 0;transition:all .4s;cursor:default;min-width:4px}
+
+/* ── RECOMMENDATION BOX ── */
+.rec-box{border-radius:10px;padding:1.2rem 1.4rem;border:1px solid;margin-bottom:1rem}
+.rec-box.optimal{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.3)}
+.rec-box.good{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.3)}
+.rec-box.moderate{background:rgba(240,165,0,.06);border-color:rgba(240,165,0,.3)}
+.rec-box.low{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.3)}
+.rec-box.critical{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.3)}
+.rec-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:.5rem}
+.rec-text{font-size:.82rem;color:var(--muted);line-height:1.6}
+
+/* ── TIMELINE CHART ── */
+.timeline-row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:.5rem;margin-bottom:.35rem}
+.timeline-date{font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);text-align:right;letter-spacing:.06em}
+.timeline-bar-wrap{display:flex;align-items:center;gap:.4rem}
+.timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.timeline-val{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;width:28px;text-align:right}
+
+/* ── PROTOCOL CARD ── */
+.proto-day{display:grid;grid-template-columns:90px 80px 1fr;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border2);align-items:start}
+.proto-day:last-child{border-bottom:none}
+.proto-phase{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--coral)}
+.proto-load{display:inline-flex;align-items:center;padding:.22rem .6rem;border-radius:4px;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.proto-load.rest{background:rgba(239,68,68,.15);color:var(--red)}
+.proto-load.easy{background:rgba(16,185,129,.15);color:var(--green)}
+.proto-load.moderate{background:rgba(240,165,0,.15);color:var(--gold)}
+.proto-load.full{background:rgba(14,165,233,.15);color:var(--cyan)}
+.proto-actions{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+/* ── ALERT CHIP ── */
+.alert-chip{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .9rem;border-radius:8px;font-size:.78rem;color:var(--text);line-height:1.5;margin-bottom:.5rem}
+.alert-chip.high{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25)}
+.alert-chip.medium{background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.25)}
+.alert-chip.info{background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.2)}
+
+/* ── CORRELATION CHART ── */
+.corr-item{display:grid;grid-template-columns:80px 1fr auto;gap:.75rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border2);font-size:.78rem}
+.corr-item:last-child{border-bottom:none}
+.corr-date{color:var(--dim);font-size:.7rem}
+.corr-bar-wrap{background:var(--surface2);border-radius:3px;height:8px;overflow:hidden}
+.corr-fill{height:100%;border-radius:3px}
+.corr-val{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;text-align:right}
+
+/* ── COACH VIEW ── */
+.athlete-row{display:grid;grid-template-columns:36px 1fr 80px 80px 80px auto;gap:.75rem;align-items:center;padding:.65rem .85rem;border-radius:8px;margin-bottom:.4rem;border:1px solid var(--border2)}
+.athlete-row:hover{border-color:var(--border)}
+.athlete-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800}
+.athlete-name{font-size:.85rem;font-weight:600}
+.score-pill{padding:.2rem .65rem;border-radius:20px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;text-align:center}
+
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+
+/* ── PROGRESS BARS (shared) ── */
+.g-rb{background:var(--surface2);border-radius:3px;height:5px;overflow:hidden;margin-top:.4rem}
+.g-rf{height:100%;border-radius:3px;background:var(--gc,var(--green));transition:width .8s ease}
+</style>
+<link rel="stylesheet" href="nav.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<!-- PAGE HEADER -->
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-eye">LabX · SPRINT 15</div>
+        <div class="ph-title" id="ph-title">RECUPERACIÓN <em style="color:var(--green)">INTELIGENTE</em></div>
+        <div class="ph-sub" id="ph-date-sub">Cargando…</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:center">
+        <input type="date" id="date-picker" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:.08em">
+        <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:2rem 0 5rem">
+<div class="c">
+
+<!-- ══ RECOVERY HERO WIDGET ══ -->
+<section class="sr" id="sec-hero">
+  <div class="rc-hero" id="rc-hero">
+    <!-- Dial SVG -->
+    <div class="rc-dial">
+      <svg class="rc-dial-svg" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="58" fill="none" stroke="var(--surface2)" stroke-width="12"/>
+        <circle id="rc-dial-ring" cx="70" cy="70" r="58" fill="none" stroke="var(--green)" stroke-width="12"
+          stroke-linecap="round" stroke-dasharray="364" stroke-dashoffset="364"
+          transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 1.2s ease,stroke .5s"/>
+      </svg>
+      <div class="rc-dial-score">
+        <div class="rc-score-n" id="rc-score-n" style="color:var(--green)">—</div>
+        <div class="rc-score-l">SCORE</div>
+      </div>
+    </div>
+    <!-- Info -->
+    <div>
+      <div class="rc-label" id="rc-label">Cargando…</div>
+      <div class="rc-rec" id="rc-rec">Sincronizando datos Garmin…</div>
+      <div class="rc-factors" id="rc-factors"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TABS ══ -->
+<section class="sr mt2" id="sec-tabs">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Análisis de Recuperación
+      </span>
+      <div class="tabs-bar">
+        <button class="tab-btn on" onclick="switchTab('overview',this)">📊 Resumen</button>
+        <button class="tab-btn" onclick="switchTab('hrv',this)">🫀 HRV</button>
+        <button class="tab-btn" onclick="switchTab('sleep',this)">🌙 Sueño</button>
+        <button class="tab-btn" onclick="switchTab('wellness',this)">🧘 Bienestar</button>
+        <button class="tab-btn" onclick="switchTab('timeline',this)">📈 Timeline</button>
+        <button class="tab-btn" onclick="switchTab('correlations',this)">🔬 Correlaciones</button>
+        <button class="tab-btn" onclick="switchTab('protocol',this)">📋 Protocolos</button>
+        <button class="tab-btn" onclick="switchTab('coach',this)" id="tab-coach-btn" style="display:none">👥 Coach</button>
+      </div>
+    </div>
+    <div style="padding:1.5rem">
+
+      <!-- ── TAB: RESUMEN ── -->
+      <div class="tab-pane on" id="tab-overview">
+        <div class="g2" style="margin-bottom:1.5rem">
+          <div>
+            <div class="sec-h" style="font-size:.78rem">Recomendación del día</div>
+            <div id="rec-box-main"></div>
+            <div id="rec-alerts"></div>
+            <div id="rec-priorities"></div>
+          </div>
+          <div>
+            <div class="sec-h" style="font-size:.78rem">Detalle Garmin</div>
+            <div class="g3" id="garmin-kpis" style="gap:.75rem"></div>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="sec-h" style="font-size:.78rem">HRV — últimas 7 noches</div>
+            <div id="hrv-mini-chart"></div>
+          </div>
+          <div>
+            <div class="sec-h" style="font-size:.78rem">Sueño anoche</div>
+            <div id="sleep-mini"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: HRV ── -->
+      <div class="tab-pane" id="tab-hrv">
+        <div class="g3" id="hrv-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <select id="hrv-days-sel" onchange="loadHrvHistory()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
+            <option value="14">14 días</option>
+            <option value="30" selected>30 días</option>
+            <option value="90">90 días</option>
+          </select>
+        </div>
+        <div id="hrv-bars" style="margin-bottom:1.5rem"></div>
+        <div id="hrv-zones"></div>
+        <div id="hrv-insights" style="margin-top:1rem"></div>
+      </div>
+
+      <!-- ── TAB: SUEÑO ── -->
+      <div class="tab-pane" id="tab-sleep">
+        <div class="g3" id="sleep-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <select id="sleep-days-sel" onchange="loadSleepHistory()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
+            <option value="14">14 días</option>
+            <option value="30" selected>30 días</option>
+          </select>
+        </div>
+        <div id="sleep-bars" style="margin-bottom:1.5rem"></div>
+        <div id="sleep-debt-box"></div>
+      </div>
+
+      <!-- ── TAB: BIENESTAR ── -->
+      <div class="tab-pane" id="tab-wellness">
+        <div style="max-width:500px;margin-bottom:1.5rem">
+          <div class="sec-h" style="font-size:.78rem">¿Cómo te sentís hoy?</div>
+          <div class="panel" style="padding:1rem">
+            <div id="wellness-form">
+              <div class="well-row">
+                <span class="well-label">⚡ Energía general</span>
+                <div class="well-stars" id="ws-energy" data-field="energy"></div>
+              </div>
+              <div class="well-row">
+                <span class="well-label">😊 Estado de ánimo</span>
+                <div class="well-stars" id="ws-mood" data-field="mood"></div>
+              </div>
+              <div class="well-row">
+                <span class="well-label">💪 Piernas/Músculos (5=sin dolor)</span>
+                <div class="well-stars" id="ws-soreness" data-field="soreness"></div>
+              </div>
+              <div class="well-row">
+                <span class="well-label">🎯 Motivación para entrenar</span>
+                <div class="well-stars" id="ws-motivation" data-field="motivation"></div>
+              </div>
+              <div class="well-row">
+                <span class="well-label">🌡️ Estrés externo (5=sin estrés)</span>
+                <div class="well-stars" id="ws-stress" data-field="stress"></div>
+              </div>
+              <div class="well-row" style="border-bottom:none">
+                <span class="well-label">🌙 Calidad del sueño subjetiva</span>
+                <div class="well-stars" id="ws-sleep_quality" data-field="sleep_quality"></div>
+              </div>
+            </div>
+            <div style="margin-top:1rem">
+              <input id="well-notes" type="text" placeholder="Nota opcional (ej: estrés laboral, viaje)…"
+                style="width:100%;padding:.45rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.82rem">
+            </div>
+            <div style="margin-top:.75rem;display:flex;gap:.5rem">
+              <button class="btn btn-primary btn-sm" onclick="saveWellness()">Guardar bienestar</button>
+              <span id="wellness-save-msg" style="font-size:.75rem;color:var(--green);align-self:center;opacity:0;transition:opacity .3s"></span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-h" style="font-size:.78rem">Historial de bienestar (30d)</div>
+          <div id="wellness-history"></div>
+        </div>
+      </div>
+
+      <!-- ── TAB: TIMELINE ── -->
+      <div class="tab-pane" id="tab-timeline">
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <select id="tl-days-sel" onchange="loadTimeline()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
+            <option value="14">14 días</option>
+            <option value="30" selected>30 días</option>
+            <option value="60">60 días</option>
+          </select>
+        </div>
+        <div class="sec-h" style="font-size:.78rem">Recovery Score</div>
+        <div id="tl-recovery" style="margin-bottom:1.2rem"></div>
+        <div class="sec-h" style="font-size:.78rem">HRV (ms)</div>
+        <div id="tl-hrv" style="margin-bottom:1.2rem"></div>
+        <div class="sec-h" style="font-size:.78rem">Sueño (Score)</div>
+        <div id="tl-sleep" style="margin-bottom:1.2rem"></div>
+        <div id="tl-windows"></div>
+      </div>
+
+      <!-- ── TAB: CORRELACIONES ── -->
+      <div class="tab-pane" id="tab-correlations">
+        <div style="margin-bottom:.75rem;display:flex;gap:.75rem;align-items:center">
+          <select id="corr-days-sel" onchange="loadCorrelations()" style="padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
+            <option value="60">60 días</option>
+            <option value="90" selected>90 días</option>
+            <option value="180">180 días</option>
+          </select>
+        </div>
+        <div id="corr-insights" style="margin-bottom:1.2rem"></div>
+        <div id="corr-table"></div>
+      </div>
+
+      <!-- ── TAB: PROTOCOLOS ── -->
+      <div class="tab-pane" id="tab-protocol">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem">
+          <button class="btn btn-g btn-sm" onclick="loadProtocol('post_sprint')">⚡ Post Sprint</button>
+          <button class="btn btn-g btn-sm" onclick="loadProtocol('post_703')">🌊 Post 70.3</button>
+          <button class="btn btn-g btn-sm" onclick="loadProtocol('post_ironman')">🔥 Post Ironman</button>
+          <button class="btn btn-g btn-sm" onclick="loadProtocol('illness')">🤒 Post Enfermedad</button>
+          <button class="btn btn-g btn-sm" onclick="loadProtocol('overtraining')">⚠️ Sobreentrenamiento</button>
+        </div>
+        <div id="protocol-content">
+          <div style="color:var(--dim);font-size:.82rem">Selecciona un protocolo para ver el plan de recuperación detallado.</div>
+        </div>
+      </div>
+
+      <!-- ── TAB: COACH ── -->
+      <div class="tab-pane" id="tab-coach">
+        <div id="coach-view-content">
+          <div style="color:var(--dim);font-size:.82rem">Cargando vista de atletas…</div>
+        </div>
+      </div>
+
+    </div><!-- /padding -->
+  </div><!-- /panel -->
+</section>
+
+</div><!-- /c -->
+</div><!-- /padding -->
+
+<footer><div class="c">LabX Recovery Intelligence v1.0 · Sprint 15 · Powered by Garmin Connect</div></footer>
+
+<script src="nav.js" defer></script>
+<script>
+(function () {
+  'use strict';
+
+  var _k   = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null') || {};
+  var API  = '/api';
+  var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_k.token || '') };
+
+  var _wellnessValues = { energy: 0, mood: 0, soreness: 0, motivation: 0, stress: 0, sleep_quality: 0 };
+  var _currentDate = (function () {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }());
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  // ── Date picker setup ─────────────────────────────────────────────────────
+  var dp = document.getElementById('date-picker');
+  dp.value = _currentDate;
+  dp.addEventListener('change', function () {
+    _currentDate = dp.value;
+    loadDashboard();
+  });
+
+  // ── Tab switcher ──────────────────────────────────────────────────────────
+  window.switchTab = function (id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('on'); });
+    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('on'); });
+    var pane = document.getElementById('tab-' + id);
+    if (pane) pane.classList.add('on');
+    if (btn)  btn.classList.add('on');
+
+    if (id === 'hrv')          loadHrvHistory();
+    else if (id === 'sleep')   loadSleepHistory();
+    else if (id === 'timeline')loadTimeline();
+    else if (id === 'correlations') loadCorrelations();
+    else if (id === 'wellness')loadWellnessHistory();
+    else if (id === 'coach')   loadCoachView();
+  };
+
+  // ── Scroll reveal ─────────────────────────────────────────────────────────
+  function reveal() {
+    document.querySelectorAll('.sr').forEach(function (el) {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.92) {
+        el.classList.add('vis');
+      }
+    });
+  }
+  window.addEventListener('scroll', reveal, { passive: true });
+  setTimeout(reveal, 80);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DASHBOARD PRINCIPAL
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadDashboard() {
+    var url = API + '/recovery/dashboard?date_iso=' + _currentDate;
+    fetch(url, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        renderHero(d.recovery);
+        renderOverviewDetail(d);
+        updateDateSub(d.date_iso);
+      })
+      .catch(function () {
+        document.getElementById('rc-label').textContent = 'Sin datos Garmin para este día';
+        document.getElementById('rc-rec').textContent   = 'Sincroniza tu dispositivo Garmin para ver el score de recuperación.';
+      });
+
+    // Cargar recomendación paralela
+    fetch(API + '/recovery/recommendation?date_iso=' + _currentDate, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderRecommendation(d); })
+      .catch(function () {});
+
+    // Cargar bienestar existente
+    fetch(API + '/recovery/wellness/' + _currentDate, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (w) { if (w.logged) prefillWellness(w); })
+      .catch(function () {});
+  }
+  window.loadDashboard = loadDashboard;
+
+  function updateDateSub(diso) {
+    var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    var d    = new Date(diso + 'T12:00:00');
+    document.getElementById('ph-date-sub').textContent =
+      days[d.getDay()] + ' ' + diso + ' · Recovery Score del día';
+  }
+
+  // ── Hero dial ────────────────────────────────────────────────────────────
+  function renderHero(rec) {
+    if (!rec) return;
+    var score  = rec.score || 0;
+    var color  = rec.color || 'var(--muted)';
+    var label  = rec.label || '';
+    var recs   = rec.recommendation || '';
+
+    // Dial animation
+    var circumference = 364;
+    var offset = circumference - (score / 100) * circumference;
+    var ring   = document.getElementById('rc-dial-ring');
+    ring.style.stroke = color;
+    setTimeout(function () { ring.style.strokeDashoffset = offset; }, 100);
+
+    document.getElementById('rc-score-n').textContent = score;
+    document.getElementById('rc-score-n').style.color = color;
+    document.getElementById('rc-label').textContent   = label;
+    document.getElementById('rc-label').style.color   = color;
+    document.getElementById('rc-rec').textContent     = recs.substring(0, 200);
+
+    // Factors
+    var factors = rec.factors || {};
+    var factorDefs = [
+      { key: 'hrv',          label: 'HRV',         icon: '🫀', color: '#7C3AED' },
+      { key: 'sleep',        label: 'Sueño',        icon: '🌙', color: '#1D4ED8' },
+      { key: 'tsb',          label: 'Carga',        icon: '⚡', color: '#0EA5E9' },
+      { key: 'stress',       label: 'Estrés',       icon: '🧘', color: '#10B981' },
+      { key: 'body_battery', label: 'Batería',      icon: '🔋', color: '#F59E0B' },
+      { key: 'wellness',     label: 'Bienestar',    icon: '❤️', color: '#F43F5E' },
+    ];
+
+    var html = factorDefs.map(function (f) {
+      var val = factors[f.key];
+      if (val === null || val === undefined) return '';
+      var pct = Math.round(val);
+      return '<div class="rc-factor">' +
+        '<div class="rc-factor-n" style="color:' + f.color + '">' + pct + '</div>' +
+        '<div class="rc-factor-l">' + f.icon + ' ' + f.label + '</div>' +
+        '<div class="rc-factor-bar"><div class="rc-factor-fill" style="width:' + pct + '%;background:' + f.color + '"></div></div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('rc-factors').innerHTML = html;
+  }
+
+  // ── Overview detail ────────────────────────────────────────────────────────
+  function renderOverviewDetail(d) {
+    // Garmin KPIs
+    var g   = d.garmin || {};
+    var tl  = d.training_load || {};
+    var garminKpis = [
+      { label: '🔋 Body Battery', value: g.body_battery_end !== null ? g.body_battery_end + '/100' : '—', color: '#F59E0B' },
+      { label: '💓 FC Reposo',    value: g.resting_hr ? g.resting_hr + ' bpm' : '—',              color: '#F43F5E' },
+      { label: '😤 Estrés Avg',   value: g.avg_stress !== null ? g.avg_stress : '—',              color: '#7C3AED' },
+      { label: '⚡ TSB',          value: tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: '#0EA5E9' },
+      { label: '🎯 CTL',          value: tl.ctl ? Math.round(tl.ctl) : '—',                       color: '#10B981' },
+      { label: '😮‍💨 SpO2',        value: g.avg_spo2 ? g.avg_spo2 + '%' : '—',                   color: '#22D3EE' },
+    ];
+    document.getElementById('garmin-kpis').innerHTML = garminKpis.map(function (k) {
+      return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div>' +
+        '<div class="kpi-l">' + k.label + '</div></div>';
+    }).join('');
+
+    // HRV mini-chart
+    var hrvTrend = (d.hrv || {}).trend_7d || [];
+    renderMiniChart('hrv-mini-chart', hrvTrend, 'hrv_ms', '#7C3AED', 'ms');
+
+    // Sleep mini
+    var sleep = d.sleep || {};
+    var sleepHtml = '';
+    if (sleep.total_h !== null && sleep.total_h !== undefined) {
+      var deep = sleep.deep_min || 0;
+      var rem  = sleep.rem_min  || 0;
+      var light= sleep.light_min|| 0;
+      var awake= sleep.awake_min|| 0;
+      var tot  = (sleep.total_min || 1);
+      sleepHtml = '<div style="margin-bottom:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--blue)">' +
+        sleep.total_h + 'h</div>';
+      sleepHtml += '<div class="phase-bar">';
+      if (deep)  sleepHtml += '<div class="phase-seg" style="width:'+Math.round(deep/tot*100)+'%;background:#1D4ED8" title="Deep ' + deep + 'min">Deep</div>';
+      if (rem)   sleepHtml += '<div class="phase-seg" style="width:'+Math.round(rem/tot*100)+'%;background:#7C3AED" title="REM ' + rem + 'min">REM</div>';
+      if (light) sleepHtml += '<div class="phase-seg" style="width:'+Math.round(light/tot*100)+'%;background:#0EA5E9" title="Light ' + light + 'min">Light</div>';
+      if (awake) sleepHtml += '<div class="phase-seg" style="width:'+Math.round(awake/tot*100)+'%;background:#3D6880" title="Awake ' + awake + 'min">⚡</div>';
+      sleepHtml += '</div>';
+      sleepHtml += '<div style="display:flex;gap:.5rem;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:.35rem">';
+      if (deep)  sleepHtml += '<span style="color:#1D4ED8">● Deep ' + deep + 'min</span>';
+      if (rem)   sleepHtml += '<span style="color:#7C3AED">● REM ' + rem + 'min</span>';
+      if (light) sleepHtml += '<span style="color:#0EA5E9">● Light ' + light + 'min</span>';
+      sleepHtml += '</div>';
+      if (sleep.score) {
+        sleepHtml += '<div style="margin-top:.5rem;font-size:.75rem;color:var(--muted)">Score Garmin: <strong style="color:var(--text)">' + sleep.score + '</strong> · ' + (sleep.quality || '') + '</div>';
+      }
+    } else {
+      sleepHtml = '<div style="color:var(--dim);font-size:.8rem">Sin datos de sueño Garmin para este día.</div>';
+    }
+    document.getElementById('sleep-mini').innerHTML = sleepHtml;
+  }
+
+  function renderMiniChart(elId, points, field, color, unit) {
+    var el = document.getElementById(elId);
+    if (!points || !points.length) {
+      el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">Sin datos disponibles.</div>';
+      return;
+    }
+    var vals = points.map(function (p) { return p[field] || 0; });
+    var mn   = Math.min.apply(null, vals.filter(function(v){return v>0;})) * 0.92;
+    var mx   = Math.max.apply(null, vals) * 1.05;
+
+    var html = '<div class="mini-bars">';
+    points.forEach(function (p) {
+      var v = p[field] || 0;
+      var h = v > 0 ? Math.round((v - mn) / (mx - mn) * 40 + 8) : 4;
+      var d = p.date_iso ? p.date_iso.substring(5) : '';
+      html += '<div class="mini-bar" style="height:' + h + 'px;background:' + color + ';opacity:' + (v > 0 ? '.75' : '.2') + '" title="' + d + ': ' + v + (unit ? unit : '') + '"></div>';
+    });
+    html += '</div>';
+    if (points.length) {
+      var last = points[points.length - 1];
+      html += '<div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">Último: <strong style="color:' + color + '">' + (last[field] || '—') + '</strong>' + (unit || '') + '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  // ── Recommendation ────────────────────────────────────────────────────────
+  function renderRecommendation(d) {
+    var level = d.training_suggestion || 'moderate';
+    var box   = document.getElementById('rec-box-main');
+    if (!box) return;
+
+    var sessionLabels = { full:'Sesión completa', moderate:'Sesión moderada', easy:'Sesión suave / Z1-Z2', rest:'Descanso' };
+    var icons = { full:'🟢', moderate:'🟡', easy:'🟠', rest:'🔴' };
+
+    box.className = 'rec-box ' + level;
+    box.innerHTML = '<div class="rec-title">' + (icons[level] || '') + ' ' + (sessionLabels[level] || level) + '</div>' +
+      '<div class="rec-text">' + (d.main_recommendation || '') + '</div>' +
+      (d.recommended_tss ? '<div style="margin-top:.6rem;font-size:.78rem;color:var(--muted)">TSS sugerido: <strong style="color:var(--text)">' + d.recommended_tss + '</strong>' + (d.planned_tss ? ' (plan: ' + d.planned_tss + ')' : '') + '</div>' : '');
+
+    // Alerts
+    var alertsEl = document.getElementById('rec-alerts');
+    if (alertsEl && d.alerts && d.alerts.length) {
+      alertsEl.innerHTML = d.alerts.map(function (a) {
+        return '<div class="alert-chip ' + a.level + '">⚠️ ' + a.message + '</div>';
+      }).join('');
+    }
+
+    // Priorities
+    var priEl = document.getElementById('rec-priorities');
+    if (priEl && d.recovery_priorities && d.recovery_priorities.length) {
+      priEl.innerHTML = '<div style="margin-top:.75rem;font-size:.75rem;color:var(--dim);font-family:\'Oswald\',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Para esta noche:</div>' +
+        d.recovery_priorities.map(function (p) {
+          return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0">' + p + '</div>';
+        }).join('');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HRV HISTORY
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadHrvHistory() {
+    var days = document.getElementById('hrv-days-sel').value || 30;
+    fetch(API + '/recovery/hrv/history?days=' + days, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        // KPIs
+        document.getElementById('hrv-kpis').innerHTML = [
+          { label: 'HRV Promedio', value: d.avg_ms ? d.avg_ms + 'ms' : '—',  color: '#7C3AED' },
+          { label: 'Baseline',    value: d.baseline_ms ? d.baseline_ms + 'ms': '—', color: '#A855F7' },
+          { label: 'Tendencia',   value: d.trend_ms_week !== null ? (d.trend_ms_week > 0 ? '+' : '') + d.trend_ms_week + 'ms/sem' : '—',
+            color: d.trend_direction === 'up' ? '#10B981' : (d.trend_direction === 'down' ? '#EF4444' : '#7FB3CC') },
+        ].map(function (k) {
+          return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+        }).join('');
+
+        // Bar chart
+        var pts  = (d.points || []).filter(function (p) { return p.hrv_ms; });
+        var base = d.baseline_ms || 0;
+        var mn   = 0, mx = Math.max.apply(null, pts.map(function(p){return p.hrv_ms;})) * 1.1;
+        var barHtml = '<div style="display:flex;align-items:flex-end;gap:3px;height:80px;overflow-x:auto">';
+        pts.forEach(function (p) {
+          var h   = Math.round((p.hrv_ms / mx) * 72);
+          var col = base > 0
+            ? (p.hrv_ms >= base * 1.05 ? '#10B981' : (p.hrv_ms >= base * 0.90 ? '#7C3AED' : '#EF4444'))
+            : '#7C3AED';
+          barHtml += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:8px">' +
+            '<div style="width:100%;height:' + h + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.8" title="' + p.date_iso + ': ' + p.hrv_ms + 'ms"></div>' +
+            '</div>';
+        });
+        barHtml += '</div>';
+        if (base) {
+          barHtml += '<div style="font-size:.7rem;color:#A855F7;margin-top:.35rem">Baseline: ' + base + 'ms · 🟢 ≥baseline 🟣 normal 🔴 bajo</div>';
+        }
+        document.getElementById('hrv-bars').innerHTML = barHtml;
+
+        // Zones
+        var zp = d.zones_pct || {};
+        document.getElementById('hrv-zones').innerHTML =
+          '<div class="sec-h" style="font-size:.78rem">Distribución de zonas</div>' +
+          '<div style="display:flex;gap:.75rem;flex-wrap:wrap">' +
+          [['optimal','🟢 Óptimo','#10B981'],['normal','🟣 Normal','#7C3AED'],['low','🟡 Bajo','#F59E0B'],['critical','🔴 Crítico','#EF4444']].map(function (z) {
+            return '<div class="kpi-box" style="min-width:90px"><div class="kpi-n" style="color:' + z[2] + '">' + (zp[z[0]] || 0) + '%</div><div class="kpi-l">' + z[1] + '</div></div>';
+          }).join('') + '</div>';
+
+        // Insights
+        if (d.trend_direction) {
+          var trendMsg = {
+            up:     '📈 Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.',
+            down:   '📉 Tendencia bajista — HRV en descenso. Considera reducir carga o revisar recuperación.',
+            stable: '→ HRV estable. Respuesta normal de mantenimiento.',
+          };
+          document.getElementById('hrv-insights').innerHTML =
+            '<div class="alert-chip info">' + (trendMsg[d.trend_direction] || '') + '</div>';
+        }
+      }).catch(function () {});
+  }
+  window.loadHrvHistory = loadHrvHistory;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SLEEP HISTORY
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadSleepHistory() {
+    var days = document.getElementById('sleep-days-sel').value || 30;
+    fetch(API + '/recovery/sleep/history?days=' + days, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        // KPIs
+        document.getElementById('sleep-kpis').innerHTML = [
+          { label: 'Promedio horas', value: d.avg_hours ? d.avg_hours + 'h' : '—',  color: '#1D4ED8' },
+          { label: 'Score promedio', value: d.avg_score ? d.avg_score : '—',         color: '#7C3AED' },
+          { label: 'Deuda 7d',       value: d.sleep_debt_7d_h > 0 ? d.sleep_debt_7d_h + 'h' : '✅ 0h', color: d.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
+        ].map(function (k) {
+          return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+        }).join('');
+
+        // Bar chart
+        var pts = (d.points || []).filter(function (p) { return p.total_h; });
+        var barHtml = '<div style="display:flex;align-items:flex-end;gap:3px;height:80px;overflow-x:auto">';
+        pts.forEach(function (p) {
+          var h   = Math.round((p.total_h / 10) * 72);
+          var col = p.total_h >= 8 ? '#10B981' : (p.total_h >= 6 ? '#1D4ED8' : '#EF4444');
+          barHtml += '<div style="width:100%;max-width:20px;height:' + h + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.8;flex:1;min-width:6px" title="' + p.date_iso + ': ' + p.total_h + 'h"></div>';
+        });
+        barHtml += '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h</div>';
+        document.getElementById('sleep-bars').innerHTML = barHtml;
+
+        // Debt
+        var debtEl = document.getElementById('sleep-debt-box');
+        if (d.sleep_debt_7d_h > 1) {
+          debtEl.innerHTML = '<div class="alert-chip ' + (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') + '">💤 Deuda de sueño esta semana: <strong>' + d.sleep_debt_7d_h + 'h</strong>. Objetivo: ' + d.target_h + 'h/noche. ' + (d.nights_under_6h ? d.nights_under_6h + ' noches con menos de 6h.' : '') + '</div>';
+        } else {
+          debtEl.innerHTML = '<div class="alert-chip info">✅ Sin deuda de sueño significativa esta semana.</div>';
+        }
+      }).catch(function () {});
+  }
+  window.loadSleepHistory = loadSleepHistory;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WELLNESS
+  // ═══════════════════════════════════════════════════════════════════════════
+  function initWellnessStars() {
+    var fields = ['energy','mood','soreness','motivation','stress','sleep_quality'];
+    fields.forEach(function (f) {
+      var container = document.getElementById('ws-' + f);
+      if (!container) return;
+      container.innerHTML = '';
+      for (var i = 1; i <= 5; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'star inactive';
+        btn.textContent = '★';
+        btn.dataset.val = i;
+        btn.dataset.field = f;
+        btn.addEventListener('click', (function (field, val, el) {
+          return function () {
+            _wellnessValues[field] = val;
+            updateStars(field);
+          };
+        })(f, i, btn));
+        container.appendChild(btn);
+      }
+    });
+  }
+
+  function updateStars(field) {
+    var val       = _wellnessValues[field] || 0;
+    var container = document.getElementById('ws-' + field);
+    if (!container) return;
+    container.querySelectorAll('.star').forEach(function (s) {
+      var sv = parseInt(s.dataset.val);
+      s.className = 'star ' + (sv <= val ? 'active' : 'inactive');
+    });
+  }
+
+  function prefillWellness(w) {
+    var fields = ['energy','mood','soreness','motivation','stress','sleep_quality'];
+    fields.forEach(function (f) {
+      if (w[f] !== null && w[f] !== undefined) {
+        _wellnessValues[f] = w[f];
+        updateStars(f);
+      }
+    });
+    var notesEl = document.getElementById('well-notes');
+    if (notesEl && w.notes) notesEl.value = w.notes;
+  }
+
+  window.saveWellness = function () {
+    var notes = document.getElementById('well-notes').value || null;
+    var body  = { date_iso: _currentDate, notes: notes };
+    Object.keys(_wellnessValues).forEach(function (f) {
+      if (_wellnessValues[f]) body[f] = _wellnessValues[f];
+    });
+
+    fetch(API + '/recovery/wellness', { method: 'POST', headers: hdrs, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          var msg = document.getElementById('wellness-save-msg');
+          msg.textContent = '✅ Guardado — score recalculado';
+          msg.style.opacity = 1;
+          setTimeout(function () {
+            msg.style.opacity = 0;
+            loadDashboard(); // Refrescar con nuevo wellness
+          }, 1800);
+        }
+      }).catch(function () {});
+  };
+
+  function loadWellnessHistory() {
+    fetch(API + '/recovery/wellness/history?days=30', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var avgs = d.avgs || {};
+        var labels = { energy:'⚡ Energía', mood:'😊 Ánimo', soreness:'💪 Piernas', motivation:'🎯 Motivación', stress:'🌡️ Estrés (inv)', sleep_quality:'🌙 Sueño subj.' };
+        var html = '';
+        Object.keys(labels).forEach(function (f) {
+          var v = avgs[f];
+          html += '<div class="well-row"><span class="well-label">' + labels[f] + '</span>' +
+            '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:800;color:var(--gold)">' + (v !== null && v !== undefined ? v + '/5' : '—') + '</span>' +
+            '</div>';
+        });
+        document.getElementById('wellness-history').innerHTML = html || '<div style="color:var(--dim);font-size:.8rem">Sin historial de bienestar. Registra tu bienestar diariamente.</div>';
+      }).catch(function () {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TIMELINE
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadTimeline() {
+    var days = document.getElementById('tl-days-sel').value || 30;
+    fetch(API + '/recovery/timeline?days=' + days, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var pts = d.timeline || [];
+
+        function renderTlSeries(elId, field, color, maxVal) {
+          var el = document.getElementById(elId);
+          var barHtml = '<div style="display:flex;align-items:flex-end;gap:2px;height:60px;overflow-x:auto;overflow-y:hidden">';
+          pts.forEach(function (p) {
+            var v = p[field];
+            if (v === null || v === undefined) {
+              barHtml += '<div style="flex:1;min-width:6px;max-width:16px"></div>';
+              return;
+            }
+            var h   = Math.round((v / maxVal) * 54);
+            var tip = p.date_iso + ': ' + Math.round(v);
+            barHtml += '<div style="flex:1;min-width:6px;max-width:16px;height:' + h + 'px;background:' + color + ';border-radius:2px 2px 0 0;opacity:.75" title="' + tip + '"></div>';
+          });
+          barHtml += '</div>';
+          el.innerHTML = barHtml;
+        }
+
+        renderTlSeries('tl-recovery', 'recovery_score', 'var(--green)', 100);
+        renderTlSeries('tl-hrv',      'hrv_ms',          '#7C3AED',     80);
+        renderTlSeries('tl-sleep',    'sleep_score',     '#1D4ED8',     100);
+
+        // Optimal windows
+        var wins = d.optimal_windows || [];
+        var winEl = document.getElementById('tl-windows');
+        if (wins.length) {
+          winEl.innerHTML = '<div class="sec-h" style="font-size:.78rem;margin-top:1rem">Ventanas de forma óptima detectadas</div>' +
+            wins.map(function (w) {
+              return '<div class="alert-chip info">🟢 ' + w.start + ' — ' + w.label + '</div>';
+            }).join('');
+        } else {
+          winEl.innerHTML = '';
+        }
+      }).catch(function () {});
+  }
+  window.loadTimeline = loadTimeline;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CORRELACIONES
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadCorrelations() {
+    var days = document.getElementById('corr-days-sel').value || 90;
+    fetch(API + '/recovery/correlations?days=' + days, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        // Insights
+        var insEl = document.getElementById('corr-insights');
+        if (d.insights && d.insights.length) {
+          insEl.innerHTML = d.insights.map(function (msg) {
+            return '<div class="alert-chip info">🔬 ' + msg + '</div>';
+          }).join('');
+        } else {
+          insEl.innerHTML = '<div style="color:var(--dim);font-size:.8rem">Sin suficientes datos para análisis de correlación.</div>';
+        }
+
+        // Table
+        var corrs = (d.correlations || []).slice(-20);
+        var maxHrv = Math.max.apply(null, corrs.map(function (c) { return c.hrv_ms || 0; })) || 1;
+        var tableHtml = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
+          '<thead><tr style="border-bottom:1px solid var(--border2)">' +
+          ['Fecha','Deporte','HRV','TSS'].map(function (h) {
+            return '<th style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--dim);padding:.4rem .6rem;text-align:left">' + h + '</th>';
+          }).join('') + '</tr></thead><tbody>';
+        corrs.forEach(function (c) {
+          var barW = c.hrv_ms ? Math.round(c.hrv_ms / maxHrv * 100) : 0;
+          tableHtml += '<tr style="border-bottom:1px solid rgba(8,116,174,.06)">' +
+            '<td class="corr-date" style="padding:.45rem .6rem">' + c.date_iso + '</td>' +
+            '<td style="padding:.45rem .6rem;color:var(--muted)">' + (c.sport || '—') + '</td>' +
+            '<td style="padding:.45rem .6rem">' +
+            '<div style="display:flex;align-items:center;gap:.4rem">' +
+            '<div style="flex:1;background:var(--surface2);border-radius:2px;height:6px;min-width:60px"><div style="width:' + barW + '%;height:100%;background:#7C3AED;border-radius:2px"></div></div>' +
+            '<span style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;color:#7C3AED;min-width:32px;text-align:right">' + (c.hrv_ms || '—') + '</span>' +
+            '</div></td>' +
+            '<td style="padding:.45rem .6rem;font-family:\'Barlow Condensed\',sans-serif;font-weight:800;color:var(--gold)">' + (c.tss ? Math.round(c.tss) : '—') + '</td>' +
+            '</tr>';
+        });
+        tableHtml += '</tbody></table></div>';
+        document.getElementById('corr-table').innerHTML = tableHtml;
+      }).catch(function () {});
+  }
+  window.loadCorrelations = loadCorrelations;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROTOCOLOS
+  // ═══════════════════════════════════════════════════════════════════════════
+  window.loadProtocol = function (ptype) {
+    fetch(API + '/recovery/protocol/' + ptype, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var p   = d.protocol || {};
+        var ctx = d.athlete_context || {};
+        var loadColors = { rest:'#EF4444', easy:'#10B981', moderate:'#F0A500', full:'#0EA5E9' };
+
+        var html = '<div class="panel" style="padding:1.2rem">' +
+          '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:.4rem">' + p.name + '</div>' +
+          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Duración estimada: ' + p.duration + '</div>';
+
+        if (p.warning) {
+          html += '<div class="alert-chip high" style="margin-bottom:1rem">⚠️ ' + p.warning + '</div>';
+        }
+
+        (p.days || []).forEach(function (day) {
+          html += '<div class="proto-day">' +
+            '<div class="proto-phase">' + day.label + '</div>' +
+            '<div><span class="proto-load ' + day.load + '">' + day.load.toUpperCase() + '</span>' +
+            (day.tss_max !== null && day.tss_max !== undefined ? '<div style="font-size:.65rem;color:var(--dim);margin-top:.2rem">TSS ≤ ' + day.tss_max + '</div>' : '') +
+            '</div>' +
+            '<div class="proto-actions"><ul style="list-style:disc;padding-left:1rem">' +
+            (day.actions || []).map(function (a) { return '<li>' + a + '</li>'; }).join('') +
+            '</ul></div>' +
+            '</div>';
+        });
+
+        html += '<div class="alert-chip info" style="margin-top:1rem">🫀 ' + p.hrv_clearance + '</div>';
+
+        if (ctx.recovery_score_today !== null && ctx.recovery_score_today !== undefined) {
+          html += '<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)">Tu Recovery Score hoy: <strong style="color:var(--text)">' + ctx.recovery_score_today + '</strong> · ' + (ctx.recommendation || '') + '</div>';
+        }
+        html += '</div>';
+
+        document.getElementById('protocol-content').innerHTML = html;
+      }).catch(function () {});
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COACH VIEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadCoachView() {
+    fetch(API + '/recovery/coach-view', { headers: hdrs })
+      .then(function (r) {
+        if (r.status === 403) return null;
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d) return;
+        var el       = document.getElementById('coach-view-content');
+        var athletes = d.athletes || [];
+        if (!athletes.length) {
+          el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">No tienes atletas activos.</div>';
+          return;
+        }
+
+        var html = '<div style="margin-bottom:.75rem;display:flex;gap:1rem;font-size:.78rem;color:var(--muted)">' +
+          '<span>🔴 Necesitan atención: <strong style="color:var(--red)">' + (d.red_count || 0) + '</strong></span>' +
+          '<span>🟢 Bien: <strong style="color:var(--green)">' + (d.green_count || 0) + '</strong></span></div>';
+
+        athletes.forEach(function (a) {
+          var initials = (a.name || 'X').split(' ').map(function (w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
+          var scoreCol = a.color || 'var(--muted)';
+          html += '<div class="athlete-row"' + (a.needs_attention ? ' style="border-color:rgba(239,68,68,.4)"' : '') + '>' +
+            '<div class="athlete-avatar" style="background:' + scoreCol + '20;color:' + scoreCol + '">' + initials + '</div>' +
+            '<div>' +
+            '<div class="athlete-name">' + a.name + (a.needs_attention ? ' ⚠️' : '') + '</div>' +
+            '<div style="font-size:.68rem;color:var(--dim)">' + (a.suggestion || '') + ' · HRV ' + a.hrv_trend + '</div>' +
+            '</div>' +
+            '<div class="score-pill" style="background:' + scoreCol + '20;color:' + scoreCol + '">' + (a.score !== null ? a.score : '—') + '</div>' +
+            '<div style="font-size:.72rem;color:var(--dim);text-align:center">' + (a.factors ? 'HRV<br>' + Math.round(a.factors.hrv || 0) : '') + '</div>' +
+            '<div style="font-size:.72rem;color:var(--dim);text-align:center">' + (a.factors ? 'Sleep<br>' + Math.round(a.factors.sleep || 0) : '') + '</div>' +
+            '<div style="font-size:.72rem;color:var(--dim);text-align:center;white-space:nowrap">TSB<br>' + Math.round(a.factors ? (a.factors.tsb || 0) : 0) + '</div>' +
+            '</div>';
+        });
+        el.innerHTML = html;
+      }).catch(function () {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════════════════════════════════
+  initWellnessStars();
+  loadDashboard();
+
+  // Show coach tab if role = coach
+  if (_k && (_k.role === 'coach' || _k.role === 'admin')) {
+    var coachBtn = document.getElementById('tab-coach-btn');
+    if (coachBtn) coachBtn.style.display = '';
+  }
+
+  // Update nav user info
+  setTimeout(function () {
+    if (typeof KL !== 'undefined' && KL.init) KL.init();
+  }, 200);
+
+}());
+</script>
+<script src="lx-audit.js"></script>`n</body>
+</html>

@@ -1,0 +1,691 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Race Day Intelligence</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nav.css">
+<style>
+:root{
+  --bg:#0F172A;--card:#1E293B;--card2:#263148;--border:#334155;
+  --text:#F1F5F9;--sub:#94A3B8;--acc:#F59E0B;--acc2:#EF4444;
+  --green:#10B981;--blue:#0EA5E9;--purple:#8B5CF6;
+  --r:14px;--r2:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+#nav-placeholder{height:0}
+/* ─── LabX TopNav ─── */
+#lx-topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:rgba(4,8,15,.97);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.12);display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem}
+.lxn-brand{display:flex;align-items:center;gap:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#F0F9FF;text-decoration:none;flex-shrink:0}
+.lxn-brand span{color:#FF6535}
+.lxn-brand svg.sbl-svg{width:32px;height:32px;flex-shrink:0}
+.lxn-nav{display:flex;align-items:center;gap:.15rem;flex:1;overflow-x:auto}
+.lxn-nav a{padding:.32rem .68rem;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7FB3CC;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
+.lxn-nav a:hover,.lxn-nav a.on{color:#FF6535;background:rgba(255,101,53,.1)}
+.lxn-out{background:transparent;border:1px solid rgba(61,104,128,.32);border-radius:5px;color:#3D6880;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .65rem;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.lxn-out:hover{border-color:#EF4444;color:#EF4444}
+.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
+.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
+@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
+@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
+@media(max-width:700px){.lxn-nav{display:none}}
+.page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-header p{color:var(--sub);margin-top:4px;font-size:.9rem}
+
+/* TABS */
+.tabs{display:flex;gap:6px;background:var(--card);border-radius:var(--r);padding:6px;margin-bottom:24px;overflow-x:auto}
+.tab-btn{flex:1;min-width:110px;padding:10px 14px;border:none;border-radius:var(--r2);cursor:pointer;background:transparent;color:var(--sub);font-size:.85rem;font-weight:500;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--acc);color:#000}
+.tab-btn:hover:not(.active){background:var(--card2);color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.card-title{font-weight:600;font-size:.95rem;margin-bottom:14px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* COUNTDOWN */
+.countdown-hero{text-align:center;padding:24px}
+.countdown-days{font-size:5rem;font-weight:900;background:linear-gradient(135deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.countdown-label{font-size:.85rem;color:var(--sub);margin-top:4px}
+.race-name-big{font-size:1.3rem;font-weight:700;margin-top:8px}
+.race-date-sub{font-size:.88rem;color:var(--sub)}
+
+/* FITNESS CHIPS */
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:80px}
+.chip-val{font-size:1.4rem;font-weight:800}
+.chip-label{font-size:.7rem;color:var(--sub);margin-top:2px}
+.chip-ctl{border-color:var(--blue);} .chip-ctl .chip-val{color:var(--blue)}
+.chip-tsb .chip-val{color:var(--green)}
+.chip-tsb-neg .chip-val{color:var(--acc2)}
+.chip-rec .chip-val{color:var(--purple)}
+
+/* SPLITS TABLE */
+.splits-table{width:100%;border-collapse:collapse}
+.splits-table th{text-align:left;color:var(--sub);font-size:.78rem;padding:8px 10px;border-bottom:1px solid var(--border)}
+.splits-table td{padding:10px;border-bottom:1px solid var(--border)33;font-size:.88rem}
+.splits-table td:last-child{text-align:right;font-weight:700;color:var(--acc)}
+.splits-table tr.total-row td{border-top:2px solid var(--border);font-weight:700;font-size:.95rem;color:var(--text)}
+.segment-icon{font-size:1.1rem;margin-right:6px}
+
+/* PACING TARGETS */
+.target-card{background:var(--card2);border-radius:var(--r2);padding:16px;border:1px solid var(--border);margin-bottom:12px}
+.target-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.target-label{font-size:.88rem;font-weight:600}
+.target-value{font-size:1.5rem;font-weight:800;color:var(--acc)}
+.target-sub{font-size:.78rem;color:var(--sub)}
+.if-bar{height:8px;border-radius:4px;background:var(--border);margin-top:8px;overflow:hidden}
+.if-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--acc),var(--acc2))}
+
+/* NUTRITION */
+.nutr-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.nutr-stat{background:var(--card2);border-radius:var(--r2);padding:12px;text-align:center}
+.nutr-val{font-size:1.4rem;font-weight:800;color:var(--acc)}
+.nutr-label{font-size:.7rem;color:var(--sub);margin-top:2px}
+.nutr-timeline{list-style:none}
+.nutr-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)44}
+.nutr-seg{width:80px;font-size:.78rem;font-weight:600;color:var(--acc);flex-shrink:0}
+.nutr-detail{flex:1;font-size:.8rem;color:var(--sub);line-height:1.4}
+.nutr-macros{font-size:.75rem;color:var(--text);font-weight:600;margin-top:2px}
+.warning-list{list-style:none;margin-top:12px}
+.warning-list li{padding:6px 0;font-size:.8rem;color:var(--acc);border-bottom:1px solid var(--border)33}
+.warning-list li::before{content:"⚠ ";color:var(--acc)}
+
+/* RESULT FORM */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.78rem;color:var(--sub);font-weight:500}
+.form-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;width:100%}
+.form-input:focus{outline:none;border-color:var(--acc)}
+.btn-primary{padding:10px 24px;background:var(--acc);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:6px 14px;font-size:.8rem}
+.btn-outline{padding:10px 22px;background:transparent;border:1px solid var(--acc);color:var(--acc);border-radius:8px;cursor:pointer;font-weight:600}
+
+/* ANALYSIS */
+.comparison-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)44}
+.comp-seg{font-size:.85rem;font-weight:600;width:80px}
+.comp-vals{display:flex;gap:20px;font-size:.85rem}
+.comp-pred{color:var(--sub)}
+.comp-actual{font-weight:700}
+.comp-diff{font-size:.78rem;padding:2px 8px;border-radius:10px}
+.diff-faster{background:var(--green)22;color:var(--green)}
+.diff-slower{background:var(--acc2)22;color:var(--acc2)}
+.pacing-score-hero{text-align:center;padding:20px}
+.pacing-score-num{font-size:4rem;font-weight:900}
+.learning-item{padding:10px 0;border-bottom:1px solid var(--border)44;font-size:.85rem;color:var(--sub)}
+.learning-item::before{content:"→ ";color:var(--acc)}
+
+/* HISTORY */
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)44;flex-wrap:wrap;gap:8px}
+.hist-name{font-weight:600;font-size:.88rem}
+.hist-time{font-size:1.1rem;font-weight:800;color:var(--acc)}
+.hist-date{font-size:.75rem;color:var(--sub)}
+.score-pill{font-size:.75rem;padding:2px 10px;border-radius:12px;font-weight:600}
+.score-hi{background:var(--green)22;color:var(--green)}
+.score-mid{background:var(--acc)22;color:var(--acc)}
+.score-lo{background:var(--acc2)22;color:var(--acc2)}
+.dnf-badge{font-size:.72rem;color:var(--acc2);font-weight:700}
+
+/* PLAN FORM */
+.plan-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.select-input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-size:.88rem;width:100%}
+.select-input:focus{outline:none;border-color:var(--acc)}
+
+/* MISC */
+.empty-state{text-align:center;padding:40px;color:var(--sub);font-size:.9rem}
+.loader{text-align:center;padding:40px;color:var(--sub)}
+.tag{font-size:.72rem;padding:2px 8px;border-radius:10px;font-weight:600}
+.success-msg{color:var(--green);font-size:.85rem;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <header class="sb-topbar"></header>
+  <div class="sb-overlay" id="sb-overlay"></div>
+  <main class="main" id="main-content">
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Race Day Intelligence</h1>
+    <p>Predicción de splits basada en tu CTL/TSB real · Pacing targets · Nutrición personalizada</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('plan')">Generar Plan</button>
+    <button class="tab-btn" onclick="switchTab('nutrition')">Nutrición</button>
+    <button class="tab-btn" onclick="switchTab('result')">Registrar Resultado</button>
+    <button class="tab-btn" onclick="switchTab('history')">Historial</button>
+  </div>
+
+  <!-- ═══════════ TAB: DASHBOARD ═══════════ -->
+  <div class="tab-panel active" id="tab-dashboard">
+    <div id="dash-loader" class="loader">Cargando Race Day Dashboard...</div>
+    <div id="dash-content" style="display:none">
+
+      <!-- Countdown -->
+      <div class="card" style="margin-bottom:16px" id="countdown-card">
+        <div class="countdown-hero">
+          <div class="countdown-days" id="dash-days">—</div>
+          <div class="countdown-label">días para la carrera</div>
+          <div class="race-name-big" id="dash-race-name">Sin carrera registrada</div>
+          <div class="race-date-sub" id="dash-race-date"></div>
+        </div>
+      </div>
+
+      <!-- Fitness -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Estado de Forma</div>
+        <div class="chips">
+          <div class="chip chip-ctl">
+            <div class="chip-val" id="dash-ctl">—</div>
+            <div class="chip-label">CTL (Fitness)</div>
+          </div>
+          <div class="chip" id="dash-tsb-chip">
+            <div class="chip-val" id="dash-tsb">—</div>
+            <div class="chip-label">TSB (Forma)</div>
+          </div>
+          <div class="chip">
+            <div class="chip-val" id="dash-atl">—</div>
+            <div class="chip-label">ATL (Fatiga)</div>
+          </div>
+          <div class="chip chip-rec">
+            <div class="chip-val" id="dash-rec">—</div>
+            <div class="chip-label">Recovery</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Plan -->
+      <div class="card" style="margin-bottom:16px" id="dash-plan-card">
+        <div class="card-title">Plan de Carrera Actual</div>
+        <div id="dash-plan-content"></div>
+      </div>
+
+      <!-- Recent History -->
+      <div class="card">
+        <div class="card-title">Últimas Carreras</div>
+        <div id="dash-history-list">
+          <div class="empty-state">Sin historial de carreras.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: PLAN ═══════════ -->
+  <div class="tab-panel" id="tab-plan">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Generar Plan de Carrera Automático</div>
+      <p style="font-size:.85rem;color:var(--sub);margin-bottom:16px">
+        El motor usa tu CTL, TSB y Recovery Score actuales para predecir splits y generar targets de pacing.
+        Opcionalmente ingresa tu FTP para targets de potencia más precisos.
+      </p>
+      <div class="plan-form">
+        <div class="form-group">
+          <label>Tipo de carrera</label>
+          <select class="select-input" id="plan-race-type">
+            <option value="sprint">Sprint (750m/20km/5km)</option>
+            <option value="olympic" selected>Olímpico (1.5km/40km/10km)</option>
+            <option value="703">Ironman 70.3</option>
+            <option value="full">Ironman Completo</option>
+            <option value="21k">Media Maratón</option>
+            <option value="42k">Maratón</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FTP (Watts) — opcional</label>
+          <input type="number" class="form-input" id="plan-ftp" placeholder="ej. 220" min="50" max="500">
+        </div>
+        <div class="form-group">
+          <label>Peso corporal (kg) — opcional</label>
+          <input type="number" class="form-input" id="plan-weight" placeholder="ej. 72" min="30" max="150">
+        </div>
+        <div class="form-group">
+          <label>Tasa de sudor (L/h) — opcional</label>
+          <input type="number" class="form-input" id="plan-sweat" placeholder="ej. 0.8" min="0.3" max="2.5" step="0.1">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" onclick="generatePlan()">Generar Plan</button>
+        <span id="plan-gen-msg" style="display:none;font-size:.85rem;color:var(--green)">✓ Plan generado</span>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="plan-results" style="display:none">
+      <div class="grid-2" style="margin-bottom:16px">
+        <!-- Splits -->
+        <div class="card">
+          <div class="card-title">Splits Predichos</div>
+          <table class="splits-table" id="splits-table-plan"></table>
+        </div>
+        <!-- Pacing -->
+        <div class="card">
+          <div class="card-title">Targets de Pacing</div>
+          <div id="pacing-targets-plan"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Base de la Predicción</div>
+        <div id="plan-basis"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: NUTRITION ═══════════ -->
+  <div class="tab-panel" id="tab-nutrition">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Parámetros de Nutrición</div>
+      <div class="plan-form">
+        <div class="form-group">
+          <label>Duración estimada (min)</label>
+          <input type="number" class="form-input" id="nutr-duration" placeholder="ej. 300" min="30" max="840">
+        </div>
+        <div class="form-group">
+          <label>Peso corporal (kg)</label>
+          <input type="number" class="form-input" id="nutr-weight" placeholder="ej. 72" min="30" max="150">
+        </div>
+        <div class="form-group">
+          <label>Tasa de sudor (L/h)</label>
+          <input type="number" class="form-input" id="nutr-sweat" placeholder="ej. 0.8" step="0.1" min="0.3" max="2.5">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="calcNutrition()">Calcular Plan</button>
+    </div>
+    <div id="nutr-result" style="display:none">
+      <!-- Summary -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Resumen Nutricional</div>
+        <div class="nutr-summary" id="nutr-summary"></div>
+        <ul class="warning-list" id="nutr-warnings"></ul>
+      </div>
+      <!-- Key Rules -->
+      <div class="card">
+        <div class="card-title">Reglas de Oro</div>
+        <ul class="nutr-timeline" id="nutr-rules"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: RESULT ═══════════ -->
+  <div class="tab-panel" id="tab-result">
+    <div class="card">
+      <div class="card-title">Registrar Resultado de Carrera</div>
+      <p style="font-size:.85rem;color:var(--sub);margin-bottom:16px">Ingresa tus splits reales para calcular el score de ejecución vs el plan.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tiempo Nado (mm:ss)</label>
+          <input type="text" class="form-input" id="res-swim" placeholder="28:45">
+        </div>
+        <div class="form-group">
+          <label>T1 (mm:ss)</label>
+          <input type="text" class="form-input" id="res-t1" placeholder="2:30">
+        </div>
+        <div class="form-group">
+          <label>Tiempo Bici (h:mm:ss)</label>
+          <input type="text" class="form-input" id="res-bike" placeholder="1:12:00">
+        </div>
+        <div class="form-group">
+          <label>T2 (mm:ss)</label>
+          <input type="text" class="form-input" id="res-t2" placeholder="1:45">
+        </div>
+        <div class="form-group">
+          <label>Tiempo Carrera (h:mm:ss)</label>
+          <input type="text" class="form-input" id="res-run" placeholder="42:30">
+        </div>
+        <div class="form-group">
+          <label>Potencia media bici (W)</label>
+          <input type="number" class="form-input" id="res-power" placeholder="185" min="50" max="600">
+        </div>
+        <div class="form-group">
+          <label>FC media en carrera (bpm)</label>
+          <input type="number" class="form-input" id="res-hr-run" placeholder="158" min="60" max="220">
+        </div>
+        <div class="form-group">
+          <label>Pace carrera (mm:ss/km)</label>
+          <input type="text" class="form-input" id="res-run-pace" placeholder="4:15">
+        </div>
+        <div class="form-group">
+          <label>Sensación general (1-5)</label>
+          <select class="select-input" id="res-feeling">
+            <option value="">—</option>
+            <option value="5">5 — Excelente</option>
+            <option value="4">4 — Bueno</option>
+            <option value="3">3 — Regular</option>
+            <option value="2">2 — Malo</option>
+            <option value="1">1 — Muy malo</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin:12px 0;display:flex;gap:10px;align-items:center">
+        <label style="font-size:.85rem;display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="res-dnf"> DNF
+        </label>
+        <input type="text" class="form-input" id="res-dnf-reason" placeholder="Motivo DNF" style="width:auto;flex:1;display:none">
+      </div>
+      <textarea class="form-input" id="res-notes" placeholder="Notas post-carrera..." style="resize:none;min-height:64px;margin-bottom:12px"></textarea>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" onclick="saveResult()">Guardar Resultado</button>
+        <span id="res-saved-msg" style="display:none"></span>
+      </div>
+    </div>
+    <div id="res-analysis-box" style="display:none;margin-top:16px">
+      <div class="card">
+        <div class="card-title">Resultado del Análisis</div>
+        <div id="res-analysis-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: HISTORY ═══════════ -->
+  <div class="tab-panel" id="tab-history">
+    <div class="card">
+      <div class="card-title">Historial de Carreras</div>
+      <div id="history-list"><div class="loader">Cargando...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '/api';
+var currentPlan = null;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  var tabs = {dashboard:0, plan:1, nutrition:2, result:3, history:4};
+  document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
+  if (name === 'history') loadHistory();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function loadDashboard() {
+  fetch(API + '/races/dashboard-s19', {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderDashboard(d); })
+    .catch(function(){ document.getElementById('dash-loader').textContent = 'Error al cargar. Reintenta.'; });
+}
+
+function renderDashboard(d) {
+  document.getElementById('dash-loader').style.display = 'none';
+  document.getElementById('dash-content').style.display = 'block';
+
+  var nr = d.next_race || {};
+  document.getElementById('dash-days').textContent = nr.days_to_race !== null ? nr.days_to_race : '—';
+  document.getElementById('dash-race-name').textContent = nr.name || 'Sin carrera registrada';
+  document.getElementById('dash-race-date').textContent = nr.date || '';
+
+  var fit = d.fitness || {};
+  document.getElementById('dash-ctl').textContent = fit.ctl !== null ? fit.ctl : '—';
+  document.getElementById('dash-tsb').textContent = fit.tsb !== null ? fit.tsb : '—';
+  document.getElementById('dash-atl').textContent = fit.atl !== null ? fit.atl : '—';
+  document.getElementById('dash-rec').textContent = fit.recovery_score !== null ? fit.recovery_score : '—';
+  var tsbChip = document.getElementById('dash-tsb-chip');
+  tsbChip.className = 'chip ' + ((fit.tsb || 0) >= 0 ? 'chip-tsb' : 'chip-tsb-neg');
+
+  var plan = d.plan || {};
+  var pc = document.getElementById('dash-plan-content');
+  if (plan.total_fmt) {
+    pc.innerHTML = '<div class="chips">' +
+      '<div class="chip"><div class="chip-val" style="color:var(--acc)">' + plan.total_fmt + '</div><div class="chip-label">Tiempo Predicho</div></div>' +
+      (plan.bike_power ? '<div class="chip"><div class="chip-val">' + plan.bike_power + 'W</div><div class="chip-label">Target Bici</div></div>' : '') +
+      (plan.run_pace ? '<div class="chip"><div class="chip-val">' + escHtml(plan.run_pace) + '</div><div class="chip-label">Pace Carrera</div></div>' : '') +
+      '</div>' +
+      '<div style="margin-top:12px"><button class="btn-outline btn-sm" onclick="switchTab(\'plan\')">Regenerar plan</button></div>';
+  } else {
+    pc.innerHTML = '<div class="empty-state">Sin plan generado. <button class="btn-primary btn-sm" onclick="switchTab(\'plan\')" style="margin-left:10px">Generar ahora</button></div>';
+  }
+
+  var hist = d.history || [];
+  var hl = document.getElementById('dash-history-list');
+  if (!hist.length) { hl.innerHTML = '<div class="empty-state">Sin carreras registradas aún.</div>'; return; }
+  hl.innerHTML = hist.map(function(r) {
+    var scoreHtml = r.pacing_score ? '<span class="score-pill ' + scoreCls(r.pacing_score) + '">' + r.pacing_score + ' exec</span>' : '';
+    var dnfHtml   = r.dnf ? '<span class="dnf-badge">DNF</span>' : '';
+    return '<div class="history-row">' +
+      '<div><div class="hist-name">' + escHtml(r.race_name) + '</div></div>' +
+      '<div style="display:flex;gap:10px;align-items:center">' +
+      '<span class="hist-time">' + escHtml(r.total_fmt || '—') + '</span>' +
+      scoreHtml + dnfHtml + '</div></div>';
+  }).join('');
+}
+
+// ─── GENERATE PLAN ───────────────────────────────────────────────────────────
+function generatePlan() {
+  var payload = {
+    ftp_w:     parseInt(document.getElementById('plan-ftp').value) || null,
+    weight_kg: parseFloat(document.getElementById('plan-weight').value) || null,
+    sweat_l_h: parseFloat(document.getElementById('plan-sweat').value) || null,
+  };
+  fetch(API + '/races/auto-plan', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      currentPlan = d;
+      document.getElementById('plan-gen-msg').style.display = 'inline';
+      setTimeout(function(){ document.getElementById('plan-gen-msg').style.display = 'none'; }, 3000);
+      renderPlanResults(d);
+    })
+    .catch(function(){ alert('Error al generar plan. Verifica tus datos.'); });
+}
+
+function renderPlanResults(d) {
+  document.getElementById('plan-results').style.display = 'block';
+  var splits = d.splits || {};
+
+  var rows = [];
+  if (splits.swim_fmt && splits.swim_fmt !== '—') rows.push(['🏊', 'Nado',    splits.swim_fmt, splits.swim_s]);
+  if (splits.t1_fmt   && splits.t1_fmt   !== '—') rows.push(['↔', 'T1',      splits.t1_fmt,  0]);
+  if (splits.bike_fmt && splits.bike_fmt !== '—') rows.push(['🚴', 'Bici',    splits.bike_fmt, splits.bike_s]);
+  if (splits.t2_fmt   && splits.t2_fmt   !== '—') rows.push(['↔', 'T2',      splits.t2_fmt,  0]);
+  if (splits.run_fmt  && splits.run_fmt  !== '—') rows.push(['🏃', 'Carrera', splits.run_fmt,  splits.run_s]);
+
+  var tableHtml = '<thead><tr><th colspan="2">Segmento</th><th>Tiempo</th></tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td>' + escHtml(r[1]) + '</td><td>' + escHtml(r[2]) + '</td></tr>'; }).join('') +
+    '<tr class="total-row"><td>⏱</td><td>TOTAL</td><td>' + escHtml(splits.total_fmt || '—') + '</td></tr></tbody>';
+  document.getElementById('splits-table-plan').innerHTML = tableHtml;
+
+  var pacing = d.pacing || {};
+  var pts = document.getElementById('pacing-targets-plan');
+  pts.innerHTML = '';
+  if (pacing.bike_power || pacing.bike_if) {
+    var ifPct = pacing.bike_if ? Math.round(pacing.bike_if * 100) : 0;
+    pts.innerHTML += '<div class="target-card">' +
+      '<div class="target-header"><span class="target-label">🚴 Potencia Bici</span>' +
+      '<span class="target-value">' + (pacing.bike_power || '—') + 'W</span></div>' +
+      '<div class="target-sub">IF objetivo: ' + (pacing.bike_if || '—') + ' (' + ifPct + '% FTP)</div>' +
+      '<div class="if-bar"><div class="if-fill" style="width:' + Math.min(100, ifPct) + '%"></div></div>' +
+      '</div>';
+  }
+  if (pacing.run_pace) {
+    pts.innerHTML += '<div class="target-card">' +
+      '<div class="target-header"><span class="target-label">🏃 Pace Carrera</span>' +
+      '<span class="target-value">' + escHtml(pacing.run_pace) + '</span></div>' +
+      '<div class="target-sub">Incluye factor de fatiga del triatlón</div>' +
+      '</div>';
+  }
+
+  var basis = document.getElementById('plan-basis');
+  basis.innerHTML = '<div class="chips">' +
+    '<div class="chip"><div class="chip-val" style="color:var(--blue)">' + (d.ctl_used || '—') + '</div><div class="chip-label">CTL usado</div></div>' +
+    '<div class="chip"><div class="chip-val">' + (d.tsb_used !== null ? d.tsb_used : '—') + '</div><div class="chip-label">TSB</div></div>' +
+    '<div class="chip"><div class="chip-val">' + (d.recovery || '—') + '</div><div class="chip-label">Recovery</div></div>' +
+    '<div class="chip"><div class="chip-val">' + (d.perf_mod || '—') + '</div><div class="chip-label">Modificador</div></div>' +
+    '</div>';
+}
+
+// ─── NUTRITION ───────────────────────────────────────────────────────────────
+function calcNutrition() {
+  var dur   = parseInt(document.getElementById('nutr-duration').value) || 120;
+  var wt    = parseFloat(document.getElementById('nutr-weight').value) || 70;
+  var sweat = parseFloat(document.getElementById('nutr-sweat').value) || 0.8;
+  var totalS = dur * 60;
+  var durH   = dur / 60;
+
+  var carbGH, carbG, fluidL, sodMgH, cal;
+  if (dur < 60)      carbGH = 30;
+  else if (dur < 90) carbGH = 45;
+  else if (dur < 150) carbGH = 60;
+  else if (dur < 240) carbGH = 75;
+  else                carbGH = 90;
+
+  carbG   = Math.round(carbGH * durH);
+  fluidL  = Math.round(sweat * durH * 10) / 10;
+  sodMgH  = Math.round(wt * 10);
+  cal     = Math.round(carbG * 4 + wt * 5);
+
+  document.getElementById('nutr-result').style.display = 'block';
+  document.getElementById('nutr-summary').innerHTML =
+    '<div class="nutr-stat"><div class="nutr-val">' + carbGH + '</div><div class="nutr-label">g Carbs/hora</div></div>' +
+    '<div class="nutr-stat"><div class="nutr-val">' + carbG  + '</div><div class="nutr-label">g Carbs Total</div></div>' +
+    '<div class="nutr-stat"><div class="nutr-val">' + fluidL + '</div><div class="nutr-label">L Fluidos</div></div>' +
+    '<div class="nutr-stat"><div class="nutr-val">' + sodMgH + '</div><div class="nutr-label">mg Sodio/h</div></div>';
+
+  var rules = [
+    'Objetivo: ' + carbGH + 'g carbohidratos/hora durante las partes activas.',
+    'Nunca experimentes el día de carrera — todo probado en training.',
+    'Si el estómago falla: agua sola 10 min, luego retoma geles.',
+    'Hidratación: ~' + Math.round(sweat * 500) + 'ml por hora en condiciones normales.',
+    'Calor > 28°C: +20% fluidos, switch a geles líquidos.',
+    carbGH > 60 ? 'Para cargas > 60g/h: usar mezcla glucosa:fructosa 2:1 (GI más eficiente).' : null,
+  ].filter(Boolean);
+  document.getElementById('nutr-rules').innerHTML = rules.map(function(r) {
+    return '<li class="nutr-row"><div class="nutr-detail">' + escHtml(r) + '</div></li>';
+  }).join('');
+
+  var warnings = [
+    '⚠ Nunca dejes pasar más de 45 min sin comer en bici.',
+    '⚠ Empieza a comer a los 15 min de bici — no esperes a tener hambre.',
+    '⚠ En carrera: geles líquidos + cola en los últimos km.',
+  ];
+  document.getElementById('nutr-warnings').innerHTML = warnings.map(function(w) {
+    return '<li>' + escHtml(w) + '</li>';
+  }).join('');
+}
+
+// ─── RESULT ──────────────────────────────────────────────────────────────────
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'res-dnf') {
+    document.getElementById('res-dnf-reason').style.display =
+      e.target.checked ? 'block' : 'none';
+  }
+});
+
+function parseTimeToSec(str) {
+  if (!str || !str.trim()) return null;
+  var parts = str.trim().split(':').map(Number);
+  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+  if (parts.length === 2) return parts[0]*60 + parts[1];
+  return parseInt(str) || null;
+}
+
+function saveResult() {
+  var payload = {
+    swim_s:            parseTimeToSec(document.getElementById('res-swim').value),
+    t1_s:              parseTimeToSec(document.getElementById('res-t1').value),
+    bike_s:            parseTimeToSec(document.getElementById('res-bike').value),
+    t2_s:              parseTimeToSec(document.getElementById('res-t2').value),
+    run_s:             parseTimeToSec(document.getElementById('res-run').value),
+    avg_power_bike_w:  parseInt(document.getElementById('res-power').value) || null,
+    avg_hr_run:        parseInt(document.getElementById('res-hr-run').value) || null,
+    avg_pace_run_s_km: parseTimeToSec(document.getElementById('res-run-pace').value),
+    overall_feeling:   parseInt(document.getElementById('res-feeling').value) || null,
+    dnf:               document.getElementById('res-dnf').checked,
+    dnf_reason:        document.getElementById('res-dnf-reason').value || null,
+    notes:             document.getElementById('res-notes').value || null,
+  };
+
+  fetch(API + '/races/record-result', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var msg = document.getElementById('res-saved-msg');
+      msg.style.display = 'inline';
+      msg.className = 'success-msg';
+      msg.textContent = '✓ Guardado — Tiempo: ' + (d.total_fmt || '—') +
+        (d.pacing_score ? ' · Exec: ' + d.pacing_score + '/100' : '') +
+        (d.pred_error_fmt ? ' · ' + d.pred_error_fmt + ' vs predicción' : '');
+
+      var box = document.getElementById('res-analysis-box');
+      var content = document.getElementById('res-analysis-content');
+      box.style.display = 'block';
+      content.innerHTML =
+        '<div class="chips">' +
+        '<div class="chip"><div class="chip-val" style="color:var(--acc)">' + (d.total_fmt || '—') + '</div><div class="chip-label">Tiempo final</div></div>' +
+        (d.pacing_score !== null ? '<div class="chip"><div class="chip-val" style="color:' + scoreColor(d.pacing_score) + '">' + d.pacing_score + '</div><div class="chip-label">Pacing Score</div></div>' : '') +
+        (d.pred_error_fmt ? '<div class="chip"><div class="chip-val" style="font-size:.9rem">' + escHtml(d.pred_error_fmt) + '</div><div class="chip-label">vs Predicción</div></div>' : '') +
+        '</div>';
+    })
+    .catch(function(){ alert('Error al guardar resultado.'); });
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function loadHistory() {
+  var container = document.getElementById('history-list');
+  container.innerHTML = '<div class="loader">Cargando...</div>';
+  fetch(API + '/races?limit=20', {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderHistory(d.races || d || []); })
+    .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar historial.</div>'; });
+}
+
+function renderHistory(races) {
+  var container = document.getElementById('history-list');
+  if (!races.length) { container.innerHTML = '<div class="empty-state">Sin carreras registradas.</div>'; return; }
+  container.innerHTML = races.map(function(r) {
+    var score = r.pacing_score || r.readiness_score;
+    var scoreHtml = score ? '<span class="score-pill ' + scoreCls(score) + '">' + score + '</span>' : '';
+    return '<div class="history-row">' +
+      '<div>' +
+        '<div class="hist-name">' + escHtml(r.race_name || r.name || '—') + '</div>' +
+        '<div class="hist-date">' + (r.race_date || r.date || '') + ' · ' + (r.distance || '—') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' + scoreHtml + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function scoreCls(s) {
+  return s >= 80 ? 'score-hi' : s >= 60 ? 'score-mid' : 'score-lo';
+}
+function scoreColor(s) {
+  return s >= 80 ? '#10B981' : s >= 60 ? '#F59E0B' : '#EF4444';
+}
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadDashboard();
+});
+</script>
+<script src="auth.js"></script>
+<script>KL.guard('race_day');</script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+  </main>
+</div>
+</body>
+</html>

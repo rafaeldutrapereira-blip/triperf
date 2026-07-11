@@ -1,0 +1,105 @@
+groups:
+  - name: labx_api
+    interval: 30s
+    rules:
+      # API caída
+      - alert: APIDown
+        expr: labx_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LabX API is DOWN"
+          description: "El endpoint /health de LabX no responde. Acción inmediata requerida."
+
+      # Alta tasa de errores 5xx
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{status=~"5.."}[5m])
+          /
+          rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta tasa de errores 5xx (>5%)"
+          description: "{{ $value | humanizePercentage }} de las requests están fallando."
+
+      # Latencia P95 elevada
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latencia P95 > 2s"
+          description: "El percentil 95 de latencia es {{ $value }}s — revisar queries lentas."
+
+      # Muchas requests simultáneas
+      - alert: HighConcurrentRequests
+        expr: active_requests > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Demasiadas requests simultáneas (>50)"
+          description: "Posible DDoS o leak de conexiones. Revisar."
+
+  - name: labx_database
+    interval: 30s
+    rules:
+      # DB caída
+      - alert: DatabaseDown
+        expr: labx_db_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Base de datos LabX no disponible"
+          description: "La API no puede conectarse a PostgreSQL."
+
+      # Redis caído
+      - alert: RedisDown
+        expr: labx_redis_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis no disponible"
+          description: "SSE, rate limiting y Celery se ven afectados."
+
+  - name: labx_system
+    interval: 60s
+    rules:
+      # Disco lleno
+      - alert: DiskSpaceHigh
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco casi lleno (< 15% libre)"
+          description: "Solo {{ $value | humanizePercentage }} de espacio libre. Limpiar backups o aumentar volumen."
+
+      # Memoria alta
+      - alert: MemoryUsageHigh
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de memoria > 85%"
+          description: "{{ $value | humanizePercentage }} de RAM en uso. Posible OOM cercano."
+
+      # CPU alta sostenida
+      - alert: CPUSustainedHigh
+        expr: rate(node_cpu_seconds_total{mode!="idle"}[5m]) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU > 90% por más de 15 minutos"
+          description: "Revisar procesos activos — posible loop infinito o tarea Celery bloqueada."

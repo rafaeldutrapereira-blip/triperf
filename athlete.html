@@ -1,0 +1,830 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Portal Atleta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--gold:#F0A500;--cyan:#0EA5E9;--aqua:#22D3EE;
+  --green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+  --sb-w:230px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+
+/* ── SIDEBAR ── */
+#sidebar{position:fixed;top:0;left:0;width:var(--sb-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:200;transition:transform var(--ease)}
+.sb-brand{padding:1.4rem 1.25rem .8rem;border-bottom:1px solid var(--border2)}
+.sb-logo svg.sbl-svg,.sb-topbar svg.sbl-svg{width:28px;height:28px;flex-shrink:0}.sb-logo{display:flex;align-items:center;gap:.55rem;font-family:'Oswald',sans-serif;font-size:1.35rem;font-weight:700;letter-spacing:.03em}.sb-logo svg.sbl-svg{width:36px;height:36px;flex-shrink:0}.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
+.sb-logo span{color:var(--orange)}
+.sb-tagline{font-size:.68rem;color:var(--dim);margin-top:.2rem;letter-spacing:.06em;text-transform:uppercase}
+.sb-nav{flex:1;overflow-y:auto;padding:1rem 0 .5rem}
+.sb-lnk{display:flex;align-items:center;gap:.7rem;padding:.55rem 1.25rem;font-size:.875rem;color:var(--muted);transition:background var(--ease),color var(--ease);cursor:pointer}
+.sb-lnk svg{width:17px;height:17px;flex-shrink:0;opacity:.7}
+.sb-lnk:hover,.sb-lnk.on{background:rgba(255,101,53,.1);color:var(--text)}
+.sb-lnk.on svg,.sb-lnk:hover svg{opacity:1;color:var(--orange)}
+.sb-sep{height:1px;background:var(--border2);margin:.5rem 1rem}
+.sb-foot{padding:1rem 1.25rem;border-top:1px solid var(--border2)}
+.sb-user{display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem;color:#fff;flex-shrink:0}
+.sb-uname{font-size:.85rem;font-weight:600}
+.sb-urole{font-size:.7rem;color:var(--dim)}
+.sb-logout{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--muted);padding:.4rem .6rem;border-radius:var(--radius-sm);transition:all var(--ease);width:100%}
+.sb-logout:hover{background:rgba(239,68,68,.1);color:var(--red)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.sb-topbar{display:none;position:fixed;top:0;left:0;right:0;height:52px;background:var(--surface);border-bottom:1px solid var(--border);align-items:center;padding:0 1rem;gap:.75rem;z-index:300}
+.sb-hamburger{width:28px;height:28px;display:flex;flex-direction:column;justify-content:space-around;padding:2px}
+.sb-hamburger span{display:block;height:2px;background:var(--text);border-radius:2px}
+@media(max-width:800px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  .sb-topbar{display:flex}
+  .sb-overlay.show{display:block}
+  .ath-wrap{margin-left:0!important;padding-top:60px!important}
+}
+
+/* ── LAYOUT ── */
+.ath-wrap{margin-left:var(--sb-w);padding:2rem 2rem 4rem;max-width:1100px}
+
+/* ── LOGIN WALL ── */
+.lw-backdrop{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+.lw-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;width:100%;max-width:380px}
+.lw-box h2{font-family:'Oswald',sans-serif;font-size:1.6rem;margin-bottom:.3rem}
+.lw-box p{font-size:.82rem;color:var(--muted);margin-bottom:1.5rem}
+.lw-logo{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;color:var(--dim)}
+.lw-logo span{color:var(--orange)}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.4rem;margin-bottom:1.25rem}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-hd h3{font-family:'Oswald',sans-serif;font-size:1rem;font-weight:500;letter-spacing:.04em;color:var(--text)}
+
+/* ── GRID ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ── KPI ── */
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.1rem;text-align:center}
+.kpi-val{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:600;color:var(--text);line-height:1}
+.kpi-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-top:.3rem}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:.15rem}
+
+/* ── TABS ── */
+.ath-tabs{display:flex;gap:.25rem;border-bottom:2px solid var(--border2);margin-bottom:1.75rem;overflow-x:auto}
+.ath-tab{padding:.55rem 1.1rem;font-size:.85rem;font-weight:500;color:var(--dim);border-radius:var(--radius-sm) var(--radius-sm) 0 0;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all var(--ease);white-space:nowrap}
+.ath-tab:hover{color:var(--muted)}
+.ath-tab.on{color:var(--orange);border-bottom-color:var(--orange);background:rgba(255,101,53,.05)}
+.tab-panel{display:none}.tab-panel.on{display:block}
+
+/* ── FORM ── */
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.55rem .75rem;font-size:.875rem;color:var(--text);font-family:inherit;transition:border-color var(--ease);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cyan)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:560px){.field-row{grid-template-columns:1fr}}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;letter-spacing:.02em;transition:all var(--ease)}
+.btn-primary{background:var(--orange);color:#fff}.btn-primary:hover{background:#e55a2b}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--cyan);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#0da271}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}.btn-danger:hover{background:rgba(239,68,68,.22)}
+.btn-sm{padding:.3rem .65rem;font-size:.75rem}
+.btn-cyan{background:rgba(14,165,233,.12);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}.btn-cyan:hover{background:rgba(14,165,233,.22)}
+
+/* ── SPORT CHIPS ── */
+.sport-chip{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:600;padding:.18rem .5rem;border-radius:20px;letter-spacing:.03em}
+.sp-swim{background:rgba(14,165,233,.15);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}
+.sp-bike{background:rgba(240,165,0,.15);color:var(--gold);border:1px solid rgba(240,165,0,.25)}
+.sp-run{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.sp-str{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.25)}
+
+/* ── PLAN CALENDAR ── */
+.plan-day{border:1px solid var(--border2);border-radius:var(--radius-sm);margin-bottom:.6rem;overflow:hidden}
+.plan-day-hd{display:flex;align-items:center;gap:.75rem;padding:.55rem .9rem;background:var(--surface2);cursor:pointer;user-select:none}
+.plan-day-date{font-family:'Oswald',sans-serif;font-size:.85rem;font-weight:500;min-width:95px}
+.plan-day-date.today{color:var(--orange)}
+.plan-day-date.past{color:var(--dim)}
+.plan-day-items{padding:.5rem .9rem .6rem}
+.plan-item{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--border2)}
+.plan-item:last-child{border-bottom:none}
+.plan-item-info{flex:1;font-size:.82rem}
+.plan-item-name{font-weight:600}
+.plan-item-meta{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.plan-item-notes{font-size:.72rem;color:var(--dim);margin-top:.15rem;font-style:italic}
+.done-badge{font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:20px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.pending-badge{font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:20px;background:rgba(240,165,0,.12);color:var(--gold);border:1px solid rgba(240,165,0,.2)}
+
+/* ── LOG MODAL ── */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;width:100%;max-width:480px;position:relative}
+.modal h2{font-family:'Oswald',sans-serif;font-size:1.25rem;margin-bottom:1.25rem}
+.modal-close{position:absolute;top:1rem;right:1rem;width:28px;height:28px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--muted)}
+.modal-close:hover{color:var(--text)}
+
+/* ── GARMIN ACTIVITY ── */
+.gact-row{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--border2)}
+.gact-row:last-child{border-bottom:none}
+.gact-info{flex:1;font-size:.82rem}
+.gact-name{font-weight:600}
+.gact-meta{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.gact-stat{font-size:.78rem;text-align:right;color:var(--muted)}
+
+/* ── PROFILE ── */
+.prof-field{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border2);font-size:.85rem}
+.prof-field:last-child{border-bottom:none}
+.prof-label{color:var(--muted);font-size:.78rem}
+
+/* ── TOAST ── */
+#ath-toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:600;display:flex;flex-direction:column;gap:.4rem;pointer-events:none;align-items:center}
+.toast-msg{background:var(--surface2);border:1px solid var(--border);padding:.55rem 1.1rem;border-radius:20px;font-size:.8rem;animation:fadeUp .22s ease}
+.toast-ok{border-color:rgba(16,185,129,.4);color:var(--green)}
+.toast-err{border-color:rgba(239,68,68,.4);color:var(--red)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── WEEK STRIP ── */
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-bottom:1.25rem}
+.week-day{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:.5rem .3rem;text-align:center;min-height:68px;cursor:pointer;transition:border-color var(--ease)}
+.week-day:hover{border-color:var(--cyan)}
+.week-day.today{border-color:var(--orange)}
+.week-day.has-plan{background:rgba(14,165,233,.05)}
+.wd-name{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--dim)}
+.wd-num{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:500;line-height:1;margin:.15rem 0}
+.wd-dot{width:6px;height:6px;border-radius:50%;margin:.2rem auto 0}
+.wd-dot.swim{background:var(--cyan)}
+.wd-dot.bike{background:var(--gold)}
+.wd-dot.run{background:var(--green)}
+.wd-dot.str{background:var(--purple)}
+
+/* ── EMPTY ── */
+.empty{padding:2rem 1rem;text-align:center;color:var(--dim);font-size:.85rem}
+
+/* ── ERROR MSG ── */
+.err-msg{color:var(--red);font-size:.78rem;margin-top:.4rem;display:none}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-brand">
+    <a href="landing.html" class="sb-logo" style="text-decoration:none;color:inherit"><svg class="sbl-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="sbl-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".6"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient></defs><g class="sbl-arcs"><circle cx="50" cy="50" r="44" stroke="#F0A500" stroke-width="1.5" stroke-dasharray="62 214" stroke-linecap="round" transform="rotate(28 50 50)" stroke-opacity=".7"/><circle cx="50" cy="50" r="40" stroke="#0EA5E9" stroke-width=".8" stroke-dasharray="23 231" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-opacity=".6"/></g><g class="sbl-flower"><circle cx="50" cy="50" r="13" stroke="rgba(255,101,53,.28)" stroke-width=".8" fill="rgba(255,101,53,.05)"/><circle cx="63" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="56.5" cy="38.8" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="43.5" cy="38.8" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/><circle cx="37" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="43.5" cy="61.2" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="56.5" cy="61.2" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/></g><circle cx="50" cy="50" r="9.5" fill="url(#sbl-glow)"/><circle cx="50" cy="50" r="6" fill="rgba(255,101,53,.12)" stroke="rgba(255,101,53,.35)" stroke-width=".8"/><text x="50" y="55.5" text-anchor="middle" font-size="7.5" font-family="serif" style="filter:drop-shadow(0 0 3px rgba(255,101,53,.8))">&#x1F33A;</text></svg> Lab<span>X</span></a>
+    <div class="sb-tagline">Portal Atleta</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-lnk on" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="sb-lnk" data-tab="plan" onclick="switchTab('plan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Mi Plan
+    </div>
+    <div class="sb-lnk" data-tab="history" onclick="switchTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Actividades Garmin
+    </div>
+    <div class="sb-lnk" data-tab="profile" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Mi Perfil
+    </div>
+  </div>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-avatar">A</div>
+      <div><div class="sb-uname" id="sb-name">Atleta</div><div class="sb-urole">Atleta</div></div>
+    </div>
+    <button class="sb-logout" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Cerrar sesión
+    </button>
+  </div>
+</nav>
+
+<div class="sb-overlay" id="sb-overlay" onclick="sbClose()"></div>
+<header class="sb-topbar">
+  <button class="sb-hamburger" onclick="sbToggle()"><span></span><span></span><span></span></button>
+  <a href="landing.html" style="display:flex;align-items:center;gap:.3rem;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#F0F9FF;flex:1"><svg class="sbl-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="stb-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".6"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient></defs><g class="sbl-arcs"><circle cx="50" cy="50" r="44" stroke="#F0A500" stroke-width="1.5" stroke-dasharray="62 214" stroke-linecap="round" transform="rotate(28 50 50)" stroke-opacity=".7"/><circle cx="50" cy="50" r="40" stroke="#0EA5E9" stroke-width=".8" stroke-dasharray="23 231" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-opacity=".6"/></g><g class="sbl-flower"><circle cx="50" cy="50" r="13" stroke="rgba(255,101,53,.28)" stroke-width=".8" fill="rgba(255,101,53,.05)"/><circle cx="63" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="56.5" cy="38.8" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="43.5" cy="38.8" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/><circle cx="37" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="43.5" cy="61.2" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="56.5" cy="61.2" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/></g><circle cx="50" cy="50" r="9.5" fill="url(#stb-glow)"/><circle cx="50" cy="50" r="6" fill="rgba(255,101,53,.12)" stroke="rgba(255,101,53,.35)" stroke-width=".8"/><text x="50" y="55.5" text-anchor="middle" font-size="7.5" font-family="serif" style="filter:drop-shadow(0 0 3px rgba(255,101,53,.8))">&#x1F33A;</text></svg> Lab<span style="color:#FF6535">X</span></a>
+</header>
+
+<!-- LOGIN WALL -->
+<div class="lw-backdrop" id="login-wall">
+  <div class="lw-box">
+    <div class="lw-logo">Lab<span>X</span> <span style="color:var(--dim);font-weight:300">Atleta</span></div>
+    <h2>Ingresa a tu portal</h2>
+    <p>Accede con las credenciales que te dio tu coach</p>
+    <div class="field"><label>Email</label><input type="email" id="lw-email" placeholder="tu@email.com" autocomplete="username"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="lw-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <p class="err-msg" id="lw-err">Email o contraseña incorrectos</p>
+    <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:.5rem">Entrar</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="ath-wrap" id="ath-app" style="display:none">
+
+  <!-- TABS -->
+  <div class="ath-tabs">
+    <button class="ath-tab on" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="ath-tab" data-tab="plan" onclick="switchTab('plan')">Mi Plan</button>
+    <button class="ath-tab" data-tab="history" onclick="switchTab('history')">Actividades Garmin</button>
+    <button class="ath-tab" data-tab="profile" onclick="switchTab('profile')">Mi Perfil</button>
+  </div>
+
+  <!-- TAB: DASHBOARD -->
+  <div class="tab-panel on" id="tab-dashboard">
+    <div style="margin-bottom:1.5rem">
+      <h1 style="font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:600" id="dash-greeting">Bienvenido</h1>
+      <p style="font-size:.82rem;color:var(--muted)" id="dash-sub">Semana de entrenamiento</p>
+    </div>
+
+    <!-- KPIs semana actual -->
+    <div class="grid3" style="margin-bottom:1.5rem">
+      <div class="kpi-card">
+        <div class="kpi-val" id="kpi-week-sessions">—</div>
+        <div class="kpi-lbl">Sesiones esta semana</div>
+        <div class="kpi-sub" id="kpi-week-done">0 completadas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" id="kpi-week-tss">—</div>
+        <div class="kpi-lbl">TSS planificado</div>
+        <div class="kpi-sub" id="kpi-week-tss-done">0 ejecutado</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" id="kpi-week-pct">—%</div>
+        <div class="kpi-lbl">Cumplimiento semana</div>
+        <div class="kpi-sub" id="kpi-week-streak"></div>
+      </div>
+    </div>
+
+    <!-- Semana visual -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-hd"><h3>Esta semana</h3><span id="dash-week-range" style="font-size:.75rem;color:var(--dim)"></span></div>
+      <div class="week-strip" id="week-strip"></div>
+    </div>
+
+    <!-- Próximos entrenamientos -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Próximas sesiones</h3><button class="btn btn-ghost btn-sm" onclick="switchTab('plan')">Ver plan completo</button></div>
+        <div id="dash-upcoming"><div class="empty">Sin sesiones próximas</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Últimas actividades Garmin</h3><button class="btn btn-ghost btn-sm" onclick="switchTab('history')">Ver todo</button></div>
+        <div id="dash-garmin-recent"><div class="empty">Cargando actividades...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: MI PLAN -->
+  <div class="tab-panel" id="tab-plan">
+    <div class="card" style="margin-bottom:1rem;padding:.85rem 1.1rem">
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <label style="font-size:.75rem;color:var(--muted)">Desde</label>
+          <input type="date" id="plan-start" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .6rem;font-size:.82rem;color:var(--text);outline:none">
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <label style="font-size:.75rem;color:var(--muted)">Hasta</label>
+          <input type="date" id="plan-end" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .6rem;font-size:.82rem;color:var(--text);outline:none">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadPlan()">Filtrar</button>
+      </div>
+    </div>
+    <div id="plan-list"></div>
+  </div>
+
+  <!-- TAB: ACTIVIDADES GARMIN -->
+  <div class="tab-panel" id="tab-history">
+    <div class="card" style="margin-bottom:1rem;padding:.85rem 1.1rem">
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;justify-content:space-between">
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="date" id="gact-start" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .6rem;font-size:.82rem;color:var(--text);outline:none">
+          <span style="color:var(--dim)">→</span>
+          <input type="date" id="gact-end" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .6rem;font-size:.82rem;color:var(--text);outline:none">
+          <button class="btn btn-ghost btn-sm" onclick="loadGarminActivities()">Filtrar</button>
+        </div>
+        <div id="gact-status" style="font-size:.75rem;color:var(--dim)"></div>
+      </div>
+    </div>
+    <div id="gact-list"></div>
+  </div>
+
+  <!-- TAB: MI PERFIL -->
+  <div class="tab-panel" id="tab-profile">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Mis datos</h3></div>
+        <div id="prof-data">
+          <div class="prof-field"><span class="prof-label">Nombre</span><span id="prof-nombre">—</span></div>
+          <div class="prof-field"><span class="prof-label">Email</span><span id="prof-email">—</span></div>
+          <div class="prof-field"><span class="prof-label">Plan</span><span id="prof-plan">—</span></div>
+        </div>
+        <div style="margin-top:1rem">
+          <div class="field"><label>Nueva contraseña</label><input type="password" id="prof-newpass" placeholder="dejar vacío para no cambiar" autocomplete="new-password"></div>
+          <button class="btn btn-ghost btn-sm" onclick="saveProfile()">Guardar contraseña</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Conexión Garmin</h3></div>
+        <div id="garmin-status-block">
+          <div id="garmin-connected-view" style="display:none">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+              <span style="color:var(--green);font-size:1rem">●</span>
+              <span style="font-size:.85rem;font-weight:600;color:var(--green)">Conectado</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem" id="garmin-email-shown"></div>
+            <button class="btn btn-danger btn-sm" onclick="disconnectGarmin()">Desconectar Garmin</button>
+          </div>
+          <div id="garmin-disconnected-view">
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Conecta tu Garmin Connect para sincronizar entrenamientos asignados y ver tu historial aquí.</p>
+            <div class="field"><label>Email Garmin</label><input type="email" id="garmin-email-in" placeholder="tu@gmail.com"></div>
+            <div class="field"><label>Contraseña Garmin</label><input type="password" id="garmin-pass-in" placeholder="••••••••" autocomplete="off"></div>
+            <button class="btn btn-cyan" onclick="connectGarmin()">Conectar Garmin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /ath-app -->
+
+<!-- MODAL: Registrar resultado -->
+<div class="modal-backdrop" id="modal-log">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-log')">✕</button>
+    <h2>Registrar entrenamiento</h2>
+    <input type="hidden" id="log-assign-id">
+    <div id="log-workout-info" style="background:var(--surface2);border-radius:var(--radius-sm);padding:.7rem .9rem;margin-bottom:1rem;font-size:.85rem"></div>
+    <div class="field-row">
+      <div class="field" style="margin:0"><label>Distancia real (km)</label><input type="number" id="log-dist" step="0.1" min="0" placeholder="0.0"></div>
+      <div class="field" style="margin:0"><label>Duración real (min)</label><input type="number" id="log-dur" min="0" placeholder="0"></div>
+    </div>
+    <div class="field"><label>TSS real</label><input type="number" id="log-tss" min="0" placeholder="0"></div>
+    <div class="field"><label>Notas / sensaciones</label><textarea id="log-notes" rows="2" placeholder="¿Cómo te sentiste?"></textarea></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-ghost" onclick="closeModal('modal-log')">Cancelar</button>
+      <button class="btn btn-green" onclick="submitLog()">Marcar completado ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="ath-toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var API = 'http://localhost:8000/api';
+var _token = null;
+var _me    = null;
+var _plan  = [];
+var _logs  = {};  // assignmentId → log
+
+/* ══ AUTH ══════════════════════════════════════════════════ */
+function getToken(){ return _token || localStorage.getItem('lx_ath_portal_token'); }
+function setToken(t){ _token=t; localStorage.setItem('lx_ath_portal_token',t); }
+function clearToken(){ _token=null; localStorage.removeItem('lx_ath_portal_token'); localStorage.removeItem('lx_ath_portal_me'); }
+
+async function apiGet(path){
+  var r = await fetch(API+path,{headers:{Authorization:'Bearer '+getToken()}});
+  if(r.status===401){ doLogout(); throw new Error('Sesión expirada'); }
+  if(!r.ok){ var d=await r.json(); throw new Error(d.detail||'Error '+r.status); }
+  return r.json();
+}
+async function apiPost(path,body){
+  var r = await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+getToken()},body:JSON.stringify(body)});
+  if(r.status===401){ doLogout(); throw new Error('Sesión expirada'); }
+  if(!r.ok){ var d=await r.json(); throw new Error(d.detail||'Error '+r.status); }
+  return r.json();
+}
+async function apiPatch(path,body){
+  var r = await fetch(API+path,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+getToken()},body:JSON.stringify(body)});
+  if(!r.ok){ var d=await r.json(); throw new Error(d.detail||'Error'); }
+  return r.json();
+}
+async function apiDelete(path){
+  var r = await fetch(API+path,{method:'DELETE',headers:{Authorization:'Bearer '+getToken()}});
+  if(!r.ok && r.status!==204){ var d=await r.json(); throw new Error(d.detail||'Error'); }
+  return true;
+}
+
+/* ══ TOAST ══════════════════════════════════════════════════ */
+function toast(msg, type){
+  var el = document.getElementById('ath-toast');
+  var d  = document.createElement('div');
+  d.className = 'toast-msg' + (type==='err'?' toast-err':type==='ok'?' toast-ok':'');
+  d.textContent = msg;
+  el.appendChild(d);
+  setTimeout(function(){ d.remove(); }, 3000);
+}
+
+/* ══ MODALES ══════════════════════════════════════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+window.closeModal = function(id){ document.getElementById(id).classList.remove('open'); };
+
+/* ══ LOGIN ══════════════════════════════════════════════════ */
+window.doLogin = async function(){
+  var email = document.getElementById('lw-email').value.trim();
+  var pass  = document.getElementById('lw-pass').value;
+  var errEl = document.getElementById('lw-err');
+  errEl.style.display = 'none';
+  if(!email||!pass) return;
+  try{
+    var r = await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+    if(!r.ok){ errEl.style.display='block'; return; }
+    var data = await r.json();
+    setToken(data.access_token);
+    _me = data;
+    localStorage.setItem('lx_ath_portal_me', JSON.stringify(data));
+    showApp();
+  }catch(e){ errEl.style.display='block'; }
+};
+
+window.doLogout = function(){
+  clearToken();
+  _me=null; _plan=[]; _logs={};
+  document.getElementById('ath-app').style.display='none';
+  document.getElementById('login-wall').style.display='flex';
+};
+
+/* ══ INIT ══════════════════════════════════════════════════ */
+function init(){
+  var saved = localStorage.getItem('lx_ath_portal_me');
+  var tok   = getToken();
+  if(tok && saved){
+    try{ _me = JSON.parse(saved); }catch(e){}
+    showApp();
+  } else {
+    document.getElementById('login-wall').style.display='flex';
+  }
+}
+
+function showApp(){
+  document.getElementById('login-wall').style.display='none';
+  document.getElementById('ath-app').style.display='block';
+  var nombre = (_me&&_me.nombre)||'Atleta';
+  document.getElementById('sb-name').textContent   = nombre;
+  document.getElementById('sb-avatar').textContent = nombre.charAt(0).toUpperCase();
+  loadDashboard();
+}
+
+/* ══ TABS ══════════════════════════════════════════════════ */
+window.switchTab = function(name){
+  document.querySelectorAll('.ath-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===name); });
+  document.querySelectorAll('.sb-lnk').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===name); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('on', p.id==='tab-'+name); });
+  if(name==='plan')     loadPlan();
+  if(name==='history')  loadGarminActivities();
+  if(name==='profile')  loadProfile();
+};
+
+/* ══ HELPERS ══════════════════════════════════════════════════ */
+function esc(s){ if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addDays(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function fmtDate(iso){
+  var d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+}
+function sportCls(s){ return {swim:'sp-swim',bike:'sp-bike',run:'sp-run',str:'sp-str'}[s]||''; }
+function sportIcon(s){ return {swim:'🏊',bike:'🚴',run:'🏃',str:'💪'}[s]||'🏋'; }
+function sportLabel(s){ return {swim:'Natación',bike:'Ciclismo',run:'Carrera',str:'Fuerza'}[s]||s; }
+function weekStart(iso){
+  var d=new Date(iso+'T00:00:00');
+  var day=d.getDay(); // 0=Sun
+  var diff=day===0?-6:1-day; // lunes
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+function fmtDist(km){ return km ? km.toFixed(1)+' km' : '—'; }
+function fmtDur(min){ if(!min) return '—'; var h=Math.floor(min/60); var m=min%60; return h?h+'h '+m+'min':m+' min'; }
+function fmtDurSecs(secs){ if(!secs) return '—'; return fmtDur(Math.round(secs/60)); }
+
+/* ══ DASHBOARD ══════════════════════════════════════════════════ */
+async function loadDashboard(){
+  var today = todayISO();
+  var wStart = weekStart(today);
+  var wEnd   = addDays(wStart, 6);
+
+  document.getElementById('dash-greeting').textContent = 'Hola, ' + ((_me&&_me.nombre)||'Atleta') + ' 👋';
+  document.getElementById('dash-sub').textContent = 'Semana del ' + fmtDate(wStart) + ' al ' + fmtDate(wEnd);
+
+  // Cargar plan 30 días + logs
+  try{
+    var [plan, logs] = await Promise.all([
+      apiGet('/athlete/plan?start='+addDays(today,-1)+'&end='+addDays(today,30)),
+      apiGet('/athlete/log')
+    ]);
+    _plan = plan || [];
+    _logs = {};
+    (logs||[]).forEach(function(l){ _logs[l.assignment_id] = l; });
+
+    // KPIs semana
+    var weekPlan = _plan.filter(function(a){ return a.date_iso>=wStart && a.date_iso<=wEnd; });
+    var weekDone = weekPlan.filter(function(a){ return _logs[a.id]; });
+    var weekTSS  = weekPlan.reduce(function(s,a){ return s+(a.template.tss||0); },0);
+    var weekTSSDone = weekDone.reduce(function(s,a){ var l=_logs[a.id]; return s+(l&&l.tss_real||0); },0);
+    var pct = weekPlan.length ? Math.round(weekDone.length/weekPlan.length*100) : 0;
+
+    document.getElementById('kpi-week-sessions').textContent = weekPlan.length;
+    document.getElementById('kpi-week-done').textContent     = weekDone.length + ' completadas';
+    document.getElementById('kpi-week-tss').textContent      = weekTSS || '—';
+    document.getElementById('kpi-week-tss-done').textContent = weekTSSDone ? weekTSSDone+' ejecutado' : '—';
+    document.getElementById('kpi-week-pct').textContent      = pct + '%';
+
+    renderWeekStrip(wStart, weekPlan);
+    renderUpcoming(today);
+  }catch(e){ console.error('Dashboard plan error:', e); }
+
+  // Actividades Garmin recientes (últimas 5)
+  loadGarminRecent();
+}
+
+function renderWeekStrip(wStart, weekPlan){
+  var strip = document.getElementById('week-strip');
+  var today = todayISO();
+  var days  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  strip.innerHTML = '';
+  for(var i=0;i<7;i++){
+    var iso = addDays(wStart,i);
+    var dayPlan = weekPlan.filter(function(a){ return a.date_iso===iso; });
+    var isToday = iso===today;
+    var isPast  = iso<today;
+    var div = document.createElement('div');
+    div.className = 'week-day' + (isToday?' today':'') + (dayPlan.length?' has-plan':'');
+    div.onclick = (function(d){ return function(){ switchTab('plan'); }; })(iso);
+    var num = new Date(iso+'T00:00:00').getDate();
+    var dots = dayPlan.map(function(a){ return '<div class="wd-dot '+a.template.sport+'"></div>'; }).join('');
+    div.innerHTML = '<div class="wd-name">'+days[i]+'</div>'
+      +'<div class="wd-num" style="color:'+(isToday?'var(--orange)':isPast?'var(--dim)':'var(--text)')+'">'+num+'</div>'
+      +dots;
+    strip.appendChild(div);
+  }
+  document.getElementById('dash-week-range').textContent = wStart + ' / ' + addDays(wStart,6);
+}
+
+function renderUpcoming(today){
+  var upcoming = _plan.filter(function(a){ return a.date_iso>=today; }).slice(0,5);
+  var el = document.getElementById('dash-upcoming');
+  if(!upcoming.length){ el.innerHTML='<div class="empty">Sin sesiones próximas</div>'; return; }
+  el.innerHTML = upcoming.map(function(a){
+    var done = !!_logs[a.id];
+    return '<div style="display:flex;gap:.6rem;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border2)">'
+      +'<span class="sport-chip '+sportCls(a.template.sport)+'">'+sportIcon(a.template.sport)+'</span>'
+      +'<div style="flex:1;font-size:.8rem"><strong>'+esc(a.template.nombre)+'</strong>'
+      +'<div style="font-size:.72rem;color:var(--dim)">'+fmtDate(a.date_iso)
+      +(a.template.dist_km?' · '+fmtDist(a.template.dist_km):'')
+      +(a.template.dur_min?' · '+fmtDur(a.template.dur_min):'')+'</div></div>'
+      +(done?'<span class="done-badge">✓</span>':'<button class="btn btn-ghost btn-sm" onclick="openLogModal(\''+a.id+'\')">Registrar</button>')
+      +'</div>';
+  }).join('');
+}
+
+/* ══ PLAN ══════════════════════════════════════════════════ */
+window.loadPlan = async function(){
+  var today = todayISO();
+  if(!document.getElementById('plan-start').value) document.getElementById('plan-start').value = addDays(today,-7);
+  if(!document.getElementById('plan-end').value)   document.getElementById('plan-end').value   = addDays(today,30);
+  var start = document.getElementById('plan-start').value;
+  var end   = document.getElementById('plan-end').value;
+  var el    = document.getElementById('plan-list');
+  el.innerHTML = '<div class="empty">Cargando...</div>';
+  try{
+    var [plan, logs] = await Promise.all([
+      apiGet('/athlete/plan?start='+start+'&end='+end),
+      apiGet('/athlete/log')
+    ]);
+    _plan = plan || [];
+    _logs = {};
+    (logs||[]).forEach(function(l){ _logs[l.assignment_id]=l; });
+
+    if(!_plan.length){ el.innerHTML='<div class="empty">Sin entrenamientos en este período</div>'; return; }
+
+    // Agrupar por fecha
+    var byDate = {};
+    _plan.forEach(function(a){
+      if(!byDate[a.date_iso]) byDate[a.date_iso]=[];
+      byDate[a.date_iso].push(a);
+    });
+
+    el.innerHTML = Object.keys(byDate).sort().map(function(date){
+      var items = byDate[date];
+      var isPast  = date < todayISO();
+      var isToday = date === todayISO();
+      var dateClass = isToday?'today':isPast?'past':'';
+      return '<div class="plan-day">'
+        +'<div class="plan-day-hd">'
+        +'<div class="plan-day-date '+dateClass+'">'+(isToday?'HOY — ':'')+fmtDate(date)+'</div>'
+        +items.map(function(a){ return '<span class="sport-chip '+sportCls(a.template.sport)+'">'+sportIcon(a.template.sport)+'</span>'; }).join('')
+        +'</div>'
+        +'<div class="plan-day-items">'
+        +items.map(function(a){
+          var log = _logs[a.id];
+          return '<div class="plan-item">'
+            +'<span class="sport-chip '+sportCls(a.template.sport)+'" style="align-self:flex-start;margin-top:.1rem">'+sportLabel(a.template.sport)+'</span>'
+            +'<div class="plan-item-info">'
+            +'<div class="plan-item-name">'+esc(a.template.nombre)+'</div>'
+            +'<div class="plan-item-meta">'
+            +(a.template.dist_km?fmtDist(a.template.dist_km)+' &nbsp;':'')
+            +(a.template.dur_min?fmtDur(a.template.dur_min)+' &nbsp;':'')
+            +(a.template.tss?'TSS '+a.template.tss:'')
+            +'</div>'
+            +(a.template.notas||a.notas?'<div class="plan-item-notes">📋 '+esc(a.template.notas||a.notas)+'</div>':'')
+            +(log?'<div style="font-size:.72rem;color:var(--green);margin-top:.2rem">✓ Completado'
+              +(log.dist_real?' · '+fmtDist(log.dist_real):'')
+              +(log.dur_real?' · '+fmtDur(log.dur_real):'')
+              +(log.tss_real?' · TSS '+log.tss_real:'')
+              +(log.notas?'<br><span style="color:var(--dim)">'+esc(log.notas)+'</span>':'')
+              +'</div>':'')
+            +'</div>'
+            +(log
+              ?'<span class="done-badge">✓ Hecho</span>'
+              :'<button class="btn btn-green btn-sm" onclick="openLogModal(\''+a.id+'\')">Completar</button>'
+            )
+            +'</div>';
+        }).join('')
+        +'</div></div>';
+    }).join('');
+  }catch(e){ el.innerHTML='<div class="empty" style="color:var(--red)">Error: '+esc(e.message)+'</div>'; }
+};
+
+/* ══ LOG MODAL ══════════════════════════════════════════════════ */
+window.openLogModal = function(assignId){
+  var a = _plan.find(function(x){ return x.id===assignId; });
+  if(!a) return;
+  document.getElementById('log-assign-id').value = assignId;
+  document.getElementById('log-workout-info').innerHTML =
+    '<strong>'+esc(a.template.nombre)+'</strong> — '+fmtDate(a.date_iso)+'<br>'
+    +'<span style="color:var(--muted);font-size:.78rem">'
+    +sportLabel(a.template.sport)
+    +(a.template.dist_km?' · '+fmtDist(a.template.dist_km):'')
+    +(a.template.dur_min?' · '+fmtDur(a.template.dur_min):'')
+    +(a.template.tss?' · TSS '+a.template.tss:'')
+    +'</span>';
+  // Pre-fill with planned values
+  document.getElementById('log-dist').value  = a.template.dist_km||'';
+  document.getElementById('log-dur').value   = a.template.dur_min||'';
+  document.getElementById('log-tss').value   = a.template.tss||'';
+  document.getElementById('log-notes').value = '';
+  openModal('modal-log');
+};
+
+window.submitLog = async function(){
+  var assignId = document.getElementById('log-assign-id').value;
+  var dist  = parseFloat(document.getElementById('log-dist').value)||null;
+  var dur   = parseInt(document.getElementById('log-dur').value)||null;
+  var tss   = parseInt(document.getElementById('log-tss').value)||null;
+  var notes = document.getElementById('log-notes').value.trim()||null;
+  try{
+    await apiPost('/athlete/log',{assignment_id:assignId,dist_real:dist,dur_real:dur,tss_real:tss,notas:notes,completado:true});
+    toast('Entrenamiento registrado ✓','ok');
+    closeModal('modal-log');
+    loadPlan();
+    loadDashboard();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+};
+
+/* ══ GARMIN ACTIVITIES ══════════════════════════════════════════════════ */
+async function loadGarminRecent(){
+  var el = document.getElementById('dash-garmin-recent');
+  try{
+    var end   = todayISO();
+    var start = addDays(end,-14);
+    var data  = await apiGet('/athlete/garmin/activities?start='+start+'&end='+end+'&limit=5');
+    if(!data||!data.length){ el.innerHTML='<div class="empty">Sin actividades recientes</div>'; return; }
+    el.innerHTML = data.map(function(a){ return garminActivityRow(a); }).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty" style="font-size:.75rem;color:var(--dim)">Garmin no conectado o sin actividades</div>';
+  }
+}
+
+window.loadGarminActivities = async function(){
+  var el = document.getElementById('gact-list');
+  var statusEl = document.getElementById('gact-status');
+  var end   = todayISO();
+  var start = addDays(end,-30);
+  if(!document.getElementById('gact-start').value) document.getElementById('gact-start').value = start;
+  if(!document.getElementById('gact-end').value)   document.getElementById('gact-end').value   = end;
+  start = document.getElementById('gact-start').value;
+  end   = document.getElementById('gact-end').value;
+
+  el.innerHTML='<div class="empty">Cargando actividades desde Garmin Connect...</div>';
+  statusEl.textContent='';
+  try{
+    var data = await apiGet('/athlete/garmin/activities?start='+start+'&end='+end+'&limit=50');
+    if(!data||!data.length){
+      el.innerHTML='<div class="empty">Sin actividades en este período</div>'; return;
+    }
+    statusEl.textContent = data.length + ' actividades';
+    var html = '<div class="card">';
+    var totalDist=0, totalDur=0;
+    data.forEach(function(a){
+      totalDist += (a.distance_km||0);
+      totalDur  += (a.duration_secs||0);
+    });
+    html += '<div style="display:flex;gap:1.5rem;padding:.5rem 0 1rem;border-bottom:1px solid var(--border2);margin-bottom:.5rem">'
+      +'<div><div style="font-family:\'Oswald\',sans-serif;font-size:1.5rem">'+totalDist.toFixed(1)+'<span style="font-size:.8rem;color:var(--dim)"> km</span></div><div style="font-size:.7rem;color:var(--dim)">Total distancia</div></div>'
+      +'<div><div style="font-family:\'Oswald\',sans-serif;font-size:1.5rem">'+Math.round(totalDur/3600)+'<span style="font-size:.8rem;color:var(--dim)"> h</span></div><div style="font-size:.7rem;color:var(--dim)">Total tiempo</div></div>'
+      +'<div><div style="font-family:\'Oswald\',sans-serif;font-size:1.5rem">'+data.length+'</div><div style="font-size:.7rem;color:var(--dim)">Actividades</div></div>'
+      +'</div>';
+    html += data.map(function(a){ return garminActivityRow(a); }).join('');
+    html += '</div>';
+    el.innerHTML = html;
+  }catch(e){
+    el.innerHTML='<div class="card"><div class="empty" style="color:var(--red)">Error: '+esc(e.message)+'<br><span style="font-size:.75rem;color:var(--dim)">Verifica que tus credenciales Garmin estén configuradas en Mi Perfil</span></div></div>';
+  }
+};
+
+function garminActivityRow(a){
+  var sportMap = {running:'run',cycling:'bike',lap_swimming:'swim',swimming:'swim',strength_training:'str',open_water_swimming:'swim',road_biking:'bike',mountain_biking:'bike'};
+  var sport = sportMap[(a.sport||'').toLowerCase()] || 'run';
+  var date  = (a.start_time||'').slice(0,10);
+  return '<div class="gact-row">'
+    +'<span class="sport-chip '+sportCls(sport)+'">'+sportIcon(sport)+'</span>'
+    +'<div class="gact-info">'
+    +'<div class="gact-name">'+esc(a.name||a.activity_name||'Actividad')+'</div>'
+    +'<div class="gact-meta">'+(date?fmtDate(date):'')
+    +(a.average_hr?' · ❤️ '+Math.round(a.average_hr)+' bpm':'')+'</div>'
+    +'</div>'
+    +'<div class="gact-stat">'
+    +(a.distance_km?'<div>'+a.distance_km.toFixed(2)+' km</div>':'')
+    +(a.duration_secs?'<div style="color:var(--dim)">'+fmtDurSecs(a.duration_secs)+'</div>':'')
+    +'</div>'
+    +'</div>';
+}
+
+/* ══ PROFILE ══════════════════════════════════════════════════ */
+window.loadProfile = async function(){
+  try{
+    var me = await apiGet('/athlete/profile');
+    document.getElementById('prof-nombre').textContent = me.nombre;
+    document.getElementById('prof-email').textContent  = me.email;
+    document.getElementById('prof-plan').textContent   = me.plan_nivel;
+    if(me.has_garmin){
+      document.getElementById('garmin-connected-view').style.display    = '';
+      document.getElementById('garmin-disconnected-view').style.display = 'none';
+      document.getElementById('garmin-email-shown').textContent = me.garmin_email;
+    }else{
+      document.getElementById('garmin-connected-view').style.display    = 'none';
+      document.getElementById('garmin-disconnected-view').style.display = '';
+    }
+  }catch(e){ toast('Error cargando perfil','err'); }
+};
+
+window.saveProfile = async function(){
+  var pass = document.getElementById('prof-newpass').value.trim();
+  if(!pass){ toast('Ingresa la nueva contraseña','err'); return; }
+  try{
+    await apiPatch('/athlete/profile',{password:pass});
+    document.getElementById('prof-newpass').value='';
+    toast('Contraseña actualizada','ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+};
+
+window.connectGarmin = async function(){
+  var email = document.getElementById('garmin-email-in').value.trim();
+  var pass  = document.getElementById('garmin-pass-in').value.trim();
+  if(!email||!pass){ toast('Email y contraseña requeridos','err'); return; }
+  toast('Verificando credenciales Garmin...','ok');
+  try{
+    await apiPost('/athlete/garmin-credentials',{garmin_email:email,garmin_password:pass});
+    toast('Garmin conectado correctamente','ok');
+    loadProfile();
+  }catch(e){ toast('Error Garmin: '+e.message,'err'); }
+};
+
+window.disconnectGarmin = async function(){
+  if(!confirm('¿Desconectar Garmin? Ya no se sincronizarán entrenamientos automáticamente.')) return;
+  try{
+    await apiDelete('/athlete/garmin-credentials');
+    toast('Garmin desconectado','ok');
+    loadProfile();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+};
+
+/* ══ SIDEBAR MOBILE ══════════════════════════════════════════════════ */
+window.sbToggle = function(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-overlay').classList.toggle('show'); };
+window.sbClose  = function(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-overlay').classList.remove('show'); };
+
+/* ══ BOOT ══════════════════════════════════════════════════ */
+window.addEventListener('load', init);
+
+})();
+</script>
+</body>
+</html>

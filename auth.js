@@ -1,48 +1,56 @@
-/* KonaLabs — Authentication & Module Access */
+/* LabX — Authentication & Module Access — unified with Coach API */
 (function(w){
 
-  var USERS = {
-    rafael: {
-      pw:       'kona2026',
-      name:     'Rafael Dutra',
-      initials: 'R',
-      role:     'Ironman 70.3',
-      plan:     'elite'
-    },
-    demo: {
-      pw:       'demo123',
-      name:     'Atleta Demo',
-      initials: 'A',
-      role:     'Triatleta',
-      plan:     'basic'
-    },
-    pro: {
-      pw:       'pro2026',
-      name:     'Usuario Pro',
-      initials: 'U',
-      role:     'Ironman 70.3',
-      plan:     'pro'
-    }
+  /* En producción (servido desde FastAPI) la origin es la misma;
+     en desarrollo local los HTML se abren como file:// → usa localhost:8000 */
+  var API_BASE = (window.location.protocol === 'file:')
+    ? 'http://localhost:8000/api'
+    : window.location.origin + '/api';
+
+  /* Mapa shorthand → email para la Coach API */
+  var USER_EMAIL = {
+    'rafael': 'rafael@labx.com',
+    'demo':   'demo@labx.com'
   };
 
-  var PLANS = {
-    basic: {
-      label:   'Básico',
-      color:   '#0EA5E9',
-      modules: ['dashboard', 'athlete_profile']
-    },
-    pro: {
-      label:   'Pro',
-      color:   '#A855F7',
-      modules: ['dashboard', 'athlete_profile', 'training_plan', 'nutrition']
-    },
-    elite: {
-      label:   'Élite',
-      color:   '#F0A500',
-      modules: ['dashboard', 'athlete_profile', 'training_plan', 'nutrition',
-                'blood_labs', 'training_detail', 'race_predictor']
-    }
+  /* Fallback hardcoded (cuando API no disponible) */
+  var USERS = {
+    rafael: { pw:'labx2026', name:'Rafael Dutra',  initials:'RD', role:'Ironman 70.3', plan:'elite' },
+    demo:   { pw:'demo123',  name:'Coach Demo',    initials:'CD', role:'Triatleta',    plan:'basic' },
+    pro:    { pw:'pro2026',  name:'Usuario Pro',   initials:'UP', role:'Ironman 70.3', plan:'pro'   }
   };
+
+  /* plan_nivel API → plan key local */
+  var PLAN_MAP = { elite:'elite', pro:'pro', basico:'basic' };
+
+  /* rol API → etiqueta amigable */
+  var ROLE_LABELS = {
+    admin:   'Admin · Coach',
+    coach:   'Coach',
+    athlete: 'Atleta'
+  };
+
+  /* PLANS derivado de LX_ROUTES para evitar duplicación.
+     Si routes.config.js no cargó, usar defaults seguros. */
+  var PLANS = (function(){
+    if(window.LX_ROUTES) {
+      var out = {};
+      ['basic','pro','elite'].forEach(function(p){
+        var meta = window.LX_ROUTES.planMeta[p] || {};
+        out[p] = {
+          label:   meta.label  || p,
+          color:   meta.color  || '#0EA5E9',
+          modules: window.LX_ROUTES.allowedForPlan(p)
+        };
+      });
+      return out;
+    }
+    return {
+      basic: { label:'Básico', color:'#0EA5E9', modules:['dashboard','athlete_profile'] },
+      pro:   { label:'Pro',    color:'#A855F7', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','race_predictor','year_in_review','community','recovery','mental','race_day'] },
+      elite: { label:'Élite',  color:'#F0A500', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','blood_labs','training_detail','race_predictor','year_in_review','community','recovery','mental','race_day','ai_coach','adaptive','indoor_workout'] }
+    };
+  }());
 
   var MODULES = {
     dashboard:       'dashboard.html',
@@ -51,7 +59,10 @@
     nutrition:       'nutrition.html',
     blood_labs:      'blood_labs.html',
     training_detail: 'training_detail.html',
-    race_predictor:  'race_predictor.html'
+    race_predictor:  'race_predictor.html',
+    coach:           'coach.html',
+    indoor_workout:  'indoor_workout.html',
+    community:       'community.html'
   };
 
   /* ── Session ──────────────────────────────────────────────── */
@@ -71,67 +82,130 @@
   function clearSession() {
     sessionStorage.removeItem('kl_s');
     localStorage.removeItem('kl_s');
+    /* limpiar también tokens de la Coach API */
+    localStorage.removeItem('lx_co_token');
+    localStorage.removeItem('lx_co_rol');
+    localStorage.removeItem('lx_co_nombre');
+    localStorage.removeItem('lx_ath_token');
+    localStorage.removeItem('lx_ath_portal_token');
   }
 
-  /* ── Auth API ─────────────────────────────────────────────── */
-  function login(username, password, remember) {
-    var u = USERS[username.toLowerCase().trim()];
-    if (!u || u.pw !== password) return { ok: false };
-    var data = {
-      username: username.toLowerCase(),
-      name:     u.name,
-      initials: u.initials,
-      role:     u.role,
-      plan:     u.plan,
-      ts:       Date.now()
-    };
-    saveSession(data, remember);
-    return { ok: true, session: data };
+  function _initials(name) {
+    if (!name) return 'U';
+    return name.split(' ').slice(0,2).map(function(w){ return w[0] || ''; }).join('').toUpperCase();
+  }
+
+  /* ── Auth — API primero, hardcoded de respaldo ───────────── */
+  function login(usernameOrEmail, password, remember) {
+    var input = (usernameOrEmail || '').toLowerCase().trim();
+    var email = USER_EMAIL[input] || input; /* si ya es email, úsalo directo */
+
+    return fetch(API_BASE + '/auth/login', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body:    JSON.stringify({ email: email, password: password })
+    })
+    .then(function(r) {
+      if (!r.ok) return Promise.reject('bad_credentials');
+      return r.json();
+    })
+    .then(function(data) {
+      /* Guardar JWT para Coach API */
+      localStorage.setItem('lx_co_token',  data.access_token);
+      localStorage.setItem('lx_co_rol',    data.rol);
+      localStorage.setItem('lx_co_nombre', data.nombre);
+
+      var plan = PLAN_MAP[data.plan_nivel] || 'basic';
+      var sess = {
+        username: input,
+        email:    email,
+        name:     data.nombre,
+        initials: _initials(data.nombre),
+        role:     ROLE_LABELS[data.rol] || data.rol,
+        plan:     plan,
+        api_rol:  data.rol,
+        user_id:  data.user_id,
+        ts:       Date.now()
+      };
+      saveSession(sess, remember);
+      return { ok: true, session: sess };
+    })
+    .catch(function() {
+      /* API no disponible o creds incorrectas — intentar fallback hardcoded */
+      var u = USERS[input];
+      if (u && u.pw === password) {
+        var fallback = {
+          username: input,
+          name:     u.name,
+          initials: _initials(u.name),
+          role:     u.role,
+          plan:     u.plan,
+          api_rol:  'offline',
+          ts:       Date.now()
+        };
+        saveSession(fallback, remember);
+        return { ok: true, session: fallback, offline: true };
+      }
+      return { ok: false };
+    });
   }
 
   function logout() {
-    clearSession();
-    window.location.replace('login.html');
+    /* Llamar al API para revocar token y limpiar cookie HttpOnly */
+    var API = window._LX_API || 'http://localhost:8000/api';
+    fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' })
+      .catch(function(){})
+      .finally(function(){
+        clearSession();
+        window.location.replace('landing.html');
+      });
   }
 
   /* ── Guard ────────────────────────────────────────────────── */
   function guard(moduleId) {
     var s = getSession();
-    if (!s) { window.location.replace('login.html'); return; }
 
-    var plan = PLANS[s.plan];
-    if (!plan || plan.modules.indexOf(moduleId) === -1) {
-      window.location.replace('login.html?denied=' + moduleId);
+    if (!s) {
+      window.location.replace('login.html');
       return;
     }
 
-    /* inject user info into nav once DOM is ready */
+    /* Coach/admin tienen acceso a todos los módulos */
+    if (s.api_rol === 'coach' || s.api_rol === 'admin') return;
+
+    var plan = PLANS[s.plan];
+    if (!plan || plan.modules.indexOf(moduleId) === -1) {
+      /* Evitar loop: no redirigir si ya estamos en dashboard */
+      var pg = window.location.pathname.split('/').pop();
+      if (pg === 'dashboard.html') return;
+      window.location.replace('dashboard.html?locked=' + moduleId);
+      return;
+    }
+
     function hydrate() {
       var el;
-      el = document.getElementById('kl-uname');   if (el) el.textContent = s.name.split(' ')[0];
+      el = document.getElementById('kl-uname');   if (el) el.textContent = s.name ? s.name.split(' ')[0] : s.username;
       el = document.getElementById('kl-urole');   if (el) el.textContent = s.role;
       el = document.getElementById('kl-avatar');  if (el) el.textContent = s.initials;
       el = document.getElementById('kl-plan-badge');
       if (el) {
         el.textContent = plan.label;
-        el.style.color = plan.color;
+        el.style.color       = plan.color;
         el.style.borderColor = plan.color + '55';
-        el.style.background = plan.color + '18';
+        el.style.background  = plan.color + '18';
       }
-      /* also update profile page hero if present */
       el = document.getElementById('kl-fullname'); if (el) el.textContent = s.name;
       el = document.getElementById('kl-role-tag'); if (el) el.textContent = s.role;
 
-      /* lock nav links the user can't access */
+      /* bloquear módulos sin acceso */
       document.querySelectorAll('[data-kl-module]').forEach(function(link) {
         var mod = link.getAttribute('data-kl-module');
+        if (mod === 'coach') return; /* coach lo maneja nav.js */
         if (plan.modules.indexOf(mod) === -1) {
           link.classList.add('kl-locked');
           link.href = '#';
-          link.onclick = function(e) {
-            e.preventDefault();
-            showUpgradeToast(mod, plan.label);
-          };
+          link.onclick = function(e) { e.preventDefault(); showUpgradeToast(mod, plan.label); };
         }
       });
     }
@@ -147,7 +221,6 @@
   function showUpgradeToast(mod, currentPlan) {
     var existing = document.getElementById('kl-toast');
     if (existing) existing.remove();
-
     var t = document.createElement('div');
     t.id = 'kl-toast';
     t.innerHTML =
@@ -155,25 +228,18 @@
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0A500" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
         '<div>' +
           '<div style="font-family:Oswald,sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.08em;color:#F0F9FF">Módulo no incluido en plan ' + currentPlan + '</div>' +
-          '<div style="font-size:.75rem;color:#7FB3CC;margin-top:.1rem">Actualiza tu plan para acceder a este módulo.</div>' +
+          '<div style="font-size:.75rem;color:#7FB3CC;margin-top:.1rem">Actualiza tu plan para acceder.</div>' +
         '</div>' +
         '<a href="landing.html#plans" style="margin-left:auto;font-family:Oswald,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#FF6535;white-space:nowrap">Ver Planes ›</a>' +
       '</div>';
     Object.assign(t.style, {
-      position:     'fixed',
-      bottom:       '1.5rem',
-      left:         '50%',
-      transform:    'translateX(-50%) translateY(20px)',
-      background:   '#08121E',
-      border:       '1px solid rgba(240,165,0,.35)',
-      borderRadius: '10px',
-      padding:      '1rem 1.25rem',
-      zIndex:       '9999',
-      minWidth:     '320px',
-      maxWidth:     '460px',
-      boxShadow:    '0 8px 32px rgba(0,0,0,.5)',
-      opacity:      '0',
-      transition:   'all .3s cubic-bezier(.4,0,.2,1)'
+      position:'fixed', bottom:'1.5rem', left:'50%',
+      transform:'translateX(-50%) translateY(20px)',
+      background:'#08121E', border:'1px solid rgba(240,165,0,.35)',
+      borderRadius:'10px', padding:'1rem 1.25rem', zIndex:'9999',
+      minWidth:'320px', maxWidth:'460px',
+      boxShadow:'0 8px 32px rgba(0,0,0,.5)',
+      opacity:'0', transition:'all .3s cubic-bezier(.4,0,.2,1)'
     });
     document.body.appendChild(t);
     requestAnimationFrame(function() {
@@ -188,6 +254,14 @@
   }
 
   /* ── Public API ───────────────────────────────────────────── */
-  w.KL = { login: login, logout: logout, guard: guard, getSession: getSession };
+  w.KL = {
+    login:       login,
+    logout:      logout,
+    guard:       guard,
+    getSession:  getSession,
+    saveSession: saveSession,
+    clearSession: clearSession,
+    API_BASE:    API_BASE
+  };
 
 }(window));

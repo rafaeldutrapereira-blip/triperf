@@ -1,7 +1,10 @@
-/**
- * LabX Service Worker — offline cache + background sync
+﻿/**
+ * LabX Service Worker â€” offline cache + background sync + GPS tracker
+ * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
+ * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var CACHE_NAME = 'lxapp-v1';
+var BUILD_VERSION = '28';  // S44: SSE Redis Pub/Sub multi-worker + Compliance Trending
+var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
   '/athlete-app.html',
@@ -9,20 +12,35 @@ var PRECACHE = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
+  '/gps_tracker.html',
+  '/nav.js',
+  '/login.html',
+  '/dashboard.html',
+  '/year_in_review.html',
+  '/analytics.html',
+  '/training_plan.html',
+  '/auth.js',
+  '/i18n.js',
+  '/community.html',
+  '/recovery.html',
+  '/nutrition.html',
+  '/adaptive.html',
+  '/mental.html',
+  '/ai_coach.html',
 ];
 
-/* ── Install: pre-cache archivos estáticos ── */
+/* â”€â”€ Install: pre-cache archivos estÃ¡ticos â”€â”€ */
 self.addEventListener('install', function(e){
   e.waitUntil(
     caches.open(CACHE_NAME).then(function(cache){
       return cache.addAll(PRECACHE.filter(function(url){
-        return !url.endsWith('.png'); // íconos opcionales
+        return !url.endsWith('.png'); // Ã­conos opcionales
       }));
     }).then(function(){ return self.skipWaiting(); })
   );
 });
 
-/* ── Activate: limpiar caches viejos ── */
+/* â”€â”€ Activate: limpiar caches viejos â”€â”€ */
 self.addEventListener('activate', function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
@@ -34,7 +52,7 @@ self.addEventListener('activate', function(e){
   );
 });
 
-/* ── Fetch: cache-first para estáticos, network-first para API ── */
+/* â”€â”€ Fetch: cache-first para estÃ¡ticos, network-first para API â”€â”€ */
 self.addEventListener('fetch', function(e){
   var url = new URL(e.request.url);
 
@@ -49,7 +67,7 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  // Archivos estáticos: cache-first
+  // Archivos estÃ¡ticos: cache-first
   e.respondWith(
     caches.match(e.request).then(function(cached){
       if(cached) return cached;
@@ -59,7 +77,7 @@ self.addEventListener('fetch', function(e){
         caches.open(CACHE_NAME).then(function(cache){ cache.put(e.request, clone); });
         return response;
       }).catch(function(){
-        // Fallback offline: devuelve athlete-app.html para cualquier navegación
+        // Fallback offline: devuelve athlete-app.html para cualquier navegaciÃ³n
         if(e.request.mode === 'navigate'){
           return caches.match('/athlete-app.html');
         }
@@ -68,11 +86,11 @@ self.addEventListener('fetch', function(e){
   );
 });
 
-/* ── Push notifications (cuando el coach asigna entreno) ── */
+/* â”€â”€ Push notifications (cuando el coach asigna entreno) â”€â”€ */
 self.addEventListener('push', function(e){
   var data = e.data ? e.data.json() : {};
   var title = data.title || 'LabX';
-  var body  = data.body  || 'Tienes una notificación nueva';
+  var body  = data.body  || 'Tienes una notificaciÃ³n nueva';
   var icon  = '/icon-192.png';
   e.waitUntil(
     self.registration.showNotification(title, {
@@ -91,7 +109,104 @@ self.addEventListener('push', function(e){
 
 self.addEventListener('notificationclick', function(e){
   e.notification.close();
+  var data = e.notification.data || {};
+  var url = data.url || (data.type === 'community' ? '/community.html' : '/athlete-app.html');
   if(e.action === 'view' || !e.action){
-    e.waitUntil(clients.openWindow('/athlete-app.html'));
+    e.waitUntil(
+      clients.matchAll({type:'window', includeUncontrolled:true}).then(function(cls){
+        for(var i=0;i<cls.length;i++){
+          if(cls[i].url.includes(self.location.origin)){
+            cls[i].focus(); cls[i].navigate(url); return;
+          }
+        }
+        return clients.openWindow(url);
+      })
+    );
   }
 });
+
+/* â”€â”€ Background Sync â€” D-05: encolar workouts GPS cuando offline â”€â”€ */
+self.addEventListener('sync', function(e){
+  if(e.tag === 'sync-workouts'){
+    e.waitUntil(syncPendingWorkouts());
+  }
+});
+
+/*
+ * BP-10 FIX: El Service Worker NO puede leer HttpOnly cookies (por diseÃ±o de seguridad).
+ * SoluciÃ³n: usar credentials:'include' â€” el browser adjunta la cookie automÃ¡ticamente.
+ * Ya no se necesita getAuthToken() con IndexedDB; la cookie lx_access_token se envÃ­a sola.
+ */
+function syncPendingWorkouts(){
+  return openIDB().then(function(db){
+    return getAllPending(db).then(function(items){
+      if(!items.length) return;
+      return Promise.allSettled(items.map(function(item){
+        return fetch('/api/athlete/workout-log',{
+          method:'POST',
+          credentials: 'include',  /* BP-10: cookie HttpOnly se adjunta automÃ¡ticamente */
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            sport:    item.data.sport,
+            dur_min:  item.data.dur_min,
+            dist_km:  item.data.dist_km,
+            date_iso: (item.data.recorded_at||new Date().toISOString()).slice(0,10),
+            notas:    'GPS Tracker (offline sync) â€” '+item.data.dist_km+' km',
+            tss:      Math.round((item.data.dur_min||0)*0.8),
+          })
+        }).then(function(r){
+          if(r.ok) return deleteItem(db, item.key);
+          /* Si 401 â†’ sesiÃ³n expirada; no reintentar; item permanece en queue */
+          if(r.status === 401) return;
+          /* Otros errores â†’ reintentar en prÃ³ximo sync */
+        }).catch(function(){});
+      }));
+    });
+  }).catch(function(){});
+}
+
+function openIDB(){
+  return new Promise(function(resolve,reject){
+    var req = indexedDB.open('labx-offline',1);
+    req.onupgradeneeded = function(e){
+      var db = e.target.result;
+      if(!db.objectStoreNames.contains('pending_workouts'))
+        db.createObjectStore('pending_workouts',{autoIncrement:true});
+      if(!db.objectStoreNames.contains('auth'))
+        db.createObjectStore('auth',{keyPath:'id'});
+    };
+    req.onsuccess = function(e){ resolve(e.target.result); };
+    req.onerror   = function(e){ reject(e); };
+  });
+}
+
+function getAllPending(db){
+  return new Promise(function(resolve){
+    var items=[], tx=db.transaction('pending_workouts','readonly');
+    var cur=tx.objectStore('pending_workouts').openCursor();
+    cur.onsuccess=function(e){
+      var c=e.target.result;
+      if(c){ items.push({key:c.key,data:c.value}); c.continue(); }
+      else resolve(items);
+    };
+    cur.onerror=function(){ resolve([]); };
+  });
+}
+
+function deleteItem(db,key){
+  return new Promise(function(resolve){
+    var tx=db.transaction('pending_workouts','readwrite');
+    tx.objectStore('pending_workouts').delete(key);
+    tx.oncomplete=resolve;
+  });
+}
+
+function getAuthToken(db){
+  return new Promise(function(resolve){
+    try{
+      var req=db.transaction('auth','readonly').objectStore('auth').get('session');
+      req.onsuccess=function(e){ resolve(e.target.result?e.target.result.token:null); };
+      req.onerror=function(){ resolve(null); };
+    }catch(e){ resolve(null); }
+  });
+}

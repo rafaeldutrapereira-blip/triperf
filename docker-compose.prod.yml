@@ -1,0 +1,272 @@
+# docker-compose.prod.yml — LabX Private Beta Production
+# ==========================================================
+# Uso:
+#   docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml logs -f api
+#   docker compose -f docker-compose.prod.yml exec api alembic upgrade head
+#
+# Requiere: .env (copia de .env.production con valores reales)
+
+x-api-env: &api-env
+  DATABASE_URL:          postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:6432/${POSTGRES_DB}
+  JWT_SECRET:            ${JWT_SECRET:?JWT_SECRET is required}
+  JWT_AUDIENCE:          ${JWT_AUDIENCE:-labx-app}
+  TOKEN_HOURS:           ${TOKEN_HOURS:-8}
+  FERNET_KEY:            ${FERNET_KEY:?FERNET_KEY is required}
+  FERNET_KEY_OLD:        ${FERNET_KEY_OLD:-}
+  APP_ENV:               production
+  APP_URL:               ${APP_URL:?APP_URL is required}
+  ENABLE_DOCS:           "0"
+  CORS_ORIGINS:          ${CORS_ORIGINS:?CORS_ORIGINS is required}
+  REDIS_URL:             redis://redis:6379/0
+  # Email
+  RESEND_API_KEY:        ${RESEND_API_KEY:-}
+  EMAIL_FROM:            ${EMAIL_FROM:-noreply@labx.app}
+  # Pagos
+  STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_PRICE_PRO:      ${STRIPE_PRICE_PRO:-}
+  STRIPE_PRICE_COACH:    ${STRIPE_PRICE_COACH:-}
+  STRIPE_PRICE_ELITE:    ${STRIPE_PRICE_ELITE:-}
+  STRIPE_TRIAL_DAYS:     ${STRIPE_TRIAL_DAYS:-14}
+  # Garmin
+  GARMIN_CLIENT_ID:      ${GARMIN_CLIENT_ID:-}
+  GARMIN_CLIENT_SECRET:  ${GARMIN_CLIENT_SECRET:-}
+  GARMIN_REDIRECT_URI:   ${GARMIN_REDIRECT_URI}
+  # Strava
+  STRAVA_CLIENT_ID:      ${STRAVA_CLIENT_ID:-}
+  STRAVA_CLIENT_SECRET:  ${STRAVA_CLIENT_SECRET:-}
+  STRAVA_REDIRECT_URI:   ${STRAVA_REDIRECT_URI:-}
+  # AI
+  ANTHROPIC_API_KEY:     ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_MODEL:       ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+  # Push notifications
+  VAPID_PUBLIC_KEY:      ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY:     ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT:         ${VAPID_SUBJECT:-mailto:admin@labx.app}
+  # Observabilidad
+  SENTRY_DSN:            ${SENTRY_DSN:-}
+  # DB pool
+  DB_POOL_SIZE:          "5"
+  DB_MAX_OVERFLOW:       "10"
+  # Seeds
+  ADMIN_EMAIL:           ${ADMIN_EMAIL:-admin@labx.app}
+  ADMIN_PASS:            ${ADMIN_PASS:-}
+  ADMIN_NOMBRE:          ${ADMIN_NOMBRE:-Admin}
+  DEMO_EMAIL:            ${DEMO_EMAIL:-}
+  DEMO_PASS:             ${DEMO_PASS:-}
+  # Storage
+  STORAGE_BACKEND:       ${STORAGE_BACKEND:-local}
+  AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_S3_BUCKET:         ${AWS_S3_BUCKET:-}
+  AWS_REGION:            ${AWS_REGION:-us-east-1}
+  # Backup
+  BACKUP_KEEP_DAYS:      ${BACKUP_KEEP_DAYS:-30}
+
+services:
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-labx_prod}
+      POSTGRES_USER:     ${POSTGRES_USER:-labx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-labx} -d ${POSTGRES_DB:-labx_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ── PGBouncer — connection pooling ────────────────────────────────────────
+  pgbouncer:
+    image: bitnami/pgbouncer:1
+    environment:
+      POSTGRESQL_HOST:              db
+      POSTGRESQL_PORT:              "5432"
+      POSTGRESQL_USERNAME:          ${POSTGRES_USER:-labx}
+      POSTGRESQL_PASSWORD:          ${POSTGRES_PASSWORD}
+      POSTGRESQL_DATABASE:          ${POSTGRES_DB:-labx_prod}
+      PGBOUNCER_PORT:               "6432"
+      PGBOUNCER_POOL_MODE:          transaction
+      PGBOUNCER_MAX_CLIENT_CONN:    "100"
+      PGBOUNCER_DEFAULT_POOL_SIZE:  "20"
+      PGBOUNCER_MIN_POOL_SIZE:      "2"
+      PGBOUNCER_RESERVE_POOL_SIZE:  "5"
+      PGBOUNCER_SERVER_IDLE_TIMEOUT: "600"
+    ports:
+      - "127.0.0.1:6432:6432"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U ${POSTGRES_USER:-labx}"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Redis — SSE broker + rate limit + Celery broker ───────────────────────
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --appendonly no
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── API (FastAPI + uvicorn) ────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: "1"
+    image: labx-api:${DEPLOY_TAG:-latest}
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      <<: *api-env
+    volumes:
+      - labx_data:/app/data
+      - labx_backups:/app/backups
+      - labx_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  # ── Celery Worker — async tasks (Garmin sync, AI) ─────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: labx-api:${DEPLOY_TAG:-latest}
+    command: >
+      celery -A api.worker.celery_app worker
+      --loglevel=info
+      --concurrency=2
+      -Q default
+      --without-heartbeat
+      --without-gossip
+    environment:
+      <<: *api-env
+    volumes:
+      - labx_data:/app/data
+      - labx_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "api.worker.celery_app", "inspect", "ping", "--timeout=5"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── Backup automático diario ───────────────────────────────────────────────
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: labx-api:${DEPLOY_TAG:-latest}
+    command: >
+      sh -c '
+        echo "Backup service started at $$(date)";
+        while true; do
+          sleep 3600;
+          HOUR=$$(date +%H);
+          if [ "$$HOUR" = "02" ]; then
+            echo "Running backup at $$(date)";
+            python backup.py;
+            echo "Backup completed at $$(date)";
+          fi;
+        done
+      '
+    environment:
+      <<: *api-env
+    volumes:
+      - labx_data:/app/data
+      - labx_backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  labx_data:
+    driver: local
+  labx_backups:
+    driver: local
+  labx_logs:
+    driver: local
+
+networks:
+  default:
+    name: labx_prod_network
+    driver: bridge

@@ -1,0 +1,56 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    env: beta
+    service: labx
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - "alerting_rules.yml"
+
+scrape_configs:
+  # ── LabX API (FastAPI) ────────────────────────────────────────────
+  - job_name: labx_api
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["127.0.0.1:8000"]
+    # Prometheus endpoint require loopback — no auth needed
+    # Si METRICS_SECRET está configurado, agregar aquí:
+    # bearer_token: <METRICS_SECRET>
+
+  # ── PostgreSQL ────────────────────────────────────────────────────
+  - job_name: postgres
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  # ── Redis ─────────────────────────────────────────────────────────
+  - job_name: redis
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  # ── Node (VPS host) ───────────────────────────────────────────────
+  - job_name: node
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # ── Nginx ─────────────────────────────────────────────────────────
+  - job_name: nginx
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # ── Celery (via Flower Prometheus exporter) ───────────────────────
+  - job_name: celery
+    scrape_interval: 30s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["flower:5555"]

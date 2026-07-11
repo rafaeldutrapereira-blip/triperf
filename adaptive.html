@@ -1,0 +1,779 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Plan Adaptativo</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --amber:#F59E0B;--blue:#1D4ED8;--violet:#7C3AED;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.42rem .95rem;font-size:.74rem}
+.btn-primary{background:var(--purple);color:#fff}.btn-primary:hover{opacity:.88}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.88}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem}
+.sr{opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.g3,.g2,.g4{grid-template-columns:1fr}}
+.mt2{margin-top:1.5rem}.mt3{margin-top:2rem}
+.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+
+/* ── PAGE HEADER ── */
+.ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:1.6rem 0 1.4rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin-top:.35rem}
+
+/* ── SIGNAL BANNER ── */
+.signal-banner{border-radius:10px;padding:1.1rem 1.4rem;border:1.5px solid;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.signal-banner.increase{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.4)}
+.signal-banner.maintain{background:rgba(16,185,129,.05);border-color:rgba(16,185,129,.3)}
+.signal-banner.decrease{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.3)}
+.signal-banner.taper{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.3)}
+.signal-banner.rest{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.3)}
+.signal-label{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
+.signal-reason{font-size:.8rem;color:var(--muted);line-height:1.5;flex:1;min-width:200px}
+
+/* ── PHASE BANNER ── */
+.phase-banner{border-radius:10px;padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem}
+.phase-banner.base    {background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3)}
+.phase-banner.build   {background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.3)}
+.phase-banner.peak    {background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.3)}
+.phase-banner.taper   {background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.3)}
+.phase-banner.recovery{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.3)}
+.phase-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
+.phase-countdown{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1}
+.phase-prog{display:flex;align-items:center;gap:.6rem;flex:1}
+.phase-prog-bar{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.phase-prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
+
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;flex-wrap:wrap}
+.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
+.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.tab-pane{display:none}.tab-pane.on{display:block}
+
+/* ── SESSION CARD ── */
+.session-card{border-radius:10px;padding:.85rem 1rem;border:1px solid var(--border2);margin-bottom:.5rem;display:grid;grid-template-columns:65px 1fr auto;gap:.75rem;align-items:start;transition:border-color .2s}
+.session-card:hover{border-color:var(--border)}
+.session-card.adapted{border-left:3px solid var(--amber)}
+.session-card.window{border-left:3px solid var(--purple)}
+.session-card.rest-day{opacity:.55}
+.session-day{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding-top:.1rem}
+.session-date{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted)}
+.session-name{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+.session-detail{font-size:.75rem;color:var(--muted);line-height:1.4}
+.session-reason{font-size:.7rem;color:var(--amber);line-height:1.35;margin-top:.3rem;font-style:italic}
+.session-window-badge{font-size:.65rem;font-weight:700;font-family:'Oswald',sans-serif;letter-spacing:.08em;color:var(--purple);background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);padding:.15rem .45rem;border-radius:4px;margin-top:.25rem;display:inline-block}
+.session-tss{text-align:right}
+.tss-n{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;line-height:1}
+.tss-orig{font-size:.65rem;color:var(--dim);text-decoration:line-through}
+.tss-l{font-family:'Oswald',sans-serif;font-size:.55rem;letter-spacing:.08em;color:var(--dim)}
+.session-actions{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
+.accept-btn{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.08);color:var(--green);cursor:pointer;transition:all .15s}
+.accept-btn:hover{background:rgba(16,185,129,.2)}
+.reject-btn{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.05);color:var(--red);cursor:pointer;transition:all .15s}
+.reject-btn:hover{background:rgba(239,68,68,.15)}
+.accepted-badge{font-size:.62rem;font-family:'Oswald',sans-serif;color:var(--green);letter-spacing:.08em}
+.rejected-badge{font-size:.62rem;font-family:'Oswald',sans-serif;color:var(--dim);letter-spacing:.08em}
+
+/* ── KPI box ── */
+.kpi-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center}
+.kpi-n{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1}
+.kpi-l{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+.kpi-s{font-size:.68rem;color:var(--muted);margin-top:.06rem}
+
+/* ── COMPLIANCE CHART ── */
+.comp-week{display:flex;align-items:flex-end;gap:3px;height:60px}
+.comp-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:20px}
+.comp-bar{width:100%;border-radius:2px 2px 0 0;transition:height .6s ease}
+.comp-label{font-family:'Oswald',sans-serif;font-size:.52rem;color:var(--dim);letter-spacing:.05em;white-space:nowrap}
+
+/* ── TAPER CARD ── */
+.taper-day{display:grid;grid-template-columns:100px 80px 1fr;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--border2);align-items:center;font-size:.78rem}
+.taper-day:last-child{border-bottom:none}
+.taper-date{color:var(--dim);font-size:.72rem}
+.taper-factor{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800}
+.taper-label{color:var(--muted)}
+
+/* ── PROJECTION CHART ── */
+.proj-row{display:grid;grid-template-columns:75px 1fr 55px 55px;gap:.5rem;align-items:center;padding:.3rem 0;font-size:.75rem;border-bottom:1px solid var(--border2)}
+.proj-row:last-child{border-bottom:none}
+.proj-date{color:var(--dim);font-size:.68rem}
+.proj-bar-wrap{background:var(--surface2);border-radius:2px;height:6px}
+.proj-fill{height:100%;border-radius:2px;background:var(--cyan);transition:width .6s}
+.proj-ctl{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-align:right}
+.proj-phase{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);text-align:right}
+
+/* ── ALERT CHIP ── */
+.alert-chip{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .9rem;border-radius:8px;font-size:.78rem;line-height:1.5;margin-bottom:.5rem}
+.alert-chip.info{background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.2);color:var(--muted)}
+.alert-chip.warn{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);color:var(--amber)}
+.alert-chip.good{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);color:var(--green)}
+
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+</style>
+<link rel="stylesheet" href="nav.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<!-- PAGE HEADER -->
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-eye">LabX · SPRINT 16</div>
+        <div class="ph-title">PLAN <em style="color:var(--purple)">ADAPTATIVO</em></div>
+        <div class="ph-sub" id="ph-sub">Tu entrenamiento inteligente — ajustado a tu estado real</div>
+      </div>
+      <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<div style="padding:2rem 0 5rem">
+<div class="c">
+
+<!-- ══ PHASE + SIGNAL BANNERS ══ -->
+<section class="sr" id="sec-banners">
+  <div id="phase-banner-wrap"></div>
+  <div id="signal-banner-wrap"></div>
+</section>
+
+<!-- ══ WEEK KPIs ══ -->
+<section class="sr mt2" id="sec-kpis">
+  <div class="g4" id="week-kpis"></div>
+</section>
+
+<!-- ══ TABS ══ -->
+<section class="sr mt2" id="sec-tabs">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Análisis Adaptativo
+      </span>
+      <div class="tabs-bar">
+        <button class="tab-btn on" onclick="switchTab('week',this)">📅 Semana</button>
+        <button class="tab-btn" onclick="switchTab('compliance',this)">📊 Compliance</button>
+        <button class="tab-btn" onclick="switchTab('taper',this)">🏁 Tapering</button>
+        <button class="tab-btn" onclick="switchTab('projections',this)">📈 Proyección CTL</button>
+        <button class="tab-btn" onclick="switchTab('history',this)">📋 Historial</button>
+        <button class="tab-btn" id="coach-tab-btn" style="display:none" onclick="switchTab('coach',this)">👥 Coach</button>
+      </div>
+    </div>
+    <div style="padding:1.5rem">
+
+      <!-- ── TAB: SEMANA ── -->
+      <div class="tab-pane on" id="tab-week">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <button class="btn btn-g btn-sm" id="prev-week-btn" onclick="changeWeek(-1)">← Anterior</button>
+            <span id="week-label" style="font-family:'Oswald',sans-serif;font-size:.75rem;color:var(--muted);letter-spacing:.06em"></span>
+            <button class="btn btn-g btn-sm" id="next-week-btn" onclick="changeWeek(1)">Siguiente →</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="acceptAllWeek()">✅ Aceptar toda la semana</button>
+        </div>
+        <div id="week-sessions"></div>
+        <div id="form-windows-week" style="margin-top:1rem"></div>
+      </div>
+
+      <!-- ── TAB: COMPLIANCE ── -->
+      <div class="tab-pane" id="tab-compliance">
+        <div class="g3" id="compliance-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
+        <div id="compliance-chart" style="margin-bottom:1rem"></div>
+        <div id="compliance-insights"></div>
+      </div>
+
+      <!-- ── TAB: TAPERING ── -->
+      <div class="tab-pane" id="tab-taper">
+        <div id="taper-content">
+          <div style="color:var(--dim);font-size:.82rem">Cargando protocolo de tapering…</div>
+        </div>
+      </div>
+
+      <!-- ── TAB: PROYECCIÓN CTL ── -->
+      <div class="tab-pane" id="tab-projections">
+        <div id="projections-content">
+          <div style="color:var(--dim);font-size:.82rem">Cargando proyección…</div>
+        </div>
+      </div>
+
+      <!-- ── TAB: HISTORIAL ── -->
+      <div class="tab-pane" id="tab-history">
+        <div id="history-content">
+          <div style="color:var(--dim);font-size:.82rem">Cargando historial de adaptaciones…</div>
+        </div>
+      </div>
+
+      <!-- ── TAB: COACH ── -->
+      <div class="tab-pane" id="tab-coach">
+        <div id="coach-queue-content">
+          <div style="color:var(--dim);font-size:.82rem">Cargando cola de aprobaciones…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<footer><div class="c">LabX Adaptive Training Engine v1.0 · Sprint 16 · Powered by Recovery Score + Garmin</div></footer>
+
+<script src="nav.js" defer></script>
+<script>
+(function () {
+  'use strict';
+
+  var _k   = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null') || {};
+  var API  = '/api';
+  var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_k.token || '') };
+
+  var DAYS_ES  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var PHASE_COLORS = { base:'#0EA5E9', build:'#F0A500', peak:'#EF4444', taper:'#22D3EE', recovery:'#10B981' };
+
+  // ── Current week state ────────────────────────────────────────────────────
+  var _weekOffset = 0;  // 0 = current week, -1 = prev, +1 = next
+
+  function _weekStart(offset) {
+    var today = new Date();
+    var mon   = new Date(today);
+    mon.setDate(today.getDate() - today.getDay() + 1 + offset * 7);
+    if (today.getDay() === 0) mon.setDate(mon.getDate() - 6 + offset * 7);
+    return mon.toISOString().slice(0, 10);
+  }
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  // ── Reveal on scroll ──────────────────────────────────────────────────────
+  function reveal() {
+    document.querySelectorAll('.sr').forEach(function (el) {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.93) el.classList.add('vis');
+    });
+  }
+  window.addEventListener('scroll', reveal, { passive: true });
+  setTimeout(reveal, 80);
+
+  // ── Tab switcher ──────────────────────────────────────────────────────────
+  window.switchTab = function (id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('on'); });
+    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('on'); });
+    var pane = document.getElementById('tab-' + id);
+    if (pane) pane.classList.add('on');
+    if (btn)  btn.classList.add('on');
+
+    if      (id === 'compliance')  loadCompliance();
+    else if (id === 'taper')       loadTaper();
+    else if (id === 'projections') loadProjections();
+    else if (id === 'history')     loadHistory();
+    else if (id === 'coach')       loadCoachQueue();
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DASHBOARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadDashboard() {
+    fetch(API + '/adaptive/dashboard', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        renderPhaseBanner(d.phase);
+        renderSignalBanner(d.today_adaptation);
+        renderWeekKpis(d.week, d.training_load);
+        renderFormWindows(d.form_windows || []);
+      })
+      .catch(function () {
+        document.getElementById('signal-banner-wrap').innerHTML =
+          '<div class="alert-chip warn">⚠️ Sin datos suficientes. Sincroniza tu Garmin y registra tu carrera objetivo.</div>';
+      });
+    loadWeek();
+  }
+  window.loadDashboard = loadDashboard;
+
+  // ── Phase banner ────────────────────────────────────────────────────────
+  function renderPhaseBanner(phase) {
+    if (!phase) return;
+    var col  = PHASE_COLORS[phase.current] || 'var(--cyan)';
+    var pct  = phase.phase_week && phase.total_weeks
+      ? Math.round(phase.phase_week / phase.total_weeks * 100) : 0;
+
+    var html = '<div class="phase-banner ' + (phase.current || 'base') + '">' +
+      '<div>' +
+      '<div class="phase-name" style="color:' + col + '">' + (phase.phase_label || phase.current || '') + '</div>' +
+      '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' +
+        'Semana ' + (phase.phase_week || 1) + ' de ' + (phase.total_weeks || '—') +
+        (phase.race_name ? ' · ' + phase.race_name : '') +
+      '</div>' +
+      '<div class="phase-prog mt2" style="margin-top:.5rem;gap:.6rem;display:flex;align-items:center">' +
+        '<div class="phase-prog-bar" style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">' +
+          '<div class="phase-prog-fill" style="width:' + pct + '%;background:' + col + '"></div>' +
+        '</div>' +
+        '<span style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim)">' + pct + '%</span>' +
+      '</div>' +
+      '</div>' +
+      (phase.days_to_race !== null && phase.days_to_race !== undefined
+        ? '<div style="text-align:right">' +
+          '<div class="phase-countdown" style="color:' + col + '">' + phase.days_to_race + '</div>' +
+          '<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--dim)">DÍAS</div>' +
+          '</div>'
+        : '') +
+      '</div>';
+    document.getElementById('phase-banner-wrap').innerHTML = html;
+  }
+
+  // ── Signal banner ────────────────────────────────────────────────────────
+  function renderSignalBanner(adap) {
+    if (!adap) return;
+    var sig  = adap.signal || 'maintain';
+    var html = '<div class="signal-banner ' + sig + '">' +
+      '<div>' +
+      '<div class="signal-label">' + (adap.signal_label || '') + '</div>' +
+      '<div style="font-size:.7rem;color:var(--dim);margin-top:.12rem;font-family:\'Oswald\',sans-serif;letter-spacing:.06em">' +
+        'Recovery: ' + (adap.recovery_score !== null ? adap.recovery_score : '—') + ' · ' +
+        'TSB: ' + (adap.tsb !== null ? (adap.tsb > 0 ? '+' : '') + Math.round(adap.tsb || 0) : '—') + ' · ' +
+        'Compliance 7d: ' + (adap.compliance_7d !== null ? Math.round((adap.compliance_7d || 0) * 100) + '%' : '—') +
+      '</div>' +
+      '</div>' +
+      '<div class="signal-reason">' + (adap.reason_text || '') + '</div>' +
+      '</div>';
+    document.getElementById('signal-banner-wrap').innerHTML = html;
+  }
+
+  // ── Week KPIs ─────────────────────────────────────────────────────────────
+  function renderWeekKpis(week, tl) {
+    if (!week) return;
+    var delta = week.tss_delta_pct || 0;
+    var deltaCol = delta < -5 ? 'var(--amber)' : (delta > 5 ? 'var(--purple)' : 'var(--green)');
+    var kpis = [
+      { label: 'TSS Planificado', value: week.tss_planned,  color: 'var(--muted)',   sub: 'esta semana' },
+      { label: 'TSS Adaptado',    value: week.tss_adjusted, color: 'var(--cyan)',    sub: (delta > 0 ? '+' : '') + delta + '%' },
+      { label: 'CTL',             value: tl && tl.ctl ? Math.round(tl.ctl) : '—',    color: 'var(--purple)',  sub: 'fitness' },
+      { label: 'TSB',             value: tl && tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: tl && (tl.tsb || 0) > 0 ? 'var(--green)' : 'var(--amber)', sub: 'forma' },
+    ];
+    document.getElementById('week-kpis').innerHTML = kpis.map(function (k) {
+      return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div>' +
+        '<div class="kpi-l">' + k.label + '</div>' +
+        '<div class="kpi-s" style="color:' + (k.sub && k.sub.includes('+') ? 'var(--purple)' : k.sub && k.sub.includes('-') ? 'var(--amber)' : 'var(--dim)') + '">' + (k.sub || '') + '</div></div>';
+    }).join('');
+  }
+
+  // ── Form windows ─────────────────────────────────────────────────────────
+  function renderFormWindows(windows) {
+    var el = document.getElementById('form-windows-week');
+    if (!windows || !windows.length) { el.innerHTML = ''; return; }
+    el.innerHTML = windows.map(function (w) {
+      return '<div class="alert-chip info">🎯 <strong>' + w.date_iso + '</strong> — ' + w.label + '</div>';
+    }).join('');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WEEK PLAN
+  // ═══════════════════════════════════════════════════════════════════════════
+  var _weekAdaptations = [];
+
+  function loadWeek() {
+    var ws   = _weekStart(_weekOffset);
+    var url  = API + '/adaptive/week?week_start=' + ws;
+    fetch(url, { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        _weekAdaptations = d.adaptations || [];
+        renderWeekSessions(d);
+        updateWeekLabel(d.week_start, d.week_end);
+      })
+      .catch(function () {
+        document.getElementById('week-sessions').innerHTML = '<div style="color:var(--dim);font-size:.82rem">Sin datos de plan para esta semana.</div>';
+      });
+  }
+
+  function updateWeekLabel(start, end) {
+    var lbl = document.getElementById('week-label');
+    if (lbl) lbl.textContent = start + ' → ' + (end || '');
+  }
+
+  window.changeWeek = function (delta) {
+    _weekOffset += delta;
+    loadWeek();
+  };
+
+  window.acceptAllWeek = function () {
+    var today   = new Date().toISOString().slice(0, 10);
+    var pending = _weekAdaptations.filter(function (a) {
+      return a.signal !== 'maintain' && a.accepted === null && a.date_iso >= today;
+    });
+    if (!pending.length) { alert('No hay adaptaciones pendientes de aceptar esta semana.'); return; }
+    var promises = pending.map(function (a) {
+      return fetch(API + '/adaptive/accept/' + a.date_iso, { method: 'POST', headers: hdrs });
+    });
+    Promise.all(promises).then(function () { loadWeek(); }).catch(function () {});
+  };
+
+  function renderWeekSessions(d) {
+    var el       = document.getElementById('week-sessions');
+    var adaptations = d.adaptations || [];
+    if (!adaptations.length) {
+      el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">Sin sesiones planificadas esta semana.</div>';
+      return;
+    }
+
+    var intensityColor = {
+      easy: '#10B981', moderate: '#F59E0B', hard: '#EF4444', race: '#EF4444', rest: '#3D6880'
+    };
+    var intensityLabel = {
+      easy: '🟢 Fácil', moderate: '🟡 Moderado', hard: '🟠 Intenso', race: '🔴 Carrera', rest: '⚪ Descanso'
+    };
+    var phaseLabel = {
+      increase: '🎯 VENTANA', maintain: '', decrease: '⚠️ Reducido', taper: '🩵 Taper', rest: '🔴 Descanso'
+    };
+
+    var html = '';
+    adaptations.forEach(function (a) {
+      var d_date  = new Date(a.date_iso + 'T12:00:00');
+      var dayName = DAYS_ES[d_date.getDay()];
+      var dayN    = d_date.getDate();
+      var isAdapted = a.signal && a.signal !== 'maintain';
+      var isWindow  = a.signal === 'increase';
+      var isRest    = a.signal === 'rest' || !a.adjusted_tss || a.adjusted_tss < 1;
+
+      var cardClass = 'session-card' +
+        (isAdapted ? ' adapted' : '') +
+        (isWindow  ? ' window'  : '') +
+        (isRest    ? ' rest-day': '');
+
+      var adjCol   = intensityColor[a.adjusted_intensity] || 'var(--muted)';
+      var adjLabel = intensityLabel[a.adjusted_intensity] || a.adjusted_intensity || '—';
+
+      var acceptState = '';
+      if (a.accepted === true)  acceptState = '<span class="accepted-badge">✅ ACEPTADO</span>';
+      else if (a.accepted === false) acceptState = '<span class="rejected-badge">✗ RECHAZADO</span>';
+      else if (isAdapted) {
+        acceptState = '<button class="accept-btn" onclick="acceptDay(\'' + a.date_iso + '\')">✅ Aceptar</button>' +
+                      '<button class="reject-btn" onclick="rejectDay(\'' + a.date_iso + '\')">✗ Rechazar</button>';
+      }
+
+      html += '<div class="' + cardClass + '" id="card-' + a.date_iso + '">' +
+        '<div>' +
+        '<div class="session-day">' + dayName + '</div>' +
+        '<div class="session-date" style="color:' + adjCol + '">' + dayN + '</div>' +
+        '</div>' +
+        '<div>' +
+        '<div class="session-name" style="color:' + adjCol + '">' + adjLabel + '</div>' +
+        '<div class="session-detail">' +
+          'Fase: ' + (a.phase || '—') +
+          (a.coach_note ? ' · Coach: ' + a.coach_note : '') +
+        '</div>' +
+        (isAdapted ? '<div class="session-reason">' + (a.reason_text || '') + '</div>' : '') +
+        (isWindow   ? '<span class="session-window-badge">🎯 VENTANA DE FORMA</span>' : '') +
+        '<div class="session-actions">' + acceptState + '</div>' +
+        '</div>' +
+        '<div class="session-tss">' +
+          '<div class="tss-n" style="color:' + adjCol + '">' + Math.round(a.adjusted_tss || 0) + '</div>' +
+          (isAdapted && a.original_tss ? '<div class="tss-orig">' + Math.round(a.original_tss) + '</div>' : '') +
+          '<div class="tss-l">TSS</div>' +
+        '</div>' +
+        '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  window.acceptDay = function (dateIso) {
+    fetch(API + '/adaptive/accept/' + dateIso, { method: 'POST', headers: hdrs })
+      .then(function () { loadWeek(); })
+      .catch(function () {});
+  };
+
+  window.rejectDay = function (dateIso) {
+    fetch(API + '/adaptive/reject/' + dateIso, { method: 'POST', headers: hdrs })
+      .then(function () { loadWeek(); })
+      .catch(function () {});
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPLIANCE
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadCompliance() {
+    fetch(API + '/adaptive/compliance?weeks=8', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var avg = d.avg_pct;
+        var trend = d.trend;
+        document.getElementById('compliance-kpis').innerHTML = [
+          { label: 'Promedio 8 semanas', value: avg ? avg + '%' : '—', color: avg >= 85 ? 'var(--green)' : avg >= 70 ? 'var(--amber)' : 'var(--red)' },
+          { label: 'Tendencia', value: { improving:'↑ Mejorando', stable:'→ Estable', declining:'↓ Bajando' }[trend] || trend, color: trend === 'improving' ? 'var(--green)' : trend === 'declining' ? 'var(--red)' : 'var(--muted)' },
+          { label: 'Semanas analizadas', value: (d.history || []).filter(function(h){return h.compliance_pct !== null;}).length, color: 'var(--cyan)' },
+        ].map(function (k) {
+          return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+        }).join('');
+
+        // Chart
+        var history = d.history || [];
+        var maxTss  = Math.max.apply(null, history.map(function(h){return h.tss_planned || 0;})) || 1;
+        var barHtml = '<div class="comp-week">';
+        history.forEach(function (h) {
+          var pct     = h.compliance_pct || 0;
+          var barH    = Math.round((h.tss_planned || 0) / maxTss * 52);
+          var fillH   = Math.round(barH * Math.min(pct / 100, 1.05));
+          var col     = pct >= 85 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--red)';
+          var wLabel  = h.week_start ? h.week_start.substring(5) : '';
+          barHtml += '<div class="comp-bar-wrap">' +
+            '<div style="position:relative;width:100%;height:' + barH + 'px;background:var(--surface2);border-radius:2px 2px 0 0;overflow:hidden">' +
+              '<div style="position:absolute;bottom:0;left:0;right:0;height:' + fillH + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.85"></div>' +
+            '</div>' +
+            '<div class="comp-label">' + wLabel + '</div>' +
+            '</div>';
+        });
+        barHtml += '</div>';
+        barHtml += '<div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">🟢 ≥85% &nbsp; 🟡 70-84% &nbsp; 🔴 <70%</div>';
+        document.getElementById('compliance-chart').innerHTML = barHtml;
+
+        // Insights
+        var insHtml = '';
+        if (avg && avg < 70) {
+          insHtml += '<div class="alert-chip warn">📉 Compliance bajo. El plan se ha reducido automáticamente para acomodarse a tu ritmo real. Prioriza consistencia sobre volumen.</div>';
+        } else if (avg && avg >= 90) {
+          insHtml += '<div class="alert-chip good">✅ Excelente consistencia. Estás completando el plan con alta fidelidad — el motor adaptativo puede mantener la carga nominal.</div>';
+        }
+        if (trend === 'improving') {
+          insHtml += '<div class="alert-chip good">↑ Tu compliance está mejorando semana a semana. La adaptación está funcionando.</div>';
+        } else if (trend === 'declining') {
+          insHtml += '<div class="alert-chip warn">↓ Compliance en descenso. Revisa si el volumen del plan es sostenible o si hay factores externos (trabajo, viaje, estrés).</div>';
+        }
+        document.getElementById('compliance-insights').innerHTML = insHtml;
+      }).catch(function () {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAPER
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadTaper() {
+    fetch(API + '/adaptive/taper-protocol', { headers: hdrs })
+      .then(function (r) {
+        if (r.status === 404) return null;
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d) {
+          document.getElementById('taper-content').innerHTML =
+            '<div class="alert-chip warn">Sin carrera objetivo registrada. Agrega una en tu Perfil para activar el protocolo de tapering.</div>';
+          return;
+        }
+
+        var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
+        var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
+          [
+            { label: '🏁 Días para la carrera', value: d.days_to_race, color: 'var(--cyan)' },
+            { label: '📊 TSB actual', value: d.tsb_now !== null ? (d.tsb_now > 0 ? '+' : '') + d.tsb_now : '—', color: (d.tsb_now || 0) > 0 ? 'var(--green)' : 'var(--amber)' },
+            { label: '🎯 TSB objetivo carrera', value: '+' + d.tsb_target_race, color: trackCol },
+          ].map(function (k) {
+            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+          }).join('') + '</div>';
+
+        if (d.on_track) {
+          html += '<div class="alert-chip good" style="margin-bottom:1rem">✅ En camino — proyección TSB ' + d.tsb_projected + ' para carrera. Meta: +' + d.tsb_target_race + '.</div>';
+        } else {
+          html += '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ Ajusta la carga — proyección TSB ' + d.tsb_projected + ' para carrera. Meta: +' + d.tsb_target_race + '.</div>';
+        }
+
+        // Key rules
+        html += '<div class="panel" style="padding:1rem;margin-bottom:1rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.5rem;color:var(--cyan)">REGLAS DE TAPERING</div>' +
+          (d.key_rules || []).map(function (r) {
+            return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0;border-bottom:1px solid var(--border2)">→ ' + r + '</div>';
+          }).join('') + '</div>';
+
+        // Taper curve
+        var curve = (d.taper_curve || []).slice(0, 14);
+        if (curve.length) {
+          html += '<div class="sec-h" style="font-size:.78rem">Curva de tapering (próximos ' + curve.length + ' días)</div>';
+          curve.forEach(function (day) {
+            var col = day.taper_factor >= 0.85 ? 'var(--muted)' : day.taper_factor >= 0.55 ? 'var(--cyan)' : day.taper_factor >= 0.35 ? 'var(--amber)' : 'var(--red)';
+            html += '<div class="taper-day">' +
+              '<div class="taper-date">' + day.date_iso + '</div>' +
+              '<div class="taper-factor" style="color:' + col + '">×' + day.taper_factor.toFixed(2) + '</div>' +
+              '<div class="taper-label">' + (day.label || '') + ' · TSS≤' + day.tss_target + '</div>' +
+              '</div>';
+          });
+        }
+
+        document.getElementById('taper-content').innerHTML = html;
+      }).catch(function () {
+        document.getElementById('taper-content').innerHTML = '<div class="alert-chip warn">Error cargando protocolo de tapering.</div>';
+      });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROYECCIÓN CTL
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadProjections() {
+    fetch(API + '/adaptive/projections', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) {
+          document.getElementById('projections-content').innerHTML =
+            '<div class="alert-chip warn">⚠️ ' + d.error + '</div>';
+          return;
+        }
+
+        var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
+        var maxCTL   = Math.max.apply(null, (d.projection || []).map(function(p){return p.ctl_projected;})) || 1;
+
+        var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
+          [
+            { label: 'CTL actual',      value: d.ctl_now,       color: 'var(--purple)' },
+            { label: 'CTL proyectado',  value: d.ctl_projected, color: 'var(--cyan)' },
+            { label: 'CTL objetivo',    value: d.ctl_target,    color: trackCol },
+          ].map(function (k) {
+            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+          }).join('') + '</div>';
+
+        html += d.on_track
+          ? '<div class="alert-chip good" style="margin-bottom:1rem">✅ En camino. Al ritmo actual llegarás con CTL ' + d.ctl_projected + ' (meta: ' + d.ctl_target + ').</div>'
+          : '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ Gap de ' + d.gap + ' puntos CTL. Para llegar al objetivo de ' + d.ctl_target + ' necesitas aumentar compliance o extender la preparación.</div>';
+
+        html += '<div class="sec-h" style="font-size:.78rem">Proyección semanal de CTL (' + d.weeks_left + ' semanas)</div>';
+        (d.projection || []).forEach(function (p) {
+          var w     = Math.round(p.ctl_projected / maxCTL * 100);
+          var pcol  = { base:'var(--cyan)', build:'var(--gold)', peak:'var(--red)', taper:'var(--aqua)', recovery:'var(--green)' }[p.phase] || 'var(--muted)';
+          html += '<div class="proj-row">' +
+            '<div class="proj-date">' + p.week_start + '</div>' +
+            '<div class="proj-bar-wrap"><div class="proj-fill" style="width:' + w + '%;background:' + pcol + '"></div></div>' +
+            '<div class="proj-ctl" style="color:' + pcol + '">' + p.ctl_projected + '</div>' +
+            '<div class="proj-phase">' + p.phase + '</div>' +
+            '</div>';
+        });
+
+        document.getElementById('projections-content').innerHTML = html;
+      }).catch(function () {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HISTORIAL
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadHistory() {
+    fetch(API + '/adaptive/history?days=30', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var stats = d.stats || {};
+        var html  = '<div class="g4" style="margin-bottom:1.5rem;gap:.75rem">' +
+          [
+            { label: 'Días analizados', value: stats.total_days || 0,   color: 'var(--muted)' },
+            { label: 'Días adaptados',  value: stats.adapted_days || 0, color: 'var(--amber)' },
+            { label: '✅ Aceptadas',    value: stats.accepted || 0,      color: 'var(--green)' },
+            { label: '✗ Rechazadas',   value: stats.rejected || 0,      color: 'var(--red)' },
+          ].map(function (k) {
+            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
+          }).join('') + '</div>';
+
+        var adapted = (d.history || []).filter(function(h){return h.signal && h.signal !== 'maintain';});
+        if (adapted.length) {
+          adapted.forEach(function (a) {
+            var sigCol = a.signal_color || 'var(--muted)';
+            html += '<div style="display:grid;grid-template-columns:90px 1fr auto;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border2);align-items:start;font-size:.78rem">' +
+              '<div style="color:var(--dim);font-size:.7rem">' + a.date_iso + '<br><span style="color:' + sigCol + ';font-family:\'Oswald\',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">' + (a.signal || '') + '</span></div>' +
+              '<div style="color:var(--muted);line-height:1.45">' + (a.reason_text || '') + '</div>' +
+              '<div style="text-align:right">' +
+              (a.accepted === true ? '<span style="color:var(--green);font-size:.65rem">✅</span>' :
+               a.accepted === false? '<span style="color:var(--dim);font-size:.65rem">✗</span>' :
+               '<span style="color:var(--dim);font-size:.65rem">—</span>') +
+              '</div>' +
+              '</div>';
+          });
+        } else {
+          html += '<div style="color:var(--dim);font-size:.82rem">Sin adaptaciones en los últimos 30 días.</div>';
+        }
+        document.getElementById('history-content').innerHTML = html;
+      }).catch(function () {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COACH QUEUE
+  // ═══════════════════════════════════════════════════════════════════════════
+  function loadCoachQueue() {
+    fetch(API + '/adaptive/coach-queue', { headers: hdrs })
+      .then(function (r) {
+        if (r.status === 403) return null;
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d) { document.getElementById('coach-queue-content').innerHTML = ''; return; }
+        var html = '<div style="margin-bottom:.75rem;font-size:.8rem;color:var(--muted)">Adaptaciones pendientes de aprobación: <strong style="color:var(--text)">' + d.pending_count + '</strong></div>';
+        if (!(d.queue || []).length) {
+          html += '<div class="alert-chip good">✅ Sin adaptaciones pendientes de aprobación esta semana.</div>';
+        } else {
+          (d.queue || []).forEach(function (a) {
+            var sigCol = a.signal_color || 'var(--muted)';
+            html += '<div style="padding:.75rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start">' +
+              '<div>' +
+              '<div style="font-size:.82rem;font-weight:600">' + (a.athlete_name || a.athlete_id) + ' · <span style="color:' + sigCol + '">' + a.date_iso + '</span></div>' +
+              '<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">' + (a.reason_text || '') + '</div>' +
+              '</div>' +
+              '<div style="display:flex;gap:.35rem">' +
+              '<button class="accept-btn" onclick="coachApprove(\'' + a.id + '\')">✅ Aprobar</button>' +
+              '<button class="reject-btn" onclick="coachReject(\'' + a.id + '\')">✗</button>' +
+              '</div>' +
+              '</div>';
+          });
+        }
+        document.getElementById('coach-queue-content').innerHTML = html;
+      }).catch(function () {});
+  }
+
+  window.coachApprove = function (id) {
+    fetch(API + '/adaptive/coach-approve/' + id, { method: 'POST', headers: hdrs, body: JSON.stringify({}) })
+      .then(function () { loadCoachQueue(); }).catch(function () {});
+  };
+  window.coachReject = function (id) {
+    var note = prompt('Nota para el atleta (opcional):') || '';
+    fetch(API + '/adaptive/coach-reject/' + id, {
+      method: 'POST', headers: hdrs, body: JSON.stringify({ note: note })
+    }).then(function () { loadCoachQueue(); }).catch(function () {});
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════════════════════════════════
+  loadDashboard();
+
+  if (_k && (_k.role === 'coach' || _k.role === 'admin')) {
+    var coachBtn = document.getElementById('coach-tab-btn');
+    if (coachBtn) coachBtn.style.display = '';
+  }
+
+  setTimeout(function () {
+    if (typeof KL !== 'undefined' && KL.init) KL.init();
+  }, 200);
+
+}());
+</script>
+<script src="lx-audit.js"></script>`n</body>
+</html>

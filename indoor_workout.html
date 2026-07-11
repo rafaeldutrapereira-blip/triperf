@@ -1,0 +1,947 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Indoor Workout Builder</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nav.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--cyan:#0EA5E9;--green:#10B981;--red:#EF4444;
+  --gold:#F0A500;--purple:#A855F7;--aqua:#22D3EE;
+  --text:#E8F4FD;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:12px;--radius-sm:8px;--ease:.2s ease;
+  --z1:#64B5F6;--z2:#0EA5E9;--z3:#10B981;--z4:#FF6535;--z5:#EF4444;--z6:#A855F7;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:transparent;color:inherit}
+input,select,textarea{font-family:inherit;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem .7rem;font-size:.85rem;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+select option{background:var(--surface2)}
+
+/* ── Layout ────────────────────────────────────────────────── */
+.iw-wrap{margin-left:220px;padding:1.5rem 1.75rem 3rem;max-width:1280px}
+@media(max-width:860px){.iw-wrap{margin-left:0;padding:68px 1rem 2.5rem}}
+
+/* ── Page header ─────────────────────────────────────────── */
+.iw-ph{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.iw-ph-left h1{font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.iw-ph-left h1 span{color:var(--orange)}
+.iw-ph-left .sub{font-size:.75rem;color:var(--dim);margin-top:.2rem}
+.iw-ph-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+
+/* ── Top meta bar ────────────────────────────────────────── */
+.iw-meta{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.75rem;align-items:end}
+@media(max-width:700px){.iw-meta{grid-template-columns:1fr 1fr}}
+.iw-meta-field label{display:block;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
+.iw-ftp-badge{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem .8rem;font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:800;color:var(--cyan);text-align:center;white-space:nowrap}
+.iw-ftp-badge span{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-top:.1rem}
+
+/* ── Two-col builder ─────────────────────────────────────── */
+.iw-builder{display:grid;grid-template-columns:380px 1fr;gap:1.25rem;align-items:start}
+@media(max-width:1050px){.iw-builder{grid-template-columns:1fr}}
+
+/* ── Block list panel ────────────────────────────────────── */
+.iw-blocks-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.iw-panel-hd{padding:.75rem 1rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.iw-panel-hd h3{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.iw-blocks-list{min-height:80px;padding:.5rem}
+
+/* ── Individual block card ───────────────────────────────── */
+.iw-block{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);margin-bottom:.5rem;overflow:hidden;transition:border-color .18s}
+.iw-block:hover{border-color:rgba(255,101,53,.3)}
+.iw-block-hd{display:flex;align-items:center;gap:.5rem;padding:.55rem .75rem;cursor:pointer;user-select:none}
+.iw-block-color{width:4px;height:28px;border-radius:2px;flex-shrink:0}
+.iw-block-type{font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1}
+.iw-block-summary{font-size:.7rem;color:var(--dim);margin-left:auto;margin-right:.5rem;white-space:nowrap}
+.iw-block-actions{display:flex;gap:.2rem;flex-shrink:0}
+.iw-block-btn{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--dim);transition:all .15s}
+.iw-block-btn:hover{background:var(--border);color:var(--text)}
+.iw-block-btn.del:hover{background:rgba(239,68,68,.15);color:var(--red)}
+.iw-block-body{padding:.65rem .75rem;border-top:1px solid var(--border2);display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.iw-block-body.hidden{display:none}
+.iw-block-body.cols3{grid-template-columns:1fr 1fr 1fr}
+.iw-field-sm label{display:block;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.2rem}
+.iw-field-sm input,.iw-field-sm select{padding:.35rem .5rem;font-size:.8rem}
+.iw-block-body .full{grid-column:1/-1}
+
+/* ── Add block buttons ────────────────────────────────────── */
+.iw-add-row{padding:.65rem .75rem;display:flex;flex-wrap:wrap;gap:.4rem}
+.iw-add-btn{display:inline-flex;align-items:center;gap:.3rem;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .7rem;border-radius:16px;border:1px solid var(--border2);color:var(--dim);transition:all .18s}
+.iw-add-btn:hover{border-color:var(--orange);color:var(--text)}
+
+/* ── Right panel ─────────────────────────────────────────── */
+.iw-right{display:flex;flex-direction:column;gap:1.25rem}
+
+/* ── Power chart ─────────────────────────────────────────── */
+.iw-chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.iw-chart-hd{padding:.75rem 1rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.iw-chart-hd h3{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.iw-chart-hd .legend{display:flex;gap:.7rem;margin-left:auto;flex-wrap:wrap}
+.iw-chart-hd .leg-item{display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--dim)}
+.iw-chart-hd .leg-dot{width:8px;height:8px;border-radius:2px}
+.iw-chart-body{padding:.75rem 1rem 1rem;min-height:160px}
+#iw-svg{width:100%;height:160px;display:block}
+
+/* ── Stats bar ───────────────────────────────────────────── */
+.iw-stats{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1.1rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+@media(max-width:580px){.iw-stats{grid-template-columns:repeat(2,1fr)}}
+.iw-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;line-height:1;color:var(--text)}
+.iw-stat-lbl{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+
+/* ── Zone legend ─────────────────────────────────────────── */
+.iw-zones{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1.1rem}
+.iw-zones h3{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.iw-zones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
+@media(max-width:580px){.iw-zones-grid{grid-template-columns:1fr 1fr}}
+.zone-pill{display:flex;align-items:center;gap:.45rem;padding:.3rem .6rem;border-radius:6px;border:1px solid}
+.zone-pill span{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.06em}
+.zone-pill em{font-size:.58rem;font-style:normal;color:var(--dim);margin-left:auto}
+
+/* ── Export panel ─────────────────────────────────────────── */
+.iw-export{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.iw-export-hd{padding:.75rem 1rem;border-bottom:1px solid var(--border2)}
+.iw-export-hd h3{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.iw-export-body{padding:1rem 1.1rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem}
+@media(max-width:580px){.iw-export-body{grid-template-columns:1fr}}
+.iw-exp-card{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:.85rem;text-align:center}
+.iw-exp-logo{font-size:1.5rem;margin-bottom:.4rem}
+.iw-exp-name{font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}
+.iw-exp-fmt{font-size:.65rem;color:var(--dim);margin-bottom:.7rem}
+.iw-exp-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;width:100%;padding:.45rem;font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;transition:all .18s}
+.iw-exp-btn.zwift{background:rgba(255,101,53,.12);border:1px solid rgba(255,101,53,.35);color:var(--orange)}
+.iw-exp-btn.zwift:hover{background:rgba(255,101,53,.22)}
+.iw-exp-btn.erg{background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);color:var(--cyan)}
+.iw-exp-btn.erg:hover{background:rgba(14,165,233,.2)}
+.iw-exp-btn.mrc{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green)}
+.iw-exp-btn.mrc:hover{background:rgba(16,185,129,.2)}
+.iw-exp-path{font-size:.62rem;color:var(--dim);margin-top:.5rem;line-height:1.5;text-align:left;background:rgba(0,0,0,.2);border-radius:4px;padding:.4rem .6rem}
+.iw-exp-path code{color:var(--aqua);font-size:.6rem}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;letter-spacing:.02em;transition:all var(--ease)}
+.btn-primary{background:var(--orange);color:#fff}.btn-primary:hover{background:#e55a2b}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--cyan);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#0da271}
+.btn-cyan{background:rgba(14,165,233,.12);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}.btn-cyan:hover{background:rgba(14,165,233,.22)}
+.btn svg{flex-shrink:0}
+
+/* ── Toast ───────────────────────────────────────────────── */
+#iw-toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:600;pointer-events:none}
+.toast{background:var(--surface2);border:1px solid var(--border);padding:.5rem 1.1rem;border-radius:20px;font-size:.8rem;display:none}
+.toast.show{display:block;animation:fadeUp .22s ease}
+.toast.ok{border-color:rgba(16,185,129,.4);color:var(--green)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Workout list panel ──────────────────────────────────── */
+.iw-saved-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.25rem}
+.iw-saved-row{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;border-bottom:1px solid var(--border2);font-size:.82rem}
+.iw-saved-row:last-child{border-bottom:none}
+.iw-saved-row:hover{background:var(--surface2)}
+.iw-saved-name{flex:1;font-weight:600}
+.iw-saved-meta{font-size:.7rem;color:var(--dim);white-space:nowrap}
+.iw-saved-btns{display:flex;gap:.3rem}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.iw-empty{padding:2rem;text-align:center;color:var(--dim);font-size:.82rem}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<!-- MAIN -->
+<div class="iw-wrap">
+
+  <!-- Page header -->
+  <div class="iw-ph">
+    <div class="iw-ph-left">
+      <h1>Indoor Workout <span>Builder</span></h1>
+      <div class="sub">Crea workouts estructurados · Exporta a Zwift, TrainerRoad, Wahoo</div>
+    </div>
+    <div class="iw-ph-actions">
+      <button class="btn btn-ghost" onclick="newWorkout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo
+      </button>
+      <button class="btn btn-primary" onclick="saveWorkout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Guardar
+      </button>
+    </div>
+  </div>
+
+  <!-- Saved workouts list -->
+  <div class="iw-saved-panel" id="saved-panel">
+    <div class="iw-panel-hd">
+      <h3>Mis Workouts</h3>
+      <span id="saved-count" style="font-size:.7rem;color:var(--dim)"></span>
+    </div>
+    <div id="saved-list"><div class="iw-empty">Sin workouts guardados — crea el primero abajo.</div></div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="iw-meta">
+    <div class="iw-meta-field">
+      <label>Nombre del workout</label>
+      <input id="wk-name" type="text" placeholder="Ej: Threshold 4×8min">
+    </div>
+    <div class="iw-meta-field">
+      <label>Descripción</label>
+      <input id="wk-desc" type="text" placeholder="Ej: Series de umbral con recuperación activa">
+    </div>
+    <div class="iw-meta-field">
+      <label>Fecha planificada</label>
+      <input id="wk-date" type="date">
+    </div>
+    <div>
+      <div style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">FTP Referencia</div>
+      <div class="iw-ftp-badge"><span id="ftp-display">235</span>W<span>FTP · <a href="athlete_profile.html" style="color:var(--orange)">editar</a></span></div>
+    </div>
+  </div>
+
+  <!-- Two-col builder -->
+  <div class="iw-builder">
+
+    <!-- LEFT: Block list -->
+    <div class="iw-blocks-panel">
+      <div class="iw-panel-hd">
+        <h3>Bloques del workout</h3>
+        <button class="btn btn-ghost" style="font-size:.65rem;padding:.22rem .6rem" onclick="clearBlocks()">Limpiar</button>
+      </div>
+      <div class="iw-blocks-list" id="blocks-list">
+        <div class="iw-empty" id="blocks-empty">Sin bloques — añade uno abajo.</div>
+      </div>
+      <!-- Add block buttons -->
+      <div class="iw-add-row">
+        <button class="iw-add-btn" onclick="addBlock('warmup')"    style="border-color:rgba(100,181,246,.35);color:var(--z1)">+ Calentamiento</button>
+        <button class="iw-add-btn" onclick="addBlock('steady')"    style="border-color:rgba(14,165,233,.35);color:var(--z2)">+ Steady State</button>
+        <button class="iw-add-btn" onclick="addBlock('intervals')" style="border-color:rgba(239,68,68,.35);color:var(--z5)">+ Intervalos</button>
+        <button class="iw-add-btn" onclick="addBlock('ramp')"      style="border-color:rgba(16,185,129,.35);color:var(--z3)">+ Ramp</button>
+        <button class="iw-add-btn" onclick="addBlock('freeride')"  style="border-color:rgba(168,85,247,.35);color:var(--purple)">+ Free Ride</button>
+        <button class="iw-add-btn" onclick="addBlock('cooldown')"  style="border-color:rgba(100,181,246,.35);color:var(--z1)">+ Vuelta Calma</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Chart + stats + export -->
+    <div class="iw-right">
+
+      <!-- Power chart -->
+      <div class="iw-chart-panel">
+        <div class="iw-chart-hd">
+          <h3>Curva de Potencia</h3>
+          <div class="legend">
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z1)"></div>Z1</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z2)"></div>Z2</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z3)"></div>Z3</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z4)"></div>Z4</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z5)"></div>Z5</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--z6)"></div>Z6+</div>
+          </div>
+        </div>
+        <div class="iw-chart-body">
+          <svg id="iw-svg" viewBox="0 0 800 160" preserveAspectRatio="none">
+            <text x="400" y="85" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="11" letter-spacing="2">AÑADE BLOQUES PARA VER LA CURVA</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="iw-stats">
+        <div>
+          <div class="iw-stat-val" id="stat-time">0:00</div>
+          <div class="iw-stat-lbl">Duración total</div>
+        </div>
+        <div>
+          <div class="iw-stat-val" id="stat-tss">0</div>
+          <div class="iw-stat-lbl">TSS estimado</div>
+        </div>
+        <div>
+          <div class="iw-stat-val" id="stat-if">0.00</div>
+          <div class="iw-stat-lbl">IF (Intensity Factor)</div>
+        </div>
+        <div>
+          <div class="iw-stat-val" id="stat-np">0</div>
+          <div class="iw-stat-lbl">NP estimado (W)</div>
+        </div>
+      </div>
+
+      <!-- Zone legend -->
+      <div class="iw-zones">
+        <h3>Zonas de Potencia (% FTP)</h3>
+        <div class="iw-zones-grid">
+          <div class="zone-pill" style="background:rgba(100,181,246,.08);border-color:rgba(100,181,246,.25);color:var(--z1)"><span>Z1 Recuperación</span><em>&lt;55%</em></div>
+          <div class="zone-pill" style="background:rgba(14,165,233,.08);border-color:rgba(14,165,233,.25);color:var(--z2)"><span>Z2 Resistencia</span><em>55–75%</em></div>
+          <div class="zone-pill" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--z3)"><span>Z3 Tempo</span><em>76–90%</em></div>
+          <div class="zone-pill" style="background:rgba(255,101,53,.08);border-color:rgba(255,101,53,.25);color:var(--z4)"><span>Z4 Umbral</span><em>91–105%</em></div>
+          <div class="zone-pill" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:var(--z5)"><span>Z5 VO2Max</span><em>106–120%</em></div>
+          <div class="zone-pill" style="background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.25);color:var(--z6)"><span>Z6 Anaeróbico</span><em>&gt;120%</em></div>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="iw-export">
+        <div class="iw-export-hd">
+          <h3>Exportar Workout</h3>
+        </div>
+        <div class="iw-export-body">
+
+          <div class="iw-exp-card">
+            <div class="iw-exp-logo">🟠</div>
+            <div class="iw-exp-name">Zwift</div>
+            <div class="iw-exp-fmt">Formato .ZWO (XML)</div>
+            <button class="iw-exp-btn zwift" onclick="exportZWO()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar .ZWO
+            </button>
+            <div class="iw-exp-path">
+              📁 Colocar en:<br>
+              <code>Documentos\Zwift\Workouts\</code><br>
+              Aparece en Zwift → Training → My Workouts
+            </div>
+          </div>
+
+          <div class="iw-exp-card">
+            <div class="iw-exp-logo">🔵</div>
+            <div class="iw-exp-name">TrainerRoad / Wahoo</div>
+            <div class="iw-exp-fmt">Formato .ERG</div>
+            <button class="iw-exp-btn erg" onclick="exportERG()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar .ERG
+            </button>
+            <div class="iw-exp-path">
+              Compatible con TrainerRoad, Wahoo RGT, GoldenCheetah, Rouvy
+            </div>
+          </div>
+
+          <div class="iw-exp-card">
+            <div class="iw-exp-logo">🟢</div>
+            <div class="iw-exp-name">MRC / Garmin</div>
+            <div class="iw-exp-fmt">Formato .MRC</div>
+            <button class="iw-exp-btn mrc" onclick="exportMRC()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar .MRC
+            </button>
+            <div class="iw-exp-path">
+              Compatible con GarminConnect, perfecto Bike Indoor, CycleOps PowerBeam
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /iw-right -->
+  </div><!-- /iw-builder -->
+
+</div><!-- /iw-wrap -->
+
+<div id="iw-toast"><div class="toast" id="toast-msg"></div></div>
+
+<script src="auth.js"></script>
+<script>KL.guard('indoor_workout');</script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ─────────── CONSTANTS ─────────────────────────────────────── */
+var LS_KEY   = 'kl_indoor_workouts';
+var LS_DRAFT = 'kl_iw_draft';
+
+var BLOCK_TYPES = {
+  warmup:    { label:'Calentamiento', color:'#64B5F6', zwotag:'Warmup',     hasRepeat:false, hasRamp:true  },
+  steady:    { label:'Steady State',  color:'#0EA5E9', zwotag:'SteadyState',hasRepeat:false, hasRamp:false },
+  intervals: { label:'Intervalos',    color:'#EF4444', zwotag:'IntervalsT', hasRepeat:true,  hasRamp:false },
+  ramp:      { label:'Ramp',          color:'#10B981', zwotag:'Ramp',       hasRepeat:false, hasRamp:true  },
+  freeride:  { label:'Free Ride',     color:'#A855F7', zwotag:'FreeRide',   hasRepeat:false, hasRamp:false },
+  cooldown:  { label:'Vuelta Calma',  color:'#64B5F6', zwotag:'Cooldown',   hasRepeat:false, hasRamp:true  }
+};
+
+/* Power → zone color */
+function zoneColor(pct){
+  if(pct <  0.55) return '#64B5F6';
+  if(pct <  0.75) return '#0EA5E9';
+  if(pct <  0.90) return '#10B981';
+  if(pct <  1.05) return '#FF6535';
+  if(pct <  1.20) return '#EF4444';
+  return '#A855F7';
+}
+
+/* ─────────── STATE ──────────────────────────────────────────── */
+var FTP     = 235;
+var blocks  = [];   /* array of block objects */
+var editId  = null; /* currently editing saved workout id */
+
+/* ─────────── INIT ───────────────────────────────────────────── */
+(function init(){
+  /* Load FTP from athlete profile */
+  try{
+    var prof = JSON.parse(localStorage.getItem('kl_athlete_data')||'null');
+    if(prof && prof.ftp) FTP = parseInt(prof.ftp) || FTP;
+  }catch(e){}
+  document.getElementById('ftp-display').textContent = FTP;
+
+  /* Prefill date from URL ?date= */
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('date')) document.getElementById('wk-date').value = params.get('date');
+  if(params.get('name')) document.getElementById('wk-name').value = decodeURIComponent(params.get('name'));
+
+  /* Load draft */
+  try{
+    var d = JSON.parse(localStorage.getItem(LS_DRAFT)||'null');
+    if(d && d.blocks && d.blocks.length){
+      blocks = d.blocks;
+      document.getElementById('wk-name').value  = d.name  || '';
+      document.getElementById('wk-desc').value  = d.desc  || '';
+      document.getElementById('wk-date').value  = d.date  || document.getElementById('wk-date').value;
+    }
+  }catch(e){}
+
+  renderBlocks();
+  renderChart();
+  renderSaved();
+})();
+
+/* ─────────── BLOCK MANAGEMENT ──────────────────────────────── */
+var _bid = 0;
+function makeBlock(type){
+  _bid++;
+  var b = { id: 'b'+_bid, type: type };
+  switch(type){
+    case 'warmup':
+    case 'cooldown':
+      b.duration = 600; b.power_low = 0.50; b.power_high = 0.75; break;
+    case 'steady':
+      b.duration = 300; b.power = 0.75; break;
+    case 'intervals':
+      b.repeat = 4; b.on_duration = 240; b.on_power = 0.95;
+      b.off_duration = 120; b.off_power = 0.55; break;
+    case 'ramp':
+      b.duration = 600; b.power_low = 0.60; b.power_high = 1.00; break;
+    case 'freeride':
+      b.duration = 300; break;
+  }
+  return b;
+}
+
+window.addBlock = function(type){
+  blocks.push(makeBlock(type));
+  renderBlocks();
+  renderChart();
+  saveDraft();
+};
+
+window.removeBlock = function(id){
+  blocks = blocks.filter(function(b){ return b.id !== id; });
+  renderBlocks();
+  renderChart();
+  saveDraft();
+};
+
+window.moveBlock = function(id, dir){
+  var i = blocks.findIndex(function(b){ return b.id===id; });
+  if(i<0) return;
+  var j = i + dir;
+  if(j<0 || j>=blocks.length) return;
+  var tmp = blocks[i]; blocks[i]=blocks[j]; blocks[j]=tmp;
+  renderBlocks();
+  renderChart();
+  saveDraft();
+};
+
+window.toggleBlock = function(id){
+  var body = document.getElementById('body-'+id);
+  if(body) body.classList.toggle('hidden');
+};
+
+window.clearBlocks = function(){
+  if(blocks.length && !confirm('¿Borrar todos los bloques?')) return;
+  blocks = [];
+  renderBlocks();
+  renderChart();
+  saveDraft();
+};
+
+/* ─────────── RENDER BLOCKS ─────────────────────────────────── */
+function renderBlocks(){
+  var list = document.getElementById('blocks-list');
+  var empty = document.getElementById('blocks-empty');
+  if(empty) empty.style.display = blocks.length ? 'none' : '';
+
+  /* Remove old block cards */
+  var old = list.querySelectorAll('.iw-block');
+  old.forEach(function(el){ el.remove(); });
+
+  blocks.forEach(function(b, idx){
+    var cfg = BLOCK_TYPES[b.type] || BLOCK_TYPES.steady;
+    var el  = document.createElement('div');
+    el.className = 'iw-block';
+    el.id = 'blk-'+b.id;
+
+    var summary = blockSummary(b);
+    el.innerHTML =
+      '<div class="iw-block-hd" onclick="toggleBlock(\''+b.id+'\')">' +
+        '<div class="iw-block-color" style="background:'+cfg.color+'"></div>' +
+        '<div class="iw-block-type" style="color:'+cfg.color+'">'+cfg.label+'</div>' +
+        '<div class="iw-block-summary">'+summary+'</div>' +
+        '<div class="iw-block-actions">' +
+          (idx>0 ? '<button class="iw-block-btn" onclick="event.stopPropagation();moveBlock(\''+b.id+'\',-1)" title="Subir">▲</button>' : '') +
+          (idx<blocks.length-1 ? '<button class="iw-block-btn" onclick="event.stopPropagation();moveBlock(\''+b.id+'\',1)" title="Bajar">▼</button>' : '') +
+          '<button class="iw-block-btn del" onclick="event.stopPropagation();removeBlock(\''+b.id+'\')" title="Eliminar">✕</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="iw-block-body hidden" id="body-'+b.id+'">' +
+        blockFields(b) +
+      '</div>';
+
+    list.appendChild(el);
+  });
+}
+
+function blockSummary(b){
+  var d = fmtDur(totalBlockDuration(b));
+  switch(b.type){
+    case 'warmup':
+    case 'cooldown':
+    case 'ramp':
+      return d + ' · ' + Math.round(b.power_low*100)+'%→'+Math.round(b.power_high*100)+'% FTP';
+    case 'steady':
+      return d + ' · ' + Math.round(b.power*100)+'% FTP';
+    case 'intervals':
+      return b.repeat+'×('+fmtDur(b.on_duration)+' @ '+Math.round(b.on_power*100)+'% / '+fmtDur(b.off_duration)+' @ '+Math.round(b.off_power*100)+'%)';
+    case 'freeride':
+      return d + ' · Intensidad libre';
+  }
+  return d;
+}
+
+function blockFields(b){
+  var f = '';
+  if(b.type === 'intervals'){
+    f += '<div class="iw-field-sm"><label>Repeticiones</label><input type="number" min="1" value="'+b.repeat+'" onchange="updateBlock(\''+b.id+'\',\'repeat\',+this.value);renderChart()"></div>';
+    f += '<div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">';
+    f += '<div class="iw-field-sm"><label>Duración trabajo</label><input type="text" value="'+fmtDur(b.on_duration)+'" onchange="updateBlock(\''+b.id+'\',\'on_duration\',parseDur(this.value));renderChart()"></div>';
+    f += '<div class="iw-field-sm"><label>% FTP trabajo</label><input type="number" min="50" max="200" value="'+Math.round(b.on_power*100)+'" onchange="updateBlock(\''+b.id+'\',\'on_power\',+this.value/100);renderChart()"></div>';
+    f += '<div class="iw-field-sm"><label>Duración descanso</label><input type="text" value="'+fmtDur(b.off_duration)+'" onchange="updateBlock(\''+b.id+'\',\'off_duration\',parseDur(this.value));renderChart()"></div>';
+    f += '<div class="iw-field-sm"><label>% FTP descanso</label><input type="number" min="30" max="100" value="'+Math.round(b.off_power*100)+'" onchange="updateBlock(\''+b.id+'\',\'off_power\',+this.value/100);renderChart()"></div>';
+    f += '</div>';
+  } else if(b.type === 'steady' || b.type === 'freeride'){
+    f += '<div class="iw-field-sm"><label>Duración (mm:ss)</label><input type="text" value="'+fmtDur(b.duration)+'" onchange="updateBlock(\''+b.id+'\',\'duration\',parseDur(this.value));renderChart()"></div>';
+    if(b.type === 'steady'){
+      f += '<div class="iw-field-sm"><label>% FTP</label><input type="number" min="40" max="200" value="'+Math.round(b.power*100)+'" onchange="updateBlock(\''+b.id+'\',\'power\',+this.value/100);renderChart()"></div>';
+    }
+  } else {
+    /* warmup, cooldown, ramp */
+    f += '<div class="iw-field-sm"><label>Duración (mm:ss)</label><input type="text" value="'+fmtDur(b.duration)+'" onchange="updateBlock(\''+b.id+'\',\'duration\',parseDur(this.value));renderChart()"></div>';
+    f += '<div class="iw-field-sm" style="visibility:hidden"></div>';
+    f += '<div class="iw-field-sm"><label>% FTP inicio</label><input type="number" min="30" max="200" value="'+Math.round(b.power_low*100)+'" onchange="updateBlock(\''+b.id+'\',\'power_low\',+this.value/100);renderChart()"></div>';
+    f += '<div class="iw-field-sm"><label>% FTP fin</label><input type="number" min="30" max="200" value="'+Math.round(b.power_high*100)+'" onchange="updateBlock(\''+b.id+'\',\'power_high\',+this.value/100);renderChart()"></div>';
+  }
+  return f;
+}
+
+window.updateBlock = function(id, key, val){
+  var b = blocks.find(function(x){ return x.id===id; });
+  if(!b) return;
+  b[key] = val;
+  /* Update summary in header */
+  var el = document.getElementById('blk-'+id);
+  if(el){
+    var sumEl = el.querySelector('.iw-block-summary');
+    if(sumEl) sumEl.textContent = blockSummary(b);
+  }
+  saveDraft();
+};
+
+/* ─────────── CHART ──────────────────────────────────────────── */
+function renderChart(){
+  var svg = document.getElementById('iw-svg');
+  if(!blocks.length){
+    svg.innerHTML = '<text x="400" y="85" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="11" letter-spacing="2">AÑADE BLOQUES PARA VER LA CURVA</text>';
+    updateStats(0, 0, 0, 0);
+    return;
+  }
+
+  /* Build segments: [{t_start, t_end, p_start, p_end}] */
+  var segs = [];
+  var t = 0;
+  blocks.forEach(function(b){
+    switch(b.type){
+      case 'warmup': case 'cooldown': case 'ramp':
+        segs.push({ts:t, te:t+b.duration, ps:b.power_low, pe:b.power_high});
+        t += b.duration; break;
+      case 'steady':
+        segs.push({ts:t, te:t+b.duration, ps:b.power, pe:b.power});
+        t += b.duration; break;
+      case 'freeride':
+        segs.push({ts:t, te:t+b.duration, ps:0.65, pe:0.65, free:true});
+        t += b.duration; break;
+      case 'intervals':
+        for(var r=0; r<b.repeat; r++){
+          segs.push({ts:t, te:t+b.on_duration,  ps:b.on_power,  pe:b.on_power});
+          t += b.on_duration;
+          segs.push({ts:t, te:t+b.off_duration, ps:b.off_power, pe:b.off_power});
+          t += b.off_duration;
+        }
+        break;
+    }
+  });
+
+  var totalSec = t;
+  var W = 800, H = 160, padB = 20, padT = 8;
+  var chartH = H - padB - padT;
+  var maxP = Math.max(1.25, Math.max.apply(null, segs.map(function(s){ return Math.max(s.ps,s.pe); }))*1.1);
+
+  function xOf(sec){ return (sec/totalSec)*W; }
+  function yOf(p){ return padT + chartH*(1 - Math.min(p,maxP)/maxP); }
+
+  var paths = '';
+  segs.forEach(function(s){
+    var x1=xOf(s.ts), x2=xOf(s.te);
+    var y1=yOf(s.ps), y2=yOf(s.pe);
+    var col = s.free ? '#A855F7' : zoneColor((s.ps+s.pe)/2);
+    var bottom = padT+chartH;
+    paths += '<polygon points="'+x1+','+bottom+' '+x1+','+y1+' '+x2+','+y2+' '+x2+','+bottom+'" fill="'+col+'" opacity="0.75"/>';
+  });
+
+  /* Time axis labels */
+  var labels = '';
+  var step = totalSec <= 3600 ? 600 : 1800;
+  for(var ts=0; ts<=totalSec; ts+=step){
+    var lx = xOf(ts);
+    labels += '<text x="'+lx+'" y="'+(H-4)+'" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="9">'+fmtDur(ts)+'</text>';
+  }
+
+  /* FTP reference line */
+  var ftpY = yOf(1.0);
+  labels += '<line x1="0" y1="'+ftpY+'" x2="'+W+'" y2="'+ftpY+'" stroke="rgba(255,101,53,.4)" stroke-width="1" stroke-dasharray="4,3"/>';
+  labels += '<text x="4" y="'+(ftpY-3)+'" fill="rgba(255,101,53,.7)" font-family="Oswald,sans-serif" font-size="9">FTP</text>';
+
+  svg.innerHTML = paths + labels;
+
+  /* Stats */
+  var ss = calcStats(segs, totalSec);
+  updateStats(totalSec, ss.tss, ss.IF, ss.NP);
+}
+
+function calcStats(segs, totalSec){
+  if(!totalSec) return {tss:0, IF:0, NP:0};
+  /* Normalized Power: 4th power mean of 30s rolling avg → approximate as weighted RMS of segments */
+  var sum4 = 0, sumT = 0;
+  segs.forEach(function(s){
+    var dur = s.te - s.ts;
+    var avgP = (s.ps + s.pe) / 2;
+    if(s.free) avgP = 0.65;
+    sum4 += Math.pow(avgP, 4) * dur;
+    sumT += dur;
+  });
+  var NP_pct = Math.pow(sum4/sumT, 0.25);
+  var NP_W   = NP_pct * FTP;
+  var IF_val = NP_pct;
+  var TSS    = Math.round((totalSec * NP_pct * IF_val) / 3600 * 100);
+  return { tss:TSS, IF:IF_val, NP:Math.round(NP_W) };
+}
+
+function updateStats(totalSec, tss, IF_val, NP){
+  document.getElementById('stat-time').textContent = fmtDur(totalSec, true);
+  document.getElementById('stat-tss').textContent  = tss;
+  document.getElementById('stat-if').textContent   = IF_val.toFixed(2);
+  document.getElementById('stat-np').textContent   = NP + 'W';
+}
+
+/* ─────────── SAVE / LOAD ────────────────────────────────────── */
+function saveDraft(){
+  localStorage.setItem(LS_DRAFT, JSON.stringify({
+    name:  document.getElementById('wk-name').value,
+    desc:  document.getElementById('wk-desc').value,
+    date:  document.getElementById('wk-date').value,
+    blocks: blocks
+  }));
+}
+
+window.saveWorkout = function(){
+  var name = document.getElementById('wk-name').value.trim();
+  if(!name){ toast('Escribe un nombre para el workout', false); return; }
+  if(!blocks.length){ toast('Añade al menos un bloque', false); return; }
+
+  var list = loadSaved();
+  var now  = Date.now();
+  var wo = {
+    id:     editId || 'wo-'+now,
+    name:   name,
+    desc:   document.getElementById('wk-desc').value.trim(),
+    date:   document.getElementById('wk-date').value,
+    ftp:    FTP,
+    blocks: JSON.parse(JSON.stringify(blocks)),
+    updated: now
+  };
+
+  if(editId){
+    var idx = list.findIndex(function(w){ return w.id===editId; });
+    if(idx>=0) list[idx]=wo; else list.push(wo);
+  } else {
+    list.push(wo);
+    editId = wo.id;
+  }
+
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+  localStorage.removeItem(LS_DRAFT);
+  renderSaved();
+  toast('✓ Workout guardado', true);
+};
+
+function loadSaved(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }catch(e){ return []; }
+}
+
+window.loadWorkout = function(id){
+  var list = loadSaved();
+  var wo = list.find(function(w){ return w.id===id; });
+  if(!wo) return;
+  editId = wo.id;
+  blocks = JSON.parse(JSON.stringify(wo.blocks));
+  document.getElementById('wk-name').value = wo.name;
+  document.getElementById('wk-desc').value = wo.desc || '';
+  document.getElementById('wk-date').value = wo.date || '';
+  renderBlocks();
+  renderChart();
+  window.scrollTo({top:0, behavior:'smooth'});
+  toast('Workout cargado: '+wo.name, true);
+};
+
+window.deleteWorkout = function(id){
+  if(!confirm('¿Eliminar este workout?')) return;
+  var list = loadSaved().filter(function(w){ return w.id!==id; });
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+  if(editId===id){ editId=null; newWorkout(); }
+  renderSaved();
+  toast('Workout eliminado', true);
+};
+
+window.newWorkout = function(){
+  editId = null;
+  blocks = [];
+  document.getElementById('wk-name').value = '';
+  document.getElementById('wk-desc').value = '';
+  localStorage.removeItem(LS_DRAFT);
+  renderBlocks();
+  renderChart();
+};
+
+function renderSaved(){
+  var list = loadSaved();
+  var el = document.getElementById('saved-list');
+  var cnt = document.getElementById('saved-count');
+  if(cnt) cnt.textContent = list.length ? '('+list.length+')' : '';
+  if(!list.length){
+    el.innerHTML = '<div class="iw-empty">Sin workouts guardados — crea el primero abajo.</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(wo){
+    var totalSec = wo.blocks.reduce(function(acc,b){ return acc+totalBlockDuration(b); }, 0);
+    var segs = buildSegs(wo.blocks);
+    var ss = calcStats(segs, totalSec);
+    return '<div class="iw-saved-row">' +
+      '<div class="iw-saved-name">'+esc(wo.name)+'</div>' +
+      '<div class="iw-saved-meta">'+fmtDur(totalSec,true)+' · TSS '+ss.tss+' · IF '+ss.IF.toFixed(2)+(wo.date ? ' · '+wo.date : '')+'</div>' +
+      '<div class="iw-saved-btns">' +
+        '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem" onclick="loadWorkout(\''+wo.id+'\')">Editar</button>' +
+        '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--orange)" onclick="exportZWO(\''+wo.id+'\')">ZWO</button>' +
+        '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--cyan)" onclick="exportERG(\''+wo.id+'\')">ERG</button>' +
+        '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--red)" onclick="deleteWorkout(\''+wo.id+'\')">✕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ─────────── EXPORT ─────────────────────────────────────────── */
+function getWorkoutData(id){
+  if(id){
+    var list = loadSaved();
+    return list.find(function(w){ return w.id===id; }) || null;
+  }
+  /* Current builder state */
+  return {
+    name:   document.getElementById('wk-name').value.trim() || 'LabX Workout',
+    desc:   document.getElementById('wk-desc').value.trim(),
+    date:   document.getElementById('wk-date').value,
+    ftp:    FTP,
+    blocks: blocks
+  };
+}
+
+window.exportZWO = function(id){
+  var wo = getWorkoutData(id||null);
+  if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
+
+  var xml = '<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n';
+  xml += '  <author>LabX Coach</author>\n';
+  xml += '  <name>'+esc(wo.name)+'</name>\n';
+  xml += '  <description>'+esc(wo.desc||wo.name)+' | FTP: '+wo.ftp+'W</description>\n';
+  xml += '  <sportType>bike</sportType>\n';
+  xml += '  <tags/>\n';
+  xml += '  <workout>\n';
+
+  wo.blocks.forEach(function(b){
+    switch(b.type){
+      case 'warmup':
+        xml += '    <Warmup Duration="'+b.duration+'" PowerLow="'+b.power_low.toFixed(2)+'" PowerHigh="'+b.power_high.toFixed(2)+'"/>\n'; break;
+      case 'cooldown':
+        xml += '    <Cooldown Duration="'+b.duration+'" PowerLow="'+b.power_high.toFixed(2)+'" PowerHigh="'+b.power_low.toFixed(2)+'"/>\n'; break;
+      case 'steady':
+        xml += '    <SteadyState Duration="'+b.duration+'" Power="'+b.power.toFixed(2)+'"/>\n'; break;
+      case 'intervals':
+        xml += '    <IntervalsT Repeat="'+b.repeat+'" OnDuration="'+b.on_duration+'" OffDuration="'+b.off_duration+'" OnPower="'+b.on_power.toFixed(2)+'" OffPower="'+b.off_power.toFixed(2)+'" pace="0"/>\n'; break;
+      case 'ramp':
+        xml += '    <Ramp Duration="'+b.duration+'" PowerLow="'+b.power_low.toFixed(2)+'" PowerHigh="'+b.power_high.toFixed(2)+'"/>\n'; break;
+      case 'freeride':
+        xml += '    <FreeRide Duration="'+b.duration+'" FlatRoad="0"/>\n'; break;
+    }
+  });
+
+  xml += '  </workout>\n</workout_file>';
+  download(safeName(wo.name)+'.zwo', xml, 'application/xml');
+  toast('✓ Descargado .ZWO — cópialo a Documents\\Zwift\\Workouts\\', true);
+};
+
+window.exportERG = function(id){
+  var wo = getWorkoutData(id||null);
+  if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
+  var ftp = wo.ftp || FTP;
+  var segs = buildSegs(wo.blocks);
+
+  var txt = '[COURSE HEADER]\r\nDESCRIPTION = '+wo.name+'\r\nFILE NAME = '+safeName(wo.name)+'\r\nMINUTES WATTS\r\n[END COURSE HEADER]\r\n[COURSE DATA]\r\n';
+
+  /* Convert segments to minute-by-minute ERG points */
+  var points = [];
+  segs.forEach(function(s){
+    var dur = (s.te-s.ts)/60;
+    var w1  = (s.free ? 0.65 : s.ps) * ftp;
+    var w2  = (s.free ? 0.65 : s.pe) * ftp;
+    if(!points.length) points.push([0, Math.round(w1)]);
+    var t   = s.ts/60;
+    points.push([parseFloat(t.toFixed(3)), Math.round(w1)]);
+    points.push([parseFloat((t+dur).toFixed(3)), Math.round(w2)]);
+  });
+
+  txt += points.map(function(p){ return p[0]+'\t'+p[1]; }).join('\r\n');
+  txt += '\r\n[END COURSE DATA]';
+  download(safeName(wo.name)+'.erg', txt, 'text/plain');
+  toast('✓ Descargado .ERG — compatible con TrainerRoad, Wahoo, GoldenCheetah', true);
+};
+
+window.exportMRC = function(id){
+  var wo = getWorkoutData(id||null);
+  if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
+  var ftp = wo.ftp || FTP;
+  var segs = buildSegs(wo.blocks);
+
+  var txt = '[COURSE HEADER]\r\nDESCRIPTION = '+wo.name+'\r\nFILE NAME = '+safeName(wo.name)+'\r\nMINUTES PERCENT\r\n[END COURSE HEADER]\r\n[COURSE DATA]\r\n';
+
+  var points = [];
+  segs.forEach(function(s){
+    var t = s.ts/60;
+    var dur = (s.te-s.ts)/60;
+    var p1  = Math.round((s.free ? 0.65 : s.ps)*100);
+    var p2  = Math.round((s.free ? 0.65 : s.pe)*100);
+    if(!points.length) points.push([0, p1]);
+    points.push([parseFloat(t.toFixed(3)), p1]);
+    points.push([parseFloat((t+dur).toFixed(3)), p2]);
+  });
+
+  txt += points.map(function(p){ return p[0]+'\t'+p[1]; }).join('\r\n');
+  txt += '\r\n[END COURSE DATA]';
+  download(safeName(wo.name)+'.mrc', txt, 'text/plain');
+  toast('✓ Descargado .MRC — compatible con Garmin, CycleOps, GoldenCheetah', true);
+};
+
+/* ─────────── HELPERS ────────────────────────────────────────── */
+function buildSegs(bls){
+  var segs = []; var t = 0;
+  bls.forEach(function(b){
+    switch(b.type){
+      case 'warmup': case 'cooldown': case 'ramp':
+        segs.push({ts:t, te:t+b.duration, ps:b.power_low, pe:b.power_high}); t+=b.duration; break;
+      case 'steady':
+        segs.push({ts:t, te:t+b.duration, ps:b.power, pe:b.power}); t+=b.duration; break;
+      case 'freeride':
+        segs.push({ts:t, te:t+b.duration, ps:0.65, pe:0.65, free:true}); t+=b.duration; break;
+      case 'intervals':
+        for(var r=0;r<b.repeat;r++){
+          segs.push({ts:t, te:t+b.on_duration, ps:b.on_power, pe:b.on_power}); t+=b.on_duration;
+          segs.push({ts:t, te:t+b.off_duration, ps:b.off_power, pe:b.off_power}); t+=b.off_duration;
+        } break;
+    }
+  });
+  return segs;
+}
+
+function totalBlockDuration(b){
+  switch(b.type){
+    case 'intervals': return b.repeat * (b.on_duration + b.off_duration);
+    default: return b.duration || 0;
+  }
+}
+
+function fmtDur(sec, long){
+  if(!sec) return long ? '0:00' : '0:00';
+  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
+  if(long){
+    if(h) return h+'h '+String(m).padStart(2,'0')+'min';
+    return m+'min '+String(s).padStart(2,'0')+'s';
+  }
+  if(h) return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  return m+':'+String(s).padStart(2,'0');
+}
+
+function parseDur(str){
+  if(!str) return 300;
+  str = str.trim();
+  var parts = str.split(':').map(Number);
+  if(parts.length===3) return (parts[0]*3600+parts[1]*60+parts[2])||300;
+  if(parts.length===2) return (parts[0]*60+parts[1])||300;
+  return parseInt(str)*60||300;
+}
+
+function safeName(name){ return (name||'workout').replace(/[^a-z0-9_-]/gi,'_').replace(/__+/g,'_'); }
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function download(filename, content, mime){
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download = filename;
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+}
+
+function toast(msg, ok){
+  var el = document.getElementById('toast-msg');
+  el.textContent = msg;
+  el.className = 'toast show' + (ok!==false ? ' ok' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 3000);
+}
+
+/* Re-render chart when FTP changes from outside */
+document.getElementById('wk-name').addEventListener('input', saveDraft);
+document.getElementById('wk-desc').addEventListener('input', saveDraft);
+document.getElementById('wk-date').addEventListener('input', saveDraft);
+
+})();
+</script>
+</body>
+</html>

@@ -1,1547 +1,764 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" translate="no">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KonaLabs — Where Champions Are Built</title>
+<title>LabX — Plataforma de Coaching y Rendimiento Atlético</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-
 <style>
-/* ── Reset & Variables ──────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ── KONA HAWAII PALETTE ─────────────────────────────────────────────────────
-   Deep Pacific · Volcanic Lava Fields · Ali'i Drive Sunset · Kailua Bay
-──────────────────────────────────────────────────────────────────────────── */
-:root {
-  /* Backgrounds — volcanic ocean depth */
-  --bg:        #04080F;        /* Pacific midnight — lava meets ocean */
-  --surface:   #08121E;        /* Deep ocean shelf */
-  --surface2:  #0C1D30;        /* Ocean current layer */
-  --border:    rgba(8,116,174,.18); /* Pacific teal border */
-
-  /* Brand — Kona Sunset palette */
-  --orange:    #FF6535;        /* Kona sunset — Ali'i Drive hour */
-  --orange2:   #E8490A;        /* Deep lava glow */
-  --gold:      #F0A500;        /* Hawaiian gold — sacred lei */
-  --coral:     #FF8C61;        /* Coral reef · warm accent */
-
-  /* Ocean — Kailua Bay */
-  --cyan:      #0EA5E9;        /* Pacific shimmer */
-  --teal:      #0891B2;        /* Kailua Bay deep water */
-  --aqua:      #22D3EE;        /* Ocean surface light */
-
-  /* Nature */
-  --green:     #10B981;        /* Kona coffee · tropical vegetation */
-  --lava:      #7F1D1D;        /* Dried lava field · Queen K Highway */
-
-  /* Typography */
-  --text:      #F0F9FF;        /* Ocean mist white */
-  --muted:     #7FB3CC;        /* Soft Pacific blue */
-  --dim:       #3D6880;        /* Deep water dim */
-
-  --radius:    12px;
-  --transition: 220ms cubic-bezier(.4,0,.2,1);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);
+  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:14px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
 }
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+img{max-width:100%;display:block}
+.c{max-width:1200px;margin:0 auto;padding:0 clamp(1.25rem,5vw,2.5rem)}
+section{padding:clamp(4rem,8vw,7rem) 0}
 
-html { scroll-behavior: smooth; }
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(8,116,174,.12);transition:box-shadow var(--ease)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:.04em;display:flex;align-items:center;gap:.2rem}
+.nav-logo .x{color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:1.75rem}
+.nav-links a{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;align-items:center;gap:.75rem}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.5rem;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all var(--ease)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,101,53,.35)}
+.nav-burger{display:none;background:none;border:none;cursor:pointer;color:var(--text);padding:.5rem}
+.mobile-menu{display:none;flex-direction:column;gap:.25rem;padding:.75rem 1.25rem 1.25rem;border-top:1px solid var(--border)}
+.mobile-menu.open{display:flex}
+.mobile-menu a{font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.6rem 0;border-bottom:1px solid var(--border)}
+.mobile-menu a:last-child{border:none;color:var(--orange)}
+@media(max-width:768px){.nav-links,.nav-cta .btn-ghost{display:none}.nav-burger{display:block}}
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
-  /* Subtle volcanic texture */
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-
-img { max-width: 100%; display: block; }
-a  { color: inherit; text-decoration: none; }
-ul { list-style: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-}
-
-/* ── Typography ─────────────────────────────────────────────────────────────── */
-.heading-xl {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(3rem, 8vw, 6.5rem);
-  font-weight: 800;
-  line-height: .95;
-  letter-spacing: -.02em;
-  text-transform: uppercase;
-}
-.heading-lg {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -.01em;
-  text-transform: uppercase;
-}
-.heading-md {
-  font-family: 'Oswald', sans-serif;
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
-  font-weight: 600;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.label {
-  font-family: 'Oswald', sans-serif;
-  font-size: .72rem;
-  font-weight: 500;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--orange);
-}
-
-/* ── Utility ────────────────────────────────────────────────────────────────── */
-.container { max-width: 1280px; margin: 0 auto; padding: 0 clamp(1.25rem, 5vw, 3rem); }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,480px),1fr)); gap: 2rem; }
-.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,300px),1fr)); gap: 1.5rem; }
-.grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,180px),1fr)); gap: 1.25rem; }
-
-.btn {
-  display: inline-flex; align-items: center; gap: .5rem;
-  font-family: 'Oswald', sans-serif;
-  font-size: .9rem; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase;
-  padding: .85rem 2rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-.btn-primary {
-  background: var(--orange);
-  color: #fff;
-}
-.btn-primary:hover { background: var(--orange2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(249,115,22,.35); }
-.btn-outline {
-  background: transparent;
-  color: var(--text);
-  border: 1.5px solid var(--border);
-}
-.btn-outline:hover { border-color: var(--orange); color: var(--orange); }
-.btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
-
-.tag {
-  display: inline-block;
-  font-size: .7rem; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase;
-  padding: .25rem .75rem;
-  border-radius: 20px;
-  background: rgba(249,115,22,.12);
-  color: var(--orange);
-  border: 1px solid rgba(249,115,22,.25);
-}
-
-section { padding: clamp(4rem, 8vw, 7rem) 0; }
-
-/* ── NAV ────────────────────────────────────────────────────────────────────── */
-#nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(4,8,15,.88);
-  backdrop-filter: blur(20px) saturate(160%);
-  border-bottom: 1px solid rgba(8,145,178,.15);
-  transition: background var(--transition);
-}
-.nav-inner {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px;
-}
-.nav-logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.5rem; font-weight: 800;
-  letter-spacing: -.01em;
-  display: flex; align-items: center; gap: .35rem;
-}
-.nav-logo .accent { color: var(--orange); }
-.nav-logo svg { width: 22px; height: 22px; color: var(--orange); }
-
-.nav-links {
-  display: flex; align-items: center; gap: 2rem;
-}
-.nav-links a {
-  font-family: 'Oswald', sans-serif;
-  font-size: .82rem; font-weight: 500;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  transition: color var(--transition);
-}
-.nav-links a:hover { color: var(--text); }
-.nav-links a:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; border-radius: 2px; }
-
-.nav-cta { display: flex; align-items: center; gap: 1rem; }
-.nav-dash {
-  font-family: 'Oswald', sans-serif;
-  font-size: .82rem; font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--orange);
-  display: flex; align-items: center; gap: .4rem;
-  padding: .5rem 1.25rem;
-  border: 1.5px solid rgba(249,115,22,.4);
-  border-radius: 6px;
-  transition: all var(--transition);
-}
-.nav-dash:hover { background: rgba(249,115,22,.1); border-color: var(--orange); }
-.nav-dash svg { width: 14px; height: 14px; }
-
-.nav-burger {
-  display: none;
-  background: none; border: none;
-  cursor: pointer;
-  color: var(--text);
-  padding: .5rem;
-}
-.mobile-menu {
-  display: none;
-  flex-direction: column;
-  gap: .5rem;
-  padding: 1rem 1.25rem 1.5rem;
-  border-top: 1px solid var(--border);
-}
-.mobile-menu.open { display: flex; }
-.mobile-menu a {
-  font-family: 'Oswald', sans-serif;
-  font-size: 1rem; font-weight: 500; letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding: .65rem 0;
-  border-bottom: 1px solid var(--border);
-  transition: color var(--transition);
-}
-.mobile-menu a:last-child { border-bottom: none; }
-.mobile-menu a:hover { color: var(--orange); }
-
-@media (max-width: 768px) {
-  .nav-links, .nav-cta .btn { display: none; }
-  .nav-burger { display: block; }
-}
-
-/* ── HERO ───────────────────────────────────────────────────────────────────── */
-#hero {
-  position: relative;
-  min-height: 100svh;
-  display: flex; align-items: center;
-  overflow: hidden;
-  padding-top: 64px;
-}
-
-.hero-bg {
-  position: absolute; inset: 0;
+/* HERO */
+#hero{min-height:100svh;display:flex;align-items:center;padding-top:64px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;
   background:
-    /* Kona sunset glow — right side */
-    radial-gradient(ellipse 70% 80% at 80% 40%, rgba(255,101,53,.14) 0%, transparent 65%),
-    /* Ali'i Drive gold bloom */
-    radial-gradient(ellipse 50% 50% at 65% 10%,  rgba(240,165,0,.10) 0%, transparent 55%),
-    /* Pacific ocean deep — left */
-    radial-gradient(ellipse 80% 70% at 10% 60%,  rgba(8,145,178,.13) 0%, transparent 65%),
-    /* Kailua Bay shimmer — bottom */
-    radial-gradient(ellipse 100% 40% at 50% 100%, rgba(14,165,233,.08) 0%, transparent 60%),
-    /* Deep volcanic base */
-    linear-gradient(160deg, #04080F 0%, #060E1C 40%, #080A10 100%);
+    radial-gradient(ellipse 70% 60% at 80% 30%,  rgba(255,101,53,.12) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 70% at 10% 70%,  rgba(14,165,233,.09) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(168,85,247,.05) 0%,transparent 55%),
+    #04080F;
+}
+.hero-grid{position:absolute;inset:0;opacity:.025;
+  background-image:linear-gradient(rgba(14,165,233,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,.8) 1px,transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 80% 100% at 50% 100%,black 30%,transparent 100%);
+}
+.hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;width:100%;padding:clamp(3rem,8vw,5rem) 0}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);background:rgba(255,101,53,.08);border:1px solid rgba(255,101,53,.2);border-radius:20px;padding:.3rem .9rem;margin-bottom:1.25rem}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--orange);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.8rem,6vw,5rem);font-weight:900;line-height:.95;letter-spacing:-.01em;text-transform:uppercase;margin-bottom:1.5rem}
+.hero-title .accent{color:var(--orange)}
+.hero-title .stroke{-webkit-text-stroke:1.5px rgba(240,249,255,.2);color:transparent}
+.hero-desc{font-size:1.05rem;color:var(--muted);max-width:480px;line-height:1.75;margin-bottom:2rem}
+.hero-desc strong{color:var(--text)}
+.hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:2.5rem}
+.hero-actions .btn{padding:.82rem 1.75rem;font-size:.88rem}
+.hero-stats{display:flex;gap:2rem;flex-wrap:wrap}
+.hero-stat .n{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;color:var(--text)}
+.hero-stat .n span{color:var(--orange)}
+.hero-stat .l{font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
+
+/* Hero visual — dashboard mockup */
+.hero-visual{position:relative}
+.hero-card{background:rgba(8,18,30,.95);border:1px solid rgba(8,116,174,.2);border-radius:var(--radius);padding:1.5rem;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(255,101,53,.06),transparent);pointer-events:none}
+.hc-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.hc-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;letter-spacing:.04em}
+.hc-logo span{color:var(--orange)}
+.hc-dots{display:flex;gap:.4rem}
+.hc-dot{width:8px;height:8px;border-radius:50%}
+.hc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}
+.hc-metric{background:var(--surface2);border-radius:var(--radius-sm);padding:.75rem;text-align:center}
+.hc-metric .val{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;line-height:1}
+.hc-metric .lbl{font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+.hc-bar-section{margin-bottom:1rem}
+.hc-bar-label{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.4rem}
+.hc-bar-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.hc-bar-fill{height:100%;border-radius:3px}
+.hc-athletes{display:flex;flex-direction:column;gap:.5rem}
+.hc-athlete{display:flex;align-items:center;gap:.7rem;padding:.5rem .75rem;background:var(--surface2);border-radius:var(--radius-sm)}
+.hc-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;flex-shrink:0}
+.hc-aname{font-size:.78rem;font-weight:500;flex:1}
+.hc-status{font-size:.65rem;font-weight:600;letter-spacing:.06em;padding:.15rem .5rem;border-radius:4px}
+.hero-pill{position:absolute;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.5rem .85rem;font-size:.72rem;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:.4rem;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.hp-1{top:-16px;right:40px;animation:float1 4s ease-in-out infinite}
+.hp-2{bottom:20px;left:-30px;animation:float2 5s ease-in-out infinite}
+.hp-3{bottom:-16px;right:20px;animation:float1 3.5s ease-in-out infinite .5s}
+@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+.dot-green{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.dot-orange{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
+.dot-cyan{width:6px;height:6px;border-radius:50%;background:var(--cyan);flex-shrink:0}
+
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;text-align:center}
+  .hero-desc{margin:0 auto 2rem}
+  .hero-actions{justify-content:center}
+  .hero-stats{justify-content:center}
+  .hero-visual{margin-top:2rem}
+  .hp-1,.hp-2,.hp-3{display:none}
 }
 
-/* Ocean horizon line — subtle wave texture */
-.hero-bg::after {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 79px,
-      rgba(8,145,178,.03) 80px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 79px,
-      rgba(255,101,53,.02) 80px
-    );
-}
+/* STRIP */
+.strip{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1rem 0;overflow:hidden}
+.strip-inner{display:flex;align-items:center;gap:2.5rem;overflow-x:auto;scrollbar-width:none}
+.strip-inner::-webkit-scrollbar{display:none}
+.strip-item{display:flex;align-items:center;gap:.6rem;flex-shrink:0;font-size:.82rem;color:var(--muted)}
+.strip-item svg{color:var(--orange);width:16px;height:16px;flex-shrink:0}
+.strip-div{width:1px;height:20px;background:var(--border);flex-shrink:0}
 
-.hero-grid-lines {
-  position: absolute; inset: 0; opacity: .025;
-  background-image:
-    linear-gradient(rgba(14,165,233,.8) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(14,165,233,.8) 1px, transparent 1px);
-  background-size: 80px 80px;
-  mask-image: radial-gradient(ellipse 80% 100% at 50% 100%, black 30%, transparent 100%);
-}
+/* FEATURES */
+#features{background:var(--bg)}
+.section-label{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:.75rem}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:800;text-transform:uppercase;line-height:1;margin-bottom:1rem}
+.section-sub{font-size:.95rem;color:var(--muted);max-width:560px;line-height:1.7}
 
-.hero-content {
-  position: relative; z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-  width: 100%;
-  padding: clamp(3rem, 8vw, 6rem) 0;
-}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1.25rem;margin-top:3rem}
+.feat-card{background:linear-gradient(145deg,var(--surface),var(--bg));border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.6rem;transition:all var(--ease);position:relative;overflow:hidden}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--fc-color,var(--orange));transform:scaleX(0);transform-origin:left;transition:transform var(--ease)}
+.feat-card:hover{border-color:var(--fc-color,var(--orange));transform:translateY(-3px)}
+.feat-card:hover::before{transform:scaleX(1)}
+.feat-head{display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem}
+.feat-ico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
+.feat-title{font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;line-height:1.2}
+.feat-desc{font-size:.84rem;color:var(--muted);line-height:1.68;padding-left:calc(36px + .75rem)}
 
-.hero-eyebrow {
-  display: flex; align-items: center; gap: .75rem;
-  margin-bottom: 1.5rem;
-}
-.hero-eyebrow::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, var(--orange), transparent);
-  max-width: 120px;
-}
+/* HOW IT WORKS */
+#how{background:var(--surface)}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:2rem;margin-top:3rem;position:relative}
+.how-grid::before{content:'';position:absolute;top:36px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border),var(--border),transparent);z-index:0}
+.how-step{position:relative;z-index:1;text-align:center}
+.how-num{width:72px;height:72px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--orange);position:relative;transition:border-color var(--ease)}
+.how-step:hover .how-num{border-color:var(--orange);background:rgba(255,101,53,.08)}
+.how-num::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(255,101,53,.15)}
+.how-title{font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem}
+.how-desc{font-size:.82rem;color:var(--muted);line-height:1.65}
 
-.hero-title { margin-bottom: 1.5rem; }
-.hero-title .line2 { color: var(--orange); }
-.hero-title .line3 {
-  -webkit-text-stroke: 1px rgba(241,245,249,.25);
-  color: transparent;
-}
+/* ROLES */
+#roles{background:var(--bg)}
+.roles-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+.role-card{background:linear-gradient(145deg,var(--surface),var(--bg));border:1px solid var(--border);border-radius:var(--radius);padding:2rem;transition:all var(--ease);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.role-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--rc-color,var(--cyan));transform:scaleX(0);transform-origin:left;transition:transform var(--ease)}
+.role-card:hover::before{transform:scaleX(1)}
+.role-card:hover{border-color:var(--rc-color,var(--cyan));transform:translateY(-2px)}
+.role-card.coach-card{--rc-color:var(--orange)}
+.role-head{display:flex;align-items:center;gap:.85rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.role-icon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.role-head-text{}
+.role-label{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:.15rem}
+.role-title{font-family:'Barlow Condensed',sans-serif;font-size:1.55rem;font-weight:800;text-transform:uppercase;line-height:1}
+.role-desc{font-size:.87rem;color:var(--muted);line-height:1.68;margin-bottom:1.25rem;flex:1}
+.role-features{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem}
+.role-feat{display:flex;align-items:center;gap:.6rem;font-size:.83rem;color:var(--muted)}
+.role-feat svg{width:14px;height:14px;flex-shrink:0;color:var(--green)}
+.role-cta{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--rc-color,var(--cyan));border:1px solid var(--rc-color,var(--cyan));border-radius:var(--radius-sm);padding:.6rem 1.25rem;transition:all var(--ease);align-self:flex-start;margin-top:auto}
+.role-cta:hover{background:var(--rc-color,var(--cyan));color:#fff}
+@media(max-width:640px){.roles-grid{grid-template-columns:1fr}}
 
-.hero-desc {
-  font-size: 1.05rem;
-  color: var(--muted);
-  max-width: 480px;
-  margin-bottom: 2.5rem;
-  line-height: 1.75;
-}
+/* PLANS */
+#plans{background:var(--surface)}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:1.5rem;margin-top:3rem}
+.plan-card{background:linear-gradient(145deg,var(--surface2),var(--surface));border:1px solid var(--border);border-radius:var(--radius);padding:0;display:flex;flex-direction:column;transition:all var(--ease);overflow:hidden}
+.plan-card.featured{border-color:rgba(255,101,53,.4)}
+.plan-card:hover{transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+/* plan header band */
+.plan-head{padding:1.4rem 1.6rem 1.1rem;border-bottom:1px solid var(--border);background:var(--ph-bg,transparent)}
+.plan-card.featured .plan-head{background:rgba(255,101,53,.04)}
+.plan-head-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
+.plan-tag{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:.22rem .65rem;border-radius:4px;display:inline-block}
+.tag-basic{background:rgba(61,104,128,.2);color:var(--dim)}
+.tag-pro{background:rgba(255,101,53,.15);color:var(--orange)}
+.tag-elite{background:rgba(240,165,0,.15);color:var(--gold)}
+.plan-ico{font-size:1.3rem;line-height:1}
+.plan-name{font-family:'Barlow Condensed',sans-serif;font-size:1.55rem;font-weight:900;text-transform:uppercase;line-height:1;margin-bottom:.2rem}
+.plan-price-row{display:flex;align-items:baseline;gap:.4rem}
+.plan-price{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1}
+.plan-price-note{font-size:.68rem;color:var(--dim);letter-spacing:.04em}
+/* plan body */
+.plan-body{padding:1.25rem 1.6rem 1.6rem;display:flex;flex-direction:column;flex:1}
+.plan-desc{font-size:.83rem;color:var(--muted);line-height:1.62;margin-bottom:1.1rem}
+.plan-features{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1.4rem;flex:1}
+.plan-feat{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
+.plan-feat svg{width:14px;height:14px;flex-shrink:0}
+.plan-feat.on svg{color:var(--green)}
+.plan-feat.off{opacity:.8}
+.plan-feat.off svg{color:#ef4444}
+.plan-btn{width:100%;padding:.78rem;border:none;border-radius:var(--radius-sm);font-family:'Oswald',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all var(--ease);display:flex;align-items:center;justify-content:center;gap:.45rem;text-decoration:none}
+.plan-btn-primary{background:var(--orange);color:#fff}
+.plan-btn-primary:hover{background:var(--orange2);transform:translateY(-1px)}
+.plan-btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.plan-btn-outline:hover{border-color:var(--pc-color,var(--orange));color:var(--pc-color,var(--orange))}
 
-.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem; }
+/* TESTIMONIALS */
+#testimonials{background:var(--bg)}
+.test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1.25rem;margin-top:3rem}
+.test-card{background:linear-gradient(145deg,var(--surface),var(--bg));border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;transition:all var(--ease)}
+.test-card:hover{border-color:rgba(255,101,53,.2);transform:translateY(-2px)}
+.stars{display:flex;gap:.2rem;margin-bottom:1rem}
+.star{width:14px;height:14px;color:var(--gold)}
+.test-quote{font-size:.88rem;color:var(--muted);line-height:1.75;margin-bottom:1.25rem;font-style:italic}
+.test-author{display:flex;align-items:center;gap:.65rem}
+.test-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--orange);flex-shrink:0}
+.test-name{font-size:.85rem;font-weight:600}
+.test-role{font-size:.73rem;color:var(--dim)}
 
-.hero-stats {
-  display: flex; gap: 2.5rem; flex-wrap: wrap;
-}
-.hero-stat .num {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2rem; font-weight: 800;
-  color: var(--text);
-  line-height: 1;
-}
-.hero-stat .num span { color: var(--orange); }
-.hero-stat .lbl {
-  font-size: .72rem; font-weight: 500;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--dim);
-  margin-top: .2rem;
-}
+/* CTA FINAL */
+#cta-final{background:linear-gradient(135deg,rgba(255,101,53,.08) 0%,rgba(14,165,233,.06) 100%);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cta-inner{text-align:center;max-width:640px;margin:0 auto}
+.cta-inner .section-title{margin-bottom:1rem}
+.cta-inner .section-sub{margin:0 auto 2rem}
+.cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.cta-btns .btn{padding:.9rem 2rem;font-size:.9rem}
 
-.hero-visual {
-  position: relative;
-  display: flex; justify-content: center; align-items: center;
-}
-.hero-ring {
-  position: relative;
-  width: clamp(280px, 40vw, 500px);
-  aspect-ratio: 1;
-}
-.hero-ring svg.ring-bg {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  animation: spin 40s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+/* FOOTER */
+footer{background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);border-top:1px solid var(--border);padding:3rem 0 1.5rem}
+.footer-inner{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem}
+.footer-brand .logo{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:.75rem}
+.footer-brand .logo span{color:var(--orange)}
+.footer-brand p{font-size:.82rem;color:var(--dim);line-height:1.65;max-width:240px;margin-bottom:1rem}
+.footer-col h4{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.9rem}
+.footer-col ul{display:flex;flex-direction:column;gap:.45rem}
+.footer-col ul a{font-size:.82rem;color:var(--muted);transition:color var(--ease)}
+.footer-col ul a:hover{color:var(--orange)}
+.footer-bottom{border-top:1px solid var(--border);margin-top:2rem;padding-top:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.footer-bottom p{font-size:.76rem;color:var(--dim)}
+@media(max-width:900px){.footer-inner{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.footer-inner{grid-template-columns:1fr}}
 
-.hero-card-center {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: .4rem;
-  text-align: center;
-}
-.hero-card-center .kona-flag {
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  line-height: 1;
-  filter: drop-shadow(0 0 12px rgba(255,101,53,.6));
-  animation: pulse-flag 2.5s ease-in-out infinite;
-}
-@keyframes pulse-flag {
-  0%, 100% { transform: scale(1);   filter: drop-shadow(0 0 10px rgba(255,101,53,.5)); }
-  50%       { transform: scale(1.08); filter: drop-shadow(0 0 22px rgba(240,165,0,.8)); }
-}
-.hero-card-center .big {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #F0A500 0%, #FF6535 60%, #FF8C61 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-card-center .divider {
-  width: 32px; height: 1.5px;
-  background: linear-gradient(90deg, transparent, var(--orange), transparent);
-  margin: .1rem auto;
-}
-.hero-card-center .sub {
-  font-family: 'Oswald', sans-serif;
-  font-size: .72rem; font-weight: 600;
-  letter-spacing: .22em; text-transform: uppercase;
-  color: var(--aqua);
-}
-.hero-card-center .sub2 {
-  font-family: 'Oswald', sans-serif;
-  font-size: .62rem; font-weight: 400;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--dim);
-  margin-top: .1rem;
-}
-.hero-pills {
-  position: absolute;
-  display: flex; flex-direction: column; gap: .6rem;
-}
-.hero-pills.left  { left: -60px; top: 50%; transform: translateY(-50%); }
-.hero-pills.right { right: -60px; top: 50%; transform: translateY(-50%); }
-.pill-badge {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: .5rem .85rem;
-  font-size: .75rem; font-weight: 600;
-  white-space: nowrap;
-  display: flex; align-items: center; gap: .4rem;
-}
-.pill-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-.pill-badge .dot.orange { background: var(--orange); }
-.pill-badge .dot.cyan   { background: var(--cyan); }
+/* Reveal */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:none}
 
-@media (max-width: 900px) {
-  .hero-content { grid-template-columns: 1fr; text-align: center; }
-  .hero-eyebrow { justify-content: center; }
-  .hero-desc { margin-left: auto; margin-right: auto; }
-  .hero-actions { justify-content: center; }
-  .hero-stats  { justify-content: center; }
-  .hero-visual { margin-top: 2rem; }
-  .hero-pills.left, .hero-pills.right { display: none; }
-}
+/* ── LOGO ANIMADO (LAB · flor · X) ────────────────────────────────────────── */
+.ll-lockup{display:inline-flex;align-items:center;text-decoration:none;line-height:1}
+.ll-word{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;line-height:.9;position:relative;z-index:2;flex-shrink:0}
+.ll-lab{color:var(--text);text-shadow:0 2px 30px rgba(255,101,53,.25)}
+.ll-x{background:linear-gradient(125deg,#F0A500 0%,#FF6535 60%,#FF8C61 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ll-hibiscus{vertical-align:super;opacity:.85;filter:drop-shadow(0 0 5px rgba(255,101,53,.6));animation:ll-pulse 3s ease-in-out infinite;display:inline-block;flex-shrink:0}
+.ll-flor{flex-shrink:0;position:relative;z-index:1}
+.ll-flor svg{width:100%;height:100%;display:block}
+.ll-arcs  {animation:ll-spin-arcs   40s linear infinite;        transform-origin:200px 200px}
+.ll-flower{animation:ll-spin-flower 24s linear infinite reverse;transform-origin:200px 200px}
+.ll-pulse-g{animation:ll-pulse 3s ease-in-out infinite;          transform-origin:200px 200px}
+@keyframes ll-spin-arcs  {to{transform:rotate(360deg)}}
+@keyframes ll-spin-flower{to{transform:rotate(360deg)}}
+@keyframes ll-pulse{0%,100%{opacity:.88;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
 
-/* ── STRIP: Live indicator ──────────────────────────────────────────────────── */
-.strip {
-  background: linear-gradient(90deg, #060E1C 0%, #08121E 50%, #060E1C 100%);
-  border-top: 1px solid rgba(8,145,178,.2);
-  border-bottom: 1px solid rgba(8,145,178,.2);
-  padding: 1.25rem 0;
-  overflow: hidden;
-  position: relative;
-}
-.strip::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg,
-    rgba(255,101,53,.04) 0%,
-    rgba(14,165,233,.06) 50%,
-    rgba(255,101,53,.04) 100%
-  );
-}
-.strip-inner {
-  display: flex; align-items: center; gap: 3rem;
-  overflow-x: auto; scrollbar-width: none;
-}
-.strip-inner::-webkit-scrollbar { display: none; }
-.strip-item {
-  display: flex; align-items: center; gap: .75rem;
-  flex-shrink: 0;
-}
-.strip-icon { width: 28px; height: 28px; color: var(--orange); flex-shrink: 0; }
-.strip-text .val {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.25rem; font-weight: 700;
-  line-height: 1;
-}
-.strip-text .key {
-  font-size: .68rem; font-weight: 500; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--dim);
-}
-.strip-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+/* NAV — 46px flower */
+.ll-nav .ll-word  {font-size:1.5rem;letter-spacing:-.01em}
+.ll-nav .ll-flor  {width:46px;height:46px;margin:0 -10px}
+.ll-nav .ll-hibiscus{font-size:.55rem;margin-left:.1em}
 
-/* ── DISCIPLINES ────────────────────────────────────────────────────────────── */
-#disciplines { background: var(--bg); }
-
-.section-header { margin-bottom: clamp(2.5rem, 5vw, 4rem); }
-.section-header .label { margin-bottom: .75rem; }
-
-.discipline-card {
-  background: linear-gradient(135deg, #08121E 0%, #060E1C 100%);
-  border: 1px solid rgba(8,145,178,.12);
-  border-radius: var(--radius);
-  padding: 2rem;
-  transition: all var(--transition);
-  cursor: default;
-  position: relative;
-  overflow: hidden;
-}
-.discipline-card::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 80% 80% at 50% 120%, rgba(8,145,178,.04), transparent);
-  pointer-events: none;
-}
-.discipline-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--card-color, var(--orange));
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--transition);
-}
-.discipline-card:hover { border-color: var(--card-color, var(--orange)); transform: translateY(-4px); }
-.discipline-card:hover::before { transform: scaleX(1); }
-.discipline-card:hover .disc-icon { color: var(--card-color, var(--orange)); }
-
-.disc-icon { width: 40px; height: 40px; color: var(--dim); transition: color var(--transition); margin-bottom: 1.25rem; }
-.disc-title { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .6rem; }
-.disc-desc  { font-size: .88rem; color: var(--muted); line-height: 1.65; margin-bottom: 1.25rem; }
-.disc-metrics { display: flex; gap: 1rem; flex-wrap: wrap; }
-.disc-metric { font-size: .72rem; color: var(--dim); display: flex; align-items: center; gap: .3rem; }
-.disc-metric svg { width: 12px; height: 12px; }
-
-/* ── CALENDAR ───────────────────────────────────────────────────────────────── */
-#calendar { background: var(--surface); }
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 3rem;
-  align-items: start;
-}
-
-.race-list { display: flex; flex-direction: column; gap: 1rem; }
-.race-item {
-  display: flex; align-items: center; gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  transition: all var(--transition);
-  cursor: pointer;
-}
-.race-item:hover { border-color: rgba(249,115,22,.4); background: rgba(249,115,22,.04); }
-.race-item:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
-.race-item.featured { border-color: rgba(249,115,22,.4); background: rgba(249,115,22,.06); }
-
-.race-date {
-  text-align: center;
-  min-width: 52px;
-  flex-shrink: 0;
-}
-.race-date .day {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2rem; font-weight: 800;
-  line-height: 1; color: var(--orange);
-}
-.race-date .month {
-  font-size: .65rem; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--dim);
-}
-
-.race-info { flex: 1; }
-.race-name { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .25rem; }
-.race-meta { font-size: .8rem; color: var(--muted); display: flex; gap: 1rem; flex-wrap: wrap; }
-.race-meta span { display: flex; align-items: center; gap: .3rem; }
-.race-meta svg { width: 12px; height: 12px; }
-
-.race-badge {
-  font-size: .68rem; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase;
-  padding: .25rem .6rem;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.race-badge.ironman { background: rgba(249,115,22,.15); color: var(--orange); }
-.race-badge.olympic { background: rgba(6,182,212,.15); color: var(--cyan); }
-.race-badge.sprint  { background: rgba(34,197,94,.15);  color: var(--green); }
-.race-badge.h703    { background: rgba(234,179,8,.15);  color: var(--gold); }
-
-.countdown-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 2.5rem;
-}
-.countdown-label { margin-bottom: 1rem; }
-.countdown-race-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: .4rem; }
-.countdown-race-meta { font-size: .85rem; color: var(--muted); margin-bottom: 2rem; }
-.countdown-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
-.count-block { text-align: center; }
-.count-num {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 800;
-  line-height: 1; color: var(--orange);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: .75rem;
-  display: block; margin-bottom: .4rem;
-}
-.count-lbl { font-size: .65rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
-
-.readiness-bar { margin-top: 1.5rem; }
-.readiness-label { display: flex; justify-content: space-between; margin-bottom: .5rem; }
-.readiness-label span { font-size: .8rem; color: var(--muted); }
-.readiness-label strong { font-size: .8rem; color: var(--green); }
-.bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-.bar-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green), var(--cyan)); transition: width 1.2s cubic-bezier(.4,0,.2,1); }
-
-@media (max-width: 768px) {
-  .calendar-grid { grid-template-columns: 1fr; }
-}
-
-/* ── PLANS ──────────────────────────────────────────────────────────────────── */
-#plans { background: var(--bg); }
-
-.plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,280px),1fr)); gap: 1.5rem; }
-
-.plan-card {
-  background: linear-gradient(145deg, #08121E 0%, #060E1C 100%);
-  border: 1px solid rgba(8,145,178,.12);
-  border-radius: var(--radius);
-  padding: 2rem;
-  display: flex; flex-direction: column;
-  transition: all var(--transition);
-  position: relative;
-  overflow: hidden;
-}
-.plan-card.featured {
-  background: linear-gradient(160deg, #0A1928 0%, #0C1D2E 50%, #081422 100%);
-  border-color: rgba(255,101,53,.45);
-}
-.plan-card.featured::after {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%,   rgba(255,101,53,.1),  transparent),
-    radial-gradient(ellipse 60% 40% at 80% 100%,  rgba(14,165,233,.07), transparent);
-  pointer-events: none;
-}
-.plan-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
-
-.plan-badge {
-  display: inline-block;
-  font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-  padding: .2rem .7rem;
-  border-radius: 4px;
-  margin-bottom: 1.25rem;
-  align-self: flex-start;
-}
-.badge-free     { background: rgba(100,116,139,.2); color: var(--dim); }
-.badge-pro      { background: rgba(249,115,22,.15); color: var(--orange); }
-.badge-elite    { background: rgba(234,179,8,.15);  color: var(--gold); }
-.badge-popular  {
-  background: var(--orange);
-  color: #fff;
-  position: absolute; top: 1.25rem; right: 1.25rem;
-  border-radius: 4px;
-}
-
-.plan-name {
-  font-family: 'Oswald', sans-serif;
-  font-size: 1.3rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-  margin-bottom: .5rem;
-}
-.plan-price {
-  display: flex; align-items: baseline; gap: .3rem;
-  margin-bottom: .3rem;
-}
-.plan-price .amount {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2.8rem; font-weight: 800; line-height: 1;
-  color: var(--text);
-}
-.plan-price .currency { font-size: 1.2rem; color: var(--muted); align-self: flex-start; margin-top: .4rem; }
-.plan-price .period   { font-size: .85rem; color: var(--dim); }
-.plan-desc { font-size: .85rem; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.6; }
-
-.plan-features { display: flex; flex-direction: column; gap: .65rem; margin-bottom: 2rem; flex: 1; }
-.plan-feature {
-  display: flex; align-items: flex-start; gap: .6rem;
-  font-size: .85rem; color: var(--muted);
-}
-.plan-feature svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: .1rem; }
-.plan-feature.active svg { color: var(--green); }
-.plan-feature.inactive { opacity: .4; }
-.plan-feature.inactive svg { color: var(--dim); }
-
-/* ── METRICS SHOWCASE ───────────────────────────────────────────────────────── */
-#metrics { background: var(--surface); }
-
-.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,220px),1fr)); gap: 1.25rem; }
-.metric-card {
-  background: linear-gradient(145deg, #060E1C, #04080F);
-  border: 1px solid rgba(8,145,178,.1);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  transition: border-color var(--transition);
-}
-.metric-card:hover { border-color: rgba(249,115,22,.3); }
-.metric-icon { width: 32px; height: 32px; margin-bottom: .9rem; }
-.metric-val {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2.2rem; font-weight: 800;
-  line-height: 1; margin-bottom: .25rem;
-  color: var(--text);
-}
-.metric-val span { color: var(--orange); }
-.metric-name { font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-bottom: .5rem; }
-.metric-change { font-size: .8rem; color: var(--green); display: flex; align-items: center; gap: .2rem; }
-.metric-change svg { width: 12px; height: 12px; }
-
-/* ── TESTIMONIALS ───────────────────────────────────────────────────────────── */
-#testimonials { background: var(--bg); }
-
-.testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,320px),1fr)); gap: 1.5rem; }
-.testimonial-card {
-  background: linear-gradient(145deg, #08121E, #060E1C);
-  border: 1px solid rgba(8,145,178,.1);
-  border-radius: var(--radius);
-  padding: 2rem;
-  transition: all var(--transition);
-}
-.testimonial-card:hover { border-color: rgba(249,115,22,.2); transform: translateY(-2px); }
-
-.stars { display: flex; gap: .2rem; margin-bottom: 1.25rem; }
-.star { width: 16px; height: 16px; color: var(--gold); }
-.testimonial-quote {
-  font-size: .95rem; color: var(--muted);
-  line-height: 1.75; margin-bottom: 1.5rem;
-  font-style: italic;
-}
-.testimonial-author { display: flex; align-items: center; gap: .75rem; }
-.author-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--surface2);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.1rem; font-weight: 700;
-  color: var(--orange);
-  flex-shrink: 0;
-}
-.author-name { font-size: .88rem; font-weight: 600; margin-bottom: .1rem; }
-.author-role { font-size: .75rem; color: var(--dim); }
-
-/* ── CONTACT ────────────────────────────────────────────────────────────────── */
-#contact { background: var(--surface); }
-
-.contact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 4rem;
-  align-items: start;
-}
-
-.contact-info { display: flex; flex-direction: column; gap: 2rem; }
-.contact-item { display: flex; align-items: flex-start; gap: 1rem; }
-.contact-item-icon {
-  width: 40px; height: 40px;
-  background: rgba(249,115,22,.1);
-  border: 1px solid rgba(249,115,22,.2);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  color: var(--orange);
-}
-.contact-item-icon svg { width: 18px; height: 18px; }
-.contact-item-label { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: .25rem; }
-.contact-item-value { font-size: .95rem; color: var(--text); line-height: 1.5; }
-
-.form-grid { display: flex; flex-direction: column; gap: 1.25rem; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-.form-field { display: flex; flex-direction: column; gap: .4rem; }
-.form-field label {
-  font-size: .72rem; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--dim);
-}
-.form-field input,
-.form-field select,
-.form-field textarea {
-  background: #04080F;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: .8rem 1rem;
-  font-family: 'Inter', sans-serif;
-  font-size: .9rem;
-  color: var(--text);
-  transition: border-color var(--transition);
-  width: 100%;
-  appearance: none;
-}
-.form-field input::placeholder,
-.form-field textarea::placeholder { color: var(--dim); }
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-  outline: none;
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(249,115,22,.12);
-}
-.form-field textarea { resize: vertical; min-height: 120px; }
-.form-field select { cursor: pointer; }
-
-@media (max-width: 768px) {
-  .contact-grid { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-}
-
-/* ── FOOTER ─────────────────────────────────────────────────────────────────── */
-footer {
-  background: linear-gradient(180deg, #060E1C 0%, #04080F 100%);
-  border-top: 1px solid rgba(8,145,178,.15);
-  padding: 3rem 0 2rem;
-}
-.footer-inner {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 3rem;
-}
-.footer-brand .logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.4rem; font-weight: 800;
-  display: flex; align-items: center; gap: .35rem;
-  margin-bottom: 1rem;
-}
-.footer-brand .logo span { color: var(--orange); }
-.footer-brand p { font-size: .85rem; color: var(--dim); line-height: 1.65; max-width: 260px; margin-bottom: 1.25rem; }
-.social-links { display: flex; gap: .75rem; }
-.social-link {
-  width: 36px; height: 36px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--dim);
-  transition: all var(--transition);
-  cursor: pointer;
-}
-.social-link:hover { border-color: var(--orange); color: var(--orange); }
-.social-link svg { width: 16px; height: 16px; }
-
-.footer-col h4 {
-  font-family: 'Oswald', sans-serif;
-  font-size: .8rem; font-weight: 600; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--dim);
-  margin-bottom: 1rem;
-}
-.footer-col ul { display: flex; flex-direction: column; gap: .5rem; }
-.footer-col ul li a {
-  font-size: .85rem; color: var(--muted);
-  transition: color var(--transition);
-}
-.footer-col ul li a:hover { color: var(--orange); }
-
-.footer-bottom {
-  border-top: 1px solid var(--border);
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 1rem; flex-wrap: wrap;
-}
-.footer-bottom p { font-size: .78rem; color: var(--dim); }
-
-@media (max-width: 900px) {
-  .footer-inner { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 480px) {
-  .footer-inner { grid-template-columns: 1fr; }
-}
-
-/* ── KONA WAVE decoration ───────────────────────────────────────────────────── */
-.kona-wave {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 120px; overflow: hidden; line-height: 0;
-}
-.kona-wave svg { display: block; width: 100%; height: 100%; }
-
-/* ── KONA Section dividers ──────────────────────────────────────────────────── */
-.section-ocean {
-  background: linear-gradient(180deg, var(--bg) 0%, #060E1C 100%);
-  position: relative;
-}
-.section-lava {
-  background: linear-gradient(180deg, #060E1C 0%, #04080F 100%);
-}
-
-/* ── Kona pill badge — swim/bike/run ────────────────────────────────────────── */
-.kona-badges {
-  display: flex; gap: .6rem; flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-.kona-badge {
-  font-family: 'Oswald', sans-serif;
-  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase;
-  padding: .3rem .9rem;
-  border-radius: 20px;
-  border: 1px solid;
-}
-.kb-swim { background: rgba(14,165,233,.1); color: #38BDF8; border-color: rgba(14,165,233,.3); }
-.kb-bike { background: rgba(255,101,53,.1); color: #FF8C61; border-color: rgba(255,101,53,.3); }
-.kb-run  { background: rgba(240,165,0,.1);  color: #FCD34D; border-color: rgba(240,165,0,.3); }
-
-/* ── Scroll reveal ──────────────────────────────────────────────────────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1);
-}
-.reveal.visible { opacity: 1; transform: none; }
+/* HERO — 150px flower */
+.ll-hero{gap:0;margin-bottom:1.5rem}
+.ll-hero .ll-word  {font-size:clamp(2.4rem,4.5vw,4.2rem)}
+.ll-hero .ll-flor  {width:clamp(110px,15vw,150px);height:clamp(110px,15vw,150px);margin:0 clamp(-18px,-2.5vw,-14px)}
+.ll-hero .ll-hibiscus{font-size:clamp(.65rem,1.1vw,.95rem);margin-left:.1em}
+@media(max-width:900px){.ll-hero{justify-content:center}}
 </style>
 </head>
-
 <body>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     NAV
-════════════════════════════════════════════════════════════════════════════ -->
-<nav id="nav" role="navigation" aria-label="Navegación principal">
-  <div class="container">
+<!-- ── NAV ─────────────────────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="c">
     <div class="nav-inner">
-      <a href="#" class="nav-logo" aria-label="KonaLabs — inicio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        Kona<span class="accent">Labs</span>
+      <a href="landing.html" class="ll-lockup ll-nav">
+        <span class="ll-word ll-lab">LAB</span>
+        <span class="ll-flor">
+          <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="n-sunset" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0A500"/><stop offset="50%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></linearGradient>
+              <linearGradient id="n-ocean"  x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/></linearGradient>
+              <radialGradient id="n-glow"   cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".6"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient>
+              <filter id="n-gf" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="n-gs" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <g class="ll-arcs">
+              <circle cx="200" cy="200" r="188" stroke="rgba(255,101,53,.05)" stroke-width="1"/>
+              <circle cx="200" cy="200" r="176" stroke="rgba(240,165,0,.04)"  stroke-width="1" stroke-dasharray="5 11"/>
+              <circle cx="200" cy="200" r="162" stroke="rgba(14,165,233,.05)" stroke-width="1"/>
+              <circle cx="200" cy="200" r="176" stroke="url(#n-ocean)"  stroke-width="4"   stroke-dasharray="168 952" stroke-linecap="round" transform="rotate(-90 200 200)" filter="url(#n-gf)"/>
+              <circle cx="200" cy="200" r="161" stroke="url(#n-sunset)" stroke-width="5"   stroke-dasharray="248 826" stroke-linecap="round" transform="rotate(28 200 200)"  filter="url(#n-gs)"/>
+              <circle cx="200" cy="200" r="146" stroke="#F0A500"         stroke-width="2.5" stroke-dasharray="92 838"  stroke-linecap="round" transform="rotate(158 200 200)" stroke-opacity=".5"/>
+            </g>
+            <g class="ll-flower">
+              <circle cx="200" cy="200" r="52" stroke="rgba(255,101,53,.25)" stroke-width="1.2" fill="rgba(255,101,53,.025)"/>
+              <circle cx="252" cy="200" r="52" stroke="rgba(255,101,53,.2)"  stroke-width="1"   fill="rgba(255,101,53,.018)"/>
+              <circle cx="226" cy="155" r="52" stroke="rgba(240,165,0,.2)"   stroke-width="1"   fill="rgba(240,165,0,.018)"/>
+              <circle cx="174" cy="155" r="52" stroke="rgba(14,165,233,.2)"  stroke-width="1"   fill="rgba(14,165,233,.018)"/>
+              <circle cx="148" cy="200" r="52" stroke="rgba(255,101,53,.2)"  stroke-width="1"   fill="rgba(255,101,53,.018)"/>
+              <circle cx="174" cy="245" r="52" stroke="rgba(240,165,0,.2)"   stroke-width="1"   fill="rgba(240,165,0,.018)"/>
+              <circle cx="226" cy="245" r="52" stroke="rgba(14,165,233,.2)"  stroke-width="1"   fill="rgba(14,165,233,.018)"/>
+              <circle cx="304" cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8"  fill="none"/>
+              <circle cx="278" cy="110" r="52" stroke="rgba(240,165,0,.06)"  stroke-width=".8"  fill="none"/>
+              <circle cx="122" cy="110" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8"  fill="none"/>
+              <circle cx="96"  cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8"  fill="none"/>
+              <circle cx="122" cy="290" r="52" stroke="rgba(240,165,0,.06)"  stroke-width=".8"  fill="none"/>
+              <circle cx="278" cy="290" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8"  fill="none"/>
+            </g>
+            <circle cx="200" cy="200" r="38" fill="url(#n-glow)"/>
+            <circle cx="200" cy="200" r="24" fill="rgba(255,101,53,.1)" stroke="rgba(255,101,53,.3)" stroke-width="1.2"/>
+            <g class="ll-pulse-g">
+              <text x="200" y="216" text-anchor="middle" font-size="26" font-family="serif" style="filter:drop-shadow(0 0 12px rgba(255,101,53,.9))">🌺</text>
+            </g>
+          </svg>
+        </span>
+        <span class="ll-word ll-x">X</span><span class="ll-hibiscus">🌺</span>
       </a>
 
-      <ul class="nav-links" role="list">
-        <li><a href="#disciplines">Disciplinas</a></li>
-        <li><a href="#calendar">Carreras</a></li>
-        <li><a href="#plans">Planes</a></li>
-        <li><a href="#metrics">Métricas</a></li>
-        <li><a href="#contact">Contacto</a></li>
-      </ul>
-
-      <div class="nav-cta">
-        <a href="login.html" class="nav-dash" aria-label="Acceder al dashboard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          Dashboard
-        </a>
-        <a href="login.html" class="btn btn-primary">Acceder</a>
+      <div class="nav-links">
+        <a href="#features">Funciones</a>
+        <a href="#how">Cómo funciona</a>
+        <a href="#roles">Coaches · Atletas</a>
+        <a href="#plans">Planes</a>
       </div>
 
-      <button class="nav-burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu" onclick="toggleMenu(this)">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <line x1="3" y1="6"  x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
+      <div class="nav-cta">
+        <a href="login.html" class="btn btn-ghost">Ingresar</a>
+        <a href="registro.html" class="btn btn-primary">Comenzar gratis</a>
+      </div>
+
+      <button class="nav-burger" onclick="toggleMenu(this)" aria-label="Menú">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
         </svg>
       </button>
     </div>
-
-    <div class="mobile-menu" id="mobile-menu" role="menu">
-      <a href="#disciplines" role="menuitem" onclick="closeMenu()">Disciplinas</a>
-      <a href="#calendar"    role="menuitem" onclick="closeMenu()">Carreras</a>
-      <a href="#plans"       role="menuitem" onclick="closeMenu()">Planes</a>
-      <a href="#metrics"     role="menuitem" onclick="closeMenu()">Métricas</a>
-      <a href="#contact"     role="menuitem" onclick="closeMenu()">Contacto</a>
-      <a href="#contact" role="menuitem" style="color:var(--orange)">→ Acceder</a>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#features" onclick="closeMenu()">Funciones</a>
+      <a href="#how" onclick="closeMenu()">Cómo funciona</a>
+      <a href="#roles" onclick="closeMenu()">Para coaches y atletas</a>
+      <a href="#plans" onclick="closeMenu()">Planes</a>
+      <a href="login.html">Ingresar</a>
+      <a href="registro.html" style="color:var(--orange)">→ Comenzar gratis</a>
     </div>
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     HERO
-════════════════════════════════════════════════════════════════════════════ -->
-<header id="hero" role="banner">
-  <div class="hero-bg" aria-hidden="true"></div>
-  <div class="hero-grid-lines" aria-hidden="true"></div>
+<!-- ── HERO ────────────────────────────────────────────────────────────────── -->
+<header id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="c" style="width:100%">
+    <div class="hero-inner">
 
-  <!-- Kona wave bottom decoration -->
-  <div class="kona-wave" aria-hidden="true">
-    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-      <path d="M0,60 C240,100 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z"
-        fill="rgba(8,145,178,.04)"/>
-      <path d="M0,80 C360,40 720,110 1080,70 C1260,50 1380,85 1440,80 L1440,120 L0,120 Z"
-        fill="rgba(255,101,53,.03)"/>
-    </svg>
-  </div>
-
-  <div class="container">
-    <div class="hero-content">
       <!-- Left -->
       <div>
-        <div class="kona-badges">
-          <span class="kona-badge kb-swim">🌊 Swim · Kailua Bay</span>
-          <span class="kona-badge kb-bike">🌋 Bike · Queen K Hwy</span>
-          <span class="kona-badge kb-run">🌅 Run · Ali'i Drive</span>
-        </div>
-        <div class="hero-eyebrow">
-          <span class="label">Desarrollado por Triatletas · Para Triatletas</span>
-        </div>
-
-        <h1 class="heading-xl hero-title">
-          <span>Train</span><br>
-          <span class="line2">Harder.</span><br>
-          <span class="line3">Race Smarter.</span>
-        </h1>
-
-        <p class="hero-desc">
-          Inspirada en el estándar más exigente del planeta,
-          <strong style="color:var(--coral);font-weight:600">KonaLabs</strong>
-          es la suite definitiva para atletas que buscan la perfección.
-          No es una app de registro — es tu
-          <em style="color:var(--aqua)">laboratorio personal de alto rendimiento.</em>
-        </p>
-        <p class="hero-desc" style="margin-top:-.75rem">
-          Integramos <span style="color:var(--text);font-weight:500">entrenamiento</span>,
-          <span style="color:var(--gold);font-weight:500">nutrición</span> y
-          <span style="color:var(--green);font-weight:500">medicina deportiva</span>
-          en un solo ecosistema: desde el análisis de HRV y eficiencia de braceo,
-          la simulación de carga para los 180 km de la Queen K, hasta tu
-          bioquímica sanguínea correlacionada con cada sesión Garmin.
-        </p>
-        <p class="hero-desc" style="margin-top:-.75rem">
-          <span style="color:var(--text);font-weight:600">Entrena con base científica.
-          <span style="color:var(--orange)">Compite para ganar.</span></span>
-        </p>
-
-        <div class="hero-actions">
-          <a href="#contact" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        <!-- Logo hero -->
+        <a href="landing.html" class="ll-lockup ll-hero">
+          <span class="ll-word ll-lab">LAB</span>
+          <span class="ll-flor">
+            <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="h-sunset" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0A500"/><stop offset="50%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></linearGradient>
+                <linearGradient id="h-ocean"  x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/></linearGradient>
+                <radialGradient id="h-glow"   cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".55"/><stop offset="60%" stop-color="#F0A500" stop-opacity=".15"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient>
+                <filter id="h-gf" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                <filter id="h-gs" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <g class="ll-arcs">
+                <circle cx="200" cy="200" r="188" stroke="rgba(255,101,53,.05)" stroke-width="1"/>
+                <circle cx="200" cy="200" r="176" stroke="rgba(240,165,0,.04)"  stroke-width="1" stroke-dasharray="5 11"/>
+                <circle cx="200" cy="200" r="162" stroke="rgba(14,165,233,.05)" stroke-width="1"/>
+                <circle cx="200" cy="200" r="176" stroke="url(#h-ocean)"  stroke-width="4"   stroke-dasharray="168 952" stroke-linecap="round" transform="rotate(-90 200 200)" filter="url(#h-gf)"/>
+                <circle cx="200" cy="200" r="161" stroke="url(#h-sunset)" stroke-width="5"   stroke-dasharray="248 826" stroke-linecap="round" transform="rotate(28 200 200)"  filter="url(#h-gs)"/>
+                <circle cx="200" cy="200" r="146" stroke="#F0A500"         stroke-width="2.5" stroke-dasharray="92 838"  stroke-linecap="round" transform="rotate(158 200 200)" stroke-opacity=".5"/>
+              </g>
+              <g class="ll-flower">
+                <circle cx="200" cy="200" r="52" stroke="rgba(255,101,53,.25)" stroke-width="1.2" fill="rgba(255,101,53,.025)"/>
+                <circle cx="252" cy="200" r="52" stroke="rgba(255,101,53,.2)"  stroke-width="1"   fill="rgba(255,101,53,.018)"/>
+                <circle cx="226" cy="155" r="52" stroke="rgba(240,165,0,.2)"   stroke-width="1"   fill="rgba(240,165,0,.018)"/>
+                <circle cx="174" cy="155" r="52" stroke="rgba(14,165,233,.2)"  stroke-width="1"   fill="rgba(14,165,233,.018)"/>
+                <circle cx="148" cy="200" r="52" stroke="rgba(255,101,53,.2)"  stroke-width="1"   fill="rgba(255,101,53,.018)"/>
+                <circle cx="174" cy="245" r="52" stroke="rgba(240,165,0,.2)"   stroke-width="1"   fill="rgba(240,165,0,.018)"/>
+                <circle cx="226" cy="245" r="52" stroke="rgba(14,165,233,.2)"  stroke-width="1"   fill="rgba(14,165,233,.018)"/>
+                <circle cx="304" cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8"  fill="none"/>
+                <circle cx="278" cy="110" r="52" stroke="rgba(240,165,0,.06)"  stroke-width=".8"  fill="none"/>
+                <circle cx="122" cy="110" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8"  fill="none"/>
+                <circle cx="96"  cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8"  fill="none"/>
+                <circle cx="122" cy="290" r="52" stroke="rgba(240,165,0,.06)"  stroke-width=".8"  fill="none"/>
+                <circle cx="278" cy="290" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8"  fill="none"/>
+              </g>
+              <circle cx="200" cy="200" r="38" fill="url(#h-glow)"/>
+              <circle cx="200" cy="200" r="24" fill="rgba(255,101,53,.1)" stroke="rgba(255,101,53,.3)" stroke-width="1.2"/>
+              <g class="ll-pulse-g">
+                <text x="200" y="216" text-anchor="middle" font-size="26" font-family="serif" style="filter:drop-shadow(0 0 12px rgba(255,101,53,.9))">🌺</text>
+              </g>
             </svg>
-            Comenzar Gratis
-          </a>
-          <a href="#plans" class="btn btn-outline">Ver Planes</a>
-        </div>
+          </span>
+          <span class="ll-word ll-x">X</span><span class="ll-hibiscus">🌺</span>
+        </a>
 
-        <div class="hero-stats" role="list" aria-label="Estadísticas de la plataforma">
-          <div class="hero-stat" role="listitem">
-            <div class="num">500<span>+</span></div>
-            <div class="lbl">Atletas activos</div>
-          </div>
-          <div class="hero-stat" role="listitem">
-            <div class="num">6<span></span></div>
-            <div class="lbl">Disciplinas</div>
-          </div>
-          <div class="hero-stat" role="listitem">
-            <div class="num">100<span>%</span></div>
-            <div class="lbl">Garmin nativo</div>
-          </div>
+        <div class="hero-badge">Beta privada · LATAM</div>
+        <h1 class="hero-title">
+          La plataforma que<br>
+          convierte datos<br>
+          en <span class="accent">victorias</span>
+        </h1>
+        <p class="hero-desc">
+          LabX conecta a <strong>coaches</strong> y <strong>atletas</strong> con inteligencia
+          real: sincronización Garmin, análisis de carga CTL/ATL, laboratorio de sangre,
+          nutrición y AI coach — todo en un ecosistema.
+        </p>
+        <div class="hero-actions">
+          <a href="registro.html" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Crear cuenta gratis
+          </a>
+          <a href="login.html" class="btn btn-ghost">Ya tengo cuenta</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="n">500<span>+</span></div><div class="l">Atletas activos</div></div>
+          <div class="hero-stat"><div class="n">4132<span></span></div><div class="l">Actividades sincronizadas</div></div>
+          <div class="hero-stat"><div class="n">10<span>+</span></div><div class="l">Módulos de análisis</div></div>
         </div>
       </div>
 
-      <!-- Right — animated ring -->
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-ring">
-          <svg class="ring-bg" viewBox="0 0 400 400" fill="none">
-            <defs>
-              <!-- Kona sunset gradient -->
-              <linearGradient id="sunsetArc" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%"   stop-color="#F0A500"/>
-                <stop offset="50%"  stop-color="#FF6535"/>
-                <stop offset="100%" stop-color="#FF6535" stop-opacity="0"/>
-              </linearGradient>
-              <!-- Pacific ocean gradient -->
-              <linearGradient id="oceanArc" x1="0" y1="1" x2="1" y2="0">
-                <stop offset="0%"   stop-color="#0EA5E9"/>
-                <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/>
-              </linearGradient>
-              <!-- Glow filters -->
-              <filter id="sunsetGlow">
-                <feGaussianBlur stdDeviation="3" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-              <filter id="oceanGlow">
-                <feGaussianBlur stdDeviation="2" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
+      <!-- Right — Dashboard mockup -->
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="hc-topbar">
+            <div class="hc-logo">LAB<span>X</span> <span style="font-size:.65rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.1em">COACH</span></div>
+            <div class="hc-dots">
+              <div class="hc-dot" style="background:#EF4444"></div>
+              <div class="hc-dot" style="background:#F59E0B"></div>
+              <div class="hc-dot" style="background:#10B981"></div>
+            </div>
+          </div>
 
-            <!-- Outer rings — lava field texture -->
-            <circle cx="200" cy="200" r="185" stroke="rgba(255,101,53,.06)" stroke-width="1"/>
-            <circle cx="200" cy="200" r="175" stroke="rgba(240,165,0,.04)"  stroke-width="1" stroke-dasharray="4 10"/>
-            <circle cx="200" cy="200" r="160" stroke="rgba(14,165,233,.05)" stroke-width="1"/>
-            <circle cx="200" cy="200" r="145" stroke="rgba(14,165,233,.04)" stroke-width="1" stroke-dasharray="3 7"/>
+          <div class="hc-metrics">
+            <div class="hc-metric">
+              <div class="val" style="color:var(--orange)">78</div>
+              <div class="lbl">CTL</div>
+            </div>
+            <div class="hc-metric">
+              <div class="val" style="color:var(--cyan)">92</div>
+              <div class="lbl">ATL</div>
+            </div>
+            <div class="hc-metric">
+              <div class="val" style="color:var(--green)">+14</div>
+              <div class="lbl">TSB</div>
+            </div>
+          </div>
 
-            <!-- Swim arc — Kailua Bay Pacific blue -->
-            <circle cx="200" cy="200" r="175"
-              stroke="url(#oceanArc)" stroke-width="3.5"
-              stroke-dasharray="165 935" stroke-linecap="round"
-              transform="rotate(-90 200 200)"
-              filter="url(#oceanGlow)"/>
+          <div class="hc-bar-section">
+            <div class="hc-bar-label"><span>Preparación carrera</span><span style="color:var(--green)">82%</span></div>
+            <div class="hc-bar-track"><div class="hc-bar-fill" style="width:82%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
+          </div>
+          <div class="hc-bar-section">
+            <div class="hc-bar-label"><span>Carga semanal</span><span style="color:var(--orange)">64%</span></div>
+            <div class="hc-bar-track"><div class="hc-bar-fill" style="width:64%;background:linear-gradient(90deg,var(--orange),var(--gold))"></div></div>
+          </div>
 
-            <!-- Bike arc — Kona sunset / Queen K Highway -->
-            <circle cx="200" cy="200" r="160"
-              stroke="url(#sunsetArc)" stroke-width="4"
-              stroke-dasharray="240 806" stroke-linecap="round"
-              transform="rotate(30 200 200)"
-              filter="url(#sunsetGlow)"/>
-
-            <!-- Run arc — Ali'i Drive gold -->
-            <circle cx="200" cy="200" r="145"
-              stroke="#F0A500" stroke-width="2.5" stroke-opacity=".6"
-              stroke-dasharray="90 822" stroke-linecap="round"
-              transform="rotate(160 200 200)"/>
-
-            <!-- Center dot — Kona finish line -->
-            <circle cx="200" cy="200" r="5" fill="#FF6535" opacity=".9"/>
-            <circle cx="200" cy="200" r="10" fill="rgba(255,101,53,.2)"/>
-          </svg>
-
-          <div class="hero-card-center">
-            <div class="kona-flag">🌺</div>
-            <div class="big">Route<br>to Kona</div>
-            <div class="divider"></div>
-            <div class="sub">Full Ironman</div>
-            <div class="sub2">3.8 · 180 · 42.2 km</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:.9rem 0 .45rem">Mis atletas</div>
+          <div class="hc-athletes">
+            <div class="hc-athlete">
+              <div class="hc-avatar" style="background:rgba(255,101,53,.15);color:var(--orange)">MR</div>
+              <div class="hc-aname">Matías R.</div>
+              <div class="hc-status" style="background:rgba(16,185,129,.12);color:var(--green)">En forma</div>
+            </div>
+            <div class="hc-athlete">
+              <div class="hc-avatar" style="background:rgba(239,68,68,.15);color:#EF4444">CP</div>
+              <div class="hc-aname">Claudia P.</div>
+              <div class="hc-status" style="background:rgba(239,68,68,.12);color:#EF4444">Sobrecarga</div>
+            </div>
+            <div class="hc-athlete">
+              <div class="hc-avatar" style="background:rgba(14,165,233,.15);color:var(--cyan)">JV</div>
+              <div class="hc-aname">Jorge V.</div>
+              <div class="hc-status" style="background:rgba(240,165,0,.12);color:var(--gold)">Tapering</div>
+            </div>
           </div>
         </div>
 
-        <div class="hero-pills left">
-          <div class="pill-badge"><span class="dot cyan"></span> Kailua Bay Swim</div>
-          <div class="pill-badge"><span class="dot"></span> Garmin Sync Live</div>
-        </div>
-        <div class="hero-pills right">
-          <div class="pill-badge"><span class="dot orange"></span> Queen K · 180km</div>
-          <div class="pill-badge"><span class="dot orange"></span> Ali'i Drive · 42km</div>
-        </div>
+        <div class="hero-pill hp-1"><span class="dot-green"></span> Garmin sync activo</div>
+        <div class="hero-pill hp-2"><span class="dot-orange"></span> CTL +3.2 esta semana</div>
+        <div class="hero-pill hp-3"><span class="dot-cyan"></span> 3 atletas en zona roja</div>
       </div>
     </div>
   </div>
 </header>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     STRIP
-════════════════════════════════════════════════════════════════════════════ -->
-<div class="strip" aria-label="Métricas en vivo" role="region">
-  <div class="container">
+<!-- ── STRIP ───────────────────────────────────────────────────────────────── -->
+<div class="strip">
+  <div class="c">
     <div class="strip-inner">
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">CTL / ATL / TSB</div>
-          <div class="key">Carga de entrenamiento</div>
-        </div>
-      </div>
-
-      <div class="strip-divider" aria-hidden="true"></div>
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">Pace Zones</div>
-          <div class="key">Carrera · Running</div>
-        </div>
-      </div>
-
-      <div class="strip-divider" aria-hidden="true"></div>
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">FTP · NP · IF</div>
-          <div class="key">Potencia ciclismo</div>
-        </div>
-      </div>
-
-      <div class="strip-divider" aria-hidden="true"></div>
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">HRV · Readiness</div>
-          <div class="key">Recuperación diaria</div>
-        </div>
-      </div>
-
-      <div class="strip-divider" aria-hidden="true"></div>
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">CSS · SWOLF</div>
-          <div class="key">Natación · Swimming</div>
-        </div>
-      </div>
-
-      <div class="strip-divider" aria-hidden="true"></div>
-
-      <div class="strip-item">
-        <svg class="strip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
-        <div class="strip-text">
-          <div class="val">VO₂ Max</div>
-          <div class="key">Garmin nativo</div>
-        </div>
-      </div>
-
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> CTL · ATL · TSB en tiempo real</div>
+      <div class="strip-div"></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Garmin Connect · Sync automático</div>
+      <div class="strip-div"></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> HRV · Readiness · Recuperación</div>
+      <div class="strip-div"></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></svg> Nutrición · Calorimetría · Fueling</div>
+      <div class="strip-div"></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Blood Labs · Biomarcadores</div>
+      <div class="strip-div"></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg> AI Coach · Prescripciones inteligentes</div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     DISCIPLINES
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="disciplines" aria-labelledby="disc-title">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">6 disciplinas integradas</p>
-      <h2 class="heading-lg" id="disc-title">Todo lo que necesitas<br>en un solo lugar.</h2>
-    </header>
-
-    <div class="grid-6">
-
-      <!-- Natación -->
-      <article class="discipline-card reveal" style="--card-color:#06B6D4">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/><path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/>
-          <circle cx="17.5" cy="5.5" r="2.5"/>
-        </svg>
-        <h3 class="disc-title">Natación</h3>
-        <p class="disc-desc">CSS, zonas de pace, SWOLF, eficiencia de brazada y análisis de series por entrenamiento.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            1:50/100m
-          </span>
-        </div>
-      </article>
-
-      <!-- Ciclismo -->
-      <article class="discipline-card reveal" style="--card-color:#F97316">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-          <path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/><path d="M5.5 17.5l3-8 3 3 2-5.5"/>
-        </svg>
-        <h3 class="disc-title">Ciclismo</h3>
-        <p class="disc-desc">Potencia FTP, TSS, IF, NP, zonas de potencia, curva mean-max y GPS con altimetría real.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            240W FTP
-          </span>
-        </div>
-      </article>
-
-      <!-- Carrera -->
-      <article class="discipline-card reveal" style="--card-color:#22C55E">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
-          <path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/>
-          <path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/>
-        </svg>
-        <h3 class="disc-title">Carrera</h3>
-        <p class="disc-desc">rTSS, zonas de pace, cadencia, oscilación vertical, contacto suelo y predicciones de ritmo de carrera.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            4:18/km
-          </span>
-        </div>
-      </article>
-
-      <!-- Fuerza -->
-      <article class="discipline-card reveal" style="--card-color:#A855F7">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 8.5v7M18 8.5v7"/>
-        </svg>
-        <h3 class="disc-title">Fuerza</h3>
-        <p class="disc-desc">Control de carga de fuerza complementaria, prevención de lesiones y periodización con el bloque aeróbico.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Periodización
-          </span>
-        </div>
-      </article>
-
-      <!-- Nutrición -->
-      <article class="discipline-card reveal" style="--card-color:#EAB308">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-          <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
-        </svg>
-        <h3 class="disc-title">Nutrición</h3>
-        <p class="disc-desc">Gasto calórico por disciplina, balance energético, estrategia de fueling para carrera larga e Ironman.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-            Balance calórico
-          </span>
-        </div>
-      </article>
-
-      <!-- Medicina -->
-      <article class="discipline-card reveal" style="--card-color:#EC4899">
-        <svg class="disc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-        <h3 class="disc-title">Medicina</h3>
-        <p class="disc-desc">HRV, readiness score, sueño, análisis de sangre y correlaciones biomédicas con el rendimiento deportivo.</p>
-        <div class="disc-metrics">
-          <span class="disc-metric">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            HRV + Sangre
-          </span>
-        </div>
-      </article>
-
+<!-- ── FEATURES ────────────────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="c">
+    <div class="reveal">
+      <p class="section-label">Todo en una plataforma</p>
+      <h2 class="section-title">Herramientas de élite.<br>Para todos los niveles.</h2>
+      <p class="section-sub">Desde el seguimiento diario hasta el análisis biomédico, LabX centraliza todo lo que necesitas para entrenar y competir mejor.</p>
     </div>
-  </div>
-</section>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     CALENDAR
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="calendar" aria-labelledby="cal-title">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">Temporada 2026</p>
-      <h2 class="heading-lg" id="cal-title">Próximas carreras<br>en agenda.</h2>
-    </header>
-
-    <div class="calendar-grid">
-      <div class="race-list" role="list" aria-label="Lista de carreras">
-
-        <!-- 23 AGO — Triatlón Concón -->
-        <article class="race-item featured reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">23</div><div class="month">AGO</div></div>
-          <div class="race-info">
-            <div class="race-name">Triatlón Concón</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Concón, V Región, Chile</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Olímpico</span>
-            </div>
-          </div>
-          <span class="race-badge olympic">Olímpico</span>
-        </article>
-
-        <!-- 14 SEP — TriSeries Puerto Octay -->
-        <article class="race-item reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">14</div><div class="month">SEP</div></div>
-          <div class="race-info">
-            <div class="race-name">TriSeries Chile — Puerto Octay</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Puerto Octay, Los Lagos, Chile</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Lago Llanquihue</span>
-            </div>
-          </div>
-          <span class="race-badge sprint">TriSeries</span>
-        </article>
-
-        <!-- 04 OCT — IRONMAN 70.3 Buenos Aires Palermo -->
-        <article class="race-item reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">04</div><div class="month">OCT</div></div>
-          <div class="race-info">
-            <div class="race-name">IRONMAN 70.3 Buenos Aires</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Palermo, Buenos Aires, ARG</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>4h 45m objetivo</span>
-            </div>
-          </div>
-          <span class="race-badge h703">70.3</span>
-        </article>
-
-        <!-- 01 NOV — IRONMAN Full San Juan -->
-        <article class="race-item reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">01</div><div class="month">NOV</div></div>
-          <div class="race-info">
-            <div class="race-name">IRONMAN Full — San Juan</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>San Juan, Argentina</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>226km · Full Distance</span>
-            </div>
-          </div>
-          <span class="race-badge ironman">Full</span>
-        </article>
-
-        <!-- 29 NOV — IRONMAN Valdivia (Full + 70.3) — PREMIER CHILENO -->
-        <article class="race-item reveal" role="listitem" tabindex="0" style="border-color:rgba(249,115,22,.35);background:rgba(249,115,22,.04)">
-          <div class="race-date"><div class="day">29</div><div class="month">NOV</div></div>
-          <div class="race-info">
-            <div class="race-name">IRONMAN Valdivia ★ Histórico</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Valdivia, Los Ríos, Chile</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>1er Full IRONMAN en Chile</span>
-            </div>
-          </div>
-          <span class="race-badge ironman">Full + 70.3</span>
-        </article>
-
-        <!-- 06 DIC — Patagonman Extreme -->
-        <article class="race-item reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">06</div><div class="month">DIC</div></div>
-          <div class="race-info">
-            <div class="race-name">Patagonman Xtreme Triathlon</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Puerto Aysén · Carretera Austral, Chile</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>226km · Fjord Aysén · 300 cupos</span>
-            </div>
-          </div>
-          <span class="race-badge ironman">Xtreme</span>
-        </article>
-
-        <!-- 19 DIC — TriSeries Frutillar -->
-        <article class="race-item reveal" role="listitem" tabindex="0">
-          <div class="race-date"><div class="day">19</div><div class="month">DIC</div></div>
-          <div class="race-info">
-            <div class="race-name">TriSeries Chile — Frutillar</div>
-            <div class="race-meta">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Frutillar, Los Lagos, Chile</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Cierre temporada 2026</span>
-            </div>
-          </div>
-          <span class="race-badge sprint">TriSeries</span>
-        </article>
-
+    <div class="features-grid">
+      <div class="feat-card reveal" style="--fc-color:var(--cyan)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(14,165,233,.1)">📊</div><div class="feat-title">PMC · Carga de entrenamiento</div></div>
+        <p class="feat-desc">CTL, ATL y TSB calculados en tiempo real desde tus actividades Garmin. Visualiza tu forma física y evita el sobreentrenamiento.</p>
       </div>
-
-      <!-- Countdown -->
-      <div class="countdown-card reveal" aria-live="polite" aria-atomic="true">
-        <p class="label countdown-label" style="color:var(--aqua);letter-spacing:.2em">
-          🌺 KONA · HAWAII · 1989 KM FROM HERE
-        </p>
-        <p class="label countdown-label">Próxima carrera</p>
-        <h3 class="countdown-race-name">Triatlón Concón</h3>
-        <p class="countdown-race-meta">23 de Agosto · Concón, V Región · Chile</p>
-
-        <div class="countdown-grid" role="timer" aria-label="Cuenta regresiva">
-          <div class="count-block">
-            <span class="count-num" id="cd-days">--</span>
-            <span class="count-lbl">Días</span>
-          </div>
-          <div class="count-block">
-            <span class="count-num" id="cd-hours">--</span>
-            <span class="count-lbl">Horas</span>
-          </div>
-          <div class="count-block">
-            <span class="count-num" id="cd-min">--</span>
-            <span class="count-lbl">Min</span>
-          </div>
-          <div class="count-block">
-            <span class="count-num" id="cd-sec">--</span>
-            <span class="count-lbl">Seg</span>
-          </div>
-        </div>
-
-        <div class="readiness-bar">
-          <div class="readiness-label">
-            <span>Preparación estimada</span>
-            <strong>78%</strong>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill" id="readiness-fill" style="width:0%" role="progressbar" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-
-        <div style="margin-top:1.75rem">
-          <a href="#contact" class="btn btn-primary" style="width:100%;justify-content:center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Ver Plan de Preparación
-          </a>
-        </div>
+      <div class="feat-card reveal" style="--fc-color:var(--orange)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(255,101,53,.1)">🔄</div><div class="feat-title">Garmin Connect · Sync automático</div></div>
+        <p class="feat-desc">Sincronización diaria automática. Swim, Bike, Run, Fuerza — todas las actividades procesadas con potencia, FC, pace y GPS.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--green)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(16,185,129,.1)">🧬</div><div class="feat-title">Blood Labs · Análisis de sangre</div></div>
+        <p class="feat-desc">Carga tus análisis de laboratorio y correlaciona biomarcadores (HbA1c, ferritina, testosterona) con tu rendimiento en pista.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--gold)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(240,165,0,.1)">🥗</div><div class="feat-title">Nutrición · Calorimetría</div></div>
+        <p class="feat-desc">Estrategia de fueling para largo recorrido, balance energético, carga de carbohidratos y nutrición personalizada por sesión.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--purple)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(168,85,247,.1)">🤖</div><div class="feat-title">AI Coach · Prescripciones</div></div>
+        <p class="feat-desc">Motor de IA que genera workouts personalizados, proyecciones de CTL y detecta riesgo de lesión basado en tu historial real.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--cyan)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(14,165,233,.1)">🏁</div><div class="feat-title">Race Day Intelligence</div></div>
+        <p class="feat-desc">Plan de pacing basado en tu CTL actual, estrategia de nutrición hora a hora y predictor de tiempo final para tu carrera objetivo.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--green)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(16,185,129,.1)">❤️</div><div class="feat-title">HRV · Recuperación</div></div>
+        <p class="feat-desc">Score diario de readiness con HRV, sueño y fatiga acumulada. Sabe cuándo empujar fuerte y cuándo descansar.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--orange)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(255,101,53,.1)">🗓️</div><div class="feat-title">Plan Adaptativo</div></div>
+        <p class="feat-desc">El plan de entrenamiento se ajusta automáticamente según tu TSB, días disponibles y proximidad a la carrera objetivo.</p>
+      </div>
+      <div class="feat-card reveal" style="--fc-color:var(--gold)">
+        <div class="feat-head"><div class="feat-ico" style="background:rgba(240,165,0,.1)">🗺️</div><div class="feat-title">GPS · Detalle de actividad</div></div>
+        <p class="feat-desc">Mapas animados por disciplina, análisis de segmentos, curva de potencia mean-max y comparativa entre sesiones.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     METRICS
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="metrics" aria-labelledby="metrics-title">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">Dashboard en vivo</p>
-      <h2 class="heading-lg" id="metrics-title">Métricas que importan.<br>Ciencia aplicada.</h2>
-    </header>
+<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────────── -->
+<section id="how">
+  <div class="c">
+    <div class="reveal" style="text-align:center">
+      <p class="section-label">Empieza en minutos</p>
+      <h2 class="section-title">Así de simple.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-step reveal">
+        <div class="how-num">1</div>
+        <div class="how-title">Crea tu cuenta</div>
+        <p class="how-desc">Regístrate en 30 segundos. Sin tarjeta de crédito. Acceso inmediato al plan básico.</p>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">2</div>
+        <div class="how-title">Conecta Garmin</div>
+        <p class="how-desc">Ingresa tus credenciales Garmin Connect y tus últimas actividades se sincronizan automáticamente.</p>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">3</div>
+        <div class="how-title">Analiza y mejora</div>
+        <p class="how-desc">Tu PMC, zonas de entrenamiento y análisis de recuperación están listos en tu dashboard al instante.</p>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">4</div>
+        <div class="how-title">Coach o solo</div>
+        <p class="how-desc">Trabaja con un coach que ve tus datos en tiempo real, o entrena de forma autónoma con el AI Coach.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="metrics-grid">
+<!-- ── ROLES ───────────────────────────────────────────────────────────────── -->
+<section id="roles">
+  <div class="c">
+    <div class="reveal" style="text-align:center;margin-bottom:3rem">
+      <p class="section-label">Diseñado para dos roles</p>
+      <h2 class="section-title">Coaches y Atletas.<br>Un solo ecosistema.</h2>
+    </div>
+    <div class="roles-grid">
 
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-        <div class="metric-val"><span>↑</span> CTL</div>
-        <div class="metric-name">Fitness crónico acumulado</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          Tendencia semanal en tiempo real
+      <div class="role-card coach-card reveal">
+        <div class="role-head">
+          <div class="role-icon" style="background:rgba(255,101,53,.1)">🧑‍💼</div>
+          <div class="role-head-text">
+            <div class="role-label">Para coaches</div>
+            <div class="role-title" style="color:var(--orange)">Gestiona tu equipo</div>
+          </div>
+        </div>
+        <p class="role-desc">Prescribe entrenamientos, monitorea la carga de cada atleta y detecta riesgos antes de que ocurran — todo desde un solo dashboard.</p>
+        <div class="role-features">
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Vista 360° de cada atleta</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Grid de riesgo del equipo completo</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Prescripciones estructuradas</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Periodización de temporada</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Mensajería y notificaciones</div>
+        </div>
+        <a href="registro.html" class="role-cta">Empezar como Coach →</a>
+      </div>
+
+      <div class="role-card reveal">
+        <div class="role-head">
+          <div class="role-icon" style="background:rgba(14,165,233,.1)">🏃</div>
+          <div class="role-head-text">
+            <div class="role-label">Para atletas</div>
+            <div class="role-title" style="color:var(--cyan)">Tu lab de rendimiento</div>
+          </div>
+        </div>
+        <p class="role-desc">Entiende tu cuerpo, planifica tu temporada y llega a tu carrera en la mejor forma de tu vida — con o sin coach.</p>
+        <div class="role-features">
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> PMC personal con CTL/ATL/TSB</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Análisis de sangre integrado</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Calendario de entrenamientos</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> App mobile con readiness diario</div>
+          <div class="role-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Race Day plan personalizado</div>
+        </div>
+        <a href="registro.html" class="role-cta">Empezar como Atleta →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── PLANS ───────────────────────────────────────────────────────────────── -->
+<section id="plans">
+  <div class="c">
+    <div class="reveal" style="text-align:center">
+      <p class="section-label">Planes de acceso</p>
+      <h2 class="section-title">Elige tu nivel.</h2>
+      <p class="section-sub" style="margin:0 auto">Beta privada — precios por confirmar. Empieza gratis hoy.</p>
+    </div>
+    <div class="plans-grid" style="margin-top:3rem">
+
+      <div class="plan-card reveal" style="--pc-color:var(--cyan)">
+        <div class="plan-head">
+          <div class="plan-head-top">
+            <span class="plan-tag tag-basic">Atleta</span>
+            <span class="plan-ico">🏊</span>
+          </div>
+          <div class="plan-name" style="color:var(--muted)">Atleta</div>
+          <div class="plan-price-row">
+            <span class="plan-price" style="color:var(--muted)">Gratis</span>
+            <span class="plan-price-note">Beta · sin tarjeta</span>
+          </div>
+        </div>
+        <div class="plan-body">
+          <p class="plan-desc">Para atletas que comienzan. Dashboard, sync Garmin y PMC básico incluidos.</p>
+          <div class="plan-features">
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dashboard PMC</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sync Garmin Connect</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> CTL / ATL / TSB</div>
+            <div class="plan-feat off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Blood Labs</div>
+            <div class="plan-feat off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Coach asignado</div>
+          </div>
+          <a href="registro.html" class="plan-btn plan-btn-outline">Crear cuenta gratis</a>
         </div>
       </div>
 
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-        <div class="metric-val"><span>↑</span> VO₂</div>
-        <div class="metric-name">VO₂ Max ciclismo y carrera</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          Seguimiento mensual automático
+      <div class="plan-card featured reveal" style="--pc-color:var(--orange)">
+        <div class="plan-head">
+          <div class="plan-head-top">
+            <span class="plan-tag tag-pro">★ Más popular</span>
+            <span class="plan-ico">🚴</span>
+          </div>
+          <div class="plan-name" style="color:var(--orange)">Agegroup</div>
+          <div class="plan-price-row">
+            <span class="plan-price" style="color:var(--orange)">TBD</span>
+            <span class="plan-price-note">Precio por confirmar</span>
+          </div>
+        </div>
+        <div class="plan-body">
+          <p class="plan-desc">Experiencia completa. Análisis avanzados, Blood Labs, nutrición y predictor de carrera.</p>
+          <div class="plan-features">
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Todo del plan Atleta</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Blood Labs + biomarcadores</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Nutrición + Race Day</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> AI Coach + plan adaptativo</div>
+            <div class="plan-feat off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Coach personal 1:1</div>
+          </div>
+          <a href="registro.html" class="plan-btn plan-btn-primary">Registrar interés</a>
         </div>
       </div>
 
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        <div class="metric-val"><span>↑</span> FTP</div>
-        <div class="metric-name">Potencia funcional ciclismo</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          Zonas Coggan calculadas en vivo
+      <div class="plan-card reveal" style="--pc-color:var(--gold)">
+        <div class="plan-head">
+          <div class="plan-head-top">
+            <span class="plan-tag tag-elite">Elite</span>
+            <span class="plan-ico">🏅</span>
+          </div>
+          <div class="plan-name" style="color:var(--gold)">Elite</div>
+          <div class="plan-price-row">
+            <span class="plan-price" style="color:var(--gold)">TBD</span>
+            <span class="plan-price-note">Precio por confirmar</span>
+          </div>
+        </div>
+        <div class="plan-body">
+          <p class="plan-desc">Plataforma completa + coach personal experto en triatlón de larga distancia.</p>
+          <div class="plan-features">
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Todo del plan Agegroup</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Coach personal 1:1 (4/mes)</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Plan de temporada personalizado</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Médico deportivo integrado</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Soporte prioritario 24/7</div>
+          </div>
+          <a href="registro.html" class="plan-btn plan-btn-outline" style="border-color:var(--gold);color:var(--gold)">Registrar interés</a>
         </div>
       </div>
 
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <div class="metric-val"><span>↓</span> Pace</div>
-        <div class="metric-name">Pace umbral de carrera</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          rTSS y zonas actualizadas desde Garmin
+      <!-- Coach -->
+      <div class="plan-card reveal" style="--pc-color:var(--orange)">
+        <div class="plan-head">
+          <div class="plan-head-top">
+            <span class="plan-tag tag-pro">Coach</span>
+            <span class="plan-ico">🧑‍💼</span>
+          </div>
+          <div class="plan-name" style="color:var(--orange)">Coach</div>
+          <div class="plan-price-row">
+            <span class="plan-price" style="color:var(--orange)">TBD</span>
+            <span class="plan-price-note">Precio por confirmar</span>
+          </div>
         </div>
-      </div>
-
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-        <div class="metric-val">TSB<span>+</span></div>
-        <div class="metric-name">Form — Frescura para competir</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          Zona óptima de carrera identificada
-        </div>
-      </div>
-
-      <div class="metric-card reveal">
-        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-          <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
-        </svg>
-        <div class="metric-val"><span>↑</span> CSS</div>
-        <div class="metric-name">Critical Swim Speed — Natación</div>
-        <div class="metric-change">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-          SWOLF y eficiencia de brazada
+        <div class="plan-body">
+          <p class="plan-desc">Plataforma completa para entrenadores. Gestiona múltiples atletas desde un solo panel.</p>
+          <div class="plan-features">
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Todo del plan Elite</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Coach Platform completa</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Gestión de 50+ atletas</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Prescripción de entrenamientos</div>
+            <div class="plan-feat on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Soporte prioritario 24/7</div>
+          </div>
+          <a href="registro.html" class="plan-btn plan-btn-outline" style="border-color:var(--orange);color:var(--orange)">Registrar interés</a>
         </div>
       </div>
 
@@ -1549,477 +766,139 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     PLANS
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="plans" aria-labelledby="plans-title" style="background:var(--surface)">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">Planes de entrenamiento</p>
-      <h2 class="heading-lg" id="plans-title">Elige tu nivel.<br>Supera tu límite.</h2>
-    </header>
-
-    <div class="plans-grid">
-
-      <!-- Base -->
-      <article class="plan-card reveal">
-        <span class="plan-badge badge-free">Starter</span>
-        <h3 class="plan-name">Base</h3>
-        <div class="plan-price">
-          <span class="amount" style="font-size:1.6rem;color:var(--muted)">TBD</span>
-        </div>
-        <p style="font-size:.72rem;color:var(--dim);margin-bottom:.75rem;letter-spacing:.06em">To be defined · Precio por confirmar</p>
-        <p class="plan-desc">Para atletas que comienzan su viaje en el triatlón. Acceso al dashboard y sync de Garmin.</p>
-        <ul class="plan-features" aria-label="Características incluidas">
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Dashboard performance básico
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Sync Garmin Connect
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Training Load básico (CTL/ATL)
-          </li>
-          <li class="plan-feature inactive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            GPS Training Detail
-          </li>
-          <li class="plan-feature inactive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Blood Labs
-          </li>
-          <li class="plan-feature inactive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Asesoría coach
-          </li>
-        </ul>
-        <a href="#contact" class="btn btn-outline" style="width:100%;justify-content:center">Registrar interés</a>
-      </article>
-
-      <!-- Pro (featured) -->
-      <article class="plan-card featured reveal">
-        <span class="plan-badge badge-pro">Más popular</span>
-        <span class="plan-badge badge-popular">★ PRO</span>
-        <h3 class="plan-name">Pro Triatleta</h3>
-        <div class="plan-price">
-          <span class="amount" style="font-size:1.6rem;color:var(--orange)">TBD</span>
-        </div>
-        <p style="font-size:.72rem;color:var(--dim);margin-bottom:.75rem;letter-spacing:.06em">To be defined · Precio por confirmar</p>
-        <p class="plan-desc">La experiencia completa para el triatleta serio. Todo lo que necesitas para optimizar tu rendimiento.</p>
-        <ul class="plan-features" aria-label="Características incluidas">
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Todo del plan Base
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            GPS Training Detail + mapa real
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Blood Labs — análisis de sangre
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Predictor de carrera avanzado
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Nutrición + calorimetría
-          </li>
-          <li class="plan-feature inactive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Coach personal 1:1
-          </li>
-        </ul>
-        <a href="#contact" class="btn btn-primary" style="width:100%;justify-content:center">Registrar interés</a>
-      </article>
-
-      <!-- Elite -->
-      <article class="plan-card reveal">
-        <span class="plan-badge badge-elite">Elite</span>
-        <h3 class="plan-name">Iron Coach</h3>
-        <div class="plan-price">
-          <span class="amount" style="font-size:1.6rem;color:var(--gold)">TBD</span>
-        </div>
-        <p style="font-size:.72rem;color:var(--dim);margin-bottom:.75rem;letter-spacing:.06em">To be defined · Precio por confirmar</p>
-        <p class="plan-desc">Asesoría personalizada de coach experto en triatlón + toda la plataforma. Para Ironman serios.</p>
-        <ul class="plan-features" aria-label="Características incluidas">
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Todo del plan Pro
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Coach personal 1:1 (4 sesiones/mes)
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Plan de entrenamiento personalizado
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Médico deportivo integrado
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Nutrición personalizada
-          </li>
-          <li class="plan-feature active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            Acceso prioritario 24/7
-          </li>
-        </ul>
-        <a href="#contact" class="btn btn-outline" style="width:100%;justify-content:center;border-color:var(--gold);color:var(--gold)">Registrar interés</a>
-      </article>
-
+<!-- ── TESTIMONIALS ────────────────────────────────────────────────────────── -->
+<section id="testimonials">
+  <div class="c">
+    <div class="reveal" style="text-align:center">
+      <p class="section-label">Atletas que confían</p>
+      <h2 class="section-title">Resultados reales.</h2>
     </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════════════════════════════════
-     TESTIMONIALS
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="testimonials" aria-labelledby="test-title">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">Atletas que confían</p>
-      <h2 class="heading-lg" id="test-title">Resultados reales.<br>Atletas reales.</h2>
-    </header>
-
-    <div class="testimonials-grid">
-
-      <article class="testimonial-card reveal">
-        <div class="stars" aria-label="5 estrellas">
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <div class="test-grid">
+      <div class="test-card reveal">
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <p class="testimonial-quote">"KonaLabs me dio la visibilidad que TrainingPeaks no tenía sobre mis datos de Garmin. Ver mi CTL en tiempo real con el GPS integrado fue un cambio total en mi preparación para el 70.3."</p>
-        <div class="testimonial-author">
-          <div class="author-avatar" aria-hidden="true">MR</div>
-          <div>
-            <div class="author-name">Matías Rodríguez</div>
-            <div class="author-role">Ironman 70.3 · Santiago</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="testimonial-card reveal">
-        <div class="stars" aria-label="5 estrellas">
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </div>
-        <p class="testimonial-quote">"La integración de Blood Labs con mis métricas de HRV fue lo que me faltaba. Ahora entiendo la correlación entre mis análisis de sangre y mi rendimiento. No existe nada igual en el mercado."</p>
-        <div class="testimonial-author">
-          <div class="author-avatar" aria-hidden="true">CP</div>
-          <div>
-            <div class="author-name">Claudia Pérez</div>
-            <div class="author-role">Triatleta Amateur · Viña del Mar</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="testimonial-card reveal">
-        <div class="stars" aria-label="5 estrellas">
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </div>
-        <p class="testimonial-quote">"Bajé mi marca en 70.3 de 5:48 a 5:12 en 6 meses usando KonaLabs. El predictor de carrera es increíblemente preciso y el plan de nutrición integrado con Garmin es top."</p>
-        <div class="testimonial-author">
-          <div class="author-avatar" aria-hidden="true">JV</div>
-          <div>
-            <div class="author-name">Jorge Vásquez</div>
-            <div class="author-role">Ironman · Concepción</div>
-          </div>
-        </div>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════════════════════════════════
-     CONTACT
-════════════════════════════════════════════════════════════════════════════ -->
-<section id="contact" aria-labelledby="contact-title">
-  <div class="container">
-    <header class="section-header reveal">
-      <p class="label">Únete al equipo</p>
-      <h2 class="heading-lg" id="contact-title">¿Listo para<br>el siguiente nivel?</h2>
-    </header>
-
-    <div class="contact-grid">
-      <div class="contact-info reveal">
-        <div class="contact-item">
-          <div class="contact-item-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
-            </svg>
-          </div>
-          <div>
-            <div class="contact-item-label">Email</div>
-            <div class="contact-item-value">hola@konalabs.app</div>
-          </div>
-        </div>
-
-        <div class="contact-item">
-          <div class="contact-item-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-          </div>
-          <div>
-            <div class="contact-item-label">Ubicación</div>
-            <div class="contact-item-value">Chile · Argentina · Brasil<br>Plataforma 100% online</div>
-          </div>
-        </div>
-
-        <div class="contact-item">
-          <div class="contact-item-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            </svg>
-          </div>
-          <div>
-            <div class="contact-item-label">Dashboard</div>
-            <div class="contact-item-value">
-              <a href="#contact" style="color:var(--orange);text-decoration:underline">Solicitar acceso al Dashboard →</a>
-            </div>
-          </div>
-        </div>
-
-        <div class="contact-item">
-          <div class="contact-item-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-          </div>
-          <div>
-            <div class="contact-item-label">Conectado a</div>
-            <div class="contact-item-value">Garmin Connect · Sync automático diario<br>Disponible en web, móvil y desktop</div>
-          </div>
+        <p class="test-quote">"LabX me dio la visibilidad que TrainingPeaks no tenía. Ver mi CTL en tiempo real con el GPS integrado fue un cambio total en mi preparación para el 70.3 Buenos Aires."</p>
+        <div class="test-author">
+          <div class="test-avatar">MR</div>
+          <div><div class="test-name">Matías Rodríguez</div><div class="test-role">Ironman 70.3 · Santiago, Chile</div></div>
         </div>
       </div>
-
-      <form class="form-grid reveal" novalidate aria-label="Formulario de contacto">
-        <div class="form-row">
-          <div class="form-field">
-            <label for="nombre">Nombre</label>
-            <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" autocomplete="given-name" required>
-          </div>
-          <div class="form-field">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" placeholder="tu@email.com" autocomplete="email" required>
-          </div>
+      <div class="test-card reveal">
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-
-        <div class="form-field">
-          <label for="interes">Interés</label>
-          <select id="interes" name="interes" required>
-            <option value="" disabled selected>Selecciona tu objetivo</option>
-            <option>Preparación Ironman</option>
-            <option>Preparación 70.3</option>
-            <option>Triatlón Olímpico</option>
-            <option>Sprint</option>
-            <option>Coaching personalizado</option>
-            <option>Patrocinio / Colaboración</option>
-          </select>
+        <p class="test-quote">"Como coach manejo 12 atletas y el dashboard de squad me ahorra 3 horas semanales. Ver el grid de riesgo de todo el equipo en un clic es invaluable."</p>
+        <div class="test-author">
+          <div class="test-avatar">LG</div>
+          <div><div class="test-name">Luis Garrido</div><div class="test-role">Coach de triatlón · Buenos Aires</div></div>
         </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label for="nivel">Nivel actual</label>
-            <select id="nivel" name="nivel">
-              <option value="" disabled selected>Tu nivel</option>
-              <option>Principiante</option>
-              <option>Amateur</option>
-              <option>Avanzado</option>
-              <option>Elite / Competitivo</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="carrera">Próxima carrera objetivo</label>
-            <input type="text" id="carrera" name="carrera" placeholder="Ej: Ironman Pucón 2026">
-          </div>
+      </div>
+      <div class="test-card reveal">
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-
-        <div class="form-field">
-          <label for="mensaje">Mensaje</label>
-          <textarea id="mensaje" name="mensaje" placeholder="Cuéntame sobre tus objetivos, historial de entrenamiento o preguntas..." aria-required="false"></textarea>
+        <p class="test-quote">"Bajé mi 70.3 de 5:48 a 5:12 en 6 meses. El Blood Labs correlacionado con el PMC me ayudó a entender por qué me fatigaba rápido en la carrera."</p>
+        <div class="test-author">
+          <div class="test-avatar">CP</div>
+          <div><div class="test-name">Claudia Pérez</div><div class="test-role">Triatleta Amateur · Viña del Mar</div></div>
         </div>
-
-        <button type="submit" class="btn btn-primary" style="align-self:flex-start;padding:.9rem 2.5rem" onclick="handleSubmit(event)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-          Enviar mensaje
-        </button>
-        <p id="form-msg" role="alert" aria-live="polite" style="font-size:.85rem;color:var(--green);display:none;margin-top:.5rem">
-          ✓ Mensaje enviado. Te contactaré pronto.
-        </p>
-      </form>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     FOOTER
-════════════════════════════════════════════════════════════════════════════ -->
-<footer role="contentinfo">
-  <div class="container">
+<!-- ── CTA FINAL ───────────────────────────────────────────────────────────── -->
+<section id="cta-final">
+  <div class="c">
+    <div class="cta-inner reveal">
+      <p class="section-label" style="text-align:center">Empieza hoy · Es gratis</p>
+      <h2 class="section-title">¿Listo para entrenar<br>con datos reales?</h2>
+      <p class="section-sub">Crea tu cuenta en 30 segundos. Conecta Garmin y ve tu PMC en minutos. Sin tarjeta de crédito.</p>
+      <div class="cta-btns">
+        <a href="registro.html" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Crear cuenta gratis
+        </a>
+        <a href="login.html" class="btn btn-ghost">Ya tengo cuenta →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="c">
     <div class="footer-inner">
       <div class="footer-brand">
-        <div class="logo">Kona<span>Labs</span></div>
-        <p>Desarrollado por triatletas, para triatletas. Inspirado en la Meca del triatlón — Kona, Hawaii.</p>
-        <p style="margin-top:.5rem;font-size:.78rem;color:var(--orange);font-style:italic">"Built by athletes who've been on the start line."</p>
-        <div class="social-links" role="list" aria-label="Redes sociales">
-          <a href="#" class="social-link" role="listitem" aria-label="Garmin Connect">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-            </svg>
-          </a>
-          <a href="#" class="social-link" role="listitem" aria-label="GitHub">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-            </svg>
-          </a>
-          <a href="#" class="social-link" role="listitem" aria-label="Strava">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </a>
-        </div>
+        <div class="logo">LAB<span>X</span> <span style="font-size:.8rem;filter:drop-shadow(0 0 4px rgba(255,101,53,.5));animation:ll-pulse 3s ease-in-out infinite;display:inline-block">🌺</span></div>
+        <p>Plataforma de coaching y rendimiento atlético para deportistas de resistencia en LATAM.</p>
+        <p style="font-size:.75rem;color:var(--orange);font-style:italic">"Built for athletes who demand more from their data."</p>
       </div>
-
       <div class="footer-col">
         <h4>Plataforma</h4>
-        <ul role="list">
-          <li><a href="#disciplines">Disciplinas</a></li>
-          <li><a href="#metrics">Métricas</a></li>
-          <li><a href="#calendar">Calendario</a></li>
-          <li><a href="#contact">Acceder al Dashboard</a></li>
+        <ul>
+          <li><a href="#features">Funciones</a></li>
+          <li><a href="#roles">Para coaches</a></li>
+          <li><a href="#roles">Para atletas</a></li>
+          <li><a href="registro.html">Crear cuenta</a></li>
         </ul>
       </div>
-
-      <div class="footer-col">
-        <h4>Planes</h4>
-        <ul role="list">
-          <li><a href="#plans">Base (Gratis)</a></li>
-          <li><a href="#plans">Pro Triatleta</a></li>
-          <li><a href="#plans">Iron Coach</a></li>
-        </ul>
-      </div>
-
       <div class="footer-col">
         <h4>Tecnología</h4>
-        <ul role="list">
+        <ul>
           <li><a href="#">Garmin Connect</a></li>
-          <li><a href="#">Streamlit Cloud</a></li>
-          <li><a href="#">GitHub Actions</a></li>
-          <li><a href="#">Python + Plotly</a></li>
+          <li><a href="#">FastAPI + SQLite</a></li>
+          <li><a href="#">PostgreSQL (prod)</a></li>
+          <li><a href="#">JWT · Alembic</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="tos.html">Términos de servicio</a></li>
+          <li><a href="privacy.html">Privacidad</a></li>
+          <li><a href="mailto:hola@labx.app">hola@labx.app</a></li>
         </ul>
       </div>
     </div>
-
     <div class="footer-bottom">
-      <p>© 2026 KonaLabs · Desarrollado por triatletas · Inspirado en Kona, Hawaii</p>
-      <p>Conectado a Garmin Connect · Santiago de Chile</p>
+      <p>© 2026 LabX · Performance Intelligence · Santiago de Chile</p>
+      <p>Chile · Argentina · Brasil · Plataforma 100% online</p>
     </div>
   </div>
 </footer>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     JS
-════════════════════════════════════════════════════════════════════════════ -->
 <script>
-/* ── Mobile menu ── */
-function toggleMenu(btn) {
-  const menu = document.getElementById('mobile-menu');
-  const open = menu.classList.toggle('open');
-  btn.setAttribute('aria-expanded', open);
+function toggleMenu(btn){
+  const m=document.getElementById('mobile-menu');
+  m.classList.toggle('open');
+  btn.setAttribute('aria-expanded',m.classList.contains('open'));
 }
-function closeMenu() {
+function closeMenu(){
   document.getElementById('mobile-menu').classList.remove('open');
-  document.querySelector('.nav-burger').setAttribute('aria-expanded', 'false');
 }
-
-/* ── Sticky nav shadow ── */
-window.addEventListener('scroll', () => {
-  document.getElementById('nav').style.boxShadow =
-    window.scrollY > 20 ? '0 4px 32px rgba(0,0,0,.4)' : 'none';
-}, { passive: true });
-
-/* ── Countdown — 23 Ago 2026 07:00 Santiago (UTC-3) ── */
-function updateCountdown() {
-  const target = new Date('2026-08-23T07:00:00-03:00');
-  const now    = new Date();
-  const diff   = target - now;
-  if (diff <= 0) {
-    ['cd-days','cd-hours','cd-min','cd-sec'].forEach(id => document.getElementById(id).textContent = '00');
-    return;
-  }
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000)  / 60000);
-  const s = Math.floor((diff % 60000)    / 1000);
-  document.getElementById('cd-days').textContent  = String(d).padStart(2,'0');
-  document.getElementById('cd-hours').textContent = String(h).padStart(2,'0');
-  document.getElementById('cd-min').textContent   = String(m).padStart(2,'0');
-  document.getElementById('cd-sec').textContent   = String(s).padStart(2,'0');
-}
-updateCountdown();
-setInterval(updateCountdown, 1000);
-
-/* ── Readiness bar animation on scroll ── */
-const readinessFill = document.getElementById('readiness-fill');
-const readinessObs  = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) readinessFill.style.width = '78%'; });
-}, { threshold: .4 });
-readinessObs.observe(readinessFill);
-
-/* ── Scroll reveal ── */
-const revealObs = new IntersectionObserver(entries => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 60);
-      revealObs.unobserve(e.target);
-    }
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').style.boxShadow=window.scrollY>20?'0 4px 32px rgba(0,0,0,.5)':'none';
+},{passive:true});
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach((e,i)=>{
+    if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80);ro.unobserve(e.target)}
   });
-}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
-
-document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
-
-/* ── Form submit ── */
-function handleSubmit(e) {
-  e.preventDefault();
-  const btn = e.target;
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
-  setTimeout(() => {
-    document.getElementById('form-msg').style.display = 'block';
-    btn.style.display = 'none';
-  }, 800);
-}
-
-/* ── prefers-reduced-motion: disable ring spin ── */
-if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const ring = document.querySelector('.ring-bg');
-  if (ring) ring.style.animationName = 'none';
-}
+},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
 </script>
 </body>
 </html>

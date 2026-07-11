@@ -1,0 +1,435 @@
+﻿<!DOCTYPE html>
+<html lang="es" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Bienvenida</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--orange:#FF6535;--gold:#F0A500;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --radius:14px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:40px 24px 80px}
+.logo{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:.05em;margin-bottom:8px}
+.logo span{color:var(--orange)}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:32px}
+
+.progress-bar{display:flex;gap:8px;margin-bottom:36px}
+.progress-bar .step{flex:1;height:4px;border-radius:2px;background:var(--surface2);transition:background var(--ease)}
+.progress-bar .step.done{background:var(--orange)}
+.progress-bar .step.active{background:var(--cyan)}
+
+.step-panel{display:none}
+.step-panel.active{display:block}
+.step-title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;margin-bottom:6px}
+.step-desc{color:var(--muted);font-size:.88rem;margin-bottom:24px;line-height:1.5}
+
+label{display:block;font-size:.83rem;color:var(--muted);margin-bottom:5px;margin-top:14px}
+input,select,textarea{
+  width:100%;padding:11px 14px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);
+  font-family:'Inter',sans-serif;font-size:.9rem;outline:none;
+  transition:border-color var(--ease);
+}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+select option{background:var(--surface2)}
+
+.sport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+.sport-card{
+  border:2px solid var(--border);border-radius:var(--radius-sm);
+  padding:16px 12px;text-align:center;cursor:pointer;
+  transition:border-color var(--ease),background var(--ease);
+  user-select:none;
+}
+.sport-card:hover{border-color:var(--cyan);background:rgba(14,165,233,.06)}
+.sport-card.sel{border-color:var(--orange);background:rgba(255,101,53,.08)}
+.sport-card .icon{font-size:28px;margin-bottom:6px}
+.sport-card .name{font-size:.8rem;color:var(--muted)}
+
+.btn-row{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{
+  padding:12px 28px;border:none;border-radius:var(--radius-sm);
+  font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;
+  cursor:pointer;transition:opacity var(--ease),transform var(--ease);
+}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.btn-skip{background:none;color:var(--dim);border:none;font-size:.82rem;padding:12px 0;cursor:pointer}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+.info-box{
+  background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  font-size:.82rem;color:var(--muted);line-height:1.5;margin-top:10px;
+}
+
+.garmin-status{margin-top:12px;font-size:.82rem;color:var(--muted);min-height:20px}
+.garmin-status.ok{color:var(--green)}
+.garmin-status.err{color:var(--red)}
+
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:42px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--dim);padding:0;display:flex;align-items:center;transition:color var(--ease)}
+.pw-eye:hover{color:var(--muted)}
+
+.done-icon{font-size:60px;text-align:center;margin:16px 0}
+.done-title{font-family:'Oswald',sans-serif;font-size:28px;text-align:center;margin-bottom:8px}
+.done-list{list-style:none;margin:20px 0;display:flex;flex-direction:column;gap:10px}
+.done-list li{
+  background:var(--surface2);border-radius:var(--radius-sm);
+  padding:12px 16px;font-size:.88rem;color:var(--muted);
+  display:flex;align-items:center;gap:10px;
+}
+.done-list li .check{font-size:1rem;color:var(--green);min-width:20px}
+</style>
+<style>.logo svg.sbl-svg{width:32px;height:32px;flex-shrink:0}<style>.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}</style></style></head>
+<body>
+<div class="wrap">
+  <div class="logo" style="display:flex;align-items:center;gap:.5rem"><svg class="sbl-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="lxnl-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".6"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient></defs><g class="sbl-arcs"><circle cx="50" cy="50" r="44" stroke="#F0A500" stroke-width="1.5" stroke-dasharray="62 214" stroke-linecap="round" transform="rotate(28 50 50)" stroke-opacity=".7"/><circle cx="50" cy="50" r="40" stroke="#0EA5E9" stroke-width=".8" stroke-dasharray="23 231" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-opacity=".6"/></g><g class="sbl-flower"><circle cx="50" cy="50" r="13" stroke="rgba(255,101,53,.28)" stroke-width=".8" fill="rgba(255,101,53,.05)"/><circle cx="63" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="56.5" cy="38.8" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="43.5" cy="38.8" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/><circle cx="37" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="43.5" cy="61.2" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="56.5" cy="61.2" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/></g><circle cx="50" cy="50" r="9.5" fill="url(#lxnl-glow)"/><circle cx="50" cy="50" r="6" fill="rgba(255,101,53,.12)" stroke="rgba(255,101,53,.35)" stroke-width=".8"/><text x="50" y="55.5" text-anchor="middle" font-size="7.5" font-family="serif" style="filter:drop-shadow(0 0 3px rgba(255,101,53,.8))">&#x1F33A;</text></svg> LAB<span>X</span></div>
+  <p class="subtitle">Configuremos tu cuenta — solo toma 2 minutos</p>
+
+  <div class="progress-bar" id="prog-bar">
+    <div class="step active" data-s="1"></div>
+    <div class="step" data-s="2"></div>
+    <div class="step" data-s="3"></div>
+    <div class="step" data-s="4"></div>
+    <div class="step" data-s="5"></div>
+  </div>
+
+  <!-- PASO 1: Deportes -->
+  <div class="step-panel active" id="step-1">
+    <div class="step-title">¿Qué deportes practicas?</div>
+    <p class="step-desc">Selecciona uno o más. Esto personaliza tu plan y métricas.</p>
+    <div class="sport-grid">
+      <div class="sport-card" data-sport="triathlon" onclick="toggleSport(this)">
+        <div class="icon">🏅</div><div class="name">Triatlón</div>
+      </div>
+      <div class="sport-card" data-sport="swim" onclick="toggleSport(this)">
+        <div class="icon">🏊</div><div class="name">Natación</div>
+      </div>
+      <div class="sport-card" data-sport="bike" onclick="toggleSport(this)">
+        <div class="icon">🚴</div><div class="name">Ciclismo</div>
+      </div>
+      <div class="sport-card" data-sport="run" onclick="toggleSport(this)">
+        <div class="icon">🏃</div><div class="name">Carrera</div>
+      </div>
+      <div class="sport-card" data-sport="strength" onclick="toggleSport(this)">
+        <div class="icon">🏋️</div><div class="name">Fuerza</div>
+      </div>
+      <div class="sport-card" data-sport="yoga" onclick="toggleSport(this)">
+        <div class="icon">🧘</div><div class="name">Yoga</div>
+      </div>
+      <div class="sport-card" data-sport="hike" onclick="toggleSport(this)">
+        <div class="icon">🥾</div><div class="name">Senderismo</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goNext()">Continuar →</button>
+      <button class="btn-skip" onclick="goNext()">Omitir</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: Objetivo de temporada -->
+  <div class="step-panel" id="step-2">
+    <div class="step-title">Tu objetivo de temporada</div>
+    <p class="step-desc">¿Hay una carrera o evento que te motiva? Podemos calcular tu preparación.</p>
+
+    <label>Nombre del evento</label>
+    <input type="text" id="race-name" placeholder="ej: Ironman 70.3 Pucón">
+
+    <label>Fecha</label>
+    <input type="date" id="race-date">
+
+    <label>Distancia</label>
+    <select id="race-dist">
+      <option value="">Seleccionar distancia</option>
+      <option value="sprint">Sprint (750m / 20km / 5km)</option>
+      <option value="olympic">Olímpico (1.5km / 40km / 10km)</option>
+      <option value="703">Ironman 70.3 (1.9km / 90km / 21km)</option>
+      <option value="full">Ironman Full (3.8km / 180km / 42km)</option>
+      <option value="21k">Media maratón</option>
+      <option value="42k">Maratón</option>
+    </select>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goNext()">Continuar →</button>
+      <button class="btn btn-secondary" onclick="goPrev()">← Atrás</button>
+      <button class="btn-skip" onclick="goNext()">Omitir</button>
+    </div>
+  </div>
+
+  <!-- PASO 3: Métricas de rendimiento -->
+  <div class="step-panel" id="step-3">
+    <div class="step-title">Métricas de rendimiento</div>
+    <p class="step-desc">Estos datos calibran tu PMC y zonas de entrenamiento. Puedes ajustarlos luego en Mi Perfil.</p>
+
+    <label>FTP — Potencia Umbral Funcional (Watts)</label>
+    <input type="number" id="ftp" placeholder="ej: 220" min="50" max="500">
+
+    <label>FC Máxima (bpm)</label>
+    <input type="number" id="fcmax" placeholder="ej: 185" min="100" max="220">
+
+    <label>Peso corporal (kg)</label>
+    <input type="number" id="weight" placeholder="ej: 72" min="30" max="200" step="0.1">
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goNext()">Continuar →</button>
+      <button class="btn btn-secondary" onclick="goPrev()">← Atrás</button>
+      <button class="btn-skip" onclick="goNext()">Omitir</button>
+    </div>
+  </div>
+
+  <!-- PASO 4: Conectar Garmin -->
+  <div class="step-panel" id="step-4">
+    <div class="step-title">Conecta tu Garmin</div>
+    <p class="step-desc">Sincronizamos tus actividades automáticamente para calcular CTL, ATL y carga de entrenamiento real.</p>
+
+    <label>Email de Garmin Connect</label>
+    <input type="email" id="garmin-email" placeholder="tu@email.com">
+
+    <label>Contraseña de Garmin Connect</label>
+    <div class="pw-wrap">
+      <input type="password" id="garmin-pass" placeholder="••••••••">
+      <button type="button" class="pw-eye" onclick="toggleGarminPw()" aria-label="Mostrar contraseña">
+        <svg id="garmin-eye-show" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg id="garmin-eye-hide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+    </div>
+
+    <div class="info-box">
+      Tus credenciales Garmin se almacenan encriptadas (AES-256) y solo se usan para importar actividades. LabX no comparte estos datos con terceros.
+    </div>
+
+    <div id="garmin-status" class="garmin-status"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-garmin-connect" onclick="saveGarmin()">Conectar Garmin</button>
+      <button class="btn btn-secondary" onclick="goPrev()">← Atrás</button>
+      <button class="btn-skip" onclick="goNext()">Omitir por ahora</button>
+    </div>
+  </div>
+
+  <!-- PASO 5: ¡Listo! -->
+  <div class="step-panel" id="step-5">
+    <div class="done-icon">🎉</div>
+    <div class="done-title">¡Todo listo, <span id="done-name"></span>!</div>
+    <p class="step-desc" style="text-align:center">Tu plataforma está configurada. Empieza a entrenar con datos.</p>
+
+    <ul class="done-list" id="done-list"></ul>
+
+    <div class="btn-row" style="justify-content:center;margin-top:32px">
+      <button class="btn btn-primary" onclick="finish()">Ir al Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let currentStep = 1;
+const TOTAL = 5;
+const data = {
+  sports: [],
+  race_goal_name: '',
+  race_goal_date: '',
+  race_goal_dist: '',
+  ftp: null,
+  fcmax: null,
+  weight_kg: null,
+  garmin_connected: false,
+};
+
+function getToken() {
+  const m = document.cookie.match(/lx_access_token=([^;]+)/);
+  return m ? m[1] : (localStorage.getItem('lx_token') || '');
+}
+
+function authH() {
+  const t = getToken();
+  return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+function toggleSport(el) {
+  el.classList.toggle('sel');
+  const s = el.dataset.sport;
+  const idx = data.sports.indexOf(s);
+  if (idx === -1) data.sports.push(s);
+  else data.sports.splice(idx, 1);
+}
+
+function updateProgress() {
+  document.querySelectorAll('.progress-bar .step').forEach((el, i) => {
+    el.classList.remove('done', 'active');
+    if (i + 1 < currentStep) el.classList.add('done');
+    else if (i + 1 === currentStep) el.classList.add('active');
+  });
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  currentStep = n;
+  updateProgress();
+  if (n === 5) buildDoneList();
+}
+
+function goNext() {
+  collectCurrentStep();
+  if (currentStep < TOTAL) showStep(currentStep + 1);
+}
+
+function goPrev() {
+  if (currentStep > 1) showStep(currentStep - 1);
+}
+
+function collectCurrentStep() {
+  if (currentStep === 2) {
+    data.race_goal_name = document.getElementById('race-name').value.trim();
+    data.race_goal_date = document.getElementById('race-date').value;
+    data.race_goal_dist = document.getElementById('race-dist').value;
+  } else if (currentStep === 3) {
+    const ftp = parseInt(document.getElementById('ftp').value);
+    const fc  = parseInt(document.getElementById('fcmax').value);
+    const w   = parseFloat(document.getElementById('weight').value);
+    if (ftp > 0) data.ftp = ftp;
+    if (fc > 0)  data.fcmax = fc;
+    if (w > 0)   data.weight_kg = w;
+  }
+}
+
+async function saveGarmin() {
+  const email = document.getElementById('garmin-email').value.trim();
+  const pass  = document.getElementById('garmin-pass').value;
+  const btn   = document.getElementById('btn-garmin-connect');
+  const status = document.getElementById('garmin-status');
+
+  if (!email || !pass) {
+    status.textContent = 'Ingresa email y contraseña de Garmin.';
+    status.className = 'garmin-status err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Conectando…';
+  status.textContent = '';
+
+  try {
+    const r = await fetch(API + '/api/athlete/garmin-credentials', {
+      method: 'POST',
+      headers: authH(),
+      credentials: 'include',
+      body: JSON.stringify({ garmin_email: email, garmin_password: pass }),
+    });
+    if (r.ok) {
+      status.textContent = '✓ Garmin conectado. Iniciando sync…';
+      status.className = 'garmin-status ok';
+      data.garmin_connected = true;
+      fetch(API + '/api/athlete/garmin/sync', { method: 'POST', headers: authH(), credentials: 'include' }).catch(() => {});
+      setTimeout(() => goNext(), 1200);
+    } else {
+      const err = await r.json().catch(() => ({}));
+      status.textContent = '✗ ' + (err.detail || 'Error al conectar Garmin');
+      status.className = 'garmin-status err';
+    }
+  } catch(e) {
+    status.textContent = '✗ Error de red. Verifica tu conexión.';
+    status.className = 'garmin-status err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Conectar Garmin';
+  }
+}
+
+function buildDoneList() {
+  const list = document.getElementById('done-list');
+  const items = [
+    { done: data.sports.length > 0,  label: data.sports.length ? 'Deportes: ' + data.sports.join(', ') : 'Sin deportes seleccionados (configurar en Perfil)' },
+    { done: !!data.race_goal_name,    label: data.race_goal_name ? 'Objetivo: ' + data.race_goal_name : 'Sin objetivo de temporada (configurar en Perfil)' },
+    { done: !!data.ftp,               label: data.ftp ? 'FTP: ' + data.ftp + 'W' : 'FTP no ingresado (configurar en Perfil)' },
+    { done: data.garmin_connected,    label: data.garmin_connected ? 'Garmin conectado ✓' : 'Garmin no conectado (configurar en Mi Perfil)' },
+  ];
+  list.innerHTML = items.map(i =>
+    '<li><span class="check">' + (i.done ? '✓' : '○') + '</span>' + escHtml(i.label) + '</li>'
+  ).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleGarminPw() {
+  const inp  = document.getElementById('garmin-pass');
+  const show = document.getElementById('garmin-eye-show');
+  const hide = document.getElementById('garmin-eye-hide');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    show.style.display = 'none';
+    hide.style.display = 'block';
+  } else {
+    inp.type = 'password';
+    show.style.display = 'block';
+    hide.style.display = 'none';
+  }
+}
+
+async function saveProfileData() {
+  const patch = { onboarding_done: true };
+  if (data.sports.length)      patch.sports = data.sports.join(',');
+  if (data.race_goal_name)     patch.race_goal_name = data.race_goal_name;
+  if (data.race_goal_date)     patch.race_goal_date = data.race_goal_date;
+  if (data.race_goal_dist)     patch.race_goal_dist = data.race_goal_dist;
+  if (data.ftp)                patch.ftp = data.ftp;
+  if (data.fcmax)              patch.fcmax = data.fcmax;
+  if (data.weight_kg)          patch.weight_kg = data.weight_kg;
+  try {
+    await fetch(API + '/api/athlete/profile', {
+      method: 'PATCH',
+      headers: authH(),
+      credentials: 'include',
+      body: JSON.stringify(patch),
+    });
+  } catch(e) {}
+}
+
+async function finish() {
+  await saveProfileData();
+  localStorage.setItem('lx_onboarding_done', '1');
+  window.location.href = 'dashboard.html';
+}
+
+(async () => {
+  const t = getToken();
+  if (!t) {
+    window.location.href = 'login.html?next=onboarding.html';
+    return;
+  }
+  if (localStorage.getItem('lx_onboarding_done') === '1') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  try {
+    const r = await fetch(API + '/api/auth/me', { headers: authH(), credentials: 'include' });
+    if (r.ok) {
+      const u = await r.json();
+      if (u.onboarding_completed_at) {
+        localStorage.setItem('lx_onboarding_done', '1');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+      document.getElementById('done-name').textContent = (u.nombre || 'Atleta').split(' ')[0];
+    } else {
+      window.location.href = 'login.html';
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

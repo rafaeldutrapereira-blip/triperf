@@ -1,0 +1,723 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — LabX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nav.css">
+<style>
+/* ── Analytics layout ───────────────────────────────────── */
+.an-tab-bar{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:1px solid var(--border2,#1e293b);padding-bottom:.75rem}
+.an-tab{background:none;border:none;padding:.45rem .9rem;font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-radius:4px;transition:background .15s,color .15s}
+.an-tab.active,.an-tab:hover{background:rgba(14,165,233,.12);color:#0EA5E9}
+.an-pane{display:none}.an-pane.active{display:block}
+
+/* ── Power curve ────────────────────────────────────────── */
+.cp-canvas-wrap{position:relative;width:100%;height:260px;margin-bottom:1rem}
+#cp-canvas{width:100%;height:100%;display:block}
+.cp-meta{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.cp-badge{background:var(--surface2,#0f172a);border-radius:8px;padding:.6rem 1rem;border:1px solid var(--border2,#1e293b);min-width:110px}
+.cp-badge .val{font-size:1.5rem;font-weight:800;font-family:'Oswald',sans-serif;color:#0EA5E9}
+.cp-badge .lbl{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+
+/* ── VO2max ────────────────────────────────────────────── */
+.vo2-canvas-wrap{width:100%;height:200px;margin-bottom:1.25rem}
+#vo2-canvas{width:100%;height:100%}
+.vo2-score{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.25rem}
+.vo2-circle{width:90px;height:90px;border-radius:50%;border:4px solid #10B981;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.vo2-circle .v{font-size:1.8rem;font-weight:800;font-family:'Oswald',sans-serif;color:#10B981;line-height:1}
+.vo2-circle .u{font-size:.58rem;color:var(--dim)}
+
+/* ── PRs ───────────────────────────────────────────────── */
+.pr-tabs{display:flex;gap:.4rem;margin-bottom:1rem}
+.pr-stab{background:none;border:1px solid var(--border2,#1e293b);padding:.3rem .7rem;border-radius:4px;font-size:.7rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);cursor:pointer}
+.pr-stab.active{border-color:#0EA5E9;color:#0EA5E9;background:rgba(14,165,233,.1)}
+.pr-sport-pane{display:none}.pr-sport-pane.active{display:block}
+.pr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.75rem}
+.pr-card{background:var(--surface2,#0f172a);border-radius:8px;padding:.75rem 1rem;border:1px solid var(--border2,#1e293b)}
+.pr-card.has-record{border-color:rgba(240,165,0,.4)}
+.pr-card .dist{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-bottom:.2rem}
+.pr-card .time{font-size:1.25rem;font-weight:800;font-family:'Oswald',sans-serif;color:#F0A500;line-height:1.1}
+.pr-card .sub{font-size:.68rem;color:var(--muted);margin-top:.2rem}
+
+/* ── Distribution ──────────────────────────────────────── */
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:600px){.dist-grid{grid-template-columns:1fr}}
+.dist-canvas-wrap{height:180px;position:relative}
+.dist-bar{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+.dist-bar-label{width:28px;font-size:.65rem;color:var(--dim);text-align:right;flex-shrink:0}
+.dist-bar-track{flex:1;height:8px;background:var(--border2,#1e293b);border-radius:4px;overflow:hidden}
+.dist-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.dist-bar-val{width:36px;font-size:.65rem;color:var(--muted);text-align:right;flex-shrink:0}
+.pol-badge{display:inline-block;padding:.35rem .75rem;border-radius:20px;font-size:.7rem;font-weight:700;margin-top:.5rem}
+
+/* ── Zones ─────────────────────────────────────────────── */
+.zone-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.zone-table th{text-align:left;padding:.4rem .6rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);border-bottom:1px solid var(--border2,#1e293b)}
+.zone-table td{padding:.45rem .6rem;border-bottom:1px solid var(--border2,#1e293b);color:var(--text)}
+.zone-table tr:last-child td{border-bottom:none}
+.zt-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:.4rem;flex-shrink:0}
+</style>
+<style>
+.sb-logo svg.sbl-svg{width:36px;height:36px;flex-shrink:0}.tb-logo svg.sbl-svg{width:26px;height:26px;flex-shrink:0}
+.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
+.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
+@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
+@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
+</style></head>
+<body>
+<div class="app">
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside id="sidebar"></aside>
+  <header class="sb-topbar"></header>
+  <div class="sb-overlay" id="sb-overlay"></div>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <main class="main" id="main-content">
+
+    <!-- Page header -->
+    <div class="ph" style="margin-bottom:1.5rem">
+      <div>
+        <div class="ph-title">Performance Analytics</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">
+          Curva de potencia, VO2max, r&#233;cords personales y distribuci&#243;n de entrenamiento
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;align-items:center">
+        <select id="an-days" onchange="reloadAll()" style="font-size:.72rem;background:var(--surface2,#0f172a);border:1px solid var(--border2);color:var(--text);padding:.35rem .6rem;border-radius:6px">
+          <option value="90">90 d&#237;as</option>
+          <option value="180">180 d&#237;as</option>
+          <option value="365" selected>1 a&#241;o</option>
+          <option value="730">2 a&#241;os</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="an-tab-bar">
+      <button class="an-tab active" onclick="switchAnTab('power',this)">&#9889; Curva Potencia</button>
+      <button class="an-tab" onclick="switchAnTab('vo2max',this)">&#128165; VO2max</button>
+      <button class="an-tab" onclick="switchAnTab('records',this)">&#127942; R&#233;cords</button>
+      <button class="an-tab" onclick="switchAnTab('distrib',this)">&#128200; Distribuci&#243;n</button>
+      <button class="an-tab" onclick="switchAnTab('zones',this)">&#9881; Zonas</button>
+    </div>
+
+    <!-- ── PANE: POWER CURVE ──────────────────────────────────── -->
+    <div class="an-pane active" id="pane-power">
+      <div style="max-width:900px">
+        <div id="cp-meta" class="cp-meta">
+          <div class="cp-badge">
+            <div class="val" id="cp-ftp">—</div>
+            <div class="lbl">FTP Estimado (W)</div>
+          </div>
+          <div class="cp-badge">
+            <div class="val" id="cp-ftp-wkg">—</div>
+            <div class="lbl">W/kg</div>
+          </div>
+          <div class="cp-badge">
+            <div class="val" id="cp-model-cp">—</div>
+            <div class="lbl">CP (W)</div>
+          </div>
+          <div class="cp-badge">
+            <div class="val" id="cp-model-wp">—</div>
+            <div class="lbl">W' (kJ)</div>
+          </div>
+          <div class="cp-badge">
+            <div class="val" id="cp-n-acts">—</div>
+            <div class="lbl">Actividades</div>
+          </div>
+        </div>
+        <div class="card" style="padding:1rem">
+          <div class="cp-canvas-wrap">
+            <canvas id="cp-canvas"></canvas>
+          </div>
+          <div style="display:flex;gap:1.5rem;font-size:.62rem;color:var(--dim);justify-content:center">
+            <span style="color:#0EA5E9">&#9644; Curva actual</span>
+            <span style="color:rgba(14,165,233,.25)">&#9644; Historial (180d)</span>
+          </div>
+        </div>
+        <div id="cp-message" style="display:none;text-align:center;padding:2rem;color:var(--muted);font-size:.8rem"></div>
+      </div>
+    </div>
+
+    <!-- ── PANE: VO2MAX ───────────────────────────────────────── -->
+    <div class="an-pane" id="pane-vo2max">
+      <div style="max-width:760px">
+        <div class="vo2-score">
+          <div class="vo2-circle" id="vo2-circle">
+            <div class="v" id="vo2-val">—</div>
+            <div class="u">ml/kg/min</div>
+          </div>
+          <div>
+            <div id="vo2-class" style="font-size:1.05rem;font-weight:700;color:#10B981;margin-bottom:.3rem">Calculando...</div>
+            <div id="vo2-trend" style="font-size:.78rem;color:var(--muted)"></div>
+            <div style="font-size:.68rem;color:var(--dim);margin-top:.35rem" id="vo2-sources"></div>
+          </div>
+        </div>
+        <div class="card" style="padding:1rem;margin-bottom:1.25rem">
+          <div style="font-size:.65rem;color:var(--dim);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.07em">Evoluci&#243;n VO2max (12 meses)</div>
+          <div class="vo2-canvas-wrap">
+            <canvas id="vo2-canvas"></canvas>
+          </div>
+        </div>
+        <div id="vo2-message" style="display:none;color:var(--muted);font-size:.78rem;text-align:center;padding:1.5rem"></div>
+      </div>
+    </div>
+
+    <!-- ── PANE: PERSONAL RECORDS ────────────────────────────── -->
+    <div class="an-pane" id="pane-records">
+      <div style="max-width:900px">
+        <div class="pr-tabs" id="pr-tabs"></div>
+        <div id="pr-panes"></div>
+        <div id="pr-message" style="display:none;color:var(--muted);font-size:.8rem;text-align:center;padding:2rem"></div>
+      </div>
+    </div>
+
+    <!-- ── PANE: DISTRIBUCIÓN ─────────────────────────────────── -->
+    <div class="an-pane" id="pane-distrib">
+      <div style="max-width:900px">
+        <div class="dist-grid">
+          <div class="card" style="padding:.9rem">
+            <div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.7rem">TSS por Deporte</div>
+            <div id="dist-sport-bars"></div>
+          </div>
+          <div class="card" style="padding:.9rem">
+            <div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.7rem">Carga por D&#237;a de la Semana</div>
+            <div id="dist-weekday-bars"></div>
+          </div>
+        </div>
+        <div class="dist-grid">
+          <div class="card" style="padding:.9rem">
+            <div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.7rem">Distribuci&#243;n por Zona</div>
+            <div id="dist-zone-bars"></div>
+          </div>
+          <div class="card" style="padding:.9rem">
+            <div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem">Polarizaci&#243;n</div>
+            <div id="dist-pol" style="font-size:.78rem;color:var(--muted);line-height:1.7"></div>
+          </div>
+        </div>
+        <div id="dist-message" style="display:none;color:var(--muted);font-size:.8rem;text-align:center;padding:2rem"></div>
+      </div>
+    </div>
+
+    <!-- ── PANE: ZONAS ───────────────────────────────────────── -->
+    <div class="an-pane" id="pane-zones">
+      <div style="max-width:760px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+          <!-- Ciclismo -->
+          <div class="card" id="zone-cycling-card">
+            <div style="font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.9rem">&#128691; Ciclismo — Potencia</div>
+            <div id="zone-cycling-content">
+              <div style="color:var(--dim);font-size:.78rem">Sin datos suficientes de ciclismo en los &#250;ltimos 90 d&#237;as.</div>
+            </div>
+          </div>
+          <!-- Running -->
+          <div class="card" id="zone-running-card">
+            <div style="font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.9rem">&#127939; Running — Ritmo</div>
+            <div id="zone-running-content">
+              <div style="color:var(--dim);font-size:.78rem">Sin datos suficientes de running en los &#250;ltimos 90 d&#237;as.</div>
+            </div>
+          </div>
+        </div>
+        <!-- Nataci&#243;n -->
+        <div class="card" style="margin-bottom:1rem">
+          <div style="font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.9rem">&#127946; Nataci&#243;n — CSS</div>
+          <div id="zone-swim-content">
+            <div style="color:var(--dim);font-size:.78rem">Sin datos de test 200/400m en los &#250;ltimos 90 d&#237;as.</div>
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:var(--dim);font-style:italic;margin-top:.5rem" id="zone-note"></div>
+      </div>
+    </div>
+
+    <div style="height:3rem"></div>
+  </main>
+</div>
+
+<script>
+/* ── Analytics Page ─────────────────────────────────────────────── */
+var API = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
+function tok(){ return localStorage.getItem('lx_token')||''; }
+function hdrs(){ return {Authorization:'Bearer '+tok()}; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+var _data = {};  // cache by tab
+
+/* ── Tab switching ────────────────────────────────────────────── */
+function switchAnTab(name, btn){
+  document.querySelectorAll('.an-tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.an-pane').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  _loadTab(name);
+}
+
+function reloadAll(){
+  _data = {};
+  var activeBtn = document.querySelector('.an-tab.active');
+  var activeName = activeBtn ? activeBtn.getAttribute('onclick').match(/'(\w+)'/)[1] : 'power';
+  _loadTab(activeName);
+}
+
+function _loadTab(name){
+  if(name==='power')   loadPowerCurve();
+  else if(name==='vo2max')  loadVo2max();
+  else if(name==='records') loadRecords();
+  else if(name==='distrib') loadDistrib();
+  else if(name==='zones')   loadZones();
+}
+
+/* ── Days helper ────────────────────────────────────────────────── */
+function getDays(){ return parseInt(document.getElementById('an-days').value,10)||365; }
+
+/* ─────────────────────────────────────────────────────────────────
+   1. POWER CURVE
+───────────────────────────────────────────────────────────────── */
+function loadPowerCurve(){
+  if(_data.power){ renderPowerCurve(_data.power); return; }
+  fetch(API+'/analytics/power-curve?days_back='+getDays(), {headers:hdrs()})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _data.power = d;
+      renderPowerCurve(d);
+    }).catch(function(){});
+}
+
+function renderPowerCurve(d){
+  var msg = document.getElementById('cp-message');
+  var canvas = document.getElementById('cp-canvas');
+
+  if(!d.curve || !d.curve.length){
+    msg.textContent = d.message || 'Sin actividades de ciclismo con datos de potencia.';
+    msg.style.display = 'block';
+    canvas.style.display = 'none';
+    return;
+  }
+  msg.style.display = 'none';
+  canvas.style.display = 'block';
+
+  document.getElementById('cp-ftp').textContent     = d.ftp_est ? d.ftp_est+'W' : '—';
+  document.getElementById('cp-ftp-wkg').textContent = d.ftp_wkg ? d.ftp_wkg : '—';
+  document.getElementById('cp-n-acts').textContent  = d.n_activities || '—';
+  if(d.cp_model){
+    document.getElementById('cp-model-cp').textContent = d.cp_model.cp_watts+'W';
+    document.getElementById('cp-model-wp').textContent = Math.round(d.cp_model.w_prime_j/1000)+'kJ';
+  }
+
+  _drawCpCurve(canvas, d.curve);
+}
+
+function _drawCpCurve(canvas, curve){
+  var W = canvas.parentElement.offsetWidth;
+  var H = canvas.parentElement.offsetHeight;
+  canvas.width  = W;
+  canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  var pad = {top:20, right:20, bottom:40, left:52};
+  var cw = W - pad.left - pad.right;
+  var ch = H - pad.top  - pad.bottom;
+
+  var powers = curve.map(function(p){ return p.power_w; });
+  var maxP = Math.max.apply(null, powers);
+  var minP = Math.max(0, Math.min.apply(null, powers) - 20);
+
+  // log scale for x-axis (durations)
+  var durs = curve.map(function(p){ return p.duration_sec; });
+  var minD = durs[0], maxD = durs[durs.length-1];
+  function xPos(d){ return pad.left + (Math.log(d)-Math.log(minD))/(Math.log(maxD)-Math.log(minD)) * cw; }
+  function yPos(p){ return pad.top  + (1 - (p-minP)/(maxP-minP)) * ch; }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth   = 1;
+  [0.25,0.5,0.75,1].forEach(function(f){
+    var y = pad.top + f*ch;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cw,y); ctx.stroke();
+  });
+
+  // X axis labels (key durations)
+  var keyLabels = [[60,'1m'],[300,'5m'],[600,'10m'],[1200,'20m'],[3600,'1h'],[7200,'2h']];
+  ctx.fillStyle   = 'rgba(148,163,184,.6)';
+  ctx.font        = '10px Inter,sans-serif';
+  ctx.textAlign   = 'center';
+  keyLabels.forEach(function(kl){
+    if(kl[0] < minD || kl[0] > maxD) return;
+    var x = xPos(kl[0]);
+    ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,.05)';
+    ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+ch); ctx.stroke();
+    ctx.fillText(kl[1], x, pad.top+ch+15);
+  });
+
+  // Y axis labels
+  ctx.textAlign = 'right';
+  var steps = 4;
+  for(var i=0;i<=steps;i++){
+    var p = minP + (maxP-minP)*i/steps;
+    var y = yPos(p);
+    ctx.fillStyle = 'rgba(148,163,184,.6)';
+    ctx.fillText(Math.round(p)+'W', pad.left-6, y+4);
+  }
+
+  // Curve fill
+  var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+ch);
+  grad.addColorStop(0,   'rgba(14,165,233,.35)');
+  grad.addColorStop(1,   'rgba(14,165,233,.03)');
+  ctx.beginPath();
+  ctx.moveTo(xPos(curve[0].duration_sec), yPos(curve[0].power_w));
+  curve.forEach(function(pt){ ctx.lineTo(xPos(pt.duration_sec), yPos(pt.power_w)); });
+  ctx.lineTo(xPos(curve[curve.length-1].duration_sec), pad.top+ch);
+  ctx.lineTo(xPos(curve[0].duration_sec), pad.top+ch);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Curve line
+  ctx.beginPath();
+  ctx.strokeStyle = '#0EA5E9';
+  ctx.lineWidth   = 2.5;
+  ctx.lineJoin    = 'round';
+  curve.forEach(function(pt,i){
+    var x = xPos(pt.duration_sec), y = yPos(pt.power_w);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // FTP line at 60 min
+  var ftp60 = curve.find(function(p){ return p.duration_sec===3600; });
+  if(ftp60){
+    var y = yPos(ftp60.power_w);
+    ctx.setLineDash([4,4]);
+    ctx.strokeStyle = 'rgba(240,165,0,.5)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cw,y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle   = 'rgba(240,165,0,.9)';
+    ctx.textAlign   = 'left';
+    ctx.font        = '10px Inter,sans-serif';
+    ctx.fillText('FTP', pad.left+4, y-4);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   2. VO2MAX
+───────────────────────────────────────────────────────────────── */
+function loadVo2max(){
+  if(_data.vo2){ renderVo2max(_data.vo2); return; }
+  fetch(API+'/analytics/vo2max?days_back='+getDays(), {headers:hdrs()})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _data.vo2 = d;
+      renderVo2max(d);
+    }).catch(function(){});
+}
+
+function renderVo2max(d){
+  var msg     = document.getElementById('vo2-message');
+  var circle  = document.getElementById('vo2-circle');
+  var val     = document.getElementById('vo2-val');
+  var cls     = document.getElementById('vo2-class');
+  var trend   = document.getElementById('vo2-trend');
+  var sources = document.getElementById('vo2-sources');
+
+  val.textContent = d.vo2max_current ? d.vo2max_current : '—';
+  cls.textContent = d.classification  || 'Sin datos';
+
+  if(d.trend_delta){
+    var sign = d.trend_delta > 0 ? '+' : '';
+    trend.textContent = sign + d.trend_delta + ' vs período anterior';
+    trend.style.color = d.trend_delta > 0 ? '#10B981' : '#EF4444';
+  }
+
+  sources.textContent = (d.garmin_readings||0)+' lecturas Garmin, '+(d.estimated_readings||0)+' estimados';
+
+  if(!d.timeline || !d.timeline.length){
+    msg.textContent = 'Sin actividades de running o datos Garmin para calcular VO2max.';
+    msg.style.display = 'block';
+    return;
+  }
+  msg.style.display = 'none';
+  _drawVo2Chart(document.getElementById('vo2-canvas'), d.timeline);
+}
+
+function _drawVo2Chart(canvas, timeline){
+  var W = canvas.parentElement.offsetWidth;
+  var H = canvas.parentElement.offsetHeight;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  var pad = {top:15, right:15, bottom:35, left:42};
+  var cw = W - pad.left - pad.right;
+  var ch = H - pad.top  - pad.bottom;
+
+  var vals = timeline.map(function(t){ return t.vo2max; });
+  var maxV = Math.max.apply(null,vals)+3;
+  var minV = Math.max(20, Math.min.apply(null,vals)-3);
+  var n = timeline.length;
+
+  function xp(i){ return pad.left + i/(n-1)*cw; }
+  function yp(v){ return pad.top  + (1-(v-minV)/(maxV-minV))*ch; }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Area fill
+  var grad = ctx.createLinearGradient(0,pad.top,0,pad.top+ch);
+  grad.addColorStop(0,'rgba(16,185,129,.3)');
+  grad.addColorStop(1,'rgba(16,185,129,.02)');
+  ctx.beginPath();
+  ctx.moveTo(xp(0), yp(timeline[0].vo2max));
+  timeline.forEach(function(t,i){ ctx.lineTo(xp(i), yp(t.vo2max)); });
+  ctx.lineTo(xp(n-1), pad.top+ch);
+  ctx.lineTo(xp(0),   pad.top+ch);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle='#10B981'; ctx.lineWidth=2; ctx.lineJoin='round';
+  timeline.forEach(function(t,i){
+    if(i===0) ctx.moveTo(xp(i),yp(t.vo2max)); else ctx.lineTo(xp(i),yp(t.vo2max));
+  });
+  ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle='rgba(148,163,184,.6)'; ctx.font='10px Inter'; ctx.textAlign='right';
+  for(var s=0;s<=3;s++){
+    var v = minV + (maxV-minV)*s/3;
+    ctx.fillText(Math.round(v), pad.left-4, yp(v)+4);
+  }
+
+  // X date labels (first, middle, last)
+  ctx.textAlign='center';
+  [[0,'start'],[Math.floor(n/2),'mid'],[n-1,'end']].forEach(function(pair){
+    var idx=pair[0];
+    if(idx<n){
+      var d = timeline[idx].date.slice(0,7); // YYYY-MM
+      ctx.fillText(d, xp(idx), pad.top+ch+16);
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   3. PERSONAL RECORDS
+───────────────────────────────────────────────────────────────── */
+var SPORT_ICONS = {run:'&#127939;', bike:'&#128691;', swim:'&#127946;'};
+var SPORT_LABELS= {run:'Running', bike:'Ciclismo', swim:'Nataci&#243;n'};
+
+function loadRecords(){
+  if(_data.records){ renderRecords(_data.records); return; }
+  fetch(API+'/analytics/personal-records', {headers:hdrs()})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _data.records = d;
+      renderRecords(d);
+    }).catch(function(){});
+}
+
+function renderRecords(d){
+  var msg = document.getElementById('pr-message');
+  var tabs= document.getElementById('pr-tabs');
+  var panes=document.getElementById('pr-panes');
+
+  var sports = Object.keys(d.records||{});
+  if(!sports.length){
+    msg.textContent='Sin actividades con distancias estándar registradas.';
+    msg.style.display='block';
+    tabs.innerHTML=''; panes.innerHTML='';
+    return;
+  }
+  msg.style.display='none';
+
+  tabs.innerHTML = sports.map(function(sp,i){
+    return '<button class="pr-stab'+(i===0?' active':'')+'" onclick="switchPrTab(\''+sp+'\',this)">'+
+           (SPORT_ICONS[sp]||'&#127942;')+' '+(SPORT_LABELS[sp]||sp)+'</button>';
+  }).join('');
+
+  panes.innerHTML = sports.map(function(sp,i){
+    var prs = d.records[sp];
+    var cards = Object.keys(prs).map(function(key){
+      var pr = prs[key];
+      var bt = pr.best_time || {};
+      return '<div class="pr-card has-record">'
+        +'<div class="dist">'+esc(pr.label)+'</div>'
+        +'<div class="time">'+esc(bt.formatted||'—')+'</div>'
+        +(pr.pace_fmt ? '<div class="sub">'+esc(pr.pace_fmt)+'/km</div>' : '')
+        +(pr.pace_100m_fmt ? '<div class="sub">'+esc(pr.pace_100m_fmt)+'/100m</div>' : '')
+        +(pr.best_power ? '<div class="sub">&#128294; '+pr.best_power.watts+'W pico</div>' : '')
+        +(pr.best_speed_kmh ? '<div class="sub">'+pr.best_speed_kmh+' km/h m&#225;x</div>' : '')
+        +'<div class="sub" style="color:var(--dim);font-size:.6rem">'+esc(bt.date||'')+(pr.n_attempts?' · '+pr.n_attempts+' intentos':'')+'</div>'
+        +'</div>';
+    }).join('');
+    return '<div class="pr-sport-pane'+(i===0?' active':'')+'" id="pr-pane-'+sp+'">'
+      +'<div class="pr-grid">'+cards+'</div></div>';
+  }).join('');
+}
+
+function switchPrTab(sport, btn){
+  document.querySelectorAll('.pr-stab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.pr-sport-pane').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  var pane = document.getElementById('pr-pane-'+sport);
+  if(pane) pane.classList.add('active');
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   4. DISTRIBUCIÓN
+───────────────────────────────────────────────────────────────── */
+var SPORT_COLORS = {
+  bike:'#0EA5E9', run:'#10B981', swim:'#A855F7',
+  strength:'#F0A500', brick:'#EF4444', other:'#64748b'
+};
+var ZONE_COLORS = ['#475569','#10B981','#EAB308','#F97316','#EF4444'];
+
+function loadDistrib(){
+  if(_data.distrib){ renderDistrib(_data.distrib); return; }
+  fetch(API+'/analytics/training-distribution?days_back='+getDays(), {headers:hdrs()})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _data.distrib = d;
+      renderDistrib(d);
+    }).catch(function(){});
+}
+
+function renderDistrib(d){
+  var msg = document.getElementById('dist-message');
+  if(d.message){
+    msg.textContent=d.message; msg.style.display='block'; return;
+  }
+  msg.style.display='none';
+
+  // Sport bars
+  var sb = document.getElementById('dist-sport-bars');
+  var maxTss = Math.max.apply(null,(d.by_sport||[]).map(function(s){ return s.tss; }))||1;
+  sb.innerHTML = (d.by_sport||[]).map(function(s){
+    var clr = SPORT_COLORS[s.sport]||'#64748b';
+    return '<div class="dist-bar">'
+      +'<div class="dist-bar-label" style="color:'+clr+'">'+esc(s.sport.slice(0,4))+'</div>'
+      +'<div class="dist-bar-track"><div class="dist-bar-fill" style="width:'+s.pct_tss+'%;background:'+clr+'"></div></div>'
+      +'<div class="dist-bar-val">'+s.pct_tss+'%</div>'
+      +'</div>';
+  }).join('');
+
+  // Weekday bars
+  var wb = document.getElementById('dist-weekday-bars');
+  var maxWd = Math.max.apply(null,(d.by_weekday||[]).map(function(w){ return w.tss_avg; }))||1;
+  wb.innerHTML = (d.by_weekday||[]).map(function(w){
+    var pct = Math.round(w.tss_avg/maxWd*100);
+    return '<div class="dist-bar">'
+      +'<div class="dist-bar-label">'+esc(w.day)+'</div>'
+      +'<div class="dist-bar-track"><div class="dist-bar-fill" style="width:'+pct+'%;background:#7FB3CC"></div></div>'
+      +'<div class="dist-bar-val">'+Math.round(w.tss_avg)+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Zone bars
+  var zb = document.getElementById('dist-zone-bars');
+  zb.innerHTML = (d.by_zone||[]).map(function(z,i){
+    var clr = ZONE_COLORS[i]||'#64748b';
+    return '<div class="dist-bar">'
+      +'<div class="dist-bar-label" style="color:'+clr+'">'+esc(z.zone)+'</div>'
+      +'<div class="dist-bar-track"><div class="dist-bar-fill" style="width:'+z.pct+'%;background:'+clr+'"></div></div>'
+      +'<div class="dist-bar-val">'+z.pct+'%</div>'
+      +'</div>';
+  }).join('');
+
+  // Polarization
+  var pol = document.getElementById('dist-pol');
+  pol.innerHTML = '<div style="font-size:1.2rem;font-weight:800;font-family:Oswald,sans-serif;color:#0EA5E9;margin-bottom:.35rem">'
+    +(d.polarization_index||'—')+'</div>'
+    +'<div style="font-size:.72rem;color:var(--text);margin-bottom:.5rem">Índice de Polarizaci&#243;n</div>'
+    +'<div style="font-size:.72rem;color:var(--muted);line-height:1.6">'+esc(d.polarization_label||'')+'</div>'
+    +'<div style="font-size:.65rem;color:var(--dim);margin-top:.5rem">'
+    +Math.round(d.total_hours||0)+'h &#183; '+(d.total_acts||0)+' actividades &#183; '+Math.round(d.total_tss||0)+' TSS total</div>';
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   5. ZONAS
+───────────────────────────────────────────────────────────────── */
+function loadZones(){
+  if(_data.zones){ renderZones(_data.zones); return; }
+  fetch(API+'/analytics/zone-calibration?days_back=90', {headers:hdrs()})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _data.zones = d;
+      renderZones(d);
+    }).catch(function(){});
+}
+
+var ZONE_ROWS_COLORS = ['#475569','#10B981','#EAB308','#F97316','#EF4444'];
+
+function renderZones(d){
+  // Ciclismo
+  var cc = document.getElementById('zone-cycling-content');
+  if(d.cycling){
+    var c = d.cycling;
+    cc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#0EA5E9;margin-bottom:.15rem">'
+      +c.ftp_watts+'W'+(c.ftp_wkg?'<span style="font-size:.75rem;font-weight:400;color:var(--dim);margin-left:.4rem">'+c.ftp_wkg+'w/kg</span>':'')+'</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">FTP desde '+esc(c.source)+'</div>'
+      +_zoneTable(c.zones);
+  }
+
+  // Running
+  var rc = document.getElementById('zone-running-content');
+  if(d.running){
+    var r = d.running;
+    rc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#10B981;margin-bottom:.15rem">'
+      +esc(r.pace_fmt)+'/km</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">Umbral desde '+esc(r.source)+'</div>'
+      +_zoneTable(r.zones);
+  }
+
+  // Nataci&#243;n
+  var sc = document.getElementById('zone-swim-content');
+  if(d.swimming){
+    var sw = d.swimming;
+    sc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#A855F7;margin-bottom:.15rem">'
+      +esc(sw.css_fmt)+'/100m</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.5rem">CSS desde '+esc(sw.source)+'</div>';
+  }
+
+  if(d.note){
+    document.getElementById('zone-note').textContent = d.note;
+  }
+}
+
+function _zoneTable(zones){
+  if(!zones) return '';
+  var rows = Object.keys(zones).map(function(z,i){
+    return '<tr><td><span class="zt-dot" style="background:'+ZONE_ROWS_COLORS[i]+'"></span>'+esc(z)+'</td>'
+      +'<td>'+esc(zones[z])+'</td></tr>';
+  }).join('');
+  return '<table class="zone-table"><thead><tr><th>Zona</th><th>Rango</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+/* ── Init ───────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  loadPowerCurve();
+});
+
+window.addEventListener('resize', function(){
+  if(_data.power) renderPowerCurve(_data.power);
+  if(_data.vo2)   renderVo2max(_data.vo2);
+});
+</script>
+
+<script src="auth.js"></script>
+<script>KL.guard('analytics');</script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+<script>
+document.getElementById('yr') && (document.getElementById('yr').textContent = new Date().getFullYear());
+</script>
+<script src="lx-audit.js"></script>`n</body>
+</html>

@@ -1,0 +1,63 @@
+# docker-compose.override.yml — Local dev: PostgreSQL + Redis + Celery worker
+# Activado automáticamente con `docker compose up` (override se fusiona con docker-compose.yml)
+# No requiere --profile prod
+#
+# Uso:
+#   docker compose up             → API + PostgreSQL + Redis + Celery worker
+#   docker compose up api         → Solo la API (SQLite como antes)
+#   docker compose run --rm api pytest api/tests/ -q  → Tests rápidos
+
+services:
+  # ── PostgreSQL local ────────────────────────────────────────────────────────
+  db:
+    profiles: []  # override: eliminar perfil prod → activo siempre en local
+    environment:
+      POSTGRES_DB:       labx_dev
+      POSTGRES_USER:     labx
+      POSTGRES_PASSWORD: labx_dev_pass
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  # ── Redis local ─────────────────────────────────────────────────────────────
+  redis:
+    profiles: []  # override: activo siempre en local
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  # ── Celery worker ───────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A api.worker.celery_app worker --loglevel=info --concurrency=2 -Q default
+    environment:
+      DATABASE_URL:      postgresql://labx:labx_dev_pass@db:5432/labx_dev
+      REDIS_URL:         redis://redis:6379/0
+      JWT_SECRET:        ${JWT_SECRET:-labx-local-dev-secret-32chars-min}
+      JWT_AUDIENCE:      ${JWT_AUDIENCE:-labx-app}
+      FERNET_KEY:        ${FERNET_KEY:?FERNET_KEY is required}
+      APP_ENV:           ${APP_ENV:-development}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - labx_data:/app/data
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "api.worker.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── API usa PostgreSQL + Redis en dev ───────────────────────────────────────
+  api:
+    environment:
+      DATABASE_URL: postgresql://labx:labx_dev_pass@db:5432/labx_dev
+      REDIS_URL:    redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

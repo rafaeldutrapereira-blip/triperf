@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KonaLabs — Blood Labs</title>
+<title>LabX — Blood Labs</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,451 +13,1123 @@
 :root{
   --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
   --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
-  --orange:#FF6535;--orange2:#E8490A;--gold:#F0A500;--coral:#FF8C61;
-  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --orange:#FF6535;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;
+  --purple:#A855F7;--amber:#F59E0B;--blue:#3B82F6;
   --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+  --s-green:rgba(16,185,129,.12);--s-blue:rgba(59,130,246,.12);
+  --s-amber:rgba(245,158,11,.12);--s-red:rgba(239,68,68,.12);
   --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
 }
 html{scroll-behavior:smooth}
-body{
-  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
-  line-height:1.6;overflow-x:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
 a{color:inherit;text-decoration:none}ul{list-style:none}
-
-#nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,8,15,.93);backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.15)}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;display:flex;align-items:center;gap:.35rem}
-.nav-logo .acc{color:var(--orange)}
-.nav-logo svg{width:22px;height:22px;color:var(--orange)}
-.nav-links{display:flex;align-items:center;gap:2rem}
-.nav-links a{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color var(--ease)}
-.nav-links a:hover{color:var(--text)}
-.nav-links a.on{color:var(--orange)}
-.nav-right{display:flex;align-items:center;gap:.85rem}
-.sync-btn{display:flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--aqua);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:.45rem 1rem;cursor:pointer;transition:all var(--ease)}
-.sync-btn:hover{background:rgba(34,211,238,.15);border-color:var(--aqua)}
-.sync-btn svg{width:13px;height:13px}
-.sync-btn.spin svg{animation:spin360 1s linear infinite}
-@keyframes spin360{to{transform:rotate(360deg)}}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;flex-shrink:0}
-.nav-uname{font-size:.82rem;font-weight:600;line-height:1.1}
-.nav-urole{font-size:.62rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
-@media(max-width:860px){.nav-links{display:none}.nav-uname,.nav-urole{display:none}}
-
 .c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
-.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
-.btn-p{background:var(--orange);color:#fff}
-.btn-p:hover{background:var(--orange2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,101,53,.28)}
-.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
-.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-sm{padding:.42rem .95rem;font-size:.74rem}
-.btn-gc{background:transparent;color:var(--cyan);border:1.5px solid rgba(14,165,233,.3)}
-.btn-gc:hover{border-color:var(--cyan);background:rgba(14,165,233,.08)}
+.sr{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}.vis{opacity:1;transform:none}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.panel-body{padding:1.2rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+@media(max-width:640px){.g3,.g4{grid-template-columns:1fr}}
+.mt2{margin-top:1.5rem}.mt3{margin-top:2.5rem}
+.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
+.sec-h span{color:var(--dim);font-size:.85em}
 
-.ph{padding-top:64px;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
-.ph-inner{padding:1.8rem 0 1.6rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.25rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:800;line-height:1;letter-spacing:.02em;display:flex;align-items:center;gap:.6rem}
-.ph-cross{color:var(--coral);font-size:1.6rem}
-.ph-sub{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--muted);letter-spacing:.08em;margin-top:.4rem}
-.ph-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-.date-chip{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .85rem;border-radius:20px;background:rgba(8,116,174,.12);border:1px solid rgba(8,116,174,.2);color:var(--muted)}
+/* ── PAGE HEADER ── */
+.ph{background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2);padding-top:1.5rem}
+.ph-inner{padding:1.5rem 0 1.3rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.ph-eye{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.7rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.ph-title em{color:var(--red);font-style:normal}
+.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.07em;margin-top:.3rem}
+.ph-chips{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-top:.75rem}
+.chip{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .7rem;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted)}
+.chip strong{color:var(--text);font-weight:700}
+.chip-g{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.07);color:var(--green)}
+.chip-r{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07);color:var(--red)}
+.chip-a{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07);color:var(--amber)}
 
-.main{padding:2rem 0 4rem}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.mt2{margin-top:2rem}
+/* ── EXAM SELECTOR ── */
+.exam-bar{background:rgba(6,14,28,.97);border-bottom:1px solid var(--border);padding:.65rem 0;position:sticky;top:0;z-index:100}
+.exam-inner{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
+.exam-meta{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:.5rem}
+.exam-meta select{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.8rem;outline:none;cursor:pointer}
+.exam-ctx{font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.06em;margin-left:auto}
 
-.upload-zone{margin:1.4rem;border:2px dashed rgba(14,165,233,.35);border-radius:var(--radius);background:rgba(14,165,233,.04);padding:2.5rem 1.5rem;display:flex;flex-direction:column;align-items:center;gap:.85rem;cursor:pointer;transition:border-color var(--ease),background var(--ease)}
-.upload-zone:hover{border-color:var(--cyan);background:rgba(14,165,233,.07)}
-.upload-ico{color:var(--cyan);opacity:.7}
-.upload-label{font-family:'Oswald',sans-serif;font-size:1rem;color:var(--muted);letter-spacing:.06em}
-.upload-or{font-size:.8rem;color:var(--dim)}
-.fmt-tags{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
-.fmt-tag{font-size:.65rem;font-family:'Oswald',sans-serif;letter-spacing:.1em;padding:.2rem .55rem;border-radius:4px;background:rgba(8,116,174,.15);border:1px solid rgba(8,116,174,.25);color:var(--dim)}
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:1.5rem;width:fit-content;flex-wrap:wrap}
+.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
+.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.tab-pane{display:none}.tab-pane.on{display:block}
 
-.bio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border2)}
-@media(max-width:760px){.bio-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:480px){.bio-grid{grid-template-columns:1fr}}
-.bio-card{background:var(--bg);padding:1.25rem 1.4rem;display:flex;flex-direction:column;gap:.4rem}
-.bio-top{display:flex;align-items:center;justify-content:space-between}
-.bio-ico{font-size:1.4rem}
-.badge{display:inline-block;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px}
-.b-g{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
-.b-o{background:rgba(255,101,53,.12);color:var(--orange);border:1px solid rgba(255,101,53,.25)}
-.b-go{background:rgba(240,165,0,.12);color:var(--gold);border:1px solid rgba(240,165,0,.25)}
-.b-c{background:rgba(14,165,233,.12);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}
-.bio-val{font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:700;line-height:1}
-.bio-unit{font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--muted);letter-spacing:.06em}
-.bio-name{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.08em;color:var(--text)}
-.bio-range{font-size:.7rem;color:var(--dim)}
-.bio-trend{font-size:.75rem;font-family:'Oswald',sans-serif;letter-spacing:.06em}
-.bio-warn{font-size:.68rem;color:var(--orange);margin-top:.1rem}
+/* ── SUB-TABS ── */
+.stabs-bar{display:flex;gap:3px;background:rgba(8,18,30,.6);border-radius:7px;padding:3px;margin-bottom:1.2rem;flex-wrap:wrap}
+.stab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.64rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;padding:.3rem .75rem;border-radius:5px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
+.stab-btn.on{background:rgba(14,165,233,.15);color:var(--cyan);border:1px solid rgba(14,165,233,.2)}
+.stab-pane{display:none}.stab-pane.on{display:block}
 
-.chart-wrap{padding:1.4rem}
-.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1rem;color:var(--text)}
+/* ── KPI CARDS ── */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;transition:border-color var(--ease)}
+.kpi:hover{border-color:rgba(14,165,233,.22)}
+.kpi-score{font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;line-height:1}
+.kpi-bar-wrap{height:4px;background:var(--surface2);border-radius:2px;margin:.45rem 0 .3rem;overflow:hidden}
+.kpi-bar{height:100%;border-radius:2px;transition:width .8s ease}
+.kpi-label{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.15rem}
+.kpi-grade{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em}
+.kpi-detail{font-size:.72rem;color:var(--dim);margin-top:.3rem;line-height:1.5}
+.kpi-icon{font-size:1.3rem;margin-bottom:.3rem}
 
-.corr-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border2)}
-@media(max-width:760px){.corr-grid{grid-template-columns:1fr}}
-.corr-tbl-wrap{background:var(--bg);padding:1.4rem;overflow-x:auto}
-.corr-tbl{width:100%;border-collapse:collapse}
-.corr-tbl th{font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.65rem .8rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
-.corr-tbl td{padding:.65rem .8rem;font-size:.8rem;border-bottom:1px solid var(--border2)}
-.corr-tbl tr:last-child td{border-bottom:none}
-.warn-cell{color:var(--orange)}
-.alert-card{background:var(--bg);padding:1.4rem;border-left:3px solid var(--orange)}
-.alert-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}
-.alert-ico{font-size:1.1rem}
-.alert-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;color:var(--orange)}
-.alert-val{font-size:.82rem;color:var(--muted);margin-bottom:.9rem}
-.alert-list{display:flex;flex-direction:column;gap:.45rem}
-.alert-item{display:flex;align-items:flex-start;gap:.5rem;font-size:.8rem}
-.alert-item::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:.05rem}
+/* ── STATUS BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:.25rem;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.07em;padding:.22rem .55rem;border-radius:4px}
+.b-ok{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.b-warn{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.b-bad{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.b-na{background:rgba(100,116,139,.1);color:var(--dim);border:1px solid rgba(100,116,139,.15)}
 
-.acc-list{padding:1.2rem 1.4rem;display:flex;flex-direction:column;gap:.6rem}
-.acc-item{border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden}
-.acc-hd{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;cursor:pointer;background:var(--surface2);transition:background var(--ease)}
-.acc-hd:hover{background:rgba(8,116,174,.12)}
-.acc-date{font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.06em}
-.acc-sum{font-size:.75rem;color:var(--dim)}
-.acc-arr{font-size:.8rem;color:var(--dim);transition:transform var(--ease)}
-.acc-item.open .acc-arr{transform:rotate(90deg)}
-.acc-body{display:none;padding:.85rem 1rem;font-size:.8rem;color:var(--muted)}
-.acc-item.open .acc-body{display:block}
+/* ── ALERTS ── */
+.alert-box{border-radius:9px;padding:.85rem 1.1rem;font-size:.8rem;line-height:1.6;margin-bottom:.8rem}
+.alert-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22)}
+.alert-warn .alert-title{color:var(--amber)}
+.alert-ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2)}
+.alert-ok .alert-title{color:var(--green)}
+.alert-title{font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem}
 
-.sr{opacity:0;transform:translateY(20px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-.vis{opacity:1;transform:none}
+/* ── BIOMARKER TABLE ── */
+.bm-category{margin-bottom:1.5rem}
+.bm-cat-head{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.55rem .75rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;background:rgba(255,255,255,.02);border-radius:6px 6px 0 0}
+.bm-cat-head:hover{background:rgba(255,255,255,.035)}
+.bm-cat-body{overflow:hidden;transition:max-height .3s ease}
+.bm-t{width:100%;border-collapse:collapse;font-size:.78rem}
+.bm-t th{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.45rem .7rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap;background:rgba(255,255,255,.015)}
+.bm-t td{padding:.55rem .7rem;border-bottom:1px solid rgba(8,116,174,.05);vertical-align:middle}
+.bm-t tr:last-child td{border-bottom:none}
+.bm-t tr:hover td{background:rgba(255,255,255,.015)}
+.bm-name{font-weight:600;color:var(--text)}
+.bm-unit{font-size:.7rem;color:var(--dim)}
+.bm-val{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800}
+.bm-ref{font-size:.72rem;color:var(--dim)}
+.bm-delta{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700}
+.delta-up{color:var(--green)}.delta-dn{color:var(--red)}.delta-no{color:var(--dim)}
+.bm-note{font-size:.68rem;color:var(--dim);font-style:italic;padding:.3rem .7rem;background:rgba(255,255,255,.01);border-top:1px solid rgba(8,116,174,.04)}
+
+/* ── CHARTS ── */
+.ch-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem}
+.ch-title{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem}
+.ch-sub{font-size:.7rem;color:var(--dim);margin-top:.15rem;margin-bottom:.6rem}
+.ch-inner{position:relative;height:260px}
+.ch-inner-sm{position:relative;height:180px}
+.ch-inner-lg{position:relative;height:340px}
+
+/* ── RADAR PANEL ── */
+.radar-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;text-align:center}
+
+/* ── CORRELATION TABLE ── */
+.corr-t{width:100%;border-collapse:collapse;font-size:.78rem}
+.corr-t th{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);padding:.45rem .7rem;text-align:left;border-bottom:1px solid var(--border2);background:rgba(255,255,255,.015)}
+.corr-t td{padding:.6rem .7rem;border-bottom:1px solid rgba(8,116,174,.05);font-size:.75rem;vertical-align:top;line-height:1.4}
+.corr-t tr:hover td{background:rgba(255,255,255,.015)}
+.corr-bm{font-family:'Oswald',sans-serif;font-weight:700;color:var(--text);font-size:.78rem}
+.corr-action{color:var(--cyan)}
+
+/* ── FORM (import exam) ── */
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+@media(max-width:900px){.form-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+.form-field{display:flex;flex-direction:column;gap:.25rem}
+.form-label{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.form-note{font-size:.62rem;color:var(--dim);margin-top:.15rem;font-style:italic}
+.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.38rem .65rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;outline:none;transition:border-color var(--ease)}
+.form-input:focus{border-color:rgba(14,165,233,.4)}
+.form-cat-head{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:1px solid var(--border2)}
+.btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.4rem;border-radius:7px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 2px 12px rgba(255,101,53,.3)}.btn-primary:hover{background:var(--orange2)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.38rem .85rem;font-size:.68rem}
+.save-msg{display:none;padding:.6rem 1rem;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;margin-top:.75rem;text-align:center}
+.save-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--green);display:flex}
+.save-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red);display:flex}
+
+/* ── FICK CARD ── */
+.fick-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.9rem 1.1rem;font-size:.78rem;color:var(--muted);line-height:1.6}
+.fick-card h4{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text);margin-bottom:.5rem}
+.fick-card strong{color:var(--text)}
+.fick-card ul{margin:.4rem 0 0 .9rem;list-style:disc}
+.fick-card li{margin-bottom:.2rem}
+.metric-mini{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:8px;padding:.7rem .9rem;margin-bottom:.7rem}
+.metric-mini-n{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;line-height:1}
+.metric-mini-l{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
+.metric-mini-d{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
 </style>
+<link rel="stylesheet" href="nav.css">
 </head>
 <body>
 
-<nav id="nav">
-  <div class="nav-inner">
-    <a href="landing.html" class="nav-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Kona<span class="acc">Labs</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="landing.html#disciplines">Disciplinas</a></li>
-      <li><a href="landing.html#calendar">Carreras</a></li>
-      <li><a href="landing.html#plans">Planes</a></li>
-      <li><a href="dashboard.html" data-kl-module="dashboard">Dashboard</a></li>
-      <li><a href="athlete_profile.html" data-kl-module="athlete_profile">Perfil</a></li>
-      <li><a href="training_plan.html" data-kl-module="training_plan">Plan</a></li>
-      <li><a href="nutrition.html" data-kl-module="nutrition">Nutrición</a></li>
-      <li><a href="blood_labs.html" class="on" data-kl-module="blood_labs">Labs</a></li>
-      <li><a href="race_predictor.html" data-kl-module="race_predictor">Predictor</a></li>
-    </ul>
-    <div class="nav-right">
-      <button class="sync-btn" onclick="syncBtn(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        Sync Garmin
-      </button>
-      <button onclick="KL.logout()" style="background:transparent;border:1px solid rgba(61,104,128,.35);border-radius:6px;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .8rem;cursor:pointer;transition:all 220ms;display:flex;align-items:center;gap:.35rem" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='rgba(61,104,128,.35)';this.style.color='var(--dim)'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <div class="nav-avatar" id="kl-avatar">R</div>
-        <div>
-          <div class="nav-uname" id="kl-uname">Rafael</div>
-          <div class="nav-urole" id="kl-urole">Ironman 70.3</div>
-        </div>
-      </div>
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<!-- ══ EXAM SELECTOR BAR ══ -->
+<div class="exam-bar">
+  <div class="c">
+    <div class="exam-inner">
+      <span class="exam-meta">
+        Examen actual:
+        <select id="sel-exam" onchange="switchExam()"></select>
+      </span>
+      <span class="exam-meta" id="comp-label" style="display:none">
+        vs
+        <select id="sel-comp" onchange="switchExam()"></select>
+      </span>
+      <span class="exam-ctx" id="exam-ctx-lbl"></span>
+      <button class="btn btn-g btn-sm" onclick="switchTab('import',document.querySelector('[data-tab=import]'))">+ Registrar Examen</button>
     </div>
   </div>
-</nav>
+</div>
 
+<!-- ══ PAGE HEADER ══ -->
 <div class="ph">
   <div class="c">
     <div class="ph-inner">
       <div>
-        <div class="ph-title"><span class="ph-cross">✚</span> BLOOD LABS</div>
-        <div class="ph-sub">ANÁLISIS BIOMÉDICO &nbsp;·&nbsp; CORRELACIÓN CON RENDIMIENTO GARMIN</div>
-      </div>
-      <div class="ph-right">
-        <span class="date-chip">Última muestra: 15 May 2026</span>
-        <button class="btn btn-p btn-sm">+ Subir Análisis</button>
+        <div class="ph-eye">LabX · Medicina del Deporte</div>
+        <div class="ph-title">BLOOD <em>LABS</em> · Bioquímica</div>
+        <div class="ph-sub">Análisis clínico orientado al rendimiento en triatlón · Medicina del deporte</div>
+        <div class="ph-chips" id="ph-chips">
+          <span class="chip chip-g">Performance Score: <strong id="chip-score">—</strong></span>
+          <span class="chip chip-a" id="chip-alerts" style="display:none">Alertas: <strong id="chip-alert-n">0</strong></span>
+          <span class="chip">Exámenes: <strong id="chip-exams">—</strong></span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="main">
-  <div class="c">
+<!-- ══ MAIN ══ -->
+<div style="padding:2rem 0 4rem">
+<div class="c">
 
-    <div class="panel sr" id="s-up">
-      <div class="panel-head"><div class="panel-title">Subir Análisis</div></div>
-      <div class="upload-zone" id="drop-zone" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
-        <div class="upload-ico">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <div class="upload-label">Arrastra tu análisis aquí</div>
-        <div class="upload-or">o</div>
-        <button class="btn btn-gc btn-sm">Seleccionar archivo</button>
-        <div class="fmt-tags">
-          <span class="fmt-tag">PDF</span>
-          <span class="fmt-tag">CSV</span>
-          <span class="fmt-tag">XLSX</span>
-        </div>
-      </div>
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn on" data-tab="resumen" onclick="switchTab('resumen',this)">🏥 Resumen Clínico</button>
+  <button class="tab-btn" data-tab="trends" onclick="switchTab('trends',this)">📈 Tendencias</button>
+  <button class="tab-btn" data-tab="garmin" onclick="switchTab('garmin',this)">🔗 Correlación Garmin</button>
+  <button class="tab-btn" data-tab="import" onclick="switchTab('import',this)">📥 Registrar Examen</button>
+</div>
+
+<!-- ══ TAB 1: RESUMEN CLÍNICO ══ -->
+<div class="tab-pane on" id="tab-resumen">
+
+  <!-- KPI 3 cards -->
+  <div class="g3 sr" id="kpi-section">
+    <div class="kpi" id="kpi-muscle">
+      <div class="kpi-icon">💪</div>
+      <div class="kpi-label">Recuperación Muscular</div>
+      <div class="kpi-score" id="kpi-m-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-m-bar"></div></div>
+      <div class="kpi-grade" id="kpi-m-grade"></div>
+      <div class="kpi-detail" id="kpi-m-detail"></div>
     </div>
-
-    <div class="panel mt2 sr" id="s-bio">
-      <div class="panel-head"><div class="panel-title">Últimos Resultados — 15 May 2026</div></div>
-      <div class="bio-grid">
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">〜</span>
-            <span class="badge b-g">Óptimo</span>
-          </div>
-          <div class="bio-val" style="color:var(--green)">15.2</div>
-          <div class="bio-unit">g/dL</div>
-          <div class="bio-name">Hemoglobina</div>
-          <div class="bio-range">Rango: 13.5 – 17.5 g/dL</div>
-          <div class="bio-trend" style="color:var(--muted)">↔ Estable</div>
-        </div>
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">◉</span>
-            <span class="badge b-g">Óptimo</span>
-          </div>
-          <div class="bio-val" style="color:var(--green)">46</div>
-          <div class="bio-unit">%</div>
-          <div class="bio-name">Hematocrito</div>
-          <div class="bio-range">Rango: 40 – 52%</div>
-          <div class="bio-trend" style="color:var(--green)">↑ +1%</div>
-        </div>
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">⚠</span>
-            <span class="badge b-o">Atención</span>
-          </div>
-          <div class="bio-val" style="color:var(--orange)">28</div>
-          <div class="bio-unit">ng/mL</div>
-          <div class="bio-name">Ferritina</div>
-          <div class="bio-range">Rango atleta: &gt;50 ng/mL</div>
-          <div class="bio-trend" style="color:var(--orange)">↓ Tendencia bajando</div>
-          <div class="bio-warn">Bajo para atleta de resistencia</div>
-        </div>
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">☀</span>
-            <span class="badge b-go">Óptimo</span>
-          </div>
-          <div class="bio-val" style="color:var(--gold)">42</div>
-          <div class="bio-unit">ng/mL</div>
-          <div class="bio-name">Vitamina D</div>
-          <div class="bio-range">Rango: 40 – 60 ng/mL</div>
-          <div class="bio-trend" style="color:var(--muted)">↔ Estable</div>
-        </div>
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">⚡</span>
-            <span class="badge b-c">Post-Ent</span>
-          </div>
-          <div class="bio-val" style="color:var(--cyan)">380</div>
-          <div class="bio-unit">U/L</div>
-          <div class="bio-name">CK (Creatinkinasa)</div>
-          <div class="bio-range">Normal &lt;200 · Atleta &lt;500</div>
-          <div class="bio-trend" style="color:var(--cyan)">↑ Post-entrenamiento</div>
-          <div class="bio-warn" style="color:var(--muted)">Elevado post-ent · Normal para atleta</div>
-        </div>
-        <div class="bio-card">
-          <div class="bio-top">
-            <span class="bio-ico">▲</span>
-            <span class="badge b-g">Excelente</span>
-          </div>
-          <div class="bio-val" style="color:var(--green)">54.2</div>
-          <div class="bio-unit">ml/kg/min</div>
-          <div class="bio-name">VO₂ Max Est.</div>
-          <div class="bio-range">Excelente: &gt;52 ml/kg/min</div>
-          <div class="bio-trend" style="color:var(--green)">↑ +1.2</div>
-        </div>
-      </div>
+    <div class="kpi" id="kpi-o2">
+      <div class="kpi-icon">🫀</div>
+      <div class="kpi-label">Transporte de Oxígeno</div>
+      <div class="kpi-score" id="kpi-o-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-o-bar"></div></div>
+      <div class="kpi-grade" id="kpi-o-grade"></div>
+      <div class="kpi-detail" id="kpi-o-detail"></div>
     </div>
-
-    <div class="panel mt2 sr" id="s-chart">
-      <div class="panel-head"><div class="panel-title">Ferritina — Tendencia 6 Meses ⚠</div></div>
-      <div class="chart-wrap">
-        <svg id="ferr-svg" width="100%" height="200" viewBox="0 0 800 200" preserveAspectRatio="none"></svg>
-      </div>
+    <div class="kpi" id="kpi-micro">
+      <div class="kpi-icon">🧬</div>
+      <div class="kpi-label">Micronutrientes & Hormonal</div>
+      <div class="kpi-score" id="kpi-n-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-n-bar"></div></div>
+      <div class="kpi-grade" id="kpi-n-grade"></div>
+      <div class="kpi-detail" id="kpi-n-detail"></div>
     </div>
+  </div>
 
-    <div class="panel mt2 sr" id="s-corr">
-      <div class="panel-head"><div class="panel-title">Correlación Garmin — Últimas 4 Semanas</div></div>
-      <div class="corr-grid">
-        <div class="corr-tbl-wrap">
-          <table class="corr-tbl">
-            <thead>
-              <tr>
-                <th>Semana</th>
-                <th>TSS</th>
-                <th>HRV</th>
-                <th>FC Rep.</th>
-                <th>Ferritina</th>
-                <th>Readiness</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Sem 13</td><td>645</td><td>68ms</td><td>40bpm</td><td>34 ng</td><td>84/100</td></tr>
-              <tr><td>Sem 14</td><td>660</td><td class="warn-cell">65ms</td><td>41bpm</td><td>31 ng</td><td class="warn-cell">79/100</td></tr>
-              <tr><td>Sem 15</td><td>690</td><td class="warn-cell">61ms</td><td>43bpm</td><td>28 ng</td><td class="warn-cell">74/100</td></tr>
-              <tr><td>Sem 16</td><td>487</td><td class="warn-cell">62ms</td><td>42bpm</td><td>28 ng</td><td class="warn-cell">78/100</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="alert-card">
-          <div class="alert-head">
-            <span class="alert-ico">⚠️</span>
-            <span class="alert-title">Alerta: Ferritina Baja</span>
-          </div>
-          <div class="alert-val">28 ng/mL — Por debajo del mínimo recomendado para atletas de resistencia (50 ng/mL)</div>
-          <div class="alert-list">
-            <div class="alert-item">Consultar médico deportivo esta semana</div>
-            <div class="alert-item">Considerar suplementación de hierro (bajo supervisión)</div>
-            <div class="alert-item">Reducir intensidad 15-20% próximas 2 semanas</div>
-            <div class="alert-item">Aumentar ingesta: carne roja, espinacas, lentejas</div>
-            <div class="alert-item">Re-analizar en 4 semanas</div>
-          </div>
-        </div>
-      </div>
+  <!-- Radar chart + Alerts -->
+  <div class="g2 sr mt2">
+    <div class="radar-box">
+      <div class="ch-title">Radar de Rendimiento Bioquímico</div>
+      <div class="ch-sub">Puntaje 0-100 por categoría vs referencia deportiva</div>
+      <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
     </div>
-
-    <div class="panel mt2 sr" id="s-hist">
-      <div class="panel-head"><div class="panel-title">Historial de Análisis</div></div>
-      <div class="acc-list">
-        <div class="acc-item open">
-          <div class="acc-hd" onclick="toggleAcc(this)">
-            <div>
-              <div class="acc-date">15 May 2026</div>
-              <div class="acc-sum">Ferritina 28 · CK 380 · HGB 15.2 · Hct 46%</div>
-            </div>
-            <span class="acc-arr">▶</span>
-          </div>
-          <div class="acc-body">
-            Análisis completo: Hemoglobina 15.2 g/dL ✓ · Hematocrito 46% ✓ · Ferritina 28 ng/mL ⚠ · Vitamina D 42 ng/mL ✓ · CK 380 U/L (post-entreno) · VO₂Max Est. 54.2 ml/kg/min ✓
-          </div>
-        </div>
-        <div class="acc-item">
-          <div class="acc-hd" onclick="toggleAcc(this)">
-            <div>
-              <div class="acc-date">15 Feb 2026</div>
-              <div class="acc-sum">Ferritina 42 · Todo normal</div>
-            </div>
-            <span class="acc-arr">▶</span>
-          </div>
-          <div class="acc-body">
-            Análisis trimestral: Ferritina 42 ng/mL (dentro de rango) · Hemoglobina 15.0 g/dL · Hematocrito 44% · Vitamina D 40 ng/mL · Todos los indicadores en rango normal.
-          </div>
-        </div>
-        <div class="acc-item">
-          <div class="acc-hd" onclick="toggleAcc(this)">
-            <div>
-              <div class="acc-date">15 Nov 2025</div>
-              <div class="acc-sum">Ferritina 58 · Vitamina D baja</div>
-            </div>
-            <span class="acc-arr">▶</span>
-          </div>
-          <div class="acc-body">
-            Análisis pre-temporada: Ferritina 58 ng/mL ✓ · Vitamina D 28 ng/mL ⚠ (bajo) · Hemoglobina 14.8 g/dL · Se inició suplementación de Vitamina D.
-          </div>
-        </div>
-      </div>
+    <div>
+      <div class="sec-h">Variaciones Notables <span id="alerts-date-label"></span></div>
+      <div id="alerts-container"></div>
+      <div class="sec-h mt2">Interpretación Clínica</div>
+      <div id="clinical-summary" style="font-size:.8rem;color:var(--muted);line-height:1.7"></div>
     </div>
+  </div>
 
+  <!-- Full biomarker table -->
+  <div class="sr mt3">
+    <div class="sec-h">Tabla Completa de Biomarcadores</div>
+    <div id="bm-table-container"></div>
   </div>
 </div>
 
-<footer style="border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center">
-  <div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);letter-spacing:.1em">
-    KONALABS &copy; <span id="yr"></span> &nbsp;·&nbsp; BLOOD LABS &nbsp;·&nbsp; IRONMAN 70.3
+<!-- ══ TAB 2: TENDENCIAS ══ -->
+<div class="tab-pane" id="tab-trends">
+  <div class="stabs-bar">
+    <button class="stab-btn on" data-stab="hemo" onclick="switchStab('hemo',this)">🩸 Hemograma</button>
+    <button class="stab-btn" data-stab="musc" onclick="switchStab('musc',this)">💪 Muscular</button>
+    <button class="stab-btn" data-stab="lipid" onclick="switchStab('lipid',this)">🫀 Lípidos</button>
+    <button class="stab-btn" data-stab="vit" onclick="switchStab('vit',this)">🌟 Vitaminas</button>
+    <button class="stab-btn" data-stab="renal" onclick="switchStab('renal',this)">🫘 Renal</button>
+    <button class="stab-btn" data-stab="horm" onclick="switchStab('horm',this)">🧪 Hormonal</button>
+    <button class="stab-btn" data-stab="elec" onclick="switchStab('elec',this)">⚡ Electrolitos</button>
   </div>
-</footer>
+  <div id="trend-content"></div>
+</div>
 
+<!-- ══ TAB 3: CORRELACIÓN GARMIN ══ -->
+<div class="tab-pane" id="tab-garmin">
+  <p style="font-size:.8rem;color:var(--dim);margin-bottom:1.5rem">Superposición de biomarcadores con métricas de entrenamiento · Datos Garmin</p>
+
+  <!-- CK/LDH vs Training Load -->
+  <div class="sr">
+    <div class="sec-h">💪 Marcadores Musculares vs Carga de Entrenamiento</div>
+    <div class="g2">
+      <div class="ch-box">
+        <div class="ch-title">CK & LDH — Evolución temporal</div>
+        <div class="ch-sub">Referencia atleta: CK 80–250 U/L · LDH 150–220 U/L</div>
+        <div class="ch-inner"><canvas id="ch-ck-ldh"></canvas></div>
+      </div>
+      <div>
+        <div id="ck-interpretation" class="fick-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hb/Hct vs VO2 -->
+  <div class="sr mt3">
+    <div class="sec-h">🫀 Hemoglobina & Hematocrito — Transporte de O₂</div>
+    <div class="g2">
+      <div class="ch-box">
+        <div class="ch-title">Hb / Hct — Tendencia</div>
+        <div class="ch-sub">Óptimo resistencia: Hb >15.5 g/dL · Hct 45-52%</div>
+        <div class="ch-inner"><canvas id="ch-hb-hct"></canvas></div>
+      </div>
+      <div>
+        <div id="hb-vo2-card" class="fick-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vit D -->
+  <div class="sr mt3">
+    <div class="sec-h">🌟 Vitamina D vs Recuperación</div>
+    <div class="g2">
+      <div class="ch-box">
+        <div class="ch-title">Vitamina D — Evolución</div>
+        <div class="ch-sub">Óptimo atleta: 40-70 ng/mL · Mínimo: 30 ng/mL</div>
+        <div class="ch-inner"><canvas id="ch-vitd"></canvas></div>
+      </div>
+      <div>
+        <div id="vitd-card" class="fick-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Correlations reference table -->
+  <div class="sr mt3">
+    <div class="sec-h">Marco de Correlaciones Bioquímicas × Rendimiento</div>
+    <div class="panel">
+      <div class="panel-body">
+        <table class="corr-t" id="corr-table">
+          <thead><tr><th>Biomarcador</th><th>Señal de Entrenamiento</th><th>Correlación esperada</th><th>Acción si correlaciona</th></tr></thead>
+          <tbody id="corr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: REGISTRAR EXAMEN ══ -->
+<div class="tab-pane" id="tab-import">
+  <div class="g2">
+    <div>
+      <div class="sec-h">Registrar Nuevo Examen</div>
+      <div class="panel">
+        <div class="panel-body">
+          <div class="g2" style="gap:.75rem;margin-bottom:.75rem">
+            <div class="form-field">
+              <label class="form-label">Fecha del examen</label>
+              <input type="date" class="form-input" id="inp-date">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Laboratorio</label>
+              <input type="text" class="form-input" id="inp-lab" placeholder="Laboratorio Clínico">
+            </div>
+          </div>
+          <div class="form-field" style="margin-bottom:.75rem">
+            <label class="form-label">Contexto / Motivo</label>
+            <input type="text" class="form-input" id="inp-ctx" placeholder="Ej: Control pre-temporada · Post-Ironman Vitoria">
+          </div>
+          <div id="form-cats-container"></div>
+          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveExam()">💾 Guardar Examen</button>
+            <button class="btn btn-g" onclick="clearForm()">✕ Limpiar</button>
+          </div>
+          <div class="save-msg" id="save-msg"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-h">Guía de Marcadores para Triatleta</div>
+      <div class="panel">
+        <div class="panel-body" id="guide-panel" style="font-size:.78rem;color:var(--muted);line-height:1.65;max-height:520px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<footer><div class="c"><div>LABX &copy; <span id="yr"></span> · BLOOD LABS · MEDICINA DEL DEPORTE</div></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="data/blood_labs_data.js"></script>
+<script src="data/dashboard_data.js"></script>
 <script>
-document.getElementById('yr').textContent = new Date().getFullYear();
+// ══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════
+var CAT_ORDER  = ['hemograma','muscular','lipidos','enzimas','renal','bioquimica','vitaminas','electrolitos','hormonal'];
+var CAT_LABELS = {
+  hemograma:'🩸 Hemograma', muscular:'💪 Muscular', lipidos:'🫀 Perfil Lipídico',
+  enzimas:'⚗️ Enzimas', renal:'🫘 Función Renal', bioquimica:'🔬 Bioquímica',
+  vitaminas:'🌟 Vitaminas', electrolitos:'⚡ Electrolitos', hormonal:'🧪 Hormonal'
+};
 
-function syncBtn(b){b.classList.add('spin');setTimeout(()=>b.classList.remove('spin'),2200)}
-function handleDrop(e){e.preventDefault()}
+var TREND_GROUPS = {
+  hemo: {label:'🩸 Hemograma', groups:[
+    {title:'Hemoglobina & Hematocrito', keys:['hemoglobina','hematocrito']},
+    {title:'Series Celulares', keys:['eritrocitos','leucocitos','plaquetas']},
+    {title:'Índices Eritrocitarios', keys:['vcm','hcm','chcm']},
+    {title:'Sedimentación (Inflamación)', keys:['sedimentacion']}
+  ]},
+  musc: {label:'💪 Muscular', groups:[
+    {title:'CK & LDH — Marcadores Musculares', keys:['ck','ldh']},
+    {title:'Enzimas Hepáticas & Musculares', keys:['got_ast','gpt_alt','ggt','fosfatasas_alc']}
+  ]},
+  lipid:{label:'🫀 Lípidos', groups:[
+    {title:'Perfil de Colesterol', keys:['colesterol_total','hdl','ldl']},
+    {title:'Triglicéridos & Ácido Úrico', keys:['trigliceridos','ac_urico']}
+  ]},
+  vit:  {label:'🌟 Vitaminas', groups:[
+    {title:'Vitaminas D & B12', keys:['vitamina_d','vitamina_b12']}
+  ]},
+  renal:{label:'🫘 Renal', groups:[
+    {title:'Creatinina & TFGe', keys:['creatinina','tfge']},
+    {title:'Nitrógeno Ureico & Urea', keys:['nitrogeno_ureico','urea']}
+  ]},
+  horm: {label:'🧪 Hormonal', groups:[
+    {title:'Tiroides — TSH & FT4', keys:['tsh','ft4']},
+    {title:'PSA Total', keys:['psa_total']}
+  ]},
+  elec: {label:'⚡ Electrolitos', groups:[
+    {title:'Sodio, Potasio & Cloro', keys:['na','k','cl']},
+    {title:'Calcio & Fósforo', keys:['calcio','fosforo']}
+  ]}
+};
 
-function toggleAcc(hd){
-  const item = hd.closest('.acc-item');
-  item.classList.toggle('open');
-}
+var CORR_DATA = [
+  {bm:'CK (Creatinquinasa)', signal:'Carga Aguda (ATL)',
+   corr:'CK sube 24–48h post-esfuerzo intenso (ATL alto). Basal <200 = buena recuperación.',
+   action:'CK > 400 con ATL > 60 por >5 días → reducir carga inmediatamente'},
+  {bm:'LDH', signal:'Forma (TSB)',
+   corr:'LDH elevado con TSB muy negativo indica fatiga acumulada sistémica.',
+   action:'TSB < −20 + LDH > 260 → semana de recuperación activa'},
+  {bm:'Hemoglobina / Hematocrito', signal:'VO₂max estimado',
+   corr:'R ≈ 0.7–0.85. Cada +1 g/dL Hb ≈ +2–3% VO₂max. Capacidad aeróbica directa.',
+   action:'Hb < 14.5 con plateau VO₂max → revisar hierro sérico + ferritina'},
+  {bm:'Vitamina D', signal:'Sleep Score / Body Battery',
+   corr:'VitD bajo (<30) se asocia a peor calidad de sueño y Body Battery reducida.',
+   action:'VitD < 30 + Sleep < 65 → suplementación 2000–4000 UI/d D3+K2'},
+  {bm:'TSH / FT4 (Tiroides)', signal:'HR en reposo / HRV',
+   corr:'Hipotiroidismo → RHR elevada, HRV baja. Hipertiroidismo → RHR > 70 en reposo.',
+   action:'TSH > 3.5 + RHR elevada persistente → evaluación médica endocrinológica'},
+  {bm:'Ácido Úrico', signal:'TSS semanal total',
+   corr:'Se eleva con semanas de TSS > 600. Catabolismo celular intenso por volumen.',
+   action:'Ácido Úrico > 6.5 en período de alta carga → hidratación ++ y descanso'},
+  {bm:'GOT/AST & GPT/ALT', signal:'Carga por deporte',
+   corr:'Se elevan normalmente 24–48h post-entrenamiento muscular intenso.',
+   action:'AST/ALT cronicamente elevados sin esfuerzo reciente → evaluación hepática'},
+  {bm:'Ferritina / Hierro sérico', signal:'Fatiga & Rendimiento en calor',
+   corr:'Ferritina baja → anemia funcional. Correlaciona con caída de potencia y FCmax.',
+   action:'Ferritina < 30 µg/L → suplementación de hierro oral + control en 8 semanas'},
+];
 
-function drawFerr(){
-  const svg = document.getElementById('ferr-svg');
-  const W = 800, H = 200;
-  const labels = ['Ene','Feb','Mar','Abr','May','Jun'];
-  const vals = [45,42,38,34,28,28];
-  const target = 50;
-  const PAD = {l:50,r:20,t:20,b:40};
-  const cW = W - PAD.l - PAD.r;
-  const cH = H - PAD.t - PAD.b;
-  const minV = 20, maxV = 65;
+// ══════════════════════════════════════════════════════════════
+// SCORING ENGINE (port of app.py)
+// ══════════════════════════════════════════════════════════════
+var BM   = (window.KL_BLOOD||{}).biomarkers || {};
+var EXAMS = (window.KL_BLOOD||{}).exams || [];
+EXAMS = EXAMS.slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
 
-  function xP(i){return PAD.l + (i/(vals.length-1))*cW}
-  function yP(v){return PAD.t + (1-(v-minV)/(maxV-minV))*cH}
-
-  let paths = '';
-  paths += `<defs>
-    <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FF6535" stop-opacity=".35"/>
-      <stop offset="100%" stop-color="#FF6535" stop-opacity=".02"/>
-    </linearGradient>
-  </defs>`;
-
-  const ty = yP(target);
-  paths += `<line x1="${PAD.l}" y1="${ty}" x2="${W-PAD.r}" y2="${ty}" stroke="#10B981" stroke-width="1.5" stroke-dasharray="6,4" opacity=".7"/>`;
-  paths += `<text x="${W-PAD.r+4}" y="${ty+4}" font-size="9" fill="#10B981" font-family="Oswald,sans-serif">Mín atleta 50</text>`;
-
-  let areaPath = `M${xP(0)},${yP(vals[0])}`;
-  for(let i=1;i<vals.length;i++) areaPath += ` L${xP(i)},${yP(vals[i])}`;
-  areaPath += ` L${xP(vals.length-1)},${H-PAD.b} L${xP(0)},${H-PAD.b} Z`;
-  paths += `<path d="${areaPath}" fill="url(#gF)"/>`;
-
-  let linePath = `M${xP(0)},${yP(vals[0])}`;
-  for(let i=1;i<vals.length;i++) linePath += ` L${xP(i)},${yP(vals[i])}`;
-  const lineEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-  lineEl.setAttribute('d',linePath);
-  lineEl.setAttribute('fill','none');
-  lineEl.setAttribute('stroke','#FF6535');
-  lineEl.setAttribute('stroke-width','2.5');
-
-  paths += labels.map((l,i)=>`
-    <text x="${xP(i)}" y="${H-PAD.b+16}" text-anchor="middle" font-size="10" fill="#3D6880" font-family="Oswald,sans-serif">${l}</text>
-    <text x="${xP(i)}" y="${yP(vals[i])-8}" text-anchor="middle" font-size="10" fill="#FF6535" font-family="Barlow Condensed,sans-serif" font-weight="700">${vals[i]}</text>
-    <circle cx="${xP(i)}" cy="${yP(vals[i])}" r="4" fill="#FF6535"/>
-  `).join('');
-
-  for(let v=25;v<=60;v+=10){
-    const yv = yP(v);
-    paths += `<line x1="${PAD.l}" y1="${yv}" x2="${W-PAD.r}" y2="${yv}" stroke="rgba(8,116,174,.1)" stroke-width="1"/>`;
-    paths += `<text x="${PAD.l-6}" y="${yv+4}" text-anchor="end" font-size="9" fill="#3D6880" font-family="Oswald,sans-serif">${v}</text>`;
+function score(val, key) {
+  if(val==null || !(key in BM)) return null;
+  var bm = BM[key];
+  var lo = bm.ref_low, hi = bm.ref_high, d = bm.direction||'range';
+  if(d==='lower'){
+    if(val <= hi*0.50) return 96;
+    if(val <= hi*0.75) return 86;
+    if(val <= hi)      return 72;
+    if(val <= hi*1.25) return 45;
+    return 20;
+  } else if(d==='higher'){
+    if(val >= lo*1.30) return 96;
+    if(val >= lo*1.15) return 88;
+    if(val >= lo)      return 72;
+    if(val >= lo*0.85) return 50;
+    return 28;
+  } else {
+    var mid=(lo+hi)/2, half=(hi-lo)/2||1;
+    if(val>=lo && val<=hi) return Math.max(80, Math.round(100 - Math.abs(val-mid)/half*20));
+    if(val < lo) return Math.max(0, Math.round(70 - (lo-val)/half*55));
+    return Math.max(0, Math.round(70 - (val-hi)/half*55));
   }
-
-  svg.innerHTML = paths;
-  svg.appendChild(lineEl);
-
-  const len = lineEl.getTotalLength();
-  lineEl.style.strokeDasharray = len;
-  lineEl.style.strokeDashoffset = len;
-  lineEl.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)';
-  setTimeout(()=>lineEl.style.strokeDashoffset = '0', 300);
 }
 
-const io = new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      e.target.classList.add('vis');
-      if(e.target.id==='s-chart') drawFerr();
+function gradeScore(s) {
+  if(s==null) return {label:'Sin datos', color:var_css('--dim')};
+  if(s>=88)   return {label:'Excelente', color:var_css('--green')};
+  if(s>=74)   return {label:'Bueno',     color:var_css('--blue')};
+  if(s>=58)   return {label:'Monitorear',color:var_css('--amber')};
+  if(s>=42)   return {label:'Atención',  color:'#F97316'};
+  return             {label:'Alerta',    color:var_css('--red')};
+}
+function var_css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function avgScores(keys, vals) {
+  var sc = keys.map(function(k){ return score(vals[k], k); }).filter(function(s){ return s!=null; });
+  return sc.length ? Math.round(sc.reduce(function(a,b){ return a+b; },0)/sc.length) : null;
+}
+
+function refLabel(key) {
+  var bm=BM[key]; if(!bm) return '—';
+  var lo=bm.ref_low, hi=bm.ref_high, d=bm.direction||'range';
+  if(d==='lower')  return '< '+hi;
+  if(d==='higher') return '> '+lo;
+  var los=lo===Math.floor(lo)?String(lo):String(lo);
+  var his=hi===Math.floor(hi)?String(hi):String(hi);
+  return los+' – '+his;
+}
+
+function statusBadge(val, key) {
+  if(val==null) return '<span class="badge b-na">—</span>';
+  var bm=BM[key], lo=bm.ref_low, hi=bm.ref_high, d=bm.direction||'range';
+  if(d==='lower'){
+    if(val>hi)         return '<span class="badge b-bad">🔴 Alto</span>';
+    if(val>hi*0.85)    return '<span class="badge b-warn">🟡 Límite</span>';
+    return '<span class="badge b-ok">✅ OK</span>';
+  } else if(d==='higher'){
+    if(val<lo)         return '<span class="badge b-bad">🔴 Bajo</span>';
+    if(val<lo*1.10)    return '<span class="badge b-warn">🟡 Límite</span>';
+    return '<span class="badge b-ok">✅ OK</span>';
+  } else {
+    if(val<lo||val>hi) return '<span class="badge b-bad">🔴 Fuera rango</span>';
+    if(val<lo*1.08||val>hi*0.92) return '<span class="badge b-warn">🟡 Límite</span>';
+    return '<span class="badge b-ok">✅ Normal</span>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+var EXAM_IDX  = EXAMS.length - 1; // latest
+var COMP_IDX  = EXAMS.length - 2; // previous
+var CH = {};
+
+// ══════════════════════════════════════════════════════════════
+// EXAM SELECTOR
+// ══════════════════════════════════════════════════════════════
+function buildExamSelectors() {
+  var sel = document.getElementById('sel-exam');
+  var cmp = document.getElementById('sel-comp');
+  sel.innerHTML = ''; cmp.innerHTML = '<option value="-1">Ninguno</option>';
+  EXAMS.forEach(function(e,i){
+    var o = '<option value="'+i+'">'+e.date+'</option>';
+    sel.innerHTML += o; cmp.innerHTML += o;
+  });
+  sel.value = EXAM_IDX;
+  if(COMP_IDX >= 0){ document.getElementById('comp-label').style.display='flex'; cmp.value=COMP_IDX; }
+}
+
+function switchExam() {
+  EXAM_IDX = parseInt(document.getElementById('sel-exam').value);
+  COMP_IDX = parseInt(document.getElementById('sel-comp').value);
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════════
+function renderAll() {
+  if(!EXAMS.length){ document.getElementById('tab-resumen').innerHTML='<p style="color:var(--dim);padding:2rem">No hay exámenes registrados. Usa la pestaña Registrar Examen para agregar el primero.</p>'; return; }
+  var latest = EXAMS[EXAM_IDX];
+  var prev   = COMP_IDX >= 0 && COMP_IDX !== EXAM_IDX ? EXAMS[COMP_IDX] : null;
+  var lv = latest.values;
+
+  // Exam context label
+  document.getElementById('exam-ctx-lbl').textContent = latest.lab + ' · ' + (latest.context||'');
+
+  // KPIs
+  var mScore = avgScores(['ck','ldh'], lv);
+  var oScore = avgScores(['hemoglobina','hematocrito','eritrocitos'], lv);
+  var nScore = avgScores(['vitamina_d','vitamina_b12','tsh'], lv);
+  var allScore = [mScore,oScore,nScore].filter(function(s){ return s!=null; });
+  var globalScore = allScore.length ? Math.round(allScore.reduce(function(a,b){return a+b;},0)/allScore.length) : null;
+
+  renderKpi('m', mScore, 'Recuperación Muscular',
+    'CK: '+(lv.ck||'—')+' U/L  ·  LDH: '+(lv.ldh||'—')+' U/L<br>CK refleja daño muscular post-esfuerzo');
+  renderKpi('o', oScore, 'Transporte de O₂',
+    'Hb: '+(lv.hemoglobina||'—')+' g/dL  ·  Hct: '+(lv.hematocrito||'—')+'%<br>Eritrocitos: '+(lv.eritrocitos||'—')+' ×10⁶/µL');
+  renderKpi('n', nScore, 'Micronutrientes',
+    'Vit D: '+(lv.vitamina_d||'—')+' ng/mL  ·  B12: '+(lv.vitamina_b12||'—')+' pg/mL<br>TSH: '+(lv.tsh||'—')+' uU/mL');
+
+  // Header chips
+  var g = gradeScore(globalScore);
+  document.getElementById('chip-score').textContent = globalScore != null ? globalScore+'/100 — '+g.label : '—';
+  document.getElementById('chip-exams').textContent = EXAMS.length;
+
+  // Alerts
+  var alerts = buildAlerts(latest, prev);
+  document.getElementById('chip-alerts').style.display = alerts.length ? 'inline-flex' : 'none';
+  document.getElementById('chip-alert-n').textContent  = alerts.length;
+  renderAlerts(alerts, latest, prev);
+
+  // Clinical summary
+  renderClinicalSummary(lv, mScore, oScore, nScore);
+
+  // Radar
+  renderRadar(lv);
+
+  // BM table
+  renderBMTable(latest, prev);
+
+  // Garmin tab
+  renderGarminTab(lv, prev);
+
+  // Correlation table
+  renderCorrTable();
+}
+
+function renderKpi(id, s, title, detail) {
+  var g = gradeScore(s);
+  document.getElementById('kpi-'+id+'-score').textContent = s != null ? s+'/100' : '—';
+  document.getElementById('kpi-'+id+'-grade').textContent = g.label;
+  document.getElementById('kpi-'+id+'-grade').style.color = g.color;
+  document.getElementById('kpi-'+id+'-detail').innerHTML  = detail;
+  document.getElementById('kpi-'+id+'-bar').style.width   = (s||0)+'%';
+  document.getElementById('kpi-'+id+'-bar').style.background = g.color;
+  document.getElementById('kpi-'+id+'-score').style.color = g.color;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ALERTS
+// ══════════════════════════════════════════════════════════════
+function buildAlerts(latest, prev) {
+  if(!prev) return [];
+  var alerts = [];
+  var lv = latest.values, pv = prev.values;
+  Object.keys(BM).forEach(function(k){
+    var vn = lv[k], vo = pv[k];
+    if(vn==null||vo==null||vo===0) return;
+    var dp = (vn-vo)/Math.abs(vo)*100;
+    if(Math.abs(dp) <= 12) return;
+    var bmd = BM[k];
+    var concern = (bmd.direction==='higher' && dp<0) ||
+                  (bmd.direction==='lower'  && dp>0) ||
+                  (bmd.direction==='range'  && Math.abs(dp)>18);
+    alerts.push({key:k, label:bmd.label, old:vo, val:vn, dp:dp,
+                 concern:concern, unit:bmd.unit, icon:dp>0?'📈':'📉'});
+  });
+  alerts.sort(function(a,b){ return Math.abs(b.dp)-Math.abs(a.dp); });
+  return alerts;
+}
+
+function renderAlerts(alerts, latest, prev) {
+  var el = document.getElementById('alerts-container');
+  if(!prev){ el.innerHTML='<p style="font-size:.78rem;color:var(--dim)">Solo hay un examen registrado. Los cambios se mostrarán tras registrar el segundo examen.</p>'; return; }
+  document.getElementById('alerts-date-label').textContent = '· Δ vs '+prev.date;
+  if(!alerts.length){ el.innerHTML='<div class="alert-box alert-ok"><div class="alert-title">✅ Sin variaciones significativas</div><p style="font-size:.78rem;color:var(--muted)">Todos los marcadores con cambio &lt;12% respecto al examen anterior.</p></div>'; return; }
+  var concern  = alerts.filter(function(a){ return a.concern; });
+  var positive = alerts.filter(function(a){ return !a.concern; });
+  var html='';
+  if(concern.length) html += '<div class="alert-box alert-warn"><div class="alert-title">⚠️ Requiere atención</div>'+
+    concern.slice(0,4).map(function(a){
+      return '<div style="font-size:.78rem;margin-bottom:.2rem"><strong>'+a.label+'</strong> '+a.icon+' '+a.old+' → <strong>'+a.val+'</strong> '+a.unit+' ('+a.dp.toFixed(1)+'%)</div>';
+    }).join('')+'</div>';
+  if(positive.length) html += '<div class="alert-box alert-ok"><div class="alert-title">✅ Mejoras registradas</div>'+
+    positive.slice(0,4).map(function(a){
+      return '<div style="font-size:.78rem;margin-bottom:.2rem"><strong>'+a.label+'</strong> '+a.icon+' '+a.old+' → <strong>'+a.val+'</strong> '+a.unit+' ('+a.dp.toFixed(1)+'%)</div>';
+    }).join('')+'</div>';
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CLINICAL SUMMARY
+// ══════════════════════════════════════════════════════════════
+function renderClinicalSummary(lv, mScore, oScore, nScore) {
+  var lines = [];
+  var hb = lv.hemoglobina, ck = lv.ck, vitd = lv.vitamina_d, tsh = lv.tsh;
+
+  if(hb){ if(hb>=15.5) lines.push('🩸 <strong>Hb '+hb+' g/dL</strong> — nivel élite para triatlón. Capacidad aeróbica óptima.');
+         else if(hb>=13.5) lines.push('🩸 <strong>Hb '+hb+' g/dL</strong> — rango normal pero subóptimo para resistencia. Objetivo >15.5 g/dL.');
+         else lines.push('⚠️ <strong>Hb '+hb+' g/dL</strong> — por debajo del rango óptimo. Revisar hierro sérico, ferritina y folatos.'); }
+  if(ck){ if(ck<=250) lines.push('💪 <strong>CK '+ck+' U/L</strong> — basal atleta dentro de rango. Recuperación muscular completa.');
+         else if(ck<=500) lines.push('💪 <strong>CK '+ck+' U/L</strong> — elevada post-esfuerzo. Normal si último entrenamiento fue hace <48h. Monitorear.');
+         else lines.push('⚠️ <strong>CK '+ck+' U/L</strong> — crónicamente elevada. Señal de sobreentrenamiento o recuperación incompleta. Reducir carga.'); }
+  if(vitd){ if(vitd>=40) lines.push('☀️ <strong>Vitamina D '+vitd+' ng/mL</strong> — nivel óptimo para atleta. Inmunidad y fuerza muscular protegidas.');
+            else if(vitd>=30) lines.push('☀️ <strong>Vitamina D '+vitd+' ng/mL</strong> — suficiente pero subóptimo. Considerar 1000–2000 UI/d D3+K2.');
+            else lines.push('⚠️ <strong>Vitamina D '+vitd+' ng/mL</strong> — insuficiente. Suplementar 2000–4000 UI/d D3+K2 y controlar en 3 meses.'); }
+  if(tsh){ if(tsh>=0.4&&tsh<=2.5) lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — función tiroidea óptima. Metabolismo basal estable.');
+           else if(tsh>2.5&&tsh<=4.0) lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — en rango pero en límite superior. Monitorear RHR y HRV.');
+           else lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — fuera de rango. Consultar endocrinología.'); }
+
+  document.getElementById('clinical-summary').innerHTML = lines.length ? lines.join('<br>') : '<span style="color:var(--dim)">Carga el primer examen para ver el resumen clínico.</span>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// RADAR CHART
+// ══════════════════════════════════════════════════════════════
+function renderRadar(lv) {
+  var axes = [
+    {label:'O₂ Transport', keys:['hemoglobina','hematocrito','eritrocitos']},
+    {label:'Recuperación', keys:['ck','ldh']},
+    {label:'Vitaminas',    keys:['vitamina_d','vitamina_b12']},
+    {label:'Metabolismo',  keys:['glucosa','proteinas_totales','albumina']},
+    {label:'Lípidos',      keys:['hdl','trigliceridos','colesterol_total']},
+    {label:'Renal',        keys:['creatinina','tfge']},
+    {label:'Hormonal',     keys:['tsh','ft4']},
+    {label:'Electrolitos', keys:['na','k','cl']},
+  ];
+  var data = axes.map(function(a){ return avgScores(a.keys, lv) || 0; });
+
+  if(CH.radar){ CH.radar.destroy(); }
+  CH.radar = new Chart(document.getElementById('ch-radar'), {
+    type:'radar',
+    data:{
+      labels: axes.map(function(a){ return a.label; }),
+      datasets:[{
+        label:'Score bioquímico',
+        data: data,
+        backgroundColor:'rgba(14,165,233,.12)',
+        borderColor:'rgba(14,165,233,.7)',
+        borderWidth:2.5,
+        pointBackgroundColor:'#0EA5E9',
+        pointBorderColor:'#fff',
+        pointRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},
+                 grid:{color:'rgba(8,116,174,.18)'},
+                 pointLabels:{color:'#7FB3CC',font:{family:'Oswald',size:11,weight:'600'}},
+                 angleLines:{color:'rgba(8,116,174,.12)'}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(c){ return c.label+': '+c.raw+'/100'; }}}}
     }
   });
-},{threshold:.1});
-document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+}
+
+// ══════════════════════════════════════════════════════════════
+// BIOMARKER TABLE
+// ══════════════════════════════════════════════════════════════
+function renderBMTable(latest, prev) {
+  var lv = latest.values;
+  var pv = prev ? prev.values : {};
+  var html = '';
+  CAT_ORDER.forEach(function(cat){
+    var keys = Object.keys(BM).filter(function(k){ return BM[k].category===cat; });
+    var rows = keys.filter(function(k){ return lv[k]!=null||pv[k]!=null; });
+    if(!rows.length) return;
+    html += '<div class="bm-category panel">';
+    html += '<div class="bm-cat-head" onclick="toggleCat(this)">';
+    html += CAT_LABELS[cat]||cat;
+    html += ' <span style="margin-left:auto;opacity:.5;font-size:.85em;font-weight:400">▾</span></div>';
+    html += '<div class="bm-cat-body">';
+    html += '<table class="bm-t"><thead><tr><th>Marcador</th><th>Referencia</th>';
+    if(prev) html += '<th>'+prev.date+'</th>';
+    html += '<th>'+latest.date+'</th><th>Δ</th><th>Estado</th></tr></thead><tbody>';
+    rows.forEach(function(k){
+      var bmd = BM[k];
+      var vn  = lv[k], vo = pv[k];
+      var delta='<span class="delta-no">—</span>';
+      if(vn!=null && vo!=null && vo!==0){
+        var dp=(vn-vo)/Math.abs(vo)*100;
+        var arrow=dp>0?'▲':'▼';
+        var cls=dp>0?'delta-up':'delta-dn';
+        delta='<span class="bm-delta '+cls+'">'+arrow+' '+Math.abs(dp).toFixed(1)+'%</span>';
+      }
+      var sc = score(vn, k);
+      var g  = gradeScore(sc);
+      html += '<tr>';
+      html += '<td><div class="bm-name">'+bmd.label+'</div><div class="bm-unit">'+bmd.unit+'</div></td>';
+      html += '<td class="bm-ref">'+refLabel(k)+'</td>';
+      if(prev) html += '<td class="bm-val" style="color:var(--dim)">'+(vo!=null?vo:'—')+'</td>';
+      html += '<td class="bm-val" style="color:'+g.color+'">'+(vn!=null?vn:'—')+'</td>';
+      html += '<td>'+delta+'</td>';
+      html += '<td>'+statusBadge(vn,k)+'</td>';
+      html += '</tr>';
+      if(bmd.athlete_note){
+        html += '<tr><td colspan="'+(prev?6:5)+'" class="bm-note">📋 '+bmd.athlete_note+'</td></tr>';
+      }
+    });
+    html += '</tbody></table></div></div>';
+  });
+  document.getElementById('bm-table-container').innerHTML = html;
+}
+
+function toggleCat(head) {
+  var body = head.nextElementSibling;
+  var isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+  if(isOpen){ body.style.maxHeight='0'; body.style.overflow='hidden'; }
+  else { body.style.maxHeight = body.scrollHeight+'px'; body.style.overflow='visible'; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRENDS TAB
+// ══════════════════════════════════════════════════════════════
+var CUR_STAB = 'hemo';
+function switchStab(id, btn) {
+  document.querySelectorAll('.stab-btn').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  CUR_STAB = id;
+  renderTrends(id);
+}
+
+function renderTrends(groupId) {
+  var group = TREND_GROUPS[groupId];
+  if(!group) return;
+  var container = document.getElementById('trend-content');
+
+  // Build date series
+  var dates = EXAMS.map(function(e){ return e.date; });
+
+  var html = '';
+  group.groups.forEach(function(g, gi){ html += '<div class="sec-h" style="margin-top:'+(gi?'1.5rem':'0')+'">'+ g.title +'</div><div id="tg-'+gi+'" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem;margin-bottom:1.2rem"></div>'; });
+  container.innerHTML = html;
+
+  Object.keys(CH).filter(function(k){ return k.startsWith('tr-'); }).forEach(function(k){ if(CH[k]){ CH[k].destroy(); delete CH[k]; } });
+
+  group.groups.forEach(function(g, gi){
+    var available = g.keys.filter(function(k){ return EXAMS.some(function(e){ return e.values[k]!=null; }); });
+    if(!available.length){ document.getElementById('tg-'+gi).innerHTML='<p style="font-size:.78rem;color:var(--dim)">Sin datos para esta categoría.</p>'; return; }
+    available.forEach(function(key){
+      var bmd = BM[key]||{label:key, unit:''};
+      var vals = EXAMS.map(function(e){ return e.values[key]!=null ? e.values[key] : null; });
+      var colors = vals.map(function(v){ var s=score(v,key), g=gradeScore(s); return g.color; });
+      var cid = 'trend-'+gi+'-'+key;
+      var box = document.createElement('div');
+      box.className = 'ch-box';
+      box.innerHTML = '<div class="ch-title">'+bmd.label+'</div><div class="ch-sub">Referencia: '+refLabel(key)+' '+bmd.unit+'</div><div style="position:relative;height:160px"><canvas id="'+cid+'"></canvas></div>';
+      document.getElementById('tg-'+gi).appendChild(box);
+
+      var latest = vals[vals.length-1], oldest = vals[0];
+      var trend = (latest!=null&&oldest!=null&&oldest!==0) ? (latest-oldest)/Math.abs(oldest) : 0;
+      var lineColor = trend >= 0 ? '#10B981' : '#EF4444';
+
+      CH['tr-'+cid] = new Chart(document.getElementById(cid), {
+        type:'line',
+        data:{
+          labels: dates,
+          datasets:[{
+            label: bmd.label,
+            data: vals,
+            borderColor: lineColor,
+            backgroundColor: 'rgba(14,165,233,.06)',
+            pointBackgroundColor: colors,
+            pointBorderColor: '#fff',
+            pointRadius: 8,
+            pointBorderWidth: 2,
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.3,
+            spanGaps: true,
+          }]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{callbacks:{label:function(c){ return c.parsed.y+' '+bmd.unit; }}}
+          },
+          scales:{
+            x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+            y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'}}
+          }
+        }
+      });
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// GARMIN TAB
+// ══════════════════════════════════════════════════════════════
+function renderGarminTab(lv, prev) {
+  // CK / LDH trend
+  if(CH.ckldh){ CH.ckldh.destroy(); }
+  var dates = EXAMS.map(function(e){ return e.date; });
+  var ckVals  = EXAMS.map(function(e){ return e.values.ck||null; });
+  var ldhVals = EXAMS.map(function(e){ return e.values.ldh||null; });
+  CH.ckldh = new Chart(document.getElementById('ch-ck-ldh'), {
+    type:'line',
+    data:{labels:dates, datasets:[
+      {label:'CK (U/L)', data:ckVals, borderColor:'#A855F7',
+       backgroundColor:'rgba(168,85,247,.08)', pointBackgroundColor:'#A855F7',
+       pointBorderColor:'#fff', pointRadius:8, borderWidth:2.5, fill:false, tension:.3, spanGaps:true},
+      {label:'LDH (U/L)', data:ldhVals, borderColor:'#F59E0B',
+       backgroundColor:'rgba(245,158,11,.08)', pointBackgroundColor:'#F59E0B',
+       pointBorderColor:'#fff', pointRadius:8, borderWidth:2.5, fill:false, tension:.3, spanGaps:true, borderDash:[6,3]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+              y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'},
+                 title:{display:true,text:'U/L',color:'#3D6880',font:{size:10}}}},
+      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+' U/L';}}},
+        annotation:{annotations:{ck_zone:{type:'box',yMin:80,yMax:250,backgroundColor:'rgba(16,185,129,.05)',borderColor:'rgba(16,185,129,.3)',borderWidth:1}}}}
+    }
+  });
+
+  var ck = lv.ck||0, ldh = lv.ldh||0;
+  document.getElementById('ck-interpretation').innerHTML =
+    '<h4>Interpretación Muscular</h4>'+
+    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(ck<=250?'var(--green)':ck<=500?'var(--amber)':'var(--red)')+'">'+ck+' U/L</div><div class="metric-mini-l">CK (Creatinquinasa)</div><div class="metric-mini-d">'+(ck<=250?'✅ Basal atleta — recuperación completa':ck<=500?'🟡 Elevado post-esfuerzo — normal si <48h':'⚠️ Crónicamente elevado — reducir carga')+'</div></div>'+
+    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(ldh<=220?'var(--green)':ldh<=280?'var(--amber)':'var(--red)')+'">'+ldh+' U/L</div><div class="metric-mini-l">LDH</div><div class="metric-mini-d">'+(ldh<=220?'✅ Nivel óptimo de atleta':ldh<=280?'🟡 En límite superior':'⚠️ Elevado — fatiga sistémica')+'</div></div>'+
+    '<p style="font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:.6rem"><strong style="color:var(--text)">Contexto deportivo:</strong> CK sube 24–48h post-sesión intensa y regresa al basal en 3–5d. CK basal &gt;500 U/L de forma crónica indica sobreentrenamiento o recuperación incompleta.</p>';
+
+  // Hb / Hct
+  if(CH.hbhct){ CH.hbhct.destroy(); }
+  var hbVals  = EXAMS.map(function(e){ return e.values.hemoglobina||null; });
+  var hctVals = EXAMS.map(function(e){ return e.values.hematocrito||null; });
+  CH.hbhct = new Chart(document.getElementById('ch-hb-hct'), {
+    type:'line',
+    data:{labels:dates, datasets:[
+      {label:'Hemoglobina (g/dL)', data:hbVals, borderColor:'#EF4444',
+       pointBackgroundColor:'#EF4444', pointBorderColor:'#fff', pointRadius:8,
+       borderWidth:2.5, fill:false, tension:.3, spanGaps:true, yAxisID:'y'},
+      {label:'Hematocrito (%)', data:hctVals, borderColor:'#F59E0B',
+       pointBackgroundColor:'#F59E0B', pointBorderColor:'#fff', pointRadius:8,
+       borderWidth:2, fill:false, tension:.3, spanGaps:true, borderDash:[5,3], yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+        y:{ticks:{color:'#3D6880',font:{size:10}},title:{display:true,text:'g/dL',color:'#3D6880',font:{size:10}},
+           grid:{color:'rgba(8,116,174,.08)'},min:13,max:19},
+        y2:{position:'right',ticks:{color:'#F59E0B',font:{size:10}},title:{display:true,text:'%',color:'#F59E0B',font:{size:10}},
+            grid:{display:false},min:38,max:56}
+      },
+      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}}}
+    }
+  });
+
+  var hb = lv.hemoglobina||0, hct = lv.hematocrito||0;
+  var athProfile = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
+  var vo2r = athProfile.vo2max || 57;
+  var hbFactor = hb ? Math.round((hb-15.5)/15.5*100*10)/10 : 0;
+  document.getElementById('hb-vo2-card').innerHTML =
+    '<h4>Ecuación de Fick & VO₂max</h4>'+
+    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(hb>=15.5?'var(--green)':hb>=13.5?'var(--amber)':'var(--red)')+'">'+hb+' g/dL</div><div class="metric-mini-l">Hemoglobina actual</div><div class="metric-mini-d">Óptimo resistencia: &gt;15.5 g/dL</div></div>'+
+    '<div class="metric-mini"><div class="metric-mini-n" style="color:var(--cyan)">'+vo2r+'</div><div class="metric-mini-l">VO₂max estimado (Garmin)</div><div class="metric-mini-d">Hb factor: '+(hbFactor>=0?'+':'')+hbFactor+'% impacto teórico</div></div>'+
+    '<p style="font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:.6rem"><strong style="color:var(--text)">Ecuación de Fick:</strong> VO₂max = CO × (CaO₂ − CvO₂)<br>donde CaO₂ ∝ [Hb]. Cada +1 g/dL Hb ≈ <strong>+2–3% en VO₂max</strong>.</p>'+
+    '<ul style="font-size:.7rem;color:var(--dim);margin:.4rem 0 0 1rem;line-height:1.6">'+
+    '<li>Hct 45–52% = óptimo para resistencia</li>'+
+    '<li>Hct &gt;52% sin causas claras → investigar</li>'+
+    '<li>Hb &lt;14.5 con VO₂ plateau → revisar Fe + ferritina</li>'+
+    '</ul>';
+
+  // Vit D
+  if(CH.vitd){ CH.vitd.destroy(); }
+  var vdVals = EXAMS.map(function(e){ return e.values.vitamina_d||null; });
+  CH.vitd = new Chart(document.getElementById('ch-vitd'), {
+    type:'line',
+    data:{labels:dates, datasets:[{
+      label:'Vitamina D (ng/mL)', data:vdVals,
+      borderColor:'#F59E0B', backgroundColor:'rgba(245,158,11,.06)',
+      pointBackgroundColor:vdVals.map(function(v){ return v>=40?'#10B981':v>=30?'#F59E0B':'#EF4444'; }),
+      pointBorderColor:'#fff', pointRadius:10, borderWidth:3, fill:true, tension:.3, spanGaps:true
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+        y:{ticks:{color:'#3D6880',font:{size:10}},title:{display:true,text:'ng/mL',color:'#3D6880',font:{size:10}},
+           grid:{color:'rgba(8,116,174,.08)'},min:0}
+      },
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return 'Vit D: '+c.parsed.y+' ng/mL';}}}}
+    }
+  });
+
+  var vd = lv.vitamina_d||0;
+  var vdStatus = vd>=40?'✅ Óptimo para atleta (40–70 ng/mL)':vd>=30?'🟡 Subóptimo — considera suplementar':'🔴 Insuficiente — suplementar urgente';
+  document.getElementById('vitd-card').innerHTML =
+    '<h4>Vitamina D & Rendimiento</h4>'+
+    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(vd>=40?'var(--green)':vd>=30?'var(--amber)':'var(--red)')+'">'+vd+' ng/mL</div><div class="metric-mini-l">Vitamina D actual</div><div class="metric-mini-d">'+vdStatus+'</div></div>'+
+    '<ul style="font-size:.72rem;color:var(--dim);margin:.5rem 0 0 1rem;line-height:1.7">'+
+    '<li><strong style="color:var(--text)">Fuerza muscular:</strong> ↓VitD → ↓contractilidad y potencia</li>'+
+    '<li><strong style="color:var(--text)">Inmunidad:</strong> ↓VitD → mayor riesgo ITRS post-esfuerzo</li>'+
+    '<li><strong style="color:var(--text)">Hueso:</strong> Estrés repetitivo run+bike — protección ósea</li>'+
+    '<li><strong style="color:var(--text)">Sueño:</strong> Receptores VDR en hipocampo (calidad sueño)</li>'+
+    '</ul>'+
+    (vd<40?'<p style="font-size:.72rem;color:var(--amber);margin-top:.6rem">💊 Recomendación: <strong>2000–4000 UI/d D3 + K2</strong> · Control en 3 meses</p>':'');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CORRELATION TABLE
+// ══════════════════════════════════════════════════════════════
+function renderCorrTable() {
+  var html = CORR_DATA.map(function(r){
+    return '<tr><td class="corr-bm">'+r.bm+'</td><td style="color:var(--muted)">'+r.signal+'</td><td style="color:var(--muted)">'+r.corr+'</td><td class="corr-action">'+r.action+'</td></tr>';
+  }).join('');
+  document.getElementById('corr-tbody').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// IMPORT EXAM FORM
+// ══════════════════════════════════════════════════════════════
+var FORM_CATS = [
+  {label:'🩸 Hemograma', keys:['hemoglobina','hematocrito','eritrocitos','vcm','hcm','chcm','leucocitos','plaquetas','sedimentacion']},
+  {label:'💪 Muscular', keys:['ck','ldh']},
+  {label:'🫀 Lípidos', keys:['colesterol_total','hdl','ldl','trigliceridos','ac_urico']},
+  {label:'⚗️ Enzimas', keys:['got_ast','gpt_alt','ggt','fosfatasas_alc','bilirrubina_total']},
+  {label:'🫘 Renal', keys:['creatinina','tfge','nitrogeno_ureico','urea']},
+  {label:'🔬 Bioquímica', keys:['glucosa','proteinas_totales','albumina','globulinas']},
+  {label:'🌟 Vitaminas', keys:['vitamina_d','vitamina_b12']},
+  {label:'⚡ Electrolitos', keys:['na','k','cl','calcio','fosforo']},
+  {label:'🧪 Hormonal', keys:['tsh','ft4','psa_total']},
+];
+
+function buildForm() {
+  var html = '';
+  FORM_CATS.forEach(function(cat){
+    html += '<div class="form-cat-head">'+cat.label+'</div><div class="form-grid">';
+    cat.keys.forEach(function(k){
+      var bmd = BM[k]||{label:k,unit:'',ref_low:0,ref_high:0};
+      html += '<div class="form-field"><label class="form-label">'+bmd.label+' ('+bmd.unit+')</label>'+
+        '<input type="number" step="any" class="form-input" id="fi-'+k+'" placeholder="'+refLabel(k)+'">'+
+        '<div class="form-note">'+(bmd.athlete_note||'')+'</div></div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('form-cats-container').innerHTML = html;
+
+  // Set today's date
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('inp-date').value = today;
+
+  // Guide panel
+  var guide = '';
+  CAT_ORDER.forEach(function(cat){
+    var keys = Object.keys(BM).filter(function(k){ return BM[k].category===cat; });
+    if(!keys.length) return;
+    guide += '<p style="font-family:\'Oswald\',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.9rem 0 .3rem">'+CAT_LABELS[cat]+'</p>';
+    keys.forEach(function(k){
+      var bmd=BM[k];
+      guide += '<p><strong style="color:var(--text)">'+bmd.label+'</strong> ('+bmd.unit+') — Ref: '+refLabel(k)+' · '+bmd.athlete_note+'</p>';
+    });
+  });
+  document.getElementById('guide-panel').innerHTML = guide;
+}
+
+function saveExam() {
+  var dateVal = document.getElementById('inp-date').value;
+  if(!dateVal){ showSaveMsg('⚠️ Selecciona la fecha del examen','err'); return; }
+  var values = {};
+  FORM_CATS.forEach(function(cat){
+    cat.keys.forEach(function(k){
+      var el = document.getElementById('fi-'+k);
+      if(el && el.value !== '') values[k] = parseFloat(el.value);
+    });
+  });
+  if(!Object.keys(values).length){ showSaveMsg('⚠️ Ingresa al menos un valor de marcador','err'); return; }
+
+  var newExam = {
+    date: dateVal,
+    lab: document.getElementById('inp-lab').value || 'Laboratorio Clínico',
+    context: document.getElementById('inp-ctx').value || '',
+    values: values
+  };
+
+  // Update KL_BLOOD in memory
+  var idx = EXAMS.findIndex(function(e){ return e.date === dateVal; });
+  if(idx >= 0){ EXAMS[idx] = newExam; }
+  else { EXAMS.push(newExam); EXAMS.sort(function(a,b){ return a.date<b.date?-1:1; }); }
+
+  // Save to localStorage (persistence within session)
+  localStorage.setItem('kl_blood_labs', JSON.stringify({biomarkers:BM, exams:EXAMS}));
+
+  EXAM_IDX = EXAMS.length-1;
+  COMP_IDX = EXAMS.length-2;
+  buildExamSelectors();
+  renderAll();
+
+  showSaveMsg('✅ Examen del '+dateVal+' guardado con '+Object.keys(values).length+' marcadores.','ok');
+}
+
+function clearForm() {
+  FORM_CATS.forEach(function(cat){ cat.keys.forEach(function(k){ var el=document.getElementById('fi-'+k); if(el) el.value=''; }); });
+  document.getElementById('inp-ctx').value='';
+  document.getElementById('save-msg').style.display='none';
+}
+
+function showSaveMsg(msg, type) {
+  var el = document.getElementById('save-msg');
+  el.className = 'save-msg save-'+(type==='ok'?'ok':'err');
+  el.style.display='flex'; el.textContent=msg;
+  setTimeout(function(){ el.style.display='none'; }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('on'); });
+  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('on'); });
+  btn.classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+  if(id==='trends' && CUR_STAB) renderTrends(CUR_STAB);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCROLL ANIMATIONS
+// ══════════════════════════════════════════════════════════════
+var io = new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('vis');});},{threshold:.08});
+document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
+
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+(function init(){
+  // Try localStorage first (user may have saved more exams)
+  var stored = localStorage.getItem('kl_blood_labs');
+  if(stored){ try{ var d=JSON.parse(stored); if(d.exams&&d.exams.length>=EXAMS.length){ EXAMS.splice(0,EXAMS.length); d.exams.forEach(function(e){ EXAMS.push(e); }); if(d.biomarkers) Object.assign(BM,d.biomarkers); } }catch(e){} }
+  buildExamSelectors();
+  buildForm();
+  renderAll();
+})();
 </script>
 <script src="auth.js"></script>
 <script>KL.guard('blood_labs');</script>
-<style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}.kl-locked::after{content:'🔒';font-size:.7rem;margin-left:.3rem}</style>
-</body>
+<script src="nav.js"></script>
+<script src="lx-audit.js"></script>`n</body>
 </html>
+

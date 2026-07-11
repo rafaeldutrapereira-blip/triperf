@@ -4,17 +4,51 @@ Pydantic v2 schemas — request / response bodies
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, EmailStr, field_validator
+
+
+# ─────────────────────────────────────────────
+# SHARED: Error envelope + Pagination
+# ─────────────────────────────────────────────
+
+T = TypeVar("T")
+
+
+class ErrorDetail(BaseModel):
+    code:    str
+    message: str
+    field:   str | None = None
+
+
+class ErrorEnvelope(BaseModel):
+    ok:      bool = False
+    errors:  list[ErrorDetail]
+    request_id: str | None = None
+
+
+class Page(BaseModel, Generic[T]):
+    items:   list[T]
+    total:   int
+    page:    int
+    per_page: int
+    pages:   int
+
+    @classmethod
+    def build(cls, items: list, total: int, page: int, per_page: int) -> "Page[T]":
+        pages = max(1, (total + per_page - 1) // per_page)
+        return cls(items=items, total=total, page=page, per_page=per_page, pages=pages)
 
 
 # ─────────────────────────────────────────────
 # AUTH
 # ─────────────────────────────────────────────
 class LoginRequest(BaseModel):
-    email:    EmailStr
-    password: str
+    email:      EmailStr
+    password:   str
+    totp_code:  str | None = None
+    remember_me: bool = False   # S5: True → token de 30 días
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -23,6 +57,7 @@ class TokenResponse(BaseModel):
     nombre:       str
     user_id:      str
     plan_nivel:   str = "basico"
+    needs_2fa:    bool = False
 
 
 # ─────────────────────────────────────────────
@@ -47,13 +82,18 @@ class UserOut(BaseModel):
     has_garmin:      bool          = False
     race_goal_name:  Optional[str] = None
     race_goal_date:  Optional[str] = None
+    race_goal_dist:  Optional[str] = None
     ftp:             Optional[int]   = None
     weight_kg:       Optional[float] = None
     height_cm:       Optional[int]   = None
+    age:             Optional[int]   = None
     vo2max:          Optional[float] = None
     fcmax:           Optional[int]   = None
     css:             Optional[str]   = None
     run_pace:        Optional[str]   = None
+    totp_enabled:              bool            = False
+    sports:                    Optional[str]   = None
+    onboarding_completed_at:   Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -220,16 +260,21 @@ class AthleteAdherence(BaseModel):
 # ATHLETE PROFILE UPDATE
 # ─────────────────────────────────────────────
 class AthleteProfileUpdate(BaseModel):
+    nombre:         Optional[str]   = None
     password:       Optional[str]   = None
     race_goal_name: Optional[str]   = None
     race_goal_date: Optional[str]   = None
+    race_goal_dist: Optional[str]   = None
     ftp:            Optional[int]   = None
     weight_kg:      Optional[float] = None
     height_cm:      Optional[int]   = None
+    age:            Optional[int]   = None
     vo2max:         Optional[float] = None
     fcmax:          Optional[int]   = None
     css:            Optional[str]   = None
     run_pace:       Optional[str]   = None
+    sports:         Optional[str]   = None  # comma-separated: "swim,bike,run"
+    onboarding_done: Optional[bool] = None  # True → stamps onboarding_completed_at
 
 
 # ─────────────────────────────────────────────

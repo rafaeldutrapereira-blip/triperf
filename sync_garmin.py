@@ -40,13 +40,18 @@ def invalidate_today_cache():
     log.info("Invalidated %d cache files for %s", removed, today)
 
 
-def sync():
-    """Full sync: fetch last 90 days from Garmin and rebuild load timeline."""
-    log.info("Starting daily Garmin sync...")
+def sync(full_history: bool = True):
+    """Fetch ALL Garmin data from day 0 and rebuild load timeline.
+
+    Always downloads complete history from 2010-01-01 by default.
+    Results are cached in data/cache/ so only new/uncached days hit the API.
+    full_history=False: legacy 90-day incremental mode (not recommended).
+    """
+    log.info("Starting Garmin sync (full_history=%s)...", full_history)
     try:
         from garmin_connector import (
             fetch_activities, fetch_hrv_status,
-            fetch_sleep, build_training_load,
+            fetch_sleep, fetch_resting_hr, build_training_load,
         )
         from dotenv import load_dotenv
         import os, json
@@ -58,12 +63,13 @@ def sync():
         invalidate_today_cache()
 
         end   = date.today()
-        start = end - timedelta(days=90)
+        start = date(2010, 1, 1) if full_history else end - timedelta(days=90)
 
         log.info("Fetching activities %s -> %s", start, end)
         df_act   = fetch_activities(start, end)
         df_hrv   = fetch_hrv_status(start, end)
         df_sleep = fetch_sleep(start, end)
+        df_rhr   = fetch_resting_hr(start, end)
         df_load  = build_training_load(df_act, ftp, threshold_run)
 
         # Persist to CSV for fast dashboard reload
@@ -71,6 +77,7 @@ def sync():
         df_act.to_csv(out_dir / "activities.csv",     index=False)
         df_hrv.to_csv(out_dir / "hrv.csv",            index=False)
         df_sleep.to_csv(out_dir / "sleep.csv",        index=False)
+        df_rhr.to_csv(out_dir / "rhr.csv",            index=False)
         df_load.to_csv(out_dir / "training_load.csv", index=False)
 
         log.info("Sync complete. Activities: %d rows, Load: %d days",
@@ -83,7 +90,7 @@ def sync():
             password = os.getenv("GARMIN_PASSWORD", "")
             outdoor  = df_act[
                 df_act["sport"].isin(["bike", "run"]) &
-                df_act["date"] >= pd.Timestamp(end - timedelta(days=30))
+                (df_act["date"] >= pd.Timestamp(end - timedelta(days=30)))
             ].copy() if not df_act.empty else pd.DataFrame()
 
             gps_ok = 0
@@ -118,14 +125,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--daemon", action="store_true",
                         help="Run as daemon, sync every day at 06:00")
+    parser.add_argument("--no-full-history", action="store_true",
+                        help="Incremental mode: only last 90 days (faster, not recommended)")
     args = parser.parse_args()
 
     if args.daemon:
         schedule.every().day.at("06:00").do(sync)
-        log.info("Daemon started. Will sync daily at 06:00.")
-        sync()   # run immediately on start
+        log.info("Daemon started. Will sync full history daily at 06:00.")
+        sync()
         while True:
             schedule.run_pending()
             time.sleep(60)
     else:
-        sync()
+        sync(full_history=not args.no_full_history)

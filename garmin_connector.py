@@ -161,14 +161,12 @@ def fetch_hrv_status(start: date, end: date) -> pd.DataFrame:
 
 
 def fetch_sleep(start: date, end: date) -> pd.DataFrame:
-    """Fetch daily sleep scores (last 7 days only to avoid excessive API calls)."""
-    fetch_start = max(start, end - timedelta(days=6))
+    """Fetch daily sleep scores for the full date range (day-by-day, cached)."""
     rows = []
-    current = fetch_start
-    client = _get_client()   # reuse same session for all days
+    current = start
+    client = _get_client()
     while current <= end:
-        cache_key = f"sleep_{current}"
-        cache_path = CACHE_DIR / f"{cache_key}_{current}_{current}.json"
+        cache_path = CACHE_DIR / f"sleep_{current}_{current}_{current}.json"
         if cache_path.exists():
             raw = json.loads(cache_path.read_text())
         else:
@@ -187,6 +185,42 @@ def fetch_sleep(start: date, end: date) -> pd.DataFrame:
             "deep_sleep_h":      (dto.get("deepSleepSeconds") or 0) / 3600,
             "rem_sleep_h":       (dto.get("remSleepSeconds") or 0) / 3600,
         })
+        current += timedelta(days=1)
+    return pd.DataFrame(rows)
+
+
+def fetch_resting_hr(start: date, end: date) -> pd.DataFrame:
+    """Fetch daily stats (RHR, Body Battery, Stress) from Garmin Connect (cached)."""
+    rows = []
+    current = start
+    client = _get_client()
+    while current <= end:
+        cache_path = CACHE_DIR / f"rhr_{current}_{current}_{current}.json"
+        if cache_path.exists():
+            raw = json.loads(cache_path.read_text())
+        else:
+            try:
+                raw = client.get_stats(current.isoformat())
+                cache_path.write_text(json.dumps(raw, default=str))
+            except Exception as e:
+                log.debug("Stats fetch skipped for %s: %s", current, e)
+                current += timedelta(days=1)
+                continue
+        if not isinstance(raw, dict):
+            current += timedelta(days=1)
+            continue
+        rhr = raw.get("restingHeartRate")
+        bb  = raw.get("bodyBatteryMostRecentValue")
+        bb_hi = raw.get("bodyBatteryHighestValue")
+        stress = raw.get("averageStressLevel")
+        if rhr and int(rhr) > 20:
+            rows.append({
+                "date":        pd.to_datetime(current),
+                "rhr":         int(rhr),
+                "body_battery": int(bb)    if bb    is not None else None,
+                "bb_high":     int(bb_hi) if bb_hi is not None else None,
+                "stress":      int(stress) if stress is not None else None,
+            })
         current += timedelta(days=1)
     return pd.DataFrame(rows)
 
@@ -267,6 +301,121 @@ def fetch_activity_gps(activity_id: int,
     if pts:
         cache_file.write_text(json.dumps(pts))
     return pts
+
+
+_SPORT_MAP = {
+    "swim": {"sportTypeId": 4,  "sportTypeKey": "lap_swimming"},
+    "bike": {"sportTypeId": 2,  "sportTypeKey": "cycling"},
+    "run":  {"sportTypeId": 1,  "sportTypeKey": "running"},
+    "str":  {"sportTypeId": 13, "sportTypeKey": "strength_training"},
+}
+_DEFAULT_SPORT = {"sportTypeId": 0, "sportTypeKey": "other"}
+
+
+def _build_workout_body(session: dict) -> dict:
+    """Build Garmin workout JSON with required segment/step structure."""
+    sport    = _SPORT_MAP.get(session.get("sport", ""), _DEFAULT_SPORT)
+    dur_secs = int((session.get("dur_min") or 60) * 60)
+    dist_m   = int((session.get("dist_km") or 0) * 1000) or None
+    return {
+        "workoutName": session.get("name", "LabX Workout"),
+        "description": session.get("notes") or "",
+        "sportType":   sport,
+        "estimatedDurationInSecs":   dur_secs,
+        "estimatedDistanceInMeters": dist_m,
+        "workoutSegments": [
+            {
+                "segmentOrder": 1,
+                "sportType":    sport,
+                "workoutSteps": [
+                    {
+                        "type":      "ExecutableStepDTO",
+                        "stepOrder": 1,
+                        "stepType":  {"stepTypeId": 3, "stepTypeKey": "interval"},
+                        "endCondition": {"conditionTypeId": 2, "conditionTypeKey": "time"},
+                        "endConditionValue": dur_secs,
+                        "targetType": {"workoutTargetTypeId": 1, "workoutTargetTypeKey": "no.target"},
+                    }
+                ],
+            }
+        ],
+    }
+
+
+def schedule_workout(session: dict, target_date: str) -> dict:
+    """
+    Create a workout on Garmin Connect and schedule it to target_date.
+
+    session dict keys: name, sport, dur_min, dist_km, notes
+    target_date: 'YYYY-MM-DD'
+    """
+    client = _get_client()
+    workout_body = _build_workout_body(session)
+
+    log.info("Creating Garmin workout: %s for %s", workout_body["workoutName"], target_date)
+
+    # Step 1 — create workout definition
+    created = client.upload_workout(workout_body)
+    workout_id = (created or {}).get("workoutId")
+    if not workout_id:
+        raise RuntimeError(f"Garmin did not return a workoutId: {created}")
+
+    log.info("Garmin workout created: id=%s", workout_id)
+
+    # Step 2 — schedule it to the target date
+    scheduled = client.schedule_workout(workout_id, target_date)
+    log.info("Garmin workout %s scheduled on %s: %s", workout_id, target_date, scheduled)
+
+    return {"workoutId": workout_id, "scheduled": scheduled, "date": target_date}
+
+
+def reschedule_workout(session: dict, old_date: str, new_date: str) -> dict:
+    """
+    Convenience wrapper: schedule a previously planned session to a new date.
+    old_date is logged only; Garmin has no native "move" endpoint — we create fresh.
+    """
+    log.info(
+        "Rescheduling '%s' from %s to %s",
+        session.get("name"), old_date, new_date
+    )
+    return schedule_workout(session, new_date)
+
+
+def schedule_workout_for_athlete(
+    session: dict,
+    target_date: str,
+    athlete_email: str,
+    athlete_password: str,
+) -> dict:
+    """
+    Push a workout to a *specific athlete's* Garmin account.
+
+    Uses a temporary, per-call client — does NOT touch the module-level
+    singleton (_CLIENT) which belongs to the coach/admin account.
+
+    session dict keys: name, sport, dur_min, dist_km, notes
+    target_date: 'YYYY-MM-DD'
+    """
+    try:
+        from garminconnect import Garmin
+    except ImportError:
+        raise ImportError("Run: pip install garminconnect")
+
+    log.info("Authenticating Garmin for athlete: %s", athlete_email)
+    client = Garmin(athlete_email, athlete_password)
+    client.login()
+    log.info("Garmin auth OK for %s", athlete_email)
+
+    workout_body = _build_workout_body(session)
+    created    = client.upload_workout(workout_body)
+    workout_id = (created or {}).get("workoutId")
+    if not workout_id:
+        raise RuntimeError(f"Garmin did not return workoutId: {created}")
+
+    scheduled = client.schedule_workout(workout_id, target_date)
+    log.info("Workout %s scheduled on %s for %s", workout_id, target_date, athlete_email)
+
+    return {"workoutId": str(workout_id), "scheduled": scheduled, "date": target_date}
 
 
 def build_training_load(df_activities: pd.DataFrame, ftp: float, threshold_run_sec: float) -> pd.DataFrame:

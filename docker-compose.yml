@@ -1,0 +1,173 @@
+version: "3.9"
+
+# LabX — Docker Compose
+# Uso:
+#   Desarrollo:  docker compose up
+#   Producción:  docker compose --profile prod up -d
+#   Solo tests:  docker compose run --rm api pytest api/tests/ --noconftest -q
+
+x-api-env: &api-env
+  DATABASE_URL:          ${DATABASE_URL:-sqlite:///./data/labx_coach.db}
+  JWT_SECRET:            ${JWT_SECRET:?JWT_SECRET is required}
+  JWT_AUDIENCE:          ${JWT_AUDIENCE:-labx-app}
+  TOKEN_HOURS:           ${TOKEN_HOURS:-8}
+  FERNET_KEY:            ${FERNET_KEY:?FERNET_KEY is required}
+  FERNET_KEY_OLD:        ${FERNET_KEY_OLD:-}
+  APP_ENV:               ${APP_ENV:-development}
+  APP_URL:               ${APP_URL:-http://localhost:8000}
+  ENABLE_DOCS:           ${ENABLE_DOCS:-1}
+  CORS_ORIGINS:          ${CORS_ORIGINS:-}
+  # Email
+  RESEND_API_KEY:        ${RESEND_API_KEY:-}
+  EMAIL_FROM:            ${EMAIL_FROM:-noreply@labx.app}
+  # Pagos
+  STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_PRICE_PRO:      ${STRIPE_PRICE_PRO:-}
+  STRIPE_PRICE_COACH:    ${STRIPE_PRICE_COACH:-}
+  STRIPE_PRICE_ELITE:    ${STRIPE_PRICE_ELITE:-}
+  STRIPE_TRIAL_DAYS:     ${STRIPE_TRIAL_DAYS:-14}
+  # Garmin
+  GARMIN_CLIENT_ID:      ${GARMIN_CLIENT_ID:-}
+  GARMIN_CLIENT_SECRET:  ${GARMIN_CLIENT_SECRET:-}
+  GARMIN_REDIRECT_URI:   ${GARMIN_REDIRECT_URI:-http://localhost:8000/api/garmin/callback}
+  # Strava
+  STRAVA_CLIENT_ID:      ${STRAVA_CLIENT_ID:-}
+  STRAVA_CLIENT_SECRET:  ${STRAVA_CLIENT_SECRET:-}
+  STRAVA_REDIRECT_URI:   ${STRAVA_REDIRECT_URI:-http://localhost:8000/api/strava/callback}
+  # AI
+  ANTHROPIC_API_KEY:     ${ANTHROPIC_API_KEY:-}
+  # Push notifications
+  VAPID_PUBLIC_KEY:      ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY:     ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT:         ${VAPID_SUBJECT:-mailto:admin@labx.app}
+  # Redis (opcional)
+  REDIS_URL:             ${REDIS_URL:-}
+  # Observabilidad
+  SENTRY_DSN:            ${SENTRY_DSN:-}
+  # Seeds
+  ADMIN_EMAIL:           ${ADMIN_EMAIL:-admin@labx.app}
+  ADMIN_PASS:            ${ADMIN_PASS:-}
+  DEMO_EMAIL:            ${DEMO_EMAIL:-demo@labx.app}
+  DEMO_PASS:             ${DEMO_PASS:-}
+
+services:
+  # ── API FastAPI ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      <<: *api-env
+    volumes:
+      - labx_data:/app/data
+      - labx_backups:/app/backups
+      - labx_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ── PostgreSQL (perfil prod) ────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    profiles: ["prod"]
+    environment:
+      POSTGRES_DB:       labx_db
+      POSTGRES_USER:     ${POSTGRES_USER:-labx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"  # Solo local — nunca exponer en 0.0.0.0
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-labx}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ── Redis (perfil prod — rate limiting y cache) ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    profiles: ["prod"]
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── PGBouncer (perfil prod — connection pooling) ───────────────────────────
+  pgbouncer:
+    image: bitnami/pgbouncer:1
+    profiles: ["prod"]
+    environment:
+      POSTGRESQL_HOST:     db
+      POSTGRESQL_PORT:     5432
+      POSTGRESQL_USERNAME: ${POSTGRES_USER:-labx}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRESQL_DATABASE: labx_db
+      PGBOUNCER_PORT:      6432
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 100
+      PGBOUNCER_DEFAULT_POOL_SIZE: 20
+      PGBOUNCER_MIN_POOL_SIZE:     2
+      PGBOUNCER_RESERVE_POOL_SIZE: 5
+    ports:
+      - "127.0.0.1:6432:6432"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U ${POSTGRES_USER:-labx}"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Backup diario ───────────────────────────────────────────────────────
+  backup:
+    build: .
+    profiles: ["prod"]
+    command: sh -c 'while true; do python backup.py && echo "Backup OK $(date)"; sleep 86400; done'
+    environment:
+      <<: *api-env
+    volumes:
+      - labx_data:/app/data
+      - labx_backups:/app/backups
+    restart: unless-stopped
+    depends_on:
+      - db
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
+        max-file: "3"
+
+volumes:
+  labx_data:
+  labx_backups:
+  labx_logs:
+  postgres_data:
+  redis_data:

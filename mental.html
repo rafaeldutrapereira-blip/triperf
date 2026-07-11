@@ -1,0 +1,899 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Rendimiento Mental</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nav.css">
+<style>
+:root{
+  --bg:#0F172A;--card:#1E293B;--card2:#263148;--border:#334155;
+  --text:#F1F5F9;--sub:#94A3B8;--acc:#6366F1;--acc2:#8B5CF6;
+  --green:#10B981;--yellow:#F59E0B;--orange:#F97316;--red:#EF4444;
+  --blue:#0EA5E9;--teal:#14B8A6;
+  --r:14px;--r2:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* ─── NAV ─── */
+#nav-placeholder{height:0}
+/* ─── LabX TopNav ─── */
+#lx-topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:rgba(4,8,15,.97);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.12);display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem}
+.lxn-brand{display:flex;align-items:center;gap:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#F0F9FF;text-decoration:none;flex-shrink:0}
+.lxn-brand span{color:#FF6535}
+.lxn-brand svg.sbl-svg{width:32px;height:32px;flex-shrink:0}
+.lxn-nav{display:flex;align-items:center;gap:.15rem;flex:1;overflow-x:auto}
+.lxn-nav a{padding:.32rem .68rem;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7FB3CC;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
+.lxn-nav a:hover,.lxn-nav a.on{color:#FF6535;background:rgba(255,101,53,.1)}
+.lxn-out{background:transparent;border:1px solid rgba(61,104,128,.32);border-radius:5px;color:#3D6880;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .65rem;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.lxn-out:hover{border-color:#EF4444;color:#EF4444}
+.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
+.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
+@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
+@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
+@media(max-width:700px){.lxn-nav{display:none}}
+
+/* ─── LAYOUT ─── */
+.page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#A78BFA,#6366F1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-header p{color:var(--sub);margin-top:4px;font-size:.9rem}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:6px;background:var(--card);border-radius:var(--r);padding:6px;margin-bottom:24px;overflow-x:auto}
+.tab-btn{flex:1;min-width:110px;padding:10px 14px;border:none;border-radius:var(--r2);cursor:pointer;background:transparent;color:var(--sub);font-size:.85rem;font-weight:500;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--acc);color:#fff}
+.tab-btn:hover:not(.active){background:var(--card2);color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── CARDS ─── */
+.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.card-title{font-weight:600;font-size:.95rem;margin-bottom:14px;color:var(--text)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ─── MFS DIAL ─── */
+.mfs-hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.mfs-dial{position:relative;width:160px;height:160px;flex-shrink:0}
+.mfs-dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.mfs-dial-bg{fill:none;stroke:var(--border);stroke-width:14}
+.mfs-dial-fill{fill:none;stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .4s}
+.mfs-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.mfs-score-num{font-size:2.2rem;font-weight:800;line-height:1}
+.mfs-label{font-size:.72rem;color:var(--sub);margin-top:2px}
+.mfs-info{flex:1;min-width:200px}
+.mfs-level-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;margin-bottom:10px}
+.mfs-rec{font-size:.88rem;color:var(--sub);line-height:1.5}
+.mfs-signal{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:.82rem;font-weight:600;margin-top:10px}
+.signal-train{background:#10B98122;color:#10B981}
+.signal-reduce{background:#F59E0B22;color:#F59E0B}
+.signal-rest{background:#EF444422;color:#EF4444}
+
+/* ─── CHECKIN ─── */
+.checkin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.checkin-field{display:flex;flex-direction:column;gap:8px}
+.checkin-field label{font-size:.8rem;color:var(--sub);font-weight:500}
+.stars{display:flex;gap:4px}
+.star-btn{width:32px;height:32px;border:2px solid var(--border);border-radius:6px;background:var(--card2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--sub)}
+.star-btn.active{border-color:var(--acc);background:var(--acc);color:#fff}
+.star-btn:hover:not(.active){border-color:var(--acc);color:var(--acc)}
+.checkin-note{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;resize:none;min-height:64px}
+.checkin-note:focus{outline:none;border-color:var(--acc)}
+.btn-primary{padding:10px 24px;background:var(--acc);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:opacity .2s}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:6px 14px;font-size:.8rem;border-radius:6px}
+
+/* ─── TREND CHART ─── */
+.trend-wrap{height:120px;position:relative;overflow:hidden}
+.trend-bars{display:flex;align-items:flex-end;gap:4px;height:100%;padding-bottom:18px}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:height .5s}
+.trend-date{font-size:.62rem;color:var(--sub);margin-top:2px;white-space:nowrap;transform:rotate(-30deg);transform-origin:top center}
+
+/* ─── PROTOCOL LIBRARY ─── */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filter-select{padding:7px 12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:.82rem;cursor:pointer}
+.filter-select:focus{outline:none;border-color:var(--acc)}
+.proto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.proto-card{background:var(--card2);border-radius:var(--r2);padding:14px;border:1px solid var(--border);cursor:pointer;transition:border-color .2s}
+.proto-card:hover{border-color:var(--acc)}
+.proto-card.done{border-color:var(--green)!important;opacity:.8}
+.proto-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.proto-name{font-weight:600;font-size:.88rem}
+.proto-dur{font-size:.75rem;color:var(--sub);background:var(--border);padding:2px 8px;border-radius:12px}
+.proto-cat{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:12px;margin-bottom:6px}
+.cat-breathing{background:#0EA5E922;color:#0EA5E9}
+.cat-visualization{background:#8B5CF622;color:#8B5CF6}
+.cat-mindfulness{background:#14B8A622;color:#14B8A6}
+.cat-cognitive{background:#F59E0B22;color:#F59E0B}
+.cat-activation{background:#F9731622;color:#F97316}
+.cat-pre_race{background:#EF444422;color:#EF4444}
+.cat-recovery_mental{background:#10B98122;color:#10B981}
+.proto-desc{font-size:.78rem;color:var(--sub);line-height:1.4}
+.proto-footer{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.goal-tag{font-size:.7rem;color:var(--acc);background:var(--acc)22;padding:2px 8px;border-radius:10px}
+.done-badge{font-size:.7rem;color:var(--green);font-weight:600}
+
+/* ─── BREATHING TIMER ─── */
+.breath-hero{display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px 0}
+.breath-ring-wrap{position:relative;width:200px;height:200px}
+.breath-ring-wrap svg{width:100%;height:100%}
+.breath-ring-bg{fill:none;stroke:var(--border);stroke-width:12}
+.breath-ring-fill{fill:none;stroke:var(--acc);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.breath-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.breath-phase{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px}
+.breath-count{font-size:2rem;font-weight:800;color:var(--acc)}
+.breath-cycles{font-size:.85rem;color:var(--sub)}
+.breath-ctrls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.breath-select-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;width:100%;max-width:700px}
+.breath-option{background:var(--card2);border:2px solid var(--border);border-radius:var(--r2);padding:12px;cursor:pointer;transition:border-color .2s}
+.breath-option:hover,.breath-option.selected{border-color:var(--acc);background:var(--acc)18}
+.breath-option h4{font-size:.88rem;font-weight:600;margin-bottom:4px}
+.breath-option p{font-size:.75rem;color:var(--sub);line-height:1.3}
+.btn-accent{padding:10px 22px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn-ghost{padding:10px 22px;background:transparent;color:var(--sub);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.9rem}
+
+/* ─── CORRELACIONES ─── */
+.corr-insight{background:linear-gradient(135deg,var(--acc)15,var(--acc2)15);border:1px solid var(--acc)55;border-radius:var(--r);padding:16px;margin-bottom:16px}
+.corr-num{font-size:2rem;font-weight:800;color:var(--acc)}
+.scatter-wrap{overflow-x:auto}
+.scatter-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.scatter-table th{text-align:left;color:var(--sub);padding:6px 10px;border-bottom:1px solid var(--border)}
+.scatter-table td{padding:6px 10px;border-bottom:1px solid var(--border)22}
+.level-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ─── PRE-RACE ─── */
+.race-countdown{text-align:center;padding:20px}
+.race-days{font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.race-name{font-size:1rem;color:var(--sub);margin-top:4px}
+.protocol-steps{counter-reset:step}
+.protocol-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)55}
+.protocol-step:last-child{border-bottom:none}
+.step-num{width:24px;height:24px;background:var(--acc);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-text{font-size:.85rem;color:var(--sub);line-height:1.5}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:#00000088;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.hidden{display:none}
+.modal-box{background:var(--card);border-radius:var(--r);padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--sub);cursor:pointer;font-size:1.3rem}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.modal-cat{font-size:.78rem;color:var(--sub);margin-bottom:16px}
+.modal-desc{font-size:.88rem;color:var(--sub);line-height:1.5;margin-bottom:16px}
+.modal-steps-list{list-style:none;counter-reset:mstep}
+.modal-steps-list li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)55;font-size:.85rem;color:var(--text)}
+.modal-steps-list li::before{counter-increment:mstep;content:counter(mstep);width:22px;height:22px;background:var(--acc2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.modal-steps-list li:last-child{border-bottom:none}
+.rating-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.rating-star{font-size:1.4rem;cursor:pointer;opacity:.4;transition:opacity .15s}
+.rating-star.sel{opacity:1}
+
+/* ─── MISC ─── */
+.empty-state{text-align:center;padding:40px;color:var(--sub);font-size:.9rem}
+.loader{text-align:center;padding:40px;color:var(--sub)}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.diff-badge{font-size:.7rem;padding:2px 8px;border-radius:10px}
+.diff-beginner{background:#10B98122;color:#10B981}
+.diff-intermediate{background:#F59E0B22;color:#F59E0B}
+.diff-advanced{background:#EF444422;color:#EF4444}
+.completeness{font-size:.75rem;color:var(--sub);margin-top:6px}
+.completeness span{color:var(--acc);font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <header class="sb-topbar"></header>
+  <div class="sb-overlay" id="sb-overlay"></div>
+  <main class="main" id="main-content">
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Rendimiento Mental</h1>
+    <p>Mental Fatigue Score + protocolos psicológicos + correlaciones HRV × rendimiento</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('score')">Score del Día</button>
+    <button class="tab-btn" onclick="switchTab('protocols')">Protocolos</button>
+    <button class="tab-btn" onclick="switchTab('breathing')">Respiración</button>
+    <button class="tab-btn" onclick="switchTab('correlations')">Correlaciones</button>
+    <button class="tab-btn" onclick="switchTab('prerace')">Pre-Carrera</button>
+  </div>
+
+  <!-- ═══════════ TAB: SCORE ═══════════ -->
+  <div class="tab-panel active" id="tab-score">
+    <div class="grid-2" style="margin-bottom:16px">
+      <!-- MFS Hero -->
+      <div class="card" style="grid-column:span 2" id="mfs-hero-card">
+        <div class="loader" id="mfs-loader">Cargando Mental Fatigue Score...</div>
+        <div id="mfs-hero-content" style="display:none">
+          <div class="mfs-hero">
+            <div class="mfs-dial">
+              <svg viewBox="0 0 160 160">
+                <circle class="mfs-dial-bg" cx="80" cy="80" r="64"/>
+                <circle class="mfs-dial-fill" id="mfs-arc" cx="80" cy="80" r="64" stroke-dasharray="402" stroke-dashoffset="402"/>
+              </svg>
+              <div class="mfs-center">
+                <div class="mfs-score-num" id="mfs-num">—</div>
+                <div class="mfs-label">Mental Score</div>
+              </div>
+            </div>
+            <div class="mfs-info">
+              <div class="mfs-level-badge" id="mfs-badge">—</div>
+              <div class="mfs-rec" id="mfs-rec"></div>
+              <div class="mfs-signal" id="mfs-signal"></div>
+              <div class="completeness" id="mfs-completeness"></div>
+            </div>
+          </div>
+        </div>
+        <div id="mfs-no-data" style="display:none">
+          <div class="empty-state">
+            Completa el check-in mental para calcular tu Mental Fatigue Score
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Check-in -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Check-in Mental de Hoy</div>
+      <div class="checkin-grid">
+        <div class="checkin-field">
+          <label>Ansiedad — ¿Qué tan calmo te sientes? (5=muy calmo)</label>
+          <div class="stars" id="stars-anxiety" data-key="anxiety"></div>
+        </div>
+        <div class="checkin-field">
+          <label>Motivación (5=muy motivado)</label>
+          <div class="stars" id="stars-motivation" data-key="motivation"></div>
+        </div>
+        <div class="checkin-field">
+          <label>Foco / Concentración (5=muy enfocado)</label>
+          <div class="stars" id="stars-focus" data-key="focus"></div>
+        </div>
+        <div class="checkin-field">
+          <label>Confianza (5=muy confiado)</label>
+          <div class="stars" id="stars-confidence" data-key="confidence"></div>
+        </div>
+        <div class="checkin-field">
+          <label>Estado de ánimo general (5=excelente)</label>
+          <div class="stars" id="stars-mood" data-key="mood"></div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <textarea class="checkin-note" id="checkin-notes" placeholder="Notas opcionales (estrés laboral, sueño, emociones...)"></textarea>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" onclick="submitCheckin()">Guardar Check-in</button>
+        <span id="checkin-saved" style="font-size:.82rem;color:var(--green);display:none">✓ Guardado</span>
+      </div>
+    </div>
+
+    <!-- Trend 7d -->
+    <div class="card">
+      <div class="card-title">Tendencia 7 días</div>
+      <div class="trend-wrap">
+        <div class="trend-bars" id="trend-bars">
+          <div class="loader" style="padding:10px">Cargando...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: PROTOCOLS ═══════════ -->
+  <div class="tab-panel" id="tab-protocols">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Biblioteca de Protocolos</div>
+      <div class="filter-row">
+        <select class="filter-select" id="filter-cat" onchange="loadProtocols()">
+          <option value="">Todas las categorías</option>
+          <option value="breathing">Respiración</option>
+          <option value="visualization">Visualización</option>
+          <option value="mindfulness">Mindfulness</option>
+          <option value="cognitive">Cognitivo</option>
+          <option value="activation">Activación</option>
+          <option value="pre_race">Pre-Carrera</option>
+          <option value="recovery_mental">Recuperación Mental</option>
+        </select>
+        <select class="filter-select" id="filter-goal" onchange="loadProtocols()">
+          <option value="">Todos los objetivos</option>
+          <option value="anxiety">Ansiedad</option>
+          <option value="focus">Foco</option>
+          <option value="confidence">Confianza</option>
+          <option value="motivation">Motivación</option>
+          <option value="stress">Estrés</option>
+          <option value="hrv">HRV / Recuperación</option>
+          <option value="energy">Energía</option>
+          <option value="recovery">Recuperación</option>
+        </select>
+        <select class="filter-select" id="filter-diff" onchange="loadProtocols()">
+          <option value="">Todos los niveles</option>
+          <option value="beginner">Principiante</option>
+          <option value="intermediate">Intermedio</option>
+          <option value="advanced">Avanzado</option>
+        </select>
+        <select class="filter-select" id="filter-dur" onchange="loadProtocols()">
+          <option value="">Cualquier duración</option>
+          <option value="5">Hasta 5 min</option>
+          <option value="10">Hasta 10 min</option>
+          <option value="15">Hasta 15 min</option>
+        </select>
+      </div>
+      <div class="proto-grid" id="proto-grid">
+        <div class="loader">Cargando protocolos...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: BREATHING ═══════════ -->
+  <div class="tab-panel" id="tab-breathing">
+    <div class="card">
+      <div class="card-title">Timer de Respiración Guiada</div>
+      <div class="breath-hero">
+        <!-- Protocol selector -->
+        <div class="breath-select-wrap" id="breath-selector">
+          <div class="breath-option selected" data-id="box" onclick="selectBreath(this,'box','Respiración en Caja',4,4,4,4)">
+            <h4>Caja (4-4-4-4)</h4>
+            <p>Foco y control. Navy SEALs.</p>
+          </div>
+          <div class="breath-option" data-id="478" onclick="selectBreath(this,'478','4-7-8',4,7,8,0)">
+            <h4>4-7-8</h4>
+            <p>Ansiedad y sueño.</p>
+          </div>
+          <div class="breath-option" data-id="resonance" onclick="selectBreath(this,'resonance','Resonancia (5.5s)',5.5,0,5.5,0)">
+            <h4>Resonancia (5.5-5.5)</h4>
+            <p>Maximiza HRV.</p>
+          </div>
+          <div class="breath-option" data-id="physiological" onclick="selectBreath(this,'physio','Suspiro Fisiológico',3,1,8,0)">
+            <h4>Suspiro Fisiológico</h4>
+            <p>Reducción de estrés inmediata.</p>
+          </div>
+        </div>
+
+        <!-- Ring timer -->
+        <div class="breath-ring-wrap" id="breath-ring" style="display:none">
+          <svg viewBox="0 0 200 200">
+            <circle class="breath-ring-bg" cx="100" cy="100" r="82"/>
+            <circle class="breath-ring-fill" id="breath-arc" cx="100" cy="100" r="82"
+                    stroke-dasharray="515" stroke-dashoffset="515"
+                    style="transform-origin:center;transform:rotate(-90deg)"/>
+          </svg>
+          <div class="breath-center">
+            <div class="breath-phase" id="breath-phase">—</div>
+            <div class="breath-count" id="breath-count">0</div>
+            <div class="breath-cycles" id="breath-cycles">Ciclo 0/5</div>
+          </div>
+        </div>
+
+        <div class="breath-ctrls">
+          <button class="btn-accent" id="breath-start-btn" onclick="startBreathing()">Comenzar</button>
+          <button class="btn-ghost" id="breath-stop-btn" onclick="stopBreathing()" style="display:none">Detener</button>
+        </div>
+        <div id="breath-complete-msg" style="display:none;text-align:center">
+          <div style="font-size:1.4rem;margin-bottom:6px">Sesión completada</div>
+          <div style="font-size:.9rem;color:var(--sub);margin-bottom:12px">¿Cómo te sientes? Califica la efectividad:</div>
+          <div class="rating-row" style="justify-content:center" id="breath-rating-stars"></div>
+          <button class="btn-primary" style="margin-top:12px" onclick="saveBreathSession()">Guardar sesión</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: CORRELATIONS ═══════════ -->
+  <div class="tab-panel" id="tab-correlations">
+    <div id="corr-content">
+      <div class="loader">Calculando correlaciones...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: PRE-RACE ═══════════ -->
+  <div class="tab-panel" id="tab-prerace">
+    <div id="prerace-content">
+      <div class="loader">Cargando protocolo pre-carrera...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Protocol Modal ─── -->
+<div class="modal-overlay hidden" id="proto-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProtoModal()">✕</button>
+    <div class="modal-title" id="proto-modal-title">—</div>
+    <div class="modal-cat" id="proto-modal-cat"></div>
+    <div class="modal-desc" id="proto-modal-desc"></div>
+    <ol class="modal-steps-list" id="proto-modal-steps"></ol>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:.82rem;color:var(--sub);margin-bottom:8px">Calificar efectividad después de completar:</div>
+      <div class="rating-row" id="modal-rating-stars"></div>
+      <button class="btn-primary btn-sm" style="margin-top:12px" onclick="saveProtocolSession()">Marcar como completado</button>
+      <span id="proto-saved-msg" style="display:none;font-size:.8rem;color:var(--green);margin-left:10px">✓ Guardado</span>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '/api';
+var checkinData = {};
+var selectedProtoId = null;
+var selectedProtoRating = 0;
+var breathProto = {id:'box', name:'Caja', inhale:4, hold1:4, exhale:4, hold2:4};
+var breathTimer = null;
+var breathCycle = 0;
+var breathMaxCycles = 5;
+var breathStep = 0;
+var breathSec = 0;
+var breathRating = 0;
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  var tabs = {score:0, protocols:1, breathing:2, correlations:3, prerace:4};
+  document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
+  if (name === 'protocols') loadProtocols();
+  if (name === 'correlations') loadCorrelations();
+  if (name === 'prerace') loadPreRace();
+}
+
+// ─── LOAD DASHBOARD ─────────────────────────────────────────────────────────
+function loadDashboard() {
+  fetch(API + '/mental/dashboard', {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      renderMFS(d.today);
+      renderCheckin(d.checkin);
+      renderTrend(d.trend_7d);
+      if (d.suggested_protocol) {
+        console.log('Suggested:', d.suggested_protocol.name);
+      }
+    })
+    .catch(function(){ document.getElementById('mfs-loader').textContent = 'Error al cargar. Reintenta.'; });
+}
+
+function renderMFS(today) {
+  document.getElementById('mfs-loader').style.display = 'none';
+  if (!today || today.score === null || today.score === undefined) {
+    document.getElementById('mfs-no-data').style.display = 'block';
+    return;
+  }
+  document.getElementById('mfs-hero-content').style.display = 'block';
+
+  var score = today.score;
+  var color = today.color || '#6366F1';
+  var CIRC = 402;
+  var offset = CIRC - (CIRC * score / 100);
+
+  var arc = document.getElementById('mfs-arc');
+  arc.style.stroke = color;
+  arc.style.strokeDashoffset = offset;
+
+  document.getElementById('mfs-num').textContent = score;
+  document.getElementById('mfs-num').style.color = color;
+
+  var levels = {peak:'Forma Mental Pico', good:'Bueno', moderate:'Moderado', low:'Bajo', critical:'Crítico'};
+  var badge = document.getElementById('mfs-badge');
+  badge.textContent = levels[today.level] || today.level;
+  badge.style.background = color + '22';
+  badge.style.color = color;
+
+  document.getElementById('mfs-rec').textContent = today.recommendation || '';
+
+  var sigCls = {train:'signal-train', reduce:'signal-reduce', rest:'signal-rest'};
+  var sigTxt = {train:'Entrenar ✓', reduce:'Reducir intensidad', rest:'Descansar'};
+  var sig = document.getElementById('mfs-signal');
+  sig.textContent = sigTxt[today.signal] || today.signal;
+  sig.className = 'mfs-signal ' + (sigCls[today.signal] || 'signal-train');
+
+  var pct = Math.round((today.data_completeness || 0) * 100);
+  document.getElementById('mfs-completeness').innerHTML =
+    'Completitud: <span>' + pct + '%</span> de datos disponibles';
+}
+
+function renderCheckin(c) {
+  if (!c) return;
+  var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
+  keys.forEach(function(key) {
+    if (c[key]) {
+      checkinData[key] = c[key];
+      setStars(key, c[key]);
+    }
+  });
+  if (c.notes) document.getElementById('checkin-notes').value = c.notes || '';
+}
+
+function renderTrend(trend) {
+  if (!trend || !trend.length) return;
+  var container = document.getElementById('trend-bars');
+  container.innerHTML = '';
+  var max = Math.max.apply(null, trend.map(function(t){ return t.score || 0; }));
+  max = max || 100;
+  var colorMap = {peak:'#10B981', good:'#0EA5E9', moderate:'#F59E0B', low:'#F97316', critical:'#EF4444'};
+  trend.forEach(function(t) {
+    var pct = t.score ? Math.round(t.score / max * 80) : 0;
+    var col = colorMap[t.level] || '#334155';
+    var shortDate = t.date_iso ? t.date_iso.slice(5) : '';
+    var wrap = document.createElement('div');
+    wrap.className = 'trend-bar-wrap';
+    wrap.innerHTML = '<div class="trend-bar" style="height:' + pct + '%;background:' + col + ';min-height:' + (t.score ? 6 : 2) + 'px" title="' + (t.score || '—') + '"></div>' +
+                     '<div class="trend-date">' + shortDate + '</div>';
+    container.appendChild(wrap);
+  });
+}
+
+// ─── CHECKIN ─────────────────────────────────────────────────────────────────
+function buildStars() {
+  var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
+  keys.forEach(function(key) {
+    var container = document.getElementById('stars-' + key);
+    if (!container) return;
+    container.innerHTML = '';
+    for (var i = 1; i <= 5; i++) {
+      var btn = document.createElement('button');
+      btn.className = 'star-btn';
+      btn.textContent = i;
+      btn.dataset.val = i;
+      btn.dataset.key = key;
+      btn.onclick = (function(k, v, b) {
+        return function() {
+          checkinData[k] = v;
+          setStars(k, v);
+        };
+      })(key, i, btn);
+      container.appendChild(btn);
+    }
+  });
+}
+
+function setStars(key, val) {
+  var container = document.getElementById('stars-' + key);
+  if (!container) return;
+  container.querySelectorAll('.star-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+  });
+}
+
+function submitCheckin() {
+  var payload = {
+    anxiety:    checkinData.anxiety    || null,
+    motivation: checkinData.motivation || null,
+    focus:      checkinData.focus      || null,
+    confidence: checkinData.confidence || null,
+    mood:       checkinData.mood       || null,
+    notes:      document.getElementById('checkin-notes').value || null,
+  };
+  fetch(API + '/mental/checkin', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      document.getElementById('checkin-saved').style.display = 'inline';
+      setTimeout(function(){ document.getElementById('checkin-saved').style.display = 'none'; }, 2500);
+      renderMFS({
+        score: d.mfs_score, level: d.mfs_level, color: d.mfs_color,
+        signal: null, recommendation: d.recommendation, data_completeness: 1.0
+      });
+    })
+    .catch(function(){});
+}
+
+// ─── PROTOCOLS ───────────────────────────────────────────────────────────────
+function loadProtocols() {
+  var cat  = document.getElementById('filter-cat').value;
+  var goal = document.getElementById('filter-goal').value;
+  var diff = document.getElementById('filter-diff').value;
+  var dur  = document.getElementById('filter-dur').value;
+  var qs = [];
+  if (cat)  qs.push('category=' + cat);
+  if (goal) qs.push('goal=' + goal);
+  if (diff) qs.push('difficulty=' + diff);
+  if (dur)  qs.push('max_duration=' + dur);
+  var url = API + '/mental/protocols' + (qs.length ? '?' + qs.join('&') : '');
+  fetch(url, {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderProtocols(d.protocols || []); })
+    .catch(function(){ document.getElementById('proto-grid').innerHTML = '<div class="empty-state">Error al cargar.</div>'; });
+}
+
+function renderProtocols(protocols) {
+  var grid = document.getElementById('proto-grid');
+  if (!protocols.length) { grid.innerHTML = '<div class="empty-state">Sin protocolos con estos filtros.</div>'; return; }
+  var catLabels = {breathing:'Respiración', visualization:'Visualización', mindfulness:'Mindfulness',
+    cognitive:'Cognitivo', activation:'Activación', pre_race:'Pre-Carrera', recovery_mental:'Recuperación Mental'};
+  var diffLabels = {beginner:'Principiante', intermediate:'Intermedio', advanced:'Avanzado'};
+  grid.innerHTML = protocols.map(function(p) {
+    var done = p.completed_this_week ? ' done' : '';
+    return '<div class="proto-card' + done + '" onclick="openProtoModal(\'' + p.id + '\')">' +
+      '<div class="proto-header"><div class="proto-name">' + escHtml(p.name) + '</div>' +
+      '<div class="proto-dur">' + p.duration_min + ' min</div></div>' +
+      '<span class="proto-cat cat-' + p.category + '">' + (catLabels[p.category] || p.category) + '</span>' +
+      '<div class="proto-desc">' + escHtml(p.description) + '</div>' +
+      '<div class="proto-footer">' +
+      '<span class="goal-tag">' + escHtml(p.goal) + '</span>' +
+      '<span class="diff-badge diff-' + p.difficulty + '">' + (diffLabels[p.difficulty] || p.difficulty) + '</span>' +
+      (done ? '<span class="done-badge">✓ Esta semana</span>' : '') +
+      '</div></div>';
+  }).join('');
+}
+
+function openProtoModal(id) {
+  selectedProtoId = id;
+  selectedProtoRating = 0;
+  fetch(API + '/mental/protocols/' + id, {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(p) {
+      document.getElementById('proto-modal-title').textContent = p.name;
+      document.getElementById('proto-modal-cat').textContent =
+        (p.category || '') + ' · ' + p.duration_min + ' min';
+      document.getElementById('proto-modal-desc').textContent = p.description;
+      var stepsHtml = (p.steps || []).map(function(s) {
+        return '<li>' + escHtml(s) + '</li>';
+      }).join('');
+      document.getElementById('proto-modal-steps').innerHTML = stepsHtml;
+      buildRatingStars('modal-rating-stars', function(v){ selectedProtoRating = v; });
+      document.getElementById('proto-saved-msg').style.display = 'none';
+      document.getElementById('proto-modal').classList.remove('hidden');
+    })
+    .catch(function(){});
+}
+
+function closeProtoModal() {
+  document.getElementById('proto-modal').classList.add('hidden');
+}
+
+function saveProtocolSession() {
+  if (!selectedProtoId) return;
+  fetch(API + '/mental/protocols/' + selectedProtoId + '/complete', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({protocol_id: selectedProtoId, rating: selectedProtoRating || null})
+  })
+    .then(function(r){ return r.json(); })
+    .then(function() {
+      document.getElementById('proto-saved-msg').style.display = 'inline';
+      loadProtocols();
+    })
+    .catch(function(){});
+}
+
+// ─── BREATHING TIMER ─────────────────────────────────────────────────────────
+function selectBreath(el, id, name, inhale, hold1, exhale, hold2) {
+  document.querySelectorAll('.breath-option').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  breathProto = {id:id, name:name, inhale:inhale, hold1:hold1, exhale:exhale, hold2:hold2};
+}
+
+function startBreathing() {
+  var PHASES = [];
+  if (breathProto.inhale)  PHASES.push({label:'Inhala',  secs: breathProto.inhale});
+  if (breathProto.hold1)   PHASES.push({label:'Retén',   secs: breathProto.hold1});
+  if (breathProto.exhale)  PHASES.push({label:'Exhala',  secs: breathProto.exhale});
+  if (breathProto.hold2)   PHASES.push({label:'Retén',   secs: breathProto.hold2});
+
+  document.getElementById('breath-selector').style.display = 'none';
+  document.getElementById('breath-ring').style.display = 'block';
+  document.getElementById('breath-start-btn').style.display = 'none';
+  document.getElementById('breath-stop-btn').style.display = 'block';
+  document.getElementById('breath-complete-msg').style.display = 'none';
+
+  breathCycle = 0;
+  breathMaxCycles = 5;
+  breathStep = 0;
+  breathSec = 0;
+  var CIRC = 515;
+
+  function tick() {
+    var phase = PHASES[breathStep];
+    if (!phase) return;
+    document.getElementById('breath-phase').textContent = phase.label;
+    document.getElementById('breath-count').textContent = Math.ceil(phase.secs - breathSec);
+    document.getElementById('breath-cycles').textContent = 'Ciclo ' + (breathCycle + 1) + '/' + breathMaxCycles;
+    var progress = breathSec / phase.secs;
+    var offset = CIRC - (CIRC * progress);
+    document.getElementById('breath-arc').style.strokeDashoffset = offset;
+
+    breathSec += 0.1;
+    if (breathSec >= phase.secs) {
+      breathSec = 0;
+      breathStep++;
+      if (breathStep >= PHASES.length) {
+        breathStep = 0;
+        breathCycle++;
+        if (breathCycle >= breathMaxCycles) {
+          stopBreathing();
+          finishBreathing();
+          return;
+        }
+      }
+    }
+    breathTimer = setTimeout(tick, 100);
+  }
+  tick();
+}
+
+function stopBreathing() {
+  if (breathTimer) { clearTimeout(breathTimer); breathTimer = null; }
+  document.getElementById('breath-start-btn').style.display = 'block';
+  document.getElementById('breath-stop-btn').style.display = 'none';
+}
+
+function finishBreathing() {
+  document.getElementById('breath-ring').style.display = 'none';
+  var comp = document.getElementById('breath-complete-msg');
+  comp.style.display = 'block';
+  buildRatingStars('breath-rating-stars', function(v){ breathRating = v; });
+}
+
+function saveBreathSession() {
+  var protoMap = {box:'breath_box', '478':'breath_478', resonance:'breath_resonance', physio:'breath_physiological'};
+  var pid = protoMap[breathProto.id] || 'breath_box';
+  fetch(API + '/mental/protocols/' + pid + '/complete', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({protocol_id: pid, duration_min: breathMaxCycles * 2, rating: breathRating || null})
+  })
+    .then(function(r){ return r.json(); })
+    .then(function() {
+      document.getElementById('breath-complete-msg').innerHTML =
+        '<div style="color:var(--green);font-size:1rem;font-weight:600">✓ Sesión guardada</div>';
+      setTimeout(function() {
+        document.getElementById('breath-selector').style.display = 'grid';
+        document.getElementById('breath-complete-msg').style.display = 'none';
+        document.getElementById('breath-start-btn').style.display = 'block';
+      }, 2000);
+    })
+    .catch(function(){});
+}
+
+// ─── CORRELATIONS ───────────────────────────────────────────────────────────
+function loadCorrelations() {
+  var container = document.getElementById('corr-content');
+  container.innerHTML = '<div class="loader">Calculando correlaciones...</div>';
+  fetch(API + '/mental/correlations?days=30', {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderCorrelations(d); })
+    .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar correlaciones.</div>'; });
+}
+
+function renderCorrelations(d) {
+  var container = document.getElementById('corr-content');
+  var corr = d.correlation_mfs_tss;
+  var corrDisplay = corr !== null && corr !== undefined ? corr.toFixed(2) : '—';
+  var byLevel = d.tss_by_mfs_level || {};
+  var levelOrder = ['peak','good','moderate','low','critical'];
+  var levelLabels = {peak:'Pico Mental',good:'Bueno',moderate:'Moderado',low:'Bajo',critical:'Crítico'};
+  var levelColors = {peak:'#10B981',good:'#0EA5E9',moderate:'#F59E0B',low:'#F97316',critical:'#EF4444'};
+
+  var levelRows = levelOrder.filter(function(l){ return byLevel[l]; }).map(function(l) {
+    return '<tr><td><span class="level-dot" style="background:' + levelColors[l] + '"></span>' + levelLabels[l] + '</td>' +
+           '<td>' + byLevel[l] + '</td></tr>';
+  }).join('');
+
+  var pointRows = (d.data_points || []).slice(0, 20).map(function(dp) {
+    var col = levelColors[dp.mfs_level] || '#94A3B8';
+    return '<tr><td>' + (dp.date_iso || '') + '</td>' +
+           '<td><span class="level-dot" style="background:' + col + '"></span>' + (dp.mfs_score || '—') + '</td>' +
+           '<td>' + (dp.tss || '—') + '</td>' +
+           '<td>' + (dp.activity_type || '—') + '</td></tr>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="corr-insight" style="margin-bottom:16px">' +
+      '<div style="font-size:.8rem;color:var(--sub);margin-bottom:4px">Correlación MFS × TSS (' + (d.days_analyzed || 30) + ' días)</div>' +
+      '<div class="corr-num">' + corrDisplay + '</div>' +
+      '<div style="font-size:.85rem;color:var(--sub);margin-top:4px">' + escHtml(d.insight || '') + '</div>' +
+      '<div style="font-size:.75rem;color:var(--sub);margin-top:6px">' + (d.data_points_count || 0) + ' entrenamientos analizados</div>' +
+    '</div>' +
+
+    '<div class="grid-2">' +
+      '<div class="card">' +
+        '<div class="card-title">TSS Promedio por Nivel Mental</div>' +
+        '<table class="scatter-table"><tr><th>Nivel Mental</th><th>TSS Prom.</th></tr>' + levelRows + '</table>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="card-title">Últimos 20 días con datos</div>' +
+        '<div class="scatter-wrap"><table class="scatter-table"><tr><th>Fecha</th><th>MFS</th><th>TSS</th><th>Deporte</th></tr>' +
+        pointRows + '</table></div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ─── PRE-RACE ────────────────────────────────────────────────────────────────
+function loadPreRace() {
+  var container = document.getElementById('prerace-content');
+  container.innerHTML = '<div class="loader">Cargando protocolo pre-carrera...</div>';
+  fetch(API + '/mental/pre-race', {credentials:'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderPreRace(d); })
+    .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar.</div>'; });
+}
+
+function renderPreRace(d) {
+  var container = document.getElementById('prerace-content');
+  if (!d.protocol) {
+    container.innerHTML = '<div class="card"><div class="empty-state">' + escHtml(d.message) + '</div></div>';
+    return;
+  }
+  var race = d.race || {};
+  var protos = (d.protocols_today || []).concat(d.extra_if_anxious || []);
+
+  var raceSec = '<div class="card" style="margin-bottom:16px"><div class="race-countdown">' +
+    '<div class="race-days">' + (race.days_to_race !== null ? race.days_to_race : '—') + '</div>' +
+    '<div style="font-size:.75rem;color:var(--sub)">días para la carrera</div>' +
+    '<div class="race-name">' + escHtml(race.name || 'Tu carrera') + ' · ' + (race.date || '') + '</div>' +
+    '<div style="margin-top:10px;font-size:.85rem;color:var(--sub)">' + escHtml(d.message || '') + '</div>' +
+    '</div></div>';
+
+  var mfsSec = d.mfs_today
+    ? '<div class="card" style="margin-bottom:16px"><div class="card-title">Estado Mental Hoy</div>' +
+      '<div style="font-size:1.5rem;font-weight:700">' + d.mfs_today + '<span style="font-size:.9rem;font-weight:400;color:var(--sub);margin-left:6px">' + (d.mfs_level || '') + '</span></div></div>'
+    : '';
+
+  var protosSec = protos.length
+    ? '<div class="card"><div class="card-title">Protocolos de hoy</div>' +
+      protos.map(function(p) {
+        return '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)55">' +
+          '<div style="font-weight:600;margin-bottom:4px;cursor:pointer;color:var(--acc)" onclick="openProtoModal(\'' + escHtml(p.id) + '\')">' + escHtml(p.name) + ' → ' + p.duration_min + ' min</div>' +
+          '<div style="font-size:.82rem;color:var(--sub)">' + escHtml(p.description) + '</div>' +
+          '<div class="protocol-steps">' +
+          (p.steps || []).map(function(s, i) {
+            return '<div class="protocol-step"><div class="step-num">' + (i+1) + '</div><div class="step-text">' + escHtml(s) + '</div></div>';
+          }).join('') +
+          '</div></div>';
+      }).join('') + '</div>'
+    : '<div class="card"><div class="empty-state">No hay protocolo específico para hoy. Mantén la rutina normal.</div></div>';
+
+  container.innerHTML = raceSec + mfsSec + protosSec;
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function buildRatingStars(containerId, onSelect) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (var i = 1; i <= 5; i++) {
+    var s = document.createElement('span');
+    s.className = 'rating-star';
+    s.textContent = '★';
+    s.dataset.val = i;
+    s.onclick = (function(v, el) {
+      return function() {
+        onSelect(v);
+        el.parentElement.querySelectorAll('.rating-star').forEach(function(rs) {
+          rs.classList.toggle('sel', parseInt(rs.dataset.val) <= v);
+        });
+      };
+    })(i, s);
+    container.appendChild(s);
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  buildStars();
+  loadDashboard();
+});
+</script>
+<script src="auth.js"></script>
+<script>KL.guard('mental');</script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+  </main>
+</div>
+<script src="lx-audit.js"></script>`n</body>
+</html>

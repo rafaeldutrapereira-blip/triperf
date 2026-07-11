@@ -1,4 +1,4 @@
-"""TriPerf — Triathlon Performance Dashboard"""
+"""LabX — Triathlon Performance Dashboard"""
 
 import os, sys, subprocess
 from datetime import date, timedelta, datetime
@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import streamlit as st
+import streamlit.components.v1 as _stc
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,8 +31,8 @@ from utils.formulas import (
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="TriPerf",
-    page_icon="⚡",
+    page_title="LabX — Where Champions Are Built",
+    page_icon="🌺",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -297,7 +298,7 @@ footer{background:#0F172A;padding:2rem 5vw;display:flex;flex-wrap:wrap;align-ite
 
 <section class="why">
   <div class="why-title">
-    <h2>Why TriPerf?</h2>
+    <h2>Why LabX?</h2>
     <p class="why-sub">Everything TrainingPeaks does &mdash; built specifically for you, connected to your Garmin data.</p>
   </div>
   <div class="wgrid">
@@ -684,16 +685,24 @@ vo2b   = float(_prof["vo2max_bike"])
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## ⚡ TriPerf")
-    st.caption("Triathlon Performance Dashboard")
+    st.markdown("## ⚡ LabX")
+    st.caption("Where Champions Are Built · Kona, HI")
     st.markdown("---")
+
+    _nav_opts = ["👤 Athlete Profile", "📋 Training Plan", "📊 Dashboard",
+                 "📈 Training Load", "🏊 Swimming", "🚴 Cycling",
+                 "🏃 Running", "🍎 Nutrition", "🏆 Race Predictor",
+                 "🩸 Blood Labs", "🗺️ Training Detail"]
+    _nav_default = 2  # Dashboard
+    if "_nav_target" in st.session_state:
+        _t = st.session_state.pop("_nav_target")
+        if _t in _nav_opts:
+            _nav_default = _nav_opts.index(_t)
 
     page = st.radio(
         "nav",
-        ["👤 Athlete Profile", "📋 Training Plan", "📊 Dashboard",
-         "📈 Training Load", "🏊 Swimming", "🚴 Cycling",
-         "🏃 Running", "🍎 Nutrition", "🏆 Race Predictor",
-         "🩸 Blood Labs", "🗺️ Training Detail"],
+        _nav_opts,
+        index=_nav_default,
         label_visibility="collapsed",
     )
 
@@ -1037,172 +1046,392 @@ For now, workouts are saved locally and compared against synced Garmin data.
 # 📊 DASHBOARD
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "📊 Dashboard":
+    # ── Data ──────────────────────────────────────────────────────────────────
     latest = df_load.iloc[-1] if not df_load.empty else {}
     prev   = df_load.iloc[-8] if len(df_load) > 7 else {}
-
-    ctl  = float(latest.get("ctl",  55))
-    atl  = float(latest.get("atl",  60))
-    tsb  = float(latest.get("tsb",  -5))
-    acwr = float(latest.get("acwr", 1.05))
+    ctl   = float(latest.get("ctl",  55))
+    atl   = float(latest.get("atl",  60))
+    tsb   = float(latest.get("tsb",  -5))
+    acwr  = float(latest.get("acwr", 1.05))
     ctl_d = ctl - float(prev.get("ctl", ctl))
     atl_d = atl - float(prev.get("atl", atl))
-
-    # ── Daily Readiness Score ─────────────────────────────────────────────────
     rdy, rdy_lbl, rdy_color, rdy_cmp = _readiness_score(tsb, df_hrv, df_sleep)
 
-    # ── Fila 1: Readiness + sus 3 componentes ────────────────────────────────
-    def _dot(v): return "🟢" if v >= 70 else "🟡" if v >= 50 else "🔴"
-    section("Daily Readiness", "How ready are you to train today?")
-    rd0, rd1, rd2, rd3 = st.columns(4)
-    rd0.metric("⚡ Readiness Score", f"{rdy} / 100", rdy_lbl)
-    rd1.metric(f"{_dot(rdy_cmp['TSB'])}  Form (TSB)",
-               f"{rdy_cmp['TSB']:.0f} / 100",
-               "Optimal" if 60 <= rdy_cmp['TSB'] <= 100 else "High fatigue" if rdy_cmp['TSB'] < 40 else "")
-    rd2.metric(f"{_dot(rdy_cmp['HRV'])}  HRV Status",
-               f"{rdy_cmp['HRV']:.0f} / 100",
-               "No HRV data" if df_hrv.empty else "Stable" if rdy_cmp['HRV'] >= 70 else "Below avg")
-    rd3.metric(f"{_dot(rdy_cmp['Sleep'])}  Sleep Quality",
-               f"{rdy_cmp['Sleep']:.0f} / 100",
-               "No sleep data" if df_sleep.empty else "Good" if rdy_cmp['Sleep'] >= 70 else "Poor")
+    _plan_done = 0; _plan_total = 1
+    if not df_plan.empty:
+        _cutoff = pd.Timestamp.today().normalize() - timedelta(days=28)
+        _recent_p = df_plan[pd.to_datetime(df_plan["date"]) >= _cutoff]
+        if not _recent_p.empty:
+            _plan_total = len(_recent_p)
+            _plan_done  = sum(1 for _, row in _recent_p.iterrows()
+                              if not df_act.empty and _match_actual(row, df_act) is not None)
+    _compliance = (_plan_done / _plan_total * 100) if _plan_total else 75
+    rri, rri_lbl, rri_col = _race_readiness(tsb, df_hrv, df_sleep, _compliance)
+    target_race = _prof.get("target_race", "703")
+    target_date = _prof.get("target_date", "")
+    days_to_race = None
+    if target_date:
+        try:
+            days_to_race = (datetime.strptime(target_date, "%Y-%m-%d") - datetime.today()).days
+        except Exception:
+            pass
 
-    st.markdown(" ")
+    # ── Sparkline helper ───────────────────────────────────────────────────────
+    def _is_valid(v):
+        try: f = float(v); return f == f  # NaN != NaN
+        except Exception: return False
 
-    # ── Fila 2: Training load KPIs ────────────────────────────────────────────
-    section("Training Load", "Last 7 days vs previous week")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("CTL — Fitness",  f"{ctl:.1f}",  f"{ctl_d:+.1f} vs last week")
-    c2.metric("ATL — Fatigue",  f"{atl:.1f}",  f"{atl_d:+.1f}")
-    c3.metric("TSB — Form",     f"{tsb:.1f}",
-              "Race Ready ✓" if tsb > 10 else "Training" if tsb > -15 else "⚠ Fatigue")
-    c4.metric("ACWR",           f"{acwr:.2f}",
-              "Safe ✓" if 0.8 <= acwr <= 1.3 else "⚠ Injury risk")
+    def _spark(vals, color, w=96, h=28):
+        vs = [float(v) for v in vals if _is_valid(v)]
+        if len(vs) < 2:
+            return f'<svg width="{w}" height="{h}"></svg>'
+        mn, mx = min(vs), max(vs); rng = mx - mn or 1; n = len(vs)
+        pts = " ".join(f"{i/(n-1)*w:.1f},{h*0.9-(v-mn)/rng*(h*0.75):.1f}" for i, v in enumerate(vs))
+        lx = w; ly = h*0.9 - (vs[-1]-mn)/rng*(h*0.75)
+        return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+                f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.8" '
+                f'stroke-linecap="round" stroke-linejoin="round"/>'
+                f'<circle cx="{lx:.0f}" cy="{ly:.1f}" r="2.5" fill="{color}"/></svg>')
 
-    st.markdown(" ")
-    left, right = st.columns([2, 1], gap="medium")
+    _hrv_7d_raw = (df_hrv.sort_values("date").tail(7)["hrv_last_night"].tolist()
+                   if not df_hrv.empty and "hrv_last_night" in df_hrv.columns else [])
+    _slp_7d_raw = (df_sleep.sort_values("date").tail(7)["sleep_score"].tolist()
+                   if not df_sleep.empty and "sleep_score" in df_sleep.columns else [])
+    _hrv_7d = [v for v in _hrv_7d_raw if _is_valid(v)]
+    _slp_7d = [v for v in _slp_7d_raw if _is_valid(v)]
+    _hrv_avg = sum(_hrv_7d) / len(_hrv_7d) if _hrv_7d else None
+    _slp_avg = sum(_slp_7d) / len(_slp_7d) if _slp_7d else None
+    _hrv_svg = _spark(_hrv_7d if len(_hrv_7d) >= 2 else [58,62,59,65,61,63,60], "#22D3EE")
+    _slp_svg = _spark(_slp_7d if len(_slp_7d) >= 2 else [72,68,75,70,73,71,74], "#A78BFA")
+    _hrv_val = f"{_hrv_avg:.0f} ms" if _hrv_avg else "—"
+    _slp_val = f"{_slp_avg:.0f}/100" if _slp_avg else "—"
 
-    with left:
-        section("Performance Chart", "90-day CTL / ATL / TSB")
+    # ── TSB zone ───────────────────────────────────────────────────────────────
+    _TSB_MIN, _TSB_MAX = -50, 30
+    _tsb_pct = max(1.0, min(99.0, (tsb - _TSB_MIN) / (_TSB_MAX - _TSB_MIN) * 100))
+    if tsb > 20:    _tsb_zone, _tsb_zc = "Detraining",   "#64748B"
+    elif tsb > 5:   _tsb_zone, _tsb_zc = "Race Ready",   "#10B981"
+    elif tsb > -15: _tsb_zone, _tsb_zc = "Optimal",      "#FF6535"
+    elif tsb > -30: _tsb_zone, _tsb_zc = "High Fatigue", "#F0A500"
+    else:           _tsb_zone, _tsb_zc = "Overtraining", "#EF4444"
+
+    # ── Readiness ring values ──────────────────────────────────────────────────
+    _R = 70; _CIRC = 6.28318 * _R; _arc = rdy / 100 * _CIRC
+    _ring_c = "#FF6535" if rdy >= 70 else "#F0A500" if rdy >= 50 else "#EF4444"
+
+    # ── Pre-compute HTML fragments ─────────────────────────────────────────────
+    _zone_defs = [
+        ("#EF4444", 25,    "Overtraining"),
+        ("#F0A500", 18.75, "Fatigue"),
+        ("#FF6535", 25,    "Optimal"),
+        ("#10B981", 18.75, "Race Ready"),
+        ("#64748B", 12.5,  "Detraining"),
+    ]
+    _zone_segs = "".join(
+        f'<div style="flex:{w};background:{c};border-radius:3px;height:100%;opacity:.85"></div>'
+        for c, w, _ in _zone_defs)
+    _zone_legend = "".join(
+        f'<span style="display:flex;align-items:center;gap:.22rem;font-size:.59rem;color:#4B5563">'
+        f'<span style="width:6px;height:6px;border-radius:50%;background:{c};flex-shrink:0"></span>{lbl}</span>'
+        for c, _, lbl in _zone_defs)
+    _days_row = (
+        f'<div style="display:flex;justify-content:space-between;font-size:.74rem">'
+        f'<span style="color:#4B5563">Days to Race</span>'
+        f'<span style="color:#CBD5E1;font-weight:600">{days_to_race}d</span></div>'
+        if days_to_race and days_to_race > 0 else "")
+    _rri_arc = rri / 100 * 175.9
+
+    # ── CSS (pure string) ──────────────────────────────────────────────────────
+    st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap');
+.cockpit {
+  display:flex; background:#161616;
+  border:1px solid rgba(255,255,255,.07); border-radius:14px;
+  overflow:hidden; margin-bottom:1.25rem;
+}
+.cockpit-left {
+  flex:0 0 34%; padding:2rem 1.5rem;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.6rem; border-right:1px solid rgba(255,255,255,.05);
+}
+.cockpit-right {
+  flex:1; padding:1.6rem 2rem;
+  display:flex; flex-direction:column; justify-content:center; gap:1.4rem;
+}
+.ck-tag {
+  font-size:.58rem; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:#374151; margin-bottom:.3rem;
+}
+.ck-tsb-track {
+  display:flex; height:8px; border-radius:4px; overflow:hidden; gap:2px;
+}
+.ck-spark-row { display:flex; gap:2.5rem; }
+.ck-spark-block { display:flex; flex-direction:column; gap:.2rem; }
+.ck-spark-val {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:.92rem; font-weight:700; color:#E2E8F0;
+}
+.kpi-strip {
+  display:flex; gap:1px; background:rgba(255,255,255,.05);
+  border-radius:12px; overflow:hidden; margin:.1rem 0 1.4rem;
+}
+.kpi-strip-cell {
+  flex:1; background:#141414; padding:.95rem 1.2rem;
+  display:flex; flex-direction:column; gap:.18rem;
+}
+.kpi-strip-lbl {
+  font-size:.57rem; font-weight:700; letter-spacing:.13em;
+  text-transform:uppercase; color:#374151;
+}
+.kpi-strip-val {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:2.1rem; font-weight:800; line-height:1; color:#E2E8F0;
+}
+.kpi-strip-delta { font-size:.68rem; color:#4B5563; font-weight:500; }
+.kpi-strip-delta.pos { color:#10B981; }
+.kpi-strip-delta.neg { color:#EF4444; }
+.kpi-strip-delta.warn { color:#F0A500; }
+.ra-go-btn button {
+  background:none!important; border:none!important; padding:0 2px!important;
+  color:#4B8DA8!important; font-size:.8rem!important; font-weight:500!important;
+  line-height:1!important; min-height:0!important; height:auto!important;
+  box-shadow:none!important; letter-spacing:.04em;
+}
+.ra-go-btn button:hover { color:#0EA5E9!important; text-decoration:underline!important; }
+.ra-ico { font-size:1rem; line-height:1; }
+.ra-name {
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-size:.82rem; color:#e2e8f0;
+}
+.ra-dim { color:#6B7F9A; font-size:.75rem; }
+.ra-sep { border-bottom:1px solid rgba(255,255,255,.05); margin:0; }
+</style>
+""", unsafe_allow_html=True)
+
+    # ═══ TIER 1: FITNESS COCKPIT (via components.html — bypasses markdown sanitizer) ══
+    _cockpit_html = f"""<!DOCTYPE html><html><head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{background:#161616;font-family:'Inter',sans-serif;padding:0}}
+.cockpit{{display:flex;border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;height:200px}}
+.ck-left{{flex:0 0 33%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-right:1px solid rgba(255,255,255,.05);padding:16px}}
+.ck-right{{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:20px 28px}}
+.ck-tag{{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#374151;margin-bottom:4px}}
+.ring-wrap{{position:relative;display:inline-block}}
+.ring-label{{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}}
+.ring-score{{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;line-height:1;color:{_ring_c}}}
+.ring-denom{{font-size:12px;color:#4B5563;font-weight:600}}
+.ring-status{{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:{_ring_c};text-align:center}}
+.tsb-track{{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}}
+.tsb-seg{{border-radius:3px;height:100%}}
+.tsb-marker-wrap{{position:relative;height:24px;margin-top:4px}}
+.tsb-marker{{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}}
+.tsb-tick{{width:2px;height:8px;border-radius:1px;background:{_tsb_zc}}}
+.tsb-val{{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:{_tsb_zc};white-space:nowrap}}
+.legend{{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}}
+.leg-item{{display:flex;align-items:center;gap:4px;font-size:9px;color:#4B5563}}
+.leg-dot{{width:6px;height:6px;border-radius:50%;flex-shrink:0}}
+.spark-row{{display:flex;gap:32px}}
+.spark-block{{display:flex;flex-direction:column;gap:3px}}
+.spark-val{{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}}
+</style></head><body>
+<div class="cockpit">
+  <div class="ck-left">
+    <div class="ck-tag">Daily Readiness</div>
+    <div class="ring-wrap">
+      <svg width="148" height="148" viewBox="0 0 148 148">
+        <circle cx="74" cy="74" r="{_R}" fill="none" stroke="#1E1E1E" stroke-width="12"/>
+        <circle cx="74" cy="74" r="{_R}" fill="none" stroke="{_ring_c}" stroke-width="12"
+          stroke-dasharray="{_arc:.1f} {_CIRC:.1f}" stroke-linecap="round"
+          transform="rotate(-90 74 74)"/>
+      </svg>
+      <div class="ring-label">
+        <div class="ring-score">{rdy}<span class="ring-denom">/100</span></div>
+      </div>
+    </div>
+    <div class="ring-status">{rdy_lbl}</div>
+  </div>
+  <div class="ck-right">
+    <div>
+      <div class="ck-tag">Form · Training Stress Balance</div>
+      <div class="tsb-track">
+        <div class="tsb-seg" style="flex:25;background:#EF4444;opacity:.85"></div>
+        <div class="tsb-seg" style="flex:18.75;background:#F0A500;opacity:.85"></div>
+        <div class="tsb-seg" style="flex:25;background:#FF6535;opacity:.85"></div>
+        <div class="tsb-seg" style="flex:18.75;background:#10B981;opacity:.85"></div>
+        <div class="tsb-seg" style="flex:12.5;background:#64748B;opacity:.85"></div>
+      </div>
+      <div class="tsb-marker-wrap">
+        <div class="tsb-marker" style="left:{_tsb_pct:.1f}%">
+          <div class="tsb-tick"></div>
+          <div class="tsb-val">{tsb:+.1f} &middot; {_tsb_zone}</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#EF4444"></div>Overtraining</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#F0A500"></div>Fatigue</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FF6535"></div>Optimal</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#10B981"></div>Race Ready</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#64748B"></div>Detraining</div>
+      </div>
+    </div>
+    <div class="spark-row">
+      <div class="spark-block">
+        <div class="ck-tag">HRV &middot; 7 days</div>
+        {_hrv_svg}
+        <div class="spark-val" style="color:#22D3EE">{_hrv_val}</div>
+      </div>
+      <div class="spark-block">
+        <div class="ck-tag">Sleep Quality &middot; 7 days</div>
+        {_slp_svg}
+        <div class="spark-val" style="color:#A78BFA">{_slp_val}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>"""
+    _stc.html(_cockpit_html, height=214, scrolling=False)
+
+    # ═══ TIER 2: PMC CHART + THIS WEEK ════════════════════════════════════════
+    _col_pmc, _col_week = st.columns([2.5, 1], gap="large")
+    with _col_pmc:
+        section("Performance Management", "90-day CTL · ATL · TSB")
         if not df_load.empty:
             df90 = df_load.tail(90)
             fig = make_subplots(specs=[[{"secondary_y": True}]])
-            fig.add_trace(go.Scatter(x=df90["date"], y=df90["ctl"], name="CTL",
+            fig.add_trace(go.Scatter(x=df90["date"], y=df90["ctl"], name="CTL – Fitness",
                 line=dict(color=COL_CTL, width=2.5)), secondary_y=False)
-            fig.add_trace(go.Scatter(x=df90["date"], y=df90["atl"], name="ATL",
+            fig.add_trace(go.Scatter(x=df90["date"], y=df90["atl"], name="ATL – Fatigue",
                 line=dict(color=COL_ATL, width=2)), secondary_y=False)
-            fig.add_trace(go.Scatter(x=df90["date"], y=df90["tsb"], name="TSB",
+            fig.add_trace(go.Scatter(x=df90["date"], y=df90["tsb"], name="TSB – Form",
                 line=dict(color=COL_TSB, width=1.5),
                 fill="tozeroy", fillcolor="rgba(139,92,246,0.08)"), secondary_y=True)
-            fig.add_hline(y=0, line_dash="dot", line_color="#CBD5E1", secondary_y=True)
-            fig.update_yaxes(title_text="CTL/ATL", secondary_y=False, title_font_size=10)
-            fig.update_yaxes(title_text="TSB",     secondary_y=True,  title_font_size=10)
-            st.plotly_chart(chart(fig, 320, dict(l=0, r=0, t=14, b=0)), use_container_width=True)
+            fig.add_hline(y=0, line_dash="dot", line_color="#2D3748", secondary_y=True)
+            fig.update_yaxes(title_text="CTL / ATL", secondary_y=False,
+                             gridcolor="#1A2332", title_font_size=10)
+            fig.update_yaxes(title_text="TSB", secondary_y=True,
+                             gridcolor="#1A2332", title_font_size=10)
+            fig.update_xaxes(gridcolor="#1A2332")
+            st.plotly_chart(chart(fig, 340, dict(l=0, r=0, t=8, b=0)),
+                            use_container_width=True)
         else:
             st.info("No training load data — click Sync Garmin in the sidebar.")
 
-    with right:
+    with _col_week:
         today = pd.Timestamp.today().normalize()
         since = today - timedelta(days=6)
         df_week = df_act[df_act["date"] >= since].copy() if has_data else pd.DataFrame()
         section("This Week", since.strftime("%b %d") + " – " + today.strftime("%b %d"))
-
         REF = {"swim": 15, "bike": 250, "run": 60}
         for sp in ["swim", "bike", "run"]:
-            sub = df_week[df_week["sport"] == sp] if not df_week.empty else pd.DataFrame()
-            km  = sub["distance_m"].sum() / 1000 if not sub.empty else 0
+            sub   = df_week[df_week["sport"] == sp] if not df_week.empty else pd.DataFrame()
+            km    = sub["distance_m"].sum() / 1000 if not sub.empty else 0
             sec_t = sub["duration_sec"].sum() if not sub.empty else 0
-            n   = len(sub)
+            n     = len(sub)
             ca, cb = st.columns([3, 1])
             ca.markdown(f"**{SPORT_ICONS[sp]} {sp.title()}**")
             cb.markdown(f"**{km:.1f} km**")
             st.progress(min(1.0, km / REF[sp]))
             st.caption(f"{n} sessions · {_fmt_dur(sec_t)}" if n else "No sessions")
-
-        # Strength — sin distancia, mostramos sesiones y tiempo
-        str_sub  = df_week[df_week["sport"] == "str"] if not df_week.empty else pd.DataFrame()
-        str_n    = len(str_sub)
-        str_sec  = str_sub["duration_sec"].sum() if not str_sub.empty else 0
-        ca, cb = st.columns([3, 1])
-        ca.markdown(f"**🏋️ Strength**")
+        str_sub = df_week[df_week["sport"] == "str"] if not df_week.empty else pd.DataFrame()
+        str_n   = len(str_sub)
+        str_sec = str_sub["duration_sec"].sum() if not str_sub.empty else 0
+        ca, cb  = st.columns([3, 1])
+        ca.markdown("**🏋️ Strength**")
         cb.markdown(f"**{str_n} sess**")
-        st.progress(min(1.0, str_n / 3))   # referencia: 3 sesiones/semana
+        st.progress(min(1.0, str_n / 3))
         st.caption(f"{str_n} sessions · {_fmt_dur(str_sec)}" if str_n else "No sessions")
-
         st.divider()
         tss_tot = df_week["tss"].fillna(0).sum() if not df_week.empty else 0
         sec_tot = df_week["duration_sec"].sum() if not df_week.empty else 0
-        ta, tb = st.columns(2)
+        ta, tb  = st.columns(2)
         ta.metric("TSS",  f"{tss_tot:.0f}")
         tb.metric("Time", _fmt_dur(sec_tot))
 
     st.markdown(" ")
-    bot_l, bot_r = st.columns([1, 2], gap="medium")
+
+    # ═══ TIER 3: LOAD KPIs ════════════════════════════════════════════════════
+    _ctl_dc  = "pos" if ctl_d >= 0 else "neg"
+    _atl_dc  = "pos" if atl_d <= 3 else "warn" if atl_d <= 8 else "neg"
+    _acwr_dc = "pos" if 0.8 <= acwr <= 1.3 else "warn"
+    st.markdown(f"""
+<div class="kpi-strip">
+  <div class="kpi-strip-cell">
+    <div class="kpi-strip-lbl">CTL · Fitness</div>
+    <div class="kpi-strip-val">{ctl:.0f}</div>
+    <div class="kpi-strip-delta {_ctl_dc}">{ctl_d:+.1f} vs 7d ago</div>
+  </div>
+  <div class="kpi-strip-cell">
+    <div class="kpi-strip-lbl">ATL · Fatigue</div>
+    <div class="kpi-strip-val">{atl:.0f}</div>
+    <div class="kpi-strip-delta {_atl_dc}">{atl_d:+.1f} vs 7d ago</div>
+  </div>
+  <div class="kpi-strip-cell">
+    <div class="kpi-strip-lbl">TSB · Form</div>
+    <div class="kpi-strip-val" style="color:{_tsb_zc}">{tsb:+.0f}</div>
+    <div class="kpi-strip-delta" style="color:{_tsb_zc}">{_tsb_zone}</div>
+  </div>
+  <div class="kpi-strip-cell">
+    <div class="kpi-strip-lbl">ACWR · Load Ratio</div>
+    <div class="kpi-strip-val">{acwr:.2f}</div>
+    <div class="kpi-strip-delta {_acwr_dc}">{'Safe zone' if 0.8 <= acwr <= 1.3 else 'Risk zone'}</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    # ═══ TIER 4: RACE READINESS + RECENT ACTIVITIES ═══════════════════════════
+    bot_l, bot_r = st.columns([1, 2], gap="large")
 
     with bot_l:
-        # Plan compliance for Race Readiness
-        _plan_done = 0; _plan_total = 1
-        if not df_plan.empty:
-            _cutoff = pd.Timestamp.today().normalize() - timedelta(days=28)
-            _recent = df_plan[pd.to_datetime(df_plan["date"]) >= _cutoff]
-            if not _recent.empty:
-                _plan_total = len(_recent)
-                _plan_done  = sum(1 for _, row in _recent.iterrows()
-                                  if not df_act.empty and _match_actual(row, df_act) is not None)
-        _compliance = (_plan_done / _plan_total * 100) if _plan_total else 75
-
-        rri, rri_lbl, rri_col = _race_readiness(tsb, df_hrv, df_sleep, _compliance)
-        target_race = _prof.get("target_race", "703")
-        target_date = _prof.get("target_date", "")
-        days_to_race = None
-        if target_date:
-            try:
-                days_to_race = (datetime.strptime(target_date, "%Y-%m-%d") - datetime.today()).days
-            except Exception:
-                pass
-
-        section("Race Readiness Index",
+        section("Race Readiness",
                 f"Target: {RACE_LABELS.get(target_race, target_race)}"
                 + (f"  ·  {days_to_race}d away" if days_to_race and days_to_race > 0 else ""))
-
-        rri_a, rri_b = st.columns([1, 1])
-        with rri_a:
-            st.metric("Race Readiness", f"{rri}/100", rri_lbl)
-        with rri_b:
-            st.metric("Plan Compliance", f"{_compliance:.0f}%",
-                      f"{_plan_done}/{_plan_total} sessions last 28d")
-        st.markdown(" ")
-
-        # Gauge-style bar
-        bar_pct = rri
-        bar_c   = rri_col.replace("#", "%23")
         st.markdown(f"""
-<div style="background:#F1F5F9;border-radius:6px;height:10px;margin:4px 0 10px">
-  <div style="background:{rri_col};height:100%;width:{bar_pct}%;border-radius:6px;
-    transition:width .4s"></div>
-</div>""", unsafe_allow_html=True)
-
-        # Component breakdown
-        comp_labels = [
-            ("TSB Form",    "Training Stress Balance in optimal range", tsb, 5, 15),
-            ("HRV Status",  "Heart Rate Variability trend (7 days)",    None, None, None),
-            ("Sleep",       "Average sleep quality last 7 nights",      None, None, None),
-            ("Compliance",  "Training plan adherence last 28 days",     _compliance, 80, 100),
-        ]
-        for lbl, desc, val, lo, hi in comp_labels:
-            v_ok = (val is not None and lo is not None and lo <= val <= hi)
-            icon = "✅" if v_ok else ("—" if val is None else "⚠️")
-            v_str = f"{val:.0f}" if val is not None else "—"
-            st.caption(f"{icon} **{lbl}** — {desc}")
+<div style="display:flex;align-items:center;gap:1.2rem;margin:.5rem 0 .9rem">
+  <svg width="70" height="70" viewBox="0 0 70 70">
+    <circle cx="35" cy="35" r="27" fill="none" stroke="#1C1C1C" stroke-width="8"/>
+    <circle cx="35" cy="35" r="27" fill="none"
+      stroke="{rri_col}" stroke-width="8"
+      stroke-dasharray="{_rri_arc:.1f} 169.6"
+      stroke-linecap="round"
+      transform="rotate(-90 35 35)"/>
+    <text x="35" y="40" text-anchor="middle"
+      font-family="Barlow Condensed,sans-serif" font-size="17" font-weight="800"
+      fill="{rri_col}">{rri}</text>
+  </svg>
+  <div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.3rem;font-weight:800;color:{rri_col};line-height:1">{rri}/100</div>
+    <div style="font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:{rri_col};opacity:.7;margin-top:.1rem">{rri_lbl}</div>
+  </div>
+</div>
+<div style="background:#1C1C1C;border-radius:4px;height:5px;margin-bottom:.9rem">
+  <div style="height:100%;border-radius:4px;background:{rri_col};width:{rri}%"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:.45rem">
+  <div style="display:flex;justify-content:space-between;font-size:.74rem">
+    <span style="color:#4B5563">Plan Compliance</span>
+    <span style="color:#CBD5E1;font-weight:600">{_compliance:.0f}% ({_plan_done}/{_plan_total})</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:.74rem">
+    <span style="color:#4B5563">TSB Form</span>
+    <span style="color:{_tsb_zc};font-weight:600">{tsb:+.1f} · {_tsb_zone}</span>
+  </div>
+  {_days_row}
+</div>
+""", unsafe_allow_html=True)
 
     with bot_r:
-        section("Recent Activities", "Last 10")
+        section("Recent Activities", "Last 10 · tap → to view detail")
         if has_data:
-            rows = []
-            for _, r in df_act.head(10).iterrows():
-                sp = r["sport"]
-                dt = pd.to_datetime(r["date"])
-                day = ("Today" if dt.date() == date.today()
-                       else "Yesterday" if dt.date() == date.today() - timedelta(1)
-                       else dt.strftime("%b %d"))
+            for _ri, (_idx, r) in enumerate(df_act.head(10).iterrows()):
+                sp  = r["sport"]
+                dt  = pd.to_datetime(r["date"])
+                day = ("Today"     if dt.date() == date.today()
+                  else "Yesterday" if dt.date() == date.today() - timedelta(1)
+                  else dt.strftime("%b %d"))
                 if sp == "bike":
                     detail = f"{r.get('norm_power') or r.get('avg_power') or 0:.0f}W"
                 elif sp == "run":
@@ -1210,73 +1439,71 @@ elif page == "📊 Dashboard":
                               if r.get("avg_pace_sec_km") else "—")
                 else:
                     detail = f"{r['distance_m']/1000:.1f} km"
-                rows.append({
-                    "": SPORT_ICONS[sp],
-                    "Activity": str(r.get("name", sp))[:38],
-                    "Date": day,
-                    "Duration": _fmt_dur(r["duration_sec"]),
-                    "Detail": detail,
-                    "TSS": f"{r.get('tss') or 0:.0f}",
-                })
-            st.dataframe(
-                pd.DataFrame(rows), hide_index=True, use_container_width=True,
-                column_config={
-                    "": st.column_config.TextColumn("", width=30),
-                    "Activity": st.column_config.TextColumn("Activity", width=180),
-                    "Date": st.column_config.TextColumn("Date", width=75),
-                    "Duration": st.column_config.TextColumn("Duration", width=80),
-                    "Detail": st.column_config.TextColumn("Detail", width=85),
-                    "TSS": st.column_config.TextColumn("TSS", width=50),
-                },
-            )
+                _c_ico, _c_name, _c_day, _c_dur, _c_det, _c_tss, _c_go = st.columns(
+                    [0.4, 3.2, 1.0, 1.1, 1.1, 0.6, 0.5])
+                with _c_ico:
+                    st.markdown(f'<div class="ra-ico">{SPORT_ICONS[sp]}</div>',
+                                unsafe_allow_html=True)
+                with _c_name:
+                    st.markdown(f'<div class="ra-name">{str(r.get("name", sp))[:40]}</div>',
+                                unsafe_allow_html=True)
+                with _c_day:
+                    st.markdown(f'<span class="ra-dim">{day}</span>', unsafe_allow_html=True)
+                with _c_dur:
+                    st.markdown(f'<span class="ra-dim">{_fmt_dur(r["duration_sec"])}</span>',
+                                unsafe_allow_html=True)
+                with _c_det:
+                    st.markdown(f'<span class="ra-dim">{detail}</span>', unsafe_allow_html=True)
+                with _c_tss:
+                    st.markdown(f'<span class="ra-dim">{r.get("tss") or 0:.0f}</span>',
+                                unsafe_allow_html=True)
+                with _c_go:
+                    st.markdown('<div class="ra-go-btn">', unsafe_allow_html=True)
+                    if st.button("→", key=f"ra_go_{_ri}", help="Ver detalle"):
+                        st.session_state["detail_act_id"] = int(r.get("activity_id") or 0)
+                        st.session_state["_nav_target"] = "🗺️ Training Detail"
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('<hr class="ra-sep"/>', unsafe_allow_html=True)
         else:
             st.info("No activities — click Sync Garmin in the sidebar.")
 
-    # ── Strength KPIs ─────────────────────────────────────────────────────────
+    # ═══ STRENGTH & CONDITIONING ════════════════════════════════════════════════
     st.markdown(" ")
     section("🏋️ Strength & Conditioning", "Last 30 days")
-
-    df_str = df_act[df_act["sport"] == "str"].copy() if has_data else pd.DataFrame()
+    df_str    = df_act[df_act["sport"] == "str"].copy() if has_data else pd.DataFrame()
     today_ts  = pd.Timestamp.today().normalize()
     last_30   = today_ts - timedelta(days=29)
     last_7    = today_ts - timedelta(days=6)
     df_str30  = df_str[df_str["date"] >= last_30] if not df_str.empty else pd.DataFrame()
     df_str7   = df_str[df_str["date"] >= last_7]  if not df_str.empty else pd.DataFrame()
-
     last_str  = df_str["date"].max() if not df_str.empty else None
     last_str_label = (
-        "Today"     if last_str and last_str.date() == date.today()     else
+        "Today"     if last_str and last_str.date() == date.today() else
         "Yesterday" if last_str and last_str.date() == date.today() - timedelta(1) else
-        last_str.strftime("%b %d") if last_str else "—"
-    )
-    # Frecuencia: sesiones por semana (rolling 4 sem)
-    freq_4w = len(df_str30) / 4 if not df_str30.empty else 0
+        last_str.strftime("%b %d") if last_str else "—")
+    freq_4w  = len(df_str30) / 4 if not df_str30.empty else 0
     avg_dur  = df_str30["duration_sec"].mean() / 60 if not df_str30.empty else 0
-
     sk1, sk2, sk3, sk4 = st.columns(4)
-    sk1.metric("Sessions this week",  len(df_str7),               "goal: 3/wk")
+    sk1.metric("Sessions this week",  len(df_str7),  "goal: 3/wk")
     sk2.metric("Sessions last 30d",   len(df_str30))
-    sk3.metric("Avg frequency",       f"{freq_4w:.1f} /wk",       "rolling 4 weeks")
+    sk3.metric("Avg frequency",       f"{freq_4w:.1f} /wk", "rolling 4 weeks")
     sk4.metric("Avg session length",  f"{avg_dur:.0f} min" if avg_dur else "—",
                f"last: {last_str_label}")
-
     if not df_str30.empty:
         st.markdown(" ")
         str_l, str_r = st.columns(2, gap="medium")
-
         with str_l:
             section("Weekly Strength Sessions", "Count by week")
             df_str30["week"] = df_str30["date"].dt.to_period("W").dt.start_time
             wk_str = df_str30.groupby("week").size().reset_index(name="sessions")
-            fig_s = px.bar(wk_str, x="week", y="sessions",
-                           color_discrete_sequence=[COL_STR])
+            fig_s = px.bar(wk_str, x="week", y="sessions", color_discrete_sequence=[COL_STR])
             fig_s.update_layout(xaxis_title="", yaxis_title="Sessions",
                                 yaxis=dict(tickmode="linear", dtick=1))
             fig_s.add_hline(y=3, line_dash="dot", line_color="#94A3B8",
                             annotation_text="Goal 3/wk", annotation_font_size=9)
             st.plotly_chart(chart(fig_s, 240, dict(l=0, r=0, t=14, b=0)),
                             use_container_width=True)
-
         with str_r:
             section("Session Duration", "Minutes per session")
             df_str_plot = df_str30.copy()
@@ -1286,8 +1513,7 @@ elif page == "📊 Dashboard":
                 x=df_str_plot["date"], y=df_str_plot["dur_min"],
                 mode="markers+lines",
                 line=dict(color=COL_STR, width=2),
-                marker=dict(size=7, color=COL_STR),
-            ))
+                marker=dict(size=7, color=COL_STR)))
             fig_d.add_hline(y=45, line_dash="dot", line_color="#94A3B8",
                             annotation_text="45 min target", annotation_font_size=9)
             fig_d.update_yaxes(title_text="min")
@@ -3408,9 +3634,18 @@ elif page == "🗺️ Training Detail":
         nm  = str(r.get("name") or r["sport"])[:35]
         return f"{ic}  {dt}  ·  {nm}{d_s}  ·  {dur}"
 
+    # Pre-select activity if navigated from Recent Activities
+    _presel_id = st.session_state.pop("detail_act_id", None)
+    _default_idx = 0
+    if _presel_id:
+        _match = _acts[_acts["activity_id"] == _presel_id]
+        if not _match.empty:
+            _default_idx = int(_match.index[0])
+
     _sel = st.selectbox(
         "Actividad",
         range(len(_acts)),
+        index=_default_idx,
         format_func=lambda i: _act_lbl(_acts.iloc[i]),
         label_visibility="collapsed",
     )

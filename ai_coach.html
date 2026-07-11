@@ -1,0 +1,738 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — AI Coach</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nav.css">
+<style>
+:root{
+  --bg:#0F172A;--card:#1E293B;--card2:#263148;--border:#334155;
+  --text:#F1F5F9;--sub:#94A3B8;--acc:#F59E0B;--acc2:#EF4444;
+  --green:#10B981;--blue:#0EA5E9;--purple:#8B5CF6;--ai:#A78BFA;
+  --r:14px;--r2:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+#nav-placeholder{height:0}
+/* ─── LabX TopNav ─── */
+#lx-topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:rgba(4,8,15,.97);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.12);display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem}
+.lxn-brand{display:flex;align-items:center;gap:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#F0F9FF;text-decoration:none;flex-shrink:0}
+.lxn-brand span{color:#FF6535}
+.lxn-brand svg.sbl-svg{width:32px;height:32px;flex-shrink:0}
+.lxn-nav{display:flex;align-items:center;gap:.15rem;flex:1;overflow-x:auto}
+.lxn-nav a{padding:.32rem .68rem;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7FB3CC;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
+.lxn-nav a:hover,.lxn-nav a.on{color:#FF6535;background:rgba(255,101,53,.1)}
+.lxn-out{background:transparent;border:1px solid rgba(61,104,128,.32);border-radius:5px;color:#3D6880;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .65rem;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.lxn-out:hover{border-color:#EF4444;color:#EF4444}
+.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
+.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
+@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
+@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
+@media(max-width:700px){.lxn-nav{display:none}}
+.page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
+.page-header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#A78BFA,#0EA5E9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-header p{color:var(--sub);font-size:.88rem;margin-top:4px}
+
+.tabs{display:flex;gap:6px;background:var(--card);border-radius:var(--r);padding:6px;margin:20px 0;overflow-x:auto}
+.tab-btn{flex:1;min-width:110px;padding:10px 14px;border:none;border-radius:var(--r2);cursor:pointer;background:transparent;color:var(--sub);font-size:.85rem;font-weight:500;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--ai);color:#000}
+.tab-btn:hover:not(.active){background:var(--card2);color:var(--text)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.card-title{font-weight:600;font-size:.95rem;margin-bottom:14px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr}}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 280px);min-height:400px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{padding:12px 16px;border-radius:var(--r2);max-width:80%;font-size:.88rem;line-height:1.5;white-space:pre-wrap}
+.msg-user{background:var(--ai);color:#000;align-self:flex-end;border-bottom-right-radius:4px}
+.msg-ai{background:var(--card2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-typing{color:var(--sub);font-style:italic;font-size:.82rem;align-self:flex-start;padding:8px 12px}
+.chat-input-row{display:flex;gap:8px;padding:16px;background:var(--card2);border-top:1px solid var(--border)}
+.chat-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;resize:none;min-height:42px;max-height:120px}
+.chat-input:focus{outline:none;border-color:var(--ai)}
+.btn-send{padding:10px 20px;background:var(--ai);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
+.btn-send:disabled{opacity:.5;cursor:not-allowed}
+.sessions-list{list-style:none}
+.session-item{padding:10px;border-bottom:1px solid var(--border)44;cursor:pointer;font-size:.85rem;transition:background .15s}
+.session-item:hover{background:var(--card2)}
+.session-time{font-size:.72rem;color:var(--sub);margin-top:2px}
+
+/* WORKOUT GENERATOR */
+.sport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.sport-btn{padding:12px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;background:var(--card2);color:var(--sub);font-size:.82rem;text-align:center;transition:all .2s}
+.sport-btn.active{border-color:var(--ai);color:var(--ai);background:var(--ai)11}
+.focus-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+@media(max-width:600px){.focus-grid{grid-template-columns:repeat(3,1fr)}}
+.focus-btn{padding:10px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;background:var(--card2);color:var(--sub);font-size:.78rem;text-align:center;transition:all .2s}
+.focus-btn.active{border-color:var(--acc);color:var(--acc);background:var(--acc)11}
+.phase-item{padding:14px;border-left:3px solid var(--border);margin-bottom:10px;background:var(--card2);border-radius:0 var(--r2) var(--r2) 0}
+.phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.phase-name{font-weight:600;font-size:.88rem}
+.phase-meta{font-size:.75rem;color:var(--sub);display:flex;gap:10px}
+.phase-desc{font-size:.8rem;color:var(--sub);line-height:1.4}
+.zone-badge{font-size:.72rem;padding:2px 8px;border-radius:10px;font-weight:700}
+.zone-Z1{background:#10B98122;color:#10B981}
+.zone-Z2{background:#0EA5E922;color:#0EA5E9}
+.zone-Z3{background:#F59E0B22;color:#F59E0B}
+.zone-Z4{background:#F9730622;color:#F97316}
+.zone-Z5{background:#EF444422;color:#EF4444}
+.rpe-bar{display:flex;gap:3px;margin-top:4px}
+.rpe-dot{width:12px;height:8px;border-radius:2px;background:var(--border)}
+.rpe-dot.active{background:var(--acc)}
+
+/* REPORT */
+.score-ring{width:100px;height:100px;margin:0 auto 16px}
+.score-circle{fill:none;stroke:var(--border);stroke-width:8}
+.score-fill{fill:none;stroke-width:8;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .8s ease}
+.score-val{font-size:2rem;font-weight:900;text-anchor:middle;dominant-baseline:central}
+.kv-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kv-item{background:var(--card2);border-radius:var(--r2);padding:12px}
+.kv-label{font-size:.72rem;color:var(--sub);margin-bottom:4px}
+.kv-val{font-size:.9rem;font-weight:600}
+.list-check{list-style:none}
+.list-check li{padding:6px 0;font-size:.85rem;border-bottom:1px solid var(--border)33}
+.list-check li::before{content:"✓ ";color:var(--green)}
+.list-warn li::before{content:"⚠ ";color:var(--acc)}
+
+/* FORECAST */
+.forecast-chart{position:relative;height:180px;border-bottom:1px solid var(--border);border-left:1px solid var(--border);margin:16px 0}
+.forecast-x{display:flex;justify-content:space-around;padding:4px 0 0;font-size:.7rem;color:var(--sub)}
+.form-badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600}
+.form-peak{background:#10B98122;color:#10B981}
+.form-fresh{background:#0EA5E922;color:#0EA5E9}
+.form-normal{background:#94A3B822;color:#94A3B8}
+.form-fatigued{background:#F59E0B22;color:#F59E0B}
+.form-overtrained{background:#EF444422;color:#EF4444}
+.forecast-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)33;font-size:.83rem;flex-wrap:wrap;gap:6px}
+
+/* INJURY */
+.risk-meter{text-align:center;padding:16px}
+.risk-score-num{font-size:4rem;font-weight:900}
+.risk-low{color:var(--green)}
+.risk-caution{color:var(--acc)}
+.risk-high{color:var(--acc2)}
+.risk-critical{color:#DC2626}
+.action-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)33;font-size:.84rem;align-items:flex-start}
+.action-num{width:22px;height:22px;background:var(--ai);color:#000;border-radius:50%;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* MISC */
+.btn-primary{padding:10px 24px;background:var(--ai);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
+.btn-primary:hover{opacity:.85}
+.btn-outline{padding:10px 22px;background:transparent;border:1px solid var(--ai);color:var(--ai);border-radius:8px;cursor:pointer;font-weight:600}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-group label{font-size:.78rem;color:var(--sub);font-weight:500}
+.form-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;width:100%}
+.form-input:focus{outline:none;border-color:var(--ai)}
+.loader{text-align:center;padding:40px;color:var(--sub)}
+.empty-state{text-align:center;padding:32px;color:var(--sub);font-size:.9rem}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:80px}
+.chip-val{font-size:1.3rem;font-weight:800;color:var(--ai)}
+.chip-label{font-size:.7rem;color:var(--sub)}
+.override-banner{background:var(--acc)22;border:1px solid var(--acc)44;border-radius:8px;padding:10px;font-size:.83rem;color:var(--acc);margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <header class="sb-topbar"></header>
+  <div class="sb-overlay" id="sb-overlay"></div>
+  <main class="main" id="main-content">
+<div class="page-wrap">
+  <div class="page-header" style="margin-bottom:0">
+    <h1>AI Coach</h1>
+    <p>Inteligencia artificial entrenada con tus datos reales — análisis, planes, predicciones</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('chat')">💬 Chat</button>
+    <button class="tab-btn" onclick="switchTab('workout')">🏋 Workout</button>
+    <button class="tab-btn" onclick="switchTab('report')">📊 Informe</button>
+    <button class="tab-btn" onclick="switchTab('forecast')">📈 Forecast</button>
+    <button class="tab-btn" onclick="switchTab('injury')">🛡 Lesiones</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="tab-panel active" id="tab-chat">
+    <div class="grid-2" style="gap:16px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="chat-wrap">
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg msg-ai">Hola! Soy tu Coach IA de LabX. Tengo acceso a tu CTL, TSB, HRV, recuperación y actividades recientes. ¿En qué te ayudo hoy?</div>
+          </div>
+          <div class="chat-input-row">
+            <textarea class="chat-input" id="chat-input" placeholder="Escribe tu consulta..." rows="2"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+            <button class="btn-send" id="btn-send" onclick="sendMessage()">Enviar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sesiones anteriores</div>
+        <div id="sessions-list"><div class="loader">Cargando...</div></div>
+        <div style="margin-top:12px">
+          <button class="btn-outline" style="width:100%;font-size:.8rem" onclick="newSession()">+ Nueva sesión</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKOUT GENERATOR -->
+  <div class="tab-panel" id="tab-workout">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Generador de Entrenamiento IA</div>
+      <p style="font-size:.83rem;color:var(--sub);margin-bottom:16px">
+        El motor usa tu CTL, TSB y Recovery Score actuales para adaptar la intensidad automáticamente.
+      </p>
+
+      <div class="form-group">
+        <label>Deporte</label>
+        <div class="sport-grid">
+          <button class="sport-btn active" data-sport="run" onclick="selectSport(this)">🏃 Carrera</button>
+          <button class="sport-btn" data-sport="bike" onclick="selectSport(this)">🚴 Ciclismo</button>
+          <button class="sport-btn" data-sport="swim" onclick="selectSport(this)">🏊 Natación</button>
+          <button class="sport-btn" data-sport="gym" onclick="selectSport(this)">🏋 Gym</button>
+          <button class="sport-btn" data-sport="brick" onclick="selectSport(this)">⚡ Brick</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Foco</label>
+        <div class="focus-grid">
+          <button class="focus-btn active" data-focus="endurance" onclick="selectFocus(this)">Resistencia</button>
+          <button class="focus-btn" data-focus="threshold" onclick="selectFocus(this)">Umbral</button>
+          <button class="focus-btn" data-focus="vo2" onclick="selectFocus(this)">VO₂max</button>
+          <button class="focus-btn" data-focus="recovery" onclick="selectFocus(this)">Recuperación</button>
+          <button class="focus-btn" data-focus="strength" onclick="selectFocus(this)">Fuerza</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Duración (min)</label>
+        <input type="range" min="20" max="240" value="60" step="5" id="wkt-duration"
+          oninput="document.getElementById('dur-val').textContent=this.value+' min'"
+          style="width:100%;accent-color:var(--ai)">
+        <span id="dur-val" style="font-size:.88rem;color:var(--text)">60 min</span>
+      </div>
+
+      <button class="btn-primary" onclick="generateWorkout()">Generar Entrenamiento</button>
+    </div>
+
+    <div id="wkt-result" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div class="card-title" id="wkt-title" style="margin-bottom:4px"></div>
+            <div id="wkt-meta" style="font-size:.8rem;color:var(--sub)"></div>
+          </div>
+          <div id="wkt-tss" style="font-size:1.4rem;font-weight:800;color:var(--ai)"></div>
+        </div>
+        <div id="wkt-override" style="display:none" class="override-banner"></div>
+        <div id="wkt-phases"></div>
+        <div style="margin-top:14px">
+          <div style="font-size:.8rem;font-weight:600;color:var(--sub);margin-bottom:8px">PUNTOS CLAVE</div>
+          <ul class="list-check" id="wkt-tips"></ul>
+        </div>
+        <div id="wkt-warnings-box" style="display:none;margin-top:10px">
+          <ul class="list-check list-warn" id="wkt-warnings"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="tab-panel" id="tab-report">
+    <div id="report-loader" class="loader">Cargando informe semanal...</div>
+    <div id="report-content" style="display:none">
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card" style="text-align:center">
+          <div class="card-title">Score de la Semana</div>
+          <svg class="score-ring" viewBox="0 0 100 100">
+            <circle class="score-circle" cx="50" cy="50" r="40"/>
+            <circle class="score-fill" id="rpt-ring" cx="50" cy="50" r="40" stroke="#A78BFA"
+                    stroke-dasharray="251" stroke-dashoffset="251"/>
+            <text class="score-val" x="50" y="50" fill="#F1F5F9" id="rpt-score-val">—</text>
+          </svg>
+          <div id="rpt-form" style="font-size:.9rem;color:var(--sub)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Carga de la Semana</div>
+          <div class="chips" style="margin-bottom:12px">
+            <div class="chip"><div class="chip-val" id="rpt-tss">—</div><div class="chip-label">TSS</div></div>
+            <div class="chip"><div class="chip-val" id="rpt-hours">—</div><div class="chip-label">horas</div></div>
+            <div class="chip"><div class="chip-val" id="rpt-acts">—</div><div class="chip-label">sesiones</div></div>
+          </div>
+          <p id="rpt-load-summary" style="font-size:.83rem;color:var(--sub);line-height:1.4"></p>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">✅ Logros</div>
+          <ul class="list-check" id="rpt-achievements"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title">⚠ Preocupaciones</div>
+          <ul class="list-check list-warn" id="rpt-concerns">
+            <li style="color:var(--sub)">Sin alertas esta semana.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recomendaciones para la Próxima Semana</div>
+        <div id="rpt-next-wrap">
+          <div class="chips" style="margin-bottom:12px">
+            <div class="chip"><div class="chip-val" id="rpt-tss-min" style="font-size:1rem">—</div><div class="chip-label">TSS mín</div></div>
+            <div class="chip"><div class="chip-val" id="rpt-tss-max" style="font-size:1rem">—</div><div class="chip-label">TSS máx</div></div>
+            <div class="chip"><div class="chip-val" id="rpt-focus-next" style="font-size:.9rem">—</div><div class="chip-label">Foco sugerido</div></div>
+          </div>
+          <ul class="list-check" id="rpt-recs"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="tab-panel" id="tab-forecast">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Parámetros del Forecast</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label>Semanas a proyectar</label>
+          <input type="number" class="form-input" id="fc-weeks" value="8" min="2" max="16">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label>TSS semanal planificado</label>
+          <input type="number" class="form-input" id="fc-tss" placeholder="Auto desde histórico" min="0" max="3000">
+        </div>
+        <button class="btn-primary" onclick="loadForecast()">Proyectar</button>
+      </div>
+    </div>
+
+    <div id="forecast-loader" class="loader" style="display:none">Calculando proyección...</div>
+    <div id="forecast-content" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Proyección CTL · 8 semanas</div>
+        <canvas id="forecast-canvas" height="160" style="width:100%"></canvas>
+        <div class="forecast-x" id="fc-x-labels"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Detalle por semana</div>
+        <div id="forecast-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INJURY -->
+  <div class="tab-panel" id="tab-injury">
+    <div id="injury-loader" class="loader">Calculando riesgo de lesión...</div>
+    <div id="injury-content" style="display:none">
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card" style="text-align:center">
+          <div class="card-title">Score de Riesgo</div>
+          <div class="risk-meter">
+            <div class="risk-score-num" id="inj-score">—</div>
+            <div id="inj-level" style="font-size:1rem;font-weight:600;margin-top:4px"></div>
+            <div id="inj-driver" style="font-size:.82rem;color:var(--sub);margin-top:6px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ventana de Riesgo</div>
+          <div class="chips">
+            <div class="chip"><div class="chip-val" id="inj-days-risk" style="font-size:1.3rem">—</div><div class="chip-label">días en riesgo</div></div>
+            <div class="chip"><div class="chip-val" id="inj-days-rec" style="font-size:1.3rem">—</div><div class="chip-label">días de recuperación</div></div>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-size:.78rem;color:var(--sub);font-weight:600;margin-bottom:6px">SEÑALES</div>
+            <ul class="list-check list-warn" id="inj-warnings">
+              <li style="color:var(--sub)">Sin señales de alerta.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Plan de Acción</div>
+        <div id="inj-plan"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '/api';
+var chatHistory = [];
+var currentSession = null;
+var selectedSport = 'run';
+var selectedFocus = 'endurance';
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  var tabs = {chat:0, workout:1, report:2, forecast:3, injury:4};
+  document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
+  if (name === 'report') loadReport();
+  if (name === 'injury') loadInjury();
+  if (name === 'forecast') loadForecast();
+}
+
+// ─── CHAT ────────────────────────────────────────────────────────────────────
+function newSession() {
+  currentSession = null;
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="msg msg-ai">Nueva conversación iniciada. ¿Cómo puedo ayudarte?</div>';
+}
+
+function loadSessions() {
+  fetch(API + '/ai/sessions', {credentials: 'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var ul = document.getElementById('sessions-list');
+      if (!d.length) { ul.innerHTML = '<div class="empty-state">Sin sesiones previas.</div>'; return; }
+      ul.innerHTML = '<ul class="sessions-list">' +
+        d.map(function(s) {
+          return '<li class="session-item" onclick="loadSession(\'' + esc(s.id) + '\')">' +
+            '<div>' + esc(s.title) + '</div>' +
+            '<div class="session-time">' + (s.last_message_at ? s.last_message_at.slice(0,16) : '') + '</div>' +
+            '</li>';
+        }).join('') + '</ul>';
+    })
+    .catch(function(){ document.getElementById('sessions-list').innerHTML = '<div class="empty-state">Error cargando sesiones.</div>'; });
+}
+
+function loadSession(id) {
+  fetch(API + '/ai/sessions/' + id + '/messages', {credentials: 'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      currentSession = id;
+      chatHistory = [];
+      var box = document.getElementById('chat-messages');
+      box.innerHTML = '';
+      (d.messages || []).forEach(function(m) {
+        chatHistory.push({role: m.role, content: m.content});
+        appendMsg(m.role === 'user' ? 'msg-user' : 'msg-ai', m.content);
+      });
+      box.scrollTop = box.scrollHeight;
+    });
+}
+
+function sendMessage() {
+  var input = document.getElementById('chat-input');
+  var msg   = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  appendMsg('msg-user', msg);
+  chatHistory.push({role: 'user', content: msg});
+
+  var typing = document.createElement('div');
+  typing.className = 'msg-typing';
+  typing.textContent = 'Coach IA está escribiendo…';
+  document.getElementById('chat-messages').appendChild(typing);
+
+  document.getElementById('btn-send').disabled = true;
+
+  fetch(API + '/ai/coach-suggest', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      message:    msg,
+      session_id: currentSession,
+      history:    chatHistory.slice(-10),
+    }),
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      typing.remove();
+      if (d.answer) {
+        appendMsg('msg-ai', d.answer);
+        chatHistory.push({role: 'assistant', content: d.answer});
+        currentSession = d.session_id || currentSession;
+        loadSessions();
+      } else {
+        appendMsg('msg-ai', 'Error: ' + (d.detail || 'Respuesta vacía'));
+      }
+    })
+    .catch(function() {
+      typing.remove();
+      appendMsg('msg-ai', 'Error de conexión. Verifica que la API esté activa.');
+    })
+    .finally(function() {
+      document.getElementById('btn-send').disabled = false;
+    });
+}
+
+function appendMsg(cls, text) {
+  var box = document.getElementById('chat-messages');
+  var el  = document.createElement('div');
+  el.className = 'msg ' + cls;
+  el.textContent = text;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ─── WORKOUT ─────────────────────────────────────────────────────────────────
+function selectSport(btn) {
+  document.querySelectorAll('.sport-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedSport = btn.dataset.sport;
+}
+
+function selectFocus(btn) {
+  document.querySelectorAll('.focus-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedFocus = btn.dataset.focus;
+}
+
+function generateWorkout() {
+  var dur = parseInt(document.getElementById('wkt-duration').value);
+
+  fetch(API + '/ai/generate-workout', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({sport: selectedSport, focus: selectedFocus, duration_min: dur}),
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderWorkout(d); })
+    .catch(function(){ alert('Error al generar entrenamiento.'); });
+}
+
+function renderWorkout(d) {
+  document.getElementById('wkt-result').style.display = 'block';
+  document.getElementById('wkt-title').textContent = d.title || '';
+  document.getElementById('wkt-meta').textContent =
+    d.total_duration + ' min · Estado: ' + d.form_state;
+  document.getElementById('wkt-tss').textContent = '~' + d.estimated_tss + ' TSS';
+
+  var ovr = document.getElementById('wkt-override');
+  if (d.override_reason) {
+    ovr.style.display = 'block';
+    ovr.textContent = '⚡ Ajuste automático: ' + d.override_reason;
+  } else {
+    ovr.style.display = 'none';
+  }
+
+  var phases = document.getElementById('wkt-phases');
+  phases.innerHTML = (d.phases || []).map(function(p) {
+    var dots = Array.from({length: 10}, function(_, i) {
+      return '<div class="rpe-dot' + (i < p.rpe ? ' active' : '') + '"></div>';
+    }).join('');
+    return '<div class="phase-item">' +
+      '<div class="phase-header">' +
+        '<span class="phase-name">' + esc(p.name) + '</span>' +
+        '<span class="zone-badge zone-' + p.zone + '">' + p.zone + ' — ' + esc(p.zone_range) + '</span>' +
+      '</div>' +
+      '<div class="phase-meta">' +
+        '<span>' + p.duration_min + ' min</span>' +
+        '<span>RPE: ' + p.rpe + '/10</span>' +
+      '</div>' +
+      '<div class="rpe-bar">' + dots + '</div>' +
+      '<div class="phase-desc" style="margin-top:6px">' + esc(p.description) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var tips = document.getElementById('wkt-tips');
+  tips.innerHTML = (d.key_points || []).map(function(t) {
+    return '<li>' + esc(t) + '</li>';
+  }).join('');
+
+  var wb  = document.getElementById('wkt-warnings-box');
+  var wl  = document.getElementById('wkt-warnings');
+  if (d.warnings && d.warnings.length) {
+    wb.style.display = 'block';
+    wl.innerHTML = d.warnings.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('');
+  } else {
+    wb.style.display = 'none';
+  }
+}
+
+// ─── REPORT ──────────────────────────────────────────────────────────────────
+function loadReport() {
+  document.getElementById('report-loader').style.display = 'block';
+  document.getElementById('report-content').style.display = 'none';
+
+  fetch(API + '/ai/weekly-report', {credentials: 'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderReport(d); })
+    .catch(function() {
+      document.getElementById('report-loader').textContent = 'Error al cargar informe.';
+    });
+}
+
+function renderReport(d) {
+  document.getElementById('report-loader').style.display = 'none';
+  document.getElementById('report-content').style.display = 'block';
+
+  var score = d.week_score || 50;
+  var circ  = 2 * Math.PI * 40;
+  document.getElementById('rpt-ring').setAttribute('stroke-dashoffset',
+    (circ - circ * score / 100).toFixed(1));
+  document.getElementById('rpt-score-val').textContent = score;
+  document.getElementById('rpt-form').textContent = d.form_assessment || '';
+
+  var raw = d.raw || {};
+  document.getElementById('rpt-tss').textContent   = raw.week_tss || 0;
+  document.getElementById('rpt-hours').textContent = raw.week_hours || 0;
+  document.getElementById('rpt-acts').textContent  = raw.activities || 0;
+  document.getElementById('rpt-load-summary').textContent = d.load_summary || '';
+
+  document.getElementById('rpt-achievements').innerHTML =
+    (d.key_achievements || []).map(function(a){ return '<li>' + esc(a) + '</li>'; }).join('');
+
+  var conc = document.getElementById('rpt-concerns');
+  if (d.concerns && d.concerns.length) {
+    conc.innerHTML = d.concerns.map(function(c){ return '<li>' + esc(c) + '</li>'; }).join('');
+  }
+
+  var nw = d.next_week || {};
+  document.getElementById('rpt-tss-min').textContent  = (nw.tss_range || {}).min || '—';
+  document.getElementById('rpt-tss-max').textContent  = (nw.tss_range || {}).max || '—';
+  document.getElementById('rpt-focus-next').textContent = nw.focus || '—';
+  document.getElementById('rpt-recs').innerHTML =
+    (nw.recommendations || []).map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
+}
+
+// ─── FORECAST ────────────────────────────────────────────────────────────────
+function loadForecast() {
+  var weeks  = parseInt(document.getElementById('fc-weeks').value) || 8;
+  var tssVal = document.getElementById('fc-tss').value;
+  var url    = API + '/ai/forecast?weeks=' + weeks + (tssVal ? '&tss_per_week=' + tssVal : '');
+
+  document.getElementById('forecast-loader').style.display = 'block';
+  document.getElementById('forecast-content').style.display = 'none';
+
+  fetch(url, {credentials: 'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderForecast(d); })
+    .catch(function() {
+      document.getElementById('forecast-loader').textContent = 'Error al cargar forecast.';
+    });
+}
+
+function renderForecast(d) {
+  document.getElementById('forecast-loader').style.display = 'none';
+  document.getElementById('forecast-content').style.display = 'block';
+
+  var proj = d.projection || [];
+  var canvas = document.getElementById('forecast-canvas');
+  var ctx    = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.clientWidth;
+  var W = canvas.width, H = canvas.height;
+
+  var maxCTL = Math.max.apply(null, proj.map(function(p){ return p.ctl; }));
+  var minCTL = Math.min.apply(null, proj.map(function(p){ return p.ctl; }));
+  var padTop = 20, padBot = 10;
+
+  var toY = function(v) { return padTop + (1 - (v - minCTL) / (maxCTL - minCTL + 1)) * (H - padTop - padBot); };
+
+  ctx.clearRect(0, 0, W, H);
+
+  // CTL line
+  ctx.beginPath();
+  ctx.strokeStyle = '#A78BFA';
+  ctx.lineWidth   = 2.5;
+  proj.forEach(function(p, i) {
+    var x = (i / (proj.length - 1)) * W;
+    var y = toY(p.ctl);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // TSB dots
+  proj.forEach(function(p, i) {
+    var x = (i / (proj.length - 1)) * W;
+    var tsbNorm = Math.max(0, Math.min(1, (p.tsb + 30) / 60));
+    var y = padTop + 8;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = p.tsb >= 0 ? '#10B981' : '#F59E0B';
+    ctx.fill();
+  });
+
+  // X labels
+  document.getElementById('fc-x-labels').innerHTML =
+    proj.map(function(p){ return '<span>S' + p.week + '</span>'; }).join('');
+
+  // Rows
+  var formCls = {peak:'form-peak', fresh:'form-fresh', normal:'form-normal', fatigued:'form-fatigued', overtrained:'form-overtrained'};
+  document.getElementById('forecast-rows').innerHTML = proj.map(function(p) {
+    return '<div class="forecast-row">' +
+      '<span style="color:var(--sub);width:40px">S' + p.week + '</span>' +
+      '<span>CTL: <strong>' + p.ctl + '</strong></span>' +
+      '<span>TSB: <strong style="color:' + (p.tsb >= 0 ? 'var(--green)' : 'var(--acc)') + '">' + p.tsb + '</strong></span>' +
+      '<span class="form-badge ' + (formCls[p.form_label] || 'form-normal') + '">' + p.form_label + '</span>' +
+      '<span style="color:var(--sub);font-size:.75rem">' + p.planned_tss + ' TSS</span>' +
+      (p.notes && p.notes.length ? '<span style="color:var(--acc);font-size:.72rem">⚠ ' + esc(p.notes[0]) + '</span>' : '') +
+    '</div>';
+  }).join('');
+}
+
+// ─── INJURY ──────────────────────────────────────────────────────────────────
+function loadInjury() {
+  document.getElementById('injury-loader').style.display = 'block';
+  document.getElementById('injury-content').style.display = 'none';
+
+  fetch(API + '/ai/injury-forecast', {credentials: 'include'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) { renderInjury(d); })
+    .catch(function() {
+      document.getElementById('injury-loader').textContent = 'Error al cargar análisis.';
+    });
+}
+
+function renderInjury(d) {
+  document.getElementById('injury-loader').style.display = 'none';
+  document.getElementById('injury-content').style.display = 'block';
+
+  var pct  = Math.round((d.risk_score || 0) * 100);
+  var cls  = {low: 'risk-low', caution: 'risk-caution', high: 'risk-high', critical: 'risk-critical'}[d.risk_level] || 'risk-caution';
+  document.getElementById('inj-score').textContent  = pct + '%';
+  document.getElementById('inj-score').className    = 'risk-score-num ' + cls;
+  document.getElementById('inj-level').textContent  = d.risk_level || '—';
+  document.getElementById('inj-driver').textContent = d.primary_driver || '';
+
+  document.getElementById('inj-days-risk').textContent = d.time_at_risk_days || 0;
+  document.getElementById('inj-days-rec').textContent  = d.recovery_days_needed || 0;
+
+  var ws = document.getElementById('inj-warnings');
+  if (d.warning_signs && d.warning_signs.length) {
+    ws.innerHTML = d.warning_signs.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('');
+  }
+
+  document.getElementById('inj-plan').innerHTML =
+    (d.action_plan || []).map(function(step, i) {
+      return '<div class="action-item">' +
+        '<div class="action-num">' + (i+1) + '</div>' +
+        '<div>' + esc(step) + '</div>' +
+      '</div>';
+    }).join('');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadSessions();
+});
+</script>
+<script src="auth.js"></script>
+<script>KL.guard('ai_coach');</script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+  </main>
+</div>
+</body>
+</html>

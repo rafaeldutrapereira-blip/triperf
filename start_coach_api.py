@@ -13,7 +13,10 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+# Cargar .env ANTES de importar módulos de la API (leen vars de entorno al importar)
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
 
 data_dir = Path(__file__).parent / "data"
 data_dir.mkdir(exist_ok=True)
@@ -25,124 +28,53 @@ from api.auth import hash_password
 Base.metadata.create_all(bind=engine)
 
 
-def migrate_db():
-    """Aplica columnas nuevas a tablas existentes (solo SQLite — PostgreSQL usa create_all)."""
+def run_alembic_upgrade():
+    """Run alembic upgrade head to apply all pending migrations."""
+    from pathlib import Path as _Path
     from api.database import DATABASE_URL
-    if not DATABASE_URL.startswith("sqlite"):
-        print("[OK] PostgreSQL detectado — create_all() maneja el schema, migrate_db() omitida.")
-        return
-    with engine.connect() as conn:
-        # Obtener columnas actuales de la tabla users
-        cols = {row[1] for row in conn.execute(
-            __import__('sqlalchemy').text("PRAGMA table_info(users)")
-        )}
-        additions = []
-        if "garmin_email"      not in cols: additions.append("ALTER TABLE users ADD COLUMN garmin_email TEXT")
-        if "garmin_password"   not in cols: additions.append("ALTER TABLE users ADD COLUMN garmin_password TEXT")
-        if "race_goal_name"    not in cols: additions.append("ALTER TABLE users ADD COLUMN race_goal_name TEXT")
-        if "race_goal_date"    not in cols: additions.append("ALTER TABLE users ADD COLUMN race_goal_date TEXT")
-        if "ftp"               not in cols: additions.append("ALTER TABLE users ADD COLUMN ftp INTEGER")
-        if "weight_kg"         not in cols: additions.append("ALTER TABLE users ADD COLUMN weight_kg REAL")
-        if "height_cm"         not in cols: additions.append("ALTER TABLE users ADD COLUMN height_cm INTEGER")
-        if "vo2max"            not in cols: additions.append("ALTER TABLE users ADD COLUMN vo2max REAL")
-        if "fcmax"             not in cols: additions.append("ALTER TABLE users ADD COLUMN fcmax INTEGER")
-        if "css"               not in cols: additions.append("ALTER TABLE users ADD COLUMN css TEXT")
-        if "run_pace"          not in cols: additions.append("ALTER TABLE users ADD COLUMN run_pace TEXT")
-
-        # workout_logs
-        log_cols = {row[1] for row in conn.execute(
-            __import__('sqlalchemy').text("PRAGMA table_info(workout_logs)")
-        )}
-        if "rpe" not in log_cols:
-            additions.append("ALTER TABLE workout_logs ADD COLUMN rpe INTEGER")
-
-        # assigned_workouts — coach_comment para Etapa Media
-        aw_cols = {row[1] for row in conn.execute(
-            __import__('sqlalchemy').text("PRAGMA table_info(assigned_workouts)")
-        )}
-        if "coach_comment" not in aw_cols:
-            additions.append("ALTER TABLE assigned_workouts ADD COLUMN coach_comment TEXT")
-
-        # blood_lab_exams — nueva tabla P1
-        try:
-            conn.execute(__import__('sqlalchemy').text("SELECT 1 FROM blood_lab_exams LIMIT 1"))
-        except Exception:
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE TABLE IF NOT EXISTS blood_lab_exams ("
-                "id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date_iso TEXT NOT NULL, "
-                "lab_name TEXT, context TEXT, values_json TEXT NOT NULL, "
-                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "FOREIGN KEY(user_id) REFERENCES users(id))"
-            ))
-            additions.append("CREATE TABLE blood_lab_exams")
-
-        # nutrition_plans — nueva tabla P2
-        try:
-            conn.execute(__import__('sqlalchemy').text("SELECT 1 FROM nutrition_plans LIMIT 1"))
-        except Exception:
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE TABLE IF NOT EXISTS nutrition_plans ("
-                "id TEXT PRIMARY KEY, user_id TEXT NOT NULL, race_name TEXT, "
-                "race_date TEXT, race_dist TEXT, total_kcal INTEGER, "
-                "cho_g REAL, fluid_ml INTEGER, sodium_mg INTEGER, "
-                "params_json TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "FOREIGN KEY(user_id) REFERENCES users(id))"
-            ))
-            additions.append("CREATE TABLE nutrition_plans")
-
-        # login_attempts — rate limiting persistente
-        try:
-            conn.execute(__import__('sqlalchemy').text("SELECT 1 FROM login_attempts LIMIT 1"))
-        except Exception:
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE TABLE IF NOT EXISTS login_attempts ("
-                "id TEXT PRIMARY KEY, ip TEXT NOT NULL, "
-                "attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
-            ))
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE INDEX IF NOT EXISTS ix_login_attempts_ip ON login_attempts(ip)"
-            ))
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE INDEX IF NOT EXISTS ix_login_attempts_at ON login_attempts(attempted_at)"
-            ))
-            additions.append("CREATE TABLE login_attempts")
-
-        # drip_logs — control de emails de onboarding enviados
-        try:
-            conn.execute(__import__('sqlalchemy').text("SELECT 1 FROM drip_logs LIMIT 1"))
-        except Exception:
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE TABLE IF NOT EXISTS drip_logs ("
-                "id TEXT PRIMARY KEY, user_id TEXT NOT NULL, "
-                "tag TEXT NOT NULL, sent_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "FOREIGN KEY(user_id) REFERENCES users(id))"
-            ))
-            conn.execute(__import__('sqlalchemy').text(
-                "CREATE INDEX IF NOT EXISTS ix_drip_logs_user ON drip_logs(user_id)"
-            ))
-            additions.append("CREATE TABLE drip_logs")
-
-        for sql in additions:
-            if not sql.startswith("CREATE TABLE"):
-                conn.execute(__import__('sqlalchemy').text(sql))
-            print("[OK] Migración: " + sql)
-        if additions:
-            conn.commit()
+    try:
+        from alembic.config import Config as _AlembicConfig
+        from alembic import command as _alembic_command
+        cfg = _AlembicConfig(str(_Path(__file__).parent / "alembic.ini"))
+        cfg.set_main_option("sqlalchemy.url", DATABASE_URL)
+        _alembic_command.upgrade(cfg, "head")
+        print("[OK] Alembic upgrade head completado")
+    except Exception as e:
+        print(f"[WARN] Alembic upgrade falló: {e} — continuando (create_all ya aplicó el schema)")
 
 
-migrate_db()
+run_alembic_upgrade()
 
 
 def seed_admin():
+    _is_prod = os.getenv("APP_ENV", "development") == "production"
+
+    admin_email  = os.getenv("ADMIN_EMAIL",  "admin@labx.com")
+    admin_pass   = os.getenv("ADMIN_PASS",   "")
+    admin_nombre = os.getenv("ADMIN_NOMBRE", "Admin")
+    demo_email   = os.getenv("DEMO_EMAIL",   "demo@labx.com")
+    demo_pass    = os.getenv("DEMO_PASS",    "")
+
+    if _is_prod and not admin_pass:
+        import sys
+        print("[FATAL] ADMIN_PASS no configurada. No se puede seed en producción sin contraseña.")
+        sys.exit(1)
+
+    # En desarrollo, usar contraseña temporal si no está configurada
+    if not admin_pass:
+        admin_pass = "labx-dev-change-me"
+        print("[WARN] ADMIN_PASS no configurada — usando contraseña temporal (solo dev)")
+    if not demo_pass:
+        demo_pass = "labx-dev-change-me"
+
     db = SessionLocal()
     try:
-        existing = db.query(User).filter(User.email == "rafael@labx.com").first()
+        existing = db.query(User).filter(User.email == admin_email).first()
         if not existing:
             admin = User(
-                email         = "rafael@labx.com",
-                nombre        = "Rafael",
-                password_hash = hash_password("kona2026"),
+                email         = admin_email,
+                nombre        = admin_nombre,
+                password_hash = hash_password(admin_pass),
                 rol           = "admin",
                 plan_nivel    = "elite",
                 activo        = True,
@@ -150,9 +82,9 @@ def seed_admin():
             db.add(admin)
 
             demo_coach = User(
-                email         = "demo@labx.com",
+                email         = demo_email,
                 nombre        = "Coach Demo",
-                password_hash = hash_password("demo123"),
+                password_hash = hash_password(demo_pass),
                 rol           = "coach",
                 plan_nivel    = "basico",
                 activo        = True,
@@ -160,9 +92,8 @@ def seed_admin():
             db.add(demo_coach)
 
             db.commit()
-            print("[OK] Usuarios iniciales creados:")
-            print("  admin  -> rafael@labx.com / kona2026")
-            print("  coach  -> demo@labx.com   / demo123")
+            # No imprimir contraseñas en producción
+            print(f"[OK] Usuarios iniciales creados: {admin_email} (admin), {demo_email} (coach)")
         else:
             print("[OK] DB lista (usuarios ya existen)")
     finally:
@@ -170,18 +101,24 @@ def seed_admin():
 
 
 if __name__ == "__main__":
+    _is_prod = os.getenv("APP_ENV", "development") == "production"
+    _port    = int(os.getenv("PORT", "8000"))
+
     print("=" * 50)
     print("  LabX Coach API")
+    print(f"  Env: {os.getenv('APP_ENV', 'development')}")
     print("=" * 50)
     seed_admin()
-    print("\n  Servidor en:  http://localhost:8000")
-    print("  Docs:         http://localhost:8000/docs\n")
+    print(f"\n  Servidor en:  http://localhost:{_port}")
+    if not _is_prod:
+        print(f"  Docs:         http://localhost:{_port}/docs")
+    print()
 
     import uvicorn
     uvicorn.run(
         "api.coach_main:app",
         host        = "0.0.0.0",
-        port        = 8000,
-        reload      = True,
-        reload_dirs = ["api"],
+        port        = _port,
+        reload      = not _is_prod,
+        reload_dirs = ["api"] if not _is_prod else None,
     )

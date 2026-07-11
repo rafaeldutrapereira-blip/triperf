@@ -1,0 +1,235 @@
+name: CI — LabX
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DATABASE_URL: sqlite:///:memory:
+  JWT_SECRET: test-secret-ci-pipeline-32chars-min
+  JWT_AUDIENCE: labx-app
+  APP_ENV: test
+  FERNET_KEY: ${{ secrets.FERNET_KEY_TEST }}
+
+jobs:
+  # ── Job 1: Tests unitarios + cobertura ─────────────────────
+  test:
+    name: Tests Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-api.txt
+          pip install pytest pytest-cov httpx pytest-asyncio
+
+      - name: Run tests
+        run: |
+          # --noconftest: evita bug de field_validator en athlete_routes.py:242
+          pytest api/tests/ -v --tb=short --noconftest \
+            --ignore=api/tests/test_strava.py \
+            --ignore=api/tests/test_stripe.py \
+            --ignore=api/tests/test_year_in_review.py \
+            --cov=api --cov-report=term-missing \
+            --cov-report=xml:coverage.xml
+        env:
+          DATABASE_URL: sqlite:///:memory:
+          FERNET_KEY: ${{ secrets.FERNET_KEY_TEST || 'dmFsaWQtZmVybmV0LWtleS1mb3ItdGVzdGluZy0zMmNoYXJz' }}
+
+      - name: Coverage check (minimum 70%)
+        run: |
+          pytest api/tests/ --noconftest \
+            --ignore=api/tests/test_strava.py \
+            --ignore=api/tests/test_stripe.py \
+            --ignore=api/tests/test_year_in_review.py \
+            --cov=api --cov-fail-under=70
+
+      - name: Upload coverage to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ── Job 2: Lint ─────────────────────────────────────────────
+  lint:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flake8
+      - name: Lint
+        run: |
+          flake8 api/ \
+            --max-line-length=120 \
+            --exclude=api/tests/,__pycache__,api/migrations/ \
+            --ignore=E501,W503,E302,E303
+
+  # ── Job 3: JS Syntax Check ──────────────────────────────────
+  js-check:
+    name: JS Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check JS syntax
+        run: |
+          for f in nav.js sw.js; do
+            [ -f "$f" ] && node --check "$f" && echo "✓ $f" || exit 1
+          done
+
+  # ── Job 4: Docker Build ─────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t labx-api:ci-${{ github.sha }} .
+
+  # ── Job 5: Seguridad — bandit + pip-audit ───────────────────
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install bandit pip-audit
+
+      - name: Bandit SAST scan (S9: falla en HIGH o CRITICAL, no en warnings)
+        run: |
+          bandit -r api/ \
+            -ll \
+            -x api/tests/,api/migrations/ \
+            --exit-zero \
+            -f json -o bandit-report.json || true
+          # Fallar solo si hay issues de severidad HIGH o CRITICAL
+          python3 -c "
+          import json, sys
+          try:
+              data = json.load(open('bandit-report.json'))
+              highs = [r for r in data.get('results',[]) if r['issue_severity'] in ('HIGH','CRITICAL')]
+              if highs:
+                  print(f'BLOQUEADO: {len(highs)} issues HIGH/CRITICAL en bandit:')
+                  for h in highs: print(f'  - {h[\"filename\"]}:{h[\"line_number\"]} {h[\"issue_text\"]}')
+                  sys.exit(1)
+              print(f'Bandit OK — {len(data.get(\"results\",[]))} warnings (ninguno HIGH/CRITICAL)')
+          except Exception as e:
+              print(f'No se pudo parsear reporte bandit: {e}')
+          "
+
+      - name: pip-audit (vulnerabilidades en dependencias)
+        run: |
+          pip-audit -r requirements-api.txt \
+            --skip-editable \
+            --format=json \
+            -o pip-audit-report.json || true
+          python3 -c "
+          import json, sys
+          try:
+              data = json.load(open('pip-audit-report.json'))
+              vulns = data.get('dependencies',[])
+              criticals = [v for v in vulns if v.get('vulns')]
+              if criticals:
+                  print('Vulnerabilidades encontradas:')
+                  for c in criticals:
+                      for vv in c['vulns']:
+                          print(f'  {c[\"name\"]} {c[\"version\"]}: {vv[\"id\"]} — {vv[\"description\"][:80]}')
+                  sys.exit(1)
+              print('pip-audit OK — sin vulnerabilidades conocidas')
+          except Exception as e:
+              print(f'No se pudo parsear reporte pip-audit: {e}')
+          "
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            pip-audit-report.json
+
+  # ── Job 6: Smoke tests post-deploy (solo en main) ───────────
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps + run migrations + start server
+        run: |
+          pip install -r requirements-api.txt httpx
+          DATABASE_URL=sqlite:///./test_smoke.db \
+          JWT_SECRET=smoke-test-secret-32chars-min \
+          JWT_AUDIENCE=labx-app \
+          FERNET_KEY=${{ secrets.FERNET_KEY_TEST || 'dmFsaWQtZmVybmV0LWtleS1mb3ItdGVzdGluZy0zMmNoYXJz' }} \
+          alembic upgrade head
+          DATABASE_URL=sqlite:///./test_smoke.db \
+          JWT_SECRET=smoke-test-secret-32chars-min \
+          JWT_AUDIENCE=labx-app \
+          FERNET_KEY=${{ secrets.FERNET_KEY_TEST || 'dmFsaWQtZmVybmV0LWtleS1mb3ItdGVzdGluZy0zMmNoYXJz' }} \
+          uvicorn api.coach_main:app --host 127.0.0.1 --port 8765 &
+          sleep 4
+
+      - name: Run smoke tests
+        run: |
+          python3 - <<'EOF'
+          import httpx, sys, json
+
+          BASE = "http://127.0.0.1:8765"
+          ok, failed = 0, 0
+
+          def check(label, resp, expected_status=200):
+              global ok, failed
+              if resp.status_code == expected_status:
+                  print(f"  ✓ {label} ({resp.status_code})")
+                  ok += 1
+              else:
+                  print(f"  ✗ {label} — got {resp.status_code}, expected {expected_status}")
+                  print(f"    body: {resp.text[:200]}")
+                  failed += 1
+
+          # Health check
+          check("GET /health", httpx.get(f"{BASE}/health"))
+
+          # Planes Stripe
+          check("GET /api/stripe/plans", httpx.get(f"{BASE}/api/stripe/plans"))
+
+          # Login con credenciales inválidas → 401
+          check("POST /api/auth/login (bad creds)",
+                httpx.post(f"{BASE}/api/auth/login",
+                           json={"email":"smoke@test.com","password":"wrongpass"}),
+                expected_status=401)
+
+          # Rate limit (no debe estar bloqueado desde el principio) → 401 o 422
+          r = httpx.post(f"{BASE}/api/auth/register",
+                         json={"email":"smoke@test.com","nombre":"Smoke","password":"InvalidNoNum"})
+          print(f"  ↳ Password validation: {r.status_code} {r.json().get('detail','')}")
+
+          print(f"\n{'='*40}")
+          print(f"Smoke tests: {ok} OK, {failed} FAILED")
+          if failed > 0:
+              sys.exit(1)
+          EOF

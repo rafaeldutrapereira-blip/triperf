@@ -1,0 +1,126 @@
+# LabX — Observability Stack (Prometheus + Grafana + exporters)
+# Desplegar junto al stack principal:
+#   docker compose -f docker-compose.prod.yml -f deploy/observability/docker-compose.observability.yml up -d
+#
+# Acceso Grafana: http://127.0.0.1:3000 (solo loopback — acceder via SSH tunnel)
+#   ssh -L 3000:localhost:3000 labx@beta.labx.app
+#   Abrir: http://localhost:3000 (admin / ver GRAFANA_PASSWORD en .env)
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/observability/alerting_rules.yml:/etc/prometheus/alerting_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.listen-address=127.0.0.1:9090
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-changeme}
+      GF_SERVER_HTTP_PORT:        "3000"
+      GF_SERVER_HTTP_ADDR:        "127.0.0.1"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_USERS_ALLOW_SIGN_UP:    "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+  # ── Exporters ─────────────────────────────────────────────────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-labx}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-labx_prod}?sslmode=disable"
+      PG_EXPORTER_DISABLE_DEFAULT_METRICS: "false"
+    ports:
+      - "127.0.0.1:9187:9187"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.59.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "127.0.0.1:9121:9121"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+    pid: host
+    ports:
+      - "127.0.0.1:9100:9100"
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    command:
+      - --nginx.scrape-uri=http://127.0.0.1:8080/stub_status
+    ports:
+      - "127.0.0.1:9113:9113"
+    restart: unless-stopped
+    network_mode: host
+
+  # Celery monitoring (Flower)
+  flower:
+    image: mher/flower:2.0
+    command: >
+      celery
+      --broker=redis://redis:6379/1
+      flower
+      --port=5555
+      --address=127.0.0.1
+      --basic-auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:5555:5555"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - labx_prod_network
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  labx_prod_network:
+    external: true

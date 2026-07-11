@@ -1,0 +1,583 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LabX — GPS Tracker</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--orange:#FF6535;--gold:#F0A500;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;--radius:12px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden}
+
+/* ── Top bar ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:56px;
+  background:rgba(4,8,15,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 16px;z-index:1000;
+}
+#topbar a{color:var(--muted);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px}
+#topbar a:hover{color:var(--cyan)}
+#topbar h1{flex:1;font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;color:var(--cyan);text-align:center}
+#rec-badge{
+  font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;
+  background:var(--red);color:#fff;display:none;animation:pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── Map ── */
+#map{position:fixed;top:56px;left:0;right:0;bottom:200px;z-index:1}
+#map.hidden{display:none}
+
+/* ── Metrics panel ── */
+#metrics{
+  position:fixed;bottom:0;left:0;right:0;height:200px;
+  background:rgba(4,8,15,.97);border-top:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background-color:var(--border);z-index:100;
+}
+.metric-cell{
+  background:var(--surface);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;padding:12px 6px;
+}
+.metric-cell .val{
+  font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;
+  color:var(--text);line-height:1;
+}
+.metric-cell .val.hi{color:var(--cyan)}
+.metric-cell .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:center}
+
+/* ── Controls ── */
+#controls{
+  position:fixed;bottom:200px;left:0;right:0;height:64px;
+  background:rgba(4,8,15,.95);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:16px;z-index:100;
+}
+.btn{
+  border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;
+  padding:10px 24px;transition:opacity .15s,transform .1s;
+}
+.btn:active{transform:scale(.97)}
+.btn-start{background:var(--green);color:#fff}
+.btn-pause{background:var(--gold);color:#000}
+.btn-stop{background:var(--red);color:#fff}
+.btn-lap{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn:disabled{opacity:.35;pointer-events:none}
+
+/* ── Sport selector overlay ── */
+#sport-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);
+  display:flex;align-items:center;justify-content:center;z-index:2000;
+}
+#sport-picker{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:32px 24px;text-align:center;max-width:340px;width:90%;
+}
+#sport-picker h2{font-family:'Oswald',sans-serif;font-size:22px;color:var(--text);margin-bottom:20px}
+.sport-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sport-btn{
+  border:2px solid var(--border);border-radius:12px;background:var(--surface2);
+  color:var(--text);padding:16px 12px;cursor:pointer;transition:border-color .15s,background .15s;
+  font-size:13px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.sport-btn span.ico{font-size:28px;display:block}
+.sport-btn:hover,.sport-btn.sel{border-color:var(--cyan);background:rgba(14,165,233,.12);color:var(--cyan)}
+
+/* ── Laps panel ── */
+#laps-panel{
+  position:fixed;top:56px;left:0;right:0;bottom:264px;
+  background:var(--surface);padding:12px;overflow-y:auto;z-index:50;display:none;
+}
+#laps-panel h3{font-family:'Oswald',sans-serif;color:var(--muted);font-size:14px;margin-bottom:8px}
+.lap-row{
+  display:grid;grid-template-columns:32px 1fr 1fr 1fr;gap:8px;
+  padding:8px 10px;border-radius:8px;font-size:13px;border-bottom:1px solid var(--border2,rgba(8,116,174,.06));
+}
+.lap-row:nth-child(even){background:var(--surface2)}
+.lap-row .lap-n{color:var(--muted);font-weight:600}
+.lap-row .fast{color:var(--green)}
+
+/* ── No GPS warning ── */
+#gps-warn{
+  position:fixed;top:66px;left:0;right:0;padding:10px 16px;
+  background:rgba(239,68,68,.15);border-bottom:1px solid rgba(239,68,68,.3);
+  color:#fca5a5;font-size:12px;text-align:center;z-index:500;display:none;
+}
+
+/* ── Saved toast ── */
+#toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:var(--green);color:#fff;padding:10px 20px;border-radius:8px;
+  font-weight:600;font-size:14px;opacity:0;transition:opacity .3s,transform .3s;z-index:3000;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<style>.topbar-brand svg.sbl-svg{width:28px;height:28px;flex-shrink:0}<style>.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}</style></style></head>
+<body>
+
+<!-- Sport selector -->
+<div id="sport-overlay">
+  <div id="sport-picker">
+    <h2>Selecciona deporte</h2>
+    <div class="sport-grid">
+      <button class="sport-btn" onclick="selectSport('run')"><span class="ico">🏃</span>Correr</button>
+      <button class="sport-btn" onclick="selectSport('bike')"><span class="ico">🚴</span>Ciclismo</button>
+      <button class="sport-btn" onclick="selectSport('swim')"><span class="ico">🏊</span>Natación</button>
+      <button class="sport-btn" onclick="selectSport('walk')"><span class="ico">🚶</span>Caminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <a href="training_plan.html">← Plan</a>
+  <h1 id="topbar-title">GPS Tracker</h1>
+  <span id="rec-badge">● REC</span>
+</div>
+
+<div id="gps-warn">Buscando señal GPS…</div>
+
+<!-- Map -->
+<div id="map"></div>
+
+<!-- Laps detail (toggle) -->
+<div id="laps-panel">
+  <h3>VUELTAS</h3>
+  <div id="laps-body"></div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="btn btn-start" id="btn-start" onclick="startWorkout()">Iniciar</button>
+  <button class="btn btn-pause" id="btn-pause" onclick="pauseWorkout()" disabled>Pausar</button>
+  <button class="btn btn-lap"   id="btn-lap"   onclick="recordLap()"   disabled>Vuelta</button>
+  <button class="btn btn-stop"  id="btn-stop"  onclick="stopWorkout()"  disabled>Finalizar</button>
+</div>
+
+<!-- Metrics -->
+<div id="metrics">
+  <div class="metric-cell">
+    <div class="val hi" id="m-time">00:00:00</div>
+    <div class="lbl">Tiempo</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-dist">0.00</div>
+    <div class="lbl">km</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-pace">--:--</div>
+    <div class="lbl" id="m-pace-lbl">min/km</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-hr">--</div>
+    <div class="lbl">bpm</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-spd">--</div>
+    <div class="lbl">km/h</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-elev">0</div>
+    <div class="lbl">m desnivel</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-cad">--</div>
+    <div class="lbl">vueltas</div>
+  </div>
+  <div class="metric-cell">
+    <div class="val" id="m-cal">0</div>
+    <div class="lbl">kcal</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="nav.js" defer></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// LabX GPS Tracker — D-04
+// ─────────────────────────────────────────────────────────────────────────────
+
+var _sport    = null;
+var _state    = 'idle'; // idle | running | paused | stopped
+var _startAt  = null;
+var _elapsed  = 0;  // ms acumulados (soporta pause/resume)
+var _pausedAt = null;
+var _timerInt = null;
+
+var _points   = [];   // [{lat,lng,alt,ts,speed,accuracy}]
+var _laps     = [];   // [{dist,time,pace}]
+var _lapStart = {dist:0, time:0};
+
+var _totalDist = 0;   // km
+var _elevGain  = 0;   // metros
+var _lastAlt   = null;
+var _calories  = 0;
+
+var _watchId   = null;
+var _gpsOk     = false;
+
+// ── Map (Leaflet) ────────────────────────────────────────────────────────────
+var _map, _polyline, _marker, _posCircle;
+
+function initMap(lat, lng) {
+  if (_map) return;
+  _map = L.map('map', {
+    zoomControl: false,
+    attributionControl: false,
+  }).setView([lat, lng], 16);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(_map);
+
+  _polyline  = L.polyline([], { color: '#FF6535', weight: 4, opacity: .9 }).addTo(_map);
+  _posCircle = L.circleMarker([lat, lng], {
+    radius: 10, color: '#0EA5E9', fillColor: '#22D3EE', fillOpacity: .9, weight: 2
+  }).addTo(_map);
+}
+
+function updateMap(lat, lng) {
+  if (!_map) { initMap(lat, lng); return; }
+  _posCircle.setLatLng([lat, lng]);
+  if (_state === 'running') {
+    _polyline.addLatLng([lat, lng]);
+  }
+  _map.panTo([lat, lng], { animate: true, duration: 0.5 });
+}
+
+// ── Sport selector ────────────────────────────────────────────────────────────
+function selectSport(s) {
+  _sport = s;
+  document.getElementById('sport-overlay').style.display = 'none';
+  var labels = { run:'Correr', bike:'Ciclismo', swim:'Natación', walk:'Caminar' };
+  document.getElementById('topbar-title').textContent = labels[s] || 'GPS Tracker';
+  if (s === 'bike') {
+    document.getElementById('m-pace-lbl').textContent = 'km/h avg';
+  }
+  // Start GPS watch immediately
+  startGPSWatch();
+}
+
+// ── GPS Watch ─────────────────────────────────────────────────────────────────
+function startGPSWatch() {
+  if (!navigator.geolocation) {
+    showGPSWarn('GPS no disponible en este dispositivo');
+    return;
+  }
+  document.getElementById('gps-warn').style.display = 'block';
+  document.getElementById('gps-warn').textContent   = 'Buscando señal GPS…';
+
+  _watchId = navigator.geolocation.watchPosition(
+    onGPSUpdate,
+    onGPSError,
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+  );
+}
+
+function stopGPSWatch() {
+  if (_watchId !== null) {
+    navigator.geolocation.clearWatch(_watchId);
+    _watchId = null;
+  }
+}
+
+function onGPSUpdate(pos) {
+  var lat = pos.coords.latitude;
+  var lng = pos.coords.longitude;
+  var alt = pos.coords.altitude;
+  var spd = pos.coords.speed;           // m/s or null
+  var acc = pos.coords.accuracy;        // meters
+
+  // GPS acquired
+  if (!_gpsOk) {
+    _gpsOk = true;
+    document.getElementById('gps-warn').style.display = 'none';
+    initMap(lat, lng);
+  }
+
+  if (_state !== 'running') {
+    updateMap(lat, lng);
+    return;
+  }
+
+  var now = Date.now();
+  var pt  = { lat, lng, alt, ts: now, speed: spd, accuracy: acc };
+
+  // Distance increment (Haversine)
+  if (_points.length > 0) {
+    var prev = _points[_points.length - 1];
+    var d    = haversine(prev.lat, prev.lng, lat, lng);
+    // Filter out GPS noise: ignore points with accuracy > 30m or jump > 0.05 km/s
+    if (acc < 40 && d < 0.05) {
+      _totalDist += d;
+    }
+    // Elevation gain
+    if (alt !== null && _lastAlt !== null && alt > _lastAlt) {
+      _elevGain += (alt - _lastAlt);
+    }
+  }
+  if (alt !== null) _lastAlt = alt;
+
+  _points.push(pt);
+  updateMap(lat, lng);
+  updateMetrics(spd);
+}
+
+function onGPSError(err) {
+  var msgs = {
+    1: 'Permiso GPS denegado — actívalo en ajustes del navegador',
+    2: 'Señal GPS perdida',
+    3: 'Timeout GPS — verifica que estás al aire libre',
+  };
+  showGPSWarn(msgs[err.code] || 'Error GPS');
+}
+
+function showGPSWarn(msg) {
+  var el = document.getElementById('gps-warn');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ── Workout control ───────────────────────────────────────────────────────────
+function startWorkout() {
+  if (!_sport) return;
+  _state   = 'running';
+  _startAt = Date.now();
+  _lapStart = { dist: 0, time: 0 };
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-pause').disabled = false;
+  document.getElementById('btn-lap').disabled   = false;
+  document.getElementById('btn-stop').disabled  = false;
+  document.getElementById('rec-badge').style.display = 'block';
+
+  _timerInt = setInterval(tickTimer, 1000);
+
+  if (!_gpsOk) startGPSWatch();
+}
+
+function pauseWorkout() {
+  if (_state === 'running') {
+    _state    = 'paused';
+    _pausedAt = Date.now();
+    clearInterval(_timerInt);
+    document.getElementById('btn-pause').textContent = 'Reanudar';
+    document.getElementById('rec-badge').style.display = 'none';
+  } else if (_state === 'paused') {
+    _state = 'running';
+    _elapsed += (Date.now() - _pausedAt);
+    _pausedAt = null;
+    _timerInt = setInterval(tickTimer, 1000);
+    document.getElementById('btn-pause').textContent = 'Pausar';
+    document.getElementById('rec-badge').style.display = 'block';
+  }
+}
+
+function recordLap() {
+  if (_state !== 'running') return;
+  var lapDist = _totalDist - _lapStart.dist;
+  var lapTime = getElapsed() - _lapStart.time;
+  var pace    = lapDist > 0.01 ? lapTime / 1000 / 60 / lapDist : 0;
+
+  var lapN = _laps.length + 1;
+  _laps.push({ n: lapN, dist: lapDist, time: lapTime, pace });
+  _lapStart = { dist: _totalDist, time: getElapsed() };
+
+  renderLap({ n: lapN, dist: lapDist, time: lapTime, pace });
+  showLapsPanel(true);
+}
+
+function stopWorkout() {
+  if (!confirm('¿Finalizar el entrenamiento?')) return;
+  _state = 'stopped';
+  clearInterval(_timerInt);
+  stopGPSWatch();
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+  document.getElementById('btn-lap').disabled   = true;
+  document.getElementById('btn-stop').disabled  = true;
+  document.getElementById('rec-badge').style.display = 'none';
+  document.getElementById('btn-start').textContent = 'Nueva';
+
+  saveWorkout();
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+function getElapsed() {
+  if (_state === 'paused') return _elapsed + (Date.now() - _startAt) - (_pausedAt - _startAt + _elapsed);
+  return _elapsed + (Date.now() - _startAt);
+}
+
+function tickTimer() {
+  var ms  = _elapsed + (Date.now() - _startAt);
+  document.getElementById('m-time').textContent = fmtDuration(ms);
+  // Calories: rough estimate ~600 kcal/h for running, less for others
+  var coeff = { run: 600, bike: 400, swim: 500, walk: 250 }[_sport] || 500;
+  _calories = Math.round(coeff * ms / 3_600_000);
+  document.getElementById('m-cal').textContent = _calories;
+}
+
+// ── Metrics display ───────────────────────────────────────────────────────────
+function updateMetrics(spdMs) {
+  document.getElementById('m-dist').textContent = _totalDist.toFixed(2);
+  document.getElementById('m-elev').textContent = Math.round(_elevGain);
+  document.getElementById('m-cad').textContent  = _laps.length;
+
+  var elapsed_s = getElapsed() / 1000;
+  var spdKmh    = spdMs != null ? spdMs * 3.6 : (_totalDist > 0.01 ? _totalDist / (elapsed_s / 3600) : 0);
+  document.getElementById('m-spd').textContent  = spdKmh.toFixed(1);
+
+  if (_sport === 'bike') {
+    document.getElementById('m-pace').textContent = spdKmh.toFixed(1);
+  } else {
+    var paceMinKm = spdKmh > 0.5 ? 60 / spdKmh : 0;
+    document.getElementById('m-pace').textContent = paceMinKm > 0 ? fmtPace(paceMinKm) : '--:--';
+  }
+}
+
+// ── Laps rendering ────────────────────────────────────────────────────────────
+var _fastPace = Infinity;
+function renderLap(lap) {
+  var body = document.getElementById('laps-body');
+  var isFast = lap.pace > 0 && lap.pace < _fastPace;
+  if (isFast) _fastPace = lap.pace;
+
+  var row = document.createElement('div');
+  row.className = 'lap-row';
+  row.innerHTML =
+    '<span class="lap-n">' + lap.n + '</span>' +
+    '<span>' + lap.dist.toFixed(2) + ' km</span>' +
+    '<span>' + fmtDuration(lap.time) + '</span>' +
+    '<span class="' + (isFast ? 'fast' : '') + '">' + (lap.pace > 0 ? fmtPace(lap.pace) : '--') + '</span>';
+  body.appendChild(row);
+}
+
+function showLapsPanel(show) {
+  document.getElementById('laps-panel').style.display = show ? 'block' : 'none';
+}
+
+// ── Save to IndexedDB (offline) + sync to API ─────────────────────────────────
+function saveWorkout() {
+  var dur_min  = Math.round(getElapsed() / 60000);
+  var payload  = {
+    sport:     _sport,
+    dur_min:   dur_min,
+    dist_km:   parseFloat(_totalDist.toFixed(2)),
+    elev_m:    Math.round(_elevGain),
+    calories:  _calories,
+    laps:      _laps,
+    gps_track: _points.map(function(p){ return [p.lat, p.lng, p.alt, p.ts]; }),
+    recorded_at: new Date().toISOString(),
+  };
+
+  // Save to IndexedDB (offline-first — D-05)
+  saveToIndexedDB('pending_workouts', payload);
+
+  // Try immediate sync
+  var sess = null;
+  try { sess = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s')); } catch(e){}
+  var token = sess && sess.token;
+
+  if (navigator.onLine && token) {
+    fetch('/api/athlete/workout-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        sport:      payload.sport,
+        dur_min:    payload.dur_min,
+        dist_km:    payload.dist_km,
+        date_iso:   new Date().toISOString().slice(0, 10),
+        notas:      'GPS Tracker — ' + payload.dist_km + ' km',
+        tss:        Math.round(payload.dur_min * 0.8),
+      }),
+    }).then(function(r){ if (r.ok) showToast('Entrenamiento guardado ✓'); })
+      .catch(function(){ showToast('Guardado localmente — se sincronizará al conectar'); });
+  } else {
+    showToast('Sin conexión — guardado localmente');
+  }
+
+  // Register background sync (D-05)
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready.then(function(sw) {
+      sw.sync.register('sync-workouts').catch(function(){});
+    });
+  }
+}
+
+// ── IndexedDB helper ──────────────────────────────────────────────────────────
+function saveToIndexedDB(store, data) {
+  var req = indexedDB.open('labx-offline', 1);
+  req.onupgradeneeded = function(e) {
+    var db = e.target.result;
+    if (!db.objectStoreNames.contains('pending_workouts')) {
+      db.createObjectStore('pending_workouts', { autoIncrement: true });
+    }
+  };
+  req.onsuccess = function(e) {
+    var db  = e.target.result;
+    var tx  = db.transaction(store, 'readwrite');
+    var s   = tx.objectStore(store);
+    s.add(data);
+  };
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  var R  = 6371;
+  var dL = (lat2 - lat1) * Math.PI / 180;
+  var dG = (lon2 - lon1) * Math.PI / 180;
+  var a  = Math.sin(dL/2)*Math.sin(dL/2) +
+           Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)*Math.sin(dG/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function fmtDuration(ms) {
+  var s   = Math.floor(ms / 1000);
+  var h   = Math.floor(s / 3600);
+  var m   = Math.floor((s % 3600) / 60);
+  var sec = s % 60;
+  return (h > 0 ? String(h).padStart(2,'0') + ':' : '') +
+         String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function fmtPace(minKm) {
+  var m = Math.floor(minKm);
+  var s = Math.round((minKm - m) * 60);
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ── Wake Lock (pantalla encendida durante tracking) ────────────────────────────
+var _wakeLock = null;
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) {
+    try {
+      _wakeLock = await navigator.wakeLock.request('screen');
+    } catch(e) {}
+  }
+}
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && _state === 'running') requestWakeLock();
+});
+requestWakeLock();
+</script>
+</body>
+</html>
