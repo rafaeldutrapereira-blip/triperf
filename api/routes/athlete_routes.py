@@ -638,6 +638,12 @@ def athlete_dashboard(
     bike_km = round(sum(a["dist_km"] or 0 for a in week_acts if a["sport"] == "bike"), 2)
     run_km  = round(sum(a["dist_km"] or 0 for a in week_acts if a["sport"] == "run"),  2)
     gym_n   = sum(1 for a in week_acts if a["sport"] == "gym")
+    # Minutos reales por disciplina — respaldo para comparar contra el plan
+    # cuando el entrenamiento planificado es por duración/potencia y no
+    # define una distancia objetivo (ej. bloques de bici con target de watts).
+    swim_min = round(sum(a["dur_min"] or 0 for a in week_acts if a["sport"] == "swim"), 1)
+    bike_min = round(sum(a["dur_min"] or 0 for a in week_acts if a["sport"] == "bike"), 1)
+    run_min  = round(sum(a["dur_min"] or 0 for a in week_acts if a["sport"] == "run"),  1)
 
     # ── Sync status ───────────────────────────────────────────────────────────
     sync_row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
@@ -890,6 +896,9 @@ def athlete_dashboard(
             "bike_km":    bike_km,
             "run_km":     run_km,
             "strength_n": gym_n,
+            "swim_min":   swim_min,
+            "bike_min":   bike_min,
+            "run_min":    run_min,
         },
         # Carrera objetivo
         "race_goal_name": me.race_goal_name,

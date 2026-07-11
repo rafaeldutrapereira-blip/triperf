@@ -1256,8 +1256,8 @@ ul { list-style: none; }
               <div class="dc-pct" id="dc-swim-pct">87%</div>
             </div>
             <div class="dc-name">Natación</div>
-            <div class="dc-val"><span id="dc-swim-val">5.2</span><span> km</span></div>
-            <div class="dc-tgt">meta: 6.0 km</div>
+            <div class="dc-val"><span id="dc-swim-val">5.2</span><span id="dc-swim-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-swim-tgt">meta: 6.0 km</div>
             <div class="bar-t"><div class="bar-f" id="dc-swim-bar" data-w="87"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-swim-tss">—</strong> TSS</span>
@@ -1277,8 +1277,8 @@ ul { list-style: none; }
               <div class="dc-pct" id="dc-bike-pct">89%</div>
             </div>
             <div class="dc-name">Ciclismo</div>
-            <div class="dc-val"><span id="dc-bike-val">142</span><span> km</span></div>
-            <div class="dc-tgt">meta: 160 km</div>
+            <div class="dc-val"><span id="dc-bike-val">142</span><span id="dc-bike-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-bike-tgt">meta: 160 km</div>
             <div class="bar-t"><div class="bar-f" id="dc-bike-bar" data-w="89"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-bike-tss">—</strong> TSS</span>
@@ -1298,8 +1298,8 @@ ul { list-style: none; }
               <div class="dc-pct" id="dc-run-pct">80%</div>
             </div>
             <div class="dc-name">Carrera</div>
-            <div class="dc-val"><span id="dc-run-val">28</span><span> km</span></div>
-            <div class="dc-tgt">meta: 35 km</div>
+            <div class="dc-val"><span id="dc-run-val">28</span><span id="dc-run-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-run-tgt">meta: 35 km</div>
             <div class="bar-t"><div class="bar-f" id="dc-run-bar" data-w="80"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-run-tss">—</strong> TSS</span>
@@ -1745,39 +1745,64 @@ function renderWeekAdherence(){
 
   /* ── Update discipline cards from KL_DATA.weekly_disc ─────────────────── */
   var wd = (window.KL_DATA && KL_DATA.weekly_disc) || {};
-  // Targets desde plan del coach (suma de dist_km por deporte) o defaults por distancia de carrera
+  // Targets desde el plan real (TrainingPeaks/Garmin Coach/LabX, vía
+  // garmin_planned_workouts) — suma dist_km Y dur_min por deporte. Muchos
+  // workouts estructurados (bloques de potencia, por ej.) son por duración,
+  // no por distancia: si el plan no define km para una disciplina pero sí
+  // minutos, se compara por minutos en vez de caer al default genérico.
   var DC_TGTS = (function(){
-    var defaults = {swim:6.0, bike:160, run:35, str:2};
+    var defaults = {swim:{km:6.0,min:0}, bike:{km:160,min:0}, run:{km:35,min:0}, str:2};
     var cp = window._coachPlanData;
     if(cp && cp.length){
-      var t = {swim:0, bike:0, run:0, str:0};
-      cp.forEach(function(a){ var tmpl=a.template||{}, sp=tmpl.sport; if(sp==='swim') t.swim+=(tmpl.dist_km||0); else if(sp==='bike') t.bike+=(tmpl.dist_km||0); else if(sp==='run') t.run+=(tmpl.dist_km||0); else if(sp==='strength'||sp==='gym') t.str++; });
-      return { swim:t.swim||defaults.swim, bike:t.bike||defaults.bike, run:t.run||defaults.run, str:t.str||defaults.str };
+      var t = {swim:{km:0,min:0}, bike:{km:0,min:0}, run:{km:0,min:0}, str:0};
+      cp.forEach(function(a){
+        var tmpl=a.template||{}, sp=tmpl.sport;
+        if(t[sp]){ t[sp].km += (tmpl.dist_km||0); t[sp].min += (tmpl.dur_min||0); }
+        else if(sp==='strength'||sp==='gym') t.str++;
+      });
+      ['swim','bike','run'].forEach(function(sp){
+        if(!t[sp].km && !t[sp].min) t[sp] = defaults[sp];
+      });
+      t.str = t.str || defaults.str;
+      return t;
     }
     return defaults;
   })();
-  function updDC(sp, actual, tgt, isCount){
-    var pct = tgt>0 ? Math.min(120, Math.round(actual/tgt*100)) : 0;
-    var valEl = document.getElementById('dc-'+sp+'-val');
-    var pctEl = document.getElementById('dc-'+sp+'-pct');
-    var barEl = document.getElementById('dc-'+sp+'-bar');
-    if(valEl) valEl.textContent = isCount ? actual : (Math.round(actual*10)/10);
-    var c = pct>=100 ? 'var(--green)' : pct>=90 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
-    if(pctEl){
-      pctEl.textContent = pct+'%';
-      pctEl.style.color = c;
+  function updDC(sp, actualKm, actualMin, tgt, isCount){
+    if(isCount){
+      var pct0 = tgt>0 ? Math.min(120, Math.round(actualKm/tgt*100)) : 0;
+      var valEl0 = document.getElementById('dc-'+sp+'-val');
+      var pctEl0 = document.getElementById('dc-'+sp+'-pct');
+      var barEl0 = document.getElementById('dc-'+sp+'-bar');
+      if(valEl0) valEl0.textContent = actualKm;
+      var c0 = pct0>=90 ? 'var(--green)' : pct0>=60 ? 'var(--gold)' : 'var(--red)';
+      if(pctEl0){ pctEl0.textContent = pct0+'%'; pctEl0.style.color = c0; }
+      if(barEl0){ var w0=Math.min(100,pct0); barEl0.setAttribute('data-w',w0); barEl0.style.width=w0+'%'; barEl0.style.background=c0; }
+      return;
     }
-    if(barEl){
-      var w = Math.min(100, pct);
-      barEl.setAttribute('data-w', w);
-      barEl.style.width = w+'%';
-      barEl.style.background = c;
-    }
+    // Elegir unidad: km si el plan (o default) define distancia; si no,
+    // minutos si el plan define duración; el default genérico usa km.
+    var useMin = !tgt.km && tgt.min > 0;
+    var actual = useMin ? actualMin : actualKm;
+    var target = useMin ? tgt.min : tgt.km;
+    var pct = target>0 ? Math.min(120, Math.round(actual/target*100)) : 0;
+
+    var valEl  = document.getElementById('dc-'+sp+'-val');
+    var pctEl  = document.getElementById('dc-'+sp+'-pct');
+    var barEl  = document.getElementById('dc-'+sp+'-bar');
+    var unitEl = document.getElementById('dc-'+sp+'-unit');
+    var tgtEl  = document.getElementById('dc-'+sp+'-tgt');
+    if(valEl) valEl.textContent = useMin ? Math.round(actual) : (Math.round(actual*10)/10);
+    if(unitEl) unitEl.textContent = useMin ? ' min' : ' km';
+    if(tgtEl)  tgtEl.textContent  = 'meta: ' + (useMin ? Math.round(target)+' min' : target+' km');
+    var c = pct>=90 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
+    if(pctEl){ pctEl.textContent = pct+'%'; pctEl.style.color = c; }
+    if(barEl){ var w = Math.min(100, pct); barEl.setAttribute('data-w', w); barEl.style.width = w+'%'; barEl.style.background = c; }
   }
-  if(wd.swim_km    != null) updDC('swim', wd.swim_km,    DC_TGTS.swim, false);
-  if(wd.bike_km    != null) updDC('bike', wd.bike_km,    DC_TGTS.bike, false);
-  if(wd.run_km     != null) updDC('run',  wd.run_km,     DC_TGTS.run,  false);
-  if(wd.strength_n != null) updDC('str',  wd.strength_n, DC_TGTS.str,  true);
+  if(wd.swim_km    != null) updDC('swim', wd.swim_km, wd.swim_min||0, DC_TGTS.swim, false);
+  if(wd.bike_km    != null) updDC('bike', wd.bike_km, wd.bike_min||0, DC_TGTS.bike, false);
+  if(wd.run_km     != null) updDC('run',  wd.run_km,  wd.run_min||0,  DC_TGTS.run,  false);
+  if(wd.strength_n != null) updDC('str',  wd.strength_n, 0, DC_TGTS.str, true);
 
   // TSS real por disciplina — suma de los mismos acts ya asignados a los días de la semana
   var tssBySport = {swim:0, bike:0, run:0};
@@ -2516,9 +2541,13 @@ function _showSyncBanner(secsTotal){
       headers: {Authorization: 'Bearer '+tok2}
     }).then(function(r){ return r.ok ? r.json() : []; })
     .then(function(assigns){
-      // Guardar plan real para renderWeekAdherence y DC_TGTS
-      window._coachPlanData = assigns || [];
-      if(window._coachPlanData.length){
+      // Guardar plan real para renderWeekAdherence y DC_TGTS. Solo pisa
+      // _coachPlanData si hay plan de coach real en LabX — si no, se deja
+      // lo que ya haya puesto el merge de planned_workouts (Garmin/
+      // TrainingPeaks/etc), en vez de resetearlo a [] y perder ese plan
+      // real por una condición de carrera entre estos dos fetches.
+      if(assigns && assigns.length){
+        window._coachPlanData = assigns;
         renderWeekAdherence(); // re-renderiza con plan real (anula versión sin plan)
       }
       if(!assigns || !assigns.length) return;
