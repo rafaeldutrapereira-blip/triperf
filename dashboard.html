@@ -240,8 +240,19 @@ ul { list-style: none; }
   font-weight: 800; color: var(--text); line-height: 1;
 }
 .wp-stat-unit { font-size: .75rem; font-weight: 500; color: var(--muted); margin-left: .15rem; }
-.wp-chart-wrap { width: 100%; overflow: hidden; flex: 1; min-height: 60px; }
+.wp-chart-wrap { width: 100%; overflow: visible; flex: 1; min-height: 60px; position: relative; }
 .wp-chart-wrap svg { width: 100%; height: 100%; min-height: 60px; display: block; overflow: visible; }
+.wp-tooltip {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+  background: #07111D; border: 1px solid rgba(61,104,128,.35);
+  border-radius: 6px; padding: .45rem .6rem; z-index: 30;
+  font-family: 'Oswald', sans-serif; white-space: nowrap;
+  opacity: 0; transition: opacity .12s ease; transform: translate(-50%, -110%);
+}
+.wp-tooltip.on { opacity: 1; }
+.wp-tooltip-wk { font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; color: #7FB3CC; margin-bottom: .25rem; }
+.wp-tooltip-row { font-size: .74rem; font-weight: 700; color: #F0F9FF; }
+.wp-tooltip-row span { font-weight: 400; color: #7FB3CC; margin-right: .3rem; }
 @media (max-width:480px) { .wp-stats { gap: 1rem; } .wp-stat-val { font-size: 1.2rem; } }
 
 /* -- MAIN GRID ------------------------------------------------------------- */
@@ -1049,6 +1060,7 @@ ul { list-style: none; }
         </div>
         <div class="wp-chart-wrap">
           <svg id="wp-chart" viewBox="0 0 600 105" preserveAspectRatio="none"></svg>
+          <div class="wp-tooltip" id="wp-tooltip"></div>
         </div>
       </div>
 
@@ -1976,8 +1988,58 @@ function renderWeeklyProgress(sport){
     lines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(p.cur?3.5:2)+'" fill="'+(p.cur?color:'rgba(255,255,255,.4)')+'" stroke="'+color+'" stroke-width="'+(p.cur?1.5:0)+'"/>');
   });
 
+  // Zonas invisibles de hover — una por semana, cubren toda la columna
+  // (incluye el hueco arriba de la barra) para que el tooltip se dispare
+  // en toda la altura, no solo justo sobre la barra/punto.
+  weeks.forEach(function(wk, i){
+    var x = padL + i * barW;
+    lines.push('<rect x="'+x+'" y="0" width="'+barW+'" height="'+H+'" fill="transparent" data-wk-idx="'+i+'" style="cursor:pointer"/>');
+  });
+
   svg.innerHTML = lines.join('');
+  _wpWeeksSnapshot = weeks;
 }
+
+// Tooltip del Progreso Semanal — delegado sobre el SVG (su contenido se
+// regenera en cada render, así que el listener se ata una sola vez acá
+// afuera en vez de en cada <rect> individual).
+var _wpWeeksSnapshot = [];
+(function(){
+  var svgEl = document.getElementById('wp-chart');
+  var ttEl  = document.getElementById('wp-tooltip');
+  var wrapEl = document.querySelector('.wp-chart-wrap');
+  if(!svgEl || !ttEl || !wrapEl) return;
+
+  function fmtDur(min){
+    var h = Math.floor(min/60), m = Math.round(min%60);
+    return h > 0 ? h+'h '+m+'min' : m+'min';
+  }
+
+  svgEl.addEventListener('mousemove', function(e){
+    var idx = e.target.getAttribute && e.target.getAttribute('data-wk-idx');
+    if(idx == null){ ttEl.classList.remove('on'); return; }
+    var wk = _wpWeeksSnapshot[+idx];
+    if(!wk){ ttEl.classList.remove('on'); return; }
+
+    ttEl.innerHTML =
+      '<div class="wp-tooltip-wk">Semana del ' + wk.label + '</div>' +
+      '<div class="wp-tooltip-row"><span>Distancia</span>' + wk.dist.toFixed(1) + ' km</div>' +
+      '<div class="wp-tooltip-row"><span>Tiempo</span>' + fmtDur(wk.dur) + '</div>' +
+      '<div class="wp-tooltip-row"><span>Sesiones</span>' + wk.count + '</div>';
+
+    var wrapRect = wrapEl.getBoundingClientRect();
+    var ttW = ttEl.offsetWidth || 120;
+    var x = e.clientX - wrapRect.left;
+    var y = e.clientY - wrapRect.top;
+    // No dejar que se salga del card por los costados (el tooltip se
+    // centra en X sobre el cursor vía transform: translate(-50%, -110%))
+    x = Math.max(ttW/2 + 4, Math.min(wrapRect.width - ttW/2 - 4, x));
+    ttEl.style.left = x + 'px';
+    ttEl.style.top  = y + 'px';
+    ttEl.classList.add('on');
+  });
+  svgEl.addEventListener('mouseleave', function(){ ttEl.classList.remove('on'); });
+})();
 
 // Restaurar opacidad al volver desde detalle.html (bfcache no dispara DOMContentLoaded)
 window.addEventListener('pageshow', function(){
