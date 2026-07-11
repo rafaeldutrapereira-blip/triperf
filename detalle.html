@@ -863,7 +863,16 @@ function render() {
   // Fallback: si el período actual no tiene datos, mostrar todo el histórico disponible
   if(!d.length && period > 0){ period = 0; d = getData(); }
   if(!d.length){
-    document.querySelector('.chart-panel').style.display   = '';
+    // BUG (encontrado 2026-07-11 con Playwright): este branch nunca limpiaba
+    // el bloque "hero" (valor grande + subtítulo + rango de fechas) ni el
+    // gráfico — quedaban con los datos sintéticos del primer render (el que
+    // corre antes de que la respuesta real de la API llegue), mostrando
+    // "82ms" y un año de rango falso aunque ALL[metric] ya estuviera vacío.
+    document.getElementById('hero-val').textContent     = '—';
+    document.getElementById('hero-unit').textContent    = '';
+    document.getElementById('hero-val-sub').textContent = 'Sin datos disponibles';
+    document.getElementById('chart-range').textContent  = '';
+    document.querySelector('.chart-panel').style.display   = 'none';
     document.querySelector('.stats-grid').style.display    = 'none';
     document.querySelector('.insights-panel').style.display = '';
     document.getElementById('wb-section').style.display    = 'none';
