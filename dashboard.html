@@ -1851,7 +1851,10 @@ function _sportMatch(actSport, filter){
   if(filter === 'swim') return actSport === 'swim';
   if(filter === 'bike') return actSport === 'bike';
   if(filter === 'run')  return actSport === 'run';
-  if(filter === 'gym')  return actSport !== 'swim' && actSport !== 'bike' && actSport !== 'run';
+  // Antes matcheaba "cualquier cosa que no sea swim/bike/run" — mezclaba
+  // caminatas/hikes/actividades sin clasificar (sport='other') dentro del
+  // filtro "Fuerza" (💪), inflando la escala del gráfico con datos ajenos.
+  if(filter === 'gym')  return actSport === 'gym';
   return true;
 }
 
@@ -1910,9 +1913,17 @@ function renderWeeklyProgress(sport){
   var chartW = W - padL - padR;
   var chartH = H - padT - padB;
 
-  var maxDist = Math.max.apply(null, weeks.map(function(w){ return w.dist; }));
-  if(maxDist < 1) maxDist = 10;
-  var maxLine = Math.ceil(maxDist / 10) * 10;
+  // Gym/fuerza no tiene distancia (dist_km siempre 0) — la gráfica quedaba
+  // vacía (sin barras, sin puntos, sin línea) aunque el conteo de sesiones
+  // arriba sí se calculara bien. Para ese filtro se grafica duración
+  // (minutos) en vez de distancia; para el resto, distancia como siempre.
+  var useDur  = (_wpSport === 'gym');
+  var metricOf = function(w){ return useDur ? w.dur : w.dist; };
+  var metricUnit = useDur ? 'min' : 'km';
+
+  var maxDist = Math.max.apply(null, weeks.map(metricOf));
+  if(maxDist < 1) maxDist = useDur ? 30 : 10;
+  var maxLine = useDur ? Math.ceil(maxDist / 10) * 10 : Math.ceil(maxDist / 10) * 10;
 
   var barW = chartW / weeks.length;
   var barPad = barW * 0.2;
@@ -1924,27 +1935,28 @@ function renderWeeklyProgress(sport){
   lines.push('<line x1="'+padL+'" y1="'+(padT+chartH/2)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH/2)+'" stroke="rgba(255,255,255,.04)" stroke-width="1"/>');
   lines.push('<line x1="'+padL+'" y1="'+(padT+chartH)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH)+'" stroke="rgba(255,255,255,.07)" stroke-width="1"/>');
   // Y labels
-  lines.push('<text x="'+(padL-4)+'" y="'+(padT+4)+'" text-anchor="end" font-size="7" fill="rgba(255,255,255,.3)">'+maxLine+'</text>');
+  lines.push('<text x="'+(padL-4)+'" y="'+(padT+4)+'" text-anchor="end" font-size="7" fill="rgba(255,255,255,.3)">'+maxLine+metricUnit+'</text>');
   lines.push('<text x="'+(padL-4)+'" y="'+(padT+chartH/2+4)+'" text-anchor="end" font-size="7" fill="rgba(255,255,255,.3)">'+(maxLine/2)+'</text>');
 
   // Bars + labels
   var dotPts = [];
   weeks.forEach(function(wk, i){
+    var val = metricOf(wk);
     var x = padL + i * barW;
-    var barH = wk.dist > 0 ? (wk.dist / maxLine) * chartH : 0;
+    var barH = val > 0 ? (val / maxLine) * chartH : 0;
     var y = padT + chartH - barH;
     var isCurrent = (i === weeks.length - 1);
 
     // Bar
     var alpha = isCurrent ? '.85' : '.45';
     var barColor = isCurrent ? color : 'rgba(255,255,255,.12)';
-    if(wk.dist > 0){
+    if(val > 0){
       lines.push('<rect x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="'+(isCurrent?color+'cc':'rgba(255,255,255,.12)')+'"/>');
     }
 
     // Dot for line chart
     var cx = padL + (i + 0.5) * barW;
-    var cy = wk.dist > 0 ? padT + chartH - (wk.dist / maxLine) * chartH : null;
+    var cy = val > 0 ? padT + chartH - (val / maxLine) * chartH : null;
     if(cy !== null) dotPts.push({x:cx, y:cy, cur:isCurrent});
 
     // X label — todas las semanas, rotadas para que quepan
