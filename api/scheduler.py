@@ -262,10 +262,13 @@ def _background_garmin_sync_all() -> None:
         if not token_dir.exists():
             return
 
+        # Los tokens se guardan en subcarpetas por usuario
+        # (data/garmin_tokens/{user_id}/*.json), no como archivos sueltos
+        # en el directorio padre — por eso este glob nunca encontraba nada.
         users_with_token = set()
-        for f in token_dir.glob("*.json"):
+        for f in token_dir.glob("*/*.json"):
             try:
-                uid = f.stem
+                uid = f.parent.name
                 data = _json.loads(f.read_text())
                 if data.get("oauth1_token") or data.get("oauth2_token"):
                     users_with_token.add(uid)
