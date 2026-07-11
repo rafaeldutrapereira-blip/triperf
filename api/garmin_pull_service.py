@@ -989,17 +989,30 @@ class GarminPullService:
             m = ((m - 1) % 12) + 1
             months_to_fetch.append((y, m))
 
-        # Borrar TODO lo planificado del usuario antes de reinsertar fresco.
-        # Antes filtraba por fecha (>= hoy-30d), pero Garmin a veces devuelve
-        # en el calendario ítems de fechas más viejas (padding de grilla
-        # mensual), que quedaban sin borrar y chocaban con el UNIQUE
-        # constraint (user_id, garmin_scheduled_id) al reinsertar.
-        db.query(GarminPlannedWorkout).filter(
-            GarminPlannedWorkout.user_id == user_id,
-        ).delete()
-        db.flush()
+        # IMPORTANTE (descubierto 2026-07-11): Garmin deja de devolver un
+        # workout planificado en el calendario una vez que el atleta lo
+        # ejecuta EN SU FECHA EXACTA — la entrada "workout" desaparece y
+        # solo queda la actividad ejecutada. Si acá borráramos todo lo
+        # planificado del usuario antes de reinsertar (como se hacía
+        # antes), cada sync destruiría la única oportunidad de haber
+        # capturado ese plan antes de que Garmin lo "consuma" — el
+        # histórico de plan de la semana se iría perdiendo entrenamiento
+        # a entrenamiento a medida que se ejecutan.
+        #
+        # Por eso ahora es upsert por (user_id, garmin_scheduled_id):
+        # se actualiza lo que ya existe, se inserta lo nuevo, y NUNCA se
+        # borra lo que Garmin ya no devuelve — eso simplemente significa
+        # que ya se ejecutó, no que el plan nunca existió.
+        _existing_by_sched_id = {
+            r.garmin_scheduled_id: r
+            for r in db.query(GarminPlannedWorkout)
+                       .filter(GarminPlannedWorkout.user_id == user_id,
+                               GarminPlannedWorkout.garmin_scheduled_id.isnot(None))
+                       .all()
+        }
 
         inserted = 0
+        updated = 0
         seen_sched_ids = set()  # Garmin repite ítems entre meses (relleno de grilla de calendario)
         for (yr, mo) in months_to_fetch:
             try:
@@ -1114,25 +1127,39 @@ class GarminPullService:
                 source_lbl = "trainingpeaks" if "trainingpeaks" in source_id.lower() else \
                              "garmin"        if source_id else "garmin"
 
-                import uuid as _uuid_mod2
-                db.add(GarminPlannedWorkout(
-                    id                  = str(_uuid_mod2.uuid4()),
-                    user_id             = user_id,
-                    date_iso            = date_str,
-                    garmin_scheduled_id = sched_id or None,
-                    workout_id          = workout_id,
-                    title               = title[:200],
-                    sport               = sport,
-                    dur_min             = dur_min,
-                    dist_km             = dist_km,
-                    tss_planned         = float(tss_p) if tss_p is not None else None,
-                    source              = source_lbl,
-                    raw_json            = _json.dumps(item, ensure_ascii=False)[:4000],
-                ))
-                inserted += 1
+                existing_row = _existing_by_sched_id.get(sched_id) if sched_id else None
+                if existing_row:
+                    existing_row.date_iso    = date_str
+                    existing_row.workout_id  = workout_id
+                    existing_row.title       = title[:200]
+                    existing_row.sport       = sport
+                    existing_row.dur_min     = dur_min
+                    existing_row.dist_km     = dist_km
+                    existing_row.tss_planned = float(tss_p) if tss_p is not None else existing_row.tss_planned
+                    existing_row.source      = source_lbl
+                    existing_row.raw_json    = _json.dumps(item, ensure_ascii=False)[:4000]
+                    updated += 1
+                else:
+                    import uuid as _uuid_mod2
+                    db.add(GarminPlannedWorkout(
+                        id                  = str(_uuid_mod2.uuid4()),
+                        user_id             = user_id,
+                        date_iso            = date_str,
+                        garmin_scheduled_id = sched_id or None,
+                        workout_id          = workout_id,
+                        title               = title[:200],
+                        sport               = sport,
+                        dur_min             = dur_min,
+                        dist_km             = dist_km,
+                        tss_planned         = float(tss_p) if tss_p is not None else None,
+                        source              = source_lbl,
+                        raw_json            = _json.dumps(item, ensure_ascii=False)[:4000],
+                    ))
+                    inserted += 1
 
         db.commit()
-        logger.info("Planned workouts user=%s: %d insertados (%s meses)", user_id, inserted, len(months_to_fetch))
+        logger.info("Planned workouts user=%s: %d insertados, %d actualizados (%s meses)",
+                    user_id, inserted, updated, len(months_to_fetch))
 
     def _rebuild_training_load(self, user_id: str, ftp: int) -> None:
         db = self._db
