@@ -476,8 +476,9 @@ def _notify_coach_injury_risk(user: "User", risk_result: dict, db) -> None:
     ))
     try:
         db.commit()
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        logger.warning("injury_alert insight commit falló user=%s: %s", user.id, exc)
 
 
 # ── Control de drips enviados (tabla simple en BD) ─────────────

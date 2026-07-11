@@ -1031,8 +1031,9 @@ async def post_race_ai_analysis(
             "UPDATE race_events SET ai_post_race_text=:txt WHERE id=:id"
         ), {"txt": narrative, "id": race_id})
         db.commit()
-    except Exception:
-        pass
+    except Exception as exc:
+        db.rollback()
+        logger.warning("ai_post_race_text commit falló race_id=%s: %s", race_id, exc)
 
     analysis["ai_narrative"] = narrative
     return analysis
@@ -1391,8 +1392,9 @@ def auto_race_plan(
                            race_event_id=race_id, **plan_kwargs)
             db.add(plan_obj)
             db.commit()
-        except Exception:
+        except Exception as exc:
             db.rollback()
+            logger.warning("race_plan commit falló user=%s race_id=%s: %s", me.id, race_id, exc)
 
     return {
         "race_type":  race_type,

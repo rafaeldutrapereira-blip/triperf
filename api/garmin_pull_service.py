@@ -588,8 +588,9 @@ def _update_sync_status_ok(user_id: str, db: Session) -> None:
         row.error  = None
         try:
             db.commit()
-        except Exception:
+        except Exception as exc:
             db.rollback()
+            logger.warning("_update_sync_status_ok commit falló user=%s: %s", user_id, exc)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1211,8 +1212,16 @@ class GarminPullService:
             ))
         try:
             db.commit()
-        except Exception:
+        except Exception as exc:
             db.rollback()
+            logger.warning("garmin_sync_status commit falló user=%s status=%s, reintentando: %s", user_id, status, exc)
+            import time as _time
+            _time.sleep(0.5)
+            try:
+                db.commit()
+            except Exception as exc2:
+                db.rollback()
+                logger.error("garmin_sync_status commit falló definitivamente user=%s status=%s: %s", user_id, status, exc2)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
