@@ -1025,17 +1025,38 @@ class GarminPullService:
 
         # VO2max cambia lento — se pide una sola vez (no por día) y se guarda
         # en el registro de hoy.
+        # Garmin solo actualiza el VO2max estimado en días donde corre el
+        # cálculo (tras ciertas actividades) — get_max_metrics(fecha) da []
+        # para la mayoría de los días. Se busca hacia atrás hasta encontrar
+        # el último valor real, pero solo si no tenemos ya uno reciente
+        # guardado (evita 14 requests extra a Garmin en cada sync).
         vo2max_running = vo2max_cycling = None
-        try:
-            mm = _retry(lambda: client.get_max_metrics(today.isoformat()), max_attempts=2, base_delay=1.0)
-            if mm and isinstance(mm, list) and mm:
-                entry = mm[0]
-                generic = entry.get("generic") or {}
-                cycling = entry.get("cycling") or {}
-                vo2max_running = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
-                vo2max_cycling = cycling.get("vo2MaxValue")
-        except Exception as exc:
-            logger.warning("VO2max skip user=%s: %s", user_id, exc)
+        recent_vo2_cutoff = (today - timedelta(days=7)).isoformat()
+        has_recent_vo2 = db.query(GarminHealthDaily).filter(
+            GarminHealthDaily.user_id == user_id,
+            GarminHealthDaily.date_iso >= recent_vo2_cutoff,
+            (GarminHealthDaily.vo2max_running.isnot(None)) | (GarminHealthDaily.vo2max_cycling.isnot(None)),
+        ).first()
+        if not has_recent_vo2:
+            for back in range(14):
+                try:
+                    d_iso = (today - timedelta(days=back)).isoformat()
+                    mm = _retry(lambda d=d_iso: client.get_max_metrics(d), max_attempts=2, base_delay=1.0)
+                    entry = None
+                    if mm and isinstance(mm, list) and mm:
+                        entry = mm[0]
+                    elif isinstance(mm, dict) and mm:
+                        entry = mm
+                    if entry:
+                        generic = entry.get("generic") or {}
+                        cycling = entry.get("cycling") or {}
+                        vo2max_running = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
+                        vo2max_cycling = cycling.get("vo2MaxValue")
+                        if vo2max_running or vo2max_cycling:
+                            break
+                except Exception as exc:
+                    logger.debug("VO2max skip %s user=%s: %s", d_iso, user_id, exc)
+            logger.info("VO2max user=%s running=%s cycling=%s", user_id, vo2max_running, vo2max_cycling)
 
         for delta in range(days):
             target = today - timedelta(days=delta)
