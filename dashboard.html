@@ -1999,6 +1999,20 @@ function patchData(){
       var sign = d.tsb >= 0 ? '+' : '-';
       tsbWrap.innerHTML = '<span style="font-size:1.4rem">' + sign + '</span>' +
         '<span class="cu" data-kl="tsb" data-t="'+Math.round(absT)+'">0</span>';
+      // Animar acá mismo: este span es nuevo (innerHTML recién reemplazado),
+      // el IntersectionObserver de scroll (que anima .cu al entrar en
+      // viewport) ya disparó antes de que este nodo existiera y no vuelve
+      // a correr para hijos creados después — quedaba pegado en "0" pese
+      // a tener el data-t correcto.
+      (function(elem, target){
+        var st = null;
+        requestAnimationFrame(function step(ts){
+          if(!st) st = ts;
+          var p = Math.min((ts-st)/1200, 1), e = 1-Math.pow(1-p, 3);
+          elem.textContent = Math.round(e*target);
+          if(p < 1) requestAnimationFrame(step);
+        });
+      })(tsbWrap.querySelector('.cu'), Math.round(absT));
     }
   }
 
