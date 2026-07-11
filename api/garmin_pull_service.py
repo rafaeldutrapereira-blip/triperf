@@ -1038,6 +1038,11 @@ class GarminPullService:
             (GarminHealthDaily.vo2max_running.isnot(None)) | (GarminHealthDaily.vo2max_cycling.isnot(None)),
         ).first()
         if not has_recent_vo2:
+            # "generic" (running/general fitness) es el que Garmin Connect
+            # muestra como "VO2 Max" en el reloj/app — se prioriza sobre
+            # "cycling" (estimación separada, distinta métrica) que puede
+            # venir poblada en días donde "generic" está en None.
+            fallback_cycling = None
             for back in range(14):
                 try:
                     d_iso = (today - timedelta(days=back)).isoformat()
@@ -1050,12 +1055,18 @@ class GarminPullService:
                     if entry:
                         generic = entry.get("generic") or {}
                         cycling = entry.get("cycling") or {}
-                        vo2max_running = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
-                        vo2max_cycling = cycling.get("vo2MaxValue")
-                        if vo2max_running or vo2max_cycling:
+                        run_val = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
+                        cyc_val = cycling.get("vo2MaxValue")
+                        if run_val:
+                            vo2max_running = run_val
+                            vo2max_cycling = cyc_val
                             break
+                        if cyc_val and fallback_cycling is None:
+                            fallback_cycling = cyc_val
                 except Exception as exc:
                     logger.debug("VO2max skip %s user=%s: %s", d_iso, user_id, exc)
+            if not vo2max_running and fallback_cycling:
+                vo2max_cycling = fallback_cycling
             logger.info("VO2max user=%s running=%s cycling=%s", user_id, vo2max_running, vo2max_cycling)
 
         for delta in range(days):
