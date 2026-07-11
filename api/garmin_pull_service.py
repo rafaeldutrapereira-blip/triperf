@@ -828,7 +828,7 @@ class GarminPullService:
         # Sincronizar entrenamientos planificados desde calendario Garmin
         # (Training Peaks, TrainerRoad, etc. pushean sus planes a Garmin Connect)
         try:
-            self._sync_planned_workouts(client, user_id)
+            self._sync_planned_workouts(client, user_id, ftp=ftp)
         except Exception as exc:
             logger.warning("Planned workouts sync parcial user=%s: %s", user_id, exc)
 
@@ -846,7 +846,51 @@ class GarminPullService:
         "other": "other",
     }
 
-    def _sync_planned_workouts(self, client, user_id: str, months_ahead: int = 2) -> None:
+    @staticmethod
+    def _estimate_planned_tss(workout_segments, ftp, fcmax, run_pace_s_km):
+        """
+        TSS planificado no viene de Garmin (es un cálculo propietario de
+        TrainingPeaks que no se transmite al empujar el workout a Garmin
+        Connect — la estructura completa de get_workout_by_id no tiene
+        ningún campo de TSS/stress/load). Se estima con la misma lógica
+        que ya usa LabX para actividades reales: IF² × horas × 100, IF
+        derivado del target de cada paso (potencia/FC/ritmo) contra el
+        FTP/FCMax/ritmo umbral real del atleta. Es una aproximación
+        propia, no el número exacto de TrainingPeaks.
+        """
+        total = 0.0
+        any_computed = False
+        for seg in (workout_segments or []):
+            for step in (seg.get("workoutSteps") or []):
+                if step.get("type") != "ExecutableStepDTO":
+                    continue
+                end_cond = (step.get("endCondition") or {}).get("conditionTypeKey")
+                dur_s = step.get("endConditionValue") if end_cond == "time" else None
+                if not dur_s:
+                    continue
+                v1, v2 = step.get("targetValueOne"), step.get("targetValueTwo")
+                if v1 is None and v2 is None:
+                    continue
+                avg_target = (v1 + v2) / 2 if (v1 is not None and v2 is not None) else (v1 or v2)
+                target_key = (step.get("targetType") or {}).get("workoutTargetTypeKey") or ""
+
+                intensity = None
+                if "power" in target_key and ftp:
+                    intensity = avg_target / ftp
+                elif "heart.rate" in target_key and fcmax:
+                    intensity = avg_target / (fcmax * 0.92)
+                elif "pace" in target_key and run_pace_s_km and avg_target:
+                    step_pace_s_km = 1000 / avg_target  # avg_target viene en m/s
+                    intensity = run_pace_s_km / step_pace_s_km
+                if intensity is None:
+                    continue
+
+                intensity = max(0.3, min(1.3, intensity))
+                total += (dur_s / 3600) * (intensity ** 2) * 100
+                any_computed = True
+        return round(total, 1) if any_computed else None
+
+    def _sync_planned_workouts(self, client, user_id: str, months_ahead: int = 2, ftp: int = 250) -> None:
         """
         Descarga del calendario Garmin los entrenamientos planificados
         (Training Peaks, TrainerRoad, Garmin Coach, etc.) y los guarda en
@@ -858,6 +902,16 @@ class GarminPullService:
         db   = self._db
         today = date.today()
 
+        _user_row = db.query(User).filter(User.id == user_id).first()
+        _fcmax = _user_row.fcmax if _user_row else None
+        _run_pace_s_km = None
+        if _user_row and _user_row.run_pace:
+            try:
+                _m, _s = _user_row.run_pace.split(":")
+                _run_pace_s_km = int(_m) * 60 + int(_s)
+            except Exception:
+                _run_pace_s_km = None
+
         # Caché de workout_id → (dur_min, dist_km, sport) resuelto via
         # get_workout_by_id(), para no pedirle a Garmin la misma plantilla
         # dos veces (ni dentro de esta corrida, ni en la próxima sync si ya
@@ -867,11 +921,12 @@ class GarminPullService:
             db.query(GarminPlannedWorkout)
               .filter(GarminPlannedWorkout.user_id == user_id,
                       GarminPlannedWorkout.workout_id.isnot(None),
-                      GarminPlannedWorkout.dur_min.isnot(None))
+                      GarminPlannedWorkout.dur_min.isnot(None),
+                      GarminPlannedWorkout.tss_planned.isnot(None))
               .all()
         )
         for r in _existing_resolved:
-            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km}
+            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km, "tss_est": r.tss_planned}
 
         months_to_fetch = []
         # Mes anterior (para semanas que cruzan fin de mes)
@@ -967,34 +1022,42 @@ class GarminPullService:
                 dist_m  = (item.get("distance") or item.get("estimatedDistanceInMeters") or
                            item.get("distanceInMeters") or 0)
 
+                # TSS planificado — Garmin NO lo trae (ver _estimate_planned_tss);
+                # solo lo tendríamos si el calendario lo incluyera explícito
+                # (no observado en la práctica, pero se deja el check por si
+                # alguna plataforma lo llega a exponer).
+                tss_p = (item.get("tssPlanned") or item.get("tss") or
+                         item.get("trainingStressScore") or None)
+
                 workout_id = str(item.get("workoutId") or "") or None
-                if workout_id and (not dur_secs or not dist_m):
+                if workout_id and (not dur_secs or not dist_m or tss_p is None):
                     if workout_id in _workout_cache:
                         cached = _workout_cache[workout_id]
                         dur_secs = dur_secs or (cached["dur_min"]*60 if cached["dur_min"] else 0)
                         dist_m   = dist_m   or (cached["dist_km"]*1000 if cached["dist_km"] else 0)
+                        if tss_p is None: tss_p = cached.get("tss_est")
                     else:
                         try:
                             wk = _retry(lambda w=workout_id: client.get_workout_by_id(w),
                                         max_attempts=2, base_delay=1.0)
                             wk_dur  = (wk or {}).get("estimatedDurationInSecs") or 0
                             wk_dist = (wk or {}).get("estimatedDistanceInMeters") or 0
+                            wk_tss  = self._estimate_planned_tss(
+                                (wk or {}).get("workoutSegments"), ftp, _fcmax, _run_pace_s_km)
                             dur_secs = dur_secs or wk_dur
                             dist_m   = dist_m or wk_dist
+                            if tss_p is None: tss_p = wk_tss
                             _workout_cache[workout_id] = {
                                 "dur_min": round(wk_dur/60, 1) if wk_dur else None,
                                 "dist_km": round(wk_dist/1000, 2) if wk_dist else None,
+                                "tss_est": wk_tss,
                             }
                         except Exception as exc:
                             logger.debug("get_workout_by_id %s user=%s: %s", workout_id, user_id, exc)
-                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None}
+                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None, "tss_est": None}
 
                 dur_min = round(dur_secs / 60, 1) if dur_secs else None
                 dist_km = round(dist_m / 1000, 2) if dist_m else None
-
-                # TSS planificado (Training Peaks a veces lo incluye)
-                tss_p = (item.get("tssPlanned") or item.get("tss") or
-                         item.get("trainingStressScore") or None)
 
                 # Fuente: Training Peaks se identifica por el workoutSourceId
                 source_id  = str(item.get("workoutSourceId") or item.get("source") or "")
