@@ -1654,11 +1654,13 @@ function goBack() {
         if(d.acwr != null && ALL.acwr.length && ALL.acwr[ALL.acwr.length-1].date < todayISO)
           ALL.acwr.push({date:todayISO, value:d.acwr});
       }
-      // HRV from hrv_history
-      if(d.hrv_history && d.hrv_history.length){
+      // HRV from hrv_history — respuesta real de la API es autoritativa,
+      // incluso vacía: reemplaza los datos sintéticos de demo (ALL.hrv
+      // seed) para que se muestre "Sin datos" en vez de un histórico falso.
+      if(d.hrv_history){
         var newHrv = d.hrv_history.map(function(p){ return {date:p.dt, value:p.hrv}; })
                                   .filter(function(p){ return p.value != null; });
-        if(newHrv.length) ALL.hrv = newHrv;
+        ALL.hrv = newHrv;
         if(d.hrv_last_night != null && ALL.hrv.length && ALL.hrv[ALL.hrv.length-1].date < todayISO)
           ALL.hrv.push({date:todayISO, value:d.hrv_last_night});
       }
