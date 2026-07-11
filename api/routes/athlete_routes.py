@@ -627,6 +627,7 @@ def athlete_dashboard(
             "swim_pace":   a.swim_pace,
             "calories":    a.calories,
             "tss":         a.tss,
+            "avg_cadence_spm": a.avg_cadence_spm,
         })
 
     # ── Disciplinas esta semana ───────────────────────────────────────────────
@@ -1421,6 +1422,38 @@ def get_activity_photo(
         raise HTTPException(404, "Archivo no encontrado")
     return Response(content=data, media_type="image/jpeg",
                     headers={"Cache-Control": "max-age=86400"})
+
+
+@router.get("/activities/{activity_id}/track")
+def get_activity_track(
+    activity_id: str,
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """
+    GPS track real (lat/lon/ele) de una actividad, si fue descargado
+    (ver download_gps.py). No genera datos sintéticos: 404 si no existe.
+    """
+    from pathlib import Path
+    import json as _json
+
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id     == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+
+    track_path = Path("data/tracks") / f"{activity_id}.json"
+    if not track_path.exists():
+        raise HTTPException(404, "Sin track GPS disponible para esta actividad")
+
+    try:
+        points = _json.loads(track_path.read_text(encoding="utf-8"))
+    except Exception:
+        raise HTTPException(500, "Error leyendo el track GPS")
+
+    return {"activity_id": activity_id, "points": points}
 
 
 @router.get("/year-in-review")

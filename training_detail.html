@@ -256,17 +256,6 @@ var LTHR = ATHLETE.css   || 168;  // using css field as proxy for LTHR
 var CSS  = ATHLETE.css   || 110;  // seg/100m
 
 // ─────────────────────────────────────────────────────
-// SEEDED RNG (LCG, reproducible per activity_id)
-// ─────────────────────────────────────────────────────
-function makeRNG(seed){
-  var s = ((Math.abs(seed % 2147483647)) || 54321);
-  return function(){
-    s = (s * 1664525 + 1013904223) & 0x7fffffff;
-    return s / 0x7fffffff;
-  };
-}
-
-// ─────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────
 function fmtDur(min){
@@ -301,41 +290,6 @@ function getActConfig(act){
     return {type:'outdoor', lat:-33.190, lng:-70.695, location:'Colina, Chile'};
   // generic outdoor Santiago
   return {type:'outdoor', lat:-33.450, lng:-70.650, location:'Santiago, Chile'};
-}
-
-// ─────────────────────────────────────────────────────
-// GPS ROUTE GENERATOR (seeded, sport-specific)
-// ─────────────────────────────────────────────────────
-function generateRoute(activityId, sport, distKm, baseLat, baseLng){
-  var rng  = makeRNG(activityId % 999983);
-  var dist = (distKm||10)*1000;
-  var step = sport==='bike' ? 220 : sport==='run' ? 70 : 50;
-  var n    = Math.min(500, Math.max(25, Math.round(dist/step)));
-  var cosLat = Math.cos(baseLat*Math.PI/180);
-  var pts  = [[baseLat, baseLng]];
-  var bear = rng()*360;
-
-  for(var i=1;i<n;i++){
-    var t   = i/n;
-    var turn= (rng()-0.5)*(sport==='bike'?14:28);
-
-    if(sport==='bike' && distKm>=40){
-      // Mountain ride: outbound north, return south
-      var target = t<0.44 ? 10 : t>0.56 ? 178 : bear;
-      bear = bear*0.78 + target*0.22 + turn;
-    } else {
-      // Run / short ride: loose loop
-      var loopAngle = t*Math.PI*2;
-      var loopBear  = Math.atan2(Math.sin(loopAngle), Math.cos(loopAngle))*180/Math.PI + 90;
-      bear = bear*0.72 + loopBear*0.28 + turn;
-    }
-
-    var stepDeg = step/111000;
-    var lat = pts[i-1][0] + Math.cos(bear*Math.PI/180)*stepDeg;
-    var lng = pts[i-1][1] + Math.sin(bear*Math.PI/180)*stepDeg/cosLat;
-    pts.push([lat, lng]);
-  }
-  return pts;
 }
 
 // ─────────────────────────────────────────────────────
@@ -375,11 +329,11 @@ if(ACT.sport==='bike'){
   ];
 } else if(ACT.sport==='run'){
   var paceS = ACT.dist_km ? Math.round((ACT.dur_min*60)/ACT.dist_km) : null;
-  var cad   = 172 + Math.round((makeRNG(ACT.activity_id)()-0.5)*6);
+  var cad   = ACT.avg_cadence_spm ? Math.round(ACT.avg_cadence_spm) : null;
   kpis = [
     {lbl:'Ritmo Medio',    val:paceS?fmtPace(paceS):'—',    unit:'min/km',    col:'var(--green)'},
     {lbl:'FC Media',       val:ACT.avg_hr||'—',              unit:'bpm',       col:'var(--coral)'},
-    {lbl:'Cadencia',       val:cad,                           unit:'pasos/min', col:'var(--gold)'},
+    {lbl:'Cadencia',       val:cad||'—',                      unit:'pasos/min', col:'var(--gold)'},
     {lbl:'Calorías',       val:ACT.calories||'—',             unit:'kcal',      col:'var(--purple)'}
   ];
 } else if(ACT.sport==='swim'){
@@ -460,10 +414,10 @@ function initMap(){
     return;
   }
 
-  // OUTDOOR: Leaflet map
+  // OUTDOOR: Leaflet map — SOLO con track GPS real de Garmin. Sin datos
+  // reales, se muestra un estado vacío en vez de generar una ruta falsa.
   mapWrap.innerHTML = '<div id="map-leaflet"></div><div class="map-badge" id="map-badge"></div><div class="map-outdoor-label" id="map-loc"></div>';
 
-  // Build overlay info
   var badge = document.getElementById('map-badge');
   var locEl  = document.getElementById('map-loc');
   if(ACT.sport==='bike' && ACT.avg_power){
@@ -480,501 +434,104 @@ function initMap(){
   }
   locEl.textContent = cfg.location;
 
-  // Initialize Leaflet
-  leafletMap = L.map('map-leaflet', {
-    zoomControl: true,
-    attributionControl: true,
-    scrollWheelZoom: false
-  });
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19
-  }).addTo(leafletMap);
-
-  // Generate GPS route
-  var route = generateRoute(ACT.activity_id, ACT.sport, ACT.dist_km, cfg.lat, cfg.lng);
-
-  // Route color by sport
-  var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
-
-  // Draw route glow (thick, transparent)
-  L.polyline(route, {color:lineColor, weight:10, opacity:.15}).addTo(leafletMap);
-  // Draw route line
-  var poly = L.polyline(route, {color:lineColor, weight:3, opacity:.95}).addTo(leafletMap);
-
-  // Fit map to route
-  leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
-
-  // Custom icon factory
-  function circleIcon(color){
-    return L.divIcon({
-      className:'',
-      html:'<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
-      iconSize:[14,14], iconAnchor:[7,7]
-    });
+  function noGpsState(){
+    mapWrap.innerHTML = '<div class="indoor-card">'
+      +'<div class="indoor-icon">📍</div>'
+      +'<div class="indoor-label">Sin datos GPS disponibles</div>'
+      +'<div class="indoor-sub">Esta actividad no tiene track GPS sincronizado desde Garmin</div>'
+      +'</div>';
   }
 
-  L.marker(route[0], {icon: circleIcon('#10B981')})
-    .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
-  L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
-    .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
+  var _tok = localStorage.getItem('lx_co_token');
+  if(!_tok){ try{ var _s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(_s&&_s.token) _tok=_s.token; }catch(e){} }
+  var _API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
 
-  // Distance markers every N km
-  var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
-  var totalMeters = (ACT.dist_km||0)*1000;
-  var stepsPerKm  = route.length / (ACT.dist_km||1);
-  for(var mk=markerEvery; mk<(ACT.dist_km||0); mk+=markerEvery){
-    var idx = Math.round(mk * stepsPerKm);
-    if(idx < route.length){
-      L.marker(route[idx], {icon: L.divIcon({
-        className:'',
-        html:'<div style="font-family:Oswald,sans-serif;font-size:10px;color:#F0A500;background:rgba(4,8,15,.8);padding:1px 5px;border-radius:4px;border:1px solid rgba(240,165,0,.4);white-space:nowrap">'+mk+' km</div>',
-        iconAnchor:[20,10]
-      })}).addTo(leafletMap);
-    }
-  }
+  if(!_tok || !ACT.activity_id){ noGpsState(); return; }
+
+  fetch(_API+'/athlete/activities/'+ACT.activity_id+'/track', {headers:{Authorization:'Bearer '+_tok}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(trackData){
+      if(!trackData || !trackData.points || trackData.points.length < 2){ noGpsState(); return; }
+
+      var route = trackData.points.map(function(p){ return [p.lat, p.lon]; });
+
+      leafletMap = L.map('map-leaflet', {
+        zoomControl: true,
+        attributionControl: true,
+        scrollWheelZoom: false
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(leafletMap);
+
+      var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
+      L.polyline(route, {color:lineColor, weight:10, opacity:.15}).addTo(leafletMap);
+      var poly = L.polyline(route, {color:lineColor, weight:3, opacity:.95}).addTo(leafletMap);
+      leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
+
+      function circleIcon(color){
+        return L.divIcon({
+          className:'',
+          html:'<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
+          iconSize:[14,14], iconAnchor:[7,7]
+        });
+      }
+
+      L.marker(route[0], {icon: circleIcon('#10B981')})
+        .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
+      L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
+        .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
+
+      var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
+      var stepsPerKm  = route.length / (ACT.dist_km||1);
+      for(var mk=markerEvery; mk<(ACT.dist_km||0); mk+=markerEvery){
+        var idx = Math.round(mk * stepsPerKm);
+        if(idx < route.length){
+          L.marker(route[idx], {icon: L.divIcon({
+            className:'',
+            html:'<div style="font-family:Oswald,sans-serif;font-size:10px;color:#F0A500;background:rgba(4,8,15,.8);padding:1px 5px;border-radius:4px;border:1px solid rgba(240,165,0,.4);white-space:nowrap">'+mk+' km</div>',
+            iconAnchor:[20,10]
+          })}).addTo(leafletMap);
+        }
+      }
+    }).catch(function(){ noGpsState(); });
 }
 
 // ─────────────────────────────────────────────────────
-// CHART DATA GENERATORS (seeded by activity_id)
+// CHARTS / ZONAS / SPLITS — sin telemetria real, sin generar datos falsos
 // ─────────────────────────────────────────────────────
-function genSeries(n, base, amplitude, rng, fn){
-  fn = fn || function(t,r){ return base + (r-0.5)*amplitude; };
-  var raw = [];
-  for(var i=0;i<n;i++) raw.push(fn(i/n, rng()));
-  // smooth 3-pass
-  for(var p=0;p<3;p++){
-    for(var j=1;j<raw.length-1;j++)
-      raw[j] = (raw[j-1]+raw[j]*2+raw[j+1])/4;
-  }
-  return raw;
+// LabX no recibe de Garmin series segundo-a-segundo (potencia, FC, cadencia,
+// ritmo) ni detalle de sets de fuerza — solo estadisticas resumen por
+// actividad. Estas secciones antes mostraban curvas y splits 100% inventados
+// (generador seedeado por activity_id). Se reemplazan por un estado honesto
+// de "sin datos" en vez de simular telemetria que LabX nunca sincronizo.
+function noDataBlock(msg){
+  return '<div style="padding:2rem 1.5rem;text-align:center;color:var(--dim);font-size:.85rem">'
+    + '<div style="font-size:1.5rem;margin-bottom:.5rem">—</div>'
+    + msg
+    + '</div>';
 }
 
-function buildChartData(act){
-  var rng = makeRNG(act.activity_id+7);
-  var n   = Math.min(200, Math.max(60, act.dur_min*2));
-
-  if(act.sport==='bike'){
-    var avgP = act.avg_power || 160;
-    var np   = Math.round(avgP*1.07);
-    var pow  = genSeries(n, avgP, 80, rng, function(t,r){
-      if(t<0.1) return avgP*0.5 + avgP*0.5*t/0.1 + (r-0.5)*20;
-      if(t>0.92) return avgP*0.5 + avgP*0.5*(1-t)/0.08 + (r-0.5)*20;
-      var blk = Math.floor((t-0.1)/0.1)%2;
-      return blk===0 ? avgP*1.12+(r-0.5)*45 : avgP*0.55+(r-0.5)*20;
-    });
-    var hr = genSeries(n, act.avg_hr||145, 18, rng, function(t,r){
-      if(t<0.12) return (act.avg_hr||145)*0.72 + (act.avg_hr||145)*0.28*t/0.12 + (r-0.5)*5;
-      return (act.avg_hr||145)*0.9 + (r-0.5)*15 + t*8;
-    });
-    var isColina = (act.name||'').toLowerCase().indexOf('colina')>=0;
-    var altBase  = isColina ? 800 : 450;
-    var altRange = isColina ? 900 : 180;
-    var alt = genSeries(n, altBase, 60, rng, function(t,r){
-      var profile = t<0.45 ? t/0.45 : t<0.55 ? 1 : (1-t)/0.45;
-      return altBase + profile*altRange + (r-0.5)*25;
-    });
-    var spd = pow.map(function(p){ return Math.max(12, Math.min(55, p/8.2 + (rng()-0.5)*3)); });
-    return {
-      charts:[
-        {id:'c-pow', data:pow, color:'#FF6535', label:'Potencia (W)',
-         min:0, max:Math.round(Math.max.apply(null,pow)*1.1/50)*50,
-         anns:['NP: '+np+'W','Max: '+Math.round(Math.max.apply(null,pow))+'W'],
-         annColors:['#FF6535','#EF4444']},
-        {id:'c-hr',  data:hr,  color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
-         min:60, max:Math.round(Math.max.apply(null,hr)*1.05),
-         anns:['Media: '+Math.round(hr.reduce(function(a,b){return a+b;},0)/hr.length)+'bpm',
-               'Max: '+Math.round(Math.max.apply(null,hr))+'bpm'],
-         annColors:['#EF4444','#FF8C61']},
-        {id:'c-alt', data:alt, color:'#10B981', label:'Altitud (m)', filled:true,
-         min:Math.round(Math.min.apply(null,alt)/100)*100,
-         max:Math.round(Math.max.apply(null,alt)/100)*100+100,
-         anns:['↑ '+Math.round((isColina?altRange*0.95:altRange*0.6))+'m gain'],
-         annColors:['#10B981']},
-        {id:'c-spd', data:spd, color:'#22D3EE', label:'Velocidad (km/h)',
-         min:0, max:60,
-         anns:['Media: '+act.dist_km?(act.dist_km/(act.dur_min/60)).toFixed(1)+'km/h':'—',
-               'Max: '+Math.round(Math.max.apply(null,spd))+'km/h'],
-         annColors:['#22D3EE','#0EA5E9'], taxis: true}
-      ],
-      powerForZones: pow
-    };
-  }
-
-  if(act.sport==='run'){
-    var avgPaceS = act.dist_km ? Math.round((act.dur_min*60)/act.dist_km) : 300;
-    var pace = genSeries(n, avgPaceS, 30, rng, function(t,r){
-      if(t<0.08) return avgPaceS*1.18+(r-0.5)*15;
-      return avgPaceS*0.97+(r-0.5)*22+t*8;
-    });
-    var hrR = genSeries(n, act.avg_hr||148, 15, rng, function(t,r){
-      return (act.avg_hr||148)*0.88 + t*(act.avg_hr||148)*0.15 + (r-0.5)*8;
-    });
-    var altR = genSeries(n, 820, 50, rng, function(t,r){
-      return 820 + Math.sin(t*Math.PI*3)*45 + (r-0.5)*12;
-    });
-    var cadR = genSeries(n, 172, 8, rng);
-    return {
-      charts:[
-        {id:'c-pac', data:pace, color:'#10B981', label:'Ritmo (seg/km)', invertY:true,
-         min:avgPaceS-60, max:avgPaceS+90,
-         anns:[fmtPace(Math.round(pace.reduce(function(a,b){return a+b;},0)/pace.length))],
-         annColors:['#10B981']},
-        {id:'c-hr',  data:hrR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
-         min:80, max:Math.round(Math.max.apply(null,hrR)*1.05),
-         anns:['Media: '+Math.round(hrR.reduce(function(a,b){return a+b;},0)/hrR.length)+'bpm'],
-         annColors:['#EF4444']},
-        {id:'c-alt', data:altR, color:'#22D3EE', label:'Altitud (m)', filled:true,
-         min:780, max:900,
-         anns:['Las Condes · 820-880m'],
-         annColors:['#22D3EE']},
-        {id:'c-cad', data:cadR, color:'#A855F7', label:'Cadencia (pasos/min)',
-         min:155, max:190,
-         anns:['Media: '+Math.round(cadR.reduce(function(a,b){return a+b;},0)/cadR.length)+' spm'],
-         annColors:['#A855F7'], taxis:true}
-      ],
-      hrData: hrR
-    };
-  }
-
-  if(act.sport==='swim'){
-    var paceBase = act.swim_pace
-      ? (function(s){ var p=s.match(/(\d+):(\d+)/); return p?(+p[1]*60+ +p[2]):110; })(act.swim_pace)
-      : 110;
-    var swPace = genSeries(n, paceBase, 12, rng);
-    var swHR   = genSeries(n, act.avg_hr||105, 12, rng, function(t,r){
-      return (act.avg_hr||105) + t*8 + (r-0.5)*10;
-    });
-    var swolf  = genSeries(n, 38, 6, rng);
-    return {
-      charts:[
-        {id:'c-pac', data:swPace, color:'#0EA5E9', label:'Ritmo (seg/100m)', invertY:true,
-         min:paceBase-20, max:paceBase+30,
-         anns:[fmtPace100(Math.round(swPace.reduce(function(a,b){return a+b;},0)/swPace.length))],
-         annColors:['#0EA5E9']},
-        {id:'c-hr', data:swHR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
-         min:80, max:Math.round(Math.max.apply(null,swHR)*1.05),
-         anns:['Media: '+Math.round(swHR.reduce(function(a,b){return a+b;},0)/swHR.length)+'bpm'],
-         annColors:['#EF4444']},
-        {id:'c-swolf', data:swolf, color:'#22D3EE', label:'SWOLF (eficiencia)',
-         min:28, max:52,
-         anns:['Media: '+Math.round(swolf.reduce(function(a,b){return a+b;},0)/swolf.length)],
-         annColors:['#22D3EE'], taxis:true}
-      ],
-      hrData: swHR
-    };
-  }
-
-  // Strength: HR only
-  var strHR = genSeries(n, act.avg_hr||90, 25, rng, function(t,r){
-    var blk = Math.floor(t*6)%2;
-    return blk===0 ? (act.avg_hr||90)*1.15+(r-0.5)*15 : (act.avg_hr||90)*0.78+(r-0.5)*8;
-  });
-  return {
-    charts:[
-      {id:'c-hr', data:strHR, color:'#EF4444', label:'Frecuencia Cardíaca (bpm)',
-       min:50, max:Math.round(Math.max.apply(null,strHR)*1.1),
-       anns:['Media: '+Math.round(strHR.reduce(function(a,b){return a+b;},0)/strHR.length)+'bpm',
-             'Max: '+Math.round(Math.max.apply(null,strHR))+'bpm'],
-       annColors:['#EF4444','#FF8C61'], taxis:true}
-    ],
-    hrData: strHR
-  };
-}
-
-// ─────────────────────────────────────────────────────
-// SVG CHART RENDERER
-// ─────────────────────────────────────────────────────
-function drawChart(cfg, parentEl){
-  var block = document.createElement('div');
-  block.className = 'chart-block';
-
-  // Label row
-  var lblDiv = '<div class="chart-lbl">'
-    +'<span class="chart-name" style="color:'+cfg.color+'">'+cfg.label+'</span>'
-    +'<div class="chart-anns">'
-    +cfg.anns.map(function(a,i){
-      return '<div class="chart-ann"><div class="chart-ann-dot" style="background:'+(cfg.annColors[i]||cfg.color)+'"></div>'+a+'</div>';
-    }).join('')
-    +'</div></div>';
-
-  // SVG
-  var W=900,H=120,P={l:44,r:10,t:10,b:20};
-  var cW=W-P.l-P.r, cH=H-P.t-P.b;
-  var data = cfg.data, minV=cfg.min, maxV=cfg.max;
-  if(cfg.invertY){ var tmp=minV; minV=maxV; maxV=tmp; }
-
-  function xP(i){ return P.l + (i/(data.length-1))*cW; }
-  function yP(v){ return P.t + (1-(v-cfg.min)/(cfg.max-cfg.min))*cH; }
-
-  var html='';
-  // Grid lines
-  for(var gi=0;gi<=4;gi++){
-    var gv = cfg.min + gi*(cfg.max-cfg.min)/4;
-    var gy = yP(gv);
-    html+='<line x1="'+P.l+'" y1="'+gy+'" x2="'+(W-P.r)+'" y2="'+gy+'" stroke="rgba(8,116,174,.07)" stroke-width="1"/>';
-    html+='<text x="'+(P.l-4)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="#3D6880" font-family="Oswald,sans-serif">'+Math.round(gv)+'</text>';
-  }
-
-  // Power zone bands (bike power chart)
-  if(cfg.id==='c-pow'){
-    var pZones=[[0,FTP*.55,'rgba(61,104,128,.07)'],[FTP*.55,FTP*.75,'rgba(14,165,233,.05)'],
-                [FTP*.75,FTP*.9,'rgba(16,185,129,.05)'],[FTP*.9,FTP*1.05,'rgba(240,165,0,.06)'],
-                [FTP*1.05,FTP*1.2,'rgba(255,101,53,.07)'],[FTP*1.2,999,'rgba(239,68,68,.07)']];
-    pZones.forEach(function(z){
-      var y1=Math.max(P.t,yP(Math.min(z[1],cfg.max)));
-      var y2=Math.min(H-P.b,yP(Math.max(z[0],cfg.min)));
-      if(y2>y1) html+='<rect x="'+P.l+'" y="'+y1+'" width="'+cW+'" height="'+(y2-y1)+'" fill="'+z[2]+'"/>';
-    });
-  }
-
-  // Area fill
-  if(cfg.filled){
-    var areaD='M'+xP(0)+','+yP(data[0])+' '+data.slice(1).map(function(v,i){ return 'L'+xP(i+1)+','+yP(v); }).join(' ')
-      +' L'+xP(data.length-1)+','+(H-P.b)+' L'+xP(0)+','+(H-P.b)+' Z';
-    html+='<defs><linearGradient id="grd-'+cfg.id+'" x1="0" y1="0" x2="0" y2="1">'
-      +'<stop offset="0%" stop-color="'+cfg.color+'" stop-opacity=".35"/>'
-      +'<stop offset="100%" stop-color="'+cfg.color+'" stop-opacity=".02"/></linearGradient></defs>';
-    html+='<path d="'+areaD+'" fill="url(#grd-'+cfg.id+')"/>';
-  }
-
-  var pts = data.map(function(v,i){ return xP(i)+','+yP(v); }).join(' ');
-
-  var svgStr = '<svg class="chart-svg" id="'+cfg.id+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+html+'</svg>';
-
-  var taxisStr = '';
-  if(cfg.taxis){
-    var labels=[]; var steps=6;
-    for(var ti=0;ti<=steps;ti++) labels.push(Math.round(ACT.dur_min*ti/steps)+'min');
-    taxisStr='<div class="chart-taxis">'+labels.map(function(l){return '<span>'+l+'</span>';}).join('')+'</div>';
-  }
-
-  block.innerHTML = lblDiv+svgStr+taxisStr;
-  parentEl.appendChild(block);
-
-  // Animated polyline via DOM (cannot use innerHTML for SVG namespace)
-  var svg = block.querySelector('#'+cfg.id);
-  var line = document.createElementNS('http://www.w3.org/2000/svg','polyline');
-  line.setAttribute('points', pts);
-  line.setAttribute('fill','none');
-  line.setAttribute('stroke', cfg.color);
-  line.setAttribute('stroke-width','2');
-  line.setAttribute('stroke-linejoin','round');
-  svg.appendChild(line);
-
-  var len = line.getTotalLength();
-  line.style.strokeDasharray = len;
-  line.style.strokeDashoffset= len;
-  line.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)';
-  setTimeout(function(){ line.style.strokeDashoffset='0'; },300);
-}
-
-// ─────────────────────────────────────────────────────
-// RENDER: CHARTS
-// ─────────────────────────────────────────────────────
-var chartData = buildChartData(ACT);
 var chartsInner = document.getElementById('charts-inner');
-chartData.charts.forEach(function(c){ drawChart(c, chartsInner); });
+if(chartsInner) chartsInner.innerHTML = noDataBlock('Sin datos de telemetría disponibles. LabX no recibe series segundo a segundo (potencia, FC, cadencia, ritmo) desde Garmin para esta actividad.');
 
-// ─────────────────────────────────────────────────────
-// RENDER: ZONES
-// ─────────────────────────────────────────────────────
 function renderZones(){
   var zonesGrid = document.getElementById('zones-grid');
-  var dur = ACT.dur_min;
-
-  if(ACT.sport==='bike'){
-    var pZoneDef=[
-      {lbl:'Z1 Recovery',   pct: 8, col:'#3D6880'},
-      {lbl:'Z2 Endurance',  pct:15, col:'var(--cyan)'},
-      {lbl:'Z3 Tempo',      pct:20, col:'var(--green)'},
-      {lbl:'Z4 Threshold',  pct:38, col:'var(--gold)'},
-      {lbl:'Z5 VO₂Max',     pct:14, col:'var(--orange)'},
-      {lbl:'Z6 Anaeróbico', pct: 5, col:'var(--red)'}
-    ];
-    // Adjust based on avg_power vs FTP
-    if(ACT.avg_power){
-      var ratio = ACT.avg_power/FTP;
-      if(ratio<0.6){ pZoneDef[0].pct=25; pZoneDef[1].pct=35; pZoneDef[2].pct=20; pZoneDef[3].pct=12; pZoneDef[4].pct=6; pZoneDef[5].pct=2; }
-      else if(ratio>0.85){ pZoneDef[0].pct=5; pZoneDef[1].pct=10; pZoneDef[2].pct=18; pZoneDef[3].pct=42; pZoneDef[4].pct=18; pZoneDef[5].pct=7; }
-    }
-    var hrZoneDef=[
-      {lbl:'Z1 <108bpm',  pct: 5, col:'#3D6880'},
-      {lbl:'Z2 108-126',  pct:12, col:'var(--cyan)'},
-      {lbl:'Z3 126-144',  pct:20, col:'var(--green)'},
-      {lbl:'Z4 144-162',  pct:55, col:'var(--orange)'},
-      {lbl:'Z5 >162bpm',  pct: 8, col:'var(--red)'}
-    ];
-    zonesGrid.innerHTML =
-      colHtml('Zonas de Potencia', pZoneDef, dur)
-      + colHtml('Zonas de Frecuencia Cardíaca', hrZoneDef, dur);
-  } else if(ACT.sport==='run'){
-    var hrZR=[
-      {lbl:'Z1 Recuperación', pct: 6, col:'#3D6880'},
-      {lbl:'Z2 Aeróbico',     pct:45, col:'var(--cyan)'},
-      {lbl:'Z3 Tempo',        pct:28, col:'var(--green)'},
-      {lbl:'Z4 Umbral',       pct:16, col:'var(--orange)'},
-      {lbl:'Z5 Máximo',       pct: 5, col:'var(--red)'}
-    ];
-    var paceZR=[
-      {lbl:'Muy fácil >6:30',  pct: 8, col:'#3D6880'},
-      {lbl:'Fácil 6:00-6:30',  pct:38, col:'var(--cyan)'},
-      {lbl:'Tempo 5:30-6:00',  pct:30, col:'var(--green)'},
-      {lbl:'Umbral 5:00-5:30', pct:18, col:'var(--orange)'},
-      {lbl:'Rápido <5:00',     pct: 6, col:'var(--red)'}
-    ];
-    zonesGrid.innerHTML = colHtml('Zonas de FC',col2(hrZR,dur)) + colHtml2('Zonas de Ritmo', paceZR, dur);
-    function col2(z,d){ return z; }
-    function colHtml2(t,z,d){ return colHtml(t,z,d); }
-  } else {
-    var hrZS=[
-      {lbl:'Z1 Reposo <80bpm',  pct:15, col:'#3D6880'},
-      {lbl:'Z2 Bajo 80-100',    pct:35, col:'var(--cyan)'},
-      {lbl:'Z3 Moderado 100-120',pct:32, col:'var(--green)'},
-      {lbl:'Z4 Alto 120-140',   pct:14, col:'var(--orange)'},
-      {lbl:'Z5 Máximo >140',    pct: 4, col:'var(--red)'}
-    ];
-    zonesGrid.innerHTML = colHtml('Zonas de FC', hrZS, dur);
-    zonesGrid.style.gridTemplateColumns='1fr';
-  }
-
-  function colHtml(title, zones, totalMin){
-    var html='<div class="zone-col"><div class="zone-title">'+title+'</div>';
-    zones.forEach(function(z){
-      var min = Math.round(totalMin*z.pct/100);
-      html+='<div class="zone-row">'
-        +'<div class="zone-name">'+z.lbl+'</div>'
-        +'<div class="zone-bar-bg"><div class="zone-bar-f" data-w="'+z.pct+'" style="background:'+z.col+'"></div></div>'
-        +'<div class="zone-pct">'+z.pct+'%</div>'
-        +'<div class="zone-min">'+min+'min</div>'
-        +'</div>';
-    });
-    return html+'</div>';
-  }
+  if(!zonesGrid) return;
+  zonesGrid.style.gridTemplateColumns = '1fr';
+  zonesGrid.innerHTML = noDataBlock('Sin datos de distribución de zonas disponibles. Requiere telemetría segundo a segundo que LabX no sincroniza desde Garmin.');
 }
 renderZones();
 
-// ─────────────────────────────────────────────────────
-// RENDER: SPLITS / EXERCISE LIST
-// ─────────────────────────────────────────────────────
 function renderSplits(){
-  var rng   = makeRNG(ACT.activity_id + 99);
   var inner = document.getElementById('splits-inner');
-
-  if(ACT.sport==='str'){
-    document.getElementById('splits-title').textContent = 'Ejercicios de la Sesión';
-    var exercises = [
-      {n:'Sentadilla',          sets:'4×8',   peso:'80 kg'},
-      {n:'Peso Muerto',         sets:'3×6',   peso:'100 kg'},
-      {n:'Press Banca',         sets:'4×10',  peso:'70 kg'},
-      {n:'Dominadas',           sets:'3×8',   peso:'Peso Corporal'},
-      {n:'Zancadas',            sets:'3×12',  peso:'30 kg c/u'},
-      {n:'Plancha',             sets:'3×60s', peso:'—'},
-      {n:'Hip Thrust',          sets:'4×12',  peso:'60 kg'},
-      {n:'Core Rotacional',     sets:'3×15',  peso:'5 kg'}
-    ];
-    inner.innerHTML = '<div class="ex-grid">'+exercises.map(function(e){
-      return '<div class="ex-card">'
-        +'<div class="ex-name">'+e.n+'</div>'
-        +'<div class="ex-detail">'+e.sets+'</div>'
-        +'<div class="ex-sub">'+e.peso+'</div>'
-        +'</div>';
-    }).join('')+'</div>';
-    return;
-  }
-
-  if(ACT.sport==='swim'){
-    document.getElementById('splits-title').textContent = 'Parciales por 100m';
-    var dist  = ACT.dist_km ? ACT.dist_km*1000 : 1900;
-    var nLaps  = Math.round(dist/100);
-    var pBase  = ACT.swim_pace
-      ? (function(s){var p=s.match(/(\d+):(\d+)/);return p?(+p[1]*60+ +p[2]):110;})(ACT.swim_pace)
-      : 110;
-    var rows='',best=0,bestT=999;
-    for(var li=0;li<nLaps;li++){
-      var lapPace = pBase + Math.round((rng()-0.5)*14) + (li>nLaps*0.8?6:0);
-      if(lapPace<bestT){bestT=lapPace;best=li;}
-      rows+='<tr'+(li===best?' class="best"':'')+'>'
-        +'<td>'+(li+1)+(li===best?' <span class="best-lbl">★ Mejor</span>':'')+'</td>'
-        +'<td>'+(li*100)+'-'+((li+1)*100)+'m</td>'
-        +'<td>'+fmtPace100(lapPace)+'</td>'
-        +'<td>'+(30+Math.round(rng()*6))+'</td>'
-        +'<td>'+(Math.round(pBase+(rng()-0.5)*8))+'</td>'
-        +'</tr>';
-    }
-    inner.innerHTML='<div style="overflow-x:auto"><table class="splits-tbl">'
-      +'<thead><tr><th>Largo</th><th>Metros</th><th>Ritmo</th><th>Brazadas</th><th>SWOLF</th></tr></thead>'
-      +'<tbody>'+rows+'</tbody>'
-      +'<tfoot><tr><td>TOTAL</td><td>'+Math.round(dist)+'m</td>'
-      +'<td style="color:var(--cyan)">'+fmtPace100(pBase)+'</td>'
-      +'<td>'+Math.round(32+rng()*4)+'</td><td>'+Math.round(36+rng()*4)+'</td></tr></tfoot>'
-      +'</table></div>';
-    return;
-  }
-
-  // Bike / Run: km splits
-  var sport = ACT.sport;
-  document.getElementById('splits-title').textContent = 'Parciales por Kilómetro';
-  var totalKm = ACT.dist_km || 0;
-  var numKm   = Math.round(totalKm);
-  if(numKm<1){
-    inner.innerHTML='<p style="padding:1.5rem;color:var(--dim);font-size:.82rem">Sin datos de parciales disponibles.</p>';
-    return;
-  }
-
-  var avgSpd  = totalKm/(ACT.dur_min/60);
-  var avgPaceS= sport==='run' ? Math.round((ACT.dur_min*60)/totalKm) : null;
-  var avgPow  = ACT.avg_power || null;
-  var bestKm=-1, bestVal=sport==='bike'?0:999;
-  var rows='';
-
-  for(var ki=1;ki<=numKm;ki++){
-    var isWarmup  = ki===1;
-    var isCooldown= ki===numKm;
-    var kmPow     = avgPow ? Math.round(avgPow*(isWarmup||isCooldown?0.72:1.08+(rng()-0.5)*0.22)):null;
-    var kmPace    = avgPaceS ? Math.round(avgPaceS*(isWarmup?1.18:isCooldown?1.12:0.96+(rng()-0.5)*0.12)):null;
-    var kmHR      = Math.round((ACT.avg_hr||148)*(isWarmup?0.82:0.98+(rng()-0.5)*0.08));
-    var kmSpd     = kmPow ? (kmPow/8.2).toFixed(1) : avgSpd?(avgSpd*0.95+(rng()-0.5)*4).toFixed(1):'—';
-    var kmIF      = kmPow ? (kmPow/FTP).toFixed(2) : null;
-
-    if(sport==='bike' && kmPow && kmPow>bestVal){ bestVal=kmPow; bestKm=ki; }
-    if(sport==='run'  && kmPace && kmPace<bestVal){ bestVal=kmPace; bestKm=ki; }
-
-    var note = isWarmup?'<span style="color:var(--dim);font-size:.72rem">Calentamiento</span>'
-              :isCooldown?'<span style="color:var(--dim);font-size:.72rem">Enfriamiento</span>':'';
-
-    rows+='<tr'+(ki===bestKm?' class="best"':'')+'>';
-    rows+='<td>'+ki+(ki===bestKm?' <span class="best-lbl">★</span>':'')+'</td>';
-    if(sport==='bike'){
-      rows+='<td style="color:var(--orange)">'+(kmPow?kmPow+'W':'—')+'</td>';
-      rows+='<td>'+(kmIF||'—')+'</td>';
-    } else {
-      rows+='<td style="color:var(--green)">'+(kmPace?fmtPace(kmPace):'—')+'</td>';
-      rows+='<td style="color:var(--purple)">'+(172+Math.round((rng()-0.5)*8))+'</td>';
-    }
-    rows+='<td style="color:var(--coral)">'+kmHR+'</td>';
-    rows+='<td>'+kmSpd+' km/h</td>';
-    rows+='<td>'+note+'</td></tr>';
-  }
-
-  var thead = sport==='bike'
-    ? '<tr><th>Km</th><th>Potencia</th><th>IF</th><th>FC</th><th>Velocidad</th><th></th></tr>'
-    : '<tr><th>Km</th><th>Ritmo</th><th>Cadencia</th><th>FC</th><th>Velocidad</th><th></th></tr>';
-
-  var avgPowStr  = avgPow?avgPow+'W NP':'—';
-  var avgPaceStr = avgPaceS?fmtPace(avgPaceS):'—';
-  var avgHRStr   = (ACT.avg_hr||'—')+' bpm';
-
-  inner.innerHTML='<div style="overflow-x:auto"><table class="splits-tbl">'
-    +'<thead>'+thead+'</thead><tbody>'+rows+'</tbody>'
-    +'<tfoot><tr><td>TOTAL</td>'
-    +(sport==='bike'?'<td style="color:var(--orange)">'+avgPowStr+'</td><td style="color:var(--gold)">'+(avgPow?(avgPow/FTP).toFixed(2):'—')+'</td>'
-                   :'<td style="color:var(--green)">'+avgPaceStr+'</td><td style="color:var(--purple)">172</td>')
-    +'<td style="color:var(--coral)">'+avgHRStr+'</td>'
-    +'<td>'+(totalKm.toFixed(1))+' km</td><td></td></tr></tfoot>'
-    +'</table></div>';
+  if(!inner) return;
+  var titleEl = document.getElementById('splits-title');
+  if(titleEl) titleEl.textContent = ACT.sport==='str' ? 'Ejercicios de la Sesión' : 'Parciales';
+  inner.innerHTML = noDataBlock('Sin datos de parciales disponibles. LabX no recibe detalle por segmento/set desde Garmin para esta actividad.');
 }
 renderSplits();
 

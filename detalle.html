@@ -1621,7 +1621,10 @@ function goBack() {
       // Usar fecha LOCAL del navegador (no UTC) para evitar avanzar de día antes de medianoche local
       var _now = new Date();
       var todayISO = _now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
-      if(d.pmc && d.pmc.length){
+      // pmc es autoritativo incluso vacío — reemplaza la curva sintética de
+      // demo (mismo patrón que HRV/VO2) para que "sin actividades reales"
+      // muestre "Sin datos" en vez de un histórico inventado.
+      if(d.pmc){
         var newCtl = d.pmc.filter(function(p){ return p.ctl != null && p.ctl > 0; })
                           .map(function(p){ return {date:p.dt, value:Math.round(p.ctl*10)/10}; });
         var newAtl = d.pmc.filter(function(p){ return p.atl != null; })
@@ -1630,10 +1633,9 @@ function goBack() {
           var v = p.ctl != null && p.atl != null ? Math.round((p.ctl-p.atl)*10)/10 : null;
           return {date:p.dt, value:v};
         }).filter(function(p){ return p.value != null; });
-        // Solo reemplazar si tenemos datos reales (nunca vaciar ALL con [] vacío)
-        if(newCtl.length > 0) ALL.ctl = newCtl;
-        if(newAtl.length > 0) ALL.atl = newAtl;
-        if(newTsb.length > 0) ALL.tsb = newTsb;
+        ALL.ctl = newCtl;
+        ALL.atl = newAtl;
+        ALL.tsb = newTsb;
       }
       // Agregar punto de HOY con valores proyectados (fuera del bloque pmc para que siempre corra)
       if(d.ctl != null){
@@ -1642,16 +1644,16 @@ function goBack() {
         else if(ALL.ctl[ALL.ctl.length-1].date === todayISO)
           ALL.ctl[ALL.ctl.length-1].value = Math.round(d.ctl*10)/10;
       }
-      if(d.atl != null && ALL.atl.length && ALL.atl[ALL.atl.length-1].date < todayISO)
+      if(d.atl != null && (!ALL.atl.length || ALL.atl[ALL.atl.length-1].date < todayISO))
         ALL.atl.push({date:todayISO, value:Math.round(d.atl*10)/10});
-      if(d.tsb != null && ALL.tsb.length && ALL.tsb[ALL.tsb.length-1].date < todayISO)
+      if(d.tsb != null && (!ALL.tsb.length || ALL.tsb[ALL.tsb.length-1].date < todayISO))
         ALL.tsb.push({date:todayISO, value:Math.round(d.tsb*10)/10});
-      // ACWR from acwr_history
-      if(d.acwr_history && d.acwr_history.length){
+      // ACWR from acwr_history — autoritativo incluso vacío (mismo patrón)
+      if(d.acwr_history){
         var newAcwr = d.acwr_history.map(function(p){ return {date:p.dt, value:p.acwr}; })
                                     .filter(function(p){ return p.value != null; });
-        if(newAcwr.length) ALL.acwr = newAcwr;
-        if(d.acwr != null && ALL.acwr.length && ALL.acwr[ALL.acwr.length-1].date < todayISO)
+        ALL.acwr = newAcwr;
+        if(d.acwr != null && (!ALL.acwr.length || ALL.acwr[ALL.acwr.length-1].date < todayISO))
           ALL.acwr.push({date:todayISO, value:d.acwr});
       }
       // HRV from hrv_history — respuesta real de la API es autoritativa,
@@ -1679,8 +1681,8 @@ function goBack() {
           return {dt:p.dt, l:p.l||p.dt, ctl:p.ctl||0, atl:p.atl||0, tss:p.tss||0};
         });
       }
-      // TSS weekly from PMC weekly totals
-      if(d.pmc && d.pmc.length){
+      // TSS weekly from PMC weekly totals — autoritativo incluso vacío
+      if(d.pmc){
         var byWeek = {};
         d.pmc.forEach(function(p){
           if(!p.tss) return;
@@ -1691,7 +1693,7 @@ function goBack() {
           byWeek[wk] = (byWeek[wk]||0) + (p.tss||0);
         });
         var tssArr = Object.keys(byWeek).sort().map(function(wk){ return {date:wk, value:Math.round(byWeek[wk])}; });
-        if(tssArr.length) ALL.tss = tssArr;
+        ALL.tss = tssArr;
       }
 
       render();
