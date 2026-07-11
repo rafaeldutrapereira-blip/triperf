@@ -279,6 +279,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if "text/html" in ct:
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"]        = "no-cache"
+        # No-cache para /api/*: sin esto el browser puede reusar una respuesta
+        # JSON vieja (ej. datos Garmin desactualizados) aunque el usuario haga
+        # hard-refresh de la página, porque fetch() posteriores al load no
+        # siempre respetan el bypass de caché del hard-refresh.
+        elif request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store, must-revalidate"
+            response.headers["Pragma"]        = "no-cache"
         if os.getenv("APP_ENV", "development") == "production":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             response.headers["Content-Security-Policy"] = (
