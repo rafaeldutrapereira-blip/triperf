@@ -504,7 +504,26 @@ def _garmin_login(user_id: str, email: str, password: str):
             "Ve a tu Perfil → Reconectar Garmin e ingresa el código."
         )
 
-    logger.info("Garmin login ok user=%s", user_id)
+    # IMPORTANTE: con return_on_mfa=True, la librería garminconnect retorna
+    # temprano en TODO login por credenciales (incluso sin MFA real) y NUNCA
+    # guarda el token en disco ni carga el perfil (display_name) — ese
+    # trabajo solo lo hace su rama return_on_mfa=False. Lo replicamos acá
+    # a mano; si no, cada sync vuelve a pedir credenciales/MFA de cero y
+    # cualquier endpoint que necesite display_name (RHR, sleep) falla.
+    try:
+        client.client.dump(token_store)
+    except Exception as exc:
+        logger.warning("Garmin token dump falló user=%s: %s", user_id, exc)
+    if not client.display_name:
+        try:
+            prof = client.client.connectapi("/userprofile-service/socialProfile")
+            if isinstance(prof, dict):
+                client.display_name = prof.get("displayName")
+                client.full_name = prof.get("fullName", "")
+        except Exception as exc:
+            logger.warning("Garmin profile fetch falló user=%s: %s", user_id, exc)
+
+    logger.info("Garmin login ok user=%s display_name=%s", user_id, bool(client.display_name))
     return client
 
 
@@ -541,8 +560,23 @@ def start_mfa_flow(user_id: str, email: str, password: str, db: Session) -> dict
             }
             return {"ok": True, "needs_mfa": True, "mfa_type": mfa_status}
 
-        # Login OK sin MFA (token válido o login limpio)
-        logger.info("start_mfa_flow: login sin MFA user=%s", user_id)
+        # Login OK sin MFA — replicar guardado de token + carga de perfil
+        # que garminconnect se salta en modo return_on_mfa=True (ver
+        # comentario en _garmin_login).
+        try:
+            client.client.dump(token_store)
+        except Exception as exc:
+            logger.warning("Garmin token dump falló user=%s: %s", user_id, exc)
+        if not client.display_name:
+            try:
+                prof = client.client.connectapi("/userprofile-service/socialProfile")
+                if isinstance(prof, dict):
+                    client.display_name = prof.get("displayName")
+                    client.full_name = prof.get("fullName", "")
+            except Exception as exc:
+                logger.warning("Garmin profile fetch falló user=%s: %s", user_id, exc)
+
+        logger.info("start_mfa_flow: login sin MFA user=%s display_name=%s", user_id, bool(client.display_name))
         _update_sync_status_ok(user_id, db)
         return {"ok": True, "needs_mfa": False}
 
@@ -835,11 +869,13 @@ class GarminPullService:
             m = ((m - 1) % 12) + 1
             months_to_fetch.append((y, m))
 
-        # Borrar planificados futuros del usuario (se re-insertan frescos)
-        cutoff_del = (today - timedelta(days=30)).isoformat()
+        # Borrar TODO lo planificado del usuario antes de reinsertar fresco.
+        # Antes filtraba por fecha (>= hoy-30d), pero Garmin a veces devuelve
+        # en el calendario ítems de fechas más viejas (padding de grilla
+        # mensual), que quedaban sin borrar y chocaban con el UNIQUE
+        # constraint (user_id, garmin_scheduled_id) al reinsertar.
         db.query(GarminPlannedWorkout).filter(
             GarminPlannedWorkout.user_id == user_id,
-            GarminPlannedWorkout.date_iso >= cutoff_del,
         ).delete()
         db.flush()
 
