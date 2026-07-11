@@ -974,6 +974,20 @@ class GarminPullService:
         db = self._db
         today = date.today()
 
+        # VO2max cambia lento — se pide una sola vez (no por día) y se guarda
+        # en el registro de hoy.
+        vo2max_running = vo2max_cycling = None
+        try:
+            mm = _retry(lambda: client.get_max_metrics(today.isoformat()), max_attempts=2, base_delay=1.0)
+            if mm and isinstance(mm, list) and mm:
+                entry = mm[0]
+                generic = entry.get("generic") or {}
+                cycling = entry.get("cycling") or {}
+                vo2max_running = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
+                vo2max_cycling = cycling.get("vo2MaxValue")
+        except Exception as exc:
+            logger.warning("VO2max skip user=%s: %s", user_id, exc)
+
         for delta in range(days):
             target = today - timedelta(days=delta)
             iso    = target.isoformat()
@@ -987,7 +1001,7 @@ class GarminPullService:
                     if vals:
                         bb_min, bb_max, bb_end = min(vals), max(vals), vals[-1]
             except Exception as exc:
-                logger.debug("BodyBattery skip %s user=%s: %s", iso, user_id, exc)
+                logger.warning("BodyBattery skip %s user=%s: %s", iso, user_id, exc)
 
             # ── HRV ──────────────────────────────────────────────────────
             hrv_weekly = hrv_night = hrv_low = hrv_high = None
@@ -1002,7 +1016,7 @@ class GarminPullService:
                     hrv_high   = _safe_float(summary.get("baseline", {}).get("balancedLow")) or None
                     hrv_status_str = summary.get("status")
             except Exception as exc:
-                logger.debug("HRV skip %s user=%s: %s", iso, user_id, exc)
+                logger.warning("HRV skip %s user=%s: %s", iso, user_id, exc)
 
             # ── Stress ───────────────────────────────────────────────────
             stress_avg = rest_pct = None
@@ -1025,7 +1039,7 @@ class GarminPullService:
                     spo2_avg = _safe_float(spo2_data.get("averageSpO2")) or None
                     spo2_min = _safe_float(spo2_data.get("lowestSpO2")) or None
             except Exception as exc:
-                logger.debug("SpO2 skip %s user=%s: %s", iso, user_id, exc)
+                logger.warning("SpO2 skip %s user=%s: %s", iso, user_id, exc)
 
             try:
                 resp_data = _retry(lambda d=iso: client.get_respiration_data(d), max_attempts=2, base_delay=1.0)
@@ -1041,7 +1055,7 @@ class GarminPullService:
                     if vals_list:
                         resting_hr = _safe_int(vals_list[0].get("value")) or None
             except Exception as exc:
-                logger.debug("RHR skip %s user=%s: %s", iso, user_id, exc)
+                logger.warning("RHR skip %s user=%s: %s", iso, user_id, exc)
 
             # ── Training Readiness ────────────────────────────────────────
             readiness = recovery_h = None
@@ -1054,9 +1068,14 @@ class GarminPullService:
             except Exception as exc:
                 logger.debug("TrainingReadiness skip %s user=%s: %s", iso, user_id, exc)
 
+            # ── VO2max: solo se adjunta al día de hoy (delta==0) ───────────
+            day_vo2_running = vo2max_running if delta == 0 else None
+            day_vo2_cycling = vo2max_cycling if delta == 0 else None
+
             # ── Upsert garmin_health_daily ────────────────────────────────
             has_data = any(v is not None for v in [
-                bb_end, hrv_night, stress_avg, spo2_avg, readiness
+                bb_end, hrv_night, stress_avg, spo2_avg, readiness,
+                day_vo2_running, day_vo2_cycling,
             ])
             if not has_data:
                 continue
@@ -1083,6 +1102,8 @@ class GarminPullService:
                 if resting_hr  is not None: existing.resting_hr        = resting_hr
                 if readiness   is not None: existing.training_readiness = readiness
                 if recovery_h  is not None: existing.recovery_time_h   = recovery_h
+                if day_vo2_running is not None: existing.vo2max_running = day_vo2_running
+                if day_vo2_cycling is not None: existing.vo2max_cycling = day_vo2_cycling
                 existing.synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
             else:
                 db.add(GarminHealthDaily(
@@ -1104,6 +1125,8 @@ class GarminPullService:
                     resting_hr        = resting_hr,
                     training_readiness= readiness,
                     recovery_time_h   = recovery_h,
+                    vo2max_running    = day_vo2_running,
+                    vo2max_cycling    = day_vo2_cycling,
                     synced_at         = datetime.now(timezone.utc).replace(tzinfo=None),
                 ))
 
@@ -1173,7 +1196,7 @@ class GarminPullService:
                             synced_at             = datetime.now(timezone.utc).replace(tzinfo=None),
                         ))
             except Exception as exc:
-                logger.debug("Sleep skip %s user=%s: %s", iso, user_id, exc)
+                logger.warning("Sleep skip %s user=%s: %s", iso, user_id, exc)
 
         try:
             db.commit()

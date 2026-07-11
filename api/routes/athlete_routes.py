@@ -691,6 +691,16 @@ def athlete_dashboard(
         for r in _sleep_90
         if r.total_min is not None
     ]
+    rhr_history = [
+        {"dt": r.date_iso, "rhr": r.resting_hr}
+        for r in _health_90 if r.resting_hr is not None
+    ]
+    bb_history = [
+        {"dt": r.date_iso, "bb": r.body_battery_end}
+        for r in _health_90 if r.body_battery_end is not None
+    ]
+    _vo2_rows = [r for r in reversed(_health_90) if r.vo2max_running or r.vo2max_cycling]
+    vo2max_garmin = (_vo2_rows[0].vo2max_running or _vo2_rows[0].vo2max_cycling) if _vo2_rows else None
 
     hrv_last_night   = health_today.hrv_last_night    if health_today else None
     hrv_7d_avg       = health_today.hrv_weekly_avg     if health_today else None
@@ -846,6 +856,9 @@ def athlete_dashboard(
         # Históricos wellbeing (90 días) para detalle.html?metric=wellbeing
         "sleep_history": sleep_history,
         "hrv_history":   hrv_history,
+        "rhr_history":   rhr_history,
+        "bb_history":    bb_history,
+        "vo2max_garmin": vo2max_garmin,
         # Actividades
         "activities": activities,
         # Resumen semanal por disciplina

@@ -951,6 +951,10 @@ class GarminHealthDaily(Base):
     training_readiness     = Column(Integer, nullable=True)
     recovery_time_h        = Column(Integer, nullable=True)
 
+    # VO2 Max estimado por Garmin (get_max_metrics)
+    vo2max_running    = Column(Float, nullable=True)
+    vo2max_cycling    = Column(Float, nullable=True)
+
     # LabX Readiness Score propio (0-100) â€” calculado localmente
     labx_readiness_score   = Column(Integer, nullable=True)
     labx_readiness_factors = Column(Text,    nullable=True)  # JSON desglose por factor

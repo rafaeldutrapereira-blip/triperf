@@ -2361,6 +2361,17 @@ function _showSyncBanner(secsTotal){
         };
       });
     }
+    if(fresh.vo2max_garmin != null){
+      var vo2El = document.getElementById('kl-vo2max-val');
+      if(vo2El){
+        var vo2str = String(fresh.vo2max_garmin);
+        var dot = vo2str.indexOf('.');
+        vo2El.innerHTML = dot >= 0 ? vo2str.slice(0,dot)+'<span class="u">'+vo2str.slice(dot)+'</span>' : vo2str+'<span class="u"></span>';
+      }
+      var bVo2El = document.getElementById('badge-vo2');
+      if(bVo2El){ bVo2El.className='badge b-up'; bVo2El.textContent='Garmin'; }
+      window._vo2GarminApplied = true;
+    }
     window._apiFetching = false;
     patchData();
     renderWeekAdherence();
@@ -2823,7 +2834,7 @@ function applyAthleteData(d){
   var n = document.getElementById('kl-greeting-name');
   if(n && d.name) n.textContent = d.name;
   var v = document.getElementById('kl-vo2max-val');
-  if(v && d.vo2max != null && d.vo2max !== '—'){
+  if(v && !window._vo2GarminApplied && d.vo2max != null && d.vo2max !== '—'){
     var vo2str = String(d.vo2max);
     var dot = vo2str.indexOf('.');
     v.innerHTML = dot >= 0 ? vo2str.slice(0,dot)+'<span class="u">'+vo2str.slice(dot)+'</span>' : vo2str+'<span class="u"></span>';
