@@ -1957,25 +1957,23 @@ function renderWeeklyProgress(sport){
     var x = padL + i * barW;
     var barH = val > 0 ? (val / maxLine) * chartH : 0;
     var y = padT + chartH - barH;
-    var isCurrent = (i === weeks.length - 1);
 
-    // Bar
-    var alpha = isCurrent ? '.85' : '.45';
-    var barColor = isCurrent ? color : 'rgba(255,255,255,.12)';
+    // Bar — estilo neutro al dibujar; qué semana queda "activa" (color
+    // naranja) se aplica después con _wpHighlight(), para que tanto el
+    // pintado inicial (semana actual) como el hover usen la misma lógica.
     if(val > 0){
-      lines.push('<rect x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="'+(isCurrent?color+'cc':'rgba(255,255,255,.12)')+'"/>');
+      lines.push('<rect class="wp-bar" data-wk-idx="'+i+'" x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="rgba(255,255,255,.12)"/>');
     }
 
     // Dot for line chart
     var cx = padL + (i + 0.5) * barW;
     var cy = val > 0 ? padT + chartH - (val / maxLine) * chartH : null;
-    if(cy !== null) dotPts.push({x:cx, y:cy, cur:isCurrent});
+    if(cy !== null) dotPts.push({x:cx, y:cy, idx:i});
 
     // X label — todas las semanas, rotadas para que quepan
-    var lblAlpha = isCurrent ? '.85' : '.35';
     var lx = x + barW / 2;
     var ly = padT + chartH + 12;
-    lines.push('<text transform="rotate(-45 '+lx+' '+ly+')" x="'+lx+'" y="'+ly+'" text-anchor="end" font-size="6.5" fill="rgba(255,255,255,'+lblAlpha+')">'+(isCurrent?'▶ ':'')+wk.label+'</text>');
+    lines.push('<text class="wp-lbl" data-wk-idx="'+i+'" data-label="'+wk.label+'" transform="rotate(-45 '+lx+' '+ly+')" x="'+lx+'" y="'+ly+'" text-anchor="end" font-size="6.5" fill="rgba(255,255,255,.35)">'+wk.label+'</text>');
   });
 
   // Line connecting dots
@@ -1983,9 +1981,9 @@ function renderWeeklyProgress(sport){
     var path = dotPts.map(function(p,i){ return (i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1); }).join(' ');
     lines.push('<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-opacity=".5" stroke-linejoin="round"/>');
   }
-  // Dots
+  // Dots — estilo neutro, _wpHighlight() decide cuál se resalta
   dotPts.forEach(function(p){
-    lines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(p.cur?3.5:2)+'" fill="'+(p.cur?color:'rgba(255,255,255,.4)')+'" stroke="'+color+'" stroke-width="'+(p.cur?1.5:0)+'"/>');
+    lines.push('<circle class="wp-dot" data-wk-idx="'+p.idx+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="2" fill="rgba(255,255,255,.4)" stroke="none" stroke-width="0"/>');
   });
 
   // Zonas invisibles de hover — una por semana, cubren toda la columna
@@ -1998,12 +1996,43 @@ function renderWeeklyProgress(sport){
 
   svg.innerHTML = lines.join('');
   _wpWeeksSnapshot = weeks;
+  _wpActiveColor   = color;
+  _wpDefaultIdx    = weeks.length - 1;
+  _wpHighlight(_wpDefaultIdx);
+}
+
+// Resalta la semana `idx` (barra + punto + label en color activo) y deja
+// el resto en estilo neutro. Se usa tanto para pintar la semana actual al
+// renderizar como para que el color "siga" al mouse en hover — misma
+// función, una sola fuente de verdad para el estilo activo/neutro.
+function _wpHighlight(idx){
+  var svg = document.getElementById('wp-chart');
+  if(!svg) return;
+  var color = _wpActiveColor || '#FF6535';
+  svg.querySelectorAll('.wp-bar').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('fill', on ? color+'cc' : 'rgba(255,255,255,.12)');
+  });
+  svg.querySelectorAll('.wp-dot').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('r', on ? 3.5 : 2);
+    el.setAttribute('fill', on ? color : 'rgba(255,255,255,.4)');
+    el.setAttribute('stroke', on ? color : 'none');
+    el.setAttribute('stroke-width', on ? 1.5 : 0);
+  });
+  svg.querySelectorAll('.wp-lbl').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('fill', 'rgba(255,255,255,'+(on?'.85':'.35')+')');
+    el.textContent = (on ? '▶ ' : '') + el.getAttribute('data-label');
+  });
 }
 
 // Tooltip del Progreso Semanal — delegado sobre el SVG (su contenido se
 // regenera en cada render, así que el listener se ata una sola vez acá
 // afuera en vez de en cada <rect> individual).
 var _wpWeeksSnapshot = [];
+var _wpActiveColor   = '#FF6535';
+var _wpDefaultIdx    = 0;
 (function(){
   var svgEl = document.getElementById('wp-chart');
   var ttEl  = document.getElementById('wp-tooltip');
@@ -2020,6 +2049,8 @@ var _wpWeeksSnapshot = [];
     if(idx == null){ ttEl.classList.remove('on'); return; }
     var wk = _wpWeeksSnapshot[+idx];
     if(!wk){ ttEl.classList.remove('on'); return; }
+
+    _wpHighlight(+idx);
 
     ttEl.innerHTML =
       '<div class="wp-tooltip-wk">Semana del ' + wk.label + '</div>' +
@@ -2038,7 +2069,10 @@ var _wpWeeksSnapshot = [];
     ttEl.style.top  = y + 'px';
     ttEl.classList.add('on');
   });
-  svgEl.addEventListener('mouseleave', function(){ ttEl.classList.remove('on'); });
+  svgEl.addEventListener('mouseleave', function(){
+    ttEl.classList.remove('on');
+    _wpHighlight(_wpDefaultIdx);
+  });
 })();
 
 // Restaurar opacidad al volver desde detalle.html (bfcache no dispara DOMContentLoaded)
