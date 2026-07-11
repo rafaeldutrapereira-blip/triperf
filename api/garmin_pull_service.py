@@ -1041,15 +1041,20 @@ class GarminPullService:
         )
         if last_vo2_row:
             vo2_start = date.fromisoformat(last_vo2_row.date_iso)
-            vo2_days_back = min(30, max(1, (today - vo2_start).days))
+            vo2_days_back = min(365, max(1, (today - vo2_start).days))
         else:
-            vo2_days_back = 30  # backfill inicial acotado (una sola vez)
+            vo2_days_back = 365  # backfill inicial de 1 año (una sola vez;
+                                  # después queda incremental desde el día
+                                  # más reciente ya guardado)
 
-        for back in range(vo2_days_back + 1):
+        import time as _time
+        consecutive_failures = 0
+        for i, back in enumerate(range(vo2_days_back + 1)):
             d = today - timedelta(days=back)
             d_iso = d.isoformat()
             try:
                 mm = _retry(lambda dd=d_iso: client.get_max_metrics(dd), max_attempts=2, base_delay=1.0)
+                consecutive_failures = 0
                 entry = None
                 if mm and isinstance(mm, list) and mm:
                     entry = mm[0]
@@ -1080,7 +1085,18 @@ class GarminPullService:
                         synced_at=datetime.now(timezone.utc).replace(tzinfo=None),
                     ))
             except Exception as exc:
+                consecutive_failures += 1
                 logger.debug("VO2max skip %s user=%s: %s", d_iso, user_id, exc)
+                if consecutive_failures >= 8:
+                    logger.warning(
+                        "VO2max backfill cortado user=%s tras %d fallos seguidos "
+                        "(quedó en %s) — sigue la próxima sync",
+                        user_id, consecutive_failures, d_iso)
+                    break
+
+            if i % 20 == 19:
+                db.flush()  # progreso persistido por si el resto falla/tarda mucho
+            _time.sleep(0.2)  # evitar ráfaga que dispare rate-limit de Garmin
         db.flush()
 
         for delta in range(days):

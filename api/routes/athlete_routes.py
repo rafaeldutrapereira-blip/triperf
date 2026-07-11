@@ -672,6 +672,18 @@ def athlete_dashboard(
         .order_by(GarminHealthDaily.date_iso.asc())
         .all()
     )
+    # VO2max cambia lento y detalle.html?metric=vo2 pide hasta 365 días
+    # (a diferencia del resto de wellbeing, que usa 90) — ventana propia.
+    _year_ago = (_date_.today() - _td(days=365)).isoformat()
+    _health_vo2 = (
+        db.query(GarminHealthDaily)
+        .filter(GarminHealthDaily.user_id == me.id,
+                GarminHealthDaily.date_iso >= _year_ago,
+                (GarminHealthDaily.vo2max_running.isnot(None)) |
+                (GarminHealthDaily.vo2max_cycling.isnot(None)))
+        .order_by(GarminHealthDaily.date_iso.asc())
+        .all()
+    )
     _sleep_90 = (
         db.query(GarminSleepSession)
         .filter(GarminSleepSession.user_id == me.id,
@@ -704,12 +716,12 @@ def athlete_dashboard(
     # en el reloj/app — se prioriza de forma CONSISTENTE en toda la serie
     # (no por fila) para no mezclar dos métricas distintas en un mismo
     # gráfico. Solo se usa "cycling" si no hay ningún running en la ventana.
-    _vo2_running_rows = [r for r in _health_90 if r.vo2max_running is not None]
+    _vo2_running_rows = [r for r in _health_vo2 if r.vo2max_running is not None]
     if _vo2_running_rows:
         vo2_history = [{"dt": r.date_iso, "vo2": r.vo2max_running} for r in _vo2_running_rows]
     else:
         vo2_history = [{"dt": r.date_iso, "vo2": r.vo2max_cycling}
-                       for r in _health_90 if r.vo2max_cycling is not None]
+                       for r in _health_vo2 if r.vo2max_cycling is not None]
     vo2max_garmin = vo2_history[-1]["vo2"] if vo2_history else None
 
     hrv_last_night   = health_today.hrv_last_night    if health_today else None
