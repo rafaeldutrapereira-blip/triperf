@@ -237,6 +237,22 @@ def _dur_str(minutes: int) -> str:
 # TSS desde datos Garmin
 # ─────────────────────────────────────────────────────────────────────────────
 
+# TSS/hora base por subtipo de actividad de gimnasio — Garmin distingue el
+# typeKey original (yoga, hiit, strength_training, etc.) aunque todo se
+# normaliza a sport="gym". Un HIIT y una clase de yoga no imponen el mismo
+# estrés sistémico aunque duren lo mismo, así que no pueden compartir tasa.
+_GYM_TSS_PER_HOUR = {
+    "yoga":               12.0,
+    "pilates":            15.0,
+    "strength_training":  25.0,
+    "fitness_equipment":  25.0,
+    "bouldering":         30.0,
+    "cardio":             35.0,
+    "hiit":               45.0,
+}
+_GYM_TSS_DEFAULT = 25.0
+
+
 def _extract_tss(act: dict, ftp: int = 250) -> float:
     """
     Extrae TSS del activity dict de Garmin.
@@ -270,9 +286,30 @@ def _extract_tss(act: dict, ftp: int = 250) -> float:
             return 0.0
         return round(min(result, 600.0), 1)  # cap en 600 TSS (sesión de 24h de IM es ~1000)
 
-    # Gym/strength: TSS fijo bajo por duración
+    # Gym/strength: sin potenciómetro, el %HRmax de resistencia (bike/run/swim)
+    # no sirve — el HR promedio de una sesión de fuerza está diluido por los
+    # descansos entre series, así que una sesión dura puede mostrar un HR
+    # promedio bajo sin que eso signifique poco estrés de entrenamiento.
     if sport == "gym" and dur_h > 0:
-        return round(dur_h * 25, 1)
+        # activityTrainingLoad: métrica propia de Garmin/Firstbeat por
+        # actividad (no requiere potenciómetro, sí requiere pulsómetro).
+        # Cuando está disponible es preferible a cualquier fórmula propia
+        # porque Garmin ya combina HR, duración y variabilidad de esfuerzo
+        # internamente — se usa tal cual, sin reescalar.
+        load = _safe_float(act.get("activityTrainingLoad"))
+        if load > 0 and not math.isnan(load) and not math.isinf(load):
+            return round(load, 1)
+
+        # Fallback sin activityTrainingLoad: tasa TSS/hora según el subtipo
+        # real de Garmin (yoga/pilates bajo, fuerza estándar, HIIT/cardio
+        # alto), con el HR promedio matizando ±25% dentro de ese subtipo.
+        type_key_raw = act.get("activityType", {})
+        type_key = (type_key_raw.get("typeKey") if isinstance(type_key_raw, dict) else type_key_raw) or ""
+        base_rate = _GYM_TSS_PER_HOUR.get(type_key.lower(), _GYM_TSS_DEFAULT)
+        hr_mod = 1.0
+        if avg_hr > 0:
+            hr_mod = max(0.75, min(1.25, avg_hr / 80.0))
+        return round(dur_h * base_rate * hr_mod, 1)
 
     return round(IF_est ** 2 * dur_h * 100, 1)
 

@@ -1115,18 +1115,27 @@ function renderChart(d, cfg) {
       allDots.push({date_iso:a.date_iso, tss:tss, sport:normSportDt(a.sport), pmc:pmc, isGen:false});
     });
 
-    // Y-axis scale based on CTL/ATL values (not TSS activity dots) — min y max
-    // dinámicos, no fijos en 0, para aprovechar el espacio vertical cuando
-    // la carga del atleta se mueve en un rango alto (ej. 50-120).
+    // Y-axis scale — min y max dinámicos, no fijos, para aprovechar el
+    // espacio vertical según el rango real de datos del período.
     var _ctlAtlMax = 30, _ctlAtlMin = null;
     ctlVals.forEach(function(v){ if(v != null){ if(v > _ctlAtlMax) _ctlAtlMax = v; if(_ctlAtlMin === null || v < _ctlAtlMin) _ctlAtlMin = v; } });
     atlVals.forEach(function(v){ if(v != null){ if(v > _ctlAtlMax) _ctlAtlMax = v; if(_ctlAtlMin === null || v < _ctlAtlMin) _ctlAtlMin = v; } });
     if(_ctlAtlMin === null) _ctlAtlMin = 0;
-    var _yMax = Math.ceil((_ctlAtlMax * 1.15) / 10) * 10; // 15% headroom, round to 10
     var _yMin = Math.max(0, Math.floor((_ctlAtlMin * 0.85) / 10) * 10); // 15% headroom hacia abajo, round to 10
-    // Track max TSS separately so dots can be clamped to chart area
+
+    // El eje no puede escalar al TSS máximo absoluto de una sola sesión
+    // (ej. un Ironman con 490 TSS vs CTL/ATL típico de 20-140) sin aplastar
+    // las líneas CTL/ATL, que son lo principal de este gráfico. Se usa el
+    // percentil 95 del TSS de las sesiones como techo — cubre casi todas
+    // las sesiones (el resto queda clampeado arriba, con el valor real
+    // siempre visible en el tooltip al pasar el mouse).
     var _yMaxTSS = 0;
-    allDots.forEach(function(d){ if(d.tss > _yMaxTSS) _yMaxTSS = d.tss; });
+    var _tssVals = [];
+    allDots.forEach(function(d){ if(d.tss > _yMaxTSS) _yMaxTSS = d.tss; if(d.tss > 0) _tssVals.push(d.tss); });
+    _tssVals.sort(function(a,b){ return a - b; });
+    var _tssP95 = _tssVals.length ? _tssVals[Math.floor(0.95 * (_tssVals.length - 1))] : 0;
+    var _dotCap = Math.ceil((_tssP95 * 1.15) / 10) * 10;
+    var _yMax = Math.max(Math.ceil((_ctlAtlMax * 1.15) / 10) * 10, _dotCap);
 
     window._pmcDotsDt = allDots;
     window._pmcYMax   = _yMax;
