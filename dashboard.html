@@ -1345,6 +1345,7 @@ ul { list-style: none; }
             <div class="dc-tgt">meta: 2 sesiones</div>
             <div class="bar-t"><div class="bar-f" id="dc-str-bar" data-w="100"></div></div>
             <div class="dc-stats">
+              <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-str-tss">—</strong> TSS</span>
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><strong id="dc-str-name">—</strong></span>
             </div>
           </div>
@@ -1829,18 +1830,18 @@ function renderWeekAdherence(){
   if(wd.strength_n != null) updDC('str',  wd.strength_n, 0, DC_TGTS.str, true);
 
   // TSS real por disciplina — suma de los mismos acts ya asignados a los días de la semana
-  var tssBySport = {swim:0, bike:0, run:0};
+  var tssBySport = {swim:0, bike:0, run:0, gym:0};
   var lastGymName = null, lastGymDate = null;
   days.forEach(function(day){
     day.acts.forEach(function(a){
       if(tssBySport.hasOwnProperty(a.sport)) tssBySport[a.sport] += a.tss;
-      else if(a.sport !== 'swim' && a.sport !== 'bike' && a.sport !== 'run'){
+      if(a.sport !== 'swim' && a.sport !== 'bike' && a.sport !== 'run'){
         if(!lastGymDate || day.date > lastGymDate){ lastGymDate = day.date; lastGymName = a.name || null; }
       }
     });
   });
-  ['swim','bike','run'].forEach(function(sp){
-    var el = document.getElementById('dc-'+sp+'-tss');
+  ['swim','bike','run','gym'].forEach(function(sp){
+    var el = document.getElementById('dc-' + (sp === 'gym' ? 'str' : sp) + '-tss');
     if(el) el.textContent = Math.round(tssBySport[sp]);
   });
   var strNameEl = document.getElementById('dc-str-name');
