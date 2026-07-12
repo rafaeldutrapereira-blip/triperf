@@ -806,6 +806,12 @@ def athlete_dashboard(
     _prev_week_start = (_date_.today() - _td(days=_date_.today().weekday() + 7)).isoformat()
     tss_prev_wk = sum(r.tss for r in load_rows if _prev_week_start <= r.date_iso < _week_start_iso) if load_rows else None
     tss_wk_trend = round(tss_wk - tss_prev_wk, 1) if tss_prev_wk is not None else None
+    # % en vez de puntos absolutos — solo tiene sentido si hubo carga la
+    # semana pasada (con prev=0 el % es indefinido, no "infinito positivo")
+    tss_wk_trend_pct = (
+        round((tss_wk - tss_prev_wk) / tss_prev_wk * 100, 1)
+        if tss_prev_wk is not None and tss_prev_wk > 0 else None
+    )
 
     # Compliance semanal desde plan_sessions (B-22)
     compliance_week = None
@@ -884,6 +890,7 @@ def athlete_dashboard(
         "trends": {
             "ctl":        ctl_change,
             "tss_week":   tss_wk_trend,
+            "tss_week_pct": tss_wk_trend_pct,
             "hrv":        hrv_trend,
             "rhr":        rhr_trend,
             "body_battery": bb_trend,

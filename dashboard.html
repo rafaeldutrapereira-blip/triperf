@@ -2237,15 +2237,24 @@ function patchData(){
     }
   }
 
-  // TSS badge — tendencia vs semana anterior
+  // TSS badge — tendencia vs semana anterior, en % (no puntos absolutos)
   var bTss = document.getElementById('badge-tss');
-  if(bTss && d.trends && d.trends.tss_week != null){
-    var tssTrend = d.trends.tss_week;
-    var tssArrow = tssTrend >= 0
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
-    bTss.className = 'badge ' + (tssTrend >= 0 ? 'b-up' : 'b-dn');
-    bTss.innerHTML = tssArrow + (tssTrend >= 0 ? '+' : '') + tssTrend + ' vs ant.';
+  if(bTss && d.trends){
+    var tssArrowUp   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>';
+    var tssArrowDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
+    if(d.trends.tss_week_pct != null){
+      var tssPct  = Math.round(d.trends.tss_week_pct);
+      var tssIsEq = tssPct === 0;
+      bTss.className = 'badge ' + (tssIsEq ? '' : (tssPct > 0 ? 'b-up' : 'b-dn'));
+      bTss.innerHTML = (tssIsEq ? '' : (tssPct > 0 ? tssArrowUp : tssArrowDown))
+        + (tssIsEq ? '=' : (tssPct > 0 ? '+' : '') + tssPct + '%') + ' vs ant.';
+    } else if(d.trends.tss_week != null){
+      // Semana anterior sin carga registrada (prev=0): el % no está
+      // definido (no es "infinito positivo"), así que se muestra honesto
+      // en vez de inventar un porcentaje.
+      bTss.className = 'badge b-up';
+      bTss.innerHTML = 'Sin carga previa';
+    }
   }
 
   // HRV 7d average subtítulo
