@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="nav.css">
 <style>
-.page-wrap { max-width:900px; margin:0 auto; padding-bottom:3rem; }
+.page-wrap { max-width:900px; padding-bottom:3rem; }
 
 /* Header */
 .ph { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.75rem; }
@@ -169,8 +169,7 @@
       <div class="ph-left">
         <div class="avatar-lg" id="avatar-lg">?</div>
         <div>
-          <div class="ph-name" id="ph-name">Cargando…</div>
-          <div class="ph-sub"  id="ph-sub"></div>
+          <div class="ph-sub" id="ph-sub"></div>
         </div>
       </div>
     </div>
@@ -672,9 +671,8 @@ function loadProfile() {
       _profile = p;
       _has2FA  = !!p.totp_enabled;
       var name = p.nombre || p.name || '';
-      var init = name.split(' ').slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase() || '?';
+      var init = name.split(' ').filter(Boolean).map(function(w){ return w[0]||''; }).join('').toUpperCase() || '?';
       document.getElementById('avatar-lg').textContent = init;
-      document.getElementById('ph-name').textContent   = name || p.email || '—';
       var planMap = { basico:'Atleta', basic:'Atleta', free:'Atleta', pro:'Agegroup', elite:'Elite', coach:'Coach' };
       var rolMap  = { atleta:'Atleta', coach:'Coach', admin:'Admin' };
       document.getElementById('ph-sub').textContent =
@@ -1129,6 +1127,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="nav.js"></script>
+<script src="dash-header.js"></script>
+<script src="lx-upgrade.js"></script>
 <script src="i18n.js"></script>
 </main>
 </div>
