@@ -30,7 +30,7 @@ class User(Base):
     nombre        = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     rol           = Column(String, nullable=False, default="atleta")   # admin | coach | atleta
-    plan_nivel    = Column(String, default="basico")                   # basico | pro | elite
+    plan_nivel    = Column(String, default="basico")                   # basico | agegroup | elite
     activo        = Column(Boolean, default=True)
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     last_login_at = Column(DateTime, nullable=True)                    # analytics: último inicio de sesión

@@ -41,7 +41,7 @@
       label:   'Plan',
       labelI18n: 'nav_plan',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -52,7 +52,7 @@
       label:   'Nutrición',
       labelI18n: 'nav_nutrition',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -63,7 +63,7 @@
       label:   'Analytics',
       labelI18n: 'nav_analytics',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -74,7 +74,7 @@
       label:   'Recuperación',
       labelI18n: 'nav_recovery',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -85,7 +85,7 @@
       label:   'Mental',
       labelI18n: 'nav_mental',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -96,7 +96,7 @@
       label:   'Race Day',
       labelI18n: 'nav_race_day',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -107,7 +107,7 @@
       label:   'Predictor',
       labelI18n: 'nav_predictor',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -118,7 +118,7 @@
       label:   'Comunidad',
       labelI18n: 'nav_community',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -129,7 +129,7 @@
       label:   'Año en Review',
       labelI18n: 'nav_year',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-      minPlan: 'pro',
+      minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -218,12 +218,12 @@
      2. JERARQUÍA DE PLANES
      El orden importa: cada plan hereda acceso de los anteriores.
   ───────────────────────────────────────────────────────────── */
-  var PLAN_HIERARCHY = ['basic', 'pro', 'elite'];
+  var PLAN_HIERARCHY = ['basic', 'agegroup', 'elite'];
 
   var PLAN_META = {
-    basic: { label:'Básico',  color:'#0EA5E9', upgradeLabel:'Pro'   },
-    pro:   { label:'Pro',     color:'#A855F7', upgradeLabel:'Elite' },
-    elite: { label:'Élite',   color:'#F0A500', upgradeLabel:null    }
+    basic:    { label:'Básico',   color:'#0EA5E9', upgradeLabel:'Agegroup' },
+    agegroup: { label:'Agegroup', color:'#A855F7', upgradeLabel:'Elite'    },
+    elite:    { label:'Élite',    color:'#F0A500', upgradeLabel:null       }
   };
 
   /* ─────────────────────────────────────────────────────────────

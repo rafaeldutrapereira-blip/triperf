@@ -15,13 +15,13 @@
 
   /* Fallback hardcoded (cuando API no disponible) */
   var USERS = {
-    rafael: { pw:'labx2026', name:'Rafael Dutra',  initials:'RD', role:'Ironman 70.3', plan:'elite' },
-    demo:   { pw:'demo123',  name:'Coach Demo',    initials:'CD', role:'Triatleta',    plan:'basic' },
-    pro:    { pw:'pro2026',  name:'Usuario Pro',   initials:'UP', role:'Ironman 70.3', plan:'pro'   }
+    rafael:   { pw:'labx2026',    name:'Rafael Dutra',    initials:'RD', role:'Ironman 70.3', plan:'elite' },
+    demo:     { pw:'demo123',     name:'Coach Demo',      initials:'CD', role:'Triatleta',    plan:'basic' },
+    agegroup: { pw:'agegroup2026',name:'Usuario Agegroup',initials:'UA', role:'Ironman 70.3', plan:'agegroup' }
   };
 
   /* plan_nivel API → plan key local */
-  var PLAN_MAP = { elite:'elite', pro:'pro', basico:'basic' };
+  var PLAN_MAP = { elite:'elite', agegroup:'agegroup', basico:'basic' };
 
   /* rol API → etiqueta amigable */
   var ROLE_LABELS = {
@@ -35,7 +35,7 @@
   var PLANS = (function(){
     if(window.LX_ROUTES) {
       var out = {};
-      ['basic','pro','elite'].forEach(function(p){
+      ['basic','agegroup','elite'].forEach(function(p){
         var meta = window.LX_ROUTES.planMeta[p] || {};
         out[p] = {
           label:   meta.label  || p,
@@ -46,9 +46,9 @@
       return out;
     }
     return {
-      basic: { label:'Básico', color:'#0EA5E9', modules:['dashboard','athlete_profile'] },
-      pro:   { label:'Pro',    color:'#A855F7', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','race_predictor','year_in_review','community','recovery','mental','race_day'] },
-      elite: { label:'Élite',  color:'#F0A500', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','blood_labs','training_detail','race_predictor','year_in_review','community','recovery','mental','race_day','ai_coach','adaptive','indoor_workout'] }
+      basic:    { label:'Básico',   color:'#0EA5E9', modules:['dashboard','athlete_profile'] },
+      agegroup: { label:'Agegroup', color:'#A855F7', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','race_predictor','year_in_review','community','recovery','mental','race_day'] },
+      elite:    { label:'Élite',    color:'#F0A500', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','blood_labs','training_detail','race_predictor','year_in_review','community','recovery','mental','race_day','ai_coach','adaptive','indoor_workout'] }
     };
   }());
 

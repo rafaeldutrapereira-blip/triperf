@@ -43,8 +43,8 @@
     /* fallback mínimo */
     var p = (sess && sess.plan) || 'basic';
     var m = {
-      basic:  ['dashboard','athlete_profile'],
-      pro:    ['dashboard','athlete_profile','training_plan','nutrition','analytics',
+      basic:    ['dashboard','athlete_profile'],
+      agegroup: ['dashboard','athlete_profile','training_plan','nutrition','analytics',
                'race_predictor','year_in_review','community','recovery','mental','race_day'],
       elite:  ['dashboard','athlete_profile','training_plan','nutrition','analytics',
                'blood_labs','training_detail','race_predictor','year_in_review','community',
@@ -57,11 +57,11 @@
     var R = _routes();
     if(R) return R.requiredPlanLabel(modId);
     var e = ['blood_labs','training_detail','ai_coach','adaptive','indoor_workout'];
-    return e.indexOf(modId) !== -1 ? 'Elite' : 'Pro';
+    return e.indexOf(modId) !== -1 ? 'Elite' : 'Agegroup';
   }
 
-  var PLAN_LABELS = { basic:'Básico', pro:'Pro', elite:'Élite' };
-  var PLAN_COLORS = { basic:'#0EA5E9', pro:'#A855F7', elite:'#F0A500' };
+  var PLAN_LABELS = { basic:'Básico', agegroup:'Agegroup', elite:'Élite' };
+  var PLAN_COLORS = { basic:'#0EA5E9', agegroup:'#A855F7', elite:'#F0A500' };
 
   function _escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -174,9 +174,6 @@
         links +
       '</nav>' +
       '<div class="sb-sep"></div>' +
-      '<button class="sb-sync" id="sb-sync-btn" aria-label="Sync Garmin">' +
-        _SYNC_SVG + 'Sync Garmin' +
-      '</button>' +
       '<div class="sb-foot">' +
         '<div class="sb-user">' +
           '<div class="sb-avatar" id="kl-sb-avatar">' + _escH(init) + '</div>' +
@@ -187,10 +184,6 @@
         '</div>' +
         '<button onclick="KL.logout()" class="sb-logout" title="Salir" aria-label="Salir">' + _LOGOUT_SVG + '</button>' +
       '</div>';
-
-    /* bind sync button (event listener, no onclick inline) */
-    var sb = document.getElementById('sb-sync-btn');
-    if(sb) sb.addEventListener('click', function(){ _syncGarmin(this); });
 
     /* ── Topbar mobile ─── */
     if(topbar){

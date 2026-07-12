@@ -143,13 +143,13 @@ def test_plan_actual_en_perfil(athlete_api):
     """
     Acceptance:
       GET /api/athlete/profile → has plan_nivel field
-      plan_nivel in ('free', 'basic', 'pro', 'elite')
+      plan_nivel in ('free', 'basic', 'agegroup', 'elite')
     """
     r = athlete_api.get("/athlete/profile")
     assert r.status_code == 200, f"Profile: {r.status_code}"
     data = r.json()
 
-    valid_plans = ("free", "basic", "pro", "elite", "starter", "premium",
+    valid_plans = ("free", "basic", "agegroup", "elite", "starter", "premium",
                    "basico", "estandar", "avanzado")  # Spanish DB values
     plan = data.get("plan_nivel", "")
     assert plan in valid_plans or plan == "", \
