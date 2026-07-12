@@ -1164,10 +1164,10 @@ ul { list-style: none; }
               <span class="leg"><span class="ld" style="background:#10B981"></span>CTL</span>
               <span class="leg"><span class="ld" style="background:#FF6535"></span>ATL</span>
               <span class="leg"><span class="ld" style="background:#0EA5E9"></span>TSB</span>
-              <span class="leg"><svg width="9" height="8" viewBox="0 0 9 8" style="margin-right:4px;vertical-align:middle"><polygon points="4.5,0 0,8 9,8" fill="#22D3EE"/></svg>NAT</span>
-              <span class="leg"><svg width="9" height="8" viewBox="0 0 9 8" style="margin-right:4px;vertical-align:middle"><polygon points="4.5,0 0,8 9,8" fill="#FF6535"/></svg>CIC</span>
-              <span class="leg"><svg width="9" height="8" viewBox="0 0 9 8" style="margin-right:4px;vertical-align:middle"><polygon points="4.5,0 0,8 9,8" fill="#10B981"/></svg>CAR</span>
-              <span class="leg"><svg width="9" height="8" viewBox="0 0 9 8" style="margin-right:4px;vertical-align:middle"><polygon points="4.5,0 0,8 9,8" fill="#A855F7"/></svg>FUE</span>
+              <span class="leg"><svg width="8" height="8" viewBox="0 0 8 8" style="margin-right:4px;vertical-align:middle"><circle cx="4" cy="4" r="3" fill="#22D3EE"/></svg>NAT</span>
+              <span class="leg"><svg width="8" height="8" viewBox="0 0 8 8" style="margin-right:4px;vertical-align:middle"><circle cx="4" cy="4" r="3" fill="#FF6535"/></svg>CIC</span>
+              <span class="leg"><svg width="8" height="8" viewBox="0 0 8 8" style="margin-right:4px;vertical-align:middle"><circle cx="4" cy="4" r="3" fill="#10B981"/></svg>CAR</span>
+              <span class="leg"><svg width="8" height="8" viewBox="0 0 8 8" style="margin-right:4px;vertical-align:middle"><circle cx="4" cy="4" r="3" fill="#A855F7"/></svg>FUE</span>
             </div>
           </div>
         </div>
@@ -2918,11 +2918,6 @@ function drawPMC(){
   var realActs=(window.KL_DATA&&KL_DATA.activities)?KL_DATA.activities:[];
   var histDots=makeHistoricalDots();
   var allDots=histDots.concat(realActs.map(function(a){return {date_iso:a.date_iso,tss:a.tss!=null?a.tss:eTSS(a),sport:a.sport,isGen:false};}));
-  /* triangle helper: equilateral centred at (cx,cy) pointing up */
-  function tri(cx,cy,r){
-    var h=r*0.866,h2=r*0.5;
-    return cx.toFixed(1)+','+(cy-r).toFixed(1)+' '+(cx-h).toFixed(1)+','+(cy+h2).toFixed(1)+' '+(cx+h).toFixed(1)+','+(cy+h2).toFixed(1);
-  }
   o+='<g clip-path="url(#pmcClip)">';
   allDots.forEach(function(a){
     if(!a.date_iso||a.date_iso<pS||a.date_iso>pE) return;
@@ -2931,8 +2926,8 @@ function drawPMC(){
     var sp=nSp(a.sport); var col=SCOL[sp];
     var pmc=pmcAtDate(a.date_iso);
     var info=a.date_iso+'|'+sp+'|'+tss+'|'+pmc.ctl+'|'+pmc.atl+'|'+pmc.tsb;
-    var r=a.isGen?3.6:5; var op=a.isGen?.45:.82;
-    o+='<polygon points="'+tri(cx,cy,r)+'" fill="'+col+'" fill-opacity="'+op+'" stroke="rgba(0,0,0,.18)" stroke-width=".5" data-info="'+info+'"></polygon>';
+    var r=a.isGen?1.8:2.6; var op=a.isGen?.45:.82;
+    o+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+col+'" fill-opacity="'+op+'" stroke="rgba(0,0,0,.18)" stroke-width=".5" data-info="'+info+'"></circle>';
   });
   o+='</g>';
   /* main lines (on top of dots) */
