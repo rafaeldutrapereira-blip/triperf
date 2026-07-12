@@ -187,16 +187,35 @@ var METRICS = {
   readiness: {
     nombre: 'Readiness — Disposición para Entrenar',
     emoji: '🟢',
-    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Combina datos de HRV, sueño, bienestar subjetivo y carga de los últimos días.',
-    formula: 'Algoritmo interno: HRV (40%) + sueño (30%) + bienestar (20%) + TSB (10%)',
+    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Se arma con 4 dimensiones fisiológicas reales: <strong style="color:#10b981">Recuperación</strong> (HRV + sueño de anoche), <strong style="color:#a855f7">Estado Mental</strong> (fatiga neurocognitiva), <strong style="color:#f59e0b">Bioquímica</strong> (tus análisis de sangre) y <strong style="color:#22d3ee">Forma</strong> (tu TSB del modelo de carga). Si te falta alguna (ej. no cargaste análisis de sangre), el puntaje se recalcula solo con las dimensiones disponibles — por eso puede aparecer más bajo o más alto de lo esperado cuando hay poca data.',
+    formula: 'DRS = Recuperación×35% + Estado Mental×25% + Bioquímica×20% + Forma×20%',
     rangos: [
       {min:0,  max:30, label:'Descansar hoy',      color:'#EF4444', advice:'Tu cuerpo necesita recuperación. Haz sesión muy suave o descansa.'},
       {min:30, max:60, label:'Entrenamiento ligero',color:'#F59E0B', advice:'Sesión moderada OK. Evita intervalos de alta intensidad.'},
       {min:60, max:80, label:'Listo para entrenar', color:'#10B981', advice:'Buenas condiciones. Puedes hacer tu sesión planificada.'},
       {min:80, max:100,label:'Óptimo ✓',           color:'#22D3EE', advice:'Condiciones ideales. Aprovecha para sesión exigente o test.'},
     ],
-    pro_tip: 'Si el Readiness está bajo pero tienes una carrera, prioriza la carrera y recupera después.',
+    dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV+sueño) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:#a855f7">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:#f59e0b">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:#22d3ee">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
+    pro_tip: 'Fijate cuál es tu "limitante principal" (la dimensión con el score más bajo) — ahí es donde tenés más para ganar. Un DRS bajo con Recuperación en rojo pide más sueño; un DRS bajo con Forma en rojo pide simplemente unos días de descarga.',
     unidad: '0–100 puntos',
+  },
+
+  pmc: {
+    nombre: 'PMC — Performance Management Chart',
+    emoji: '📊',
+    definicion: 'Muestra <strong>3 curvas</strong> que cuentan la historia de tu temporada: la <strong style="color:#10B981">verde (CTL)</strong> es tu fitness acumulado — sube y baja lento, semana a semana. La <strong style="color:#FF6535">naranja (ATL)</strong> es tu fatiga de los últimos días — reacciona rápido a cada entrenamiento fuerte. La <strong style="color:#0EA5E9">celeste (TSB)</strong> es la resta de las dos (CTL − ATL) y te dice qué tan "fresco" estás en este momento.',
+    formula: 'CTL (fitness, 42 días) · ATL (fatiga, 7 días) · TSB = CTL − ATL',
+    rangos: [
+      {min:-999, max:-20, label:'TSB muy negativo — fatiga intensa', color:'#EF4444', advice:'ATL muy por encima de CTL. Sobrecarga; si no es una semana de carga planificada, hay riesgo de sobreentrenamiento o lesión.'},
+      {min:-20,  max:-5,  label:'TSB negativo — entrenando duro',   color:'#F59E0B', advice:'ATL (naranja) por encima de CTL (verde): normal en un bloque de carga. Estás construyendo fitness a costa de estar fatigado — no es momento de competir.'},
+      {min:-5,   max:5,   label:'TSB ≈ 0 — equilibrio',              color:'#10B981', advice:'ATL y CTL casi cruzadas/parejas. Buen estado para entrenamientos de fondo o probar intensidad sin acumular demasiada fatiga.'},
+      {min:5,    max:20,  label:'TSB positivo — fresco ✓',          color:'#22D3EE', advice:'ATL (naranja) cruzó por DEBAJO de CTL (verde): tu fatiga bajó más rápido que tu fitness. Este es el estado ideal para el día de carrera.'},
+      {min:20,   max:999, label:'TSB muy alto — puede que sobres descanso', color:'#6B7280', advice:'Muy fresco por muchos días seguidos. Si no estás en semana de competencia, podrías estar perdiendo la forma construida (el CTL empieza a caer).'},
+    ],
+    cruces: 'Fijate DÓNDE se tocan la línea verde (CTL) y la naranja (ATL): cuando la <strong style="color:#FF6535">naranja sube y cruza por ENCIMA</strong> de la verde, el TSB se vuelve negativo — estás en fase de carga/fatiga. Cuando la <strong style="color:#FF6535">naranja baja y cruza por DEBAJO</strong> de la verde, el TSB se vuelve positivo — es la señal de que estás afinando (taper) y llegando fresco.',
+    meta_triathlon: 'Semana de carrera ideal: CTL alto y estable (no cayendo), ATL bajando día a día, TSB subiendo hasta quedar entre +5 y +15 el día de la competencia.',
+    pro_tip: 'Lo importante no es un solo número: es la TENDENCIA. Un CTL que sube de forma sostenida mientras el TSB no cae demasiado negativo es la señal de una temporada bien construida. Si el CTL empieza a caer varias semanas seguidas, es que estás entrenando menos de lo que tu cuerpo puede tolerar.',
+    unidad: 'puntos (TSS acumulado)',
   },
 
   if_metric: {
@@ -337,15 +356,75 @@ function _render(metricId, currentValue){
   var m = METRICS[metricId];
   if(!m) return '<p style="color:#9CA3AF">Métrica no encontrada: '+metricId+'</p>';
 
-  var activeRange = _findRange(m, currentValue);
+  // El PMC pasa un JSON {ctl,atl,tsb} en vez de un único número
+  var pmcData = null;
+  if(metricId === 'pmc' && currentValue){
+    try { pmcData = JSON.parse(currentValue); } catch(e){ pmcData = null; }
+  }
+
+  // Readiness pasa el JSON completo de /readiness/daily (drs + dimensiones)
+  var rdData = null;
+  if(metricId === 'readiness' && currentValue){
+    try { rdData = JSON.parse(currentValue); } catch(e){ rdData = null; }
+  }
+
+  var activeRange = _findRange(m, pmcData ? pmcData.tsb : (rdData ? rdData.drs : currentValue));
   var html = '';
 
   // Título
   html += '<h2>'+m.emoji+' '+m.nombre+'</h2>';
   if(m.unidad) html += '<span class="li-unit">Unidad: '+m.unidad+'</span>';
 
-  // Valor actual (si se pasó)
-  if(currentValue != null && currentValue !== ''){
+  if(pmcData){
+    var pcol = activeRange ? activeRange.color : '#F9FAFB';
+    html += '<div class="li-current-box" style="background:'+pcol+'12;border-color:'+pcol+'33">'
+      +'<div class="li-cb-label">Tu estado actual</div>'
+      +'<div style="display:flex;gap:1.2rem;margin:.35rem 0 .6rem">'
+        +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">CTL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#10B981">'+(pmcData.ctl!=null?Math.round(pmcData.ctl):'—')+'</div></div>'
+        +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">ATL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#FF6535">'+(pmcData.atl!=null?Math.round(pmcData.atl):'—')+'</div></div>'
+        +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">TSB</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:'+pcol+'">'+(pmcData.tsb!=null?((pmcData.tsb>=0?'+':'')+Math.round(pmcData.tsb)):'—')+'</div></div>'
+      +'</div>'
+      +(activeRange?'<div class="li-cb-interp"><strong style="color:'+pcol+'">'+activeRange.label+'</strong>'+(activeRange.advice?' — '+activeRange.advice:'')+'</div>':'')
+      +(pmcData.ctl!=null && pmcData.atl!=null
+        ? '<div class="li-cb-interp" style="margin-top:.4rem">'
+          +(pmcData.atl > pmcData.ctl
+            ? 'Ahora mismo tu <strong style="color:#FF6535">ATL está por ENCIMA</strong> de tu CTL → estás en fase de carga/fatiga.'
+            : 'Ahora mismo tu <strong style="color:#FF6535">ATL está por DEBAJO</strong> de tu CTL → estás fresco.')
+          +'</div>'
+        : '')
+      +'</div>';
+  } else if(rdData){
+    var rcol = rdData.drs_color || (activeRange ? activeRange.color : '#F9FAFB');
+    html += '<div class="li-current-box" style="background:'+rcol+'12;border-color:'+rcol+'33">'
+      +'<div class="li-cb-label">Tu estado actual</div>'
+      +'<div class="li-cb-val" style="color:'+rcol+'">'+(rdData.drs!=null?Math.round(rdData.drs):'—')+' <span style="font-size:1rem;font-weight:400;color:#6B7280">/ 100</span></div>'
+      +'<div class="li-cb-interp"><strong style="color:'+rcol+'">'+(rdData.drs_emoji?rdData.drs_emoji+' ':'')+(rdData.drs_label||(activeRange?activeRange.label:''))+'</strong>'+(rdData.recommendation?' — '+rdData.recommendation:'')+'</div>'
+      +'</div>';
+
+    if(rdData.dimensions && rdData.dimensions.length){
+      html += '<div class="li-section-title">Desglose de tus 4 dimensiones</div>';
+      html += '<div class="li-range-bar">';
+      rdData.dimensions.forEach(function(d){
+        var isLimiter = rdData.primary_limiter && d.name === rdData.primary_limiter;
+        html += '<div class="li-range-row'+(isLimiter?' active':'')+'">'
+          +'<div class="li-range-dot" style="background:'+d.color+'"></div>'
+          +'<div style="flex:1">'
+          +'<div class="li-range-label" style="color:'+d.color+';display:flex;justify-content:space-between;gap:.5rem">'
+          +'<span>'+(isLimiter?'▶ ':'')+d.name+' <span style="font-size:.65rem;font-weight:400;color:#6B7280">('+d.weight_pct+'% del total)</span></span>'
+          +'<span>'+(d.available ? Math.round(d.score) : 'Sin datos')+'</span>'
+          +'</div>'
+          +'<div class="li-range-advice">'+d.label+(isLimiter?' — tu limitante principal hoy':'')+'</div>'
+          +'</div></div>';
+      });
+      html += '</div>';
+    }
+    if(rdData.training_guidance){
+      html += '<div class="li-section-title">Guía para hoy</div>';
+      html += '<div class="li-def" style="font-size:.8rem">'+rdData.training_guidance+'</div>';
+    }
+  } else if(metricId === 'readiness' && currentValue === null){
+    html += '<div class="li-def" style="font-size:.78rem;color:#6B7280;font-style:italic;margin-bottom:1rem">No se pudo cargar tu desglose en vivo — mostrando solo la referencia general.</div>';
+  } else if(currentValue != null && currentValue !== ''){
     var col = activeRange ? activeRange.color : '#F9FAFB';
     html += '<div class="li-current-box" style="background:'+col+'12;border-color:'+col+'33">'
       +'<div class="li-cb-label">Tu valor actual</div>'
@@ -362,6 +441,18 @@ function _render(metricId, currentValue){
   if(m.formula){
     html += '<div class="li-section-title">Cómo se calcula</div>';
     html += '<div class="li-formula">'+m.formula+'</div>';
+  }
+
+  // Cruces de líneas (específico de PMC)
+  if(m.cruces){
+    html += '<div class="li-section-title">Cuándo se cruzan las líneas</div>';
+    html += '<div class="li-def" style="font-size:.8rem">'+m.cruces+'</div>';
+  }
+
+  // Por qué cada dimensión pesa lo que pesa (específico de readiness)
+  if(m.dimensiones){
+    html += '<div class="li-section-title">Por qué estos pesos</div>';
+    html += '<div class="li-def" style="font-size:.8rem">'+m.dimensiones+'</div>';
   }
 
   // Rangos
@@ -400,6 +491,24 @@ function _render(metricId, currentValue){
   return html;
 }
 
+/* ── Helpers de fetch autenticado (para datos en vivo, ej. readiness) ──── */
+function _apiBase(){
+  return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
+}
+function _authToken(){
+  try{
+    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+    return s && s.token ? s.token : '';
+  }catch(e){ return ''; }
+}
+function _fetchReadinessDaily(cb){
+  var tok = _authToken();
+  fetch(_apiBase() + '/readiness/daily', { headers: tok ? { Authorization: 'Bearer ' + tok } : {} })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(cb)
+    .catch(function(){ cb(null); });
+}
+
 /* ── API pública ─────────────────────────────────────────────────────── */
 window.lxInfo = {
 
@@ -425,11 +534,12 @@ window.lxInfo = {
 
   /** Agrega botón ℹ a todos los elementos que tengan [data-lx-info] */
   autoInit: function(){
+    _ensurePanel(); // inyecta el CSS de .lx-info-btn de inmediato (antes solo ocurría al primer clic)
     document.querySelectorAll('[data-lx-info]').forEach(function(el){
       var mid   = el.getAttribute('data-lx-info');
       var vsel  = el.getAttribute('data-lx-info-val') || null;
-      // Mount on parent .kc card (top-right corner) when available, else inline
-      var card  = el.closest('.kc');
+      // Mount on parent .kc / .lx-card card (top-right corner) when available, else inline
+      var card  = el.closest('.kc') || el.closest('.lx-card');
       var mount = card || el;
       if(mount.querySelector('.lx-info-btn')) return; // ya tiene
       var btn   = document.createElement('button');
@@ -445,6 +555,23 @@ window.lxInfo = {
       btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="7" height="7"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg>';
       btn.addEventListener('click', function(e){
         e.stopPropagation();
+        if(mid === 'pmc'){
+          var ctlEl = document.querySelector('[data-kl="ctl"]');
+          var atlEl = document.querySelector('[data-kl="atl"]');
+          var tsbWrap = document.getElementById('tsb-val');
+          var ctl = ctlEl ? parseFloat(ctlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
+          var atl = atlEl ? parseFloat(atlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
+          var tsb = tsbWrap ? parseFloat(tsbWrap.textContent.replace(/[^0-9.+-]/g,'')) : null;
+          var pmcVal = JSON.stringify({ ctl: isNaN(ctl)?null:ctl, atl: isNaN(atl)?null:atl, tsb: (tsb==null||isNaN(tsb))?null:tsb });
+          lxInfo.show(mid, pmcVal);
+          return;
+        }
+        if(mid === 'readiness'){
+          _fetchReadinessDaily(function(data){
+            lxInfo.show(mid, data ? JSON.stringify(data) : null);
+          });
+          return;
+        }
         var val = null;
         if(vsel){
           var target = document.querySelector(vsel);
