@@ -3445,6 +3445,14 @@ window.addEventListener('click', function(e){
 <div id="ed-toast" class="ed-toast"></div>
 
 <!-- ?????????? UPGRADE MODAL ?????????? -->
+<style>
+#upgrade-overlay .up-plan-card{transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease}
+#upgrade-overlay .up-plan-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.45),0 0 0 1px var(--pc,#0EA5E9),0 0 40px -12px var(--pc,#0EA5E9);z-index:2}
+#upgrade-overlay .up-plans-grid:hover .up-plan-card:not(:hover){opacity:.6;transform:scale(.98)}
+#upgrade-overlay .up-plan-card ul{color:#7FB3CC}
+#upgrade-overlay .up-feat-on{color:#10B981}
+#upgrade-overlay .up-feat-off{color:#ef4444}
+</style>
 <div id="upgrade-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:9000;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#08121E;border:1px solid rgba(8,116,174,.22);border-radius:20px;width:100%;max-width:920px;max-height:90vh;overflow-y:auto;position:relative">
     <button onclick="closeUpgrade()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#3D6880;cursor:pointer;font-size:1.4rem;line-height:1">?</button>
@@ -3454,69 +3462,65 @@ window.addEventListener('click', function(e){
       </div>
       <p style="color:#7FB3CC;font-size:.9rem">Elige el plan que mejor se adapta a tu entrenamiento</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:.75rem;padding:1rem 1.25rem 1.5rem">
+    <div class="up-plans-grid" style="display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:.75rem;padding:1rem 1.25rem 1.5rem">
 
       <!-- Básico -->
-      <div id="plan-basico" style="border:1px solid rgba(8,116,174,.2);border-radius:14px;padding:1.25rem;background:rgba(14,165,233,.03);display:flex;flex-direction:column">
+      <div id="plan-basico" class="up-plan-card" style="--pc:#0EA5E9;border:1px solid rgba(8,116,174,.2);border-radius:14px;padding:1.25rem;background:rgba(14,165,233,.03);display:flex;flex-direction:column">
         <div style="font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#0EA5E9;margin-bottom:.6rem" data-i18n="plan_basic">Básico</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;margin-bottom:.2rem">Atleta</div>
         <div style="font-size:.7rem;color:#7FB3CC;margin-bottom:.8rem">sin tarjeta de crédito</div>
-        <ul style="list-style:none;font-size:.78rem;color:#7FB3CC;line-height:1.8;margin-bottom:1.2rem;flex:1">
-          <li>✓ Dashboard de entrenamiento</li>
-          <li>✓ Registro de wellness</li>
-          <li>✓ Workout log</li>
-          <li style="color:#ef4444">✗ PMC / CTL / ATL</li>
-          <li style="color:#ef4444">✗ Predictor de carrera</li>
-          <li style="color:#ef4444">✗ Sync Garmin</li>
+        <ul style="list-style:none;font-size:.78rem;line-height:1.8;margin-bottom:1.2rem;flex:1">
+          <li><span class="up-feat-on">✓</span> Dashboard + histórico completo</li>
+          <li><span class="up-feat-on">✓</span> Sync Garmin Connect automático</li>
+          <li><span class="up-feat-on">✓</span> CTL / ATL / TSB</li>
+          <li><span class="up-feat-off">✗</span> Plan, Nutrición, Analytics</li>
+          <li><span class="up-feat-off">✗</span> Blood Labs + AI Coach</li>
         </ul>
         <div id="current-plan-badge" style="display:none;text-align:center;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0EA5E9;padding:.5rem;border:1px solid rgba(14,165,233,.3);border-radius:8px" data-i18n="plan_current">Plan actual</div>
       </div>
 
-      <!-- Pro -->
-      <div style="border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:1.25rem;background:rgba(168,85,247,.05);position:relative;display:flex;flex-direction:column">
+      <!-- Agegroup -->
+      <div class="up-plan-card" style="--pc:#A855F7;border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:1.25rem;background:rgba(168,85,247,.05);position:relative;display:flex;flex-direction:column">
         <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;font-family:'Oswald',sans-serif;font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.2rem .7rem;border-radius:20px" data-i18n="plan_popular">Más popular</div>
         <div style="font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#C084FC;margin-bottom:.6rem" data-i18n="plan_pro">Agegroup</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;margin-bottom:.2rem">$19<span style="font-size:1rem;color:#7FB3CC">/mes</span></div>
         <div style="font-size:.7rem;color:#7FB3CC;margin-bottom:.8rem">~$0.63/día</div>
-        <ul style="list-style:none;font-size:.78rem;color:#7FB3CC;line-height:1.8;margin-bottom:1.2rem;flex:1">
-          <li>✓ Todo Atleta</li>
-          <li>✓ PMC · CTL / ATL / TSB</li>
-          <li>✓ Sync Garmin Connect</li>
-          <li>✓ Predictor Ironman / 70.3</li>
-          <li style="color:#ef4444">✗ Análisis de laboratorio</li>
-          <li>✓ Planes de nutrición</li>
+        <ul style="list-style:none;font-size:.78rem;line-height:1.8;margin-bottom:1.2rem;flex:1">
+          <li><span class="up-feat-on">✓</span> Todo del plan Atleta</li>
+          <li><span class="up-feat-on">✓</span> Plan de entrenamiento + Nutrición</li>
+          <li><span class="up-feat-on">✓</span> Analytics avanzado + Predictor de carrera</li>
+          <li><span class="up-feat-on">✓</span> Recuperación (HRV) + Estado mental</li>
+          <li><span class="up-feat-off">✗</span> Blood Labs + AI Coach (Elite)</li>
         </ul>
-        <button onclick="doCheckout('pro')" style="width:100%;background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;border:none;border-radius:10px;padding:.7rem;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Elegir Agegroup →</button>
+        <button onclick="doCheckout('agegroup')" style="width:100%;background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;border:none;border-radius:10px;padding:.7rem;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Elegir Agegroup →</button>
       </div>
 
       <!-- Elite -->
-      <div style="border:1px solid rgba(240,165,0,.25);border-radius:14px;padding:1.25rem;background:rgba(240,165,0,.04);display:flex;flex-direction:column">
+      <div class="up-plan-card" style="--pc:#F0A500;border:1px solid rgba(240,165,0,.25);border-radius:14px;padding:1.25rem;background:rgba(240,165,0,.04);display:flex;flex-direction:column">
         <div style="font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#F0A500;margin-bottom:.6rem" data-i18n="plan_elite">Élite</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;margin-bottom:.2rem">$39<span style="font-size:1rem;color:#7FB3CC">/mes</span></div>
         <div style="font-size:.7rem;color:#7FB3CC;margin-bottom:.8rem">~$1.30/día</div>
-        <ul style="list-style:none;font-size:.78rem;color:#7FB3CC;line-height:1.8;margin-bottom:1.2rem;flex:1">
-          <li>✓ Todo Agegroup</li>
-          <li>✓ Blood Labs integrado</li>
-          <li>✓ Analytics avanzados</li>
-          <li>✓ Soporte prioritario</li>
-          <li>✓ Exportación de datos</li>
-          <li>✓ GPS Training Detail</li>
+        <ul style="list-style:none;font-size:.78rem;line-height:1.8;margin-bottom:1.2rem;flex:1">
+          <li><span class="up-feat-on">✓</span> Todo del plan Agegroup</li>
+          <li><span class="up-feat-on">✓</span> Blood Labs + biomarcadores</li>
+          <li><span class="up-feat-on">✓</span> AI Coach — forecast CTL + riesgo de lesión</li>
+          <li><span class="up-feat-on">✓</span> Plan adaptativo automático</li>
+          <li><span class="up-feat-on">✓</span> Indoor Workout Builder (Zwift-style)</li>
         </ul>
         <button onclick="doCheckout('elite')" style="width:100%;background:linear-gradient(135deg,#F0A500,#D97706);color:#000;border:none;border-radius:10px;padding:.7rem;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Elegir Élite →</button>
       </div>
 
       <!-- Coach -->
-      <div style="border:1px solid rgba(255,101,53,.25);border-radius:14px;padding:1.25rem;background:rgba(255,101,53,.04);display:flex;flex-direction:column">
+      <div class="up-plan-card" style="--pc:#FF6535;border:1px solid rgba(255,101,53,.25);border-radius:14px;padding:1.25rem;background:rgba(255,101,53,.04);display:flex;flex-direction:column">
         <div style="font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#FF6535;margin-bottom:.6rem" data-i18n="plan_coach">Coach</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;margin-bottom:.2rem">$49<span style="font-size:1rem;color:#7FB3CC">/mes</span></div>
         <div style="font-size:.7rem;color:#7FB3CC;margin-bottom:.8rem">gestiona 50+ atletas</div>
-        <ul style="list-style:none;font-size:.78rem;color:#7FB3CC;line-height:1.8;margin-bottom:1.2rem;flex:1">
-          <li>✓ Todo Elite</li>
-          <li>✓ Coach Platform</li>
-          <li>✓ Gestión de atletas</li>
-          <li>✓ Reportes PDF</li>
-          <li>✓ Auto-sync Garmin login</li>
-          <li>✓ Panel multi-atleta</li>
+        <ul style="list-style:none;font-size:.78rem;line-height:1.8;margin-bottom:1.2rem;flex:1">
+          <li><span class="up-feat-on">✓</span> Squad Overview — riesgo de tus atletas</li>
+          <li><span class="up-feat-on">✓</span> Prescripción de entrenamientos</li>
+          <li><span class="up-feat-on">✓</span> Mensajería con tus atletas</li>
+          <li><span class="up-feat-on">✓</span> Gestión de 50+ atletas</li>
+          <li><span class="up-feat-on">✓</span> Acceso completo a funciones Elite incluido</li>
         </ul>
         <button onclick="doCheckout('coach')" style="width:100%;background:linear-gradient(135deg,#FF6535,#E8490A);color:#fff;border:none;border-radius:10px;padding:.7rem;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Elegir Coach →</button>
       </div>
@@ -3532,13 +3536,13 @@ window.addEventListener('click', function(e){
 (function(){
   var API = KL.API_BASE;
 
-  // Mostrar botón upgrade solo a usuarios con plan basico/pro
+  // Mostrar botón upgrade solo a usuarios con plan basico/agegroup
   var s = KL.getSession();
   if(s && s.plan_nivel !== 'elite' && s.plan_nivel !== 'coach'){
     var btn = document.getElementById('btn-upgrade');
     if(btn){
       btn.style.display = 'flex';
-      if(s.plan_nivel === 'pro'){
+      if(s.plan_nivel === 'agegroup'){
         document.getElementById('btn-upgrade-label').textContent = 'Ir a Elite';
       } else if(s.plan_nivel === 'basico'){
         document.getElementById('btn-upgrade-label').textContent = 'Ir a Agegroup';
