@@ -943,8 +943,19 @@ def _get_planned_week(db: Session, user_id: str) -> list:
           .order_by(GarminPlannedWorkout.date_iso)
           .all()
     )
-    return [
-        {
+    # Dedup por (fecha, workout_id): a veces Garmin/TrainingPeaks empuja el
+    # MISMO workout al calendario dos veces con scheduledWorkoutId distintos
+    # (confirmado: mismo workout_id, dos filas) — sin esto, el "Cumplimiento
+    # Semanal" del dashboard sumaba el TSS planificado doble para ese día.
+    seen = set()
+    out = []
+    for r in rows:
+        dedup_key = (r.date_iso, r.workout_id) if r.workout_id else None
+        if dedup_key and dedup_key in seen:
+            continue
+        if dedup_key:
+            seen.add(dedup_key)
+        out.append({
             "date_iso": r.date_iso,
             "title":    r.title,
             "sport":    r.sport,
@@ -952,9 +963,8 @@ def _get_planned_week(db: Session, user_id: str) -> list:
             "dist_km":  r.dist_km,
             "tss":      r.tss_planned,
             "source":   r.source,
-        }
-        for r in rows
-    ]
+        })
+    return out
 
 
 # ─────────────────────────────────────────────

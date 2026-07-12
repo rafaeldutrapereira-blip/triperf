@@ -1116,6 +1116,20 @@ class GarminPullService:
                     type_key = act_type.get("typeKey") or act_type.get("key") or "" if isinstance(act_type, dict) else str(act_type)
                 sport = self._SPORT_MAP_PLANNED.get(type_key.lower(), "other")
 
+                workout_id_raw = str(item.get("workoutId") or "") or None
+
+                # Sin scheduledWorkoutId/id, sin workoutId y sin sportTypeKey:
+                # el ítem no tiene NINGUNA señal identificatoria real (esto pasa
+                # con entradas de calendario que no son workouts de verdad, ej.
+                # placeholders/notas). Sin sched_id el upsert de abajo nunca
+                # encuentra la fila (if sched_id else None → None siempre), así
+                # que cada sync insertaba una fila NUEVA para el mismo ítem
+                # fantasma — 235 duplicados "Entrenamiento planificado" en la
+                # tabla de este usuario antes de este fix. Se descarta en vez
+                # de guardar un plan sin ningún dato real detrás.
+                if not sched_id and not workout_id_raw and not type_key:
+                    continue
+
                 # Duración y distancia — el calendario casi nunca las trae
                 # directo (son null); la plantilla completa vive en
                 # get_workout_by_id(workoutId), sin importar qué plataforma
@@ -1133,7 +1147,7 @@ class GarminPullService:
                 tss_p = (item.get("tssPlanned") or item.get("tss") or
                          item.get("trainingStressScore") or None)
 
-                workout_id = str(item.get("workoutId") or "") or None
+                workout_id = workout_id_raw
                 if workout_id and (not dur_secs or not dist_m or tss_p is None):
                     if workout_id in _workout_cache:
                         cached = _workout_cache[workout_id]
