@@ -19,6 +19,13 @@ function apiBase(){
   return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 }
 function authToken(){
+  // El JWT real vive en localStorage.lx_co_token (mismo patrón que
+  // athlete_profile.html/dashboard.html) — kl_s NUNCA trae un campo
+  // "token", así que leerlo de ahí siempre devolvía vacío y dejaba los
+  // fetches de este módulo sin Authorization (401 silencioso para
+  // cualquier usuario recién registrado que no hubiera pasado por login.html).
+  var direct = localStorage.getItem('lx_co_token');
+  if(direct) return direct;
   try{
     var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
     return s && s.token ? s.token : '';

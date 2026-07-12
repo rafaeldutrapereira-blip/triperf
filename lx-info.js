@@ -496,6 +496,10 @@ function _apiBase(){
   return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 }
 function _authToken(){
+  // Ver el mismo fix/comentario en dash-header.js: el JWT real vive en
+  // localStorage.lx_co_token, no en kl_s.token (ese campo nunca existió).
+  var direct = localStorage.getItem('lx_co_token');
+  if(direct) return direct;
   try{
     var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
     return s && s.token ? s.token : '';
