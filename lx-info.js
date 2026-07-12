@@ -106,6 +106,21 @@ var METRICS = {
     unidad: 'ms (milisegundos)',
   },
 
+  resting_hr: {
+    nombre: 'FC Reposo — Frecuencia Cardíaca en Reposo',
+    emoji: '❤️',
+    definicion: 'Pulsaciones por minuto en <strong>estado de reposo total</strong>, medidas por Garmin durante todo el día. A menor FC de reposo, mejor condición cardiovascular general — mejora con el entrenamiento aeróbico y empeora con fatiga, enfermedad o sobreentrenamiento.',
+    formula: 'Mínimo/promedio estable detectado por el sensor óptico durante 24h',
+    rangos: [
+      {min:0,   max:50, label:'Excelente ✓', color:'#22D3EE', advice:'Nivel de atleta muy entrenado.'},
+      {min:50,  max:60, label:'Muy bueno',    color:'#10B981', advice:'Buena condición cardiovascular.'},
+      {min:60,  max:70, label:'Normal',       color:'#F59E0B', advice:'Rango saludable promedio.'},
+      {min:70,  max:999,label:'Elevado',      color:'#EF4444', advice:'Si es más alto de lo habitual, puede indicar fatiga, estrés o enfermedad incipiente.'},
+    ],
+    pro_tip: 'Un aumento repentino de 5+ bpm sobre tu promedio suele ser la primera señal de sobreentrenamiento o enfermedad.',
+    unidad: 'bpm (latidos por minuto)',
+  },
+
   vo2max: {
     nombre: 'VO2 Máx — Capacidad Aeróbica Máxima',
     emoji: '🫁',

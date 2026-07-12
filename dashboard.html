@@ -153,12 +153,12 @@ ul { list-style: none; }
 .kpi-bottom-sec { padding: 0 0 .5rem; }
 .kpi-bottom-row {
   display: grid;
-  grid-template-columns: 1fr 3.3fr 1.7fr;
+  grid-template-columns: 1fr 1fr 2.8fr 1.6fr;
   gap: 1rem;
   margin-top: 1rem;
   align-items: stretch;
 }
-@media (max-width:780px) { .kpi-bottom-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width:1100px) { .kpi-bottom-row { grid-template-columns: 1fr 1fr; } }
 @media (max-width:580px) { .kpi-bottom-row { grid-template-columns: 1fr; } }
 
 .kc {
@@ -1029,6 +1029,18 @@ ul { list-style: none; }
         <div class="kc-name" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</div>
         <div class="kc-sub">Ratio aguda/crónica · óptimo 0.8–1.3</div>
         <div style="flex:1"></div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <!-- RHR (Frecuencia Cardíaca en Reposo) card -->
+      <div class="kc sr" id="kc-rhr" style="--kc:#F43F5E" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><polyline points="4 12 8 12 10 9 13 15 15 12 20 12"/></svg>
+          <div id="badge-rhr" class="badge">—</div>
+        </div>
+        <div class="kc-val" id="kc-rhr-val" style="color:#F43F5E">—<span class="u">bpm</span></div>
+        <div class="kc-name" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</div>
+        <div class="kc-sub">Hoy · promedio 7d: <span id="rhr-7d-val">—</span>bpm</div>
         <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
       </div>
 
@@ -2207,6 +2219,29 @@ function patchData(){
   // HRV 7d average subtítulo
   var hrv7d = document.getElementById('hrv-7d-val');
   if(hrv7d && d.hrv_7d_avg != null) hrv7d.textContent = Math.round(d.hrv_7d_avg);
+
+  // RHR card — valor, badge tendencia (menor = mejor) y promedio 7d
+  var rhrValEl = document.getElementById('kc-rhr-val');
+  if(rhrValEl){
+    rhrValEl.innerHTML = (d.resting_hr != null ? Math.round(d.resting_hr) : '—') + '<span class="u">bpm</span>';
+  }
+  var bRhr = document.getElementById('badge-rhr');
+  if(bRhr){
+    if(d.trends && d.trends.rhr != null){
+      var rhrTrendVal = d.trends.rhr;
+      var rhrArrow = rhrTrendVal >= 0
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
+      // Menor FC de reposo es mejor: una tendencia negativa es una mejora.
+      bRhr.className = 'badge ' + (rhrTrendVal <= 0 ? 'b-up' : 'b-dn');
+      bRhr.innerHTML = rhrArrow + (rhrTrendVal >= 0 ? '+' : '') + rhrTrendVal + 'bpm';
+    } else if(d.resting_hr == null){
+      bRhr.className = 'badge';
+      bRhr.textContent = 'Sin datos';
+    }
+  }
+  var rhr7d = document.getElementById('rhr-7d-val');
+  if(rhr7d && d.rhr_7d_avg != null) rhr7d.textContent = Math.round(d.rhr_7d_avg);
 
   // Readiness chip
   var rChip = document.getElementById('readiness-chip-val');

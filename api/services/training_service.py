@@ -12,6 +12,13 @@ from sqlalchemy.orm import Session
 
 from ..models import GarminActivity, GarminTrainingLoad, User
 
+ACWR_SPORT_LABELS = {
+    "swim": "Natación",
+    "bike": "Ciclismo",
+    "run":  "Trote",
+    "gym":  "Fuerza / Prep. física",
+}
+
 
 # ─── Constantes de carga de entrenamiento ─────────────────────
 _CTL_TC  = 42   # días — Chronic Training Load time constant (Banister)
@@ -122,6 +129,71 @@ def compute_acwr(load_rows: list, safe_minimum: float = 1.0) -> tuple[float, str
     else:              zone = "low"
 
     return acwr, zone
+
+
+def _acwr_zone(value: Optional[float]) -> str:
+    if value is None:
+        return "no_data"
+    if value >= 1.5:   return "danger"
+    if value >= 1.3:   return "warning"
+    if value >= 0.8:   return "optimal"
+    return "low"
+
+
+def compute_acwr_by_sport(user_id: str, db: Session, min_sessions_28d: int = 3) -> dict:
+    """
+    ACWR (7:28) desglosado por disciplina — natación, ciclismo, trote, fuerza.
+    Un ACWR agregado puede verse "óptimo" mientras una sola disciplina tiene
+    un pico de carga peligroso (ej. mucho más trote esta semana compensado
+    por menos ciclismo); las lesiones por sobreuso son tejido-específicas,
+    así que el riesgo real está en la carga por disciplina, no solo la total.
+    """
+    window_days = 120  # 28 (crónico) + 7 (agudo) + ~90 días de histórico para el gráfico
+    start = date.today() - timedelta(days=window_days - 1)
+    cutoff_iso = start.isoformat()
+
+    acts = (
+        db.query(GarminActivity)
+          .filter(
+              GarminActivity.user_id == user_id,
+              GarminActivity.date_iso >= cutoff_iso,
+              GarminActivity.sport.in_(list(ACWR_SPORT_LABELS.keys())),
+          )
+          .all()
+    )
+
+    daily_tss: dict[str, dict[str, float]] = {s: {} for s in ACWR_SPORT_LABELS}
+    for a in acts:
+        bucket = daily_tss[a.sport]
+        bucket[a.date_iso] = bucket.get(a.date_iso, 0.0) + (a.tss or 0.0)
+
+    days = [(start + timedelta(days=i)).isoformat() for i in range(window_days)]
+
+    result: dict = {}
+    for sport, label in ACWR_SPORT_LABELS.items():
+        series = [daily_tss[sport].get(d, 0.0) for d in days]
+        history = []
+        for idx in range(6, len(days)):
+            window7  = series[max(0, idx - 6):idx + 1]
+            window28 = series[max(0, idx - 27):idx + 1]
+            chronic28 = sum(window28) / len(window28)
+            if chronic28 < 1.0:
+                continue
+            acute7 = sum(window7) / len(window7)
+            history.append({"dt": days[idx], "acwr": round(acute7 / chronic28, 2)})
+
+        sessions_28d = sum(1 for d in days[-28:] if daily_tss[sport].get(d, 0.0) > 0)
+        latest = history[-1]["acwr"] if history else None
+        result[sport] = {
+            "label":             label,
+            "acwr":              latest,
+            "zone":              _acwr_zone(latest),
+            "history":           history,
+            "sessions_28d":      sessions_28d,
+            "insufficient_data": sessions_28d < min_sessions_28d,
+        }
+
+    return result
 
 
 # ─── Alertas de entrenamiento ─────────────────────────────────

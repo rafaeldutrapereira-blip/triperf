@@ -22,7 +22,7 @@ from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember
-from ..services.training_service import compute_acwr, build_training_alerts as _svc_alerts
+from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
 logger = logging.getLogger("labx.athlete")
@@ -570,6 +570,7 @@ def athlete_dashboard(
 
     # ACWR (7:28) — BP-03: usa compute_acwr del service que maneja acute=0 / no_data
     acwr, acwr_zone = compute_acwr(list(load_rows))
+    acwr_by_sport = compute_acwr_by_sport(me.id, db)
 
     # ── PMC (últimas 52 semanas) + ACWR history ──────────────────────────────
     pmc = []
@@ -753,6 +754,16 @@ def athlete_dashboard(
         if h_new and h_old:
             hrv_trend = round(h_new - h_old, 1)
 
+    # RHR (frecuencia cardíaca en reposo): trend hoy vs hace 7 días + promedio 7d
+    rhr_trend = None
+    if health_today and health_7d_ago:
+        r_new = health_today.resting_hr
+        r_old = health_7d_ago.resting_hr
+        if r_new and r_old:
+            rhr_trend = round(r_new - r_old, 1)
+    rhr_vals_7d = [r.resting_hr for r in health_rows_14[:7] if r.resting_hr is not None]
+    rhr_7d_avg = round(sum(rhr_vals_7d) / len(rhr_vals_7d), 1) if rhr_vals_7d else None
+
     # Training Readiness con label + color (B-05)
     tr_score = health_today.training_readiness if health_today else None
     if tr_score is None:
@@ -850,6 +861,7 @@ def athlete_dashboard(
         "tss_week":     round(tss_wk, 1),
         "acwr":         acwr,
         "acwr_zone":    acwr_zone,
+        "acwr_by_sport": acwr_by_sport,
         "readiness":    readiness_score,
         # Salud Garmin (Sprint 1)
         "hrv_last_night":   hrv_last_night,
@@ -861,6 +873,8 @@ def athlete_dashboard(
         "sleep_deep_h":     sleep_deep_h,
         "stress_avg":       stress_avg,
         "resting_hr":       resting_hr,
+        "rhr_7d_avg":       rhr_7d_avg,
+        "rhr_trend":        rhr_trend,
         "readiness_source": "labx" if labx_readiness is not None else "tsb",
         # Training Readiness desglosado (B-05)
         "training_readiness":       tr_score,
@@ -871,6 +885,7 @@ def athlete_dashboard(
             "ctl":        ctl_change,
             "tss_week":   tss_wk_trend,
             "hrv":        hrv_trend,
+            "rhr":        rhr_trend,
             "body_battery": bb_trend,
             "sleep_h":    sleep_trend,
             "compliance": compliance_trend,

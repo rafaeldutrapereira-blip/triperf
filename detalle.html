@@ -212,6 +212,31 @@ a { color: inherit; text-decoration: none; }
   color:var(--dim); text-transform:uppercase;
 }
 
+/* ACWR POR DISCIPLINA */
+.badge {
+  font-size: .64rem; font-weight: 700; padding: .15rem .48rem;
+  border-radius: 4px; display: inline-flex; align-items: center; gap: .18rem;
+  white-space: nowrap;
+}
+.b-up   { color: var(--green); background: rgba(16,185,129,.12); }
+.b-dn   { color: var(--red);   background: rgba(239,68,68,.12); }
+.b-warn { color: var(--gold);  background: rgba(240,165,0,.12); }
+.b-low  { color: #0EA5E9;      background: rgba(14,165,233,.12); }
+.b-none { color: var(--dim);   background: rgba(61,104,128,.12); }
+.acwr-sport-meta {
+  display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+}
+.acwr-sport-sessions {
+  font-size:.62rem; color:var(--dim); padding: .95rem 1.25rem 0;
+  letter-spacing:.02em;
+}
+.acwr-legend {
+  display:flex; flex-wrap:wrap; gap:.3rem 1.1rem; margin-bottom:.9rem;
+  font-size:.62rem; color:var(--dim); letter-spacing:.01em;
+}
+.acwr-legend span { display:flex; align-items:center; gap:.35rem; }
+.acwr-legend i { width:14px; height:8px; border-radius:2px; display:inline-block; flex-shrink:0; }
+
 /* STATS GRID */
 .stats-grid {
   display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem;
@@ -370,6 +395,82 @@ footer {
         <div class="pt-sep"></div>
         <div class="pt-pmc" id="pmc-tip-pmc"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ACWR por disciplina (visible solo para metric=acwr) -->
+  <!-- El ACWR agregado puede verse "óptimo" mientras una sola disciplina
+       tiene un pico de carga peligroso (ej. mucho más trote compensado por
+       menos ciclismo esa semana) — las lesiones por sobreuso son
+       tejido-específicas, así que el riesgo real está en la carga por
+       disciplina, no solo en la carga total. -->
+  <div id="acwr-sport-section" style="display:none">
+    <div class="section-title">ACWR por disciplina — riesgo de lesión específico por tejido</div>
+    <div class="acwr-legend">
+      <span><i style="background:rgba(16,185,129,.35)"></i>Banda verde = zona óptima (0.8–1.3)</span>
+      <span><i style="background:#F0F9FF66;border-top:1px dashed #F0F9FF"></i>Línea punteada gris = promedio del período</span>
+      <span><i style="background:#F0A500"></i>Naranja = alerta (1.3–1.5)</span>
+      <span><i style="background:#EF4444"></i>Rojo = riesgo alto (≥1.5)</span>
+      <span><i style="background:#0EA5E9"></i>Azul = sub-carga (&lt;0.8, no lesivo)</span>
+    </div>
+    <div class="wb-grid">
+
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-label">🏊 <strong>Natación</strong></div>
+          <div class="acwr-sport-meta">
+            <div class="badge" id="acwr-badge-swim">—</div>
+            <div class="chart-range" id="acwr-range-swim">—</div>
+          </div>
+        </div>
+        <div class="acwr-sport-sessions" id="acwr-sessions-swim"></div>
+        <div class="chart-body">
+          <div class="wb-chart-wrap"><canvas id="acwr-chart-swim"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-label">🚴 <strong>Ciclismo</strong></div>
+          <div class="acwr-sport-meta">
+            <div class="badge" id="acwr-badge-bike">—</div>
+            <div class="chart-range" id="acwr-range-bike">—</div>
+          </div>
+        </div>
+        <div class="acwr-sport-sessions" id="acwr-sessions-bike"></div>
+        <div class="chart-body">
+          <div class="wb-chart-wrap"><canvas id="acwr-chart-bike"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-label">🏃 <strong>Trote</strong></div>
+          <div class="acwr-sport-meta">
+            <div class="badge" id="acwr-badge-run">—</div>
+            <div class="chart-range" id="acwr-range-run">—</div>
+          </div>
+        </div>
+        <div class="acwr-sport-sessions" id="acwr-sessions-run"></div>
+        <div class="chart-body">
+          <div class="wb-chart-wrap"><canvas id="acwr-chart-run"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-label">💪 <strong>Fuerza / Prep. física</strong></div>
+          <div class="acwr-sport-meta">
+            <div class="badge" id="acwr-badge-gym">—</div>
+            <div class="chart-range" id="acwr-range-gym">—</div>
+          </div>
+        </div>
+        <div class="acwr-sport-sessions" id="acwr-sessions-gym"></div>
+        <div class="chart-body">
+          <div class="wb-chart-wrap"><canvas id="acwr-chart-gym"></canvas></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -833,6 +934,9 @@ function fmtDateShort(iso) {
 function render() {
   var cfg = MC[metric]; if (!cfg) return;
 
+  var acwrSportSection = document.getElementById('acwr-sport-section');
+  if (acwrSportSection) acwrSportSection.style.display = (metric === 'acwr') ? '' : 'none';
+
   if (cfg.chartType === 'wellbeing') {
     document.documentElement.style.setProperty('--accent', cfg.color);
     document.getElementById('pg-title').textContent       = 'Estado del Atleta · LabX';
@@ -941,6 +1045,7 @@ function render() {
   document.getElementById('wb-section').style.display   = 'none';
 
   renderChart(d, cfg);
+  if (metric === 'acwr') renderAcwrBySport();
 }
 
 function setStatCard(id, val, u, sub) {
@@ -1591,6 +1696,177 @@ function renderWellbeing() {
   } else {
     noData('wb-tsb-chart');
   }
+}
+
+// ─── ACWR POR DISCIPLINA ────────────────────────────────────────────────────
+var ACWR_SPORT_CHARTS = [];
+var ACWR_SPORTS = [
+  {key:'swim', color:'#0EA5E9'},
+  {key:'bike', color:'#F0A500'},
+  {key:'run',  color:'#FF6535'},
+  {key:'gym',  color:'#A855F7'},
+];
+function acwrPointColor(v) {
+  if (v == null) return '#3D6880';
+  if (v >= 1.5) return '#EF4444';
+  if (v >= 1.3) return '#F0A500';
+  if (v >= 0.8) return '#10B981';
+  return '#0EA5E9';
+}
+function acwrZoneBadge(zone, value) {
+  var map = {
+    danger:  {cls:'b-dn',   label:'⚠ Riesgo alto'},
+    warning: {cls:'b-warn', label:'Carga alta'},
+    optimal: {cls:'b-up',   label:'Óptimo'},
+    low:     {cls:'b-low',  label:'Sub-carga'},
+    no_data: {cls:'b-none', label:'Sin datos'},
+  };
+  var m = map[zone] || map.no_data;
+  return {cls:m.cls, text: value != null ? (m.label + ' · ' + value.toFixed(2)) : m.label};
+}
+function renderAcwrBySport() {
+  ACWR_SPORT_CHARTS.forEach(function(c){ try{ c.destroy(); }catch(e){} });
+  ACWR_SPORT_CHARTS = [];
+
+  var d = window.KL_DATA || {};
+  var bySport = d.acwr_by_sport || {};
+  var cutoff = '';
+  if (period > 0) {
+    var co = new Date(); co.setDate(co.getDate() - period);
+    cutoff = co.toISOString().slice(0,10);
+  }
+
+  var opts = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 300 },
+    interaction: { mode:'index', intersect:false },
+    plugins: {
+      legend: { display:false },
+      tooltip: {
+        backgroundColor:'#07111D', borderColor:'rgba(61,104,128,.35)', borderWidth:1,
+        titleColor:'#7FB3CC', bodyColor:'#F0F9FF',
+        titleFont:{family:"'Oswald',sans-serif",size:9,weight:'600'},
+        bodyFont:{family:"'Barlow Condensed',sans-serif",size:13,weight:'700'},
+        padding:8, displayColors:false,
+        callbacks:{ title:function(items){ return fmtDate(items[0].label); },
+                    label:function(item){ return 'ACWR ' + item.formattedValue; } }
+      }
+    },
+    scales: {
+      x:{
+        grid:{color:'rgba(8,116,174,.05)',drawBorder:false}, border:{display:false},
+        ticks:{color:'#3D6880', font:{family:"'Oswald',sans-serif",size:8},
+               maxTicksLimit:6, maxRotation:0,
+               callback:function(v){ return fmtDateShort(this.getLabelForValue(v)); }}
+      }
+    }
+  };
+  function makeAcwrY(vals) {
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var pad = Math.max((mx - mn) * 0.15, 0.1);
+    var lo = Math.max(0, Math.floor((mn - pad) * 10) / 10);
+    var hi = Math.ceil((mx + pad) * 10) / 10;
+    return {
+      min: lo, max: hi,
+      grid:{color:'rgba(8,116,174,.06)',drawBorder:false}, border:{display:false},
+      ticks:{color:'#3D6880', font:{family:"'Oswald',sans-serif",size:8}}
+    };
+  }
+
+  ACWR_SPORTS.forEach(function(s){
+    var info = bySport[s.key] || {};
+    var hist = (info.history || []).filter(function(p){ return !cutoff || p.dt >= cutoff; });
+
+    var badgeEl = document.getElementById('acwr-badge-' + s.key);
+    var rangeEl = document.getElementById('acwr-range-' + s.key);
+    var sessEl  = document.getElementById('acwr-sessions-' + s.key);
+    var canvas  = document.getElementById('acwr-chart-' + s.key);
+
+    if (badgeEl) {
+      var b = acwrZoneBadge(info.zone, info.acwr);
+      badgeEl.className = 'badge ' + b.cls;
+      badgeEl.textContent = b.text;
+    }
+    if (rangeEl) rangeEl.textContent = hist.length ? (fmtDate(hist[0].dt) + ' → ' + fmtDate(hist[hist.length-1].dt)) : '—';
+    if (sessEl) {
+      if (info.insufficient_data) {
+        sessEl.textContent = 'Solo ' + (info.sessions_28d||0) + ' sesiones en 28 días — datos insuficientes para un ratio confiable';
+        sessEl.style.color = 'var(--gold)';
+      } else {
+        var daysDanger  = hist.filter(function(p){ return p.acwr >= 1.5; }).length;
+        var daysWarning = hist.filter(function(p){ return p.acwr >= 1.3 && p.acwr < 1.5; }).length;
+        var riskTxt = daysDanger
+          ? daysDanger + ' día' + (daysDanger===1?'':'s') + ' en riesgo alto (≥1.5)' + (daysWarning ? ' · ' + daysWarning + ' en alerta (1.3–1.5)' : '')
+          : daysWarning
+            ? daysWarning + ' día' + (daysWarning===1?'':'s') + ' en zona de alerta (1.3–1.5)'
+            : 'sin excesos de carga en el período';
+        sessEl.textContent = (info.sessions_28d||0) + ' sesiones en los últimos 28 días · ' + riskTxt;
+        sessEl.style.color = daysDanger ? 'var(--red)' : daysWarning ? 'var(--gold)' : 'var(--dim)';
+      }
+    }
+
+    if (!canvas) return;
+    if (!hist.length || info.insufficient_data) {
+      canvas.style.display = 'none';
+      var msg = canvas.parentElement.querySelector('.wb-nodata');
+      if (!msg) {
+        msg = document.createElement('div');
+        msg.className = 'wb-nodata';
+        canvas.parentElement.appendChild(msg);
+      }
+      msg.textContent = info.insufficient_data ? 'Datos insuficientes' : 'Sin datos disponibles';
+      msg.style.display = '';
+      return;
+    }
+    canvas.style.display = '';
+    var msg2 = canvas.parentElement.querySelector('.wb-nodata');
+    if (msg2) msg2.style.display = 'none';
+
+    var vals = hist.map(function(p){ return p.acwr; });
+    var sportOpts = Object.assign({}, opts, {
+      scales: Object.assign({}, opts.scales, {
+        y: makeAcwrY(vals.concat([0.8, 1.3]))
+      })
+    });
+
+    var meanVal = Math.round((vals.reduce(function(a,v){return a+v;},0) / vals.length) * 100) / 100;
+    var labels  = hist.map(function(p){ return p.dt; });
+    var flat    = function(v){ return labels.map(function(){ return v; }); };
+
+    ACWR_SPORT_CHARTS.push(new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { // límite superior zona óptima (1.3) — sin relleno, solo referencia
+            data: flat(1.3), borderColor: 'rgba(16,185,129,.45)', borderWidth: 1,
+            borderDash: [4,3], pointRadius: 0, fill: false, order: 3,
+          },
+          { // límite inferior zona óptima (0.8) — relleno hacia el dataset anterior = banda verde
+            data: flat(0.8), borderColor: 'rgba(16,185,129,.45)', borderWidth: 1,
+            borderDash: [4,3], pointRadius: 0, fill: '-1', backgroundColor: 'rgba(16,185,129,.08)', order: 3,
+          },
+          { // línea media del período — referencia de tendencia general
+            data: flat(meanVal), borderColor: 'rgba(240,249,255,.4)', borderWidth: 1.5,
+            borderDash: [2,3], pointRadius: 0, fill: false, order: 2,
+          },
+          { // serie real — coloreada por zona de riesgo en cada tramo y punto
+            data: vals, borderWidth: 2, pointHoverRadius: 4, tension: .25, fill: false, order: 1,
+            borderColor: s.color,
+            segment: {
+              borderColor: function(ctx){
+                return acwrPointColor(Math.max(ctx.p0.parsed.y, ctx.p1.parsed.y));
+              }
+            },
+            pointRadius: function(ctx){ var v = ctx.parsed ? ctx.parsed.y : null; return (v != null && v >= 1.3) ? 3 : 0; },
+            pointBackgroundColor: function(ctx){ return acwrPointColor(ctx.parsed ? ctx.parsed.y : null); },
+            pointBorderWidth: 0,
+          },
+        ]
+      },
+      options: sportOpts
+    }));
+  });
 }
 
 function renderRelated() {
