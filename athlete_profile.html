@@ -434,6 +434,9 @@
               <button class="btn btn-primary btn-sm" id="btn-strava-con" onclick="stravaConnect()">Conectar con Strava</button>
             </div>
           </div>
+          <div id="strava-unavailable" style="display:none;margin-top:.75rem;font-size:.73rem;color:var(--dim);border-top:1px solid var(--border2);padding-top:.75rem">
+            No disponible en este servidor todavía.
+          </div>
           <div id="strava-log" style="display:none;margin-top:.75rem;font-size:.73rem;color:var(--muted);border-top:1px solid var(--border2);padding-top:.75rem">
             <span id="strava-log-txt"></span>
           </div>
@@ -892,6 +895,17 @@ function loadStravaStatus() {
       var badge = document.getElementById('strava-badge');
       badge.className = 'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
       badge.textContent = on ? ('Conectado' + (d.athlete_name ? ' — ' + d.athlete_name : '')) : 'Sin conectar';
+
+      if (d.available === false) {
+        // Strava no configurado en este servidor (falta STRAVA_CLIENT_ID/SECRET)
+        // — ocultar el botón en vez de dejar que el usuario tope con el 503.
+        document.getElementById('btn-strava-con').style.display  = 'none';
+        document.getElementById('btn-strava-sync').style.display = 'none';
+        document.getElementById('btn-strava-dis').style.display  = 'none';
+        document.getElementById('strava-unavailable').style.display = 'block';
+        return;
+      }
+
       document.getElementById('btn-strava-con').style.display  = on ? 'none' : '';
       document.getElementById('btn-strava-sync').style.display = on ? '' : 'none';
       document.getElementById('btn-strava-dis').style.display  = on ? '' : 'none';
@@ -902,7 +916,24 @@ function loadStravaStatus() {
       }
     }).catch(function(){});
 }
-function stravaConnect()    { window.location.href = API + '/strava/connect'; }
+function stravaConnect() {
+  // GET directo navegaba de página completa y mostraba el JSON crudo del
+  // error 503 cuando Strava no está configurado en el servidor. Con
+  // redirect:'manual' podemos distinguir "hay que redirigir a Strava"
+  // (funciona) de "está devolviendo un error" (mostrar toast amigable).
+  fetch(API + '/strava/connect', { credentials:'include', headers: authH(false), redirect:'manual' })
+    .then(function(r){
+      if (r.type === 'opaqueredirect' || r.status === 0) {
+        window.location.href = API + '/strava/connect';
+        return;
+      }
+      return r.json().then(function(d){
+        var msg = (d.errors && d.errors[0] && d.errors[0].message) || 'Strava no está disponible en este momento.';
+        toast(msg, 'err');
+      });
+    })
+    .catch(function(){ toast('No se pudo conectar con Strava', 'err'); });
+}
 function stravaDisconnect() {
   if (!confirm('¿Desconectar Strava?')) return;
   fetch(API + '/strava/disconnect', { method:'DELETE', credentials:'include', headers: authH(false) })

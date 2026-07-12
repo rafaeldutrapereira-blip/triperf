@@ -199,6 +199,7 @@ def strava_status(
     """Estado de la conexión Strava del usuario."""
     connected = bool(me.strava_access_token)
     return {
+        "available":    _strava_available(),
         "connected":    connected,
         "athlete_id":   me.strava_athlete_id if connected else None,
         "token_expires": me.strava_token_expires_at.isoformat() if (connected and me.strava_token_expires_at) else None,
