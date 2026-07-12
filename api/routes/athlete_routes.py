@@ -1021,6 +1021,21 @@ def get_data_footprint(
         GarminHealthDaily,
     )
 
+    def _sum_km(sport=None):
+        from sqlalchemy import func as _func
+        q = db.query(_func.sum(GarminActivity.dist_km)).filter(GarminActivity.user_id == me.id)
+        if cutoff_iso:
+            q = q.filter(GarminActivity.date_iso >= cutoff_iso)
+        if sport:
+            q = q.filter(GarminActivity.sport == sport)
+        total = q.scalar()
+        return round(total, 1) if total else 0.0
+
+    total_km = _sum_km()
+    swim_km  = _sum_km("swim")
+    bike_km  = _sum_km("bike")
+    run_km   = _sum_km("run")
+
     # Días conectado = desde la actividad más antigua hasta hoy (ventana real de historial),
     # acotado a la ventana del período elegido (week/month/year) cuando corresponde.
     first_act = (
@@ -1050,6 +1065,10 @@ def get_data_footprint(
         "hrv_days":            hrv_days,
         "days_connected":      days_connected,
         "first_sync_date":     first_sync_date,
+        "total_km":            total_km,
+        "swim_km":             swim_km,
+        "bike_km":             bike_km,
+        "run_km":              run_km,
     }
 
 

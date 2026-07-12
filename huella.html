@@ -27,7 +27,8 @@ a{color:inherit;text-decoration:none}
 .ph-title{font-family:'Barlow Condensed',sans-serif;font-size:2.1rem;font-weight:900;text-transform:uppercase;letter-spacing:.01em}
 .ph-sub{color:var(--muted);font-size:.88rem;margin-top:.35rem;max-width:640px;line-height:1.55}
 
-.hu-period-btns{display:flex;gap:.5rem;margin-top:1rem}
+.hu-row-btns{display:flex;flex-wrap:wrap;gap:1.25rem;align-items:center;margin-top:1rem}
+.hu-period-btns{display:flex;gap:.5rem}
 .hu-period-btn{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:999px;padding:.45rem 1.1rem;cursor:pointer;transition:all .15s}
 .hu-period-btn:hover{border-color:var(--orange);color:var(--text)}
 .hu-period-btn.on{background:linear-gradient(135deg,#FF6535,#F0A500);border-color:transparent;color:#fff}
@@ -64,11 +65,17 @@ a{color:inherit;text-decoration:none}
     <div class="ph-eyebrow">LabX · Identidad de datos</div>
     <div class="ph-title">Mi Huella de Datos</div>
     <p class="ph-sub">La misma flor dinámica de LabX — cada uno de sus 6 pétalos ahora representa cuánta historia real tenés sincronizada por categoría. Pétalos grandes y luminosos = mucha data; chicos y opacos = todavía poca.</p>
-    <div class="hu-period-btns" id="hu-period-btns">
-      <button class="hu-period-btn" data-period="week">Semana</button>
-      <button class="hu-period-btn" data-period="month">Mes</button>
-      <button class="hu-period-btn" data-period="year">Año</button>
-      <button class="hu-period-btn on" data-period="all">Todo</button>
+    <div class="hu-row-btns">
+      <div class="hu-period-btns" id="hu-mode-btns">
+        <button class="hu-period-btn on" data-mode="days">Días</button>
+        <button class="hu-period-btn" data-mode="km">Km</button>
+      </div>
+      <div class="hu-period-btns" id="hu-period-btns">
+        <button class="hu-period-btn" data-period="week">Semana</button>
+        <button class="hu-period-btn" data-period="month">Mes</button>
+        <button class="hu-period-btn" data-period="year">Año</button>
+        <button class="hu-period-btn on" data-period="all">Todo</button>
+      </div>
     </div>
   </div>
 </div>
@@ -87,18 +94,41 @@ a{color:inherit;text-decoration:none}
 (function () {
   'use strict';
 
-  // Las 6 posiciones son EXACTAMENTE las del pétalo interno de la flor
+  // Las posiciones son EXACTAMENTE las de los pétalos internos de la flor
   // real del landing (landing.html, grupo .ll-flower, offset 52 desde el
   // centro) — no se inventa geometría nueva, solo se les da color propio
   // por categoría y se las hace crecer/brillar según la data real.
-  var CATS = [
-    { key: 'activities',         name: 'Actividades',  color: '#FF6535', x: 252, y: 200 }, // derecha
-    { key: 'training_load_days', name: 'Carga (PMC)',  color: '#0EA5E9', x: 226, y: 155 }, // arriba-derecha
-    { key: 'vo2_days',           name: 'VO2 Max',       color: '#22D3EE', x: 174, y: 155 }, // arriba-izquierda
-    { key: 'body_battery_days',  name: 'Body Battery',  color: '#10B981', x: 148, y: 200 }, // izquierda
-    { key: 'sleep_nights',       name: 'Sueño',         color: '#A855F7', x: 174, y: 245 }, // abajo-izquierda
-    { key: 'hrv_days',           name: 'HRV',           color: '#F0A500', x: 226, y: 245 }, // abajo-derecha
-  ];
+  //
+  // Modo "Días": usa los 6 pétalos internos completos.
+  // Modo "Km": solo hay 3 disciplinas con distancia real (natación/ciclismo/
+  // carrera) — se usan 3 de los 6 slots, espaciados 120° entre sí (índices
+  // 0/2/4 del hexágono original) para que el ramo se vea equilibrado con
+  // menos pétalos activos, en vez de dejar 3 huecos seguidos.
+  var MODES = {
+    days: {
+      centerKey: 'days_connected',
+      centerLabel: 'DÍAS CONECTADO',
+      fmt: function (v) { return Math.round(v).toLocaleString('es-CL'); },
+      cats: [
+        { key: 'activities',         name: 'Actividades',  color: '#FF6535', x: 252, y: 200 },
+        { key: 'training_load_days', name: 'Carga (PMC)',  color: '#0EA5E9', x: 226, y: 155 },
+        { key: 'vo2_days',           name: 'VO2 Max',       color: '#22D3EE', x: 174, y: 155 },
+        { key: 'body_battery_days',  name: 'Body Battery',  color: '#10B981', x: 148, y: 200 },
+        { key: 'sleep_nights',       name: 'Sueño',         color: '#A855F7', x: 174, y: 245 },
+        { key: 'hrv_days',           name: 'HRV',           color: '#F0A500', x: 226, y: 245 },
+      ],
+    },
+    km: {
+      centerKey: 'total_km',
+      centerLabel: 'KM TOTAL',
+      fmt: function (v) { return v.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' km'; },
+      cats: [
+        { key: 'swim_km', name: 'Natación', color: '#22D3EE', x: 252, y: 200 }, // derecha
+        { key: 'bike_km', name: 'Ciclismo', color: '#FF6535', x: 174, y: 155 }, // arriba-izquierda
+        { key: 'run_km',  name: 'Carrera',  color: '#10B981', x: 174, y: 245 }, // abajo-izquierda
+      ],
+    },
+  };
 
   function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
@@ -110,12 +140,14 @@ a{color:inherit;text-decoration:none}
   // percibimos en un círculo es su ÁREA (∝ radio²), no el radio.
   var MIN_R = 30, MAX_R = 74; // alrededor del r=52 original de la flor
 
-  function render(data) {
+  function render(data, mode) {
     var cx = 200, cy = 200;
     var svg = document.getElementById('hu-svg');
+    var modeCfg = MODES[mode] || MODES.days;
+    var CATS = modeCfg.cats;
 
-    var daysConnected = data.days_connected || 0;
-    var allValues = CATS.map(function (c) { return data[c.key] || 0; }).concat([daysConnected]);
+    var centerValue = data[modeCfg.centerKey] || 0;
+    var allValues = CATS.map(function (c) { return data[c.key] || 0; }).concat([centerValue]);
     var maxValue = Math.max.apply(null, allValues) || 1;
     function pctOf(value) { return Math.sqrt(Math.max(0, value) / maxValue); }
 
@@ -152,15 +184,15 @@ a{color:inherit;text-decoration:none}
           '<circle class="hu-petal" data-idx="' + i + '" cx="' + cat.x + '" cy="' + cat.y + '" r="' + radius.toFixed(1) + '" ' +
           'fill="url(#' + gid + ')" stroke="' + cat.color + '" stroke-width="1.3" stroke-opacity="' + strokeOp + '"/>' +
           '<text class="hu-petal-txt" x="' + cat.x + '" y="' + nameY.toFixed(1) + '" font-size="' + nameFs.toFixed(1) + '" font-weight="600" stroke-width="' + (nameFs * 0.12).toFixed(2) + '">' + cat.name + '</text>' +
-          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + numY.toFixed(1) + '" font-size="' + numFs.toFixed(1) + '" font-weight="800" stroke-width="' + (numFs * 0.12).toFixed(2) + '">' + count.toLocaleString('es-CL') + '</text>' +
+          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + numY.toFixed(1) + '" font-size="' + numFs.toFixed(1) + '" font-weight="800" stroke-width="' + (numFs * 0.12).toFixed(2) + '">' + modeCfg.fmt(count) + '</text>' +
         '</g>';
     });
 
-    // Centro: misma escala que los pétalos (si "días conectado" es parecido
-    // al valor de una categoría llena, el tamaño también debe ser parecido).
-    var centerPct = pctOf(daysConnected);
+    // Centro: misma escala que los pétalos (si el valor del centro es
+    // parecido al de una categoría llena, el tamaño también debe serlo).
+    var centerPct = pctOf(centerValue);
     var centerR = 24 + centerPct * 14; // 24 → 38, alrededor del r=24/38 original
-    var centerNumFs = clamp(20 + centerPct * 14, 20, 34);
+    var centerNumFs = clamp(centerValue >= 1000 ? 15 + centerPct * 10 : 20 + centerPct * 14, 15, 34);
 
     // ── SVG idéntico a landing.html (.ll-arcs + .ll-flower), con los 6
     //    pétalos internos reemplazados por los pétalos de datos de arriba.
@@ -204,9 +236,9 @@ a{color:inherit;text-decoration:none}
       '<circle cx="200" cy="200" r="' + centerR.toFixed(1) + '" fill="rgba(255,101,53,.14)" stroke="rgba(255,101,53,.4)" stroke-width="1.2"/>' +
       '<g class="ll-pulse-g">' +
         '<text x="200" y="' + (200 + centerNumFs * 0.32).toFixed(1) + '" text-anchor="middle" font-family="\'Barlow Condensed\',sans-serif" font-weight="900" font-size="' + centerNumFs.toFixed(1) + '" fill="#fff" stroke="#04080F" stroke-width="2" paint-order="stroke fill" style="filter:drop-shadow(0 0 10px rgba(255,101,53,.8))">' +
-          (data.days_connected !== null && data.days_connected !== undefined ? data.days_connected.toLocaleString('es-CL') : '—') +
+          (data[modeCfg.centerKey] !== null && data[modeCfg.centerKey] !== undefined ? modeCfg.fmt(centerValue) : '—') +
         '</text>' +
-        '<text x="200" y="228" text-anchor="middle" font-family="Oswald,sans-serif" font-size="7" font-weight="700" letter-spacing=".08em" fill="rgba(240,249,255,.7)">DÍAS CONECTADO</text>' +
+        '<text x="200" y="228" text-anchor="middle" font-family="Oswald,sans-serif" font-size="7" font-weight="700" letter-spacing=".08em" fill="rgba(240,249,255,.7)">' + modeCfg.centerLabel + '</text>' +
       '</g>';
 
     // Interacción: hover resalta el pétalo bajo el mouse
@@ -224,21 +256,35 @@ a{color:inherit;text-decoration:none}
 
   var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 
+  var state = { data: null, mode: 'days', period: 'all' };
+
   function load(period) {
     fetch(API + '/athlete/data-footprint?period=' + encodeURIComponent(period), { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('fetch failed'); return r.json(); })
-      .then(function (d) { render(d); })
+      .then(function (d) { state.data = d; render(d, state.mode); })
       .catch(function (err) {
         console.error('[huella] error', err);
         document.getElementById('hu-wrap').innerHTML = '<div class="hu-empty" style="grid-column:1/-1">No se pudo cargar tu huella de datos. Intenta recargar.</div>';
       });
   }
 
-  document.querySelectorAll('.hu-period-btn').forEach(function (btn) {
+  // El modo (Días/Km) no necesita refetch — el endpoint ya trae ambos
+  // conjuntos de campos para el período elegido; solo cambia qué se dibuja.
+  document.querySelectorAll('#hu-mode-btns .hu-period-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      document.querySelectorAll('.hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
+      document.querySelectorAll('#hu-mode-btns .hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
       btn.classList.add('on');
-      load(btn.getAttribute('data-period'));
+      state.mode = btn.getAttribute('data-mode');
+      if (state.data) render(state.data, state.mode);
+    });
+  });
+
+  document.querySelectorAll('#hu-period-btns .hu-period-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#hu-period-btns .hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
+      btn.classList.add('on');
+      state.period = btn.getAttribute('data-period');
+      load(state.period);
     });
   });
 
