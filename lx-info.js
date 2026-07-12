@@ -509,6 +509,23 @@ function _fetchReadinessDaily(cb){
     .catch(function(){ cb(null); });
 }
 
+/** Junta CTL/ATL/TSB en vivo. Primero intenta los selectores del dashboard;
+ *  si no existen (ej. en detalle.html), cae a window.LX_PMC_LIVE = {ctl,atl,tsb}
+ *  que cada página puede setear con sus propios datos ya cargados. */
+function _gatherPmcLive(){
+  var ctlEl = document.querySelector('[data-kl="ctl"]');
+  var atlEl = document.querySelector('[data-kl="atl"]');
+  var tsbWrap = document.getElementById('tsb-val');
+  if(ctlEl || atlEl || tsbWrap){
+    var ctl = ctlEl ? parseFloat(ctlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
+    var atl = atlEl ? parseFloat(atlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
+    var tsb = tsbWrap ? parseFloat(tsbWrap.textContent.replace(/[^0-9.+-]/g,'')) : null;
+    return { ctl: isNaN(ctl)?null:ctl, atl: isNaN(atl)?null:atl, tsb: (tsb==null||isNaN(tsb))?null:tsb };
+  }
+  if(window.LX_PMC_LIVE) return window.LX_PMC_LIVE;
+  return { ctl:null, atl:null, tsb:null };
+}
+
 /* ── API pública ─────────────────────────────────────────────────────── */
 window.lxInfo = {
 
@@ -524,11 +541,28 @@ window.lxInfo = {
     document.body.style.overflow = '';
   },
 
-  /** Genera el botón ℹ inline. value puede ser un número o un selector CSS para leerlo. */
-  btn: function(metricId, valueOrSelector, extraStyle){
-    var js = valueOrSelector
-      ? ('var _v=typeof '+JSON.stringify(valueOrSelector)+'==="string"&&'+JSON.stringify(valueOrSelector)+'.startsWith("#")?+(document.querySelector('+JSON.stringify(valueOrSelector)+')&&document.querySelector('+JSON.stringify(valueOrSelector)+').textContent.replace(/[^0-9.-]/g,""))||null:'+JSON.stringify(valueOrSelector)+';lxInfo.show('+JSON.stringify(metricId)+',_v)')
-      : 'lxInfo.show('+JSON.stringify(metricId)+',null)';
+  /** Muestra el panel de PMC con el CTL/ATL/TSB en vivo (dashboard o cualquier página). */
+  showPmcLive: function(){
+    lxInfo.show('pmc', JSON.stringify(_gatherPmcLive()));
+  },
+
+  /** Muestra el panel de Readiness con el desglose de 4 dimensiones en vivo (fetch a /readiness/daily). */
+  showReadinessLive: function(){
+    _fetchReadinessDaily(function(data){
+      lxInfo.show('readiness', data ? JSON.stringify(data) : null);
+    });
+  },
+
+  /** Genera el botón ℹ inline. value puede ser un número, un selector CSS para leerlo, o (con rawOnclick) un JS custom. */
+  btn: function(metricId, valueOrSelector, extraStyle, rawOnclick){
+    // Ojo: el literal va entre paréntesis — "64.startsWith(...)" es un
+    // SyntaxError en JS (el lexer lee "64." como número completo), mientras
+    // que "(64).startsWith(...)" es válido. Con decimales (ej. 92.6) el bug
+    // no se notaba porque el punto ya pertenecía al número.
+    var vLit = '(' + JSON.stringify(valueOrSelector) + ')';
+    var js = rawOnclick || (valueOrSelector
+      ? ('var _v=typeof '+vLit+'==="string"&&'+vLit+'.startsWith("#")?+(document.querySelector('+vLit+')&&document.querySelector('+vLit+').textContent.replace(/[^0-9.-]/g,""))||null:'+vLit+';lxInfo.show('+JSON.stringify(metricId)+',_v)')
+      : 'lxInfo.show('+JSON.stringify(metricId)+',null)');
     return '<button type="button" class="lx-info-btn" onclick="'+js.replace(/"/g,'&quot;')+'" title="¿Qué es '+metricId.toUpperCase()+'?" aria-label="Info sobre '+(METRICS[metricId]?METRICS[metricId].nombre:metricId)+'"'+(extraStyle?' style="'+extraStyle+'"':'')+'><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>';
   },
 
@@ -555,23 +589,8 @@ window.lxInfo = {
       btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="7" height="7"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg>';
       btn.addEventListener('click', function(e){
         e.stopPropagation();
-        if(mid === 'pmc'){
-          var ctlEl = document.querySelector('[data-kl="ctl"]');
-          var atlEl = document.querySelector('[data-kl="atl"]');
-          var tsbWrap = document.getElementById('tsb-val');
-          var ctl = ctlEl ? parseFloat(ctlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
-          var atl = atlEl ? parseFloat(atlEl.textContent.replace(/[^0-9.-]/g,'')) : null;
-          var tsb = tsbWrap ? parseFloat(tsbWrap.textContent.replace(/[^0-9.+-]/g,'')) : null;
-          var pmcVal = JSON.stringify({ ctl: isNaN(ctl)?null:ctl, atl: isNaN(atl)?null:atl, tsb: (tsb==null||isNaN(tsb))?null:tsb });
-          lxInfo.show(mid, pmcVal);
-          return;
-        }
-        if(mid === 'readiness'){
-          _fetchReadinessDaily(function(data){
-            lxInfo.show(mid, data ? JSON.stringify(data) : null);
-          });
-          return;
-        }
+        if(mid === 'pmc'){ lxInfo.showPmcLive(); return; }
+        if(mid === 'readiness'){ lxInfo.showReadinessLive(); return; }
         var val = null;
         if(vsel){
           var target = document.querySelector(vsel);

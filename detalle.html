@@ -350,7 +350,7 @@ footer {
     <div class="hero-left">
       <div class="hero-eyebrow" id="hero-eyebrow">Indicador de rendimiento</div>
       <h1 class="hero-title">
-        Histórico de <span class="accent" id="hero-accent">—</span>
+        Histórico de <span class="accent" id="hero-accent">—</span><span id="hero-info-host" style="margin-left:.4rem;display:inline-block;vertical-align:middle"></span>
       </h1>
       <p class="hero-sub" id="hero-sub">—</p>
     </div>
@@ -930,9 +930,33 @@ function fmtDateShort(iso) {
   return p[2] + '/' + p[1];
 }
 
+// ─── BOTÓN INFO (mismo estándar que dashboard.html) ───────────────────────────
+var LX_INFO_MAP = { ctl:'ctl', atl:'atl', tsb:'tsb', hrv:'hrv', tss:'tss', vo2:'vo2max', acwr:'acwr', pmc:'pmc', wellbeing:'readiness' };
+function renderInfoBtn(m) {
+  var host = document.getElementById('hero-info-host');
+  if (!host || typeof lxInfo === 'undefined') return;
+  var infoId = LX_INFO_MAP[m];
+  if (!infoId) { host.innerHTML = ''; return; }
+  if (infoId === 'pmc') {
+    var pmcLive = { ctl:null, atl:null, tsb:null };
+    if (ALL.ctl && ALL.ctl.length) pmcLive.ctl = Math.round(ALL.ctl[ALL.ctl.length-1].value);
+    if (ALL.atl && ALL.atl.length) pmcLive.atl = Math.round(ALL.atl[ALL.atl.length-1].value);
+    if (ALL.tsb && ALL.tsb.length) pmcLive.tsb = Math.round(ALL.tsb[ALL.tsb.length-1].value);
+    window.LX_PMC_LIVE = pmcLive;
+    host.innerHTML = lxInfo.btn('pmc', null, null, 'lxInfo.showPmcLive()');
+  } else if (infoId === 'readiness') {
+    host.innerHTML = lxInfo.btn('readiness', null, null, 'lxInfo.showReadinessLive()');
+  } else {
+    var d0 = getData();
+    var lastVal = d0.length ? d0[d0.length-1].value : null;
+    host.innerHTML = lxInfo.btn(infoId, lastVal);
+  }
+}
+
 // ─── RENDER ──────────────────────────────────────────────────────────────────
 function render() {
   var cfg = MC[metric]; if (!cfg) return;
+  renderInfoBtn(metric);
 
   var acwrSportSection = document.getElementById('acwr-sport-section');
   if (acwrSportSection) acwrSportSection.style.display = (metric === 'acwr') ? '' : 'none';
@@ -2150,5 +2174,6 @@ function goBack() {
   render();
 })();
 </script>
+<script src="lx-info.js"></script>
 </body>
 </html>
