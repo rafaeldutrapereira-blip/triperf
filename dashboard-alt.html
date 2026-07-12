@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LabX — Dashboard (Vista Beta)</title>
+<link rel="stylesheet" href="nav.css">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   dashboard-alt.html — Vista Beta "Aurora Glass"
+   Página 100% independiente de dashboard.html. Todo lo de acá abajo
+   está namespaced bajo .da-* para que nunca colisione con el CSS del
+   dashboard clásico. Se puede borrar este archivo sin afectar nada más.
+   Mismos datos reales (/api/athlete/dashboard) — solo cambia la vista.
+   ══════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
+.da-root {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% -5%, rgba(99,102,241,.16), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 10%, rgba(6,182,212,.11), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(167,139,250,.08), transparent 60%),
+    #080b14;
+  color: #e8ecf5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 1.75rem 2rem 4rem;
+}
+.da-root, .da-root * { font-variant-numeric: tabular-nums; }
+
+/* ── Topline ─────────────────────────────────────────────────────── */
+.da-topline { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.da-eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #6f7dab; margin-bottom: .3rem; }
+.da-title { font-size: 1.55rem; font-weight: 800; letter-spacing: -.02em; }
+.da-title em { font-style: normal; background: linear-gradient(90deg,#a78bfa,#22d3ee); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.da-sub { font-size: .78rem; color: #8b98bd; margin-top: .3rem; }
+.da-top-right { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+.da-sync-chip { font-size: .68rem; font-weight: 600; color: #9fb0d6; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); padding: .4rem .75rem; border-radius: 999px; display: inline-flex; align-items: center; gap: .4rem; }
+.da-sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
+.da-back { font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: #9fb0d6; text-decoration: none; border: 1px solid rgba(255,255,255,.1); padding: .5rem 1rem; border-radius: 999px; background: rgba(255,255,255,.03); transition: all .15s; }
+.da-back:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); }
+
+/* ── Base card ───────────────────────────────────────────────────── */
+.da-card {
+  position: relative;
+  background: rgba(255,255,255,.045);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  padding: 1.2rem 1.3rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.28);
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.da-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent, #6366f1); opacity: .9;
+}
+.da-card:hover { border-color: rgba(255,255,255,.18); }
+.da-section-ttl { font-size: .82rem; font-weight: 700; color: #cdd6f0; margin: 2rem 0 .8rem; display: flex; align-items: center; gap: .5rem; }
+.da-section-ttl:first-child { margin-top: 0; }
+.da-section-ttl small { font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6f7dab; }
+
+/* ── KPI grid ────────────────────────────────────────────────────── */
+.da-kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; }
+@media (max-width: 1400px) { .da-kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px)  { .da-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.da-kpi { cursor: pointer; }
+.da-kpi-label { font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8b98bd; margin-bottom: .5rem; }
+.da-kpi-val { font-size: 1.7rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.da-kpi-val .u { font-size: .8rem; font-weight: 600; color: #7d8bb0; margin-left: .15rem; }
+.da-kpi-row { display: flex; align-items: flex-end; justify-content: space-between; gap: .5rem; }
+.da-kpi-spark { flex-shrink: 0; }
+.da-kpi-badge { margin-top: .5rem; font-size: .68rem; font-weight: 600; color: #8b98bd; display: flex; align-items: center; gap: .25rem; }
+.da-kpi-badge .up   { color: #34d399; }
+.da-kpi-badge .down { color: #f87171; }
+
+.da-c-ctl  { --accent: #22d3ee; }
+.da-c-atl  { --accent: #fb923c; }
+.da-c-tsb-pos { --accent: #34d399; }
+.da-c-tsb-neg { --accent: #f87171; }
+.da-c-hrv  { --accent: #a78bfa; }
+.da-c-tss  { --accent: #f472b6; }
+.da-c-vo2  { --accent: #38bdf8; }
+
+/* ── Row 2: ACWR + Race ──────────────────────────────────────────── */
+.da-row2 { display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.1rem; }
+@media (max-width: 900px) { .da-row2 { grid-template-columns: 1fr; } }
+
+.da-acwr-card { --accent: #34d399; display: flex; align-items: center; gap: 1.1rem; }
+.da-acwr-ring { flex-shrink: 0; }
+.da-acwr-txt .da-kpi-label { margin-bottom: .3rem; }
+.da-acwr-zone { font-size: .72rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; display: inline-block; margin-top: .4rem; }
+
+.da-race-card { --accent: #fb923c; }
+.da-race-top { display: flex; align-items: center; justify-content: space-between; }
+.da-race-name { font-size: .95rem; font-weight: 700; margin-top: .2rem; }
+.da-race-date { font-size: .7rem; color: #8b98bd; margin-top: .1rem; }
+.da-flip-row { display: flex; gap: .6rem; margin-top: .9rem; }
+.da-flip { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: 10px; padding: .5rem .3rem; text-align: center; flex: 1; }
+.da-flip-val { font-size: 1.35rem; font-weight: 800; color: #fff; }
+.da-flip-lbl { font-size: .6rem; color: #7d8bb0; text-transform: uppercase; letter-spacing: .06em; margin-top: .1rem; }
+
+/* ── Weekly compliance rings ─────────────────────────────────────── */
+.da-disc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+@media (max-width: 900px) { .da-disc-grid { grid-template-columns: repeat(2, 1fr); } }
+.da-disc-card { text-align: center; }
+.da-disc-name { font-size: .78rem; font-weight: 700; color: #cdd6f0; margin-top: .6rem; }
+.da-disc-val  { font-size: .95rem; font-weight: 700; margin-top: .15rem; }
+.da-disc-tgt  { font-size: .68rem; color: #7d8bb0; margin-top: .1rem; }
+.da-disc-empty { font-size: .68rem; color: #5c6a94; margin-top: .1rem; font-style: italic; }
+
+/* ── Semana actual (barras diarias) ──────────────────────────────── */
+.da-week-card { --accent: #6366f1; }
+.da-week-chart-wrap { margin-top: .6rem; }
+.da-week-tt { position: absolute; pointer-events: none; background: rgba(15,18,32,.92); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(14px); border-radius: 10px; padding: .5rem .65rem; font-size: .68rem; transform: translate(-50%, -110%); opacity: 0; transition: opacity .12s; white-space: nowrap; z-index: 5; }
+.da-week-tt.show { opacity: 1; }
+.da-week-tt b { color: #fff; }
+
+/* ── PMC main chart ──────────────────────────────────────────────── */
+.da-pmc-card { --accent: #a78bfa; }
+.da-pmc-legend { display: flex; gap: 1.2rem; font-size: .7rem; color: #9fb0d6; margin-top: .7rem; }
+.da-pmc-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.da-pmc-legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+/* ── Readiness detail panel ──────────────────────────────────────── */
+.da-ready-row { display: grid; grid-template-columns: auto 1fr; gap: 1.8rem; align-items: center; }
+@media (max-width: 700px) { .da-ready-row { grid-template-columns: 1fr; } }
+.da-ready-gauge-wrap { position: relative; width: 150px; height: 150px; }
+.da-ready-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.da-ready-num b { font-size: 2.1rem; font-weight: 800; line-height: 1; }
+.da-ready-num span { font-size: .68rem; color: #7d8bb0; margin-top: .1rem; }
+.da-ready-status { font-size: .82rem; font-weight: 700; margin-bottom: .9rem; }
+.da-ready-rows { display: grid; gap: .65rem; }
+.da-ready-item { display: grid; grid-template-columns: 100px 1fr 55px; align-items: center; gap: .7rem; font-size: .72rem; }
+.da-ready-item-name { color: #9fb0d6; }
+.da-ready-item-val { text-align: right; font-weight: 700; color: #e8ecf5; }
+.da-ready-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.da-ready-fill { height: 100%; border-radius: 999px; box-shadow: 0 0 8px currentColor; }
+
+.da-empty { text-align: center; padding: 2rem 1rem; color: #7d8bb0; font-size: .8rem; }
+.da-source-tag { font-size: .6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #6f7dab; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: .12rem .5rem; }
+</style>
+</head>
+<body>
+
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<div class="da-root">
+
+  <div class="da-topline">
+    <div>
+      <div class="da-eyebrow">LabX · Vista Beta</div>
+      <div class="da-title">Dashboard <em>Aurora Glass</em></div>
+      <div class="da-sub" id="da-date-lbl">Cargando...</div>
+    </div>
+    <div class="da-top-right">
+      <div class="da-sync-chip"><span class="da-sync-dot"></span><span id="da-sync-txt">Garmin —</span></div>
+      <a class="da-back" href="dashboard.html">← Volver a la vista clásica</a>
+    </div>
+  </div>
+
+  <!-- ═══ KPI ROW ═══ -->
+  <div class="da-kpi-grid" id="da-kpi-grid"></div>
+
+  <!-- ═══ ACWR + CARRERA ═══ -->
+  <div class="da-row2" style="margin-top:1.1rem">
+    <div class="da-card da-acwr-card" id="da-acwr-card" onclick="location.href='detalle.html?metric=acwr'">
+      <svg class="da-acwr-ring" id="da-acwr-ring" width="86" height="86" viewBox="0 0 86 86"></svg>
+      <div class="da-acwr-txt">
+        <div class="da-kpi-label">ACWR · Carga</div>
+        <div class="da-kpi-val" id="da-acwr-val">—</div>
+        <div class="da-acwr-zone" id="da-acwr-zone"></div>
+      </div>
+    </div>
+
+    <div class="da-card da-race-card" id="da-race-card">
+      <div class="da-race-top">
+        <div>
+          <div class="da-kpi-label">Próxima carrera</div>
+          <div class="da-race-name" id="da-race-name">—</div>
+          <div class="da-race-date" id="da-race-date"></div>
+        </div>
+      </div>
+      <div class="da-flip-row" id="da-race-flip">
+        <div class="da-flip"><div class="da-flip-val" id="da-cd-d">--</div><div class="da-flip-lbl">Días</div></div>
+        <div class="da-flip"><div class="da-flip-val" id="da-cd-h">--</div><div class="da-flip-lbl">Hrs</div></div>
+        <div class="da-flip"><div class="da-flip-val" id="da-cd-m">--</div><div class="da-flip-lbl">Min</div></div>
+        <div class="da-flip"><div class="da-flip-val" id="da-cd-s">--</div><div class="da-flip-lbl">Seg</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CUMPLIMIENTO SEMANAL ═══ -->
+  <div class="da-section-ttl">Cumplimiento Semanal <small>· real vs. plan sincronizado desde Garmin</small></div>
+  <div class="da-disc-grid" id="da-disc-grid"></div>
+
+  <!-- ═══ SEMANA ACTUAL (barras diarias) ═══ -->
+  <div class="da-section-ttl">Semana Actual <small>· carga diaria (TSS)</small></div>
+  <div class="da-card da-week-card" style="position:relative">
+    <div class="da-week-chart-wrap">
+      <svg id="da-week-svg" width="100%" height="140" viewBox="0 0 700 140" preserveAspectRatio="none"></svg>
+      <div class="da-week-tt" id="da-week-tt"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PMC + READINESS ═══ -->
+  <div class="da-section-ttl">Performance Management &amp; Estado del Atleta</div>
+  <div class="da-row2">
+    <div class="da-card da-pmc-card">
+      <div class="da-kpi-label">CTL / ATL / TSB · 26 semanas</div>
+      <div class="da-chart-wrap" style="margin-top:.5rem;position:relative">
+        <svg id="da-pmc-svg" width="100%" height="220" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="da-pmc-legend">
+        <span><i style="background:#22d3ee"></i> CTL</span>
+        <span><i style="background:#fb923c"></i> ATL</span>
+        <span><i style="background:#a78bfa"></i> TSB</span>
+      </div>
+    </div>
+
+    <div class="da-card">
+      <div class="da-ready-row">
+        <div class="da-ready-gauge-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="62" stroke="rgba(255,255,255,.06)" stroke-width="11" fill="none"/>
+            <circle id="da-ready-arc" cx="75" cy="75" r="62" stroke="url(#da-ready-grad)" stroke-width="11" fill="none"
+              stroke-linecap="round" stroke-dasharray="389.6 389.6" stroke-dashoffset="389.6"
+              transform="rotate(-90 75 75)" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)"/>
+            <defs>
+              <linearGradient id="da-ready-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#22d3ee"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="da-ready-num"><b id="da-ready-num">—</b><span>/ 100</span></div>
+        </div>
+        <div style="width:100%">
+          <div class="da-ready-status" id="da-ready-status">Cargando…</div>
+          <div class="da-ready-rows">
+            <div class="da-ready-item">
+              <span class="da-ready-item-name">Sueño</span>
+              <div class="da-ready-track"><div class="da-ready-fill" id="da-r-sleep" style="width:0%;background:#34d399;color:#34d399"></div></div>
+              <span class="da-ready-item-val" id="da-r-sleep-val">—</span>
+            </div>
+            <div class="da-ready-item">
+              <span class="da-ready-item-name">HRV</span>
+              <div class="da-ready-track"><div class="da-ready-fill" id="da-r-hrv" style="width:0%;background:#22d3ee;color:#22d3ee"></div></div>
+              <span class="da-ready-item-val" id="da-r-hrv-val">—</span>
+            </div>
+            <div class="da-ready-item">
+              <span class="da-ready-item-name">FC Reposo</span>
+              <div class="da-ready-track"><div class="da-ready-fill" id="da-r-rhr" style="width:0%;background:#38bdf8;color:#38bdf8"></div></div>
+              <span class="da-ready-item-val" id="da-r-rhr-val">—</span>
+            </div>
+            <div class="da-ready-item">
+              <span class="da-ready-item-name">Body Battery</span>
+              <div class="da-ready-track"><div class="da-ready-fill" id="da-r-bb" style="width:0%;background:#f472b6;color:#f472b6"></div></div>
+              <span class="da-ready-item-val" id="da-r-bb-val">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="dashboard-alt-data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Helpers ─────────────────────────────────────────────────────── */
+  function fmt1(n) { return (n === null || n === undefined) ? '—' : Number(n).toFixed(1); }
+  function fmt0(n) { return (n === null || n === undefined) ? '—' : Math.round(n); }
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function sparkline(values, color, w, h) {
+    w = w || 90; h = h || 32;
+    var v = (values || []).filter(function (x) { return x !== null && x !== undefined; });
+    if (v.length < 2) return '<svg width="' + w + '" height="' + h + '"></svg>';
+    var min = Math.min.apply(null, v), max = Math.max.apply(null, v);
+    var range = (max - min) || 1;
+    var step = w / (v.length - 1);
+    var pts = v.map(function (val, i) {
+      var x = i * step;
+      var y = h - 2 - ((val - min) / range) * (h - 4);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    });
+    var last = pts[pts.length - 1].split(',');
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>' +
+      '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.3" fill="' + color + '"/>' +
+      '</svg>';
+  }
+
+  function ringSvg(pct, color, size, stroke) {
+    size = size || 86; stroke = stroke || 9;
+    var r = (size - stroke) / 2;
+    var c = 2 * Math.PI * r;
+    var p = pct === null || pct === undefined ? 0 : clamp(pct, 0, 100) / 100;
+    var cx = size / 2, cy = size / 2;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" stroke="rgba(255,255,255,.07)" stroke-width="' + stroke + '" fill="none"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" stroke="' + color + '" stroke-width="' + stroke + '" fill="none" ' +
+      'stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + ' ' + c.toFixed(1) + '" ' +
+      'stroke-dashoffset="' + (c * (1 - p)).toFixed(1) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
+      'style="filter:drop-shadow(0 0 4px ' + color + ')"/>' +
+      '</svg>';
+  }
+
+  /* ── KPI cards config ───────────────────────────────────────────── */
+  function renderKpis(d) {
+    var pmc = d.pmc || [];
+    var ctlSeries = pmc.map(function (p) { return p.ctl; });
+    var atlSeries = pmc.map(function (p) { return p.atl; });
+    var tsbSeries = pmc.map(function (p) { return p.tsb; });
+    var hrvSeries = (d.hrv_history || []).slice(-14).map(function (p) { return p.hrv; });
+    var vo2Series = (d.vo2_history || []).slice(-14).map(function (p) { return p.vo2; });
+
+    var tsbPos = d.tsb !== null && d.tsb !== undefined && d.tsb >= 0;
+
+    var cards = [
+      {
+        cls: 'da-c-ctl', label: 'CTL — Fitness', val: fmt1(d.ctl), color: '#22d3ee',
+        series: ctlSeries, trend: d.trends && d.trends.ctl, trendUnit: '', goTo: 'ctl',
+      },
+      {
+        cls: 'da-c-atl', label: 'ATL — Fatiga', val: fmt1(d.atl), color: '#fb923c',
+        series: atlSeries, goTo: 'atl',
+      },
+      {
+        cls: tsbPos ? 'da-c-tsb-pos' : 'da-c-tsb-neg', label: 'TSB — Forma',
+        val: (d.tsb === null || d.tsb === undefined) ? '—' : (d.tsb > 0 ? '+' : '') + fmt1(d.tsb),
+        color: tsbPos ? '#34d399' : '#f87171', series: tsbSeries, goTo: 'tsb',
+      },
+      {
+        cls: 'da-c-hrv', label: 'HRV Score', val: fmt0(d.hrv_last_night), unit: 'ms', color: '#a78bfa',
+        series: hrvSeries, trend: d.trends && d.trends.hrv, goTo: 'hrv',
+      },
+      {
+        cls: 'da-c-tss', label: 'TSS Semana', val: fmt1(d.tss_week), color: '#f472b6',
+        trend: d.trends && d.trends.tss_week, goTo: 'tss',
+      },
+      {
+        cls: 'da-c-vo2', label: 'VO2 Max', val: d.vo2max_garmin != null ? fmt1(d.vo2max_garmin) : '—', unit: 'ml/kg/min', color: '#38bdf8',
+        series: vo2Series, goTo: 'vo2',
+      },
+    ];
+
+    document.getElementById('da-kpi-grid').innerHTML = cards.map(function (c) {
+      var badge = '';
+      if (c.trend !== undefined && c.trend !== null) {
+        var up = c.trend >= 0;
+        badge = '<div class="da-kpi-badge"><span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + Math.abs(c.trend) + (c.trendUnit || '') + '</span>&nbsp;vs. semana pasada</div>';
+      }
+      return (
+        '<div class="da-card da-kpi ' + c.cls + '" onclick="location.href=\'detalle.html?metric=' + c.goTo + '\'">' +
+          '<div class="da-kpi-label">' + c.label + '</div>' +
+          '<div class="da-kpi-row">' +
+            '<div class="da-kpi-val">' + c.val + (c.unit ? '<span class="u">' + c.unit + '</span>' : '') + '</div>' +
+            '<div class="da-kpi-spark">' + (c.series && c.series.length > 1 ? sparkline(c.series, c.color) : '') + '</div>' +
+          '</div>' +
+          badge +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  /* ── ACWR ────────────────────────────────────────────────────────── */
+  function renderAcwr(d) {
+    var acwr = d.acwr, zone = d.acwr_zone;
+    var color = '#34d399', zoneLabel = 'Óptimo';
+    if (zone === 'high' || (acwr !== null && acwr > 1.3)) { color = '#f87171'; zoneLabel = 'Riesgo alto'; }
+    else if (zone === 'low' || (acwr !== null && acwr < 0.8)) { color = '#fbbf24'; zoneLabel = 'Bajo'; }
+    document.getElementById('da-acwr-ring').outerHTML = ringSvg(acwr !== null ? clamp(acwr / 2, 0, 1) * 100 : null, color, 86, 9).replace('<svg ', '<svg id="da-acwr-ring" class="da-acwr-ring" ');
+    document.getElementById('da-acwr-val').textContent = acwr !== null && acwr !== undefined ? acwr.toFixed(2) : '—';
+    var zEl = document.getElementById('da-acwr-zone');
+    zEl.textContent = zoneLabel;
+    zEl.style.background = color + '22';
+    zEl.style.color = color;
+  }
+
+  /* ── Race countdown ─────────────────────────────────────────────── */
+  var _raceDate = null;
+  function renderRace(d) {
+    if (!d.race_goal_date) {
+      document.getElementById('da-race-name').textContent = 'Sin carrera objetivo';
+      document.getElementById('da-race-date').textContent = '';
+      document.getElementById('da-race-flip').innerHTML = '<div style="font-size:.72rem;color:#7d8bb0;padding:.4rem 0">Configura tu carrera en el Perfil del Atleta →</div>';
+      return;
+    }
+    var MS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    var dt = new Date(d.race_goal_date + 'T12:00:00');
+    document.getElementById('da-race-name').textContent = d.race_goal_name || 'Próxima carrera';
+    document.getElementById('da-race-date').textContent = dt.getDate() + ' ' + MS[dt.getMonth()] + ' ' + dt.getFullYear();
+    _raceDate = new Date(d.race_goal_date + 'T07:00:00');
+    tickRace();
+  }
+  function tickRace() {
+    function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+    if (!_raceDate) return;
+    var diff = _raceDate - new Date();
+    if (diff <= 0) { ['da-cd-d', 'da-cd-h', 'da-cd-m', 'da-cd-s'].forEach(function (i) { set(i, '00'); }); return; }
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    set('da-cd-d', String(d).padStart(2, '0'));
+    set('da-cd-h', String(h).padStart(2, '0'));
+    set('da-cd-m', String(m).padStart(2, '0'));
+    set('da-cd-s', String(s).padStart(2, '0'));
+  }
+  setInterval(tickRace, 1000);
+
+  /* ── Cumplimiento semanal (rings) ────────────────────────────────── */
+  function sumPlanned(planned, sport, field) {
+    return planned.filter(function (p) { return p.sport === sport && p[field]; })
+      .reduce(function (acc, p) { return acc + (p[field] || 0); }, 0);
+  }
+  function renderDisciplines(d) {
+    var wd = d.weekly_disc || {};
+    var planned = d.planned_workouts || [];
+    var icons = {
+      swim: '🏊', bike: '🚴', run: '🏃', strength: '💪',
+    };
+    var defs = [
+      { key: 'swim', name: 'Natación', actual: wd.swim_km, actualMin: wd.swim_min, unit: 'km', color: '#38bdf8' },
+      { key: 'bike', name: 'Ciclismo', actual: wd.bike_km, actualMin: wd.bike_min, unit: 'km', color: '#fb923c' },
+      { key: 'run',  name: 'Carrera',  actual: wd.run_km,  actualMin: wd.run_min,  unit: 'km', color: '#34d399' },
+      { key: 'strength', name: 'Fuerza', actual: wd.strength_n, unit: 'ses.', color: '#a78bfa', isCount: true },
+    ];
+
+    document.getElementById('da-disc-grid').innerHTML = defs.map(function (def) {
+      var pct = null, tgtLabel = '';
+      if (def.isCount) {
+        var plannedN = planned.filter(function (p) { return p.sport === def.key; }).length;
+        if (plannedN > 0) { pct = (def.actual / plannedN) * 100; tgtLabel = def.actual + ' / ' + plannedN + ' ' + def.unit; }
+      } else {
+        var plannedKm = sumPlanned(planned, def.key, 'dist_km');
+        var plannedMin = sumPlanned(planned, def.key, 'dur_min');
+        if (plannedKm > 0) { pct = (def.actual / plannedKm) * 100; tgtLabel = fmt1(def.actual) + ' / ' + fmt1(plannedKm) + ' km'; }
+        else if (plannedMin > 0) { pct = (def.actualMin / plannedMin) * 100; tgtLabel = fmt0(def.actualMin) + ' / ' + fmt0(plannedMin) + ' min'; }
+      }
+      var ring = ringSvg(pct, def.color, 72, 7);
+      var valLine = def.isCount
+        ? (def.actual || 0) + ' ses.'
+        : fmt1(def.actual) + ' km';
+      return (
+        '<div class="da-card da-disc-card" style="--accent:' + def.color + '">' +
+          '<div>' + ring + '</div>' +
+          '<div class="da-disc-name">' + icons[def.key] + '&nbsp; ' + def.name + '</div>' +
+          '<div class="da-disc-val">' + valLine + '</div>' +
+          (pct !== null
+            ? '<div class="da-disc-tgt">' + tgtLabel + ' · ' + Math.round(pct) + '%</div>'
+            : '<div class="da-disc-empty">Sin plan esta semana</div>') +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  /* ── Semana actual: barras diarias (TSS) ─────────────────────────── */
+  function renderWeekBars(d) {
+    var acts = d.activities || [];
+    var today = new Date();
+    var mon = new Date(today);
+    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    var days = [];
+    var DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    for (var i = 0; i < 7; i++) {
+      var dt = new Date(mon); dt.setDate(mon.getDate() + i);
+      var iso = dt.toISOString().slice(0, 10);
+      var dayActs = acts.filter(function (a) { return a.date_iso === iso; });
+      var tss = dayActs.reduce(function (acc, a) { return acc + (a.tss || 0); }, 0);
+      days.push({ iso: iso, label: DOW[i], tss: tss, acts: dayActs, isToday: iso === today.toISOString().slice(0, 10) });
+    }
+
+    var svg = document.getElementById('da-week-svg');
+    var W = 700, H = 140, pad = 24, gap = 14;
+    var maxTss = Math.max.apply(null, days.map(function (d) { return d.tss; })) || 1;
+    var bw = (W - pad * 2 - gap * 6) / 7;
+
+    var bars = '', labels = '';
+    days.forEach(function (day, i) {
+      var x = pad + i * (bw + gap);
+      var bh = day.tss > 0 ? Math.max(4, (day.tss / maxTss) * (H - 50)) : 2;
+      var y = H - 32 - bh;
+      var color = day.isToday ? '#a78bfa' : '#6366f1';
+      var op = day.isToday ? '1' : '.55';
+      bars += '<rect data-idx="' + i + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="5" fill="' + color + '" opacity="' + op + '" style="filter:drop-shadow(0 0 5px ' + color + ')"/>';
+      labels += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle" font-size="11" fill="' + (day.isToday ? '#e8ecf5' : '#7d8bb0') + '" font-weight="' + (day.isToday ? '700' : '500') + '">' + day.label + '</text>';
+      bars += '<rect data-idx="' + i + '" x="' + x.toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + H + '" fill="transparent" class="da-week-hit" data-idx="' + i + '"/>';
+    });
+    svg.innerHTML = bars + labels;
+
+    var tt = document.getElementById('da-week-tt');
+    var wrap = svg.parentElement;
+    svg.querySelectorAll('.da-week-hit').forEach(function (hit) {
+      hit.addEventListener('mousemove', function (e) {
+        var idx = +hit.getAttribute('data-idx');
+        var day = days[idx];
+        tt.innerHTML = '<b>' + day.label + '</b> · ' + day.tss.toFixed(0) + ' TSS<br>' + day.acts.length + ' actividad' + (day.acts.length === 1 ? '' : 'es');
+        var wrapRect = wrap.getBoundingClientRect();
+        var x = e.clientX - wrapRect.left;
+        tt.style.left = clamp(x, 40, wrapRect.width - 40) + 'px';
+        tt.style.top = '0px';
+        tt.classList.add('show');
+      });
+      hit.addEventListener('mouseleave', function () { tt.classList.remove('show'); });
+    });
+
+    if (!acts.length) {
+      wrap.innerHTML = '<div class="da-empty">Sin actividades sincronizadas esta semana</div>';
+    }
+  }
+
+  /* ── PMC chart (CTL/ATL/TSB con glow) ────────────────────────────── */
+  function renderPmc(pmc) {
+    var svg = document.getElementById('da-pmc-svg');
+    if (!pmc || pmc.length < 2) {
+      svg.parentNode.innerHTML = '<div class="da-empty">Sin datos históricos suficientes</div>';
+      return;
+    }
+    var recent = pmc.slice(-26);
+    var W = 800, H = 220, padL = 6, padR = 6, padT = 14, padB = 14;
+    var allVals = [];
+    recent.forEach(function (p) { allVals.push(p.ctl || 0, p.atl || 0, p.tsb || 0); });
+    var maxV = Math.max.apply(null, allVals);
+    var minV = Math.min.apply(null, allVals.concat([0]));
+    var range = (maxV - minV) || 1;
+    var step = (W - padL - padR) / Math.max(1, recent.length - 1);
+
+    function yOf(v) { return H - padB - ((v - minV) / range) * (H - padT - padB); }
+    function pathFor(key) {
+      return recent.map(function (p, i) {
+        var x = padL + i * step;
+        var y = yOf(p[key] || 0);
+        return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+    }
+    var ctlPath = pathFor('ctl');
+    var areaPath = ctlPath + ' L' + (padL + (recent.length - 1) * step).toFixed(1) + ',' + (H - padB) + ' L' + padL + ',' + (H - padB) + ' Z';
+
+    svg.innerHTML =
+      '<defs>' +
+        '<filter id="da-glow" x="-30%" y="-30%" width="160%" height="160%">' +
+          '<feGaussianBlur stdDeviation="3.2" result="blur"/>' +
+          '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+        '</filter>' +
+        '<linearGradient id="da-ctl-fill" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#22d3ee" stop-opacity=".28"/>' +
+          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      '<path d="' + areaPath + '" fill="url(#da-ctl-fill)"/>' +
+      '<path d="' + pathFor('tsb') + '" fill="none" stroke="#a78bfa" stroke-width="1.6" opacity=".75"/>' +
+      '<path d="' + pathFor('atl') + '" fill="none" stroke="#fb923c" stroke-width="1.8" opacity=".85"/>' +
+      '<path d="' + ctlPath + '" fill="none" stroke="#22d3ee" stroke-width="2.4" filter="url(#da-glow)"/>';
+  }
+
+  /* ── Readiness detail ────────────────────────────────────────────── */
+  function readyMeta(score) {
+    if (score >= 85) return { label: 'Óptimo — listo para exigir', color: '#34d399' };
+    if (score >= 70) return { label: 'Bueno — apto para entrenar', color: '#a3e635' };
+    if (score >= 55) return { label: 'Moderado — entrena con cautela', color: '#fbbf24' };
+    if (score >= 35) return { label: 'Bajo — prioriza recuperación', color: '#fb923c' };
+    return { label: 'Crítico — descanso recomendado', color: '#f87171' };
+  }
+  function renderReadiness(d) {
+    var score = d.readiness;
+    if (score === null || score === undefined) score = 0;
+    var meta = readyMeta(score);
+    var c = 2 * Math.PI * 62;
+    var arc = document.getElementById('da-ready-arc');
+    arc.setAttribute('stroke-dasharray', c.toFixed(1) + ' ' + c.toFixed(1));
+    setTimeout(function () { arc.setAttribute('stroke-dashoffset', (c * (1 - clamp(score, 0, 100) / 100)).toFixed(1)); }, 60);
+    document.getElementById('da-ready-num').textContent = fmt0(score);
+    document.getElementById('da-ready-status').textContent = meta.label;
+    document.getElementById('da-ready-status').style.color = meta.color;
+
+    function setRow(barId, valId, pct, valText) {
+      var bar = document.getElementById(barId);
+      setTimeout(function () { bar.style.width = clamp(pct || 0, 0, 100) + '%'; }, 60);
+      document.getElementById(valId).textContent = valText;
+    }
+    setRow('da-r-sleep', 'da-r-sleep-val', d.sleep_score, d.sleep_score != null ? d.sleep_score + '/100' : '—');
+
+    var hrvPct = (d.hrv_last_night && d.hrv_7d_avg) ? clamp((d.hrv_last_night / d.hrv_7d_avg) * 100, 0, 100) : null;
+    setRow('da-r-hrv', 'da-r-hrv-val', hrvPct, d.hrv_last_night != null ? d.hrv_last_night + ' ms' : '—');
+
+    var rhrPct = d.resting_hr != null ? clamp(100 - (d.resting_hr - 40) * 2, 0, 100) : null;
+    setRow('da-r-rhr', 'da-r-rhr-val', rhrPct, d.resting_hr != null ? d.resting_hr + ' bpm' : '—');
+
+    setRow('da-r-bb', 'da-r-bb-val', d.body_battery, d.body_battery != null ? d.body_battery + '/100' : '—');
+  }
+
+  /* ── Header meta (fecha, sync) ───────────────────────────────────── */
+  function renderHeader(d) {
+    var D = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    var M = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    var n = new Date();
+    document.getElementById('da-date-lbl').textContent = D[n.getDay()] + ', ' + n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear();
+    document.getElementById('da-sync-txt').textContent = d.last_sync ? 'Garmin · ' + d.last_sync : 'Garmin · sin sincronizar';
+  }
+
+  /* ── Boot ────────────────────────────────────────────────────────── */
+  var tok = LabXData.getToken();
+  if (!tok) { window.location.href = 'login.html'; return; }
+
+  LabXData.fetchDashboard().then(function (d) {
+    renderHeader(d);
+    renderKpis(d);
+    renderAcwr(d);
+    renderRace(d);
+    renderDisciplines(d);
+    renderWeekBars(d);
+    renderPmc(d.pmc);
+    renderReadiness(d);
+  }).catch(function (err) {
+    console.error('[dashboard-alt] fetch error', err);
+    document.getElementById('da-kpi-grid').innerHTML =
+      '<div class="da-empty" style="grid-column:1/-1">No se pudieron cargar los datos. Intenta recargar la página.</div>';
+  });
+})();
+</script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+</body>
+</html>
