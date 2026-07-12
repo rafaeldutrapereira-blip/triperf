@@ -958,6 +958,102 @@ def _get_planned_week(db: Session, user_id: str) -> list:
 
 
 # ─────────────────────────────────────────────
+# HUELLA DE DATOS — conteos reales por categoría (para la flor dinámica)
+# ─────────────────────────────────────────────
+
+_FOOTPRINT_WINDOW_DAYS = {"month": 30, "year": 365}
+
+
+@router.get("/data-footprint")
+def get_data_footprint(
+    period: str = Query(default="all", pattern="^(week|month|year|all)$"),
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """
+    Cuenta cuántos registros REALES tiene el atleta por categoría de dato
+    Garmin — usado por huella.html para dibujar la flor dinámica con el
+    tamaño de cada pétalo proporcional a la cobertura real de esa métrica.
+    Nunca inventa números: si una categoría está vacía, cuenta 0.
+
+    `period` acota la ventana de conteo: week (lunes→hoy, semana calendario)
+    | month (30d) | year (365d) | all (todo el historial, default).
+    """
+    from datetime import timedelta as _td
+    from ..models import GarminHealthDaily, GarminSleepSession
+
+    cutoff_iso = None
+    window_len = None
+    if period == "week":
+        monday = _date.today() - _td(days=_date.today().weekday())
+        cutoff_iso = monday.isoformat()
+        window_len = (_date.today() - monday).days + 1  # lunes→hoy, inclusive
+    elif period in _FOOTPRINT_WINDOW_DAYS:
+        window_len = _FOOTPRINT_WINDOW_DAYS[period]
+        cutoff_iso = (_date.today() - _td(days=window_len - 1)).isoformat()
+
+    def _count(query, model):
+        if cutoff_iso:
+            query = query.filter(model.date_iso >= cutoff_iso)
+        return query.count()
+
+    activities = _count(db.query(GarminActivity).filter(GarminActivity.user_id == me.id), GarminActivity)
+    training_load_days = _count(db.query(GarminTrainingLoad).filter(GarminTrainingLoad.user_id == me.id), GarminTrainingLoad)
+    vo2_days = _count(
+        db.query(GarminHealthDaily)
+        .filter(GarminHealthDaily.user_id == me.id)
+        .filter((GarminHealthDaily.vo2max_running.isnot(None)) | (GarminHealthDaily.vo2max_cycling.isnot(None))),
+        GarminHealthDaily,
+    )
+    body_battery_days = _count(
+        db.query(GarminHealthDaily)
+        .filter(GarminHealthDaily.user_id == me.id, GarminHealthDaily.body_battery_end.isnot(None)),
+        GarminHealthDaily,
+    )
+    sleep_nights = _count(
+        db.query(GarminSleepSession)
+        .filter(GarminSleepSession.user_id == me.id, GarminSleepSession.total_min.isnot(None)),
+        GarminSleepSession,
+    )
+    hrv_days = _count(
+        db.query(GarminHealthDaily)
+        .filter(GarminHealthDaily.user_id == me.id, GarminHealthDaily.hrv_last_night.isnot(None)),
+        GarminHealthDaily,
+    )
+
+    # Días conectado = desde la actividad más antigua hasta hoy (ventana real de historial),
+    # acotado a la ventana del período elegido (week/month/year) cuando corresponde.
+    first_act = (
+        db.query(GarminActivity)
+        .filter(GarminActivity.user_id == me.id)
+        .order_by(GarminActivity.date_iso.asc())
+        .first()
+    )
+    days_connected = None
+    first_sync_date = None
+    if first_act:
+        first_sync_date = first_act.date_iso
+        try:
+            days_connected = (_date.today() - _date.fromisoformat(first_act.date_iso)).days
+        except ValueError:
+            days_connected = None
+        if days_connected is not None and window_len is not None:
+            days_connected = min(days_connected, window_len)
+
+    return {
+        "period":              period,
+        "activities":         activities,
+        "training_load_days": training_load_days,
+        "vo2_days":            vo2_days,
+        "body_battery_days":   body_battery_days,
+        "sleep_nights":        sleep_nights,
+        "hrv_days":            hrv_days,
+        "days_connected":      days_connected,
+        "first_sync_date":     first_sync_date,
+    }
+
+
+# ─────────────────────────────────────────────
 # PERSONAL RECORDS
 # ─────────────────────────────────────────────
 

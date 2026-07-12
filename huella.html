@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Mi Huella de Datos</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080F;--surface:#08121E;--surface2:#0C1D30;
+  --border:rgba(8,116,174,.18);--border2:rgba(8,116,174,.10);
+  --orange:#FF6535;--gold:#F0A500;--coral:#FF8C61;
+  --cyan:#0EA5E9;--aqua:#22D3EE;--green:#10B981;--red:#EF4444;--purple:#A855F7;
+  --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+.c{max-width:1080px;margin:0 auto;padding:0 1.5rem}
+
+.ph{padding:2.2rem 0 1.4rem;border-bottom:1px solid var(--border2)}
+.ph-eyebrow{font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--orange);margin-bottom:.4rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:2.1rem;font-weight:900;text-transform:uppercase;letter-spacing:.01em}
+.ph-sub{color:var(--muted);font-size:.88rem;margin-top:.35rem;max-width:640px;line-height:1.55}
+
+.hu-period-btns{display:flex;gap:.5rem;margin-top:1rem}
+.hu-period-btn{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:999px;padding:.45rem 1.1rem;cursor:pointer;transition:all .15s}
+.hu-period-btn:hover{border-color:var(--orange);color:var(--text)}
+.hu-period-btn.on{background:linear-gradient(135deg,#FF6535,#F0A500);border-color:transparent;color:#fff}
+
+.hu-wrap{padding:2.5rem 0 2rem;display:flex;justify-content:center}
+.hu-flower-box{position:relative;width:100%;max-width:640px;aspect-ratio:1/1}
+.hu-flower-box svg{width:100%;height:100%;overflow:visible}
+
+/* Idéntico a la flor "hero" del landing (landing.html .ll-arcs/.ll-flower) */
+.ll-arcs   { animation: ll-spin-arcs   40s linear infinite;         transform-origin: 200px 200px; }
+.ll-flower { animation: ll-spin-flower 24s linear infinite reverse; transform-origin: 200px 200px; }
+.ll-pulse-g{ animation: ll-pulse       3s ease-in-out infinite;     transform-origin: 200px 200px; }
+@keyframes ll-spin-arcs   { to { transform: rotate(360deg); } }
+@keyframes ll-spin-flower { to { transform: rotate(360deg); } }
+@keyframes ll-pulse { 0%,100% { opacity:.88; transform:scale(1); } 50% { opacity:1; transform:scale(1.12); } }
+
+.hu-petal{cursor:pointer;transition:filter .2s ease}
+.hu-petal:hover, .hu-petal.active{filter:brightness(1.45)}
+.hu-petal-txt{pointer-events:none;font-family:'Oswald',sans-serif;text-anchor:middle;dominant-baseline:middle;paint-order:stroke fill;stroke:#04080F;fill:#fff}
+
+.hu-empty{text-align:center;padding:3rem 1rem;color:var(--dim)}
+.hu-foot-note{padding:0 0 3rem;color:var(--dim);font-size:.75rem;text-align:center;max-width:640px;margin:0 auto;line-height:1.6}
+</style>
+<link rel="stylesheet" href="nav.css">
+</head>
+<body>
+
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<div class="ph">
+  <div class="c">
+    <div class="ph-eyebrow">LabX · Identidad de datos</div>
+    <div class="ph-title">Mi Huella de Datos</div>
+    <p class="ph-sub">La misma flor dinámica de LabX — cada uno de sus 6 pétalos ahora representa cuánta historia real tenés sincronizada por categoría. Pétalos grandes y luminosos = mucha data; chicos y opacos = todavía poca.</p>
+    <div class="hu-period-btns" id="hu-period-btns">
+      <button class="hu-period-btn" data-period="week">Semana</button>
+      <button class="hu-period-btn" data-period="month">Mes</button>
+      <button class="hu-period-btn" data-period="year">Año</button>
+      <button class="hu-period-btn on" data-period="all">Todo</button>
+    </div>
+  </div>
+</div>
+
+<div class="c">
+  <div class="hu-wrap" id="hu-wrap">
+    <div class="hu-flower-box">
+      <svg id="hu-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+  <p class="hu-foot-note">Los números son tu historial real sincronizado desde Garmin Connect — LabX nunca genera datos de muestra. Si un pétalo está chico, es porque esa métrica todavía no tiene suficiente historial en tu cuenta (por ejemplo, HRV o sueño solo se registran algunas noches).</p>
+</div>
+
+<script src="dashboard-alt-data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // Las 6 posiciones son EXACTAMENTE las del pétalo interno de la flor
+  // real del landing (landing.html, grupo .ll-flower, offset 52 desde el
+  // centro) — no se inventa geometría nueva, solo se les da color propio
+  // por categoría y se las hace crecer/brillar según la data real.
+  var CATS = [
+    { key: 'activities',         name: 'Actividades',  color: '#FF6535', x: 252, y: 200 }, // derecha
+    { key: 'training_load_days', name: 'Carga (PMC)',  color: '#0EA5E9', x: 226, y: 155 }, // arriba-derecha
+    { key: 'vo2_days',           name: 'VO2 Max',       color: '#22D3EE', x: 174, y: 155 }, // arriba-izquierda
+    { key: 'body_battery_days',  name: 'Body Battery',  color: '#10B981', x: 148, y: 200 }, // izquierda
+    { key: 'sleep_nights',       name: 'Sueño',         color: '#A855F7', x: 174, y: 245 }, // abajo-izquierda
+    { key: 'hrv_days',           name: 'HRV',           color: '#F0A500', x: 226, y: 245 }, // abajo-derecha
+  ];
+
+  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  // Escala ÚNICA y compartida entre las 7 pelotas (6 categorías + centro):
+  // el tamaño de cada una es proporcional a su valor real comparado con el
+  // MÁXIMO real entre las 7 — dos números casi iguales (2884 vs 2885) dan
+  // pelotas casi iguales; números claramente distintos (2885 vs 4172) dan
+  // pelotas claramente distintas. Raíz cuadrada porque el tamaño que
+  // percibimos en un círculo es su ÁREA (∝ radio²), no el radio.
+  var MIN_R = 30, MAX_R = 74; // alrededor del r=52 original de la flor
+
+  function render(data) {
+    var cx = 200, cy = 200;
+    var svg = document.getElementById('hu-svg');
+
+    var daysConnected = data.days_connected || 0;
+    var allValues = CATS.map(function (c) { return data[c.key] || 0; }).concat([daysConnected]);
+    var maxValue = Math.max.apply(null, allValues) || 1;
+    function pctOf(value) { return Math.sqrt(Math.max(0, value) / maxValue); }
+
+    var dataDefs = '';
+    var dataPetals = '';
+
+    CATS.forEach(function (cat, i) {
+      var count = data[cat.key] || 0;
+      var pct = pctOf(count);
+      var radius = MIN_R + pct * (MAX_R - MIN_R);
+      var fillOp = (0.05 + pct * 0.32).toFixed(3);
+      var strokeOp = (0.18 + pct * 0.55).toFixed(3);
+      var gid = 'hu-g-' + i;
+
+      dataDefs +=
+        '<radialGradient id="' + gid + '" cx="50%" cy="50%" r="50%">' +
+        '<stop offset="0%" stop-color="' + cat.color + '" stop-opacity="' + fillOp + '"/>' +
+        '<stop offset="100%" stop-color="' + cat.color + '" stop-opacity="0"/>' +
+        '</radialGradient>';
+
+      var nameFs = clamp(radius * 0.22, 7, 13);
+      var numFs  = clamp(radius * 0.34, 9, 19);
+      var nameY  = cat.y - radius * 0.28;
+      var numY   = cat.y + radius * 0.16;
+
+      // El grupo interno contrarrota exactamente lo que gira .ll-flower
+      // (24s, reverse) para que el texto de cada pétalo se mantenga
+      // siempre derecho mientras el ramo entero gira, igual que el logo.
+      dataPetals +=
+        '<g class="hu-petal-group" data-idx="' + i + '">' +
+          '<animateTransform attributeName="transform" type="rotate" ' +
+          'from="0 ' + cat.x + ' ' + cat.y + '" to="360 ' + cat.x + ' ' + cat.y + '" ' +
+          'dur="24s" repeatCount="indefinite"/>' +
+          '<circle class="hu-petal" data-idx="' + i + '" cx="' + cat.x + '" cy="' + cat.y + '" r="' + radius.toFixed(1) + '" ' +
+          'fill="url(#' + gid + ')" stroke="' + cat.color + '" stroke-width="1.3" stroke-opacity="' + strokeOp + '"/>' +
+          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + nameY.toFixed(1) + '" font-size="' + nameFs.toFixed(1) + '" font-weight="600" stroke-width="' + (nameFs * 0.12).toFixed(2) + '">' + cat.name + '</text>' +
+          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + numY.toFixed(1) + '" font-size="' + numFs.toFixed(1) + '" font-weight="800" stroke-width="' + (numFs * 0.12).toFixed(2) + '">' + count.toLocaleString('es-CL') + '</text>' +
+        '</g>';
+    });
+
+    // Centro: misma escala que los pétalos (si "días conectado" es parecido
+    // al valor de una categoría llena, el tamaño también debe ser parecido).
+    var centerPct = pctOf(daysConnected);
+    var centerR = 24 + centerPct * 14; // 24 → 38, alrededor del r=24/38 original
+    var centerNumFs = clamp(20 + centerPct * 14, 20, 34);
+
+    // ── SVG idéntico a landing.html (.ll-arcs + .ll-flower), con los 6
+    //    pétalos internos reemplazados por los pétalos de datos de arriba.
+    svg.innerHTML =
+      '<defs>' +
+        '<linearGradient id="hu-sunset" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0A500"/><stop offset="50%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></linearGradient>' +
+        '<linearGradient id="hu-ocean" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/></linearGradient>' +
+        '<radialGradient id="hu-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".55"/><stop offset="60%" stop-color="#F0A500" stop-opacity=".15"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient>' +
+        '<filter id="hu-gf" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+        '<filter id="hu-gs" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+        dataDefs +
+      '</defs>' +
+      '<g class="ll-arcs">' +
+        '<circle cx="200" cy="200" r="188" stroke="rgba(255,101,53,.05)" stroke-width="1"/>' +
+        '<circle cx="200" cy="200" r="176" stroke="rgba(240,165,0,.04)" stroke-width="1" stroke-dasharray="5 11"/>' +
+        '<circle cx="200" cy="200" r="162" stroke="rgba(14,165,233,.05)" stroke-width="1"/>' +
+        '<circle cx="200" cy="200" r="176" stroke="url(#hu-ocean)" stroke-width="4" stroke-dasharray="168 952" stroke-linecap="round" transform="rotate(-90 200 200)" filter="url(#hu-gf)"/>' +
+        '<circle cx="200" cy="200" r="161" stroke="url(#hu-sunset)" stroke-width="5" stroke-dasharray="248 826" stroke-linecap="round" transform="rotate(28 200 200)" filter="url(#hu-gs)"/>' +
+        '<circle cx="200" cy="200" r="146" stroke="#F0A500" stroke-width="2.5" stroke-dasharray="92 838" stroke-linecap="round" transform="rotate(158 200 200)" stroke-opacity=".5"/>' +
+      '</g>' +
+      '<g>' +
+        // Rotación del ramo entero vía SMIL (no CSS): visualmente idéntica
+        // a la animación ll-spin-flower del landing (24s, sentido inverso),
+        // pero en el MISMO reloj de animación que la contra-rotación de
+        // cada pétalo — mezclar CSS+SMIL desincroniza sus tiempos de inicio
+        // y el texto queda inclinado.
+        '<animateTransform attributeName="transform" type="rotate" from="0 200 200" to="-360 200 200" dur="24s" repeatCount="indefinite"/>' +
+        // Pétalo central decorativo (idéntico al original, se funde con el sol)
+        '<circle cx="200" cy="200" r="52" stroke="rgba(255,101,53,.25)" stroke-width="1.2" fill="rgba(255,101,53,.025)"/>' +
+        // 6 pétalos internos → ahora son los pétalos de DATOS
+        dataPetals +
+        // 6 pétalos externos decorativos (idénticos al original, sin cambios)
+        '<circle cx="304" cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
+        '<circle cx="278" cy="110" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
+        '<circle cx="122" cy="110" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
+        '<circle cx="96"  cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
+        '<circle cx="122" cy="290" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
+        '<circle cx="278" cy="290" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
+      '</g>' +
+      '<circle cx="200" cy="200" r="38" fill="url(#hu-glow)"/>' +
+      '<circle cx="200" cy="200" r="' + centerR.toFixed(1) + '" fill="rgba(255,101,53,.14)" stroke="rgba(255,101,53,.4)" stroke-width="1.2"/>' +
+      '<g class="ll-pulse-g">' +
+        '<text x="200" y="' + (200 + centerNumFs * 0.32).toFixed(1) + '" text-anchor="middle" font-family="\'Barlow Condensed\',sans-serif" font-weight="900" font-size="' + centerNumFs.toFixed(1) + '" fill="#fff" stroke="#04080F" stroke-width="2" paint-order="stroke fill" style="filter:drop-shadow(0 0 10px rgba(255,101,53,.8))">' +
+          (data.days_connected !== null && data.days_connected !== undefined ? data.days_connected.toLocaleString('es-CL') : '—') +
+        '</text>' +
+        '<text x="200" y="228" text-anchor="middle" font-family="Oswald,sans-serif" font-size="7" font-weight="700" letter-spacing=".08em" fill="rgba(240,249,255,.7)">DÍAS CONECTADO</text>' +
+      '</g>';
+
+    // Interacción: hover resalta el pétalo bajo el mouse
+    svg.querySelectorAll('.hu-petal-group').forEach(function (el) {
+      el.addEventListener('mouseenter', function () {
+        svg.querySelectorAll('.hu-petal').forEach(function (p) {
+          p.classList.toggle('active', p === el.querySelector('.hu-petal'));
+        });
+      });
+    });
+  }
+
+  var tok = LabXData.getToken();
+  if (!tok) { window.location.href = 'login.html'; return; }
+
+  var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
+
+  function load(period) {
+    fetch(API + '/athlete/data-footprint?period=' + encodeURIComponent(period), { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('fetch failed'); return r.json(); })
+      .then(function (d) { render(d); })
+      .catch(function (err) {
+        console.error('[huella] error', err);
+        document.getElementById('hu-wrap').innerHTML = '<div class="hu-empty" style="grid-column:1/-1">No se pudo cargar tu huella de datos. Intenta recargar.</div>';
+      });
+  }
+
+  document.querySelectorAll('.hu-period-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
+      btn.classList.add('on');
+      load(btn.getAttribute('data-period'));
+    });
+  });
+
+  load('all');
+})();
+</script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
+<script src="i18n.js"></script>
+</body>
+</html>
