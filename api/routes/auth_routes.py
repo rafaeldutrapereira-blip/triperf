@@ -220,6 +220,7 @@ def login(
         nombre       = user.nombre,
         user_id      = user.id,
         plan_nivel   = user.plan_nivel or "basico",
+        onboarding_done = (user.rol != "atleta") or (user.onboarding_completed_at is not None),
     )
 
 
@@ -393,6 +394,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
         nombre       = user.nombre,
         user_id      = user.id,
         plan_nivel   = user.plan_nivel,
+        onboarding_done = user.rol != "atleta",
     )
 
 
