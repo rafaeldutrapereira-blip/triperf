@@ -22,10 +22,15 @@ Fallback estratégico:
 """
 from __future__ import annotations
 
+import json
 import logging
 import math
 from dataclasses import dataclass, field
-from typing import Optional
+from datetime import date, timedelta
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 logger = logging.getLogger("labx.readiness")
 
@@ -319,3 +324,104 @@ def compute_readiness_history(data_points: list[dict]) -> list[ReadinessHistoryP
             color=report.drs_color,
         ))
     return sorted(results, key=lambda p: p.date_iso)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data fetch helpers — leen las 4 dimensiones desde la DB para un usuario
+# (compartido entre readiness_routes.py y el pipeline de sync de Garmin,
+# para que el DRS se calcule igual en ambos lugares).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_recovery_score(user_id: str, db: "Session") -> Optional[float]:
+    """Lee el RecoveryScore más reciente (últimos 3 días)."""
+    cutoff = (date.today() - timedelta(days=3)).isoformat()
+    try:
+        from ..models import RecoveryScore
+        row = (
+            db.query(RecoveryScore)
+            .filter(
+                RecoveryScore.user_id == user_id,
+                RecoveryScore.date_iso >= cutoff,
+            )
+            .order_by(RecoveryScore.date_iso.desc())
+            .first()
+        )
+        return float(row.score) if row else None
+    except Exception:
+        return None
+
+
+def get_mental_score(user_id: str, db: "Session") -> Optional[float]:
+    """Lee el MentalFatigueScore más reciente (últimos 3 días)."""
+    cutoff = (date.today() - timedelta(days=3)).isoformat()
+    try:
+        from ..models import MentalFatigueScore
+        row = (
+            db.query(MentalFatigueScore)
+            .filter(
+                MentalFatigueScore.user_id == user_id,
+                MentalFatigueScore.date_iso >= cutoff,
+            )
+            .order_by(MentalFatigueScore.date_iso.desc())
+            .first()
+        )
+        return float(row.score) if row else None
+    except Exception:
+        return None
+
+
+def get_trs(user_id: str, db: "Session") -> Optional[float]:
+    """Calcula TRS del último examen de blood labs (últimos 90 días)."""
+    cutoff = (date.today() - timedelta(days=90)).isoformat()
+    try:
+        from ..models import BloodLabExam, User
+        exam = (
+            db.query(BloodLabExam)
+            .filter(
+                BloodLabExam.user_id == user_id,
+                BloodLabExam.date_iso >= cutoff,
+            )
+            .order_by(BloodLabExam.date_iso.desc())
+            .first()
+        )
+        if not exam:
+            return None
+
+        values = json.loads(exam.values_json)
+        sex = "M"
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and hasattr(user, "sexo") and user.sexo == "F":
+            sex = "F"
+        elif user and hasattr(user, "sex") and user.sex == "F":
+            sex = "F"
+
+        from ..services.blood_labs_impact_service import compute_training_impact
+        report = compute_training_impact(values=values, sex=sex)
+        return float(report.trs)
+    except Exception:
+        return None
+
+
+def get_tsb(user_id: str, db: "Session") -> Optional[float]:
+    """Lee el TSB más reciente de GarminTrainingLoad."""
+    try:
+        from ..models import GarminTrainingLoad
+        load = (
+            db.query(GarminTrainingLoad)
+            .filter(GarminTrainingLoad.user_id == user_id)
+            .order_by(GarminTrainingLoad.date_iso.desc())
+            .first()
+        )
+        return float(load.tsb) if load and load.tsb is not None else None
+    except Exception:
+        return None
+
+
+def compute_daily_readiness_for_user(user_id: str, db: "Session") -> DailyReadinessReport:
+    """Atajo: lee las 4 dimensiones de la DB y computa el DRS del día."""
+    return compute_daily_readiness(
+        recovery_score=get_recovery_score(user_id, db),
+        mental_score=get_mental_score(user_id, db),
+        trs=get_trs(user_id, db),
+        tsb=get_tsb(user_id, db),
+    )

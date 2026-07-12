@@ -17,6 +17,7 @@ Ejecutar como BackgroundTask en FastAPI (non-blocking para el login).
 """
 from __future__ import annotations
 
+import json
 import logging
 import math
 import os
@@ -825,6 +826,9 @@ class GarminPullService:
         except Exception as exc:
             logger.warning("Health sync parcial user=%s: %s", user_id, exc)
 
+        # Calcular y persistir el LabX Daily Readiness Score (4 dimensiones)
+        self._update_readiness(user_id)
+
         # Sincronizar entrenamientos planificados desde calendario Garmin
         # (Training Peaks, TrainerRoad, etc. pushean sus planes a Garmin Connect)
         try:
@@ -1196,6 +1200,50 @@ class GarminPullService:
         ])
         db.commit()
 
+    def _update_readiness(self, user_id: str) -> None:
+        """
+        Calcula el LabX Daily Readiness Score (4 dimensiones: recuperación,
+        estado mental, TRS de blood labs, forma/TSB) con el motor real de
+        readiness_service y lo persiste en garmin_health_daily del día de
+        hoy. Reemplaza el placeholder "50+TSB" que usaba el dashboard.
+        """
+        from .services.readiness_service import compute_daily_readiness_for_user
+
+        db = self._db
+        today_iso = date.today().isoformat()
+        try:
+            report = compute_daily_readiness_for_user(user_id, db)
+
+            row = (
+                db.query(GarminHealthDaily)
+                  .filter(GarminHealthDaily.user_id == user_id,
+                          GarminHealthDaily.date_iso == today_iso)
+                  .first()
+            )
+            if row is None:
+                row = GarminHealthDaily(user_id=user_id, date_iso=today_iso)
+                db.add(row)
+
+            row.labx_readiness_score = report.drs
+            row.labx_readiness_factors = json.dumps({
+                "label": report.drs_label,
+                "primary_limiter": report.primary_limiter,
+                "data_completeness": report.data_completeness,
+                "computed_from": report.computed_from,
+                "dimensions": [
+                    {
+                        "name": d.name,
+                        "score": round(d.score) if d.score is not None else None,
+                        "available": d.available,
+                    }
+                    for d in report.dimensions
+                ],
+            })
+            db.commit()
+        except Exception:
+            logger.exception("Readiness update fallo user=%s", user_id)
+            db.rollback()
+
     def _sync_health_data(self, client, user_id: str, days: int = 30) -> None:
         """
         Sincroniza datos de salud de los últimos `days` días desde Garmin:
@@ -1288,13 +1336,22 @@ class GarminPullService:
             iso    = target.isoformat()
 
             # ── Body Battery ──────────────────────────────────────────────
+            # Garmin no devuelve un nivel plano por entrada: cada item trae
+            # un array de puntos [timestampMs, nivel] bajo
+            # "bodyBatteryValuesArray" que hay que desanidar.
             bb_min = bb_max = bb_end = None
             try:
                 bb_data = _retry(lambda d=iso: client.get_body_battery(d), max_attempts=2, base_delay=1.0)
                 if bb_data and isinstance(bb_data, list):
-                    vals = [e.get("bodyBatteryLevel") for e in bb_data if e.get("bodyBatteryLevel") is not None]
-                    if vals:
-                        bb_min, bb_max, bb_end = min(vals), max(vals), vals[-1]
+                    points = []
+                    for e in bb_data:
+                        for pt in (e.get("bodyBatteryValuesArray") or []):
+                            if isinstance(pt, (list, tuple)) and len(pt) >= 2 and pt[1] is not None:
+                                points.append((pt[0], pt[1]))
+                    if points:
+                        points.sort(key=lambda p: p[0])
+                        levels = [p[1] for p in points]
+                        bb_min, bb_max, bb_end = min(levels), max(levels), levels[-1]
             except Exception as exc:
                 logger.warning("BodyBattery skip %s user=%s: %s", iso, user_id, exc)
 
@@ -1305,10 +1362,11 @@ class GarminPullService:
                 hrv_data = _retry(lambda d=iso: client.get_hrv_data(d), max_attempts=2, base_delay=1.0)
                 if hrv_data and isinstance(hrv_data, dict):
                     summary = hrv_data.get("hrvSummary", {}) or {}
+                    baseline = summary.get("baseline") or {}
                     hrv_weekly = _safe_float(summary.get("weeklyAvg")) or None
-                    hrv_night  = _safe_float(summary.get("lastNight")) or None
-                    hrv_low    = _safe_float(summary.get("baseline", {}).get("lowUpper")) or None
-                    hrv_high   = _safe_float(summary.get("baseline", {}).get("balancedLow")) or None
+                    hrv_night  = _safe_float(summary.get("lastNightAvg")) or None
+                    hrv_low    = _safe_float(baseline.get("balancedLow")) or None
+                    hrv_high   = _safe_float(baseline.get("balancedUpper")) or None
                     hrv_status_str = summary.get("status")
             except Exception as exc:
                 logger.warning("HRV skip %s user=%s: %s", iso, user_id, exc)

@@ -643,9 +643,12 @@ var MC = {
       var sl = (d.sleep_history||[]).slice(-7);
       var avgSleep = sl.length ? Math.round(sl.reduce(function(a,p){return a+p.h;},0)/sl.length*10)/10 : null;
       var hrArr = d.hrv_history||[];
-      var lastHrv = hrArr.length ? hrArr[hrArr.length-1].hrv : null;
-      var tsbArr = d.tsb_history||[];
-      var lastTsb = tsbArr.length ? tsbArr[tsbArr.length-1].tsb : null;
+      var lastHrv = null;
+      for (var _i = hrArr.length-1; _i >= 0; _i--) { if (hrArr[_i].hrv != null) { lastHrv = hrArr[_i].hrv; break; } }
+      var tsbArr = d.tsb_history && d.tsb_history.length ? d.tsb_history
+        : (d.pmc||[]).map(function(p){ return {dt:p.dt, tsb: p.tsb}; });
+      var lastTsb = null;
+      for (var _j = tsbArr.length-1; _j >= 0; _j--) { if (tsbArr[_j].tsb != null) { lastTsb = tsbArr[_j].tsb; break; } }
       var tsbZone = lastTsb === null ? '—' : lastTsb > 10 ? 'Muy fresco — ideal para competir' : lastTsb > -5 ? 'Listo para calidad' : lastTsb > -20 ? 'Zona de construcción' : lastTsb > -35 ? 'Fatiga acumulada alta' : 'Sobrecarga — descansa';
       return [
         avgSleep ? 'Sueño promedio últimos 7 días: <em>' + avgSleep + 'h</em>. ' + (avgSleep >= 7.5 ? 'Recuperación óptima.' : avgSleep >= 6.5 ? 'Aceptable, pero intenta llegar a 8h.' : 'Insuficiente — prioriza el sueño esta semana.') : 'Sin datos de sueño recientes disponibles.',
@@ -1392,9 +1395,29 @@ function renderWellbeing() {
              callback:function(v){ return v+(unit?unit:''); }}};
   }
   function noData(canvasId) {
+    // No destruye el <canvas> (antes reemplazaba parentElement.innerHTML,
+    // borrándolo para siempre — el primer render síncrono corre ANTES de
+    // que el fetch real resuelva, así que casi siempre disparaba esta rama
+    // una vez, y el canvas ya no existía cuando llegaban los datos reales).
     var ctx = document.getElementById(canvasId);
     if (!ctx) return;
-    ctx.parentElement.innerHTML = '<div class="wb-nodata">Sin datos disponibles</div>';
+    ctx.style.display = 'none';
+    var msg = ctx.parentElement.querySelector('.wb-nodata');
+    if (!msg) {
+      msg = document.createElement('div');
+      msg.className = 'wb-nodata';
+      msg.textContent = 'Sin datos disponibles';
+      ctx.parentElement.appendChild(msg);
+    }
+    msg.style.display = '';
+  }
+  function showChart(canvasId) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    ctx.style.display = '';
+    var msg = ctx.parentElement.querySelector('.wb-nodata');
+    if (msg) msg.style.display = 'none';
+    return ctx;
   }
 
   var sleep = sliceDt(d.sleep_history || []);
@@ -1408,7 +1431,7 @@ function renderWellbeing() {
   if (sleep.length < 2) {
     noData('wb-sleep-chart');
   } else {
-    var slCtx = document.getElementById('wb-sleep-chart');
+    var slCtx = showChart('wb-sleep-chart');
     if (slCtx) {
       var slOpts = JSON.parse(JSON.stringify(CHART_OPTS));
       slOpts.scales.yH = makeY('#6366F1', 0, 12, 'h');
@@ -1443,7 +1466,7 @@ function renderWellbeing() {
   if (hrv.length < 2) {
     noData('wb-hrv-chart');
   } else {
-    var hrvCtx = document.getElementById('wb-hrv-chart');
+    var hrvCtx = showChart('wb-hrv-chart');
     if (hrvCtx) {
       var hrvOpts = JSON.parse(JSON.stringify(CHART_OPTS));
       hrvOpts.scales.y = makeY('#22D3EE', null, null, 'ms');
@@ -1475,7 +1498,7 @@ function renderWellbeing() {
   if (rhr.length < 2) {
     noData('wb-rhr-chart');
   } else {
-    var rhrCtx = document.getElementById('wb-rhr-chart');
+    var rhrCtx = showChart('wb-rhr-chart');
     if (rhrCtx) {
       var rhrOpts = JSON.parse(JSON.stringify(CHART_OPTS));
       var rMn = Math.max(30, Math.min.apply(null, rhr.map(function(p){return p.rhr;}))-3);
@@ -1519,7 +1542,7 @@ function renderWellbeing() {
   var rngTsb = document.getElementById('wb-tsb-range');
   if (rngTsb) rngTsb.textContent = bb.length ? fmtRange(bb) : (tsb.length ? fmtRange(tsb) : '—');
   if (bb.length >= 2) {
-    var tsbCtx = document.getElementById('wb-tsb-chart');
+    var tsbCtx = showChart('wb-tsb-chart');
     if (tsbCtx) {
       var tsbOpts = JSON.parse(JSON.stringify(CHART_OPTS));
       tsbOpts.scales.yBB = makeY('#10B981', 0, 100, '');
@@ -1548,7 +1571,7 @@ function renderWellbeing() {
       }));
     }
   } else if (tsb.length >= 2) {
-    var tsbCtx2 = document.getElementById('wb-tsb-chart');
+    var tsbCtx2 = showChart('wb-tsb-chart');
     if (tsbCtx2) {
       var tsbOpts2 = JSON.parse(JSON.stringify(CHART_OPTS));
       var tMn = Math.min.apply(null, tsb.map(function(p){return p.tsb;}));

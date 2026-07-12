@@ -8,7 +8,6 @@ Endpoints:
 """
 from __future__ import annotations
 
-import json
 import logging
 from datetime import date, timedelta
 from typing import Optional
@@ -18,9 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import (
-    BloodLabExam,
     GarminTrainingLoad,
-    GarminHealthDaily,
     User,
 )
 from ..auth import get_current_user
@@ -28,94 +25,14 @@ from ..services.readiness_service import (
     compute_daily_readiness,
     compute_readiness_history,
     tsb_to_form_score,
+    get_recovery_score as _get_recovery_score,
+    get_mental_score as _get_mental_score,
+    get_trs as _get_trs,
+    get_tsb as _get_tsb,
 )
 
 logger = logging.getLogger("labx.readiness")
 router = APIRouter(prefix="/readiness", tags=["readiness"])
-
-
-def _get_recovery_score(user_id: str, db: Session) -> Optional[float]:
-    """Lee el RecoveryScore más reciente (últimos 3 días)."""
-    cutoff = (date.today() - timedelta(days=3)).isoformat()
-    try:
-        from ..models import RecoveryScore
-        row = (
-            db.query(RecoveryScore)
-            .filter(
-                RecoveryScore.user_id == user_id,
-                RecoveryScore.date_iso >= cutoff,
-            )
-            .order_by(RecoveryScore.date_iso.desc())
-            .first()
-        )
-        return float(row.score) if row else None
-    except Exception:
-        # RecoveryScore puede no estar disponible si no hay datos Garmin
-        return None
-
-
-def _get_mental_score(user_id: str, db: Session) -> Optional[float]:
-    """Lee el MentalFatigueScore más reciente (últimos 3 días)."""
-    cutoff = (date.today() - timedelta(days=3)).isoformat()
-    try:
-        from ..models import MentalFatigueScore
-        row = (
-            db.query(MentalFatigueScore)
-            .filter(
-                MentalFatigueScore.user_id == user_id,
-                MentalFatigueScore.date_iso >= cutoff,
-            )
-            .order_by(MentalFatigueScore.date_iso.desc())
-            .first()
-        )
-        return float(row.score) if row else None
-    except Exception:
-        return None
-
-
-def _get_trs(user_id: str, db: Session) -> Optional[float]:
-    """Calcula TRS del último examen de blood labs (últimos 90 días)."""
-    cutoff = (date.today() - timedelta(days=90)).isoformat()
-    try:
-        exam = (
-            db.query(BloodLabExam)
-            .filter(
-                BloodLabExam.user_id == user_id,
-                BloodLabExam.date_iso >= cutoff,
-            )
-            .order_by(BloodLabExam.date_iso.desc())
-            .first()
-        )
-        if not exam:
-            return None
-
-        values = json.loads(exam.values_json)
-        sex = "M"
-        user = db.query(User).filter(User.id == user_id).first()
-        if user and hasattr(user, "sexo") and user.sexo == "F":
-            sex = "F"
-        elif user and hasattr(user, "sex") and user.sex == "F":
-            sex = "F"
-
-        from ..services.blood_labs_impact_service import compute_training_impact
-        report = compute_training_impact(values=values, sex=sex)
-        return float(report.trs)
-    except Exception:
-        return None
-
-
-def _get_tsb(user_id: str, db: Session) -> Optional[float]:
-    """Lee el TSB más reciente de GarminTrainingLoad."""
-    try:
-        load = (
-            db.query(GarminTrainingLoad)
-            .filter(GarminTrainingLoad.user_id == user_id)
-            .order_by(GarminTrainingLoad.date.desc())
-            .first()
-        )
-        return float(load.tsb) if load and load.tsb is not None else None
-    except Exception:
-        return None
 
 
 @router.get("/daily")
@@ -226,11 +143,11 @@ def get_readiness_history(
             db.query(GarminTrainingLoad)
             .filter(
                 GarminTrainingLoad.user_id == me.id,
-                GarminTrainingLoad.date >= cutoff,
+                GarminTrainingLoad.date_iso >= cutoff,
             )
             .all()
         )
-        tsb_map = {str(l.date)[:10]: float(l.tsb) for l in loads if l.tsb is not None}
+        tsb_map = {l.date_iso[:10]: float(l.tsb) for l in loads if l.tsb is not None}
     except Exception:
         pass
 
