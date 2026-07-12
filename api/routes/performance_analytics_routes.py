@@ -35,9 +35,10 @@ from ..services.performance_analytics_service import (
     compute_season_summary,
     generate_automated_insights,
 )
+from ..plan_features import require_feature
 
 logger = APIRouter()
-router = APIRouter(prefix="/analytics", tags=["performance_analytics"])
+router = APIRouter(prefix="/analytics", tags=["performance_analytics"], dependencies=[Depends(require_feature("analytics"))])
 
 
 def _me(db=Depends(get_db), user=Depends(get_current_user)):

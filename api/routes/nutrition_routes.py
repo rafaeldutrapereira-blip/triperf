@@ -52,6 +52,7 @@ from ..models import (
     HydrationLog, WeightLog, SupplementLog,
     CustomFood, FavoriteFood, NutritionInsight,
 )
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.nutrition")
 router = APIRouter(prefix="/nutrition", tags=["nutrition_v2"])
@@ -221,7 +222,7 @@ def _hydration_goal_ml(me: User, tl: Optional[GarminTrainingLoad],
 def calorie_balance(
     date_iso: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     """
     Balance calórico real del día:
@@ -300,7 +301,7 @@ def calorie_balance(
 def carb_periodization(
     days: int = Query(7, ge=1, le=14),
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     """
     Plan de carbohidratos para los próximos N días según TSS programado.
@@ -377,7 +378,7 @@ class _HydrationIn(BaseModel):
 def get_hydration(
     date_iso: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     logs = db.query(HydrationLog).filter(
         HydrationLog.user_id  == me.id,
@@ -417,7 +418,7 @@ def get_hydration(
 def add_hydration(
     body: _HydrationIn,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     d_iso = body.date_iso or _today()
     log   = HydrationLog(
@@ -437,7 +438,7 @@ def add_hydration(
 def delete_hydration(
     log_id: str,
     db:     Session = Depends(get_db),
-    me:     User    = Depends(get_current_user),
+    me:     User    = Depends(require_feature("nutrition")),
 ):
     log = db.query(HydrationLog).filter(
         HydrationLog.id      == log_id,
@@ -454,7 +455,7 @@ def delete_hydration(
 def hydration_goal(
     date_iso: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     tl     = _get_training_load(me.id, date_iso, db)
     health = _get_health_daily(me.id, date_iso, db)
@@ -492,7 +493,7 @@ class _WeightIn(BaseModel):
 def log_weight(
     body: _WeightIn,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     d_iso = body.date_iso or _today()
     # Upsert por fecha
@@ -521,7 +522,7 @@ def log_weight(
 def weight_history(
     days: int = Query(90, ge=7, le=365),
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     cutoff = (date.today() - timedelta(days=days)).isoformat()
     logs   = db.query(WeightLog).filter(
@@ -575,7 +576,7 @@ def weight_history(
 def delete_weight(
     log_id: str,
     db:     Session = Depends(get_db),
-    me:     User    = Depends(get_current_user),
+    me:     User    = Depends(require_feature("nutrition")),
 ):
     log = db.query(WeightLog).filter(WeightLog.id == log_id, WeightLog.user_id == me.id).first()
     if not log:
@@ -606,7 +607,7 @@ def supplement_catalog():
 def get_supplements(
     date_iso: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     logs = db.query(SupplementLog).filter(
         SupplementLog.user_id  == me.id,
@@ -633,7 +634,7 @@ def get_supplements(
 def log_supplement(
     body: _SupplementIn,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     d_iso = body.date_iso or _today()
     log   = SupplementLog(
@@ -653,7 +654,7 @@ def log_supplement(
 def delete_supplement(
     log_id: str,
     db:     Session = Depends(get_db),
-    me:     User    = Depends(get_current_user),
+    me:     User    = Depends(require_feature("nutrition")),
 ):
     log = db.query(SupplementLog).filter(
         SupplementLog.id == log_id, SupplementLog.user_id == me.id
@@ -698,7 +699,7 @@ class _CustomFoodIn(BaseModel):
 @router.get("/custom-foods")
 def list_custom_foods(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     foods = db.query(CustomFood).filter(CustomFood.user_id == me.id).order_by(CustomFood.name).all()
     return [
@@ -720,7 +721,7 @@ def list_custom_foods(
 def create_custom_food(
     body: _CustomFoodIn,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     food = CustomFood(
         user_id      = me.id,
@@ -745,7 +746,7 @@ def update_custom_food(
     food_id: str,
     body:    _CustomFoodIn,
     db:      Session = Depends(get_db),
-    me:      User    = Depends(get_current_user),
+    me:      User    = Depends(require_feature("nutrition")),
 ):
     food = db.query(CustomFood).filter(CustomFood.id == food_id, CustomFood.user_id == me.id).first()
     if not food:
@@ -762,7 +763,7 @@ def update_custom_food(
 def delete_custom_food(
     food_id: str,
     db:      Session = Depends(get_db),
-    me:      User    = Depends(get_current_user),
+    me:      User    = Depends(require_feature("nutrition")),
 ):
     food = db.query(CustomFood).filter(CustomFood.id == food_id, CustomFood.user_id == me.id).first()
     if not food:
@@ -790,7 +791,7 @@ class _FavoriteIn(BaseModel):
 @router.get("/favorites")
 def list_favorites(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     favs = db.query(FavoriteFood).filter(
         FavoriteFood.user_id == me.id
@@ -818,7 +819,7 @@ def list_favorites(
 def add_favorite(
     body: _FavoriteIn,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     # Upsert: si ya existe, incrementar use_count
     existing = db.query(FavoriteFood).filter(
@@ -853,7 +854,7 @@ def add_favorite(
 def remove_favorite(
     fav_id: str,
     db:     Session = Depends(get_db),
-    me:     User    = Depends(get_current_user),
+    me:     User    = Depends(require_feature("nutrition")),
 ):
     fav = db.query(FavoriteFood).filter(
         FavoriteFood.id == fav_id, FavoriteFood.user_id == me.id
@@ -884,7 +885,7 @@ def race_protocol(
     temp_celsius:float = Query(22.0,   ge=0,  le=45),
     ftp_w:       int   = Query(250,    ge=100, le=500),
     db:          Session = Depends(get_db),
-    me:          User    = Depends(get_current_user),
+    me:          User    = Depends(require_feature("nutrition")),
 ):
     """
     Genera protocolo de nutrición de carrera personalizado.
@@ -1068,7 +1069,7 @@ def _race_briefing(dist: str, cho_g_h: float, fluid_ml_h: float,
 def nutrition_insights(
     date_iso: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     """
     Genera hasta 4 insights proactivos basados en:
@@ -1214,7 +1215,7 @@ def nutrition_insights(
 def nutrition_dashboard(
     date_iso: Optional[str] = Query(None),
     db:       Session = Depends(get_db),
-    me:       User    = Depends(get_current_user),
+    me:       User    = Depends(require_feature("nutrition")),
 ):
     """
     Endpoint maestro de la página de nutrición.
@@ -1366,7 +1367,7 @@ def nutrition_dashboard(
 def get_nutrition_compliance(
     days: int = Query(default=7, ge=1, le=30),
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("nutrition")),
 ):
     """
     Compliance score de macros para los últimos N días.
@@ -1457,7 +1458,7 @@ def get_nutrition_compliance(
 @router.get("/labs-sync")
 def get_labs_nutrition_sync(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("nutrition")),
 ):
     """
     Blood Labs ↔ Supplement Protocol Bridge.

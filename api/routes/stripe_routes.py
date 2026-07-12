@@ -1,14 +1,14 @@
 """
 Stripe — gestión de suscripciones LabX.
-Planes: basico (gratis) | pro ($19/mes) | elite ($39/mes) | coach ($49/mes)
+Planes: basico (gratis) | agegroup ($19/mes) | elite ($39/mes) | coach ($49/mes)
 
 Variables de entorno requeridas:
-  STRIPE_SECRET_KEY      sk_live_... o sk_test_...
-  STRIPE_WEBHOOK_SECRET  whsec_...
-  STRIPE_PRICE_PRO       price_...
-  STRIPE_PRICE_ELITE     price_...
-  STRIPE_PRICE_COACH     price_...
-  APP_URL                https://labx.app (para redirect)
+  STRIPE_SECRET_KEY        sk_live_... o sk_test_...
+  STRIPE_WEBHOOK_SECRET    whsec_...
+  STRIPE_PRICE_AGEGROUP    price_...
+  STRIPE_PRICE_ELITE       price_...
+  STRIPE_PRICE_COACH       price_...
+  APP_URL                  https://labx.app (para redirect)
 """
 from __future__ import annotations
 
@@ -24,15 +24,19 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..database import get_db
 from ..models import User
+# Única fuente de verdad de feature-gating por plan (usada también por
+# blood_lab_routes, adaptive_routes, nutrition_routes, etc.) — se
+# re-exporta acá para no romper imports existentes de este módulo.
+from ..plan_features import _PLAN_FEATURES, has_feature, require_feature
 
 logger = logging.getLogger("labx.stripe")
 router = APIRouter(prefix="/stripe", tags=["stripe"])
 
 # Mapa price_id → plan_nivel
 _PRICE_TO_PLAN: dict[str, str] = {
-    os.getenv("STRIPE_PRICE_PRO",   "price_pro"):   "pro",
-    os.getenv("STRIPE_PRICE_ELITE", "price_elite"): "elite",
-    os.getenv("STRIPE_PRICE_COACH", "price_coach"): "coach",
+    os.getenv("STRIPE_PRICE_AGEGROUP", "price_agegroup"): "agegroup",
+    os.getenv("STRIPE_PRICE_ELITE",    "price_elite"):    "elite",
+    os.getenv("STRIPE_PRICE_COACH",    "price_coach"):    "coach",
 }
 
 
@@ -45,42 +49,6 @@ def _stripe():
     return _s
 
 
-# ── Feature flags por plan ─────────────────────────────────────
-_PLAN_FEATURES: dict[str, set[str]] = {
-    "basico": {"dashboard", "wellness", "workout_log"},
-    "pro":    {"dashboard", "wellness", "workout_log", "pmc", "race_predictor",
-               "blood_labs", "nutrition", "garmin_sync"},
-    "elite":  {"dashboard", "wellness", "workout_log", "pmc", "race_predictor",
-               "blood_labs", "nutrition", "garmin_sync", "advanced_analytics",
-               "priority_support"},
-    "coach":  {"dashboard", "wellness", "workout_log", "pmc", "race_predictor",
-               "blood_labs", "nutrition", "garmin_sync", "advanced_analytics",
-               "priority_support", "coach_platform", "athlete_management"},
-}
-
-
-def has_feature(user: User, feature: str) -> bool:
-    """Verifica si el usuario tiene acceso a una feature según su plan."""
-    plan = (user.plan_nivel or "basico").lower()
-    allowed = _PLAN_FEATURES.get(plan, _PLAN_FEATURES["basico"])
-    # Coach y admin siempre tienen acceso completo
-    if user.rol in ("coach", "admin"):
-        return True
-    return feature in allowed
-
-
-def require_feature(feature: str):
-    """FastAPI dependency — lanza 403 si el usuario no tiene la feature."""
-    def _check(user: User = Depends(get_current_user)):
-        if not has_feature(user, feature):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Tu plan '{user.plan_nivel or 'basico'}' no incluye '{feature}'. Actualiza tu suscripción.",
-            )
-        return user
-    return _check
-
-
 # ── Endpoints ──────────────────────────────────────────────────
 
 @router.get("/plans")
@@ -88,10 +56,10 @@ def list_plans():
     """Devuelve los planes disponibles y sus features."""
     return {
         "plans": [
-            {"id": "basico",  "name": "Básico",  "price_usd": 0,  "features": sorted(_PLAN_FEATURES["basico"])},
-            {"id": "pro",     "name": "Pro",     "price_usd": 19, "features": sorted(_PLAN_FEATURES["pro"])},
-            {"id": "elite",   "name": "Élite",   "price_usd": 39, "features": sorted(_PLAN_FEATURES["elite"])},
-            {"id": "coach",   "name": "Coach",   "price_usd": 49, "features": sorted(_PLAN_FEATURES["coach"])},
+            {"id": "basico",   "name": "Básico",   "price_usd": 0,  "features": sorted(_PLAN_FEATURES["basico"])},
+            {"id": "agegroup", "name": "Agegroup", "price_usd": 19, "features": sorted(_PLAN_FEATURES["agegroup"])},
+            {"id": "elite",    "name": "Élite",    "price_usd": 39, "features": sorted(_PLAN_FEATURES["elite"])},
+            {"id": "coach",    "name": "Coach",    "price_usd": 49, "features": sorted(_PLAN_FEATURES["coach"])},
         ]
     }
 
@@ -141,11 +109,11 @@ def create_checkout(
     """S15: Crea una sesión de Stripe Checkout para upgrading de plan con idempotency."""
     import uuid as _uuid
     stripe = _stripe()  # raises 503 first if STRIPE_SECRET_KEY not set
-    plan = body.get("plan", "pro").lower()
+    plan = body.get("plan", "agegroup").lower()
     price_map = {
-        "pro":   os.getenv("STRIPE_PRICE_PRO",   ""),
-        "elite": os.getenv("STRIPE_PRICE_ELITE", ""),
-        "coach": os.getenv("STRIPE_PRICE_COACH", ""),
+        "agegroup": os.getenv("STRIPE_PRICE_AGEGROUP", ""),
+        "elite":    os.getenv("STRIPE_PRICE_ELITE", ""),
+        "coach":    os.getenv("STRIPE_PRICE_COACH", ""),
     }
     price_id = price_map.get(plan, "")
     if not price_id:

@@ -234,7 +234,10 @@ class TestTrainingDistribution:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def auth_headers(client, athlete_user):
+def auth_headers(client, db, athlete_user):
+    # Analytics es feature de plan Agegroup+ (ver api/plan_features.py)
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()
     token = login(client, "athlete@test.com", "AthlPass123")
     return {"Authorization": f"Bearer {token}"}
 

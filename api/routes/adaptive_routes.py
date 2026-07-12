@@ -44,9 +44,10 @@ from ..models import (
     RecoveryScore, RaceEvent, CoachAthlete,
     PlanAdaptation, WeeklyPlanSnapshot,
 )
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.adaptive")
-router = APIRouter(prefix="/adaptive", tags=["adaptive"])
+router = APIRouter(prefix="/adaptive", tags=["adaptive"], dependencies=[Depends(require_feature("adaptive"))])
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTES FISIOLÓGICAS

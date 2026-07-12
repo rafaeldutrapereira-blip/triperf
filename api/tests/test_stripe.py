@@ -16,13 +16,15 @@ class TestFeatureFlags:
         u = User(rol="athlete", plan_nivel="basico")
         assert has_feature(u, "dashboard") is True
 
-    def test_basico_no_garmin(self):
+    def test_basico_no_nutrition(self):
+        # Garmin sync es basico (todos los planes) — el corte real de plan
+        # empieza en Agegroup, con módulos como nutrición/analytics/recovery.
         u = User(rol="athlete", plan_nivel="basico")
-        assert has_feature(u, "garmin_sync") is False
+        assert has_feature(u, "nutrition") is False
 
-    def test_pro_has_garmin(self):
-        u = User(rol="athlete", plan_nivel="pro")
-        assert has_feature(u, "garmin_sync") is True
+    def test_agegroup_has_nutrition(self):
+        u = User(rol="athlete", plan_nivel="agegroup")
+        assert has_feature(u, "nutrition") is True
 
     def test_coach_has_all(self):
         u = User(rol="coach", plan_nivel="basico")
@@ -50,7 +52,7 @@ class TestPlansEndpoint:
         assert "plans" in data
         ids = [p["id"] for p in data["plans"]]
         assert "basico" in ids
-        assert "pro" in ids
+        assert "agegroup" in ids
         assert "elite" in ids
         assert "coach" in ids
 
@@ -68,13 +70,13 @@ class TestPlansEndpoint:
         assert "garmin_sync" not in data["features"]
 
     def test_checkout_requires_auth(self, client):
-        r = client.post("/api/stripe/checkout", json={"plan": "pro"})
+        r = client.post("/api/stripe/checkout", json={"plan": "agegroup"})
         assert r.status_code == 401
 
     def test_checkout_no_stripe_key(self, client, athlete_user):
         """Sin STRIPE_SECRET_KEY configurada, debe retornar 503."""
         token = login(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/stripe/checkout",
-                        json={"plan": "pro"},
+                        json={"plan": "agegroup"},
                         headers=auth_headers(token))
         assert r.status_code == 503

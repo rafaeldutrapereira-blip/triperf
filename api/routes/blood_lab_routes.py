@@ -37,6 +37,7 @@ from ..database import get_db
 from ..models import BloodLabAlert, BloodLabExam, GarminTrainingLoad, User, AuditLog
 from ..auth import get_current_user
 from ..redis_client import check_rate_limit_redis
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.blood_labs")
 router = APIRouter(prefix="/labs", tags=["blood_labs"])
@@ -391,7 +392,7 @@ def get_markers_catalog():
 def create_exam(
     body: dict,
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("blood_labs")),
 ):
     """
     Crea un nuevo examen de sangre.
@@ -470,7 +471,7 @@ def create_exam(
 def list_exams(
     limit: int = Query(20, ge=1, le=100),
     db:    Session = Depends(get_db),
-    me:    User    = Depends(get_current_user),
+    me:    User    = Depends(require_feature("blood_labs")),
 ):
     """Lista los exámenes del atleta, más recientes primero."""
     exams = (
@@ -511,7 +512,7 @@ def list_exams(
 def get_exam(
     exam_id: str,
     db:      Session = Depends(get_db),
-    me:      User    = Depends(get_current_user),
+    me:      User    = Depends(require_feature("blood_labs")),
 ):
     """
     Detalle completo de un examen con análisis de cada marcador.
@@ -586,7 +587,7 @@ def get_exam(
 def delete_exam(
     exam_id: str,
     db:      Session = Depends(get_db),
-    me:      User    = Depends(get_current_user),
+    me:      User    = Depends(require_feature("blood_labs")),
 ):
     exam = db.query(BloodLabExam).filter(
         BloodLabExam.id      == exam_id,
@@ -604,7 +605,7 @@ def analyze_exam_with_ai(
     exam_id: str,
     request: Request,
     db:      Session = Depends(get_db),
-    me:      User    = Depends(get_current_user),
+    me:      User    = Depends(require_feature("blood_labs")),
 ):
     """
     Dispara la interpretación IA del examen con Claude.
@@ -698,7 +699,7 @@ def get_active_alerts(
     limit:             int  = Query(20, ge=1, le=100),
     include_dismissed: bool = Query(False),
     db:    Session = Depends(get_db),
-    me:    User    = Depends(get_current_user),
+    me:    User    = Depends(require_feature("blood_labs")),
 ):
     """Retorna las alertas activas de labs del atleta, ordenadas por severidad."""
     q = (
@@ -734,7 +735,7 @@ def get_active_alerts(
 def dismiss_alert(
     alert_id: str,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     alert = db.query(BloodLabAlert).filter(
         BloodLabAlert.id      == alert_id,
@@ -751,7 +752,7 @@ def dismiss_alert(
 def get_labs_correlation(
     days: int = Query(120, ge=30, le=365),
     db:   Session = Depends(get_db),
-    me:   User    = Depends(get_current_user),
+    me:   User    = Depends(require_feature("blood_labs")),
 ):
     """
     Correlación temporal entre Labs y Carga de Entrenamiento.
@@ -833,7 +834,7 @@ def get_labs_correlation(
 @router.get("/summary")
 def get_labs_summary(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Resumen del estado actual de Labs del atleta:
@@ -912,7 +913,7 @@ def get_labs_summary(
 @router.get("/correlations")
 def get_labs_correlations(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Correlaciones estadísticas entre marcadores de labs y métricas de rendimiento.
@@ -927,7 +928,7 @@ def get_labs_correlations(
 @router.post("/correlations/ai-interpretation")
 async def get_labs_ai_interpretation(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Genera interpretación narrativa IA de las correlaciones labs↔rendimiento.
@@ -947,7 +948,7 @@ async def get_labs_ai_interpretation(
 def get_labs_timeline(
     months: int = 12,
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Timeline de todos los marcadores de labs en los últimos N meses,
@@ -968,7 +969,7 @@ def get_labs_timeline(
 @router.get("/training-impact")
 def get_labs_training_impact(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Training Restriction Score (TRS) — impacto de los biomarcadores actuales
@@ -1063,7 +1064,7 @@ def get_labs_training_impact(
 @router.get("/team")
 def get_team_labs_status(
     db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
+    me: User    = Depends(require_feature("blood_labs")),
 ):
     """
     Vista de equipo (solo coaches y admins): estado de labs de todos los atletas asignados.

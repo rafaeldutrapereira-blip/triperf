@@ -46,7 +46,7 @@ def _create_coach(db, email="coach44@test.com", nombre="Coach 44") -> "User":
         nombre=nombre,
         password_hash=hash_password("Test1234!"),
         rol="coach",
-        plan_nivel="pro",
+        plan_nivel="agegroup",
         activo=True,
     )
     db.add(u)

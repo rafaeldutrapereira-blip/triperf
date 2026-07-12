@@ -23,8 +23,9 @@ from ..models import (
     User, MentalCheckin, MentalFatigueScore, MentalProtocolSession,
     RecoveryScore, WellnessLog, GarminActivity, GarminTrainingLoad, RaceEvent,
 )
+from ..plan_features import require_feature
 
-router = APIRouter(prefix="/mental", tags=["mental"])
+router = APIRouter(prefix="/mental", tags=["mental"], dependencies=[Depends(require_feature("mental"))])
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -189,7 +189,10 @@ from .conftest import login
 
 
 @pytest.fixture
-def auth_headers(client, athlete_user):
+def auth_headers(client, db, athlete_user):
+    # Blood Labs (correlaciones/timeline) es feature de plan Elite
+    athlete_user.plan_nivel = "elite"
+    db.commit()
     token = login(client, "athlete@test.com", "AthlPass123")
     return {"Authorization": f"Bearer {token}"}
 

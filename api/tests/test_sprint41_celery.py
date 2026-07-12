@@ -15,13 +15,19 @@ def client(db):
     app.dependency_overrides.clear()
 
 
-def _register_and_login(client, email: str, password: str = "Test1234!") -> str:
+def _register_and_login(client, email: str, password: str = "Test1234!", db=None) -> str:
     """Register a new athlete user and return access_token."""
     r = client.post("/api/auth/register", json={
         "email": email, "password": password,
         "nombre": "Test", "apellido": "User", "rol": "athlete"
     })
     assert r.status_code in (200, 201), f"Register failed: {r.text}"
+    if db is not None:
+        # AI Coach es feature de plan Elite (ver api/plan_features.py)
+        from api.models import User
+        u = db.query(User).filter(User.email == email).first()
+        u.plan_nivel = "elite"
+        db.commit()
     r2 = client.post("/api/auth/login", json={"email": email, "password": password})
     assert r2.status_code == 200, f"Login failed: {r2.text}"
     return r2.json()["access_token"]
@@ -118,9 +124,9 @@ class TestDispatchGarminSync:
 # ── AI endpoint async tests ───────────────────────────────────────────────────
 
 class TestAiCoachAsync:
-    def test_coach_suggest_returns_503_without_api_key(self, client):
+    def test_coach_suggest_returns_503_without_api_key(self, client, db):
         """Without ANTHROPIC_API_KEY, returns 503."""
-        token = _register_and_login(client, "aitest@test.com")
+        token = _register_and_login(client, "aitest@test.com", db=db)
         resp = client.post(
             "/api/ai/coach-suggest",
             json={"message": "what training should I do today?"},
@@ -132,8 +138,8 @@ class TestAiCoachAsync:
         resp = client.post("/api/ai/coach-suggest", json={"message": "hello"})
         assert resp.status_code in (401, 403)
 
-    def test_coach_suggest_validates_empty_message(self, client):
-        token = _register_and_login(client, "aitest2@test.com")
+    def test_coach_suggest_validates_empty_message(self, client, db):
+        token = _register_and_login(client, "aitest2@test.com", db=db)
         resp = client.post(
             "/api/ai/coach-suggest",
             json={"message": ""},
@@ -141,8 +147,8 @@ class TestAiCoachAsync:
         )
         assert resp.status_code in (422, 503)
 
-    def test_coach_suggest_validates_long_message(self, client):
-        token = _register_and_login(client, "aitest3@test.com")
+    def test_coach_suggest_validates_long_message(self, client, db):
+        token = _register_and_login(client, "aitest3@test.com", db=db)
         resp = client.post(
             "/api/ai/coach-suggest",
             json={"message": "x" * 2001},

@@ -82,7 +82,7 @@ def coach_user(db) -> User:
         nombre="Coach Test",
         password_hash=hash_password("CoachPass123"),
         rol="coach",
-        plan_nivel="pro",
+        plan_nivel="agegroup",
         activo=True,
     )
     db.add(u)

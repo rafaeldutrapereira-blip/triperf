@@ -50,31 +50,36 @@ class TestRoleCheckFix:
 
 class TestBloodLabDateValidation:
 
-    def test_create_exam_requires_date(self, client, athlete_user):
+    def test_create_exam_requires_date(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/labs/exams", headers=h,
                         json={"values": {"ferritin": 45.0}})
         assert r.status_code == 422
 
-    def test_create_exam_invalid_date_format(self, client, athlete_user):
+    def test_create_exam_invalid_date_format(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/labs/exams", headers=h,
                         json={"date_iso": "03-07-2026", "values": {"ferritin": 45.0}})
         assert r.status_code == 422
 
-    def test_create_exam_future_date_rejected(self, client, athlete_user):
+    def test_create_exam_future_date_rejected(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/labs/exams", headers=h,
                         json={"date_iso": "2099-01-01", "values": {"ferritin": 45.0}})
         assert r.status_code == 422
 
-    def test_create_exam_invalid_calendar_date(self, client, athlete_user):
+    def test_create_exam_invalid_calendar_date(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/labs/exams", headers=h,
                         json={"date_iso": "2026-13-45", "values": {"ferritin": 45.0}})
         assert r.status_code == 422
 
-    def test_create_exam_valid_date_accepted(self, client, athlete_user):
+    def test_create_exam_valid_date_accepted(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.post("/api/labs/exams", headers=h,
                         json={"date_iso": "2026-06-15", "values": {"ferritin": 45.0}})
@@ -87,9 +92,10 @@ class TestBloodLabDateValidation:
 
 class TestBloodLabIDOR:
 
-    def test_athlete_cannot_read_another_users_exam(self, client, athlete_user, coach_user):
+    def test_athlete_cannot_read_another_users_exam(self, client, db, athlete_user, coach_user):
         # coach creates an exam as themselves (requires athlete role, but for test purposes
         # we create directly via fixture and check that athlete can't read it)
+        athlete_user.plan_nivel = "elite"; db.commit()
         from api.tests.conftest import TestingSessionLocal
         from api.models import BloodLabExam
         import json
@@ -108,12 +114,14 @@ class TestBloodLabIDOR:
         r = client.get(f"/api/labs/exams/{eid}", headers=h)
         assert r.status_code == 404
 
-    def test_athlete_cannot_delete_another_users_exam(self, client, athlete_user):
+    def test_athlete_cannot_delete_another_users_exam(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.delete("/api/labs/exams/nonexistent-exam-id", headers=h)
         assert r.status_code == 404
 
-    def test_athlete_cannot_dismiss_another_users_alert(self, client, athlete_user):
+    def test_athlete_cannot_dismiss_another_users_alert(self, client, db, athlete_user):
+        athlete_user.plan_nivel = "elite"; db.commit()
         h = _tok(client, "athlete@test.com", "AthlPass123")
         r = client.patch("/api/labs/alerts/fake-alert-id/dismiss", headers=h)
         assert r.status_code == 404

@@ -40,9 +40,10 @@ from ..models import (
     GarminTrainingLoad, GarminActivity,
     WellnessLog, RecoveryScore,
 )
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.recovery")
-router = APIRouter(prefix="/recovery", tags=["recovery"])
+router = APIRouter(prefix="/recovery", tags=["recovery"], dependencies=[Depends(require_feature("recovery"))])
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # MOTOR DE RECUPERACIÃ“N â€” corazÃ³n del mÃ³dulo

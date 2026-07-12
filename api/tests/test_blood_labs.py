@@ -104,7 +104,10 @@ class TestSexHelper:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def auth_headers(client, athlete_user):
+def auth_headers(client, db, athlete_user):
+    # Blood Labs es feature de plan Elite (ver api/plan_features.py)
+    athlete_user.plan_nivel = "elite"
+    db.commit()
     token = login(client, "athlete@test.com", "AthlPass123")
     return {"Authorization": f"Bearer {token}"}
 

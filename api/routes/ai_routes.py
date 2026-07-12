@@ -25,9 +25,10 @@ from ..database import get_db
 from ..models import AIInsight, AIMessage, AISession, User
 from ..auth import get_current_user
 from ..services.context_engine import get_context_for_prompt
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.ai")
-router = APIRouter(prefix="/ai", tags=["ai"])
+router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(require_feature("ai_coach"))])
 
 _ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
