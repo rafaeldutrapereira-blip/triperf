@@ -890,6 +890,8 @@ class PersonalRecord(Base):
     id         = Column(String, primary_key=True, default=_uuid)
     user_id    = Column(String, ForeignKey("users.id"), nullable=False)
     event      = Column(String, nullable=False)    # "swim_1500m", "bike_40km", "run_10km", "ironman", etc.
+    sport      = Column(String, nullable=True)      # "swim" | "bike" | "run" | "triathlon"
+    place      = Column(String, nullable=True)      # "Pucón, Chile" (opcional)
     value_sec  = Column(Float,  nullable=False)    # tiempo en segundos
     value_disp = Column(String, nullable=True)     # "1:32:45" (display)
     achieved_at= Column(String, nullable=True)     # YYYY-MM-DD

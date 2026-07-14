@@ -1093,12 +1093,33 @@ def get_data_footprint(
 # ─────────────────────────────────────────────
 
 class _PRIn(BaseModel):
-    event:      str
-    value_sec:  float
-    value_disp: str | None = None
-    achieved_at: str | None = None
-    source:     str = "manual"
-    notes:      str | None = None
+    # Nombres alineados con lo que manda el formulario de Records en
+    # athlete_profile.html (antes este schema pedía value_sec/value_disp/
+    # achieved_at, campos que el frontend nunca mandó — todo POST fallaba
+    # 422 y el usuario solo veía "Error guardando record").
+    sport:  str | None = None
+    event:  str
+    time:   str                    # "hh:mm:ss", "mm:ss" o segundos — se parsea abajo
+    date:   str | None = None
+    place:  str | None = None
+    source: str = "manual"
+    notes:  str | None = None
+
+
+def _parse_time_to_sec(raw: str) -> float:
+    """Acepta 'hh:mm:ss', 'mm:ss' o un número de segundos plano."""
+    raw = (raw or "").strip()
+    parts = raw.split(":")
+    try:
+        if len(parts) == 3:
+            h, m, s = parts
+            return int(h) * 3600 + int(m) * 60 + float(s)
+        if len(parts) == 2:
+            m, s = parts
+            return int(m) * 60 + float(s)
+        return float(raw)
+    except ValueError:
+        raise HTTPException(400, f"Formato de marca inválido: '{raw}' (usa hh:mm:ss o mm:ss)")
 
 
 @router.get("/cycle-compare")
@@ -1215,6 +1236,8 @@ def get_personal_records(
         {
             "id":           pr.id,
             "event":        pr.event,
+            "sport":        pr.sport,
+            "place":        pr.place,
             "value_sec":    pr.value_sec,
             "value_disp":   pr.value_disp,
             "achieved_at":  pr.achieved_at,
@@ -1236,7 +1259,8 @@ def upsert_personal_record(
     Si ya existe un PR para ese evento y el nuevo tiempo es mejor, lo reemplaza.
     """
     from ..models import PersonalRecord
-    if body.value_sec <= 0:
+    value_sec = _parse_time_to_sec(body.time)
+    if value_sec <= 0:
         raise HTTPException(400, "El tiempo debe ser mayor a 0 segundos")
 
     existing = (
@@ -1246,7 +1270,7 @@ def upsert_personal_record(
         .first()
     )
 
-    if existing and body.value_sec >= existing.value_sec:
+    if existing and value_sec >= existing.value_sec:
         # No es un nuevo PR
         return {
             "improved": False,
@@ -1261,9 +1285,11 @@ def upsert_personal_record(
     pr = PersonalRecord(
         user_id=me.id,
         event=body.event,
-        value_sec=body.value_sec,
-        value_disp=body.value_disp,
-        achieved_at=body.achieved_at,
+        sport=body.sport,
+        place=body.place,
+        value_sec=value_sec,
+        value_disp=body.time,
+        achieved_at=body.date,
         source=body.source,
         notes=body.notes,
     )
@@ -1275,6 +1301,8 @@ def upsert_personal_record(
         "pr": {
             "id":          pr.id,
             "event":       pr.event,
+            "sport":       pr.sport,
+            "place":       pr.place,
             "value_sec":   pr.value_sec,
             "value_disp":  pr.value_disp,
             "achieved_at": pr.achieved_at,
