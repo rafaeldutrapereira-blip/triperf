@@ -572,18 +572,21 @@ def athlete_dashboard(
     acwr, acwr_zone = compute_acwr(list(load_rows))
     acwr_by_sport = compute_acwr_by_sport(me.id, db)
 
-    # ── PMC (últimas 52 semanas) + ACWR history ──────────────────────────────
+    # ── PMC (historial completo, muestreado semanal) + ACWR history ─────────
+    # Sin tope de fecha: la opción "Todo" de detalle.html filtra en el
+    # cliente sobre este mismo payload, así que si acá se corta a 52
+    # semanas, "Todo" nunca puede mostrar más que eso aunque haya años de
+    # historial real sincronizado.
     pmc = []
     acwr_history = []
     mo  = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
-    cutoff_pmc = (_date_.today() - _td(weeks=52)).isoformat()
     load_list = list(load_rows)  # already ordered by date_iso asc
     for idx, r in enumerate(load_list):
         try:
             dt = _date_.fromisoformat(r.date_iso)
         except ValueError:
             continue
-        if r.date_iso >= cutoff_pmc and dt.weekday() == 6:  # domingos
+        if dt.weekday() == 6:  # domingos
             pmc.append({
                 "dt":  r.date_iso,
                 "l":   f"{dt.day} {mo[dt.month-1]}",
@@ -670,22 +673,19 @@ def athlete_dashboard(
         .first()
     )
 
-    # ── Históricos para wellbeing charts (90 días) ───────────────────────────
-    _ninety_ago = (_date_.today() - _td(days=90)).isoformat()
+    # ── Históricos para wellbeing charts ─────────────────────────────────────
+    # Sin tope de fecha (ver el mismo comentario en el bloque de PMC más
+    # arriba): la opción "Todo" de detalle.html necesita el historial
+    # completo, no solo los últimos 90/365 días.
     _health_90 = (
         db.query(GarminHealthDaily)
-        .filter(GarminHealthDaily.user_id == me.id,
-                GarminHealthDaily.date_iso >= _ninety_ago)
+        .filter(GarminHealthDaily.user_id == me.id)
         .order_by(GarminHealthDaily.date_iso.asc())
         .all()
     )
-    # VO2max cambia lento y detalle.html?metric=vo2 pide hasta 365 días
-    # (a diferencia del resto de wellbeing, que usa 90) — ventana propia.
-    _year_ago = (_date_.today() - _td(days=365)).isoformat()
     _health_vo2 = (
         db.query(GarminHealthDaily)
         .filter(GarminHealthDaily.user_id == me.id,
-                GarminHealthDaily.date_iso >= _year_ago,
                 (GarminHealthDaily.vo2max_running.isnot(None)) |
                 (GarminHealthDaily.vo2max_cycling.isnot(None)))
         .order_by(GarminHealthDaily.date_iso.asc())
@@ -693,8 +693,7 @@ def athlete_dashboard(
     )
     _sleep_90 = (
         db.query(GarminSleepSession)
-        .filter(GarminSleepSession.user_id == me.id,
-                GarminSleepSession.date_iso >= _ninety_ago)
+        .filter(GarminSleepSession.user_id == me.id)
         .order_by(GarminSleepSession.date_iso.asc())
         .all()
     )
