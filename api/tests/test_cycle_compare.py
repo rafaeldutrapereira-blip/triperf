@@ -158,3 +158,35 @@ def test_cycle_compare_missing_anchor(client, db, athlete_user):
         headers=auth_headers(token),
     )
     assert r.status_code == 400
+
+
+def test_cycle_compare_without_cycle_c_returns_none(client, db, athlete_user):
+    """Sin date_c/race_c, cycle_c va en null (ciclo C es opcional)."""
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare?date_a=2026-01-15&date_b=2025-01-15",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    assert r.json()["cycle_c"] is None
+
+
+def test_cycle_compare_with_cycle_c(client, db, athlete_user):
+    """Con date_c, se devuelven los 3 ciclos."""
+    _seed_training_load(db, athlete_user.id, "2026-01-15", weeks=16, ctl_start=40, ctl_end=95)
+    _seed_training_load(db, athlete_user.id, "2025-01-15", weeks=16, ctl_start=30, ctl_end=72)
+    _seed_training_load(db, athlete_user.id, "2024-01-15", weeks=16, ctl_start=20, ctl_end=55)
+
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare"
+        "?date_a=2026-01-15&date_b=2025-01-15&date_c=2024-01-15&label_c=Prep+2024",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    d = r.json()
+    assert d["cycle_c"] is not None
+    assert d["cycle_c"]["race"]["name"] == "Prep 2024"
+    assert d["cycle_c"]["stats"]["has_data"] is True
+    # Los tres ciclos rampearon a picos distintos y crecientes
+    assert d["cycle_a"]["stats"]["peak_ctl"] > d["cycle_b"]["stats"]["peak_ctl"] > d["cycle_c"]["stats"]["peak_ctl"]

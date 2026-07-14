@@ -1126,25 +1126,29 @@ def _parse_time_to_sec(raw: str) -> float:
 def cycle_compare(
     race_a:  str | None = Query(None, description="id de RaceEvent — ciclo A (opcional, atajo si ya está registrada)"),
     race_b:  str | None = Query(None, description="id de RaceEvent — ciclo B (opcional)"),
+    race_c:  str | None = Query(None, description="id de RaceEvent — ciclo C (opcional, tercer ciclo)"),
     date_a:  str | None = Query(None, description="YYYY-MM-DD — día de referencia del ciclo A, alternativa a race_a"),
     date_b:  str | None = Query(None, description="YYYY-MM-DD — día de referencia del ciclo B, alternativa a race_b"),
+    date_c:  str | None = Query(None, description="YYYY-MM-DD — día de referencia del ciclo C, alternativa a race_c"),
     label_a: str | None = Query(None, max_length=80),
     label_b: str | None = Query(None, max_length=80),
+    label_c: str | None = Query(None, max_length=80),
     weeks:   int = Query(16, ge=4, le=52, description="semanas de bloque a comparar antes de cada fecha de referencia"),
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
     """
-    Compara dos bloques de entrenamiento (ej. el mismo ciclo sept-dic de dos
-    años distintos) alineados por "días hasta el día de referencia" en vez
-    de fecha de calendario — así el pico de carga de un año queda
-    superpuesto sobre el punto equivalente del ciclo del otro año, sin
-    importar que las fechas de calendario no coincidan.
+    Compara dos o tres bloques de entrenamiento (ej. el mismo ciclo
+    sept-dic de años distintos) alineados por "días hasta el día de
+    referencia" en vez de fecha de calendario — así el pico de carga de
+    un año queda superpuesto sobre el punto equivalente del ciclo de
+    otro año, sin importar que las fechas de calendario no coincidan.
 
     El día de referencia de cada ciclo puede venir de una carrera ya
-    registrada (race_a/race_b) o elegirse directamente con date_a/date_b —
-    no hace falta pasar por el Predictor de Carrera para usar esta
-    comparación.
+    registrada (race_a/race_b/race_c) o elegirse directamente con
+    date_a/date_b/date_c — no hace falta pasar por el Predictor de
+    Carrera. El ciclo C es opcional: si no se manda race_c ni date_c,
+    la respuesta solo trae cycle_a y cycle_b.
     """
     from datetime import timedelta as _td
 
@@ -1212,11 +1216,18 @@ def cycle_compare(
     anchor_a = _resolve_anchor(race_a, date_a, label_a, "Ciclo A")
     anchor_b = _resolve_anchor(race_b, date_b, label_b, "Ciclo B")
 
-    return {
+    result = {
         "weeks":  weeks,
         "cycle_a": _load_cycle(anchor_a),
         "cycle_b": _load_cycle(anchor_b),
+        "cycle_c": None,
     }
+
+    if race_c or date_c:
+        anchor_c = _resolve_anchor(race_c, date_c, label_c, "Ciclo C")
+        result["cycle_c"] = _load_cycle(anchor_c)
+
+    return result
 
 
 @router.get("/personal-records")

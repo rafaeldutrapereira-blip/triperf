@@ -471,6 +471,12 @@ footer {
         <input type="date" id="cc-date-b">
         <input type="text" id="cc-label-b" placeholder="Nombre (opcional, ej. Ironman 2025)">
       </div>
+      <div class="cc-vs">VS</div>
+      <div class="cc-select-group">
+        <label>Ciclo C — día de referencia (opcional)</label>
+        <input type="date" id="cc-date-c">
+        <input type="text" id="cc-label-c" placeholder="Nombre (opcional, ej. Ironman 2024)">
+      </div>
       <div class="cc-select-group" style="flex:0 0 130px">
         <label>Semanas antes</label>
         <select id="cc-weeks">
@@ -488,6 +494,7 @@ footer {
       <div class="cc-legend">
         <div class="cc-legend-item"><span class="cc-legend-dot" style="background:#FF6535"></span><span id="cc-legend-a">Ciclo A</span></div>
         <div class="cc-legend-item"><span class="cc-legend-dot" style="background:#0EA5E9"></span><span id="cc-legend-b">Ciclo B</span></div>
+        <div class="cc-legend-item" id="cc-legend-c-wrap" style="display:none"><span class="cc-legend-dot" style="background:#10B981"></span><span id="cc-legend-c">Ciclo C</span></div>
       </div>
       <div class="chart-panel">
         <div class="chart-body">
@@ -2193,22 +2200,28 @@ window.loadCycleCompare = function(){
   var tok = _ccToken();
   var dateA = document.getElementById('cc-date-a');
   var dateB = document.getElementById('cc-date-b');
+  var dateC = document.getElementById('cc-date-c');
   var labelA = document.getElementById('cc-label-a');
   var labelB = document.getElementById('cc-label-b');
+  var labelC = document.getElementById('cc-label-c');
   var weeksSel = document.getElementById('cc-weeks');
   var emptyEl = document.getElementById('cc-empty');
   var resultEl = document.getElementById('cc-result');
   if(!tok || !dateA || !dateB || !dateA.value || !dateB.value) return;
-  if(dateA.value === dateB.value){
+  var dates = [dateA.value, dateB.value];
+  if(dateC && dateC.value) dates.push(dateC.value);
+  if(new Set(dates).size !== dates.length){
     resultEl.style.display = 'none';
     emptyEl.style.display = '';
-    emptyEl.textContent = 'Elegí dos fechas distintas para comparar.';
+    emptyEl.textContent = 'Elegí fechas distintas para cada ciclo.';
     return;
   }
   var qs = 'date_a='+encodeURIComponent(dateA.value)+'&date_b='+encodeURIComponent(dateB.value)
     + '&weeks='+encodeURIComponent(weeksSel ? weeksSel.value : 16)
     + (labelA && labelA.value.trim() ? '&label_a='+encodeURIComponent(labelA.value.trim()) : '')
-    + (labelB && labelB.value.trim() ? '&label_b='+encodeURIComponent(labelB.value.trim()) : '');
+    + (labelB && labelB.value.trim() ? '&label_b='+encodeURIComponent(labelB.value.trim()) : '')
+    + (dateC && dateC.value ? '&date_c='+encodeURIComponent(dateC.value) : '')
+    + (dateC && dateC.value && labelC && labelC.value.trim() ? '&label_c='+encodeURIComponent(labelC.value.trim()) : '');
   fetch(_ccApi()+'/athlete/cycle-compare?'+qs, { headers:{Authorization:'Bearer '+tok} })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){ if(d) renderCycleCompare(d); })
@@ -2216,10 +2229,11 @@ window.loadCycleCompare = function(){
 };
 
 function renderCycleCompare(d){
-  var a = d.cycle_a, b = d.cycle_b;
+  var a = d.cycle_a, b = d.cycle_b, c = d.cycle_c || null;
   var emptyEl  = document.getElementById('cc-empty');
   var resultEl = document.getElementById('cc-result');
-  if(!a.stats.has_data && !b.stats.has_data){
+  var anyData = a.stats.has_data || b.stats.has_data || (c && c.stats.has_data);
+  if(!anyData){
     resultEl.style.display = 'none';
     emptyEl.style.display = '';
     emptyEl.textContent = 'No hay datos de entrenamiento sincronizados en las semanas previas a estas fechas.';
@@ -2232,6 +2246,15 @@ function renderCycleCompare(d){
   var labelB = b.race.name + ' (' + b.race.date_iso.slice(0,4) + ')';
   document.getElementById('cc-legend-a').textContent = labelA;
   document.getElementById('cc-legend-b').textContent = labelB;
+  var legendCWrap = document.getElementById('cc-legend-c-wrap');
+  var labelC = null;
+  if(c){
+    labelC = c.race.name + ' (' + c.race.date_iso.slice(0,4) + ')';
+    document.getElementById('cc-legend-c').textContent = labelC;
+    legendCWrap.style.display = '';
+  } else {
+    legendCWrap.style.display = 'none';
+  }
 
   // Eje X compartido: semanas antes de la carrera (no fecha de calendario),
   // así el pico de un ciclo queda superpuesto sobre el punto equivalente
@@ -2249,8 +2272,13 @@ function renderCycleCompare(d){
     return labels.map(function(wk){ return byWeek[wk] != null ? byWeek[wk] : null; });
   }
 
-  var dataA = seriesToWeekly(a.series);
-  var dataB = seriesToWeekly(b.series);
+  var datasets = [
+    { label: labelA, data: seriesToWeekly(a.series), borderColor:'#FF6535', backgroundColor:'rgba(255,101,53,.08)', borderWidth:2.5, pointRadius:0, tension:.3, spanGaps:true, fill:true },
+    { label: labelB, data: seriesToWeekly(b.series), borderColor:'#0EA5E9', backgroundColor:'rgba(14,165,233,.06)', borderWidth:2.5, pointRadius:0, tension:.3, spanGaps:true, fill:true },
+  ];
+  if(c){
+    datasets.push({ label: labelC, data: seriesToWeekly(c.series), borderColor:'#10B981', backgroundColor:'rgba(16,185,129,.06)', borderWidth:2.5, pointRadius:0, tension:.3, spanGaps:true, fill:true });
+  }
 
   if(CC_CHART){ CC_CHART.destroy(); CC_CHART = null; }
   var ctx = document.getElementById('cc-chart').getContext('2d');
@@ -2258,10 +2286,7 @@ function renderCycleCompare(d){
     type: 'line',
     data: {
       labels: labels.map(function(w){ return w===0 ? 'Carrera' : (w+'sem'); }),
-      datasets: [
-        { label: labelA, data: dataA, borderColor:'#FF6535', backgroundColor:'rgba(255,101,53,.08)', borderWidth:2.5, pointRadius:0, tension:.3, spanGaps:true, fill:true },
-        { label: labelB, data: dataB, borderColor:'#0EA5E9', backgroundColor:'rgba(14,165,233,.06)', borderWidth:2.5, pointRadius:0, tension:.3, spanGaps:true, fill:true },
-      ]
+      datasets: datasets
     },
     options: {
       responsive:true, maintainAspectRatio:false,
@@ -2273,11 +2298,13 @@ function renderCycleCompare(d){
     }
   });
 
-  renderCycleStats(a, b);
+  renderCycleStats(a, b, c);
 }
 
-function renderCycleStats(a, b){
+function renderCycleStats(a, b, c){
   var grid = document.getElementById('cc-stats-grid');
+  var cols = c ? [ {v:a,color:'#FF6535'}, {v:b,color:'#0EA5E9'}, {v:c,color:'#10B981'} ] : [ {v:a,color:'#FF6535'}, {v:b,color:'#0EA5E9'} ];
+
   function deltaHtml(valA, valB, higherIsBetter){
     if(valA == null || valB == null || higherIsBetter == null) return '';
     var diff = valA - valB;
@@ -2287,21 +2314,39 @@ function renderCycleStats(a, b){
     var arrow = diff > 0 ? '▲' : '▼';
     return '<span class="cc-stat-delta '+cls+'">'+arrow+' '+Math.abs(Math.round(diff*10)/10)+'</span>';
   }
+  // Con 3 ciclos, en vez de deltas de a pares (confuso con 3 valores) se
+  // marca el mejor valor de la fila con un punto — igual de "vistoso" sin
+  // saturar de números.
+  function bestBadge(vals, higherIsBetter){
+    if(higherIsBetter == null) return vals.map(function(){ return ''; });
+    var present = vals.filter(function(v){ return v != null; });
+    if(present.length < 2) return vals.map(function(){ return ''; });
+    var best = higherIsBetter ? Math.max.apply(null, present) : Math.min.apply(null, present);
+    return vals.map(function(v){
+      return (v != null && Math.abs(v - best) < 0.05) ? '<span class="cc-stat-delta cc-delta-up">★ mejor</span>' : '';
+    });
+  }
+
   var rows = [
-    { name:'Pico CTL alcanzado',      a:a.stats.peak_ctl,     b:b.stats.peak_ctl,     higher:true },
-    { name:'CTL el día de carrera',   a:a.stats.ctl_race_day, b:b.stats.ctl_race_day, higher:true },
-    { name:'TSB el día de carrera',   a:a.stats.tsb_race_day, b:b.stats.tsb_race_day, higher:null },
-    { name:'TSS total del bloque',    a:a.stats.total_tss,    b:b.stats.total_tss,    higher:true },
+    { name:'Pico CTL alcanzado',      key:'peak_ctl',     higher:true },
+    { name:'CTL el día de referencia',key:'ctl_race_day', higher:true },
+    { name:'TSB el día de referencia',key:'tsb_race_day', higher:null },
+    { name:'TSS total del bloque',    key:'total_tss',    higher:true },
   ];
   var html = '<div class="cc-stat-card"><div class="cc-stat-label">Comparación de indicadores</div>'
     + rows.map(function(row){
+        var vals = cols.map(function(col){ return col.v.stats[row.key]; });
+        var badges = c ? bestBadge(vals, row.higher) : [deltaHtml(vals[0], vals[1], row.higher)];
+        var valsHtml = cols.map(function(col, i){
+          return '<span class="cc-stat-val" style="color:'+col.color+'">'+(vals[i]!=null?vals[i]:'—')+'</span>'
+            + (c ? badges[i] : '') // con 3 ciclos, el badge va pegado a SU columna
+            + (i < cols.length-1 ? '<span style="color:var(--dim);font-size:.7rem">vs</span>' : '');
+        }).join('');
         return '<div class="cc-stat-row">'
           + '<div class="cc-stat-name">'+row.name+'</div>'
           + '<div class="cc-stat-vals">'
-          +   '<span class="cc-stat-val" style="color:#FF6535">'+(row.a!=null?row.a:'—')+'</span>'
-          +   '<span style="color:var(--dim);font-size:.7rem">vs</span>'
-          +   '<span class="cc-stat-val" style="color:#0EA5E9">'+(row.b!=null?row.b:'—')+'</span>'
-          +   deltaHtml(row.a, row.b, row.higher)
+          +   valsHtml
+          +   (c ? '' : badges[0])
           + '</div>'
           + '</div>';
       }).join('')
