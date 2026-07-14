@@ -5,7 +5,7 @@ por dias hasta la carrera, no por fecha de calendario.
 """
 from datetime import date, timedelta
 
-from ..models import RaceEvent, GarminTrainingLoad
+from ..models import RaceEvent, GarminTrainingLoad, GarminActivity
 from .conftest import login, auth_headers
 
 
@@ -23,6 +23,23 @@ def _seed_training_load(db, user_id, race_date_iso, weeks, ctl_start, ctl_end):
             ctl=ctl, atl=ctl * 0.9, tsb=ctl * 0.1, tss=80.0,
         ))
     db.commit()
+
+
+def _seed_activities(db, user_id, race_date_iso, weeks, sessions_per_week, sport, dur_min, tss):
+    """Siembra N sesiones/semana de un deporte, una por semana, terminando en la carrera."""
+    race_date = date.fromisoformat(race_date_iso)
+    n = 0
+    for w in range(weeks):
+        d = race_date - timedelta(weeks=w)
+        for s in range(sessions_per_week):
+            db.add(GarminActivity(
+                user_id=user_id, activity_id=f"{sport}-{race_date_iso}-{w}-{s}",
+                sport=sport, date_iso=d.isoformat(), date_label=d.isoformat(),
+                dur_min=dur_min, tss=tss,
+            ))
+            n += 1
+    db.commit()
+    return n
 
 
 def _seed_race(db, user_id, name, date_iso, is_goal=False):
@@ -190,3 +207,74 @@ def test_cycle_compare_with_cycle_c(client, db, athlete_user):
     assert d["cycle_c"]["stats"]["has_data"] is True
     # Los tres ciclos rampearon a picos distintos y crecientes
     assert d["cycle_a"]["stats"]["peak_ctl"] > d["cycle_b"]["stats"]["peak_ctl"] > d["cycle_c"]["stats"]["peak_ctl"]
+
+
+def test_cycle_compare_breakdown_hours_and_sport(client, db, athlete_user):
+    """El desglose de horas/sesiones/deporte debe reflejar las actividades reales."""
+    _seed_training_load(db, athlete_user.id, "2026-01-15", weeks=16, ctl_start=40, ctl_end=90)
+    n = _seed_activities(db, athlete_user.id, "2026-01-15", weeks=16,
+                          sessions_per_week=3, sport="bike", dur_min=60, tss=70)
+
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare?date_a=2026-01-15&date_b=2025-01-15",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    bd = r.json()["cycle_a"]["breakdown"]
+    assert bd["sessions"] == n
+    assert bd["total_hours"] == round(n * 60 / 60, 1)
+    assert bd["hours_by_sport"]["bike"] == round(n * 60 / 60, 1)
+    assert bd["avg_tss_per_session"] == 70.0
+    assert bd["consistency_pct"] == 100  # una sesion por semana, todas las semanas
+
+
+def test_cycle_compare_breakdown_empty_when_no_activities(client, db, athlete_user):
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare?date_a=2026-06-01&date_b=2025-06-01",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    bd = r.json()["cycle_a"]["breakdown"]
+    assert bd["sessions"] == 0
+    assert bd["total_hours"] == 0
+    assert bd["hours_by_sport"] == {}
+    assert bd["avg_tss_per_session"] is None
+    assert bd["consistency_pct"] == 0
+
+
+def test_cycle_compare_insight_explains_hours_and_sport(client, db, athlete_user):
+    """El insight debe nombrar el ciclo con mas fitness y el deporte dominante."""
+    _seed_training_load(db, athlete_user.id, "2026-01-15", weeks=16, ctl_start=40, ctl_end=95)
+    _seed_training_load(db, athlete_user.id, "2025-01-15", weeks=16, ctl_start=25, ctl_end=55)
+    _seed_activities(db, athlete_user.id, "2026-01-15", weeks=16,
+                      sessions_per_week=4, sport="bike", dur_min=90, tss=80)
+    _seed_activities(db, athlete_user.id, "2025-01-15", weeks=16,
+                      sessions_per_week=1, sport="bike", dur_min=60, tss=60)
+
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare"
+        "?date_a=2026-01-15&label_a=Prep+2026&date_b=2025-01-15&label_b=Prep+2025",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    insight = r.json()["insight"]
+    assert insight is not None
+    assert "Prep 2026" in insight
+    assert "Prep 2025" in insight
+    assert "ciclismo" in insight
+    assert "h más" in insight
+
+
+def test_cycle_compare_insight_none_with_single_cycle_data(client, db, athlete_user):
+    """Sin datos en al menos 2 ciclos, no se puede construir un insight -> None."""
+    _seed_training_load(db, athlete_user.id, "2026-01-15", weeks=16, ctl_start=40, ctl_end=90)
+    token = login(client, "athlete@test.com", "AthlPass123")
+    r = client.get(
+        "/api/athlete/cycle-compare?date_a=2026-01-15&date_b=2025-06-01",
+        headers=auth_headers(token),
+    )
+    assert r.status_code == 200
+    assert r.json()["insight"] is None

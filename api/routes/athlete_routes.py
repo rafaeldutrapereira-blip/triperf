@@ -1173,6 +1173,11 @@ def cycle_compare(
             return {"id": None, "name": label or fallback_label, "date_iso": date_str, "distance": None}
         raise HTTPException(400, "Indica race_a/race_b (carrera registrada) o date_a/date_b (fecha directa)")
 
+    _SPORT_LABELS_ES = {
+        "swim": "natación", "bike": "ciclismo", "run": "carrera",
+        "gym": "fuerza", "strength": "fuerza", "other": "otras actividades",
+    }
+
     def _load_cycle(anchor: dict):
         anchor_date = _date.fromisoformat(anchor["date_iso"])
         window_start = (anchor_date - _td(weeks=weeks)).isoformat()
@@ -1201,6 +1206,33 @@ def cycle_compare(
         tsb_race_day  = series[-1]["tsb"] if series else None
         total_tss     = round(sum(p["tss"] for p in series), 0)
 
+        # ── Qué explica la curva: desglose de las actividades reales del
+        # bloque (no solo el resultado CTL/TSB/TSS, sino la causa: cuántas
+        # horas, cuántas sesiones, qué tan intensas, en qué disciplina, y
+        # con qué consistencia semana a semana).
+        acts = (
+            db.query(GarminActivity)
+              .filter(GarminActivity.user_id == me.id,
+                      GarminActivity.date_iso >= window_start,
+                      GarminActivity.date_iso <= anchor["date_iso"])
+              .all()
+        )
+        sessions = len(acts)
+        total_hours = round(sum(a.dur_min or 0 for a in acts) / 60, 1)
+        act_tss_sum = sum(a.tss or 0 for a in acts)
+        avg_tss_per_session = round(act_tss_sum / sessions, 1) if sessions else None
+
+        hours_by_sport: dict[str, float] = {}
+        for a in acts:
+            sp = (a.sport or "other").lower()
+            hours_by_sport[sp] = hours_by_sport.get(sp, 0.0) + (a.dur_min or 0) / 60
+
+        active_week_idxs = {
+            (_date.fromisoformat(a.date_iso) - anchor_date).days // 7
+            for a in acts
+        }
+        consistency_pct = round(len(active_week_idxs) / weeks * 100) if weeks else None
+
         return {
             "race": anchor,
             "series": series,
@@ -1211,23 +1243,83 @@ def cycle_compare(
                 "total_tss":    total_tss,
                 "has_data":     len(series) > 0,
             },
+            "breakdown": {
+                "total_hours":          total_hours,
+                "sessions":             sessions,
+                "avg_tss_per_session":  avg_tss_per_session,
+                "hours_by_sport":       {k: round(v, 1) for k, v in hours_by_sport.items()},
+                "active_weeks":         len(active_week_idxs),
+                "total_weeks":          weeks,
+                "consistency_pct":      consistency_pct,
+            },
         }
+
+    def _build_insight(labeled_cycles: list[dict]) -> str | None:
+        """Resumen ejecutivo de una línea: por qué el mejor ciclo fue mejor."""
+        withdata = [c for c in labeled_cycles if c["cycle"]["stats"]["has_data"]]
+        if len(withdata) < 2:
+            return None
+        ranked = sorted(withdata, key=lambda c: c["cycle"]["stats"]["peak_ctl"], reverse=True)
+        best, worst = ranked[0], ranked[-1]
+        if best["cycle"]["stats"]["peak_ctl"] == worst["cycle"]["stats"]["peak_ctl"]:
+            return None
+
+        bb, wb = best["cycle"]["breakdown"], worst["cycle"]["breakdown"]
+        hour_diff = round(bb["total_hours"] - wb["total_hours"], 1)
+
+        sports = set(list(bb["hours_by_sport"].keys()) + list(wb["hours_by_sport"].keys()))
+        sport_diffs = {
+            sp: round(bb["hours_by_sport"].get(sp, 0) - wb["hours_by_sport"].get(sp, 0), 1)
+            for sp in sports
+        }
+        dominant_sport = max(sport_diffs, key=lambda k: abs(sport_diffs[k])) if sport_diffs else None
+        dominant_diff  = sport_diffs.get(dominant_sport, 0) if dominant_sport else 0
+
+        parts = []
+        if hour_diff > 0.5:
+            parts.append(f"{best['label']} acumuló {hour_diff}h más de entrenamiento que {worst['label']}")
+        elif hour_diff < -0.5:
+            parts.append(f"{best['label']} entrenó {abs(hour_diff)}h menos que {worst['label']} pero logró más fitness")
+        else:
+            parts.append(f"{best['label']} y {worst['label']} entrenaron un volumen similar")
+
+        if dominant_sport and abs(dominant_diff) > 1:
+            sport_es = _SPORT_LABELS_ES.get(dominant_sport, dominant_sport)
+            if dominant_diff > 0:
+                parts.append(f", principalmente en {sport_es} (+{dominant_diff}h)")
+            else:
+                parts.append(f", pese a tener menos volumen en {sport_es} ({dominant_diff}h)")
+
+        ca, cw = bb.get("consistency_pct"), wb.get("consistency_pct")
+        if ca is not None and cw is not None and abs(ca - cw) >= 15:
+            parts.append(f" y una consistencia semanal mayor ({ca}% vs {cw}% de semanas activas)")
+
+        return "".join(parts) + "."
 
     anchor_a = _resolve_anchor(race_a, date_a, label_a, "Ciclo A")
     anchor_b = _resolve_anchor(race_b, date_b, label_b, "Ciclo B")
 
-    result = {
-        "weeks":  weeks,
-        "cycle_a": _load_cycle(anchor_a),
-        "cycle_b": _load_cycle(anchor_b),
-        "cycle_c": None,
-    }
+    cycle_a = _load_cycle(anchor_a)
+    cycle_b = _load_cycle(anchor_b)
+    labeled = [
+        {"label": anchor_a["name"], "cycle": cycle_a},
+        {"label": anchor_b["name"], "cycle": cycle_b},
+    ]
 
     if race_c or date_c:
         anchor_c = _resolve_anchor(race_c, date_c, label_c, "Ciclo C")
-        result["cycle_c"] = _load_cycle(anchor_c)
+        cycle_c = _load_cycle(anchor_c)
+        labeled.append({"label": anchor_c["name"], "cycle": cycle_c})
+    else:
+        cycle_c = None
 
-    return result
+    return {
+        "weeks":   weeks,
+        "cycle_a": cycle_a,
+        "cycle_b": cycle_b,
+        "cycle_c": cycle_c,
+        "insight": _build_insight(labeled),
+    }
 
 
 @router.get("/personal-records")
