@@ -10,7 +10,7 @@ from ..database import get_db
 from ..models import (
     User, AssignedWorkout, WorkoutLog, WellnessLog, BloodLabExam, NutritionPlan,
     GarminActivity, GarminTrainingLoad, GarminSyncStatus, Message, AthleteNote,
-    FoodDiaryEntry, GarminPlannedWorkout,
+    FoodDiaryEntry, GarminPlannedWorkout, RaceEvent,
 )
 from ..schemas import (
     AssignedWorkoutOut, WorkoutLogCreate, WorkoutLogOut,
@@ -1099,6 +1099,103 @@ class _PRIn(BaseModel):
     achieved_at: str | None = None
     source:     str = "manual"
     notes:      str | None = None
+
+
+@router.get("/cycle-compare")
+def cycle_compare(
+    race_a:  str | None = Query(None, description="id de RaceEvent — ciclo A (opcional, atajo si ya está registrada)"),
+    race_b:  str | None = Query(None, description="id de RaceEvent — ciclo B (opcional)"),
+    date_a:  str | None = Query(None, description="YYYY-MM-DD — día de referencia del ciclo A, alternativa a race_a"),
+    date_b:  str | None = Query(None, description="YYYY-MM-DD — día de referencia del ciclo B, alternativa a race_b"),
+    label_a: str | None = Query(None, max_length=80),
+    label_b: str | None = Query(None, max_length=80),
+    weeks:   int = Query(16, ge=4, le=52, description="semanas de bloque a comparar antes de cada fecha de referencia"),
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """
+    Compara dos bloques de entrenamiento (ej. el mismo ciclo sept-dic de dos
+    años distintos) alineados por "días hasta el día de referencia" en vez
+    de fecha de calendario — así el pico de carga de un año queda
+    superpuesto sobre el punto equivalente del ciclo del otro año, sin
+    importar que las fechas de calendario no coincidan.
+
+    El día de referencia de cada ciclo puede venir de una carrera ya
+    registrada (race_a/race_b) o elegirse directamente con date_a/date_b —
+    no hace falta pasar por el Predictor de Carrera para usar esta
+    comparación.
+    """
+    from datetime import timedelta as _td
+
+    def _resolve_anchor(race_id: str | None, date_str: str | None, label: str | None, fallback_label: str):
+        if race_id:
+            race = (
+                db.query(RaceEvent)
+                  .filter(RaceEvent.id == race_id, RaceEvent.user_id == me.id)
+                  .first()
+            )
+            if not race:
+                raise HTTPException(404, f"Carrera {race_id} no encontrada")
+            return {
+                "id": race.id, "name": race.name, "date_iso": race.date_iso,
+                "distance": race.distance,
+            }
+        if date_str:
+            try:
+                _date.fromisoformat(date_str)
+            except ValueError:
+                raise HTTPException(400, f"Fecha inválida: {date_str}")
+            return {"id": None, "name": label or fallback_label, "date_iso": date_str, "distance": None}
+        raise HTTPException(400, "Indica race_a/race_b (carrera registrada) o date_a/date_b (fecha directa)")
+
+    def _load_cycle(anchor: dict):
+        anchor_date = _date.fromisoformat(anchor["date_iso"])
+        window_start = (anchor_date - _td(weeks=weeks)).isoformat()
+        rows = (
+            db.query(GarminTrainingLoad)
+              .filter(GarminTrainingLoad.user_id == me.id,
+                      GarminTrainingLoad.date_iso >= window_start,
+                      GarminTrainingLoad.date_iso <= anchor["date_iso"])
+              .order_by(GarminTrainingLoad.date_iso.asc())
+              .all()
+        )
+        series = []
+        for r in rows:
+            d = _date.fromisoformat(r.date_iso)
+            series.append({
+                "days_to_race": (d - anchor_date).days,
+                "date_iso":     r.date_iso,
+                "ctl":          round(r.ctl, 1),
+                "atl":          round(r.atl, 1),
+                "tsb":          round(r.tsb, 1),
+                "tss":          round(r.tss, 1),
+            })
+
+        peak_ctl      = max((p["ctl"] for p in series), default=0)
+        ctl_race_day  = series[-1]["ctl"] if series else None
+        tsb_race_day  = series[-1]["tsb"] if series else None
+        total_tss     = round(sum(p["tss"] for p in series), 0)
+
+        return {
+            "race": anchor,
+            "series": series,
+            "stats": {
+                "peak_ctl":     round(peak_ctl, 1),
+                "ctl_race_day": ctl_race_day,
+                "tsb_race_day": tsb_race_day,
+                "total_tss":    total_tss,
+                "has_data":     len(series) > 0,
+            },
+        }
+
+    anchor_a = _resolve_anchor(race_a, date_a, label_a, "Ciclo A")
+    anchor_b = _resolve_anchor(race_b, date_b, label_b, "Ciclo B")
+
+    return {
+        "weeks":  weeks,
+        "cycle_a": _load_cycle(anchor_a),
+        "cycle_b": _load_cycle(anchor_b),
+    }
 
 
 @router.get("/personal-records")
