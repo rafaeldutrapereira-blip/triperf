@@ -350,28 +350,46 @@ a { color: inherit; text-decoration: none; }
 .cc-legend { display: flex; gap: 1.5rem; margin: .6rem 0 1rem; flex-wrap: wrap; }
 .cc-legend-item { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); }
 .cc-legend-dot { width: 20px; height: 3px; border-radius: 2px; flex-shrink: 0; }
-.cc-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
-.cc-stat-card {
-  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
-  padding: 1.1rem 1.25rem;
-}
-.cc-stat-label {
-  font-family: 'Oswald', sans-serif; font-size: .65rem; font-weight: 600; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--dim); margin-bottom: .7rem;
-}
-.cc-stat-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0; border-top: 1px solid var(--border2); }
-.cc-stat-row:first-of-type { border-top: none; }
-.cc-stat-name { font-size: .78rem; color: var(--muted); }
-.cc-stat-vals { display: flex; align-items: center; gap: .6rem; }
-.cc-stat-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.15rem; min-width: 42px; text-align: right; }
-.cc-stat-delta {
-  font-family: 'Oswald', sans-serif; font-size: .68rem; font-weight: 700; padding: .15rem .5rem;
-  border-radius: 20px; white-space: nowrap;
-}
-.cc-delta-up   { color: var(--green); background: rgba(16,185,129,.12); }
-.cc-delta-down { color: var(--red);   background: rgba(239,68,68,.12); }
-.cc-delta-flat { color: var(--dim);   background: rgba(61,104,128,.14); }
 .cc-empty { color: var(--dim); font-size: .82rem; padding: 1.5rem; text-align: center; }
+
+.cc-table-wrap {
+  overflow-x: auto; margin-top: 1rem; background: var(--surface);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+}
+.cc-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 480px; }
+.cc-table th, .cc-table td { padding: .6rem .9rem; text-align: right; white-space: nowrap; }
+.cc-table th:first-child, .cc-table td:first-child { text-align: left; white-space: normal; }
+.cc-table thead th {
+  font-family: 'Oswald', sans-serif; font-size: .66rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; border-bottom: 1px solid var(--border2); padding-bottom: .8rem;
+}
+.cc-table thead th:first-child { color: var(--dim); }
+.cc-table tbody td:first-child { color: var(--muted); font-size: .78rem; }
+.cc-table tbody tr { border-top: 1px solid var(--border2); }
+.cc-table tbody tr.cc-section-row td {
+  border-top: none; padding: 1.1rem .9rem .35rem; font-family: 'Oswald', sans-serif;
+  font-size: .62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--orange);
+}
+.cc-table tbody tr.cc-section-row:first-child td { padding-top: .8rem; }
+.cc-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.02rem; }
+.cc-val-cell { position: relative; border-radius: 6px; }
+.cc-val-cell.cc-winner { background: rgba(16,185,129,.1); }
+.cc-val-cell.cc-winner .cc-val::after { content: ' ★'; font-size: .7rem; color: var(--green); }
+.cc-val-sub { display: block; font-size: .65rem; color: var(--dim); font-weight: 400; margin-top: 1px; }
+
+.cc-insight {
+  display: flex; gap: .8rem; align-items: flex-start;
+  background: linear-gradient(135deg, rgba(255,101,53,.08), rgba(240,165,0,.05));
+  border: 1px solid rgba(255,101,53,.25); border-radius: var(--radius);
+  padding: 1rem 1.2rem; margin: 1rem 0; font-size: .88rem; line-height: 1.55; color: var(--text);
+}
+.cc-insight .ic { font-size: 1.2rem; flex-shrink: 0; margin-top: -.1rem; }
+.cc-insight strong { color: var(--orange); }
+
+.cc-breakdown-title {
+  font-family: 'Oswald', sans-serif; font-size: .65rem; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--dim); margin: 1.5rem 0 .6rem;
+}
 
 /* FOOTER */
 footer {
@@ -503,7 +521,8 @@ footer {
           </div>
         </div>
       </div>
-      <div class="cc-stats-grid" id="cc-stats-grid"></div>
+      <div id="cc-insight" class="cc-insight" style="display:none"></div>
+      <div class="cc-table-wrap"><table class="cc-table" id="cc-table"></table></div>
     </div>
     <div id="cc-empty" class="cc-empty" style="display:none">Elegí dos fechas y tocá "Comparar".</div>
   </div>
@@ -2176,14 +2195,55 @@ function _ccFmtDate(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+var CC_STORAGE_KEY = 'lx_cycle_compare_state';
+
+function _ccSaveState(){
+  try{
+    var state = {
+      date_a: document.getElementById('cc-date-a').value,
+      label_a: document.getElementById('cc-label-a').value,
+      date_b: document.getElementById('cc-date-b').value,
+      label_b: document.getElementById('cc-label-b').value,
+      date_c: document.getElementById('cc-date-c').value,
+      label_c: document.getElementById('cc-label-c').value,
+      weeks: document.getElementById('cc-weeks').value,
+    };
+    localStorage.setItem(CC_STORAGE_KEY, JSON.stringify(state));
+  }catch(e){}
+}
+
+function _ccLoadState(){
+  try{
+    var raw = localStorage.getItem(CC_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
 function initCycleCompare(){
   var dateA = document.getElementById('cc-date-a');
   var dateB = document.getElementById('cc-date-b');
   if(!dateA || !dateB || dateA.value) return; // ya inicializado (ej. al volver a metric=pmc)
 
-  // Default: ciclo A = tu carrera objetivo si la configuraste (o hoy),
-  // ciclo B = la misma fecha un año antes — así el usuario ve algo
-  // razonable de entrada sin tener que pensar qué fechas elegir.
+  // Si el usuario ya había elegido ciclos en una visita anterior, se
+  // recuerdan (localStorage) y se restauran tal cual — evita que tenga
+  // que volver a elegir las mismas fechas cada vez que entra a la página.
+  var saved = _ccLoadState();
+  if(saved && saved.date_a && saved.date_b){
+    dateA.value = saved.date_a;
+    document.getElementById('cc-label-a').value = saved.label_a || '';
+    dateB.value = saved.date_b;
+    document.getElementById('cc-label-b').value = saved.label_b || '';
+    if(saved.date_c) document.getElementById('cc-date-c').value = saved.date_c;
+    document.getElementById('cc-label-c').value = saved.label_c || '';
+    if(saved.weeks) document.getElementById('cc-weeks').value = saved.weeks;
+    loadCycleCompare();
+    return;
+  }
+
+  // Default (primera vez): ciclo A = tu carrera objetivo si la
+  // configuraste (o hoy), ciclo B = la misma fecha un año antes — así el
+  // usuario ve algo razonable de entrada sin tener que pensar qué fechas
+  // elegir.
   var goalDate = (window.KL_DATA && window.KL_DATA.race_goal_date) ? new Date(window.KL_DATA.race_goal_date+'T12:00:00') : null;
   var refA = (goalDate && !isNaN(goalDate)) ? goalDate : new Date();
   var refB = new Date(refA); refB.setFullYear(refB.getFullYear()-1);
@@ -2222,6 +2282,7 @@ window.loadCycleCompare = function(){
     + (labelB && labelB.value.trim() ? '&label_b='+encodeURIComponent(labelB.value.trim()) : '')
     + (dateC && dateC.value ? '&date_c='+encodeURIComponent(dateC.value) : '')
     + (dateC && dateC.value && labelC && labelC.value.trim() ? '&label_c='+encodeURIComponent(labelC.value.trim()) : '');
+  _ccSaveState();
   fetch(_ccApi()+'/athlete/cycle-compare?'+qs, { headers:{Authorization:'Bearer '+tok} })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){ if(d) renderCycleCompare(d); })
@@ -2298,60 +2359,86 @@ function renderCycleCompare(d){
     }
   });
 
-  renderCycleStats(a, b, c);
+  var insightEl = document.getElementById('cc-insight');
+  if(d.insight){
+    insightEl.innerHTML = '<span class="ic">💡</span><span>'+d.insight.replace(/(\d+(\.\d+)?h)/g, '<strong>$1</strong>')+'</span>';
+    insightEl.style.display = 'flex';
+  } else {
+    insightEl.style.display = 'none';
+  }
+
+  renderCycleTable(a, b, c);
 }
 
-function renderCycleStats(a, b, c){
-  var grid = document.getElementById('cc-stats-grid');
-  var cols = c ? [ {v:a,color:'#FF6535'}, {v:b,color:'#0EA5E9'}, {v:c,color:'#10B981'} ] : [ {v:a,color:'#FF6535'}, {v:b,color:'#0EA5E9'} ];
+var CC_SPORT_LABELS = { swim:'Natación', bike:'Ciclismo', run:'Carrera', gym:'Fuerza', strength:'Fuerza', other:'Otras actividades' };
 
-  function deltaHtml(valA, valB, higherIsBetter){
-    if(valA == null || valB == null || higherIsBetter == null) return '';
-    var diff = valA - valB;
-    if(Math.abs(diff) < 0.05) return '<span class="cc-stat-delta cc-delta-flat">= igual</span>';
-    var aIsBetter = higherIsBetter ? diff > 0 : diff < 0;
-    var cls = aIsBetter ? 'cc-delta-up' : 'cc-delta-down';
-    var arrow = diff > 0 ? '▲' : '▼';
-    return '<span class="cc-stat-delta '+cls+'">'+arrow+' '+Math.abs(Math.round(diff*10)/10)+'</span>';
-  }
-  // Con 3 ciclos, en vez de deltas de a pares (confuso con 3 valores) se
-  // marca el mejor valor de la fila con un punto — igual de "vistoso" sin
-  // saturar de números.
-  function bestBadge(vals, higherIsBetter){
-    if(higherIsBetter == null) return vals.map(function(){ return ''; });
+/** Tabla única y compacta: filas = indicadores, columnas = ciclos.
+ *  Reemplaza las dos secciones separadas (tarjetas apiladas) por un
+ *  formato tipo reporte ejecutivo — más fácil de escanear de un vistazo. */
+function renderCycleTable(a, b, c){
+  var table = document.getElementById('cc-table');
+  var cols = c
+    ? [ {v:a,color:'#FF6535',name:a.race.name}, {v:b,color:'#0EA5E9',name:b.race.name}, {v:c,color:'#10B981',name:c.race.name} ]
+    : [ {v:a,color:'#FF6535',name:a.race.name}, {v:b,color:'#0EA5E9',name:b.race.name} ];
+
+  function winners(vals, higherIsBetter){
+    if(higherIsBetter == null) return vals.map(function(){ return false; });
     var present = vals.filter(function(v){ return v != null; });
-    if(present.length < 2) return vals.map(function(){ return ''; });
+    if(present.length < 2) return vals.map(function(){ return false; });
     var best = higherIsBetter ? Math.max.apply(null, present) : Math.min.apply(null, present);
-    return vals.map(function(v){
-      return (v != null && Math.abs(v - best) < 0.05) ? '<span class="cc-stat-delta cc-delta-up">★ mejor</span>' : '';
-    });
+    return vals.map(function(v){ return v != null && Math.abs(v - best) < 0.1; });
   }
 
-  var rows = [
-    { name:'Pico CTL alcanzado',      key:'peak_ctl',     higher:true },
-    { name:'CTL el día de referencia',key:'ctl_race_day', higher:true },
-    { name:'TSB el día de referencia',key:'tsb_race_day', higher:null },
-    { name:'TSS total del bloque',    key:'total_tss',    higher:true },
-  ];
-  var html = '<div class="cc-stat-card"><div class="cc-stat-label">Comparación de indicadores</div>'
-    + rows.map(function(row){
-        var vals = cols.map(function(col){ return col.v.stats[row.key]; });
-        var badges = c ? bestBadge(vals, row.higher) : [deltaHtml(vals[0], vals[1], row.higher)];
-        var valsHtml = cols.map(function(col, i){
-          return '<span class="cc-stat-val" style="color:'+col.color+'">'+(vals[i]!=null?vals[i]:'—')+'</span>'
-            + (c ? badges[i] : '') // con 3 ciclos, el badge va pegado a SU columna
-            + (i < cols.length-1 ? '<span style="color:var(--dim);font-size:.7rem">vs</span>' : '');
-        }).join('');
-        return '<div class="cc-stat-row">'
-          + '<div class="cc-stat-name">'+row.name+'</div>'
-          + '<div class="cc-stat-vals">'
-          +   valsHtml
-          +   (c ? '' : badges[0])
-          + '</div>'
-          + '</div>';
-      }).join('')
-    + '</div>';
-  grid.innerHTML = html;
+  function dataRow(name, vals, higher, suffix){
+    var win = winners(vals, higher);
+    var tds = cols.map(function(col, i){
+      var v = vals[i];
+      var sub = '';
+      // Con solo 2 ciclos, mostrar la diferencia como sub-texto en la
+      // columna que no ganó — da contexto sin saturar la tabla.
+      if(!c && !win[i] && v != null && vals[1-i] != null && higher != null){
+        var diff = Math.round((v - vals[1-i]) * 10) / 10;
+        if(Math.abs(diff) >= 0.1) sub = '<span class="cc-val-sub">'+(diff>0?'+':'')+diff+(suffix||'')+'</span>';
+      }
+      return '<td class="cc-val-cell'+(win[i]?' cc-winner':'')+'">'
+        + '<span class="cc-val" style="color:'+col.color+'">'+(v!=null?v+(suffix||''):'—')+'</span>'
+        + sub + '</td>';
+    }).join('');
+    return '<tr><td>'+name+'</td>'+tds+'</tr>';
+  }
+
+  function sectionRow(title){
+    return '<tr class="cc-section-row"><td colspan="'+(cols.length+1)+'">'+title+'</td></tr>';
+  }
+
+  var rows = [];
+  rows.push(sectionRow('Comparación de indicadores'));
+  rows.push(dataRow('Pico CTL alcanzado',       cols.map(function(col){ return col.v.stats.peak_ctl; }),     true));
+  rows.push(dataRow('CTL el día de referencia', cols.map(function(col){ return col.v.stats.ctl_race_day; }), true));
+  rows.push(dataRow('TSB el día de referencia', cols.map(function(col){ return col.v.stats.tsb_race_day; }), null));
+  rows.push(dataRow('TSS total del bloque',     cols.map(function(col){ return col.v.stats.total_tss; }),    true));
+
+  rows.push(sectionRow('Qué explica la diferencia'));
+  rows.push(dataRow('Horas totales de entrenamiento',     cols.map(function(col){ return col.v.breakdown.total_hours; }), true, 'h'));
+  rows.push(dataRow('Sesiones',                            cols.map(function(col){ return col.v.breakdown.sessions; }), true));
+  rows.push(dataRow('TSS promedio/sesión (intensidad)',    cols.map(function(col){ return col.v.breakdown.avg_tss_per_session; }), null));
+  rows.push(dataRow('Consistencia (semanas activas)',      cols.map(function(col){ return col.v.breakdown.consistency_pct; }), true, '%'));
+
+  var allSports = {};
+  cols.forEach(function(col){
+    Object.keys(col.v.breakdown.hours_by_sport || {}).forEach(function(sp){
+      allSports[sp] = (allSports[sp] || 0) + col.v.breakdown.hours_by_sport[sp];
+    });
+  });
+  Object.keys(allSports).sort(function(x,y){ return allSports[y]-allSports[x]; }).forEach(function(sp){
+    var label = CC_SPORT_LABELS[sp] || sp;
+    rows.push(dataRow(label, cols.map(function(col){ return col.v.breakdown.hours_by_sport[sp] || 0; }), true, 'h'));
+  });
+
+  var thead = '<thead><tr><th></th>'
+    + cols.map(function(col){ return '<th style="color:'+col.color+'">'+col.name+'</th>'; }).join('')
+    + '</tr></thead>';
+  table.innerHTML = thead + '<tbody>' + rows.join('') + '</tbody>';
 }
 
 // ─── API FETCH — populate ALL with real data ─────────────────────────────────
