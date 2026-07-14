@@ -148,15 +148,15 @@ def compute_acwr_by_sport(user_id: str, db: Session, min_sessions_28d: int = 3) 
     por menos ciclismo); las lesiones por sobreuso son tejido-específicas,
     así que el riesgo real está en la carga por disciplina, no solo la total.
     """
-    window_days = 120  # 28 (crónico) + 7 (agudo) + ~90 días de histórico para el gráfico
-    start = date.today() - timedelta(days=window_days - 1)
-    cutoff_iso = start.isoformat()
-
+    # Sin tope de fecha: detalle.html?metric=acwr filtra estos gráficos por
+    # período en el cliente (Semana/Mes/3M/6M/Año/Todo). Antes esta función
+    # cortaba a los últimos 120 días fijos — 6 Meses/Año/Todo mostraban
+    # siempre el mismo tramo (todos ≥120 días), dando la impresión de que
+    # los botones de período no hacían nada para esas tres opciones.
     acts = (
         db.query(GarminActivity)
           .filter(
               GarminActivity.user_id == user_id,
-              GarminActivity.date_iso >= cutoff_iso,
               GarminActivity.sport.in_(list(ACWR_SPORT_LABELS.keys())),
           )
           .all()
@@ -167,6 +167,11 @@ def compute_acwr_by_sport(user_id: str, db: Session, min_sessions_28d: int = 3) 
         bucket = daily_tss[a.sport]
         bucket[a.date_iso] = bucket.get(a.date_iso, 0.0) + (a.tss or 0.0)
 
+    if acts:
+        start = min(date.fromisoformat(a.date_iso) for a in acts)
+    else:
+        start = date.today()
+    window_days = (date.today() - start).days + 1
     days = [(start + timedelta(days=i)).isoformat() for i in range(window_days)]
 
     result: dict = {}
