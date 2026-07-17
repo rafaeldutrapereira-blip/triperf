@@ -280,9 +280,9 @@ def compute_vo2max_history(
     )
 
     garmin_vo2max = [
-        {"date": r.date_iso, "vo2max": round(r.vo2max, 1)}
+        {"date": r.date_iso, "vo2max": round(r.vo2max_running or r.vo2max_cycling, 1)}
         for r in hrv_days
-        if r.vo2max and r.vo2max > 20
+        if (r.vo2max_running or r.vo2max_cycling) and (r.vo2max_running or r.vo2max_cycling) > 20
     ]
 
     # VO2max estimado desde actividades de running

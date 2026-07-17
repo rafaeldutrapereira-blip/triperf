@@ -242,7 +242,14 @@
 <script>
 /* ── Analytics Page ─────────────────────────────────────────────── */
 var API = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
-function tok(){ return localStorage.getItem('lx_token')||''; }
+function tok(){
+  var direct = localStorage.getItem('lx_co_token');
+  if(direct) return direct;
+  try{
+    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+    return s && s.token ? s.token : '';
+  }catch(e){ return ''; }
+}
 function hdrs(){ return {Authorization:'Bearer '+tok()}; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
