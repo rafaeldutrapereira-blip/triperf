@@ -1384,6 +1384,18 @@ loadIFOverrides();
 loadCourseOverrides();
 loadAth();
 loadFromKLData();
+
+// Preselección desde otras páginas, ej. race_day.html?race=703 (link "Ir a Nutrición")
+(function(){
+  var qRace = new URLSearchParams(location.search).get('race');
+  if(qRace && DIST[qRace]){
+    ST.race = qRace;
+    document.querySelectorAll('.rt').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+qRace+"'") >= 0);
+    });
+  }
+})();
+
 syncIFSliders();
 syncCourseSliders();
 renderWeeklyChart();

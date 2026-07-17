@@ -231,7 +231,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
       <div class="plan-form">
         <div class="form-group">
           <label>Tipo de carrera</label>
-          <select class="select-input" id="plan-race-type">
+          <select class="select-input" id="plan-race-type" onchange="syncPlanIFSliders(); syncPlanGoalInput();">
             <option value="sprint">Sprint (750m/20km/5km)</option>
             <option value="olympic" selected>Olímpico (1.5km/40km/10km)</option>
             <option value="703">Ironman 70.3</option>
@@ -253,14 +253,121 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
           <input type="number" class="form-input" id="plan-sweat" placeholder="ej. 0.8" min="0.3" max="2.5" step="0.1">
         </div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
+
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+        <div class="card-title" style="font-size:.85rem;margin-bottom:6px">Intensidad — opcional</div>
+        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px">
+          Los % estándar asumen un atleta age-grouper típico. Ajústalos si tu esfuerzo real es distinto
+          (ej. más conservador, o querés simular ir más agresivo). Se guardan por tipo de carrera.
+        </p>
+        <div class="plan-form">
+          <div class="form-group">
+            <label>Bici — % de tu FTP <span id="plan-if-bike-val" style="color:var(--acc);font-weight:700">80%</span></label>
+            <input type="range" id="plan-if-bike" min="50" max="105" step="1" oninput="onPlanIFChange()">
+          </div>
+          <div class="form-group">
+            <label>Trote — % de tu ritmo umbral <span id="plan-if-run-val" style="color:var(--acc);font-weight:700">97%</span></label>
+            <input type="range" id="plan-if-run" min="50" max="120" step="1" oninput="onPlanIFChange()">
+          </div>
+        </div>
+        <button class="btn-outline btn-sm" onclick="resetPlanIF()">↺ Restablecer estándar</button>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+        <div class="card-title" style="font-size:.85rem;margin-bottom:6px">Ruta real (GPX) — opcional</div>
+        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px">
+          Sube el track GPX de la bici y/o del trote para reemplazar el modelo genérico por física real
+          (desnivel segmento a segmento en la bici, costo metabólico por pendiente en el trote).
+        </p>
+        <div class="plan-form">
+          <div class="form-group">
+            <label>Ruta de bici (.gpx)</label>
+            <input type="file" class="form-input" id="plan-gpx-bike" accept=".gpx" onchange="handleGpxUpload('bike', this)">
+            <div id="plan-gpx-bike-info" style="font-size:.72rem;color:var(--green);margin-top:4px;display:none"></div>
+          </div>
+          <div class="form-group">
+            <label>Ruta de trote (.gpx)</label>
+            <input type="file" class="form-input" id="plan-gpx-run" accept=".gpx" onchange="handleGpxUpload('run', this)">
+            <div id="plan-gpx-run-info" style="font-size:.72rem;color:var(--green);margin-top:4px;display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+        <div class="card-title" style="font-size:.85rem;margin-bottom:6px">Condiciones del día — opcional</div>
+        <div class="plan-form">
+          <div class="form-group">
+            <label>Viento (km/h, + = en contra)</label>
+            <input type="number" class="form-input" id="plan-wind" placeholder="ej. 10" min="-30" max="30" step="1">
+          </div>
+          <div class="form-group">
+            <label>Altitud (msnm)</label>
+            <input type="number" class="form-input" id="plan-altitude" placeholder="ej. 0" min="0" max="6000" step="50">
+          </div>
+          <div class="form-group">
+            <label>Temperatura (°C)</label>
+            <input type="number" class="form-input" id="plan-temp" placeholder="ej. 22" min="-10" max="50" step="1">
+          </div>
+          <div class="form-group">
+            <label>Superficie del trote</label>
+            <select class="select-input" id="plan-surface">
+              <option value="asfalto">Asfalto</option>
+              <option value="mixto">Mixto</option>
+              <option value="trail">Trail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Condición del agua (nado)</label>
+            <select class="select-input" id="plan-water">
+              <option value="1.00">Piscina</option>
+              <option value="0.98">Mar calmo</option>
+              <option value="0.95">Mar moderado</option>
+              <option value="0.90">Mar agitado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+        <div class="card-title" style="font-size:.85rem;margin-bottom:6px">Meta — opcional</div>
+        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px">
+          Si te pusiste un objetivo de tiempo para esta carrera, lo comparamos contra la predicción.
+        </p>
+        <div class="plan-form">
+          <div class="form-group">
+            <label>Tiempo meta (hh:mm:ss)</label>
+            <input type="text" class="form-input" id="plan-goal" placeholder="ej. 5:00:00">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn-primary" onclick="generatePlan()">Generar Plan</button>
         <span id="plan-gen-msg" style="display:none;font-size:.85rem;color:var(--green)">✓ Plan generado</span>
+        <span id="plan-method-badge" style="display:none;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.3rem .7rem;border-radius:20px"></span>
       </div>
     </div>
 
     <!-- Results -->
     <div id="plan-results" style="display:none">
+      <div id="plan-confidence-row" style="display:none;margin-bottom:16px">
+        <div class="card" style="text-align:center">
+          <div style="font-size:.78rem;color:var(--sub);margin-bottom:4px">
+            Confianza: <strong id="plan-conf-pct" style="color:var(--acc)">—</strong>
+            &nbsp;·&nbsp; Rango estimado: <strong id="plan-range" style="color:var(--text)">—</strong>
+          </div>
+        </div>
+      </div>
+      <div id="plan-goal-row" style="display:none;margin-bottom:16px">
+        <div class="card">
+          <div class="card-title" style="font-size:.85rem">Meta vs Predicción</div>
+          <div class="chips" style="margin-top:8px">
+            <div class="chip"><div class="chip-val" style="color:var(--green)" id="plan-goal-val">—</div><div class="chip-label">Tu meta</div></div>
+            <div class="chip"><div class="chip-val" id="plan-goal-pred">—</div><div class="chip-label">Predicción</div></div>
+            <div class="chip"><div class="chip-val" id="plan-goal-gap">—</div><div class="chip-label">Diferencia</div></div>
+          </div>
+        </div>
+      </div>
       <div class="grid-2" style="margin-bottom:16px">
         <!-- Splits -->
         <div class="card">
@@ -282,36 +389,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
   <!-- ═══════════ TAB: NUTRITION ═══════════ -->
   <div class="tab-panel" id="tab-nutrition">
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">Parámetros de Nutrición</div>
-      <div class="plan-form">
-        <div class="form-group">
-          <label>Duración estimada (min)</label>
-          <input type="number" class="form-input" id="nutr-duration" placeholder="ej. 300" min="30" max="840">
-        </div>
-        <div class="form-group">
-          <label>Peso corporal (kg)</label>
-          <input type="number" class="form-input" id="nutr-weight" placeholder="ej. 72" min="30" max="150">
-        </div>
-        <div class="form-group">
-          <label>Tasa de sudor (L/h)</label>
-          <input type="number" class="form-input" id="nutr-sweat" placeholder="ej. 0.8" step="0.1" min="0.3" max="2.5">
-        </div>
-      </div>
-      <button class="btn-primary" onclick="calcNutrition()">Calcular Plan</button>
-    </div>
-    <div id="nutr-result" style="display:none">
-      <!-- Summary -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title">Resumen Nutricional</div>
-        <div class="nutr-summary" id="nutr-summary"></div>
-        <ul class="warning-list" id="nutr-warnings"></ul>
-      </div>
-      <!-- Key Rules -->
-      <div class="card">
-        <div class="card-title">Reglas de Oro</div>
-        <ul class="nutr-timeline" id="nutr-rules"></ul>
-      </div>
+    <div class="card" style="text-align:center;padding:40px 24px">
+      <div style="font-size:2.2rem;margin-bottom:12px">🍽️</div>
+      <div class="card-title" style="margin-bottom:8px">La calculadora de nutrición vive en su propia página</div>
+      <p style="font-size:.85rem;color:var(--sub);max-width:480px;margin:0 auto 20px">
+        Usa tu perfil real (FTP/CSS/ritmo/peso), física precisa de splits, condiciones del día
+        y planes pre/post-carrera — más completo que un cálculo rápido acá.
+      </p>
+      <a id="nutrition-link" class="btn-primary" style="display:inline-flex;text-decoration:none" href="nutrition.html">Ir a Nutrición →</a>
     </div>
   </div>
 
@@ -398,6 +483,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 var API = '/api';
 var currentPlan = null;
 
+function _authTok() {
+  var direct = localStorage.getItem('lx_co_token');
+  if (direct) return direct;
+  try { var s = JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); return s&&s.token?s.token:''; }
+  catch(e){ return ''; }
+}
+
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -405,11 +497,12 @@ function switchTab(name) {
   var tabs = {dashboard:0, plan:1, nutrition:2, result:3, history:4};
   document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
   if (name === 'history') loadHistory();
+  if (name === 'nutrition') updateNutritionLink();
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 function loadDashboard() {
-  fetch(API + '/races/dashboard-s19', {credentials:'include'})
+  fetch(API + '/races/dashboard-s19', {credentials:'include', headers:{'Authorization':'Bearer '+_authTok()}})
     .then(function(r){ return r.json(); })
     .then(function(d) { renderDashboard(d); })
     .catch(function(){ document.getElementById('dash-loader').textContent = 'Error al cargar. Reintenta.'; });
@@ -459,16 +552,159 @@ function renderDashboard(d) {
   }).join('');
 }
 
+// ─── RUTA REAL (GPX) ─────────────────────────────────────────────────────────
+var gpxData = { bike: null, run: null };  // {distance_km, elevation_gain_m, elevation_loss_m, profile}
+
+function handleGpxUpload(kind, inputEl) {
+  var file = inputEl.files && inputEl.files[0];
+  var infoEl = document.getElementById('plan-gpx-' + kind + '-info');
+  if (!file) return;
+  infoEl.style.display = 'block';
+  infoEl.style.color = 'var(--sub)';
+  infoEl.textContent = 'Analizando ruta…';
+
+  var fd = new FormData();
+  fd.append('file', file);
+  fetch(API + '/races/parse-gpx', {
+    method:'POST', credentials:'include',
+    headers:{'Authorization':'Bearer '+_authTok()},
+    body: fd
+  })
+    .then(function(r){ if(!r.ok) throw new Error('parse failed'); return r.json(); })
+    .then(function(d){
+      gpxData[kind] = d;
+      infoEl.style.color = 'var(--green)';
+      infoEl.textContent = '✓ ' + d.distance_km + ' km · D+' + Math.round(d.elevation_gain_m) + 'm · D-' + Math.round(d.elevation_loss_m) + 'm';
+    })
+    .catch(function(){
+      gpxData[kind] = null;
+      infoEl.style.color = '#EF4444';
+      infoEl.textContent = 'No se pudo leer el GPX. Verifica el archivo.';
+    });
+}
+
+// ─── INTENSIDAD (% FTP bici / % ritmo umbral trote, editable por tipo de carrera) ──
+var PLAN_IF_DEFAULTS = {
+  sprint:  {bike: 0.90, run: 1.10},
+  olympic: {bike: 0.82, run: 1.05},
+  '703':   {bike: 0.75, run: 0.97},
+  full:    {bike: 0.70, run: 0.88},
+  '21k':   {bike: null, run: 0.95},
+  '42k':   {bike: null, run: 0.88},
+};
+var PLAN_IF_STORAGE_KEY = 'lx_raceday_if_overrides';
+var planIFOverrides = {};
+(function loadPlanIFOverrides(){
+  try { planIFOverrides = JSON.parse(localStorage.getItem(PLAN_IF_STORAGE_KEY)||'{}'); } catch(e){ planIFOverrides = {}; }
+})();
+
+function getEffectivePlanIF(rk) {
+  var base = PLAN_IF_DEFAULTS[rk] || PLAN_IF_DEFAULTS.olympic;
+  var ov = planIFOverrides[rk];
+  return {
+    bike: ov && ov.bike != null ? ov.bike : base.bike,
+    run:  ov && ov.run  != null ? ov.run  : base.run,
+  };
+}
+
+function syncPlanIFSliders() {
+  var rk = document.getElementById('plan-race-type').value;
+  var eff = getEffectivePlanIF(rk);
+  var bikeSlider = document.getElementById('plan-if-bike');
+  var bikeGroup  = bikeSlider.closest('.form-group');
+  if (eff.bike == null) {
+    bikeGroup.style.display = 'none';
+  } else {
+    bikeGroup.style.display = '';
+    var bp = Math.round(eff.bike*100);
+    bikeSlider.value = bp;
+    document.getElementById('plan-if-bike-val').textContent = bp + '%';
+  }
+  var rp = Math.round(eff.run*100);
+  document.getElementById('plan-if-run').value = rp;
+  document.getElementById('plan-if-run-val').textContent = rp + '%';
+}
+
+function onPlanIFChange() {
+  var rk = document.getElementById('plan-race-type').value;
+  var bikePct = parseInt(document.getElementById('plan-if-bike').value) || 80;
+  var runPct  = parseInt(document.getElementById('plan-if-run').value) || 95;
+  document.getElementById('plan-if-bike-val').textContent = bikePct + '%';
+  document.getElementById('plan-if-run-val').textContent  = runPct + '%';
+  planIFOverrides[rk] = { bike: bikePct/100, run: runPct/100 };
+  try { localStorage.setItem(PLAN_IF_STORAGE_KEY, JSON.stringify(planIFOverrides)); } catch(e){}
+}
+
+function resetPlanIF() {
+  var rk = document.getElementById('plan-race-type').value;
+  delete planIFOverrides[rk];
+  try { localStorage.setItem(PLAN_IF_STORAGE_KEY, JSON.stringify(planIFOverrides)); } catch(e){}
+  syncPlanIFSliders();
+}
+
+// ─── META (comparación local, rescatada de race_predictor.html) ──────────────
+var PLAN_GOAL_STORAGE_KEY = 'lx_raceday_goal_overrides';
+var planGoalOverrides = {};
+(function loadPlanGoalOverrides(){
+  try { planGoalOverrides = JSON.parse(localStorage.getItem(PLAN_GOAL_STORAGE_KEY)||'{}'); } catch(e){ planGoalOverrides = {}; }
+})();
+function fmtHMS(sec) {
+  sec = Math.round(sec);
+  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+function syncPlanGoalInput() {
+  var rk = document.getElementById('plan-race-type').value;
+  document.getElementById('plan-goal').value = planGoalOverrides[rk] || '';
+}
+document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'plan-goal') {
+    var rk = document.getElementById('plan-race-type').value;
+    var v = e.target.value.trim();
+    if (v) planGoalOverrides[rk] = v; else delete planGoalOverrides[rk];
+    try { localStorage.setItem(PLAN_GOAL_STORAGE_KEY, JSON.stringify(planGoalOverrides)); } catch(err){}
+  }
+});
+
 // ─── GENERATE PLAN ───────────────────────────────────────────────────────────
 function generatePlan() {
   var payload = {
+    race_type: document.getElementById('plan-race-type').value || null,
     ftp_w:     parseInt(document.getElementById('plan-ftp').value) || null,
     weight_kg: parseFloat(document.getElementById('plan-weight').value) || null,
     sweat_l_h: parseFloat(document.getElementById('plan-sweat').value) || null,
   };
+
+  var windKmh = parseFloat(document.getElementById('plan-wind').value);
+  var altitude = parseFloat(document.getElementById('plan-altitude').value);
+  var temp = parseFloat(document.getElementById('plan-temp').value);
+  var surface = document.getElementById('plan-surface').value;
+  var waterMult = parseFloat(document.getElementById('plan-water').value);
+  if (!isNaN(windKmh)) payload.wind_ms = windKmh / 3.6;
+  if (!isNaN(altitude)) payload.altitude_m = altitude;
+  if (!isNaN(temp)) payload.temperature_c = temp;
+  if (!isNaN(waterMult) && waterMult < 1) payload.water_mult = waterMult;
+  if (surface) payload.run_surface = surface;
+
+  if (gpxData.bike) {
+    payload.bike_profile          = gpxData.bike.profile;
+    payload.bike_distance_km      = gpxData.bike.distance_km;
+    payload.bike_elevation_gain_m = gpxData.bike.elevation_gain_m;
+    payload.bike_elevation_loss_m = gpxData.bike.elevation_loss_m;
+  }
+  if (gpxData.run) {
+    payload.run_distance_km      = gpxData.run.distance_km;
+    payload.run_elevation_gain_m = gpxData.run.elevation_gain_m;
+    payload.run_elevation_loss_m = gpxData.run.elevation_loss_m;
+  }
+
+  var effIF = getEffectivePlanIF(payload.race_type || document.getElementById('plan-race-type').value);
+  if (effIF.bike != null) payload.bike_if_override = effIF.bike;
+  if (effIF.run  != null) payload.run_fraction_override = effIF.run;
+
   fetch(API + '/races/auto-plan', {
     method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_authTok()},
     body: JSON.stringify(payload)
   })
     .then(function(r){ return r.json(); })
@@ -476,6 +712,18 @@ function generatePlan() {
       currentPlan = d;
       document.getElementById('plan-gen-msg').style.display = 'inline';
       setTimeout(function(){ document.getElementById('plan-gen-msg').style.display = 'none'; }, 3000);
+      var badge = document.getElementById('plan-method-badge');
+      if (d.method === 'physics') {
+        badge.style.display = 'inline-block';
+        badge.style.background = 'rgba(16,185,129,.15)';
+        badge.style.color = 'var(--green)';
+        badge.textContent = '⚡ Física precisa (ruta + condiciones)';
+      } else {
+        badge.style.display = 'inline-block';
+        badge.style.background = 'rgba(148,163,184,.12)';
+        badge.style.color = 'var(--sub)';
+        badge.textContent = 'Modelo estándar (CTL/TSB)';
+      }
       renderPlanResults(d);
     })
     .catch(function(){ alert('Error al generar plan. Verifica tus datos.'); });
@@ -484,6 +732,28 @@ function generatePlan() {
 function renderPlanResults(d) {
   document.getElementById('plan-results').style.display = 'block';
   var splits = d.splits || {};
+
+  // Confianza + rango (rescatado de race_predictor.html)
+  if (d.confidence) {
+    document.getElementById('plan-confidence-row').style.display = 'block';
+    document.getElementById('plan-conf-pct').textContent = d.confidence.confidence_pct + '%';
+    document.getElementById('plan-range').textContent = d.confidence.range_low_fmt + ' – ' + d.confidence.range_high_fmt;
+  }
+
+  // Meta vs Predicción (rescatado de race_predictor.html)
+  var goalStr = document.getElementById('plan-goal').value.trim();
+  var goalSec = goalStr ? parseTimeToSec(goalStr) : null;
+  if (goalSec) {
+    document.getElementById('plan-goal-row').style.display = 'block';
+    document.getElementById('plan-goal-val').textContent = goalStr;
+    document.getElementById('plan-goal-pred').textContent = splits.total_fmt || '—';
+    var gap = splits.total_s - goalSec;
+    var gapEl = document.getElementById('plan-goal-gap');
+    gapEl.textContent = (gap <= 0 ? '-' : '+') + fmtHMS(Math.abs(gap)) + (gap <= 0 ? ' ✓' : '');
+    gapEl.style.color = gap <= 0 ? 'var(--green)' : '#EF4444';
+  } else {
+    document.getElementById('plan-goal-row').style.display = 'none';
+  }
 
   var rows = [];
   if (splits.swim_fmt && splits.swim_fmt !== '—') rows.push(['🏊', 'Nado',    splits.swim_fmt, splits.swim_s]);
@@ -523,56 +793,18 @@ function renderPlanResults(d) {
     '<div class="chip"><div class="chip-val">' + (d.tsb_used !== null ? d.tsb_used : '—') + '</div><div class="chip-label">TSB</div></div>' +
     '<div class="chip"><div class="chip-val">' + (d.recovery || '—') + '</div><div class="chip-label">Recovery</div></div>' +
     '<div class="chip"><div class="chip-val">' + (d.perf_mod || '—') + '</div><div class="chip-label">Modificador</div></div>' +
+    (pacing.bike_avg_speed_kmh ? '<div class="chip"><div class="chip-val">' + pacing.bike_avg_speed_kmh + ' km/h</div><div class="chip-label">Vel. media bici</div></div>' : '') +
     '</div>';
 }
 
-// ─── NUTRITION ───────────────────────────────────────────────────────────────
-function calcNutrition() {
-  var dur   = parseInt(document.getElementById('nutr-duration').value) || 120;
-  var wt    = parseFloat(document.getElementById('nutr-weight').value) || 70;
-  var sweat = parseFloat(document.getElementById('nutr-sweat').value) || 0.8;
-  var totalS = dur * 60;
-  var durH   = dur / 60;
-
-  var carbGH, carbG, fluidL, sodMgH, cal;
-  if (dur < 60)      carbGH = 30;
-  else if (dur < 90) carbGH = 45;
-  else if (dur < 150) carbGH = 60;
-  else if (dur < 240) carbGH = 75;
-  else                carbGH = 90;
-
-  carbG   = Math.round(carbGH * durH);
-  fluidL  = Math.round(sweat * durH * 10) / 10;
-  sodMgH  = Math.round(wt * 10);
-  cal     = Math.round(carbG * 4 + wt * 5);
-
-  document.getElementById('nutr-result').style.display = 'block';
-  document.getElementById('nutr-summary').innerHTML =
-    '<div class="nutr-stat"><div class="nutr-val">' + carbGH + '</div><div class="nutr-label">g Carbs/hora</div></div>' +
-    '<div class="nutr-stat"><div class="nutr-val">' + carbG  + '</div><div class="nutr-label">g Carbs Total</div></div>' +
-    '<div class="nutr-stat"><div class="nutr-val">' + fluidL + '</div><div class="nutr-label">L Fluidos</div></div>' +
-    '<div class="nutr-stat"><div class="nutr-val">' + sodMgH + '</div><div class="nutr-label">mg Sodio/h</div></div>';
-
-  var rules = [
-    'Objetivo: ' + carbGH + 'g carbohidratos/hora durante las partes activas.',
-    'Nunca experimentes el día de carrera — todo probado en training.',
-    'Si el estómago falla: agua sola 10 min, luego retoma geles.',
-    'Hidratación: ~' + Math.round(sweat * 500) + 'ml por hora en condiciones normales.',
-    'Calor > 28°C: +20% fluidos, switch a geles líquidos.',
-    carbGH > 60 ? 'Para cargas > 60g/h: usar mezcla glucosa:fructosa 2:1 (GI más eficiente).' : null,
-  ].filter(Boolean);
-  document.getElementById('nutr-rules').innerHTML = rules.map(function(r) {
-    return '<li class="nutr-row"><div class="nutr-detail">' + escHtml(r) + '</div></li>';
-  }).join('');
-
-  var warnings = [
-    '⚠ Nunca dejes pasar más de 45 min sin comer en bici.',
-    '⚠ Empieza a comer a los 15 min de bici — no esperes a tener hambre.',
-    '⚠ En carrera: geles líquidos + cola en los últimos km.',
-  ];
-  document.getElementById('nutr-warnings').innerHTML = warnings.map(function(w) {
-    return '<li>' + escHtml(w) + '</li>';
-  }).join('');
+// ─── NUTRITION (redirige a nutrition.html, ver switchTab) ─────────────────────
+var RACE_TYPE_TO_NUTRITION = { sprint:'sprint', olympic:'olympic', '703':'703', full:'ironman' };
+function updateNutritionLink() {
+  var link = document.getElementById('nutrition-link');
+  if (!link) return;
+  var rk = document.getElementById('plan-race-type') ? document.getElementById('plan-race-type').value : null;
+  var mapped = RACE_TYPE_TO_NUTRITION[rk];
+  link.href = mapped ? 'nutrition.html?race=' + mapped : 'nutrition.html';
 }
 
 // ─── RESULT ──────────────────────────────────────────────────────────────────
@@ -609,7 +841,7 @@ function saveResult() {
 
   fetch(API + '/races/record-result', {
     method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_authTok()},
     body: JSON.stringify(payload)
   })
     .then(function(r){ return r.json(); })
@@ -638,7 +870,7 @@ function saveResult() {
 function loadHistory() {
   var container = document.getElementById('history-list');
   container.innerHTML = '<div class="loader">Cargando...</div>';
-  fetch(API + '/races?limit=20', {credentials:'include'})
+  fetch(API + '/races?limit=20', {credentials:'include', headers:{'Authorization':'Bearer '+_authTok()}})
     .then(function(r){ return r.json(); })
     .then(function(d) { renderHistory(d.races || d || []); })
     .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar historial.</div>'; });
@@ -674,6 +906,8 @@ function escHtml(str) {
 
 document.addEventListener('DOMContentLoaded', function() {
   loadDashboard();
+  syncPlanIFSliders();
+  syncPlanGoalInput();
 });
 </script>
 <script src="auth.js"></script>

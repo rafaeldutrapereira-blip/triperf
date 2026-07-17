@@ -33,7 +33,7 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -1180,7 +1180,7 @@ def _rec_perf_mod(rec):
     if rec >= 40:   return 0.98
     return 0.96
 
-def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None):
+def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None, water_mult=1.0):
     dist_map = {
         "sprint": {"swim_m":750,   "bike_km":20,   "run_km":5,   "brick":1.03},
         "olympic":{"swim_m":1500,  "bike_km":40,   "run_km":10,  "brick":1.05},
@@ -1199,7 +1199,7 @@ def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None):
     base = _ctl_base_paces(ctl or 50)
     mod  = (_tsb_perf_mod(tsb) + _rec_perf_mod(recovery_score)) / 2.0
 
-    swim_s = int((dist["swim_m"]/100) * base["swim_s100m"] / mod) if dist["swim_m"] else 0
+    swim_s = int((dist["swim_m"]/100) * base["swim_s100m"] / mod / (water_mult or 1.0)) if dist["swim_m"] else 0
     t1_s   = tn["t1"] if dist["swim_m"] and dist["bike_km"] else 0
     t2_s   = tn["t2"] if dist["bike_km"] and dist["run_km"] else 0
 
@@ -1227,6 +1227,105 @@ def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None):
         "bike_if": bike_if, "bike_pw": bike_pw, "run_pace_s_km": run_pace,
         "mod": round(mod, 3),
     }
+
+
+def _physics_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w, weight_kg,
+                             bike_profile=None, bike_distance_km=None,
+                             bike_elevation_gain_m=0.0, bike_elevation_loss_m=None,
+                             run_distance_km=None, run_elevation_gain_m=0.0,
+                             run_elevation_loss_m=None, run_surface="asfalto",
+                             wind_ms=0.0, altitude_m=0.0, temperature_c=22.0,
+                             bike_if_override=None, run_fraction_override=None,
+                             water_mult=1.0):
+    """
+    Igual que _ctl_predict_splits pero reemplaza bici y run por el motor de
+    física real (Newton-Raphson + Minetti, ver models/bike_physics.py y
+    models/run_physics.py) cuando hay ruta GPX y/o condiciones del día.
+    El nado sigue el mismo modelo CTL de siempre (no hay ruta de nado).
+    """
+    from models.bike_physics import predict_bike, BikePhysicsParams
+    from models.run_physics import predict_run, RunPhysicsParams
+
+    dist_map = {
+        "sprint": {"swim_m":750,   "bike_km":20,   "run_km":5},
+        "olympic":{"swim_m":1500,  "bike_km":40,   "run_km":10},
+        "703":    {"swim_m":1900,  "bike_km":90,   "run_km":21.1},
+        "full":   {"swim_m":3800,  "bike_km":180,  "run_km":42.2},
+        "21k":    {"swim_m":0,     "bike_km":0,    "run_km":21.1},
+        "42k":    {"swim_m":0,     "bike_km":0,    "run_km":42.2},
+    }
+    trans = {
+        "sprint":{"t1":120,"t2":60}, "olympic":{"t1":150,"t2":75},
+        "703":{"t1":180,"t2":90},    "full":{"t1":240,"t2":120},
+        "21k":{"t1":0,"t2":0},       "42k":{"t1":0,"t2":0},
+    }
+    dist = dist_map.get(race_dist_key, dist_map["olympic"])
+    tn   = trans.get(race_dist_key, trans["olympic"])
+    base = _ctl_base_paces(ctl or 50)
+    mod  = (_tsb_perf_mod(tsb) + _rec_perf_mod(recovery_score)) / 2.0
+    wind_ms = wind_ms or 0.0
+    altitude_m = altitude_m or 0.0
+    temperature_c = temperature_c if temperature_c is not None else 22.0
+
+    # Swim: sin ruta disponible, se mantiene el modelo CTL de siempre + condición de agua
+    swim_s = int((dist["swim_m"]/100) * base["swim_s100m"] / mod / (water_mult or 1.0)) if dist["swim_m"] else 0
+    t1_s   = tn["t1"] if dist["swim_m"] and dist["bike_km"] else 0
+    t2_s   = tn["t2"] if dist["bike_km"] and dist["run_km"] else 0
+
+    bike_s, bike_if, bike_pw, bike_speed = 0, None, None, None
+    if dist["bike_km"] and ftp_w:
+        if bike_if_override is not None:
+            bike_if = round(min(1.05, max(0.4, bike_if_override)), 3)
+        else:
+            if_map = {"sprint":0.90, "olympic":0.82, "703":0.75, "full":0.70}
+            bike_if = round(min(0.95, if_map.get(race_dist_key, 0.78) * mod), 3)
+        bkm = bike_distance_km or dist["bike_km"]
+        bgain = bike_elevation_gain_m or 0.0
+        bloss = bike_elevation_loss_m if bike_elevation_loss_m is not None else bgain
+        bike_params = BikePhysicsParams(
+            weight_kg=weight_kg or 70.0, ftp_w=ftp_w, distance_km=bkm,
+            elevation_gain_m=bgain, elevation_loss_m=bloss,
+            altitude_m=altitude_m, temperature_c=temperature_c, wind_ms=wind_ms,
+            if_factor=bike_if,
+            profile=[tuple(p) for p in bike_profile] if bike_profile else None,
+        )
+        bike_result = predict_bike(bike_params)
+        bike_s     = round(bike_result["time_s"])
+        bike_pw    = round(bike_result["avg_power_w"])
+        bike_speed = bike_result["avg_speed_kmh"]
+    elif dist["bike_km"]:
+        bike_s = int(dist["bike_km"] / (base["bike_kmh"] * mod) * 3600)
+
+    run_s, run_pace = 0, None
+    if dist["run_km"]:
+        rk = run_distance_km or dist["run_km"]
+        rgain = run_elevation_gain_m or 0.0
+        rloss = run_elevation_loss_m if run_elevation_loss_m is not None else rgain
+        if run_fraction_override is not None:
+            run_fraction = min(1.20, max(0.4, run_fraction_override))
+        else:
+            rec_if_run   = {"sprint":1.10, "olympic":1.05, "703":0.97, "full":0.88, "21k":0.95, "42k":0.88}
+            run_fraction = min(1.15, rec_if_run.get(race_dist_key, 0.95) * mod)
+        bike_if_for_run = bike_if if bike_if is not None else (0.75 if dist["bike_km"] else 0.0)
+        run_params = RunPhysicsParams(
+            threshold_pace_s_km=base["run_s_km"], weight_kg=weight_kg or 70.0,
+            distance_km=rk, elevation_gain_m=rgain, elevation_loss_m=rloss,
+            surface=run_surface or "asfalto",
+            altitude_m=altitude_m, temperature_c=temperature_c,
+            race_fraction=run_fraction, bike_if=bike_if_for_run,
+        )
+        run_result = predict_run(run_params)
+        run_s    = round(run_result["time_s"])
+        run_pace = round(run_result["effective_pace_s_km"])
+
+    total = swim_s + t1_s + bike_s + t2_s + run_s
+    return {
+        "swim_s": swim_s, "t1_s": t1_s, "bike_s": bike_s, "t2_s": t2_s, "run_s": run_s,
+        "total_s": total, "bike_if": bike_if, "bike_pw": bike_pw,
+        "bike_avg_speed_kmh": bike_speed, "run_pace_s_km": run_pace,
+        "mod": round(mod, 3), "method": "physics",
+    }
+
 
 def _fmt_t(s):
     if not s: return "â€”"
@@ -1284,7 +1383,39 @@ def _pacing_score(pred_total, actual_total, pred_power, actual_power,
 # â”€â”€â”€ Sprint 19 endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 from pydantic import BaseModel as _BM, Field as _F
-from typing import Optional as _Opt
+from typing import Optional as _Opt, List as _List
+
+
+@router.post("/parse-gpx")
+def parse_gpx_route(
+    file: UploadFile = File(...),
+    me:   User        = Depends(get_current_user),
+):
+    """
+    Sube un archivo GPX (ruta real de bici o de trote) y devuelve su perfil
+    de elevación real: distancia, desnivel acumulado y el perfil km→altitud
+    que usa el motor de física (Newton-Raphson bici / Minetti run) para
+    predecir splits precisos en vez del modelo genérico CTL/TSB plano.
+    """
+    if not file.filename or not file.filename.lower().endswith(".gpx"):
+        raise HTTPException(422, "El archivo debe tener extensión .gpx")
+    raw = file.file.read()
+    if len(raw) > 15 * 1024 * 1024:
+        raise HTTPException(413, "Archivo GPX demasiado grande (máx 15MB)")
+    try:
+        from data.gpx_parser import parse_gpx_bytes
+        parsed = parse_gpx_bytes(raw)
+    except ValueError as e:
+        raise HTTPException(422, f"No se pudo leer el GPX: {e}")
+    return {
+        "filename":          file.filename,
+        "distance_km":       parsed["distance_km"],
+        "elevation_gain_m":  parsed["elevation_gain_m"],
+        "elevation_loss_m":  parsed["elevation_loss_m"],
+        "avg_gradient_pct":  parsed["avg_gradient_pct"],
+        "profile":           parsed["profile"],
+        "stats":             parsed["stats"],
+    }
 
 
 class _AutoPlanRequest(_BM):
@@ -1292,6 +1423,32 @@ class _AutoPlanRequest(_BM):
     ftp_w:      _Opt[int] = _F(None, ge=50, le=500)
     weight_kg:  _Opt[float] = _F(None, ge=30, le=150)
     sweat_l_h:  _Opt[float] = _F(None, ge=0.3, le=2.5)
+
+    race_type:  _Opt[str] = None  # override manual del selector (sprint|olympic|703|full|21k|42k)
+
+    # Ruta real (GPX) — opcional. Si se manda, el motor usa física real
+    # (Newton-Raphson bici + Minetti run) en vez del modelo CTL/TSB genérico.
+    bike_profile:          _Opt[_List[_List[float]]] = None  # [[km, elev_m], ...]
+    bike_distance_km:      _Opt[float] = _F(None, gt=0, le=400)
+    bike_elevation_gain_m: _Opt[float] = _F(None, ge=0, le=10000)
+    bike_elevation_loss_m: _Opt[float] = _F(None, ge=0, le=10000)
+    run_distance_km:       _Opt[float] = _F(None, gt=0, le=250)
+    run_elevation_gain_m:  _Opt[float] = _F(None, ge=0, le=10000)
+    run_elevation_loss_m:  _Opt[float] = _F(None, ge=0, le=10000)
+    run_surface:           _Opt[str]   = "asfalto"
+
+    # Condiciones del día — opcionales
+    wind_ms:        _Opt[float] = _F(None, ge=-30, le=30)   # positivo = en contra
+    altitude_m:      _Opt[float] = _F(None, ge=0, le=6000)
+    temperature_c:   _Opt[float] = _F(None, ge=-10, le=50)
+
+    # Intensidad — override manual del % de FTP (bici) y % de ritmo umbral (run),
+    # mismo concepto que el panel "Intensidad" de nutrition.html
+    bike_if_override:      _Opt[float] = _F(None, ge=0.4, le=1.05)
+    run_fraction_override: _Opt[float] = _F(None, ge=0.4, le=1.20)
+
+    # Condición de agua (nado) — rescatado de race_predictor.html
+    water_mult: _Opt[float] = _F(None, ge=0.8, le=1.0)
 
 
 class _RaceResultIn(_BM):
@@ -1316,8 +1473,8 @@ def auto_race_plan(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Genera plan automÃ¡tico basado en CTL/TSB sin inputs manuales."""
-    from ..models import RecoveryScore, RacePlan, UserProfile
+    """Genera plan automático basado en CTL/TSB sin inputs manuales."""
+    from ..models import RecoveryScore, RacePlan
     today = datetime.now(timezone.utc).replace(tzinfo=None).date().isoformat()
 
     load = (db.query(GarminTrainingLoad)
@@ -1325,26 +1482,21 @@ def auto_race_plan(
             .order_by(GarminTrainingLoad.date_iso.desc()).first())
     rec  = db.query(RecoveryScore).filter_by(user_id=me.id, date_iso=today).first()
 
-    try:
-        profile = db.query(UserProfile).filter_by(user_id=me.id).first()
-    except Exception:
-        profile = None
-
     ctl = load.ctl if load else 50
     tsb = load.tsb if load else None
     recovery_score = rec.score if rec else None
 
-    ftp_w     = body.ftp_w or (getattr(profile, "ftp_watts", None) if profile else None)
-    weight_kg = body.weight_kg or (getattr(profile, "weight_kg", None) if profile else 70.0)
+    ftp_w     = body.ftp_w or me.ftp
+    weight_kg = body.weight_kg or me.weight_kg or 70.0
 
-    # Determine race type from next race
+    # Determine race type from next race (o del selector si el usuario lo eligió a mano)
     race_id = body.race_id
     race_type = "olympic"
     race = None
     if not race_id:
         race = (db.query(RaceEvent)
-                .filter(RaceEvent.user_id == me.id, RaceEvent.race_date >= today)
-                .order_by(RaceEvent.race_date.asc()).first())
+                .filter(RaceEvent.user_id == me.id, RaceEvent.date_iso >= today)
+                .order_by(RaceEvent.date_iso.asc()).first())
         if race:
             race_id   = race.id
             race_type = race.distance or "olympic"
@@ -1353,7 +1505,40 @@ def auto_race_plan(
         if race:
             race_type = race.distance or "olympic"
 
-    splits = _ctl_predict_splits(race_type, ctl, tsb, recovery_score, ftp_w)
+    _VALID_RACE_TYPES = ("sprint", "olympic", "703", "full", "21k", "42k")
+    if body.race_type and body.race_type in _VALID_RACE_TYPES:
+        race_type = body.race_type
+
+    has_route_data = bool(
+        body.bike_profile or body.bike_elevation_gain_m or body.run_elevation_gain_m
+        or body.wind_ms or body.altitude_m or body.temperature_c is not None
+        or body.bike_if_override is not None or body.run_fraction_override is not None
+        or body.water_mult is not None
+    )
+    if has_route_data:
+        splits = _physics_predict_splits(
+            race_type, ctl, tsb, recovery_score, ftp_w, weight_kg,
+            bike_profile=body.bike_profile,
+            bike_distance_km=body.bike_distance_km,
+            bike_elevation_gain_m=body.bike_elevation_gain_m,
+            bike_elevation_loss_m=body.bike_elevation_loss_m,
+            run_distance_km=body.run_distance_km,
+            run_elevation_gain_m=body.run_elevation_gain_m,
+            run_elevation_loss_m=body.run_elevation_loss_m,
+            run_surface=body.run_surface,
+            wind_ms=body.wind_ms, altitude_m=body.altitude_m, temperature_c=body.temperature_c,
+            bike_if_override=body.bike_if_override, run_fraction_override=body.run_fraction_override,
+            water_mult=body.water_mult or 1.0,
+        )
+    else:
+        splits = _ctl_predict_splits(race_type, ctl, tsb, recovery_score, ftp_w, water_mult=body.water_mult or 1.0)
+        splits["method"] = "simple"
+
+    # Banda de confianza — rescatada de race_predictor.html, misma fórmula,
+    # usando recovery_score (0-100) en vez de "readiness" (mismo concepto).
+    _rec_for_conf = recovery_score if recovery_score is not None else 70
+    _uncertainty  = 0.02 + (1.0 - _rec_for_conf/100) * 0.04
+    _confidence   = max(55, min(95, round(70 + _rec_for_conf * 0.25)))
     nutrition = _gen_nutrition(
         splits["total_s"], race_type,
         weight_kg=weight_kg or 70.0,
@@ -1384,7 +1569,7 @@ def auto_race_plan(
         "run_target_pace":    splits["run_pace_s_km"],
         "nutrition_plan_json": json.dumps(nutrition),
         "generated_at":       datetime.now(timezone.utc).replace(tzinfo=None),
-        "race_date":          race.race_date if race else None,
+        "race_date":          race.date_iso if race else None,
     }
 
     if existing_plan:
@@ -1408,6 +1593,7 @@ def auto_race_plan(
         "tsb_used":   round(float(tsb), 1) if tsb else None,
         "recovery":   recovery_score,
         "perf_mod":   splits["mod"],
+        "method":     splits.get("method", "simple"),
         "splits": {
             "swim_fmt":  _fmt_t(splits["swim_s"]),
             "t1_fmt":    _fmt_t(splits["t1_s"]),
@@ -1423,8 +1609,15 @@ def auto_race_plan(
         "pacing": {
             "bike_if":    splits["bike_if"],
             "bike_power": splits["bike_pw"],
+            "bike_avg_speed_kmh": splits.get("bike_avg_speed_kmh"),
             "run_pace":   _fmt_pace(splits["run_pace_s_km"]),
             "run_pace_s": splits["run_pace_s_km"],
+        },
+        "confidence": {
+            "confidence_pct":  _confidence,
+            "uncertainty_pct": round(_uncertainty * 100, 1),
+            "range_low_fmt":   _fmt_t(round(splits["total_s"] * (1 - _uncertainty))),
+            "range_high_fmt":  _fmt_t(round(splits["total_s"] * (1 + _uncertainty))),
         },
         "nutrition": nutrition,
     }
