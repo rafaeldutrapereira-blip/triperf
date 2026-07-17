@@ -134,6 +134,10 @@ def _retry(func, max_attempts: int = 3, base_delay: float = 2.0):
 # ── Constantes ────────────────────────────────────────────────────────────────
 STALE_HOURS   = 4          # No re-sincronizar si el último sync fue hace menos de esto
 HISTORY_START = "2010-01-01"  # Fecha desde donde arrancar si no hay actividades previas
+RECONCILE_DAYS = 21        # Ventana que se re-consulta en cada sync, independiente del watermark:
+                            # actividades grabadas en el reloj (nado/trote) pueden subir a Garmin
+                            # días después de ejecutadas (a diferencia de Zwift, que sube al instante),
+                            # así que el fetch_from nunca debe quedar más adelante que "hoy - N días".
 CTL_TAU       = 42         # días constante de tiempo CTL (fitness)
 ATL_TAU       = 7          # días constante de tiempo ATL (fatiga)
 _CTL_K        = 1 - math.exp(-1 / CTL_TAU)
@@ -756,7 +760,9 @@ class GarminPullService:
               .order_by(GarminActivity.date_iso.desc())
               .first()
         )
-        fetch_from = last_act.date_iso if last_act else HISTORY_START
+        watermark  = last_act.date_iso if last_act else HISTORY_START
+        reconcile_floor = (date.today() - timedelta(days=RECONCILE_DAYS)).isoformat()
+        fetch_from = min(watermark, reconcile_floor) if last_act else watermark
         fetch_to   = date.today().isoformat()
 
         logger.info("Garmin fetch user=%s from=%s to=%s", user_id, fetch_from, fetch_to)
