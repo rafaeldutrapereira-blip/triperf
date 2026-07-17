@@ -169,21 +169,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 <header class="sb-topbar"></header>
 <div class="sb-overlay" id="sb-overlay"></div>
 
-<!-- PAGE HEADER -->
-<div class="ph">
-  <div class="c">
-    <div class="ph-inner">
-      <div>
-        <div class="ph-eye">LabX · SPRINT 15</div>
-        <div class="ph-title" id="ph-title">RECUPERACIÓN <em style="color:var(--green)">INTELIGENTE</em></div>
-        <div class="ph-sub" id="ph-date-sub">Cargando…</div>
-      </div>
-      <div style="display:flex;gap:.75rem;align-items:center">
-        <input type="date" id="date-picker" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:.08em">
-        <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
-      </div>
-    </div>
-  </div>
+<!-- PAGE HEADER controls: reubicados por JS a la altura de "Ir a Elite" (ver script al final) -->
+<div id="ph-controls-src" style="display:none">
+  <input type="date" id="date-picker" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:.08em">
+  <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
 </div>
 
 <div style="padding:2rem 0 5rem">
@@ -490,12 +479,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   }
   window.loadDashboard = loadDashboard;
 
-  function updateDateSub(diso) {
-    var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    var d    = new Date(diso + 'T12:00:00');
-    document.getElementById('ph-date-sub').textContent =
-      days[d.getDay()] + ' ' + diso + ' · Recovery Score del día';
-  }
+  function updateDateSub(diso) {}
 
   // ── Hero dial ────────────────────────────────────────────────────────────
   function renderHero(rec) {
@@ -1031,6 +1015,20 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   }, 200);
 
 }());
+</script>
+<script>
+// Reubica fecha + Actualizar a la altura de "Ir a Elite" / "Perfil del Atleta"
+// (fila .dhx-right del header compartido, montado por dash-header.js)
+document.addEventListener('DOMContentLoaded', function(){
+  var dhxRight = document.querySelector('#dhx-root .dhx-right');
+  var src = document.getElementById('ph-controls-src');
+  if(dhxRight && src){
+    src.style.display = 'flex';
+    src.style.alignItems = 'center';
+    src.style.gap = '.75rem';
+    dhxRight.appendChild(src);
+  }
+});
 </script>
 <script src="lx-audit.js"></script>`n</body>
 </html>

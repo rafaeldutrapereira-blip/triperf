@@ -31,7 +31,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 /* ── PAGE HEADER ── */
 .ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
 .ph-inner{padding:1.5rem 0 1.2rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.9rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;letter-spacing:.02em;line-height:1}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
 .ph-sub{font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--muted);letter-spacing:.08em;margin-top:.25rem}
 .ph-chips{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem}
 .chip{font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;padding:.28rem .7rem;border-radius:20px;background:rgba(8,116,174,.1);border:1px solid rgba(8,116,174,.2);color:var(--muted)}
@@ -240,7 +240,6 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
   <div class="c">
     <div class="ph-inner">
       <div>
-        <div class="ph-title" data-i18n="nav_plan">PLAN DE ENTRENAMIENTO</div>
         <div class="ph-sub" id="ph-sub">—</div>
         <div class="ph-chips" id="ph-chips"></div>
       </div>
@@ -631,21 +630,10 @@ function renderHeader(){
   var done  = all.filter(function(s){ return s.status==='done'; });
   var plan  = all.filter(function(s){ return s.status==='planned'; });
 
-  var label = '';
-  if(S.view==='week'){
-    var mon = weekMon(S.ref), sun = addDays(mon,6);
-    label = 'Semana '+isoWeekNum(mon)+' · '+mon.getDate()+' '+MONTHS_S[mon.getMonth()]+
-            '–'+sun.getDate()+' '+MONTHS_S[sun.getMonth()]+' '+sun.getFullYear();
-  } else if(S.view==='month'){
-    label = MONTHS_L[S.ref.getMonth()]+' '+S.ref.getFullYear();
-  } else if(S.pStart && S.pEnd){
-    label = 'Del '+fmtDateLabel(iso(S.pStart))+' al '+fmtDateLabel(iso(S.pEnd));
-  }
-
   var filterLbl = S.filters.length
     ? S.filters.map(function(f){ return SPORT[f]?SPORT[f].icon+' '+SPORT[f].label:f; }).join(', ')
     : '';
-  document.getElementById('ph-sub').textContent = label + (filterLbl?' · '+filterLbl:'');
+  document.getElementById('ph-sub').textContent = filterLbl; // fecha removida: ya se muestra en el nav del calendario
 
   var totalMin = done.reduce(function(t,s){ return t+(s.dur_min||0); },0);
   var totalKm  = done.reduce(function(t,s){ return t+(s.dist_km||0); },0);

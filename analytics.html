@@ -80,22 +80,14 @@
   <!-- ── Main ────────────────────────────────────────────────── -->
   <main class="main" id="main-content">
 
-    <!-- Page header -->
-    <div class="ph" style="margin-bottom:1.5rem">
-      <div>
-        <div class="ph-title">Performance Analytics</div>
-        <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">
-          Curva de potencia, VO2max, r&#233;cords personales y distribuci&#243;n de entrenamiento
-        </div>
-      </div>
-      <div style="display:flex;gap:.6rem;align-items:center">
-        <select id="an-days" onchange="reloadAll()" style="font-size:.72rem;background:var(--surface2,#0f172a);border:1px solid var(--border2);color:var(--text);padding:.35rem .6rem;border-radius:6px">
-          <option value="90">90 d&#237;as</option>
-          <option value="180">180 d&#237;as</option>
-          <option value="365" selected>1 a&#241;o</option>
-          <option value="730">2 a&#241;os</option>
-        </select>
-      </div>
+    <!-- Selector de rango: reubicado por JS a la altura de "Ir a Elite" (ver script al final) -->
+    <div id="ph-controls-src" style="display:none">
+      <select id="an-days" onchange="reloadAll()" style="font-size:.72rem;background:var(--surface2,#0f172a);border:1px solid var(--border2);color:var(--text);padding:.35rem .6rem;border-radius:6px">
+        <option value="90">90 d&#237;as</option>
+        <option value="180">180 d&#237;as</option>
+        <option value="365" selected>1 a&#241;o</option>
+        <option value="730">2 a&#241;os</option>
+      </select>
     </div>
 
     <!-- Tab bar -->
@@ -727,6 +719,19 @@ window.addEventListener('resize', function(){
 <script src="i18n.js"></script>
 <script>
 document.getElementById('yr') && (document.getElementById('yr').textContent = new Date().getFullYear());
+</script>
+<script>
+// Reubica el selector de rango a la altura de "Ir a Elite" / "Perfil del Atleta"
+// (fila .dhx-right del header compartido, montado por dash-header.js)
+document.addEventListener('DOMContentLoaded', function(){
+  var dhxRight = document.querySelector('#dhx-root .dhx-right');
+  var src = document.getElementById('ph-controls-src');
+  if(dhxRight && src){
+    src.style.display = 'flex';
+    src.style.alignItems = 'center';
+    dhxRight.appendChild(src);
+  }
+});
 </script>
 <script src="lx-audit.js"></script>`n</body>
 </html>
