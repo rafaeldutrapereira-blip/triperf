@@ -1,23 +1,23 @@
-﻿"""
-LabX RecuperaciÃ³n Inteligente v1.0 â€” Sprint 15
+"""
+LabX Recuperación Inteligente v1.0 — Sprint 15
 ===============================================
-Motor de recuperaciÃ³n que combina datos objetivos Garmin + bienestar subjetivo
+Motor de recuperación que combina datos objetivos Garmin + bienestar subjetivo
 + carga de entrenamiento (CTL/ATL/TSB) en un Recovery Score accionable.
 
 Endpoints:
-  GET  /recovery/dashboard               â€” Score + todos los factores del dÃ­a
-  GET  /recovery/score/{date_iso}        â€” Score de un dÃ­a especÃ­fico
-  GET  /recovery/hrv/history             â€” Tendencia HRV (7/14/30/90d)
-  GET  /recovery/sleep/history           â€” Tendencia sueÃ±o
-  GET  /recovery/timeline                â€” Vista temporal superpuesta
-  POST /recovery/wellness                â€” Log subjetivo diario (upsert)
-  GET  /recovery/wellness/{date_iso}     â€” Bienestar de un dÃ­a
-  GET  /recovery/wellness/history        â€” Tendencia bienestar
-  GET  /recovery/recommendation          â€” RecomendaciÃ³n IA para hoy
-  GET  /recovery/correlations            â€” HRV Ã— rendimiento histÃ³rico
-  GET  /recovery/protocol/{ptype}        â€” Protocolo post-carrera/enfermedad
-  GET  /recovery/coach-view              â€” Vista coach: todos los atletas
-  POST /recovery/recalculate/{date_iso}  â€” Forzar recÃ¡lculo del score
+  GET  /recovery/dashboard               — Score + todos los factores del día
+  GET  /recovery/score/{date_iso}        — Score de un día específico
+  GET  /recovery/hrv/history             — Tendencia HRV (7/14/30/90d)
+  GET  /recovery/sleep/history           — Tendencia sueño
+  GET  /recovery/timeline                — Vista temporal superpuesta
+  POST /recovery/wellness                — Log subjetivo diario (upsert)
+  GET  /recovery/wellness/{date_iso}     — Bienestar de un día
+  GET  /recovery/wellness/history        — Tendencia bienestar
+  GET  /recovery/recommendation          — Recomendación IA para hoy
+  GET  /recovery/correlations            — HRV × rendimiento histórico
+  GET  /recovery/protocol/{ptype}        — Protocolo post-carrera/enfermedad
+  GET  /recovery/coach-view              — Vista coach: todos los atletas
+  POST /recovery/recalculate/{date_iso}  — Forzar recálculo del score
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
 from sqlalchemy import desc, asc
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -38,16 +39,16 @@ from ..models import (
     Group, GroupMember,
     User, GarminHealthDaily, GarminSleepSession,
     GarminTrainingLoad, GarminActivity,
-    WellnessLog, RecoveryScore,
+    WellnessLog, RecoveryScore, PlanSession,
 )
 from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.recovery")
 router = APIRouter(prefix="/recovery", tags=["recovery"], dependencies=[Depends(require_feature("recovery"))])
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# MOTOR DE RECUPERACIÃ“N â€” corazÃ³n del mÃ³dulo
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# MOTOR DE RECUPERACIÓN — corazón del módulo
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Pesos del score compuesto (suman 1.0)
 DEFAULT_WEIGHTS = {
@@ -58,7 +59,7 @@ DEFAULT_WEIGHTS = {
     "body_battery":  0.10,
 }
 
-# Pesos alternativos si no hay HRV (redistribuir a sueÃ±o + tsb)
+# Pesos alternativos si no hay HRV (redistribuir a sueño + tsb)
 WEIGHTS_NO_HRV = {
     "hrv":           0.00,
     "sleep":         0.40,
@@ -68,11 +69,11 @@ WEIGHTS_NO_HRV = {
 }
 
 LEVEL_THRESHOLDS = [
-    (85, "optimal",  "#10B981", "ðŸŸ¢ Forma Ã³ptima",      "full"),
-    (70, "good",     "#22D3EE", "ðŸŸ¢ Buenas condiciones", "full"),
-    (55, "moderate", "#F0A500", "ðŸŸ¡ RecuperaciÃ³n moderada","moderate"),
-    (40, "low",      "#F59E0B", "ðŸŸ¡ Carga pendiente",   "easy"),
-    (0,  "critical", "#EF4444", "ðŸ”´ RecuperaciÃ³n insuficiente","rest"),
+    (85, "optimal",  "#10B981", "🟢 Forma óptima",      "full"),
+    (70, "good",     "#22D3EE", "🟢 Buenas condiciones", "full"),
+    (55, "moderate", "#F0A500", "🟡 Recuperación moderada","moderate"),
+    (40, "low",      "#F59E0B", "🟡 Carga pendiente",   "easy"),
+    (0,  "critical", "#EF4444", "🔴 Recuperación insuficiente","rest"),
 ]
 
 
@@ -80,7 +81,7 @@ def _level(score: int) -> tuple[str, str, str, str, str]:
     for thresh, lvl, color, label, sug in LEVEL_THRESHOLDS:
         if score >= thresh:
             return lvl, color, label, sug, thresh
-    return "critical", "#EF4444", "ðŸ”´ RecuperaciÃ³n insuficiente", "rest", 0
+    return "critical", "#EF4444", "🔴 Recuperación insuficiente", "rest", 0
 
 
 def _hrv_factor(health: Optional[GarminHealthDaily],
@@ -92,7 +93,7 @@ def _hrv_factor(health: Optional[GarminHealthDaily],
     if not health or not health.hrv_last_night:
         return None
     if not hrv_baseline or hrv_baseline <= 0:
-        # Sin baseline, usar absoluto con escala Garmin tÃ­pica
+        # Sin baseline, usar absoluto con escala Garmin típica
         hrv = health.hrv_last_night
         if hrv >= 70:   return 90.0
         if hrv >= 55:   return 75.0
@@ -101,7 +102,7 @@ def _hrv_factor(health: Optional[GarminHealthDaily],
         return 15.0
 
     ratio = health.hrv_last_night / hrv_baseline
-    # ratio 1.0 = baseline = 70 puntos, ratio 1.2 = Ã³ptimo = 95, ratio 0.7 = crÃ­tico = 10
+    # ratio 1.0 = baseline = 70 puntos, ratio 1.2 = óptimo = 95, ratio 0.7 = crítico = 10
     factor = min(100.0, max(0.0, (ratio - 0.7) / (1.2 - 0.7) * 90.0 + 10.0))
     return round(factor, 1)
 
@@ -109,8 +110,8 @@ def _hrv_factor(health: Optional[GarminHealthDaily],
 def _sleep_factor(sleep: Optional[GarminSleepSession],
                   health: Optional[GarminHealthDaily]) -> Optional[float]:
     """
-    Factor de sueÃ±o 0-100 basado en:
-    - Score Garmin si disponible (0-100 â†’ usado directamente)
+    Factor de sueño 0-100 basado en:
+    - Score Garmin si disponible (0-100 → usado directamente)
     - Si no: tiempo total + % deep/REM
     """
     if sleep and sleep.sleep_score is not None:
@@ -134,7 +135,7 @@ def _sleep_factor(sleep: Optional[GarminSleepSession],
             bonus = 0
         return round(min(100.0, base + bonus), 1)
 
-    # Sin datos de sueÃ±o â†’ usar resting HR como proxy (si estÃ¡ disponible)
+    # Sin datos de sueño → usar resting HR como proxy (si está disponible)
     if health and health.resting_hr:
         rhr = health.resting_hr
         if rhr <= 40:   return 80.0
@@ -147,7 +148,7 @@ def _sleep_factor(sleep: Optional[GarminSleepSession],
 
 def _tsb_factor(tl: Optional[GarminTrainingLoad]) -> Optional[float]:
     """
-    Convierte TSB en factor de recuperaciÃ³n 0-100.
+    Convierte TSB en factor de recuperación 0-100.
     TSB > +15 = forma peak = 95
     TSB -5..+15 = fresco = 80
     TSB -20..-5 = fatiga leve = 60
@@ -161,23 +162,23 @@ def _tsb_factor(tl: Optional[GarminTrainingLoad]) -> Optional[float]:
     if tsb >= -5:   return 80.0
     if tsb >= -20:  return 60.0
     if tsb >= -35:  return 40.0
-    return max(5.0, 20.0 + (tsb + 35) * 0.8)  # degradaciÃ³n gradual por debajo de -35
+    return max(5.0, 20.0 + (tsb + 35) * 0.8)  # degradación gradual por debajo de -35
 
 
 def _stress_factor(health: Optional[GarminHealthDaily]) -> Optional[float]:
     """
-    Convierte avg_stress Garmin (0-100) en factor de recuperaciÃ³n (invertido).
-    EstrÃ©s bajo = recuperaciÃ³n alta.
+    Convierte avg_stress Garmin (0-100) en factor de recuperación (invertido).
+    Estrés bajo = recuperación alta.
     """
     if not health or health.avg_stress is None:
         return None
     stress = health.avg_stress
-    # Invertir: 0 estrÃ©s = 100 puntos, 100 estrÃ©s = 10 puntos
+    # Invertir: 0 estrés = 100 puntos, 100 estrés = 10 puntos
     return round(max(10.0, 100.0 - stress * 0.90), 1)
 
 
 def _body_battery_factor(health: Optional[GarminHealthDaily]) -> Optional[float]:
-    """Body Battery end-of-day â†’ factor directo (ya es 0-100)."""
+    """Body Battery end-of-day → factor directo (ya es 0-100)."""
     if not health:
         return None
     val = health.body_battery_end or health.body_battery_max
@@ -194,8 +195,8 @@ def _wellness_factor(wellness: Optional[WellnessLog]) -> Optional[float]:
     for field in ("energy", "mood", "motivation", "sleep_quality"):
         v = getattr(wellness, field, None)
         if v is not None:
-            scores.append((v - 1) / 4 * 100)  # 1â†’0, 5â†’100
-    # Soreness y stress estÃ¡n invertidos (5=sin dolor = bueno)
+            scores.append((v - 1) / 4 * 100)  # 1→0, 5→100
+    # Soreness y stress están invertidos (5=sin dolor = bueno)
     for field in ("soreness", "stress"):
         v = getattr(wellness, field, None)
         if v is not None:
@@ -233,7 +234,7 @@ def _compute_recovery_score(
     # Si hay factor subjetivo, redistribuir peso
     weights = dict(DEFAULT_WEIGHTS)
     if well_f is not None:
-        # AÃ±adir wellness reduciendo proporcional los otros
+        # Añadir wellness reduciendo proporcional los otros
         ww = 0.10
         for k in weights:
             weights[k] = weights[k] * (1 - ww)
@@ -264,7 +265,7 @@ def _compute_recovery_score(
             available     += 1
 
     if total_weight == 0:
-        score = 50  # sin datos â†’ neutral
+        score = 50  # sin datos → neutral
         completeness = 0.0
     else:
         score = round(weighted_sum / total_weight)
@@ -285,7 +286,7 @@ def _compute_recovery_score(
 
 
 def _get_hrv_baseline(user_id: str, db: Session) -> float:
-    """Promedio de HRV Ãºltimos 60 dÃ­as como baseline personal."""
+    """Promedio de HRV últimos 60 días como baseline personal."""
     cutoff = (date.today() - timedelta(days=60)).isoformat()
     rows   = db.query(GarminHealthDaily.hrv_last_night).filter(
         GarminHealthDaily.user_id   == user_id,
@@ -306,33 +307,33 @@ def _build_recommendation(result: dict, tl: Optional[GarminTrainingLoad],
     lines = []
 
     if score >= 85:
-        lines.append("RecuperaciÃ³n Ã³ptima. Sistema nervioso listo para alta intensidad.")
+        lines.append("Recuperación óptima. Sistema nervioso listo para alta intensidad.")
         lines.append("Ventana ideal para trabajo de calidad: VO2max, umbrales o bloque de fuerza.")
     elif score >= 70:
         lines.append("Buenas condiciones. Puedes entrenar con intensidad normal.")
-        lines.append("Monitora la respuesta â€” si el esfuerzo percibido supera lo esperado, modera.")
+        lines.append("Monitora la respuesta — si el esfuerzo percibido supera lo esperado, modera.")
     elif score >= 55:
-        lines.append("RecuperaciÃ³n moderada. SesiÃ³n a intensidad controlada recomendada.")
+        lines.append("Recuperación moderada. Sesión a intensidad controlada recomendada.")
         if factors.get("tsb") is not None and factors["tsb"] < 50:
-            lines.append("Carga de entrenamiento acumulada detectada (TSB bajo). No aÃ±adas intensidad extra hoy.")
+            lines.append("Carga de entrenamiento acumulada detectada (TSB bajo). No añadas intensidad extra hoy.")
         if factors.get("hrv") is not None and factors["hrv"] < 50:
-            lines.append("HRV bajo baseline. El sistema nervioso no estÃ¡ completamente recuperado.")
+            lines.append("HRV bajo baseline. El sistema nervioso no está completamente recuperado.")
     elif score >= 40:
-        lines.append("Fatiga acumulada significativa. SesiÃ³n tÃ©cnica suave o descanso activo.")
-        lines.append("Prioriza dormir bien esta noche â€” un buen sueÃ±o puede revertir el score maÃ±ana.")
+        lines.append("Fatiga acumulada significativa. Sesión técnica suave o descanso activo.")
+        lines.append("Prioriza dormir bien esta noche — un buen sueño puede revertir el score mañana.")
     else:
-        lines.append("RecuperaciÃ³n insuficiente. El riesgo de lesiÃ³n o sobreentrenamiento es alto.")
-        lines.append("Descanso completo o movilidad suave. No ignores esta seÃ±al.")
+        lines.append("Recuperación insuficiente. El riesgo de lesión o sobreentrenamiento es alto.")
+        lines.append("Descanso completo o movilidad suave. No ignores esta señal.")
         if tl and (tl.tsb or 0) < -30:
-            lines.append(f"TSB en {int(tl.tsb or 0)} â€” bloque de fatiga severa. Considera reducir carga 3-5 dÃ­as.")
+            lines.append(f"TSB en {int(tl.tsb or 0)} — bloque de fatiga severa. Considera reducir carga 3-5 días.")
 
     # Contexto HRV vs baseline
     if hrv_baseline > 0 and health and health.hrv_last_night:
         delta_pct = (health.hrv_last_night - hrv_baseline) / hrv_baseline * 100
         if delta_pct < -15:
-            lines.append(f"HRV {int(delta_pct)}% bajo tu baseline ({int(hrv_baseline)}ms). RecuperaciÃ³n neuro comprometida.")
+            lines.append(f"HRV {int(delta_pct)}% bajo tu baseline ({int(hrv_baseline)}ms). Recuperación neuro comprometida.")
         elif delta_pct > 10:
-            lines.append(f"HRV {int(delta_pct)}% sobre tu baseline. Forma potencialmente Ã³ptima.")
+            lines.append(f"HRV {int(delta_pct)}% sobre tu baseline. Forma potencialmente óptima.")
 
     return " ".join(lines)
 
@@ -354,11 +355,11 @@ def _get_or_compute_score(user_id: str, date_iso: str,
                 "level":              cached.level,
                 "color":              cached.color,
                 "label":              {
-                    "optimal":  "ðŸŸ¢ Forma Ã³ptima",
-                    "good":     "ðŸŸ¢ Buenas condiciones",
-                    "moderate": "ðŸŸ¡ RecuperaciÃ³n moderada",
-                    "low":      "ðŸŸ¡ Carga pendiente",
-                    "critical": "ðŸ”´ RecuperaciÃ³n insuficiente",
+                    "optimal":  "🟢 Forma óptima",
+                    "good":     "🟢 Buenas condiciones",
+                    "moderate": "🟡 Recuperación moderada",
+                    "low":      "🟡 Carga pendiente",
+                    "critical": "🔴 Recuperación insuficiente",
                 }.get(cached.level or "", cached.level),
                 "training_suggestion":cached.training_suggestion,
                 "recommendation":     cached.recommendation,
@@ -437,7 +438,14 @@ def _get_or_compute_score(user_id: str, date_iso: str,
             wellness_factor      = factors.get("wellness"),
             weights_json         = json.dumps(result["weights"]),
         ))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Carrera: otro request concurrente ya insertó el score de este mismo día
+        # (el frontend dispara /dashboard, /recommendation y /wellness casi a la vez).
+        # El resultado ya calculado en esta request sigue siendo válido — se devuelve
+        # tal cual sin persistir de nuevo, evitando el 500 por UNIQUE(user_id,date_iso).
+        db.rollback()
     return result
 
 
@@ -445,9 +453,9 @@ def _today() -> str:
     return date.today().isoformat()
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # ENDPOINTS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")
 def recovery_dashboard(
@@ -456,15 +464,15 @@ def recovery_dashboard(
     me:       User          = Depends(get_current_user),
 ):
     """
-    Endpoint maestro: Recovery Score + todos los datos de recuperaciÃ³n del dÃ­a.
-    1 llamada para toda la pÃ¡gina de recuperaciÃ³n.
+    Endpoint maestro: Recovery Score + todos los datos de recuperación del día.
+    1 llamada para toda la página de recuperación.
     """
     d_iso = date_iso or _today()
 
     # Score compuesto
     score_data = _get_or_compute_score(me.id, d_iso, db)
 
-    # Datos crudos del dÃ­a
+    # Datos crudos del día
     health = db.query(GarminHealthDaily).filter(
         GarminHealthDaily.user_id  == me.id,
         GarminHealthDaily.date_iso == d_iso,
@@ -484,7 +492,7 @@ def recovery_dashboard(
 
     hrv_base = _get_hrv_baseline(me.id, db)
 
-    # HRV histÃ³rico 7 dÃ­as para mini-trend
+    # HRV histórico 7 días para mini-trend
     hrv_7d_raw = db.query(GarminHealthDaily.date_iso, GarminHealthDaily.hrv_last_night).filter(
         GarminHealthDaily.user_id  == me.id,
         GarminHealthDaily.date_iso >= (date.fromisoformat(d_iso) - timedelta(days=6)).isoformat(),
@@ -517,7 +525,7 @@ def recovery_dashboard(
             "change_7d_pct":  hrv_change_pct,
         },
 
-        # SueÃ±o
+        # Sueño
         "sleep": {
             "total_min":   sleep.total_min    if sleep else None,
             "total_h":     round(sleep.total_min / 60, 1) if (sleep and sleep.total_min) else None,
@@ -536,7 +544,7 @@ def recovery_dashboard(
             "ctl":      tl.ctl     if tl else None,
             "atl":      tl.atl     if tl else None,
             "tsb":      tl.tsb     if tl else None,
-            "tss_day":  tl.tss_day if tl else None,
+            "tss_day":  tl.tss     if tl else None,
         },
 
         # Garmin wellness
@@ -571,7 +579,7 @@ def get_recovery_score(
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
-    """Score de recuperaciÃ³n de un dÃ­a especÃ­fico."""
+    """Score de recuperación de un día específico."""
     return _get_or_compute_score(me.id, date_iso, db)
 
 
@@ -581,13 +589,13 @@ def recalculate_score(
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
-    """Fuerza recÃ¡lculo del score del dÃ­a."""
+    """Fuerza recálculo del score del día."""
     return _get_or_compute_score(me.id, date_iso, db, force=True)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # HRV HISTORY
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/hrv/history")
 def hrv_history(
@@ -595,7 +603,7 @@ def hrv_history(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Tendencia HRV y estadÃ­sticas."""
+    """Tendencia HRV y estadísticas."""
     cutoff = (date.today() - timedelta(days=days)).isoformat()
     rows   = db.query(GarminHealthDaily).filter(
         GarminHealthDaily.user_id  == me.id,
@@ -628,7 +636,7 @@ def hrv_history(
             slope = num / den
             trend_slope = round(slope * 7, 2)  # ms/semana
 
-    # Zonas (% de dÃ­as en cada zona)
+    # Zonas (% de días en cada zona)
     baseline = _get_hrv_baseline(me.id, db)
     zones = {"optimal": 0, "normal": 0, "low": 0, "critical": 0}
     for v in valid_hrv:
@@ -662,9 +670,9 @@ def hrv_history(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # SLEEP HISTORY
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/sleep/history")
 def sleep_history(
@@ -672,7 +680,7 @@ def sleep_history(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Tendencia de sueÃ±o con desglose de fases."""
+    """Tendencia de sueño con desglose de fases."""
     cutoff = (date.today() - timedelta(days=days)).isoformat()
     rows   = db.query(GarminSleepSession).filter(
         GarminSleepSession.user_id  == me.id,
@@ -697,7 +705,7 @@ def sleep_history(
     valid_scores = [p["score"]   for p in points if p["score"]   is not None]
     valid_hours  = [p["total_h"] for p in points if p["total_h"] is not None]
 
-    # Deuda de sueÃ±o (vs 8h objetivo)
+    # Deuda de sueño (vs 8h objetivo)
     SLEEP_TARGET_H = 8.0
     sleep_debt_h = 0.0
     for p in points[-7:]:
@@ -719,9 +727,9 @@ def sleep_history(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # TIMELINE (superpuesto)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/timeline")
 def recovery_timeline(
@@ -785,7 +793,7 @@ def recovery_timeline(
             "tss_day":       tss_map.get(d_iso),
         })
 
-    # Identificar ventanas de forma Ã³ptima (score â‰¥ 70, 3+ dÃ­as consecutivos)
+    # Identificar ventanas de forma óptima (score ≥ 70, 3+ días consecutivos)
     optimal_windows = []
     streak_start    = None
     streak_count    = 0
@@ -799,12 +807,12 @@ def recovery_timeline(
                 optimal_windows.append({
                     "start": streak_start,
                     "days":  streak_count,
-                    "label": f"{streak_count} dÃ­as en forma",
+                    "label": f"{streak_count} días en forma",
                 })
             streak_start = None
             streak_count = 0
     if streak_count >= 3:
-        optimal_windows.append({"start": streak_start, "days": streak_count, "label": f"{streak_count} dÃ­as en forma"})
+        optimal_windows.append({"start": streak_start, "days": streak_count, "label": f"{streak_count} días en forma"})
 
     return {
         "days":            days,
@@ -814,9 +822,9 @@ def recovery_timeline(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # WELLNESS LOG
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _WellnessIn(BaseModel):
     energy:       Optional[int] = None
@@ -847,7 +855,7 @@ def log_wellness(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Registra o actualiza el bienestar subjetivo del dÃ­a (upsert)."""
+    """Registra o actualiza el bienestar subjetivo del día (upsert)."""
     d_iso    = body.date_iso or _today()
     existing = db.query(WellnessLog).filter(
         WellnessLog.user_id  == me.id,
@@ -874,7 +882,7 @@ def log_wellness(
         ))
     db.commit()
 
-    # Invalidar cache del score del dÃ­a (se recalcularÃ¡ con wellness)
+    # Invalidar cache del score del día (se recalculará con wellness)
     _get_or_compute_score(me.id, d_iso, db, force=True)
 
     return {"ok": True, "date_iso": d_iso, "message": "Bienestar registrado"}
@@ -950,9 +958,9 @@ def wellness_history(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# RECOMENDACIÃ“N IA
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# RECOMENDACIÓN IA
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/recommendation")
 def get_recommendation(
@@ -961,8 +969,8 @@ def get_recommendation(
     me:       User          = Depends(get_current_user),
 ):
     """
-    RecomendaciÃ³n completa de entrenamiento para el dÃ­a.
-    Incluye sugerencia de carga, protocolos especÃ­ficos y alertas.
+    Recomendación completa de entrenamiento para el día.
+    Incluye sugerencia de carga, protocolos específicos y alertas.
     """
     d_iso    = date_iso or _today()
     score_d  = _get_or_compute_score(me.id, d_iso, db)
@@ -970,13 +978,18 @@ def get_recommendation(
     sug      = score_d.get("training_suggestion", "moderate")
     factors  = score_d.get("factors", {})
 
-    # Obtener plan programado para el dÃ­a
     tl = db.query(GarminTrainingLoad).filter(
         GarminTrainingLoad.user_id  == me.id,
         GarminTrainingLoad.date_iso == d_iso,
     ).first()
 
-    planned_tss = (tl.tss_planned or 0) if tl else 0
+    # Obtener plan programado para el día (sesiones prescritas, no carga ya ejecutada)
+    planned_sessions = db.query(PlanSession).filter(
+        PlanSession.athlete_id == me.id,
+        PlanSession.date_iso   == d_iso,
+        PlanSession.is_skipped == False,
+    ).all()
+    planned_tss = sum(s.tss_planned or 0 for s in planned_sessions)
 
     # Sugerencia de carga ajustada
     adjustment_factor = {
@@ -988,11 +1001,11 @@ def get_recommendation(
 
     recommended_tss = round(planned_tss * adjustment_factor) if planned_tss else None
 
-    # Tipo de sesiÃ³n recomendada
+    # Tipo de sesión recomendada
     session_type = {
-        "full":     "SesiÃ³n completa segÃºn plan. Alta intensidad disponible.",
-        "moderate": "SesiÃ³n moderada. Reduce intensidad al 75-80% del plan.",
-        "easy":     "Solo Z1-Z2. TÃ©cnica o recuperaciÃ³n activa. TSS â‰¤ 50.",
+        "full":     "Sesión completa según plan. Alta intensidad disponible.",
+        "moderate": "Sesión moderada. Reduce intensidad al 75-80% del plan.",
+        "easy":     "Solo Z1-Z2. Técnica o recuperación activa. TSS ≤ 50.",
         "rest":     "Descanso completo o stretching suave. Cero carga.",
     }.get(sug, "Moderado")
 
@@ -1002,29 +1015,29 @@ def get_recommendation(
         alerts.append({
             "type":    "hrv_critical",
             "level":   "high",
-            "message": "HRV muy bajo. El sistema nervioso autÃ³nomo no estÃ¡ recuperado. Riesgo de sobreentrenamiento.",
+            "message": "HRV muy bajo. El sistema nervioso autónomo no está recuperado. Riesgo de sobreentrenamiento.",
         })
     if factors.get("sleep") is not None and factors["sleep"] < 40:
         alerts.append({
             "type":    "sleep_deficit",
             "level":   "medium",
-            "message": "SueÃ±o insuficiente. El 75% de la hormona de crecimiento se libera en sueÃ±o profundo.",
+            "message": "Sueño insuficiente. El 75% de la hormona de crecimiento se libera en sueño profundo.",
         })
     if tl and (tl.tsb or 0) < -30:
         alerts.append({
             "type":    "high_fatigue",
             "level":   "medium",
-            "message": f"Fatiga acumulada alta (TSB {int(tl.tsb or 0)}). Considera 2-3 dÃ­as de carga reducida.",
+            "message": f"Fatiga acumulada alta (TSB {int(tl.tsb or 0)}). Considera 2-3 días de carga reducida.",
         })
 
-    # Prioridades de recuperaciÃ³n
+    # Prioridades de recuperación
     recovery_priorities = []
     if factors.get("sleep") is not None and factors["sleep"] < 60:
-        recovery_priorities.append("ðŸŒ™ Prioriza dormir 8h esta noche")
+        recovery_priorities.append("🌙 Prioriza dormir 8h esta noche")
     if factors.get("stress") is not None and factors["stress"] < 50:
-        recovery_priorities.append("ðŸ§˜ EstrÃ©s alto detectado â€” tÃ©cnicas de relajaciÃ³n o meditaciÃ³n")
+        recovery_priorities.append("🧘 Estrés alto detectado — técnicas de relajación o meditación")
     if factors.get("hrv") is not None and factors["hrv"] < 50:
-        recovery_priorities.append("ðŸ«€ HRV bajo â€” protocolo de recuperaciÃ³n neuro (Z1, baÃ±o frÃ­o, respiraciÃ³n)")
+        recovery_priorities.append("🫀 HRV bajo — protocolo de recuperación neuro (Z1, baño frío, respiración)")
 
     return {
         "date_iso":          d_iso,
@@ -1040,9 +1053,9 @@ def get_recommendation(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# CORRELACIONES HRV Ã— RENDIMIENTO
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# CORRELACIONES HRV × RENDIMIENTO
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/correlations")
 def recovery_correlations(
@@ -1051,19 +1064,19 @@ def recovery_correlations(
     me:   User    = Depends(get_current_user),
 ):
     """
-    CorrelaciÃ³n HRV Ã— rendimiento histÃ³rico.
+    Correlación HRV × rendimiento histórico.
     Identifica las condiciones objetivas del atleta cuando rinde mejor.
     """
     cutoff   = (date.today() - timedelta(days=days)).isoformat()
 
-    # Actividades del perÃ­odo
+    # Actividades del período
     acts = db.query(GarminActivity).filter(
         GarminActivity.user_id  == me.id,
         GarminActivity.date_iso >= cutoff,
         GarminActivity.tss.isnot(None),
     ).order_by(asc(GarminActivity.date_iso)).all()
 
-    # Hacer join con HRV del mismo dÃ­a
+    # Hacer join con HRV del mismo día
     correlations = []
     for a in acts:
         health = db.query(GarminHealthDaily).filter(
@@ -1073,7 +1086,7 @@ def recovery_correlations(
         if not health or not health.hrv_last_night:
             continue
 
-        # Recovery score del dÃ­a
+        # Recovery score del día
         rs = db.query(RecoveryScore).filter(
             RecoveryScore.user_id  == me.id,
             RecoveryScore.date_iso == a.date_iso,
@@ -1084,13 +1097,13 @@ def recovery_correlations(
             "sport":          a.sport,
             "hrv_ms":         health.hrv_last_night,
             "recovery_score": rs.score if rs else None,
-            "tsb":            None,  # se podrÃ­a aÃ±adir
+            "tsb":            None,  # se podría añadir
             "tss":            a.tss,
             "dist_km":        a.dist_km,
             "dur_min":        a.dur_min,
         })
 
-    # AnÃ¡lisis estadÃ­stico simple
+    # Análisis estadístico simple
     if len(correlations) >= 10:
         hrv_values = [c["hrv_ms"] for c in correlations if c["hrv_ms"]]
         median_hrv = statistics.median(hrv_values) if hrv_values else None
@@ -1110,18 +1123,18 @@ def recovery_correlations(
                 diff_pct = round((hi_avg - lo_avg) / lo_avg * 100, 1)
                 if diff_pct > 5:
                     insights.append(
-                        f"Cuando tu HRV es â‰¥{int(median_hrv)}ms, tu TSS promedio es {hi_avg} "
-                        f"(+{diff_pct}% vs dÃ­as con HRV bajo). Rindes mÃ¡s con HRV alto."
+                        f"Cuando tu HRV es ≥{int(median_hrv)}ms, tu TSS promedio es {hi_avg} "
+                        f"(+{diff_pct}% vs días con HRV bajo). Rindes más con HRV alto."
                     )
                 elif diff_pct < -5:
                     insights.append(
                         f"Curiosamente, tu TSS promedio es similar independientemente del HRV. "
-                        f"PodrÃ­as estar sobreforzando cuando el HRV es bajo."
+                        f"Podrías estar sobreforzando cuando el HRV es bajo."
                     )
         else:
             insights = []
     else:
-        insights = ["Se necesitan mÃ¡s datos (mÃ­nimo 10 actividades con HRV) para anÃ¡lisis de correlaciÃ³n."]
+        insights = ["Se necesitan más datos (mínimo 10 actividades con HRV) para análisis de correlación."]
 
     return {
         "days":         days,
@@ -1131,68 +1144,68 @@ def recovery_correlations(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# PROTOCOLOS DE RECUPERACIÃ“N
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# PROTOCOLOS DE RECUPERACIÓN
+# ─────────────────────────────────────────────────────────────────────────────
 
 RECOVERY_PROTOCOLS = {
     "post_sprint": {
         "name":     "Post Sprint",
-        "duration": "3-5 dÃ­as",
+        "duration": "3-5 días",
         "days": [
-            {"day": 1, "label": "DÃ­a 1 (post-carrera)", "load": "rest",     "tss_max": 0,  "actions": ["HidrataciÃ³n 3L", "ProteÃ­na 2g/kg", "BaÃ±o frÃ­o 10min", "SueÃ±o 9h"]},
-            {"day": 2, "label": "DÃ­a 2",                "load": "easy",     "tss_max": 20, "actions": ["30min nataciÃ³n tÃ©cnica", "Masaje/foam roller", "NutriciÃ³n recuperaciÃ³n"]},
-            {"day": 3, "label": "DÃ­a 3",                "load": "moderate", "tss_max": 45, "actions": ["Bici Z1-Z2 45min o carrera 30min suave"]},
-            {"day": 4, "label": "DÃ­a 4",                "load": "full",     "tss_max": 70, "actions": ["Entrenamiento normal si HRV normalizado"]},
+            {"day": 1, "label": "Día 1 (post-carrera)", "load": "rest",     "tss_max": 0,  "actions": ["Hidratación 3L", "Proteína 2g/kg", "Baño frío 10min", "Sueño 9h"]},
+            {"day": 2, "label": "Día 2",                "load": "easy",     "tss_max": 20, "actions": ["30min natación técnica", "Masaje/foam roller", "Nutrición recuperación"]},
+            {"day": 3, "label": "Día 3",                "load": "moderate", "tss_max": 45, "actions": ["Bici Z1-Z2 45min o carrera 30min suave"]},
+            {"day": 4, "label": "Día 4",                "load": "full",     "tss_max": 70, "actions": ["Entrenamiento normal si HRV normalizado"]},
         ],
-        "hrv_clearance": "HRV â‰¥ 90% del baseline antes de retomar intensidad",
+        "hrv_clearance": "HRV ≥ 90% del baseline antes de retomar intensidad",
     },
     "post_703": {
         "name":     "Post 70.3",
-        "duration": "10-14 dÃ­as",
+        "duration": "10-14 días",
         "days": [
-            {"day": 1,  "label": "DÃ­as 1-2",   "load": "rest",     "tss_max": 0,  "actions": ["Descanso total", "HidrataciÃ³n activa", "Anti-inflamatorio natural", "SueÃ±o â‰¥9h"]},
-            {"day": 3,  "label": "DÃ­as 3-4",   "load": "easy",     "tss_max": 25, "actions": ["Caminata suave 30min", "NataciÃ³n tÃ©cnica 20min", "Masaje profesional"]},
-            {"day": 5,  "label": "DÃ­as 5-7",   "load": "easy",     "tss_max": 40, "actions": ["Bici Z1 45min o run 20min Z1", "ContinÃºa foam roller diario"]},
-            {"day": 8,  "label": "DÃ­as 8-10",  "load": "moderate", "tss_max": 60, "actions": ["Sesiones tÃ©cnicas, sin intensidad", "Monitorear HRV â€” si <baseline, extender"]},
-            {"day": 11, "label": "DÃ­as 11-14", "load": "full",     "tss_max": 80, "actions": ["Reintroducir intensidad solo si HRV â‰¥ 95% baseline y TSB > -5"]},
+            {"day": 1,  "label": "Días 1-2",   "load": "rest",     "tss_max": 0,  "actions": ["Descanso total", "Hidratación activa", "Anti-inflamatorio natural", "Sueño ≥9h"]},
+            {"day": 3,  "label": "Días 3-4",   "load": "easy",     "tss_max": 25, "actions": ["Caminata suave 30min", "Natación técnica 20min", "Masaje profesional"]},
+            {"day": 5,  "label": "Días 5-7",   "load": "easy",     "tss_max": 40, "actions": ["Bici Z1 45min o run 20min Z1", "Continúa foam roller diario"]},
+            {"day": 8,  "label": "Días 8-10",  "load": "moderate", "tss_max": 60, "actions": ["Sesiones técnicas, sin intensidad", "Monitorear HRV — si <baseline, extender"]},
+            {"day": 11, "label": "Días 11-14", "load": "full",     "tss_max": 80, "actions": ["Reintroducir intensidad solo si HRV ≥ 95% baseline y TSB > -5"]},
         ],
-        "hrv_clearance": "HRV â‰¥ 95% del baseline antes de sesiÃ³n umbral",
+        "hrv_clearance": "HRV ≥ 95% del baseline antes de sesión umbral",
     },
     "post_ironman": {
         "name":     "Post Ironman",
-        "duration": "21-28 dÃ­as",
+        "duration": "21-28 días",
         "days": [
-            {"day": 1,  "label": "Semana 1",  "load": "rest",     "tss_max": 0,  "actions": ["Descanso activo Ãºnicamente", "No nadar, no correr, no bici", "Crioterapia si disponible", "ProteÃ­na 2.2g/kg/dÃ­a"]},
-            {"day": 8,  "label": "Semana 2",  "load": "easy",     "tss_max": 150,"actions": ["Solo Z1-Z2 todas las sesiones", "NataciÃ³n tÃ©cnica OK", "Sin umbrales"]},
-            {"day": 15, "label": "Semana 3",  "load": "moderate", "tss_max": 250,"actions": ["Aumentar volumen progresivo", "Una sesiÃ³n moderada al inicio de la semana"]},
-            {"day": 22, "label": "Semana 4+", "load": "full",     "tss_max": 350,"actions": ["Retorno a intensidad normal", "Solo si HRV â‰¥ baseline y TSB > 0"]},
+            {"day": 1,  "label": "Semana 1",  "load": "rest",     "tss_max": 0,  "actions": ["Descanso activo únicamente", "No nadar, no correr, no bici", "Crioterapia si disponible", "Proteína 2.2g/kg/día"]},
+            {"day": 8,  "label": "Semana 2",  "load": "easy",     "tss_max": 150,"actions": ["Solo Z1-Z2 todas las sesiones", "Natación técnica OK", "Sin umbrales"]},
+            {"day": 15, "label": "Semana 3",  "load": "moderate", "tss_max": 250,"actions": ["Aumentar volumen progresivo", "Una sesión moderada al inicio de la semana"]},
+            {"day": 22, "label": "Semana 4+", "load": "full",     "tss_max": 350,"actions": ["Retorno a intensidad normal", "Solo si HRV ≥ baseline y TSB > 0"]},
         ],
-        "hrv_clearance": "No realizar intervalos hasta semana 4 Y HRV â‰¥ baseline",
-        "warning": "El Ironman produce daÃ±o muscular detectable hasta 4 semanas post-carrera. Subestimar la recuperaciÃ³n es la principal causa de lesiones en triatletas.",
+        "hrv_clearance": "No realizar intervalos hasta semana 4 Y HRV ≥ baseline",
+        "warning": "El Ironman produce daño muscular detectable hasta 4 semanas post-carrera. Subestimar la recuperación es la principal causa de lesiones en triatletas.",
     },
     "illness": {
         "name":     "Post-Enfermedad",
-        "duration": "Variable (48h sin fiebre mÃ­nimo)",
+        "duration": "Variable (48h sin fiebre mínimo)",
         "days": [
-            {"day": 1,  "label": "Durante sÃ­ntomas", "load": "rest",     "tss_max": 0,  "actions": ["Cero entrenamiento con fiebre", "HidrataciÃ³n mÃ¡xima", "Descanso total"]},
-            {"day": 2,  "label": "48h asintomÃ¡tico",  "load": "easy",     "tss_max": 20, "actions": ["Solo movilidad suave", "No aumentes si sÃ­ntomas regresan"]},
-            {"day": 4,  "label": "4-5 dÃ­as OK",       "load": "moderate", "tss_max": 50, "actions": ["Retorno muy gradual", "HRV como guÃ­a principal"]},
-            {"day": 7,  "label": "7+ dÃ­as OK",        "load": "full",     "tss_max": None, "actions": ["Normal si HRV normalizado"]},
+            {"day": 1,  "label": "Durante síntomas", "load": "rest",     "tss_max": 0,  "actions": ["Cero entrenamiento con fiebre", "Hidratación máxima", "Descanso total"]},
+            {"day": 2,  "label": "48h asintomático",  "load": "easy",     "tss_max": 20, "actions": ["Solo movilidad suave", "No aumentes si síntomas regresan"]},
+            {"day": 4,  "label": "4-5 días OK",       "load": "moderate", "tss_max": 50, "actions": ["Retorno muy gradual", "HRV como guía principal"]},
+            {"day": 7,  "label": "7+ días OK",        "load": "full",     "tss_max": None, "actions": ["Normal si HRV normalizado"]},
         ],
-        "hrv_clearance": "HRV normalizado al menos 3 dÃ­as consecutivos",
-        "warning": "Entrenar con fiebre o sÃ­ntomas activos aumenta el riesgo de miocarditis. Regla: nunca."
+        "hrv_clearance": "HRV normalizado al menos 3 días consecutivos",
+        "warning": "Entrenar con fiebre o síntomas activos aumenta el riesgo de miocarditis. Regla: nunca."
     },
     "overtraining": {
         "name":     "Sobreentrenamiento",
-        "duration": "2-8 semanas (segÃºn severidad)",
+        "duration": "2-8 semanas (según severidad)",
         "days": [
-            {"day": 1,  "label": "Fase 1 (1-2 sem)", "load": "rest",     "tss_max": 0,   "actions": ["ReducciÃ³n drÃ¡stica de carga", "AnÃ¡lisis de sangre (ferritina, cortisol, testosterona)", "RevisiÃ³n nutricional"]},
+            {"day": 1,  "label": "Fase 1 (1-2 sem)", "load": "rest",     "tss_max": 0,   "actions": ["Reducción drástica de carga", "Análisis de sangre (ferritina, cortisol, testosterona)", "Revisión nutricional"]},
             {"day": 15, "label": "Fase 2 (2-4 sem)", "load": "easy",     "tss_max": 100, "actions": ["Solo Z1 si HRV muestra mejora", "Monitoreo HRV diario obligatorio"]},
             {"day": 29, "label": "Fase 3 (4-8 sem)", "load": "moderate", "tss_max": 200, "actions": ["Aumento muy gradual", "CTL objetivo 50% del anterior"]},
         ],
-        "hrv_clearance": "HRV estable â‰¥ baseline durante 7 dÃ­as consecutivos",
-        "warning": "Sobreentrenamiento real puede requerir semanas o meses. Continuar entrenando agrava el sÃ­ndrome."
+        "hrv_clearance": "HRV estable ≥ baseline durante 7 días consecutivos",
+        "warning": "Sobreentrenamiento real puede requerir semanas o meses. Continuar entrenando agrava el síndrome."
     },
 }
 
@@ -1204,7 +1217,7 @@ def get_recovery_protocol(
     me:    User    = Depends(get_current_user),
 ):
     """
-    Protocolo de recuperaciÃ³n detallado.
+    Protocolo de recuperación detallado.
     Types: post_sprint | post_703 | post_ironman | illness | overtraining
     """
     protocol = RECOVERY_PROTOCOLS.get(ptype)
@@ -1214,7 +1227,7 @@ def get_recovery_protocol(
             f"Protocolo '{ptype}' no encontrado. Disponibles: {list(RECOVERY_PROTOCOLS.keys())}"
         )
 
-    # AÃ±adir contexto del atleta actual
+    # Añadir contexto del atleta actual
     d_iso = _today()
     score_d = _get_or_compute_score(me.id, d_iso, db)
 
@@ -1225,15 +1238,15 @@ def get_recovery_protocol(
         "athlete_context": {
             "recovery_score_today": score_d.get("score"),
             "hrv_baseline_ms":      round(hrv_base, 1) if hrv_base else None,
-            "recommendation":       "Sigue el protocolo dÃ­a por dÃ­a. Usa el HRV diario como semÃ¡foro de avance.",
+            "recommendation":       "Sigue el protocolo día por día. Usa el HRV diario como semáforo de avance.",
         },
         "available_types": list(RECOVERY_PROTOCOLS.keys()),
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# COACH VIEW â€” todos los atletas con recovery
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# COACH VIEW — todos los atletas con recovery
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/coach-view")
 def coach_recovery_view(
@@ -1242,7 +1255,7 @@ def coach_recovery_view(
 ):
     """
     Vista coach: recovery score de todos sus atletas hoy.
-    SemÃ¡foro rojo/amarillo/verde instantÃ¡neo.
+    Semáforo rojo/amarillo/verde instantáneo.
     Requiere rol de coach.
     """
     if getattr(me, "role", None) not in ("coach", "admin"):
@@ -1263,17 +1276,17 @@ def coach_recovery_view(
 
         score_d = _get_or_compute_score(athlete_id, d_iso, db)
 
-        # HRV tendencia (â†‘â†“â†’)
+        # HRV tendencia (↑↓→)
         hrv_q = db.query(GarminHealthDaily.hrv_last_night).filter(
             GarminHealthDaily.user_id  == athlete_id,
             GarminHealthDaily.date_iso >= (date.today() - timedelta(days=3)).isoformat(),
         ).order_by(asc(GarminHealthDaily.date_iso)).all()
         hrv_vals = [r[0] for r in hrv_q if r[0]]
-        hrv_trend = "â†’"
+        hrv_trend = "→"
         if len(hrv_vals) >= 2:
-            hrv_trend = "â†‘" if hrv_vals[-1] > hrv_vals[0] else ("â†“" if hrv_vals[-1] < hrv_vals[0] else "â†’")
+            hrv_trend = "↑" if hrv_vals[-1] > hrv_vals[0] else ("↓" if hrv_vals[-1] < hrv_vals[0] else "→")
 
-        # Alertas automÃ¡ticas (2+ dÃ­as en rojo)
+        # Alertas automáticas (2+ días en rojo)
         recent_scores = db.query(RecoveryScore.score, RecoveryScore.date_iso).filter(
             RecoveryScore.user_id  == athlete_id,
             RecoveryScore.date_iso >= (date.today() - timedelta(days=2)).isoformat(),

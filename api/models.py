@@ -235,13 +235,19 @@ class WellnessLog(Base):
     user_id       = Column(String,  ForeignKey("users.id"), nullable=False)
     date_iso      = Column(String,  nullable=False)   # YYYY-MM-DD
     logged_at     = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    fatigue       = Column(Integer, nullable=True)   # 1-5 (5=muy fatigado)
-    sleep_q       = Column(Integer, nullable=True)   # 1-5 calidad sueño
+    fatigue       = Column(Integer, nullable=True)   # 1-5 (5=muy fatigado) — legado, usado por coach_routes
+    sleep_q       = Column(Integer, nullable=True)   # 1-5 calidad sueño — legado, usado por wellness_service
     mood          = Column(Integer, nullable=True)   # 1-5
     soreness      = Column(Integer, nullable=True)   # 1-5
     weight_kg     = Column(Float,   nullable=True)
     notes         = Column(String,  nullable=True)
     deleted_at    = Column(DateTime, nullable=True)
+
+    # Esquema de 6 factores usado por recovery.html / recovery_routes.py
+    energy        = Column(Integer, nullable=True)   # 1-5
+    motivation    = Column(Integer, nullable=True)   # 1-5
+    stress        = Column(Integer, nullable=True)   # 1-5 (5=sin estrés)
+    sleep_quality = Column(Integer, nullable=True)   # 1-5
 
     user = relationship("User", backref="wellness_logs")
 
