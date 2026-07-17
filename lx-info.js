@@ -512,6 +512,50 @@ function _fetchReadinessDaily(cb){
     .then(cb)
     .catch(function(){ cb(null); });
 }
+function _fetchDietPlan(cb){
+  var tok = _authToken();
+  fetch(_apiBase() + '/nutrition/diet-plan', { headers: tok ? { Authorization: 'Bearer ' + tok } : {} })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(cb)
+    .catch(function(){ cb(null); });
+}
+
+/* ── Render del panel de Dieta Diaria Personalizada ──────────────────── */
+function _renderDietPlan(d){
+  if(!d){
+    return '<h2>🍽️ Dieta Diaria Personalizada</h2><p class="li-def">No se pudo cargar el plan. Verifica tu conexión o vuelve a intentar.</p>';
+  }
+  var t = d.targets;
+  var html = '<h2>🍽️ Dieta Diaria Personalizada</h2>';
+  html += '<span class="li-unit">Basada en tu gasto real de entrenamiento (Garmin, últimos '+d.days_analyzed+' días)</span>';
+
+  html += '<div class="li-current-box" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.06)">';
+  html += '<div class="li-cb-label">Objetivo calórico diario</div>';
+  html += '<div class="li-cb-val" style="color:#F59E0B">'+t.kcal.toLocaleString('es')+' kcal</div>';
+  html += '<div class="li-cb-interp">BMR '+d.bmr.toLocaleString('es')+' kcal + entrenamiento (~'+d.avg_daily_train_kcal.toLocaleString('es')+' kcal/día, '+d.avg_daily_train_min+' min/día promedio) → TDEE '+d.tdee.toLocaleString('es')+' kcal. Nivel de carga: <strong>'+d.tier+'</strong>.</div>';
+  html += '</div>';
+
+  html += '<div class="li-section-title">Macronutrientes objetivo</div>';
+  html += '<div class="li-range-bar">';
+  html += '<div class="li-range-row active"><span class="li-range-dot" style="background:#F0A500"></span><span class="li-range-label">CHO — '+t.cho_g+'g ('+t.cho_per_kg+' g/kg)</span></div>';
+  html += '<div class="li-range-row active"><span class="li-range-dot" style="background:#FF6535"></span><span class="li-range-label">Proteína — '+t.protein_g+'g ('+t.protein_per_kg+' g/kg)</span></div>';
+  html += '<div class="li-range-row active"><span class="li-range-dot" style="background:#0EA5E9"></span><span class="li-range-label">Grasa — '+t.fat_g+'g (piso 0.8 g/kg)</span></div>';
+  html += '</div>';
+
+  html += '<div class="li-section-title">Distribución por comida</div>';
+  d.meals.forEach(function(m){
+    html += '<div style="margin-bottom:.9rem;padding:.6rem .75rem;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.06)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem">';
+    html += '<strong style="color:#F9FAFB;font-size:.82rem">'+m.name+'</strong>';
+    html += '<span style="font-size:.72rem;color:#9CA3AF">'+m.kcal+' kcal · '+m.cho_g+'g CHO · '+m.protein_g+'g prot</span>';
+    html += '</div>';
+    html += '<div style="font-size:.74rem;color:#D1D5DB;line-height:1.5">'+m.menu_examples.join(' &nbsp;·&nbsp; ')+'</div>';
+    html += '</div>';
+  });
+
+  html += '<div class="li-pro-tip">'+d.standard_note+'</div>';
+  return html;
+}
 
 /** Junta CTL/ATL/TSB en vivo. Primero intenta los selectores del dashboard;
  *  si no existen (ej. en detalle.html), cae a window.LX_PMC_LIVE = {ctl,atl,tsb}
@@ -557,6 +601,17 @@ window.lxInfo = {
     });
   },
 
+  /** Muestra la Dieta Diaria Personalizada (fetch a /nutrition/diet-plan). */
+  showDietPlan: function(){
+    _ensurePanel();
+    document.getElementById('lx-info-body').innerHTML = '<h2>🍽️ Dieta Diaria Personalizada</h2><p class="li-def">Calculando…</p>';
+    _panelEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    _fetchDietPlan(function(data){
+      document.getElementById('lx-info-body').innerHTML = _renderDietPlan(data);
+    });
+  },
+
   /** Genera el botón ℹ inline. value puede ser un número, un selector CSS para leerlo, o (con rawOnclick) un JS custom. */
   btn: function(metricId, valueOrSelector, extraStyle, rawOnclick){
     // Ojo: el literal va entre paréntesis — "64.startsWith(...)" es un
@@ -595,6 +650,7 @@ window.lxInfo = {
         e.stopPropagation();
         if(mid === 'pmc'){ lxInfo.showPmcLive(); return; }
         if(mid === 'readiness'){ lxInfo.showReadinessLive(); return; }
+        if(mid === 'diet_plan'){ lxInfo.showDietPlan(); return; }
         var val = null;
         if(vsel){
           var target = document.querySelector(vsel);

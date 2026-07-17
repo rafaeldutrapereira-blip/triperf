@@ -53,6 +53,8 @@ from ..models import (
     CustomFood, FavoriteFood, NutritionInsight,
 )
 from ..plan_features import require_feature
+from models.bike_physics import predict_bike, BikePhysicsParams
+from models.run_physics import predict_run, RunPhysicsParams
 
 logger = logging.getLogger("labx.nutrition")
 router = APIRouter(prefix="/nutrition", tags=["nutrition_v2"])
@@ -1557,4 +1559,251 @@ def get_labs_nutrition_sync(
             for c in bridge.covered
         ],
         "supplement_logs_last_30d": len(supp_data),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PRECISE SPLIT PREDICTION — física real (viento, pendiente, altitud, superficie)
+# Usado por nutrition.html para reemplazar el modelo simple de cancha plana.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SPLIT_DIST_M = {
+    "sprint":  {"swim": 750,  "bike": 20000,  "run": 5000,  "t1": 150, "t2": 60},
+    "olympic": {"swim": 1500, "bike": 40000,  "run": 10000, "t1": 180, "t2": 90},
+    "703":     {"swim": 1900, "bike": 90000,  "run": 21097, "t1": 240, "t2": 120},
+    "ironman": {"swim": 3800, "bike": 180000, "run": 42195, "t1": 300, "t2": 180},
+}
+
+
+class PreciseSplitsIn(BaseModel):
+    race_key:            str   = "703"
+    ftp_w:                float = 240.0
+    css_sec_100m:         float = 110.0
+    weight_kg:            float = 70.0
+    run_threshold_s_km:   float = 300.0
+    bike_if:              float = 0.80    # intensity factor efectivo (post-ajuste usuario)
+    run_fraction:         float = 0.97    # % del ritmo umbral efectivo (post-ajuste usuario)
+    bike_elevation_gain_m: float = 0.0
+    bike_elevation_loss_m: Optional[float] = None   # si es None, se asume = gain (circuito neto cero)
+    run_elevation_gain_m:  float = 0.0
+    run_elevation_loss_m:  Optional[float] = None   # si es None, se asume = gain (circuito neto cero)
+    wind_ms:              float = 0.0     # positivo = viento en contra
+    altitude_m:           float = 0.0
+    temperature_c:        float = 22.0
+    surface:              str   = "asfalto"   # asfalto | trail | mixto
+    cda:                  float = 0.32
+    crr:                  float = 0.003
+
+    @field_validator("race_key")
+    @classmethod
+    def _valid_race(cls, v: str) -> str:
+        if v not in _SPLIT_DIST_M:
+            raise ValueError(f"race_key inválido: {v}")
+        return v
+
+    @field_validator("surface")
+    @classmethod
+    def _valid_surface(cls, v: str) -> str:
+        if v not in ("asfalto", "trail", "mixto"):
+            raise ValueError(f"surface inválido: {v}")
+        return v
+
+
+@router.post("/precise-splits")
+def precise_splits(
+    body: PreciseSplitsIn,
+    me:   User = Depends(require_feature("nutrition")),
+):
+    """
+    Predicción de tiempos/gasto calórico con física real:
+    - Bici: arrastre aerodinámico + rodadura + gravedad + viento (Newton-Raphson),
+      densidad del aire ajustada por altitud/temperatura.
+    - Run: costo metabólico Minetti (pendiente), penalización de altitud (VO2max),
+      factor de superficie, factor de temperatura, fatiga post-bici.
+    Reemplaza el modelo simple (cancha plana, sin viento) usado por defecto.
+    """
+    d = _SPLIT_DIST_M[body.race_key]
+    bike_gain = body.bike_elevation_gain_m
+    bike_loss = body.bike_elevation_loss_m if body.bike_elevation_loss_m is not None else body.bike_elevation_gain_m
+    run_gain  = body.run_elevation_gain_m
+    run_loss  = body.run_elevation_loss_m if body.run_elevation_loss_m is not None else body.run_elevation_gain_m
+
+    bike_params = BikePhysicsParams(
+        weight_kg=body.weight_kg, ftp_w=body.ftp_w, cda=body.cda, crr=body.crr,
+        distance_km=d["bike"] / 1000.0,
+        elevation_gain_m=bike_gain, elevation_loss_m=bike_loss,
+        altitude_m=body.altitude_m, temperature_c=body.temperature_c, wind_ms=body.wind_ms,
+        if_factor=body.bike_if,
+    )
+    bike_result = predict_bike(bike_params)
+
+    run_params = RunPhysicsParams(
+        threshold_pace_s_km=body.run_threshold_s_km, weight_kg=body.weight_kg,
+        distance_km=d["run"] / 1000.0,
+        elevation_gain_m=run_gain, elevation_loss_m=run_loss, surface=body.surface,
+        altitude_m=body.altitude_m, temperature_c=body.temperature_c,
+        race_fraction=body.run_fraction, bike_if=body.bike_if,
+    )
+    run_result = predict_run(run_params)
+
+    swim_sec = (d["swim"] / 100.0) * body.css_sec_100m
+    t1_sec, t2_sec = d["t1"], d["t2"]
+    total_sec = swim_sec + t1_sec + bike_result["time_s"] + t2_sec + run_result["time_s"]
+
+    swim_kcal = 8.0 * body.weight_kg * (swim_sec / 3600.0)
+    bike_kcal = (bike_result["avg_power_w"] * bike_result["time_s"]) / (0.23 * 4184)
+    run_kcal  = body.weight_kg * (d["run"] / 1000.0) * 1.04 * run_result["factors"]["elevation"]
+
+    return {
+        "race_key":   body.race_key,
+        "swim":  {"time_s": round(swim_sec), "kcal": round(swim_kcal)},
+        "t1_s":  t1_sec,
+        "bike":  {
+            "time_s":       round(bike_result["time_s"]),
+            "avg_power_w":  bike_result["avg_power_w"],
+            "avg_speed_kmh": bike_result["avg_speed_kmh"],
+            "kcal":         round(bike_kcal),
+        },
+        "t2_s":  t2_sec,
+        "run":   {
+            "time_s":             round(run_result["time_s"]),
+            "effective_pace_s_km": round(run_result["effective_pace_s_km"], 1),
+            "factors":            run_result["factors"],
+            "kcal":               round(run_kcal),
+        },
+        "total_time_s": round(total_sec),
+        "total_kcal":   round(swim_kcal + bike_kcal + run_kcal),
+        "conditions": {
+            "bike_elevation_gain_m": bike_gain, "bike_elevation_loss_m": bike_loss,
+            "run_elevation_gain_m": run_gain, "run_elevation_loss_m": run_loss,
+            "wind_ms": body.wind_ms, "altitude_m": body.altitude_m,
+            "temperature_c": body.temperature_c, "surface": body.surface,
+        },
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DIET PLAN — dieta diaria personalizada según gasto calórico real de entrenamiento
+# Estándar ISSN/IOC para atletas de resistencia. Usado por el ícono ℹ de
+# "Calorías Quemadas — Últimas 8 Semanas" en nutrition.html (lx-info.js → showDietPlan).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_MEAL_SPLIT = [
+    ("Desayuno", 0.25), ("Snack AM", 0.10), ("Almuerzo", 0.30),
+    ("Snack PM", 0.10), ("Cena", 0.25),
+]
+_MENU_EXAMPLES = {
+    "Desayuno": [
+        "Avena + plátano + 2 huevos + café",
+        "Pan integral + palta + huevo + fruta",
+        "Yogur griego + granola + frutos rojos + miel",
+    ],
+    "Snack AM": ["Fruta + puñado de nueces (~25g)", "Yogur natural + miel"],
+    "Almuerzo": [
+        "Arroz o quinoa + pollo/pescado + verduras salteadas + aceite de oliva",
+        "Legumbres + arroz + ensalada + palta",
+    ],
+    "Snack PM": ["Batido de proteína + plátano", "Tostada integral + palta + huevo"],
+    "Cena": [
+        "Proteína magra + camote/papa + verduras al vapor",
+        "Pescado + quinoa + ensalada",
+    ],
+}
+
+
+def _activity_kcal(a: GarminActivity, weight_kg: float) -> float:
+    if a.calories:
+        return float(a.calories)
+    dur_min = a.dur_min or 0
+    sport = (a.sport or "").lower()
+    if sport == "bike":
+        power = a.avg_power or (weight_kg * 2.5)
+        return (power * dur_min * 60) / (0.23 * 4184)
+    if sport == "run":
+        dist_km = a.dist_km or (dur_min * 0.17)
+        return weight_kg * dist_km * 1.04
+    if sport in ("swim", "pool_swimming", "open_water"):
+        return 8.0 * weight_kg * (dur_min / 60.0)
+    return 7.0 * weight_kg * (dur_min / 60.0)  # genérico (gym/otras)
+
+
+@router.get("/diet-plan")
+def diet_plan(
+    db: Session = Depends(get_db),
+    me: User    = Depends(require_feature("nutrition")),
+):
+    """
+    Dieta diaria personalizada según estándar ISSN/IOC para atletas de resistencia:
+    - BMR (Mifflin-St Jeor, promedio sexo-neutral) + gasto real de entrenamiento (Garmin, 14d)
+    - CHO g/kg escalado por volumen de entrenamiento diario promedio (3-5/5-7/6-10/8-12 g/kg)
+    - Proteína 1.6 g/kg (rango ISSN 1.4-2.0 para resistencia)
+    - Grasa: resto de kcal, piso de seguridad 0.8 g/kg (función hormonal)
+    - Distribuye en 5 comidas con ejemplos de menú concretos
+    """
+    weight = me.weight_kg or 70.0
+    height = me.height_cm or 170
+    age    = me.age or 35
+
+    bmr = 10 * weight + 6.25 * height - 5 * age - 78  # promedio fórmulas H/M Mifflin-St Jeor
+
+    days = 14
+    cutoff = (date.today() - timedelta(days=days)).isoformat()
+    acts = db.query(GarminActivity).filter(
+        GarminActivity.user_id == me.id, GarminActivity.date_iso >= cutoff
+    ).all()
+    total_kcal = sum(_activity_kcal(a, weight) for a in acts)
+    total_min  = sum(a.dur_min or 0 for a in acts)
+    avg_daily_train_kcal = total_kcal / days
+    avg_daily_train_min  = total_min / days
+
+    tdee = bmr * 1.3 + avg_daily_train_kcal  # 1.3 = NEAT/vida diaria fuera del entreno
+
+    if avg_daily_train_min < 30:
+        cho_per_kg, tier = 4.0, "Día liviano"
+    elif avg_daily_train_min < 90:
+        cho_per_kg, tier = 6.0, "Carga moderada"
+    elif avg_daily_train_min < 180:
+        cho_per_kg, tier = 8.0, "Carga alta"
+    else:
+        cho_per_kg, tier = 10.0, "Carga muy alta"
+
+    protein_per_kg = 1.6
+    cho_g       = round(weight * cho_per_kg)
+    protein_g   = round(weight * protein_per_kg)
+    cho_kcal    = cho_g * 4
+    protein_kcal = protein_g * 4
+    fat_floor_kcal = weight * 0.8 * 9
+    fat_kcal    = max(tdee - cho_kcal - protein_kcal, fat_floor_kcal)
+    fat_g       = round(fat_kcal / 9)
+    total_kcal_target = round(cho_kcal + protein_kcal + fat_kcal)
+
+    meals = []
+    for name, pct in _MEAL_SPLIT:
+        meals.append({
+            "name": name, "pct": pct,
+            "kcal": round(total_kcal_target * pct),
+            "cho_g": round(cho_g * pct),
+            "protein_g": round(protein_g * pct),
+            "menu_examples": _MENU_EXAMPLES[name],
+        })
+
+    return {
+        "weight_kg": weight,
+        "bmr": round(bmr),
+        "tdee": round(tdee),
+        "avg_daily_train_kcal": round(avg_daily_train_kcal),
+        "avg_daily_train_min": round(avg_daily_train_min),
+        "days_analyzed": days,
+        "activities_analyzed": len(acts),
+        "tier": tier,
+        "targets": {
+            "kcal": total_kcal_target,
+            "cho_g": cho_g, "cho_per_kg": cho_per_kg,
+            "protein_g": protein_g, "protein_per_kg": protein_per_kg,
+            "fat_g": fat_g,
+        },
+        "meals": meals,
+        "standard_note": "Guías ISSN (Kerksick et al. 2018) / IOC Consensus 2010 para atletas de resistencia: "
+                          "3–5 g/kg CHO días livianos hasta 8–12 g/kg en carga muy alta; proteína 1.4–2.0 g/kg; "
+                          "grasa mínimo 0.8 g/kg para no comprometer función hormonal.",
     }

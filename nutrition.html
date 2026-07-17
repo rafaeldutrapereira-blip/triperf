@@ -56,6 +56,13 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .cfg-ath-lbl{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .cfg-ath-val{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;color:var(--text)}
 @media(max-width:720px){.cfg-ath{display:none}}
+.if-panel{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1.4rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border2)}
+.if-note{flex-basis:100%;font-family:'Inter',sans-serif;font-size:.72rem;color:var(--dim);line-height:1.4;margin-bottom:.1rem}
+.if-row{display:flex;flex-direction:column;gap:.35rem;min-width:220px}
+.if-row label{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:.5rem}
+.if-val{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;color:var(--orange)}
+.if-row input[type=range]{width:100%;accent-color:var(--orange)}
+#if-toggle-btn{position:relative}
 
 /* ── PAGE HEADER ── */
 .ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
@@ -175,20 +182,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <button class="rt on" onclick="setRace('703',this)" data-i18n="nutr_703">🌊 70.3</button>
         <button class="rt" onclick="setRace('ironman',this)" data-i18n="nutr_ironman">🔥 Ironman</button>
       </div>
-      <label class="cfg-sel">Sudoración
-        <select id="sel-sweat" onchange="nutCalc()">
-          <option value="600">Normal (~600 ml/h)</option>
-          <option value="900">Alta (~900 ml/h)</option>
-          <option value="1200">Muy alta (~1.2 L/h)</option>
-        </select>
-      </label>
-      <label class="cfg-sel">Temperatura
-        <select id="sel-heat" onchange="nutCalc()">
-          <option value="1.0">Frío/Templado (&lt;20°C)</option>
-          <option value="1.15">Cálido (20–28°C)</option>
-          <option value="1.30">Caluroso (&gt;28°C)</option>
-        </select>
-      </label>
       <div class="cfg-ath" id="cfg-ath-info">
         <div><div class="cfg-ath-lbl">FTP</div><div class="cfg-ath-val" id="ca-ftp">240W</div></div>
         <div style="width:1px;height:28px;background:var(--border2)"></div>
@@ -198,7 +191,59 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <div style="width:1px;height:28px;background:var(--border2)"></div>
         <div><div class="cfg-ath-lbl">Peso</div><div class="cfg-ath-val" id="ca-weight">72kg</div></div>
       </div>
+      <button class="btn btn-g btn-sm" id="if-toggle-btn" onclick="toggleIFPanel()" title="Ajustar intensidad de bici y carrera">🎚 Intensidad<span id="if-badge" style="display:none;margin-left:.35rem;color:var(--gold)">●</span></button>
       <span id="nut-save-status" style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);opacity:0;transition:opacity .3s ease;flex-shrink:0"></span>
+    </div>
+    <div class="if-panel" id="if-panel" style="display:none">
+      <p class="if-note">Los % estándar asumen un atleta age-grouper típico. Ajustalos si tu intensidad real es distinta (ej. edad, nivel, o si vas a ritmo conservador).</p>
+      <div class="if-row">
+        <label>Bici — % de tu FTP <span class="if-val" id="if-bike-val">80%</span></label>
+        <input type="range" id="if-bike-slider" min="50" max="105" step="1" oninput="onIFChange()">
+      </div>
+      <div class="if-row">
+        <label>Run — % de tu ritmo umbral <span class="if-val" id="if-run-val">97%</span></label>
+        <input type="range" id="if-run-slider" min="50" max="120" step="1" oninput="onIFChange()">
+      </div>
+      <button class="rt" style="align-self:flex-start" onclick="resetIF()">↺ Restablecer estándar</button>
+      <p class="if-note" style="flex-basis:100%;border-top:1px solid var(--border2);padding-top:.6rem;margin-top:.2rem">Condiciones de carrera — física real (viento, pendiente, altitud, superficie). Se guardan por tipo de carrera. El desnivel asume que subís y bajás la misma cantidad de metros (circuito neto cero).</p>
+      <div class="if-row">
+        <label>Desnivel acumulado bici (subida, m) <span class="if-val" id="if-elev-bike-val">0m</span></label>
+        <input type="range" id="if-elev-bike-slider" min="0" max="3000" step="50" value="0" oninput="onCourseChange()">
+      </div>
+      <div class="if-row">
+        <label>Desnivel acumulado run (subida, m) <span class="if-val" id="if-elev-run-val">0m</span></label>
+        <input type="range" id="if-elev-run-slider" min="0" max="1500" step="25" value="0" oninput="onCourseChange()">
+      </div>
+      <div class="if-row">
+        <label>Viento (km/h, + = en contra) <span class="if-val" id="if-wind-val">0</span></label>
+        <input type="range" id="if-wind-slider" min="-30" max="30" step="1" value="0" oninput="onCourseChange()">
+      </div>
+      <div class="if-row">
+        <label>Altitud (msnm) <span class="if-val" id="if-alt-val">0</span></label>
+        <input type="range" id="if-alt-slider" min="0" max="3000" step="50" value="0" oninput="onCourseChange()">
+      </div>
+      <div class="if-row">
+        <label>Temperatura en carrera (°C) — afecta ritmo, sudoración y sodio <span class="if-val" id="if-temp-val">22°C</span></label>
+        <input type="range" id="if-temp-slider" min="5" max="40" step="1" value="22" oninput="onCourseChange()">
+      </div>
+      <div class="if-row">
+        <label>Sudoración personal</label>
+        <select id="sel-sweat" class="cfg-sel" style="padding:.35rem .5rem;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:5px" onchange="nutCalc()">
+          <option value="600">Normal (~600 ml/h)</option>
+          <option value="900">Alta (~900 ml/h)</option>
+          <option value="1200">Muy alta (~1.2 L/h)</option>
+        </select>
+      </div>
+      <div class="if-row">
+        <label>Superficie del run</label>
+        <select id="if-surface" class="cfg-sel" style="padding:.35rem .5rem;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:5px" onchange="onCourseChange()">
+          <option value="asfalto">Asfalto</option>
+          <option value="mixto">Mixto</option>
+          <option value="trail">Trail</option>
+        </select>
+      </div>
+      <button class="rt" style="align-self:flex-start" onclick="resetCourse()">↺ Cancha plana / sin viento</button>
+      <span id="if-precision-badge" style="flex-basis:100%;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)"></span>
     </div>
   </div>
 </div>
@@ -237,7 +282,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   </div>
   <div class="panel">
     <div class="panel-head">
-      <span class="panel-title">
+      <span class="panel-title" data-lx-info="diet_plan">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         Calorías Quemadas — Últimas 8 Semanas
       </span>
@@ -274,6 +319,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <button class="tab-btn on" onclick="switchTab('res',this)" data-i18n="nutr_summary">📊 Resumen</button>
         <button class="tab-btn" onclick="switchTab('plan',this)" data-i18n="nutr_plan">📋  Plan Hora a Hora</button>
         <button class="tab-btn" onclick="switchTab('pre',this)" data-i18n="nutr_prerace">📋 Pre-Carrera</button>
+        <button class="tab-btn" onclick="switchTab('post',this)" data-i18n="nutr_postrace">🔄 Post-Carrera</button>
       </div>
     </div>
     <div style="padding:1.4rem">
@@ -326,6 +372,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <!-- TAB 3: PRE-CARRERA -->
       <div class="tab-pane" id="tab-pre">
         <div id="pre-race-content"></div>
+      </div>
+
+      <!-- TAB 4: POST-CARRERA -->
+      <div class="tab-pane" id="tab-post">
+        <div class="tot-strip" id="post-kpi-strip" style="margin-bottom:1.2rem"></div>
+        <div id="post-race-content"></div>
       </div>
 
     </div>
@@ -414,15 +466,44 @@ function kCalSwim(weight, durMin)  { return 8.0 * weight * (durMin/60); }
 // ATHLETE PROFILE (from kl_athlete_data localStorage)
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 var ATH = {ftp:235, css:110, run:300, weight:62, name:'Rafael'};
+var PROFILE = {};
+function nutAuthTok() {
+  var t = localStorage.getItem('lx_co_token');
+  if(t) return t;
+  try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); return (s&&s.token)?s.token:''; }catch(e){ return ''; }
+}
+function loadAthleteProfileFromAPI() {
+  var tok = nutAuthTok();
+  if(!tok) return;
+  var api = (location.protocol === 'file:' ? 'http://localhost:8000' : '') + '/api';
+  fetch(api + '/athlete/profile', { headers: { Authorization: 'Bearer ' + tok } })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(p){
+      if(!p) return;
+      PROFILE = p;
+      loadAth();
+      loadFromKLData();
+      renderWeeklyChart();
+      nutCalc();
+    }).catch(function(){});
+}
 function loadAth() {
-  try {
-    var d = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
-    if(d.ftp)      ATH.ftp    = parseInt(d.ftp)||235;
-    if(d.css)      ATH.css    = parsePaceSec(d.css);
-    if(d.runPace)  ATH.run    = parsePaceSec(d.runPace);
-    if(d.weight)   ATH.weight = parseFloat(d.weight)||62;
-    if(d.name)     ATH.name   = d.name;
-  } catch(e){}
+  // Fuente de verdad: perfil real (misma que athlete_profile.html). Fallback: kl_athlete_data local.
+  if(PROFILE.ftp)       ATH.ftp    = parseInt(PROFILE.ftp)    || ATH.ftp;
+  if(PROFILE.css)       ATH.css    = parsePaceSec(PROFILE.css)     || ATH.css;
+  if(PROFILE.run_pace)  ATH.run    = parsePaceSec(PROFILE.run_pace) || ATH.run;
+  if(PROFILE.weight_kg) ATH.weight = parseFloat(PROFILE.weight_kg) || ATH.weight;
+  if(PROFILE.nombre)    ATH.name   = PROFILE.nombre;
+  if(!Object.keys(PROFILE).length) {
+    try {
+      var d = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
+      if(d.ftp)      ATH.ftp    = parseInt(d.ftp)||235;
+      if(d.css)      ATH.css    = parsePaceSec(d.css);
+      if(d.runPace)  ATH.run    = parsePaceSec(d.runPace);
+      if(d.weight)   ATH.weight = parseFloat(d.weight)||62;
+      if(d.name)     ATH.name   = d.name;
+    } catch(e){}
+  }
   document.getElementById('ca-ftp').textContent    = ATH.ftp+'W';
   document.getElementById('ca-css').textContent    = fmtPace(ATH.css)+'/100';
   document.getElementById('ca-run').textContent    = fmtPace(ATH.run)+'/km';
@@ -433,7 +514,11 @@ function loadAth() {
 function loadFromKLData() {
   if (typeof KL_DATA === 'undefined') return;
   var profileRaw = {};
-  try { profileRaw = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}'); } catch(e) {}
+  if(Object.keys(PROFILE).length) {
+    profileRaw = {css: PROFILE.css, runPace: PROFILE.run_pace};
+  } else {
+    try { profileRaw = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}'); } catch(e) {}
+  }
   var profileHasCSS     = !!(profileRaw.css     && parsePaceSec(profileRaw.css)     > 0);
   var profileHasRunPace = !!(profileRaw.runPace  && parsePaceSec(profileRaw.runPace) > 0);
   var acts = KL_DATA.activities || [];
@@ -567,46 +652,79 @@ function buildPlan(raceKey, pred, sweatMl, heatF) {
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // PRE-RACE PROTOCOL DATA (ported from app.py)
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
-var PRE_RACE = {
+// PRE_RACE_BASE: recetas calibradas para un atleta de referencia de 70kg.
+// buildPreRace() escala los gramos de CHO/proteína al peso real del atleta
+// (mismo criterio que Post-Carrera) y ajusta las líneas de sodio a la temperatura real.
+var PRE_RACE_SF_BASE = 70; // kg de referencia usados para calibrar las recetas de abajo
+var PRE_RACE_BASE = {
   sprint:[
-    ['T-24h (día anterior)','Cena normal','Pasta/arroz 80g seco + proteína + verdura','6–7 g CHO/kg peso corporal. Sin cambios radicales en la dieta.'],
-    ['T-3h','Desayuno pre-carrera','Avena 60g + plátano + café · 2–3 tostadas con mermelada','60–90g CHO. Bajo en fibra y grasa. Conocido y probado en entrenos.'],
-    ['T-60min','Snack ligero','Barra de arroz o banana pequeña (25g CHO)','Opcional si el desayuno fue pequeño. Evita azúcares simples sin fibra.'],
+    ['T-24h (día anterior)','Cena normal','Pasta/arroz {80}g seco + proteína + verdura','{choKg1}g CHO (6–7 g/kg). Sin cambios radicales en la dieta.'],
+    ['T-3h','Desayuno pre-carrera','Avena {60}g + plátano + café · 2–3 tostadas con mermelada','{choKg2}g CHO (~1.1 g/kg). Bajo en fibra y grasa. Conocido y probado en entrenos.'],
+    ['T-60min','Snack ligero','Barra de arroz o banana pequeña ({25}g CHO)','Opcional si el desayuno fue pequeño. Evita azúcares simples sin fibra.'],
     ['T-30min','Hidratación activa','400–500ml agua o isotónico diluido','Objetivo: orina amarillo pálido. No más de 500ml para evitar baño.'],
     ['T-15min','Gel de activación (opcional)','1 gel cafeína (100mg) si usas cafeína en entrenos','Solo si está probado en entrenamiento. No probar nada nuevo el día de carrera.'],
     ['T-0 🏁','Lista final','Gel en bolsillo listo. Botella montada en bici. Últimos 100ml agua.','Revisa: electrolitos guardados, geles accesibles, bidón lleno.']
   ],
   olympic:[
-    ['T-24h (día anterior)','Carga suave de carbohidratos','Arroz/pasta 100g seco + pollo + verdura cocida. Cena temprana.','7–8 g CHO/kg. Evita alimentos nuevos, picantes o con alto contenido en fibra.'],
-    ['T-12h (noche anterior)','Snack nocturno','Yogur + miel + plátano (30g CHO)','Opcional. Útil si la carrera es muy temprano y el desayuno será pequeño.'],
-    ['T-3h','Desayuno pre-carrera','Avena 80g + miel + plátano + café · o arroz con mermelada','90–120g CHO. Bajo en fibra. Probado en entrenamientos largos previos.'],
-    ['T-60min','Snack CHO','Barra energética o 2 tostadas con miel (40–50g CHO)','Mantiene glucosa estable sin sobrecargar. Con ~250ml agua.'],
-    ['T-30min','Hidratación pre-race','500ml isotónico diluido (50%) + sal si hace calor','Si temperatura >22°C: añade 500mg sal. No más de 500ml.'],
+    ['T-24h (día anterior)','Carga suave de carbohidratos','Arroz/pasta {100}g seco + pollo + verdura cocida. Cena temprana.','{choKg1}g CHO (7–8 g/kg). Evita alimentos nuevos, picantes o con alto contenido en fibra.'],
+    ['T-12h (noche anterior)','Snack nocturno','Yogur + miel + plátano ({30}g CHO)','Opcional. Útil si la carrera es muy temprano y el desayuno será pequeño.'],
+    ['T-3h','Desayuno pre-carrera','Avena {80}g + miel + plátano + café · o arroz con mermelada','{choKg2}g CHO (~1.5 g/kg). Bajo en fibra. Probado en entrenamientos largos previos.'],
+    ['T-60min','Snack CHO','Barra energética o 2 tostadas con miel ({45}g CHO)','Mantiene glucosa estable sin sobrecargar. Con ~250ml agua.'],
+    ['T-30min','Hidratación pre-race','500ml isotónico diluido (50%) + {heat}','No más de 500ml.'],
     ['T-15min','Gel de activación + cafeína','1 gel cafeína (SIS Caffeine, GU Roctane) 22g CHO + 75mg cafeína','Activa el sistema nervioso. Timing preciso: 15min antes del agua.'],
     ['T-0 🏁','Checklist final','2 geles accesibles · bidón lleno · sal en bolsillo · últimos 100ml','Revisa que el bidón esté en porta-bidón. Posición cinta de corazón.']
   ],
   '703':[
-    ['T-48h (2 días antes)','Inicio carga de carbohidratos','8–10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos. Reduce entrenamiento.','Satura glucógeno muscular y hepático. Reduce grasas y fibra estos 2 días.'],
-    ['T-24h','Cena carga final','Pasta/arroz 150g seco + pollo 200g + aceite oliva + pan','Última gran comida. Cena temprana (no después de las 20h). Sin alcohol.'],
-    ['T-4h','Desayuno pre-carrera','Arroz 120g + miel + plátano 2 uds + café con leche · o avena especial','140–180g CHO. Conocido. Sin fibra, sin grasa. Tiempo suficiente para digestión.'],
-    ['T-2h','Snack de mantenimiento','Barra energética o arroz con miel (60g CHO) + 300ml agua','Evita el bajón de glucosa en la espera. Solo si toleras bien.'],
-    ['T-60min','Hidratación activa','500–600ml isotónico completo + 500mg sal extra si caluroso','Orina amarillo pálido. Ajusta sodio según temperatura.'],
+    ['T-48h (2 días antes)','Inicio carga de carbohidratos','Arroz, pasta, pan, plátanos, jugos. Reduce entrenamiento.','{choKgDay}g CHO/día (8–10 g/kg). Satura glucógeno muscular y hepático. Reduce grasas y fibra estos 2 días.'],
+    ['T-24h','Cena carga final','Pasta/arroz {150}g seco + pollo {200}g + aceite oliva + pan','Última gran comida. Cena temprana (no después de las 20h). Sin alcohol.'],
+    ['T-4h','Desayuno pre-carrera','Arroz {120}g + miel + plátano 2 uds + café con leche · o avena especial','{choKg2}g CHO (~2.3 g/kg). Conocido. Sin fibra, sin grasa. Tiempo suficiente para digestión.'],
+    ['T-2h','Snack de mantenimiento','Barra energética o arroz con miel ({60}g CHO) + 300ml agua','Evita el bajón de glucosa en la espera. Solo si toleras bien.'],
+    ['T-60min','Hidratación activa','500–600ml isotónico completo + {heat}','Orina amarillo pálido.'],
     ['T-30min','Gel + electrolitos','1 gel Maurten 100 + 1 pastilla electrolítica (Precision Hydration/SIS)','Últimos CHO antes del agua. La cápsula de sodio puede reducir calambres.'],
     ['T-15min','Gel de activación','1 gel cafeína (100mg) · últimos 200ml agua','Si usas cafeína: timing perfecto para pico en inicio de bici.'],
     ['T-0 🏁','Checklist final 70.3','3 geles en bolsillos · 2 bidones llenos (1 isotónico, 1 agua) · sal tabs · bolso especial preparado','Bolso especial: 3 geles + barra + 2 salt tabs + cambio calcetines.']
   ],
   ironman:[
-    ['T-72h (3 días antes)','Inicio protocolo carga','8–10 g CHO/kg/día. Arroz, pasta, pan, plátanos, jugos, batatas.','Reducción de entrenamiento (taper). Hydra extra: 1ml/kcal consumida.'],
-    ['T-48h','Día carga alta','10 g CHO/kg mínimo. Cada comida incluye CHO: desayuno/almuerzo/cena + snacks','Evita grasas saturadas, fibra >30g, alcohol. Puede haber hinchazón: es normal (glucógeno = agua).'],
-    ['T-24h','Cena pre-race clásica','Pasta 200g seco + salsa tomate simple + pollo 200g + pan + arroz con leche','Sin sorpresas. Nada nuevo. Sin picante. Sin mariscos. Cena antes de las 19h.'],
-    ['T-5h','Desayuno Ironman','Avena 150g + 3 plátanos + 2 rebanadas pan miel + 2 cafés con leche + zumo','200–250g CHO. El desayuno más grande del año. Tiempo amplio para digestión.'],
-    ['T-3h','Snack intermedio','Barra de arroz casera 80g CHO · o 2 plátanos + miel + tostada','Mantiene glucosa sin sobrecargar. Con 400ml isotónico diluido.'],
-    ['T-90min','Hydra activa','600ml isotónico completo + pastilla sodio (500–1000mg)','Ajusta según temperatura. >28°C: añade 1000mg sodio.'],
+    ['T-72h (3 días antes)','Inicio protocolo carga','Arroz, pasta, pan, plátanos, jugos, batatas.','{choKgDay}g CHO/día (8–10 g/kg). Reducción de entrenamiento (taper). Hidrata extra: 1ml/kcal consumida.'],
+    ['T-48h','Día carga alta','Cada comida incluye CHO: desayuno/almuerzo/cena + snacks','{choKgDayMax}g CHO/día mínimo (10 g/kg). Evita grasas saturadas, fibra >30g, alcohol. Puede haber hinchazón: es normal (glucógeno = agua).'],
+    ['T-24h','Cena pre-race clásica','Pasta {200}g seco + salsa tomate simple + pollo {200}g + pan + arroz con leche','Sin sorpresas. Nada nuevo. Sin picante. Sin mariscos. Cena antes de las 19h.'],
+    ['T-5h','Desayuno Ironman','Avena {150}g + 3 plátanos + 2 rebanadas pan miel + 2 cafés con leche + zumo','{choKg2}g CHO (~3.2 g/kg). El desayuno más grande del año. Tiempo amplio para digestión.'],
+    ['T-3h','Snack intermedio','Barra de arroz casera ({80}g CHO) · o 2 plátanos + miel + tostada','Mantiene glucosa sin sobrecargar. Con 400ml isotónico diluido.'],
+    ['T-90min','Hydra activa','600ml isotónico completo + {heat}','Ajusta según temperatura.'],
     ['T-45min','Gel + salt tabs','2 geles Maurten 100 (50g CHO) + 2 salt tabs Precision Hydration','Carga final de CHO. El sodio extra ayuda a retener fluidos iniciales.'],
     ['T-20min','Gel cafeína','1 gel cafeína 150mg (GU Roctane / Maurten cafeína) + 150ml agua','Timing para pico en inicio de bici (~90min post-ingesta).'],
     ['T-0 🏁','Checklist final IRONMAN','Bici: 2 bidones (Maurten 320) + barra sólida · Bolso especial: 4 geles + 2 barras + 4 salt tabs + vaselina + cambio calcetines','Transición especial (km 90 bici / km 21 run): verifica que el bolso llegó antes que tú.']
   ]
 };
+var PRE_RACE_CHOKG = {
+  sprint:  {choKg1: 6.5,  choKg2: 1.1},
+  olympic: {choKg1: 7.5,  choKg2: 1.5},
+  '703':   {choKgDay: 9.0, choKg2: 2.3},
+  ironman: {choKgDay: 9.0, choKgDayMax: 10.0, choKg2: 3.2}
+};
+function _heatLine(tempC) {
+  if (tempC >= 28) return 'sal extra (calor: '+tempC+'°C — prioriza sodio)';
+  if (tempC >= 22) return 'sal si hace calor ('+tempC+'°C)';
+  return 'sal opcional (clima fresco: '+tempC+'°C)';
+}
+function buildPreRace(rk, weightKg, tempC) {
+  var sf = weightKg / PRE_RACE_SF_BASE;
+  var kg = PRE_RACE_CHOKG[rk];
+  var vars = {heat: _heatLine(tempC)};
+  if (kg.choKg1)      vars.choKg1     = Math.round(weightKg * kg.choKg1);
+  if (kg.choKg2)       vars.choKg2     = Math.round(weightKg * kg.choKg2);
+  if (kg.choKgDay)    vars.choKgDay   = Math.round(weightKg * kg.choKgDay);
+  if (kg.choKgDayMax) vars.choKgDayMax = Math.round(weightKg * kg.choKgDayMax);
+  return PRE_RACE_BASE[rk].map(function(row){
+    return row.map(function(cell){
+      return cell.replace(/\{(\w+)\}/g, function(m, key){
+        if (vars[key] != null) return vars[key];
+        var n = parseFloat(key);
+        return isFinite(n) ? Math.round(n * sf) : m;
+      });
+    });
+  });
+}
 
 var GUIDELINES = {
   sprint:'<p><strong>CHO:</strong> 30–45 g total · Depende casi 100% del glucógeno almacenado</p><p><strong>Fluidos:</strong> 400–600 ml totales · Sin tiempo para hidratarse en nado</p><p><strong>Sodio:</strong> Mínimo (~200 mg). El tiempo es muy corto para pérdidas críticas</p><p><strong>Estrategia clave:</strong> 1 gel en bici es suficiente. No sobre-nutras: más peso = más lento</p>',
@@ -622,40 +740,148 @@ var ST = {race:'703'};
 var CH = {}; // chart instances
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// INTENSITY OVERRIDES (% FTP bici / % ritmo umbral run, editables por tipo de carrera)
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var IF_STORAGE_KEY = 'lx_nutrition_if_overrides';
+var IF_OVERRIDES = {};
+function loadIFOverrides() {
+  try { IF_OVERRIDES = JSON.parse(localStorage.getItem(IF_STORAGE_KEY)||'{}'); } catch(e) { IF_OVERRIDES = {}; }
+}
+function getEffectiveIF(rk) {
+  var base = REC_IF[rk];
+  var ov = IF_OVERRIDES[rk];
+  if(!ov) return base;
+  return {
+    bike:     ov.bike     != null ? ov.bike     : base.bike,
+    run_pct:  ov.run_pct  != null ? ov.run_pct  : base.run_pct
+  };
+}
+function toggleIFPanel() {
+  var p = document.getElementById('if-panel');
+  var show = p.style.display === 'none';
+  p.style.display = show ? 'flex' : 'none';
+  if(show) { syncIFSliders(); syncCourseSliders(); }
+}
+function updateOverrideBadge() {
+  var rk = ST.race;
+  var has = !!IF_OVERRIDES[rk] || !!COURSE_OVERRIDES[rk];
+  document.getElementById('if-badge').style.display = has ? '' : 'none';
+}
+function syncIFSliders() {
+  var rk  = ST.race;
+  var eff = getEffectiveIF(rk);
+  var bikePct = Math.round(eff.bike*100), runPct = Math.round(eff.run_pct*100);
+  document.getElementById('if-bike-slider').value    = bikePct;
+  document.getElementById('if-run-slider').value     = runPct;
+  document.getElementById('if-bike-val').textContent = bikePct+'%';
+  document.getElementById('if-run-val').textContent  = runPct+'%';
+  updateOverrideBadge();
+}
+function onIFChange() {
+  var rk = ST.race;
+  var bikePct = parseInt(document.getElementById('if-bike-slider').value)||Math.round(REC_IF[rk].bike*100);
+  var runPct  = parseInt(document.getElementById('if-run-slider').value)||Math.round(REC_IF[rk].run_pct*100);
+  document.getElementById('if-bike-val').textContent = bikePct+'%';
+  document.getElementById('if-run-val').textContent  = runPct+'%';
+  IF_OVERRIDES[rk] = {bike: bikePct/100, run_pct: runPct/100};
+  try { localStorage.setItem(IF_STORAGE_KEY, JSON.stringify(IF_OVERRIDES)); } catch(e){}
+  updateOverrideBadge();
+  nutCalc();
+}
+function resetIF() {
+  var rk = ST.race;
+  delete IF_OVERRIDES[rk];
+  try { localStorage.setItem(IF_STORAGE_KEY, JSON.stringify(IF_OVERRIDES)); } catch(e){}
+  syncIFSliders();
+  nutCalc();
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// COURSE / ENVIRONMENT OVERRIDES (desnivel, viento, altitud, superficie, temp real)
+// Alimentan /nutrition/precise-splits — física real por tipo de carrera
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+var COURSE_STORAGE_KEY = 'lx_nutrition_course_overrides';
+var COURSE_OVERRIDES = {};
+var COURSE_DEFAULT = {elevBike:0, elevRun:0, wind:0, alt:0, temp:22, surface:'asfalto'};
+function loadCourseOverrides() {
+  try { COURSE_OVERRIDES = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY)||'{}'); } catch(e) { COURSE_OVERRIDES = {}; }
+}
+function getEffectiveCourse(rk) {
+  var ov = COURSE_OVERRIDES[rk];
+  if(!ov) return COURSE_DEFAULT;
+  return {
+    elevBike: ov.elevBike != null ? ov.elevBike : COURSE_DEFAULT.elevBike,
+    elevRun:  ov.elevRun  != null ? ov.elevRun  : COURSE_DEFAULT.elevRun,
+    wind:     ov.wind     != null ? ov.wind     : COURSE_DEFAULT.wind,
+    alt:      ov.alt      != null ? ov.alt      : COURSE_DEFAULT.alt,
+    temp:     ov.temp     != null ? ov.temp     : COURSE_DEFAULT.temp,
+    surface:  ov.surface  || COURSE_DEFAULT.surface
+  };
+}
+function syncCourseSliders() {
+  var rk = ST.race;
+  var c  = getEffectiveCourse(rk);
+  document.getElementById('if-elev-bike-slider').value    = c.elevBike;
+  document.getElementById('if-elev-bike-val').textContent = c.elevBike+'m';
+  document.getElementById('if-elev-run-slider').value     = c.elevRun;
+  document.getElementById('if-elev-run-val').textContent  = c.elevRun+'m';
+  document.getElementById('if-wind-slider').value    = c.wind;
+  document.getElementById('if-wind-val').textContent = c.wind;
+  document.getElementById('if-alt-slider').value     = c.alt;
+  document.getElementById('if-alt-val').textContent  = c.alt;
+  document.getElementById('if-temp-slider').value    = c.temp;
+  document.getElementById('if-temp-val').textContent = c.temp+'°C';
+  document.getElementById('if-surface').value        = c.surface;
+  updateOverrideBadge();
+}
+function onCourseChange() {
+  var rk       = ST.race;
+  var elevBike = parseInt(document.getElementById('if-elev-bike-slider').value)||0;
+  var elevRun  = parseInt(document.getElementById('if-elev-run-slider').value)||0;
+  var wind     = parseInt(document.getElementById('if-wind-slider').value)||0;
+  var alt      = parseInt(document.getElementById('if-alt-slider').value)||0;
+  var temp     = parseInt(document.getElementById('if-temp-slider').value)||22;
+  var surface  = document.getElementById('if-surface').value;
+  document.getElementById('if-elev-bike-val').textContent = elevBike+'m';
+  document.getElementById('if-elev-run-val').textContent  = elevRun+'m';
+  document.getElementById('if-wind-val').textContent = wind;
+  document.getElementById('if-alt-val').textContent  = alt;
+  document.getElementById('if-temp-val').textContent = temp+'°C';
+  COURSE_OVERRIDES[rk] = {elevBike:elevBike, elevRun:elevRun, wind:wind, alt:alt, temp:temp, surface:surface};
+  try { localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(COURSE_OVERRIDES)); } catch(e){}
+  updateOverrideBadge();
+  nutCalc();
+}
+function resetCourse() {
+  var rk = ST.race;
+  delete COURSE_OVERRIDES[rk];
+  try { localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(COURSE_OVERRIDES)); } catch(e){}
+  syncCourseSliders();
+  nutCalc();
+}
+
+// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // RACE SWITCH
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 function setRace(r, btn) {
   ST.race = r;
   document.querySelectorAll('.rt').forEach(function(b){ b.classList.remove('on'); });
   btn.classList.add('on');
+  syncIFSliders();
+  syncCourseSliders();
   nutCalc();
 }
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // MAIN CALC
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
-function nutCalc() {
-  var rk = ST.race;
-  var d  = DIST[rk];
-  var rf = REC_IF[rk];
-  var sweatMl = parseInt(document.getElementById('sel-sweat').value)||600;
-  var heatF   = parseFloat(document.getElementById('sel-heat').value)||1.0;
-
-  // Predict swim/bike/run — mismo modelo que race_predictor
-  var swimSec = predictSwim(d.swim, ATH.css);
-  var bikeSec = predictBike(d.bike, ATH.ftp, rf.bike, ATH.weight);
-  var runSec  = predictRun(d.run, ATH.run, rf.run_pct);
-  var t1Min = T1_MIN[rk], t2Min = T2_MIN[rk];
-  var totalSec = swimSec + t1Min*60 + bikeSec + t2Min*60 + runSec;
-  var totalH   = totalSec / 3600;
-
-  // Caloric expenditure
-  var sKcal = kCalSwim(ATH.weight, swimSec/60);
-  var bKcal = kCalBike(ATH.ftp * rf.bike, bikeSec);
-  var rKcal = kCalRun(ATH.weight, d.run/1000);
-  var totKcal = sKcal + bKcal + rKcal;
-
-  // Nutrition targets
+function getHeatFactor() {
+  // Deriva el multiplicador de calor (sudoración/sodio) desde la temperatura real
+  // del panel de condiciones — reemplaza el combo de temperatura categórico duplicado.
+  var temp = getEffectiveCourse(ST.race).temp;
+  return 1.0 + Math.max(0, (temp - 22) * 0.02);
+}
+function computeNutritionTargets(rk, totalH, sweatMl, heatF) {
   var choHr   = CHO_HR[rk];
   var sodHr   = Math.round(SOD_HR[rk] * heatF);
   var fluidHr = Math.round(sweatMl * heatF);
@@ -663,18 +889,74 @@ function nutCalc() {
   var flTot   = Math.round(fluidHr * totalH);
   var naTot   = Math.round(sodHr * totalH);
   var ratio   = totalH > 2.5 ? '2:1 gluc:fruc' : '1:1 / libre';
-
-  var pred = {swim:swimSec, t1:t1Min*60, bike:bikeSec, t2:t2Min*60, run:runSec, total:totalSec};
-
-  // Build plan
+  return {choHr:choHr, sodHr:sodHr, fluidHr:fluidHr, choTot:choTot, flTot:flTot, naTot:naTot, ratio:ratio};
+}
+function renderNutrition(rk, pred, sKcal, bKcal, rKcal, sweatMl, heatF, precise) {
+  var totalSec = pred.total, totalH = totalSec/3600;
+  var totKcal  = sKcal + bKcal + rKcal;
+  var t = computeNutritionTargets(rk, totalH, sweatMl, heatF);
   var plan = buildPlan(rk, pred, sweatMl, heatF);
-
-  // Update UI
-  updateHeader(rk, fmtHM(totalSec), totKcal, choHr);
-  updateKpis(fmtHM(totalSec), totKcal, choTot, choHr, flTot, fluidHr, naTot, sodHr, ratio, totalH);
-  renderTab1(rk, sKcal, bKcal, rKcal, pred);
+  updateHeader(rk, fmtHM(totalSec), totKcal, t.choHr);
+  updateKpis(fmtHM(totalSec), totKcal, t.choTot, t.choHr, t.flTot, t.fluidHr, t.naTot, t.sodHr, t.ratio, totalH);
+  renderTab1(rk, sKcal, bKcal, rKcal, pred, plan);
   renderTab2(plan, pred, totalSec/60);
   renderTab3(rk, fmtHM(totalSec));
+  renderTab4(rk, totalH, t.flTot, t.naTot);
+  var badge = document.getElementById('if-precision-badge');
+  if(badge) badge.textContent = precise ? '⚡ Cálculo preciso aplicado: viento, pendiente, altitud y superficie' : '';
+}
+function nutCalcLocal() {
+  // Modelo simple (cancha plana, sin viento) — respuesta instantánea, siempre disponible
+  var rk = ST.race;
+  var d  = DIST[rk];
+  var rf = getEffectiveIF(rk);
+  var sweatMl = parseInt(document.getElementById('sel-sweat').value)||600;
+  var heatF   = getHeatFactor();
+  var swimSec = predictSwim(d.swim, ATH.css);
+  var bikeSec = predictBike(d.bike, ATH.ftp, rf.bike, ATH.weight);
+  var runSec  = predictRun(d.run, ATH.run, rf.run_pct);
+  var t1Min = T1_MIN[rk], t2Min = T2_MIN[rk];
+  var totalSec = swimSec + t1Min*60 + bikeSec + t2Min*60 + runSec;
+  var sKcal = kCalSwim(ATH.weight, swimSec/60);
+  var bKcal = kCalBike(ATH.ftp * rf.bike, bikeSec);
+  var rKcal = kCalRun(ATH.weight, d.run/1000);
+  var pred = {swim:swimSec, t1:t1Min*60, bike:bikeSec, t2:t2Min*60, run:runSec, total:totalSec};
+  renderNutrition(rk, pred, sKcal, bKcal, rKcal, sweatMl, heatF, false);
+}
+var NUT_REQ_ID = 0;
+var NUT_DEBOUNCE_T = null;
+function nutCalc() {
+  nutCalcLocal();
+  clearTimeout(NUT_DEBOUNCE_T);
+  NUT_DEBOUNCE_T = setTimeout(fetchPreciseSplits, 300);
+}
+function fetchPreciseSplits() {
+  var tok = nutAuthTok();
+  if(!tok) return;
+  var rk     = ST.race;
+  var rf     = getEffectiveIF(rk);
+  var course = getEffectiveCourse(rk);
+  var myReqId = ++NUT_REQ_ID;
+  var api = (location.protocol === 'file:' ? 'http://localhost:8000' : '') + '/api';
+  fetch(api + '/nutrition/precise-splits', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', Authorization:'Bearer '+tok},
+    body: JSON.stringify({
+      race_key: rk,
+      ftp_w: ATH.ftp, css_sec_100m: ATH.css, weight_kg: ATH.weight, run_threshold_s_km: ATH.run,
+      bike_if: rf.bike, run_fraction: rf.run_pct,
+      bike_elevation_gain_m: course.elevBike, bike_elevation_loss_m: course.elevBike,
+      run_elevation_gain_m: course.elevRun, run_elevation_loss_m: course.elevRun,
+      wind_ms: course.wind/3.6, altitude_m: course.alt, temperature_c: course.temp, surface: course.surface
+    })
+  }).then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d || myReqId !== NUT_REQ_ID || rk !== ST.race) return; // respuesta obsoleta, ignorar
+      var pred = {swim:d.swim.time_s, t1:d.t1_s, bike:d.bike.time_s, t2:d.t2_s, run:d.run.time_s, total:d.total_time_s};
+      var sweatMl = parseInt(document.getElementById('sel-sweat').value)||600;
+      var heatF   = getHeatFactor();
+      renderNutrition(rk, pred, d.swim.kcal, d.bike.kcal, d.run.kcal, sweatMl, heatF, true);
+    }).catch(function(){});
 }
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
@@ -685,7 +967,7 @@ function updateHeader(rk, timeStr, kcal, choHr) {
   document.getElementById('ch-time').textContent   = timeStr;
   document.getElementById('ch-energy').textContent = Math.round(kcal).toLocaleString('es')+' kcal';
   document.getElementById('ch-cph').textContent    = CHO_HR[rk]+'g/h';
-  document.getElementById('ch-ratio').textContent  = parseFloat(document.getElementById('sel-heat').value||1)*parseFloat(document.getElementById('sel-sweat').value||600) && choHr > 60 ? '2:1' : '1:1';
+  document.getElementById('ch-ratio').textContent  = getHeatFactor()*parseFloat(document.getElementById('sel-sweat').value||600) && choHr > 60 ? '2:1' : '1:1';
 }
 
 function updateKpis(time, kcal, choTot, choHr, flTot, flHr, naTot, naHr, ratio, h) {
@@ -702,10 +984,23 @@ function updateKpis(time, kcal, choTot, choHr, flTot, flHr, naTot, naHr, ratio, 
   document.getElementById('kpi-ratio-s').textContent = h > 2.5 ? 'Necesario >2.5h' : '';
 }
 
-function renderTab1(rk, sKcal, bKcal, rKcal, pred) {
+function aggPlanByDisc(plan) {
+  var agg = {swim:{cho:0,fluid:0,sodium:0}, bike:{cho:0,fluid:0,sodium:0}, run:{cho:0,fluid:0,sodium:0}};
+  (plan||[]).forEach(function(r){
+    if(r.lbl.indexOf('META')>-1) return; // recuperación post-meta, no es ingesta "durante" la disciplina
+    var seg = r.seg;
+    if(seg==='t1') seg='bike'; // nutrición de T1 se consume al iniciar la bici
+    if(seg==='t2') seg='run';  // nutrición de T2 se consume al iniciar el run
+    if(agg[seg]){ agg[seg].cho+=r.cho; agg[seg].fluid+=r.fluid; agg[seg].sodium+=r.sodium; }
+  });
+  return agg;
+}
+function renderTab1(rk, sKcal, bKcal, rKcal, pred, plan) {
   // Pie chart
   if(CH.pie){ CH.pie.destroy(); }
   var ctx = document.getElementById('ch-pie');
+  var discAgg = aggPlanByDisc(plan);
+  var discKeys = ['swim','bike','run'];
   CH.pie = new Chart(ctx, {
     type:'doughnut',
     data:{
@@ -723,7 +1018,14 @@ function renderTab1(rk, sKcal, bKcal, rKcal, pred) {
       responsive:true,maintainAspectRatio:false,cutout:'62%',
       plugins:{
         legend:{position:'bottom',labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},padding:14,boxWidth:14}},
-        tooltip:{callbacks:{label:function(c){return c.label+': '+Math.round(c.parsed)+' kcal';}}}
+        tooltip:{callbacks:{
+          label:function(c){return c.label+': '+Math.round(c.parsed)+' kcal';},
+          afterLabel:function(c){
+            var a = discAgg[discKeys[c.dataIndex]];
+            if(!a) return '';
+            return ['🍞 CHO: '+a.cho+'g', '💧 Fluidos: '+a.fluid+'ml', '🧂 Sodio: '+a.sodium+'mg'];
+          }
+        }}
       }
     }
   });
@@ -864,7 +1166,8 @@ function renderPlanTable(plan) {
 }
 
 function renderTab3(rk, timeStr) {
-  var plan = PRE_RACE[rk];
+  var course = getEffectiveCourse(rk);
+  var plan = buildPreRace(rk, ATH.weight, course.temp);
   var html = plan.map(function(item){
     var isFinish = item[0].indexOf('T-0')>-1;
     return '<div class="pre-item">'
@@ -878,6 +1181,46 @@ function renderTab3(rk, timeStr) {
     'Toda la estrategia nutricional debe estar practicada en entrenamientos largos. ' +
     'Coloca los geles en el mismo lugar siempre (bolsillo jersey, tri-suit, aero-bag).</div>';
   document.getElementById('pre-race-content').innerHTML = html;
+}
+
+function renderTab4(rk, totalH, flTot, naTot) {
+  var weight = ATH.weight;
+  var immCho  = Math.round(weight * 1.1);           // 1.0-1.2 g/kg — ventana 0-30min
+  var immProt = Math.round(weight * 0.3);            // ~20-25g típico
+  var rehydrateMl = Math.round(flTot * 1.4);          // 125-150% del fluido perdido en carrera
+  var isLong = (rk === '703' || rk === 'ironman');
+
+  document.getElementById('post-kpi-strip').innerHTML =
+    '<div class="tot-item"><div class="tot-n" style="color:var(--cyan)">'+(rehydrateMl/1000).toFixed(1)+'L</div><div class="tot-l">Rehidratar (próx. 4-6h)</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--gold)">'+immCho+'g</div><div class="tot-l">CHO ventana 0-30min</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--orange)">'+immProt+'g</div><div class="tot-l">Proteína ventana 0-30min</div></div>'+
+    '<div class="tot-item"><div class="tot-n" style="color:var(--muted)">'+naTot.toLocaleString('es')+'mg</div><div class="tot-l">Sodio a reponer</div></div>';
+
+  var items = [
+    ['0–30min', 'Inmediato en meta',
+      immCho+'g CHO de absorción rápida + '+immProt+'g proteína (batido de recuperación, o gel + barra proteica) + '+Math.round(rehydrateMl*0.25)+'ml de bebida con electrolitos',
+      'El estómago tolera poco sólido recién terminado — priorizá líquidos y geles.'],
+    ['30min–2h', 'Comida real',
+      Math.round(weight*1.0)+'-'+Math.round(weight*1.2)+'g CHO + '+Math.round(weight*0.3)+'-'+Math.round(weight*0.4)+'g proteína (arroz/papa + pollo/pescado/huevo + fruta)',
+      isLong ? 'En 70.3/Ironman esta ventana es clave para frenar el catabolismo muscular y empezar a recargar glucógeno.' : 'En distancias cortas el glucógeno se recupera solo, pero igual conviene comer bien en las 2h siguientes.'],
+    [isLong ? 'Cada 3-4h (24h)' : '2-6h después', 'Refuerzo',
+      'Repetir comidas con CHO+proteína cada 3-4h' + (isLong ? ' durante las primeras 24h (glucógeno tarda 24-48h en reponerse tras un IM/70.3 largo)' : ''),
+      'Seguí hidratando de a poco — no todo de una — y controlá el color de la orina (clara = bien hidratado).'],
+    ['Primeras 24h', 'Cuidados generales',
+      'Evitá alcohol (interfiere con la síntesis de glucógeno y proteína) · antiinflamatorios solo si es necesario y con comida · priorizá sueño',
+      'El dolor muscular (DOMS) es normal 24-72h — no es señal de que algo salió mal.'],
+  ];
+  var html = items.map(function(item){
+    return '<div class="pre-item">'
+      +'<div class="pre-timing">'+item[0]+'</div>'
+      +'<div><div class="pre-cat">'+item[1]+'</div></div>'
+      +'<div><div class="pre-food">'+item[2]+'</div><div class="pre-note">'+item[3]+'</div></div>'
+      +'</div>';
+  }).join('');
+  html += '<div class="golden-rule"><strong>📌 Regla de oro post-carrera:</strong> ' +
+    'La ventana de 30min post-meta es la de mayor impacto, pero lo que más importa es la suma de las próximas 24h. ' +
+    'No te saltes comidas por las náuseas post-esfuerzo — priorizá líquidos con calorías si el sólido no entra.</div>';
+  document.getElementById('post-race-content').innerHTML = html;
 }
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
@@ -1015,7 +1358,6 @@ function loadNutritionPlanFromAPI() {
       try {
         var p = JSON.parse(plan.params_json);
         if (p.sweat) document.getElementById('sel-sweat').value = p.sweat;
-        if (p.heat)  document.getElementById('sel-heat').value  = p.heat;
       } catch(e){}
     }
     nutCalc();
@@ -1029,7 +1371,7 @@ nutCalc = function() {
   // Async save to API
   var rk = ST.race;
   var sweat = document.getElementById('sel-sweat') ? document.getElementById('sel-sweat').value : '600';
-  var heat  = document.getElementById('sel-heat')  ? document.getElementById('sel-heat').value  : '1.0';
+  var heat  = getHeatFactor();
   var totKcalEl = document.getElementById('ch-energy');
   var choTotEl  = document.getElementById('cho-tot');
   var fluidEl   = document.getElementById('fl-tot');
@@ -1043,10 +1385,15 @@ nutCalc = function() {
   saveNutritionPlanToAPI(payload);
 };
 
+loadIFOverrides();
+loadCourseOverrides();
 loadAth();
 loadFromKLData();
+syncIFSliders();
+syncCourseSliders();
 renderWeeklyChart();
 nutCalc();
+loadAthleteProfileFromAPI();
 // Load saved plan from API after initial render
 setTimeout(loadNutritionPlanFromAPI, 500);
 </script>
