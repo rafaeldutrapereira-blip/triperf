@@ -1780,15 +1780,47 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
   fetch(API+'/athlete/dashboard', { headers:{Authorization:'Bearer '+tok} })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
-      if(!data || !data.activities || !data.activities.length) return;
-      // Normalizar sport para training_plan: gym→str, detectar natación por nombre
+      if(!data) return;
       var swimWords = /nata|swim|piscina|pool/i;
-      data.activities.forEach(function(a){
-        if(a.sport === 'gym') a.sport = 'str';
-        if(a.sport === 'other' && swimWords.test(a.name || '')) a.sport = 'swim';
-      });
-      window.KL_DATA = window.KL_DATA || {};
-      window.KL_DATA.activities = data.activities;
+
+      if(data.activities && data.activities.length){
+        // Normalizar sport para training_plan: gym→str, detectar natación por nombre
+        data.activities.forEach(function(a){
+          if(a.sport === 'gym') a.sport = 'str';
+          if(a.sport === 'other' && swimWords.test(a.name || '')) a.sport = 'swim';
+        });
+        window.KL_DATA = window.KL_DATA || {};
+        window.KL_DATA.activities = data.activities;
+      }
+
+      // Plan de la semana sincronizado vía Garmin/Training Peaks (tabla
+      // garmin_planned_workouts) — se usa cuando el atleta no tiene un plan
+      // de coach asignado en LabX. Sin esto, "Cumplimiento Semanal" en
+      // training_plan.html quedaba siempre "Sin datos" para cualquier
+      // atleta cuyo plan viene de Training Peaks y no del plan-builder.
+      if(data.planned_workouts && data.planned_workouts.length){
+        var raw = localStorage.getItem('kl_training_plan');
+        var plan = []; try{ if(raw) plan = JSON.parse(raw); }catch(e){}
+        var changed = false;
+        data.planned_workouts.forEach(function(p){
+          var sport = p.sport;
+          if(sport === 'strength') sport = 'str';
+          if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
+          if(['swim','bike','run','str'].indexOf(sport) === -1) return;
+          var already = plan.some(function(s){ return s.date_iso===p.date_iso && s.sport===sport; });
+          if(already) return; // no pisar un plan de coach/manual ya presente ese día+deporte
+          plan.push({
+            id: 'gpw_'+p.date_iso+'_'+sport,
+            sport: sport, date_iso: p.date_iso,
+            dur_min: p.dur_min, dist_km: p.dist_km, tss: p.tss,
+            name: p.title || SPORT[sport].label,
+            status: 'planned', source: 'garmin_planned',
+          });
+          changed = true;
+        });
+        if(changed) localStorage.setItem('kl_training_plan', JSON.stringify(plan));
+      }
+
       if(typeof window._tpRender === 'function') window._tpRender();
     })
     .catch(function(){});
