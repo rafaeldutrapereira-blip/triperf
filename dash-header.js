@@ -65,6 +65,15 @@ function injectCSS(){
     '@keyframes dhx-blink{0%,100%{opacity:1}50%{opacity:.3}}',
     '.dhx-btn{display:flex;align-items:center;gap:.4rem;padding:.38rem .85rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:"Oswald",sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-decoration:none}',
     '.dhx-btn:hover{border-color:var(--orange);color:var(--orange)}',
+    // Páginas con wrapper .app/.main (style.css) envuelven TODO su contenido
+    // -incluido este header- en el padding de .main (1.5rem arriba +
+    // clamp(1rem,3vw,2rem) a los lados). Las páginas con <header
+    // class="sb-topbar"> plano no tienen ese padding extra. Sin esto, el
+    // mismo header queda en dos posiciones distintas según la página
+    // (ver mount()) — se cancela acá para que la posición sea idéntica
+    // siempre, independiente de cuál de los dos layouts use la página.
+    '.dhx-in-main{margin:calc(-1*(56px + 1.5rem)) clamp(-2rem,-3vw,-1rem) 0}',
+    '@media (min-width:769px){.dhx-in-main{margin-top:-1.5rem}}',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -114,6 +123,7 @@ function mount(){
     // caso hay que insertarlo DENTRO de <main>, como primer hijo.
     if(mainEl && topbar && topbar.parentElement === mainEl.parentElement
        && getComputedStyle(topbar.parentElement).display === 'flex'){
+      wrap.classList.add('dhx-in-main');
       mainEl.insertBefore(wrap, mainEl.firstChild);
     } else if(topbar && topbar.parentNode){
       topbar.parentNode.insertBefore(wrap, topbar.nextSibling);
