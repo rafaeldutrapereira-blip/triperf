@@ -697,6 +697,30 @@ function renderConfigBar(){
 }
 
 // ──────────────────────────────────────
+// TSS ESTIMATOR — idéntico a estTSS() en dashboard.html. Necesario porque
+// no todas las actividades de Garmin traen `.tss` calculado (depende del
+// tipo de actividad y de si Garmin pudo estimar Training Effect); sin este
+// fallback, esta página contaba esas actividades como 0 TSS mientras el
+// dashboard sí las estimaba desde FC/potencia — dos números de
+// "Cumplimiento Semanal" distintos para la misma semana con las mismas
+// actividades reales.
+function estTSS(a){
+  if(a.tss) return Math.round(a.tss);
+  var FTP   = window._athleteFTP   || 240;
+  var FCMax = window._athleteFCMax || 180;
+  var h=(a.dur_min||0)/60, IF;
+  if(a.sport==='bike')
+    IF = a.avg_power ? a.avg_power/FTP : (a.avg_hr||120)/(0.88*FCMax);
+  else if(a.sport==='run')
+    IF = (a.avg_hr||140)/(0.89*FCMax);
+  else if(a.sport==='swim')
+    IF = (a.avg_hr||120)/(0.82*FCMax);
+  else
+    IF = (a.avg_hr||110)/(0.75*FCMax);
+  return Math.round(h * Math.min(1.25,Math.max(0.4,IF)) ** 2 * 100);
+}
+
+// ──────────────────────────────────────
 // ADHERENCE HELPERS
 // ──────────────────────────────────────
 
@@ -1106,7 +1130,7 @@ function renderWeeklyCompliance(){
     if(!planned.length){ pct = null; } // sin plan asignado esta semana → no hay "cumplimiento" que medir
     else {
       var tPlan = planned.reduce(function(t,s){ return t+(s.tss||0); },0);
-      var tDone = done.reduce(function(t,s){ return t+(s.tss||0); },0);
+      var tDone = done.reduce(function(t,s){ return t+estTSS(s); },0);
       pct = tPlan>0 ? Math.round(Math.min(tDone/tPlan*100,100)) : (done.length ? 100 : 0);
     }
     return {sport:sport, sp:sp, pct:pct};
@@ -1581,25 +1605,44 @@ window._tpRender = render;  // expuesto para el bridge API
       var plan = [];
       try{ if(raw) plan=JSON.parse(raw); }catch(e){}
 
+      // Mapeo de deporte de la plantilla del coach → claves swim/bike/run/str
+      // que usa esta página. El backend (plan_builder_routes.py: SPORTS)
+      // usa "strength", no "str" — sin esta entrada, cualquier sesión de
+      // fuerza asignada caía al default ||'run' y se contaba como Carrera,
+      // dejando además a Fuerza siempre en "Sin datos".
+      var sportMap={swim:'swim',bike:'bike',run:'run',strength:'str'};
+
       var changed=false;
       assignments.forEach(function(a){
+        var mappedSport = sportMap[a.template.sport];
+        if(!mappedSport) return; // brick/rest/other: no soportado por Cumplimiento Semanal, no inventar deporte
+
         var existing = plan.find(function(s){ return s.api_assignment_id===a.id; });
-        if(!existing){
-          var sportMap={swim:'swim',bike:'bike',run:'run',str:'str'};
-          plan.push({
-            id: 'api_'+a.id,
-            api_assignment_id: a.id,
-            name:   a.template.nombre,
-            sport:  sportMap[a.template.sport]||'run',
-            date_iso: a.date_iso,
-            dur_min: a.template.dur_min,
-            dist_km: a.template.dist_km,
-            tss:        a.template.tss,
-            notes:      a.template.notas||(a.notas||''),
-            blocks_json: a.template.blocks_json||null,
-            status: 'planned',
-            source: 'api',
-          });
+        var fresh = {
+          id: 'api_'+a.id,
+          api_assignment_id: a.id,
+          name:   a.template.nombre,
+          sport:  mappedSport,
+          date_iso: a.date_iso,
+          dur_min: a.template.dur_min,
+          dist_km: a.template.dist_km,
+          tss:        a.template.tss,
+          notes:      a.template.notas||(a.notas||''),
+          blocks_json: a.template.blocks_json||null,
+          status: 'planned',
+          source: 'api',
+        };
+        if(existing){
+          // Refrescar en el lugar: si el coach editó el template (TSS,
+          // deporte, distancia, etc) después de la primera carga, el valor
+          // cacheado en localStorage quedaba pegado para siempre y el
+          // Cumplimiento Semanal de esta página no coincidía con el
+          // Dashboard (que recalcula en vivo sin caché).
+          var keys = Object.keys(fresh);
+          var diff = keys.some(function(k){ return JSON.stringify(existing[k]) !== JSON.stringify(fresh[k]); });
+          if(diff){ Object.assign(existing, fresh); changed=true; }
+        } else {
+          plan.push(fresh);
           changed=true;
         }
       });
@@ -1776,6 +1819,18 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
   if(!tok) return;
 
   var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+
+  // FTP/FCMax del atleta — mismos globals y misma fuente (/athlete/profile)
+  // que usa dashboard.html, para que estTSS() estime igual en ambas páginas.
+  fetch(API+'/athlete/profile', { headers:{Authorization:'Bearer '+tok} })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(profile){
+      if(!profile) return;
+      window._athleteFTP   = profile.ftp   || 240;
+      window._athleteFCMax = profile.fcmax || 180;
+      if(typeof window._tpRender === 'function') window._tpRender();
+    })
+    .catch(function(){});
 
   fetch(API+'/athlete/dashboard', { headers:{Authorization:'Bearer '+tok} })
     .then(function(r){ return r.ok ? r.json() : null; })
