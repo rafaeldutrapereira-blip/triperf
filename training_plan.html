@@ -1117,21 +1117,26 @@ function renderWeeklyCompliance(){
   document.getElementById('compl-range').textContent =
     mon.getDate()+' '+MONTHS_S[mon.getMonth()]+' – '+sun.getDate()+' '+MONTHS_S[sun.getMonth()];
 
-  var all  = sessionsInRange(iso(mon), iso(sun));
+  // Real: directo de KL_DATA.activities (siempre fresco, sin caché).
+  // Plan: directo de window._weeklyPlanTSS (fetch en memoria del bridge,
+  // sin localStorage de por medio) — misma fuente y mismo criterio de
+  // precedencia coach-plan > Training Peaks/Garmin que usa dashboard.html.
+  var acts = (window.KL_DATA && KL_DATA.activities) || [];
+  var monIso = iso(mon), sunIso = iso(sun);
+  var planTSS = window._weeklyPlanTSS || {swim:0,bike:0,run:0,str:0};
   var row  = document.getElementById('compl-row');
   var R = 60, C = 2*Math.PI*R;
 
   var data = Object.keys(SPORT).map(function(sport){
     var sp = SPORT[sport];
-    var planned = all.filter(function(s){ return s.source==='local'  && s.sport===sport; });
-    var done    = all.filter(function(s){ return s.source==='garmin' && s.sport===sport; });
+    var done = acts.filter(function(a){ return a.sport===sport && a.date_iso>=monIso && a.date_iso<=sunIso; });
+    var tPlan = planTSS[sport] || 0;
 
     var pct;
-    if(!planned.length){ pct = null; } // sin plan asignado esta semana → no hay "cumplimiento" que medir
+    if(tPlan<=0){ pct = null; } // sin plan asignado esta semana → no hay "cumplimiento" que medir
     else {
-      var tPlan = planned.reduce(function(t,s){ return t+(s.tss||0); },0);
-      var tDone = done.reduce(function(t,s){ return t+estTSS(s); },0);
-      pct = tPlan>0 ? Math.round(Math.min(tDone/tPlan*100,100)) : (done.length ? 100 : 0);
+      var tDone = done.reduce(function(t,a){ return t+estTSS(a); },0);
+      pct = Math.round(Math.min(tDone/tPlan*100,100));
     }
     return {sport:sport, sp:sp, pct:pct};
   });
@@ -1841,64 +1846,54 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
         window.KL_DATA.activities = data.activities;
       }
 
-      // Plan de la semana sincronizado vía Garmin/Training Peaks (tabla
-      // garmin_planned_workouts) — se usa cuando el atleta no tiene un plan
-      // de coach asignado en LabX. Sin esto, "Cumplimiento Semanal" en
-      // training_plan.html quedaba siempre "Sin datos" para cualquier
-      // atleta cuyo plan viene de Training Peaks y no del plan-builder.
-      if(data.planned_workouts && data.planned_workouts.length){
-        var raw = localStorage.getItem('kl_training_plan');
-        var plan = []; try{ if(raw) plan = JSON.parse(raw); }catch(e){}
-
-        // Refrescar SIEMPRE las entradas 'garmin_planned' de las fechas que
-        // acaba de traer el servidor — el TSS planificado puede cambiar
-        // (Training Peaks lo edita, o el server corrige un duplicado), y
-        // antes se guardaban una sola vez y quedaban pegadas para siempre
-        // en localStorage: el Dashboard (que recalcula en vivo) y el Plan
-        // (que leía el valor viejo cacheado) terminaban mostrando % de
-        // cumplimiento distintos para la misma semana.
-        var freshKeys = {};
-        data.planned_workouts.forEach(function(p){
-          var sport = p.sport;
-          if(sport === 'strength') sport = 'str';
-          if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
-          if(['swim','bike','run','str'].indexOf(sport) === -1) return;
-          freshKeys[p.date_iso+'|'+sport] = true;
-        });
-        // Purgar cualquier entrada vieja que ocupe una de estas fechas+deporte —
-        // incluye basura de sesiones de desarrollo anteriores a este sistema
-        // (sin el campo `source`, con ids arbitrarios) que ni el filtro por
-        // source:'garmin_planned' ni el refresco de pullAssignments detectan,
-        // y que bloqueaban para siempre la actualización del valor real.
-        // Se preservan solo sesiones manuales reales (id 'plan-...') y las
-        // de coach (id 'api_...', que se refrescan solas en pullAssignments).
-        plan = plan.filter(function(s){
-          var key = s.date_iso+'|'+s.sport;
-          if(!freshKeys[key]) return true;
-          return s.id && (s.id.indexOf('plan-')===0 || s.id.indexOf('api_')===0);
-        });
-
-        data.planned_workouts.forEach(function(p){
-          var sport = p.sport;
-          if(sport === 'strength') sport = 'str';
-          if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
-          if(['swim','bike','run','str'].indexOf(sport) === -1) return;
-          var coveredByOther = plan.some(function(s){ return s.date_iso===p.date_iso && s.sport===sport; });
-          if(coveredByOther) return; // ya cubierto por un plan de coach/manual real ese día+deporte
-          plan.push({
-            id: 'gpw_'+p.date_iso+'_'+sport,
-            sport: sport, date_iso: p.date_iso,
-            dur_min: p.dur_min, dist_km: p.dist_km, tss: p.tss,
-            name: p.title || SPORT[sport].label,
-            status: 'planned', source: 'garmin_planned',
-          });
-        });
-        localStorage.setItem('kl_training_plan', JSON.stringify(plan));
-      }
+      // TSS planificado de ESTA semana por deporte, para "Cumplimiento
+      // Semanal" — SOLO en memoria, nunca tocando localStorage. Es la misma
+      // solución que ya usa dashboard.html (DC_TGTS/_coachPlanData): sin
+      // caché persistente no hay caché que se quede vieja. Se reemplazó
+      // a propósito el merge anterior a kl_training_plan (que arrastraba
+      // basura de versiones viejas de la página y nunca se limpiaba del
+      // todo) por este cálculo que se recalcula 100% de cero en cada carga.
+      window._weeklyPlanTSS = {swim:0, bike:0, run:0, str:0};
+      (data.planned_workouts || []).forEach(function(p){
+        var sport = p.sport;
+        if(sport === 'strength') sport = 'str';
+        if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
+        if(window._weeklyPlanTSS.hasOwnProperty(sport)) window._weeklyPlanTSS[sport] += (p.tss||0);
+      });
 
       if(typeof window._tpRender === 'function') window._tpRender();
     })
     .catch(function(){});
+
+  // Plan de coach asignado (si existe) para la semana actual — mismo
+  // criterio de precedencia que dashboard.html: si hay un plan de coach
+  // real en LabX, reemplaza al de Training Peaks/Garmin en vez de sumarse.
+  (function(){
+    // weekMon()/iso() viven en la IIFE del script principal (arriba, con su
+    // propio scope) — no son accesibles acá, este es un <script> separado.
+    // Se duplica el mismo cálculo seguro (hora local en 0 antes de pasar a
+    // ISO, para no correr de fecha por huso horario) en vez de asumir que
+    // esas funciones existen en este scope.
+    var now = new Date(); now.setHours(0,0,0,0);
+    var dow = now.getDay()||7;
+    var mon = new Date(now); mon.setDate(mon.getDate()-dow+1);
+    var sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    var isoOf = function(d){ return d.toISOString().slice(0,10); };
+    fetch(API+'/athlete/plan?start='+isoOf(mon)+'&end='+isoOf(sun), { headers:{Authorization:'Bearer '+tok} })
+      .then(function(r){ return r.ok ? r.json() : []; })
+      .then(function(assignments){
+        if(!assignments || !assignments.length) return;
+        var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
+        var t = {swim:0, bike:0, run:0, str:0};
+        assignments.forEach(function(a){
+          var sport = sportMap[a.template.sport];
+          if(sport) t[sport] += (a.template.tss||0);
+        });
+        window._weeklyPlanTSS = t;
+        if(typeof window._tpRender === 'function') window._tpRender();
+      })
+      .catch(function(){});
+  })();
 })();
 </script>
 
