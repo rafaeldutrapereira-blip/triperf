@@ -84,11 +84,18 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .panel-head{padding:.9rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
 .panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 
-/* Cumplimiento semanal — donuts real vs plan por deporte */
-.compl-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:1.25rem;padding:1.4rem 1.2rem}
-.compl-item{display:flex;flex-direction:column;align-items:center;gap:.55rem}
-.compl-pct{font-family:'Barlow Condensed',sans-serif;font-weight:900}
-.compl-name{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+/* Cumplimiento semanal — donuts real vs plan por deporte (mismo estándar
+   dinámico que el gauge "Estado del Atleta" del dashboard: arco con
+   gradiente + glow, número animado en Barlow Condensed, texto con
+   text-fill degradado). */
+.compl-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:1.5rem;padding:1.6rem 1.2rem}
+.compl-item{display:flex;flex-direction:column;align-items:center;gap:.6rem}
+.compl-svg{position:relative;width:140px;height:140px;flex-shrink:0}
+.compl-svg svg{width:100%;height:100%}
+.compl-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.compl-pct{font-family:'Barlow Condensed',sans-serif;font-size:2.1rem;font-weight:900;line-height:1;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.compl-lbl{font-family:'Oswald',sans-serif;font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
+.compl-name{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 
 /* ── WEEK CALENDAR ── */
 .cal-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:560px;gap:1px;background:var(--border2)}
@@ -1070,7 +1077,17 @@ function renderSummary(){
 
 // ──────────────────────────────────────
 // CUMPLIMIENTO SEMANAL — real vs plan por deporte (semana calendario actual)
+// Mismo estándar dinámico que el gauge "Estado del Atleta" del dashboard:
+// arco con gradiente propio + glow, número que cuenta animado (ease-out
+// cúbico, ~1.5s) en vez de pintarse estático.
 // ──────────────────────────────────────
+var COMPL_GRAD = {
+  swim: ['#0EA5E9','#22D3EE'],
+  bike: ['#FF6535','#F0A500'],
+  run:  ['#10B981','#22D3EE'],
+  str:  ['#A855F7','#6366F1'],
+};
+
 function renderWeeklyCompliance(){
   var mon = weekMon(new Date()), sun = addDays(mon,6);
   document.getElementById('compl-range').textContent =
@@ -1078,9 +1095,9 @@ function renderWeeklyCompliance(){
 
   var all  = sessionsInRange(iso(mon), iso(sun));
   var row  = document.getElementById('compl-row');
-  var R = 26, C = 2*Math.PI*R;
+  var R = 60, C = 2*Math.PI*R;
 
-  row.innerHTML = Object.keys(SPORT).map(function(sport){
+  var data = Object.keys(SPORT).map(function(sport){
     var sp = SPORT[sport];
     var planned = all.filter(function(s){ return s.source==='local'  && s.sport===sport; });
     var done    = all.filter(function(s){ return s.source==='garmin' && s.sport===sport; });
@@ -1093,20 +1110,49 @@ function renderWeeklyCompliance(){
       var tDone = done.reduce(function(t,s){ return t+(s.tss||0); },0);
       pct = tPlan>0 ? Math.round(Math.min(tDone/tPlan*100,100)) : (done.length ? 100 : 0);
     }
+    return {sport:sport, sp:sp, pct:pct};
+  });
 
-    var dash = pct===null ? C : C*(1-pct/100);
-    var color = pct===null ? 'var(--border2)' : sp.color;
-    var label = pct===null ? '—' : pct+'%';
-
+  row.innerHTML = data.map(function(d, idx){
+    var gid = 'compl-g-'+d.sport;
+    var grad = COMPL_GRAD[d.sport];
+    var textFill = d.pct===null ? 'var(--dim)' : 'linear-gradient(135deg,'+grad[0]+','+grad[1]+')';
     return '<div class="compl-item">'
-      +'<svg viewBox="0 0 64 64" width="72" height="72">'
-      +'<circle cx="32" cy="32" r="'+R+'" fill="none" stroke="var(--border2)" stroke-width="7"/>'
-      +(pct!==null ? '<circle cx="32" cy="32" r="'+R+'" fill="none" stroke="'+color+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(2)+'" stroke-dashoffset="'+dash.toFixed(2)+'" transform="rotate(-90 32 32)"/>' : '')
-      +'<text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="'+(pct===null?'var(--dim)':'var(--text)')+'" font-family=\'Barlow Condensed,sans-serif\'>'+label+'</text>'
+      +'<div class="compl-svg">'
+      +'<svg viewBox="0 0 140 140">'
+      +'<defs>'
+        +'<linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="0">'
+          +'<stop offset="0%" stop-color="'+grad[0]+'"/><stop offset="100%" stop-color="'+grad[1]+'"/>'
+        +'</linearGradient>'
+        +'<filter id="'+gid+'-glow"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      +'</defs>'
+      +'<circle cx="70" cy="70" r="'+R+'" fill="none" stroke="rgba(8,145,178,.08)" stroke-width="9"/>'
+      +(d.pct!==null ? '<circle class="compl-arc" data-idx="'+idx+'" cx="70" cy="70" r="'+R+'" fill="none" stroke="url(#'+gid+')" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+C.toFixed(2)+'" stroke-dashoffset="'+C.toFixed(2)+'" transform="rotate(-90 70 70)" filter="url(#'+gid+'-glow)" style="transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)"/>' : '')
       +'</svg>'
-      +'<span class="compl-name">'+sp.icon+' '+sp.label+'</span>'
+      +'<div class="compl-ctr">'
+        +'<div class="compl-pct" data-idx="'+idx+'" style="'+(d.pct===null?'color:var(--dim);':'background:'+textFill+';background-clip:text;-webkit-background-clip:text')+'">'+(d.pct===null?'—':'0')+'</div>'
+        +'<div class="compl-lbl">'+(d.pct===null?'Sin datos':'/ 100')+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<span class="compl-name">'+d.sp.icon+' '+d.sp.label+'</span>'
       +'</div>';
   }).join('');
+
+  // Animación: arco + conteo del número, igual que animGauge() del dashboard
+  data.forEach(function(d, idx){
+    if(d.pct===null) return;
+    var arc  = row.querySelector('.compl-arc[data-idx="'+idx+'"]');
+    var numEl= row.querySelector('.compl-pct[data-idx="'+idx+'"]');
+    if(!arc || !numEl) return;
+    var end = C - (d.pct/100)*C, st = null, dur = 1500;
+    requestAnimationFrame(function step(ts){
+      if(!st) st = ts;
+      var p = Math.min((ts-st)/dur,1), e = 1-Math.pow(1-p,3);
+      arc.style.strokeDashoffset = C-(C-end)*e;
+      numEl.textContent = Math.round(e*d.pct);
+      if(p<1) requestAnimationFrame(step);
+    });
+  });
 }
 
 // ──────────────────────────────────────
