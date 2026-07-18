@@ -83,9 +83,12 @@ a{color:inherit;text-decoration:none}
 .sport-stat{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--muted);flex-shrink:0;text-align:right;min-width:56px}
 
 .month-chart{display:flex;align-items:flex-end;gap:3px;height:76px;padding:0 .5rem}
-.month-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.month-bar{width:100%;border-radius:2px 2px 0 0;transition:height .4s cubic-bezier(.4,0,.2,1);background:var(--orange);min-height:2px}
+.month-bar-wrap{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;position:relative}
+.month-bar{width:100%;border-radius:2px 2px 0 0;transition:height .4s cubic-bezier(.4,0,.2,1),filter .15s;background:var(--orange);min-height:2px}
+.month-bar-wrap:hover .month-bar{filter:brightness(1.25)}
 .month-label{font-size:.55rem;color:var(--dim);text-align:center}
+.month-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-2px);margin-bottom:4px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;color:var(--text);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5}
+.month-bar-wrap:hover .month-tip{opacity:1;transform:translateX(-50%) translateY(-6px)}
 
 .highlight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin-bottom:1.25rem}
 .hl-card{background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--border2);border-radius:var(--radius);padding:1.1rem}
@@ -419,7 +422,7 @@ a{color:inherit;text-decoration:none}
   var HDR = function(){ return {Authorization:'Bearer '+tok}; };
 
   var _data = null;
-  var _year = new Date().getFullYear() - 1;
+  var _year = new Date().getFullYear();
 
   var SPORT_LABEL = {swim:'Natación', bike:'Ciclismo', run:'Carrera', strength:'Fuerza', gym:'Gimnasio', brick:'Brick', other:'Otro'};
   var SPORT_COLOR = {swim:'var(--swim)', bike:'var(--bike)', run:'var(--run)', strength:'var(--str)', gym:'var(--str)'};
@@ -513,7 +516,8 @@ a{color:inherit;text-decoration:none}
     chart.innerHTML = months.map(function(mo){
       var pct = maxTss > 0 ? Math.max(2, Math.round(mo.tss / maxTss * 100)) : 2;
       var clr = mo.tss === maxTss ? 'var(--orange)' : 'rgba(255,101,53,.45)';
-      return '<div class="month-bar-wrap" title="'+mo.label+': '+mo.tss+' TSS">'
+      return '<div class="month-bar-wrap">'
+        +'<div class="month-tip">'+mo.label+': '+Math.round(mo.tss)+' TSS</div>'
         +'<div class="month-bar" style="height:'+pct+'%;background:'+clr+'"></div>'
         +'<div class="month-label">'+mo.label.slice(0,1)+'</div>'
         +'</div>';
