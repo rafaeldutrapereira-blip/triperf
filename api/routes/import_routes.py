@@ -141,24 +141,29 @@ async def import_activity(
         logger.warning("Error al parsear %s: %s", filename, e)
         raise HTTPException(400, f"No se pudo leer el archivo: {e}")
 
-    # Verificar si ya existe una actividad con el mismo start_time
-    if data.get("start_time"):
+    date_iso = str(data["start_time"])[:10] if data.get("start_time") else None
+
+    # Verificar si ya existe una actividad con la misma fecha + deporte
+    if date_iso:
         existing = db.query(GarminActivity).filter(
-            GarminActivity.user_id   == me.id,
-            GarminActivity.start_time == str(data["start_time"])[:19]
+            GarminActivity.user_id == me.id,
+            GarminActivity.date_iso == date_iso,
+            GarminActivity.sport    == data.get("sport_type"),
         ).first()
         if existing:
             return {"ok": True, "activity_id": existing.id, "duplicate": True,
                     "message": "Esta actividad ya existe en LabX"}
 
+    dist_m  = data.get("distance_m")
+    dur_s   = data.get("duration_s")
     activity = GarminActivity(
         id          = str(uuid.uuid4()),
         user_id     = me.id,
         activity_id = f"import_{uuid.uuid4().hex[:12]}",
-        sport_type  = data.get("sport_type"),
-        start_time  = str(data["start_time"])[:19] if data.get("start_time") else None,
-        distance_m  = data.get("distance_m"),
-        duration_s  = data.get("duration_s"),
+        sport       = data.get("sport_type"),
+        date_iso    = date_iso,
+        dist_km     = round(dist_m / 1000, 2) if dist_m else 0.0,
+        dur_min     = round(dur_s / 60) if dur_s else 0,
         avg_hr      = data.get("avg_hr"),
     )
     db.add(activity)

@@ -104,14 +104,14 @@ def _generate_pdf(athlete: User, activities: list, loads: list, week_str: str) -
         acts_data = [["Deporte", "Fecha", "Distancia", "Duración", "FC Prom", "TSS"]]
         total_km = 0.0; total_min = 0; total_tss = 0.0
         for act in activities:
-            dist_km = (act.distance_m or 0) / 1000
-            dur_min = int((act.duration_s or 0) / 60)
+            dist_km = act.dist_km or 0
+            dur_min = int(act.dur_min or 0)
             total_km  += dist_km
             total_min += dur_min
             total_tss += (act.tss or 0)
             acts_data.append([
-                _sport_emoji(act.sport_type) + " " + (act.sport_type or "—"),
-                str(act.start_time)[:10] if act.start_time else "—",
+                _sport_emoji(act.sport) + " " + (act.sport or "—"),
+                act.date_iso or "—",
                 f"{dist_km:.1f} km" if dist_km > 0 else "—",
                 f"{dur_min} min",
                 f"{act.avg_hr:.0f} bpm" if act.avg_hr else "—",
@@ -187,18 +187,18 @@ def export_athlete_pdf(
         db.query(GarminActivity)
         .filter(
             GarminActivity.user_id == athlete_id,
-            GarminActivity.start_time >= monday.isoformat()
+            GarminActivity.date_iso >= monday.isoformat()
         )
-        .order_by(GarminActivity.start_time)
+        .order_by(GarminActivity.date_iso)
         .all()
     )
     loads = (
         db.query(GarminTrainingLoad)
         .filter(
             GarminTrainingLoad.user_id == athlete_id,
-            GarminTrainingLoad.date >= (monday - timedelta(days=7)).isoformat()
+            GarminTrainingLoad.date_iso >= (monday - timedelta(days=7)).isoformat()
         )
-        .order_by(GarminTrainingLoad.date)
+        .order_by(GarminTrainingLoad.date_iso)
         .all()
     )
 
@@ -226,15 +226,15 @@ def export_my_pdf(
 
     activities = (
         db.query(GarminActivity)
-        .filter(GarminActivity.user_id == me.id, GarminActivity.start_time >= monday.isoformat())
-        .order_by(GarminActivity.start_time)
+        .filter(GarminActivity.user_id == me.id, GarminActivity.date_iso >= monday.isoformat())
+        .order_by(GarminActivity.date_iso)
         .all()
     )
     loads = (
         db.query(GarminTrainingLoad)
         .filter(GarminTrainingLoad.user_id == me.id,
-                GarminTrainingLoad.date >= (monday - timedelta(days=7)).isoformat())
-        .order_by(GarminTrainingLoad.date)
+                GarminTrainingLoad.date_iso >= (monday - timedelta(days=7)).isoformat())
+        .order_by(GarminTrainingLoad.date_iso)
         .all()
     )
 

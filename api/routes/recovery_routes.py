@@ -773,7 +773,7 @@ def recovery_timeline(
     hrv_map    = {r.date_iso: r.hrv_last_night for r in health_q}
     sleep_map  = {r.date_iso: r.sleep_score    for r in sleep_q}
     tsb_map    = {r.date_iso: r.tsb            for r in tl_q}
-    tss_map    = {r.date_iso: r.tss_day        for r in tl_q}
+    tss_map    = {r.date_iso: r.tss             for r in tl_q}
 
     # Generar timeline diaria
     all_dates = sorted(set(

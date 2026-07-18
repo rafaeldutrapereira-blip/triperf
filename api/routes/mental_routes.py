@@ -289,14 +289,14 @@ def mental_dashboard(
     # Next race (for pre-race protocol suggestion)
     next_race = db.query(RaceEvent).filter(
         RaceEvent.user_id == current_user.id,
-        RaceEvent.race_date > today,
+        RaceEvent.date_iso > today,
         RaceEvent.is_goal_race == True,
-    ).order_by(RaceEvent.race_date.asc()).first()
+    ).order_by(RaceEvent.date_iso.asc()).first()
     days_to_race = None
     pre_race_protocol = None
     if next_race:
         days_to_race = (
-            datetime.strptime(next_race.race_date, "%Y-%m-%d").date() -
+            datetime.strptime(next_race.date_iso, "%Y-%m-%d").date() -
             datetime.now(timezone.utc).replace(tzinfo=None).date()
         ).days
         if days_to_race <= 1:
@@ -341,7 +341,7 @@ def mental_dashboard(
         "completed_today":   completed_today,
         "race": {
             "days_to_race":       days_to_race,
-            "race_name":          next_race.race_name if next_race else None,
+            "race_name":          next_race.name if next_race else None,
             "pre_race_protocol":  pre_race_protocol,
         },
     }
@@ -586,12 +586,12 @@ def mental_correlations(
 
     acts = db.query(GarminActivity).filter(
         GarminActivity.user_id == current_user.id,
-        GarminActivity.start_time >= start + "T00:00:00",
+        GarminActivity.date_iso >= start,
     ).all()
 
     data_points = []
     for act in acts:
-        date_iso = str(act.start_time)[:10] if act.start_time else None
+        date_iso = act.date_iso
         if not date_iso:
             continue
         mfs = score_by_date.get(date_iso)
@@ -603,7 +603,7 @@ def mental_correlations(
             "mfs_level":  mfs.level,
             "tss":        act.tss,
             "avg_hr":     act.avg_hr,
-            "activity_type": act.activity_type,
+            "activity_type": act.sport,
         })
 
     # Compute average TSS by MFS level
@@ -653,15 +653,15 @@ def pre_race_protocol(
     today = _today()
     race = db.query(RaceEvent).filter(
         RaceEvent.user_id == current_user.id,
-        RaceEvent.race_date > today,
+        RaceEvent.date_iso > today,
         RaceEvent.is_goal_race == True,
-    ).order_by(RaceEvent.race_date.asc()).first()
+    ).order_by(RaceEvent.date_iso.asc()).first()
 
     if not race:
         return {"message": "Sin carrera objetivo registrada. Agrega tu próxima carrera en Perfil.", "protocol": None}
 
     days_to_race = (
-        datetime.strptime(race.race_date, "%Y-%m-%d").date() -
+        datetime.strptime(race.date_iso, "%Y-%m-%d").date() -
         datetime.now(timezone.utc).replace(tzinfo=None).date()
     ).days
 
@@ -698,8 +698,8 @@ def pre_race_protocol(
 
     return {
         "race": {
-            "name": race.race_name if hasattr(race, "race_name") else "Tu carrera",
-            "date": race.race_date,
+            "name": race.name or "Tu carrera",
+            "date": race.date_iso,
             "days_to_race": days_to_race,
             "distance": race.distance if hasattr(race, "distance") else None,
         },

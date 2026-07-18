@@ -1004,7 +1004,7 @@ def get_labs_training_impact(
     load = (
         db.query(GarminTrainingLoad)
         .filter(GarminTrainingLoad.user_id == me.id)
-        .order_by(GarminTrainingLoad.date.desc())
+        .order_by(GarminTrainingLoad.date_iso.desc())
         .first()
     )
     ctl = float(load.ctl) if load and load.ctl else None
@@ -1115,7 +1115,7 @@ def get_team_labs_status(
         load = (
             db.query(GarminTrainingLoad)
             .filter(GarminTrainingLoad.user_id == aid)
-            .order_by(GarminTrainingLoad.date.desc())
+            .order_by(GarminTrainingLoad.date_iso.desc())
             .first()
         )
 

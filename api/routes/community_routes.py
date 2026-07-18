@@ -1,4 +1,4 @@
-﻿"""
+"""
 LabX Comunidad TriatlÃ³n LATAM â€” Routes completas (Sprint 13 / MÃ³dulo Â§10-11)
 
 Endpoints:
@@ -1439,7 +1439,7 @@ RECOVERY_LEVEL_LABEL = {
 
 def _build_activity_card_s17(act, viewer_id, db):
     owner    = db.query(User).filter_by(id=act.user_id).first()
-    act_date = str(act.start_time)[:10] if act.start_time else None
+    act_date = act.date_iso
 
     rec = None
     if act_date:
@@ -1455,7 +1455,7 @@ def _build_activity_card_s17(act, viewer_id, db):
             .first()
         )
 
-    sport_raw = (act.activity_type or "other").lower()
+    sport_raw = (act.sport or "other").lower()
     sport_key = next((k for k in SPORT_EMOJI_S17 if k in sport_raw), "other")
     country   = getattr(owner, "country_code", None) if owner else None
 
@@ -1464,8 +1464,8 @@ def _build_activity_card_s17(act, viewer_id, db):
         "type":        "garmin_activity",
         "user": {
             "id":             owner.id if owner else None,
-            "name":           (owner.full_name or owner.email.split("@")[0]) if owner else "â€”",
-            "avatar_initial": ((owner.full_name or owner.email)[0]).upper() if owner else "?",
+            "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "â€”",
+            "avatar_initial": ((owner.nombre or owner.email)[0]).upper() if owner else "?",
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
@@ -1473,13 +1473,13 @@ def _build_activity_card_s17(act, viewer_id, db):
         "sport_emoji":  SPORT_EMOJI_S17.get(sport_key, "âš¡"),
         "name":         act.name or sport_raw.capitalize(),
         "date_iso":     act_date,
-        "distance_km":  round((act.distance_m or 0) / 1000, 2),
-        "duration_min": round((act.duration_s or 0) / 60, 1),
-        "elevation_m":  act.elevation_gain_m,
+        "distance_km":  round(act.dist_km or 0, 2),
+        "duration_min": round(act.dur_min or 0, 1),
+        "elevation_m":  act.elev_m,
         "tss":          round(act.tss, 1) if act.tss else None,
         "avg_hr":       act.avg_hr,
-        "avg_pace_min_km": act.avg_pace_min_km,
-        "avg_power_w":  act.avg_power_w,
+        "avg_pace_min_km": act.pace_str,
+        "avg_power_w":  act.avg_power,
         "recovery": {
             "score":      rec.score if rec else None,
             "level":      rec.level if rec else None,
@@ -1512,13 +1512,13 @@ def garmin_activity_feed(
 
     q = db.query(GarminActivity).filter(
         GarminActivity.user_id.in_(feed_ids),
-        GarminActivity.start_time.isnot(None),
+        GarminActivity.date_iso.isnot(None),
     )
     if sport:
-        q = q.filter(GarminActivity.activity_type.ilike(f"%{sport}%"))
+        q = q.filter(GarminActivity.sport.ilike(f"%{sport}%"))
 
     acts = (
-        q.order_by(GarminActivity.start_time.desc())
+        q.order_by(GarminActivity.date_iso.desc())
         .offset(offset)
         .limit(limit)
         .all()
@@ -1575,11 +1575,11 @@ def latam_leaderboard(
     for u in users:
         acts_q = db.query(GarminActivity).filter(
             GarminActivity.user_id == u.id,
-            GarminActivity.start_time >= f"{start_iso}T00:00:00",
+            GarminActivity.date_iso >= start_iso,
         )
         if sport != "all":
             acts_q = acts_q.filter(
-                GarminActivity.activity_type.ilike(f"%{sport}%")
+                GarminActivity.sport.ilike(f"%{sport}%")
             )
         acts = acts_q.all()
         total = 0.0
@@ -1587,17 +1587,17 @@ def latam_leaderboard(
             if metric == "tss":
                 total += a.tss or 0.0
             elif metric == "distance_km":
-                total += (a.distance_m or 0) / 1000
+                total += a.dist_km or 0.0
             elif metric == "elevation_m":
-                total += a.elevation_gain_m or 0.0
+                total += a.elev_m or 0.0
             elif metric == "duration_h":
-                total += (a.duration_s or 0) / 3600
+                total += (a.dur_min or 0) / 60
         country = getattr(u, "country_code", None)
         rows.append({
             "user": {
                 "id":             u.id,
-                "name":           (u.full_name or u.email.split("@")[0]),
-                "avatar_initial": ((u.full_name or u.email)[0]).upper(),
+                "name":           (u.nombre or u.email.split("@")[0]),
+                "avatar_initial": ((u.nombre or u.email)[0]).upper(),
                 "country_code":   country,
                 "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             },
@@ -1639,7 +1639,7 @@ def search_athletes_s17(
 ):
     term = f"%{q.strip()}%"
     candidates = db.query(User).filter(
-        (User.full_name.ilike(term)) | (User.email.ilike(term))
+        (User.nombre.ilike(term)) | (User.email.ilike(term))
     ).limit(limit + 1).all()
 
     following_ids = {
@@ -1659,8 +1659,8 @@ def search_athletes_s17(
         )
         results.append({
             "id":             u.id,
-            "name":           u.full_name or u.email.split("@")[0],
-            "avatar_initial": ((u.full_name or u.email)[0]).upper(),
+            "name":           u.nombre or u.email.split("@")[0],
+            "avatar_initial": ((u.nombre or u.email)[0]).upper(),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             "is_following":   u.id in following_ids,

@@ -471,9 +471,9 @@ def api_weekly_report(
     week_start = _date.today() - _td(days=7)
     acts = db.query(GarminActivity).filter(
         GarminActivity.user_id == me.id,
-        GarminActivity.start_time >= week_start.isoformat(),
+        GarminActivity.date_iso >= week_start.isoformat(),
     ).all()
-    week_tss   = int(sum(a.training_stress_score or 0 for a in acts))
+    week_tss   = int(sum(a.tss or 0 for a in acts))
     week_hours = round(sum((a.dur_min or 0) for a in acts) / 60, 1)
 
     r = generate_weekly_report(ctl=ctl, atl=atl, tsb=tsb,
@@ -513,9 +513,9 @@ def api_forecast(
         week_start = _date.today() - _td(days=7)
         acts = db.query(GarminActivity).filter(
             GarminActivity.user_id == me.id,
-            GarminActivity.start_time >= week_start.isoformat(),
+            GarminActivity.date_iso >= week_start.isoformat(),
         ).all()
-        tss_per_week = max(100, int(sum(a.training_stress_score or 0 for a in acts) * 1.05))
+        tss_per_week = max(100, int(sum(a.tss or 0 for a in acts) * 1.05))
 
     proj = forecast_ctl(current_ctl=ctl, current_atl=atl,
                         weekly_tss_plan=[tss_per_week], weeks=weeks)

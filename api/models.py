@@ -78,6 +78,9 @@ class User(Base):
     notif_email_weekly     = Column(Boolean, default=True)
     notif_email_workout    = Column(Boolean, default=True)
     notif_push_wellness    = Column(Boolean, default=True)
+    # Comunidad — código de país ISO-3166 alfa-2 ("CL","BR",...), para el
+    # filtro "comparar por país" del leaderboard LATAM
+    country_code           = Column(String,   nullable=True)
 
     # relations
     groups_coached = relationship("Group",       back_populates="coach",   foreign_keys="Group.coach_id")
@@ -768,6 +771,13 @@ class GarminTrainingLoad(Base):
     acwr     = Column(Float, nullable=True)     # Acute:Chronic Workload Ratio (7:28d)
     monotony = Column(Float, nullable=True)     # TSS_avg / TSS_std (7d) â€” variabilidad
     strain   = Column(Float, nullable=True)     # monotony Ã— tss_week_total
+
+    @property
+    def tss_day(self):
+        """Alias de lectura — varios routers (adaptive/nutrition/analytics)
+        fueron escritos contra `tss_day` en vez de la columna real `tss`.
+        En vez de corregir 14 sitios distintos, se expone el alias acá."""
+        return self.tss
 
     user = relationship("User", backref="training_load")
 
