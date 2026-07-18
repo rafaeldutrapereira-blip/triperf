@@ -51,9 +51,9 @@ function injectCSS(){
   s.textContent = [
     '.dhx{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}',
     '.dhx-c{max-width:1400px;margin:0 auto;padding:0 1.5rem}',
-    '.dhx-inner{display:flex;flex-direction:column;align-items:flex-start;gap:.85rem;padding:1.5rem 0 1.4rem}',
+    '.dhx-inner{display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap;padding:1.5rem 0 1.4rem}',
     '.dhx-eye{font-family:"Oswald",sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem}',
-    '.dhx-h1{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.7rem,3.5vw,2.25rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1.05}',
+    '.dhx-h1{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.3rem,2.1vw,1.6rem);font-weight:800;letter-spacing:-.01em;text-transform:uppercase;line-height:1.1}',
     '.dhx-h1 em{color:var(--orange);font-style:normal}',
     '.dhx-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}',
     '.dhx-chip-row{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}',
