@@ -180,6 +180,41 @@ def my_profile(db: Session = Depends(get_db), me: User = Depends(get_current_use
     return UserOut.from_orm_user(me)
 
 
+def _sync_goal_race_event(me: User, db: Session) -> None:
+    """
+    Mantiene sincronizada la carrera objetivo "simple" del perfil
+    (User.race_goal_name/date/dist, editada desde Mi Perfil) con la tabla
+    RaceEvent (is_goal_race=True) que consumen Mental→Pre-Carrera,
+    Analytics→Goal Race Countdown y otras features de calendario de
+    carreras. Sin esto, cargar la carrera solo en Perfil la deja invisible
+    para cualquier feature que lea RaceEvent en vez de los campos simples.
+    """
+    existing = (
+        db.query(RaceEvent)
+        .filter(RaceEvent.user_id == me.id, RaceEvent.is_goal_race == True)
+        .first()
+    )
+    if not me.race_goal_date:
+        if existing:
+            existing.is_goal_race = False
+        return
+
+    if existing:
+        existing.name     = me.race_goal_name or existing.name or "Mi carrera objetivo"
+        existing.date_iso = me.race_goal_date
+        existing.distance = me.race_goal_dist or existing.distance
+    else:
+        import uuid as _uuid_mod
+        db.add(RaceEvent(
+            id           = str(_uuid_mod.uuid4()),
+            user_id      = me.id,
+            name         = me.race_goal_name or "Mi carrera objetivo",
+            date_iso     = me.race_goal_date,
+            distance     = me.race_goal_dist,
+            is_goal_race = True,
+        ))
+
+
 @router.patch("/profile", response_model=dict)
 def update_profile(
     body: AthleteProfileUpdate,
@@ -195,6 +230,8 @@ def update_profile(
         me.race_goal_date = body.race_goal_date or None
     if body.race_goal_dist is not None:
         me.race_goal_dist = body.race_goal_dist or None
+    if body.race_goal_name is not None or body.race_goal_date is not None or body.race_goal_dist is not None:
+        _sync_goal_race_event(me, db)
     if body.ftp       is not None: me.ftp       = body.ftp
     if body.weight_kg is not None: me.weight_kg = body.weight_kg
     if body.height_cm is not None: me.height_cm = body.height_cm
