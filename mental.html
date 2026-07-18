@@ -81,8 +81,8 @@ a{color:inherit;text-decoration:none}
 /* ─── CHECKIN ─── */
 .checkin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
 .checkin-field{display:flex;flex-direction:column;gap:8px}
-.checkin-field label{font-size:.8rem;color:var(--sub);font-weight:500}
-.stars{display:flex;gap:4px}
+.checkin-field label{font-size:.8rem;color:var(--sub);font-weight:500;line-height:1.35}
+.stars{display:flex;gap:4px;margin-top:auto}
 .star-btn{width:32px;height:32px;border:2px solid var(--border);border-radius:6px;background:var(--card2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--sub)}
 .star-btn.active{border-color:var(--acc);background:var(--acc);color:#fff}
 .star-btn:hover:not(.active){border-color:var(--acc);color:var(--acc)}
@@ -416,6 +416,25 @@ a{color:inherit;text-decoration:none}
 
 <script>
 var API = '/api';
+// El JWT real vive en localStorage.lx_co_token. La cookie httponly
+// lx_access_token (credentials:'include') solo la setea /auth/login, dura
+// TOKEN_HOURS (8h por defecto) y expira en medio de la sesión del usuario —
+// sin este header, el check-in "se guarda" (POST con cookie aún viva) pero
+// al volver más tarde el GET falla en silencio y parece que no se guardó.
+function _authTok() {
+  var direct = localStorage.getItem('lx_co_token');
+  if (direct) return direct;
+  try {
+    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+    return s && s.token ? s.token : '';
+  } catch (e) { return ''; }
+}
+function _authHeaders(extra) {
+  var h = Object.assign({}, extra || {});
+  var tok = _authTok();
+  if (tok) h.Authorization = 'Bearer ' + tok;
+  return h;
+}
 var checkinData = {};
 var selectedProtoId = null;
 var selectedProtoRating = 0;
@@ -441,7 +460,7 @@ function switchTab(name) {
 
 // ─── LOAD DASHBOARD ─────────────────────────────────────────────────────────
 function loadDashboard() {
-  fetch(API + '/mental/dashboard', {credentials:'include'})
+  fetch(API + '/mental/dashboard', {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       renderMFS(d.today);
@@ -567,7 +586,7 @@ function submitCheckin() {
   };
   fetch(API + '/mental/checkin', {
     method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
+    headers:_authHeaders({'Content-Type':'application/json'}),
     body: JSON.stringify(payload)
   })
     .then(function(r){ return r.json(); })
@@ -624,7 +643,7 @@ function renderProtocols(protocols) {
 function openProtoModal(id) {
   selectedProtoId = id;
   selectedProtoRating = 0;
-  fetch(API + '/mental/protocols/' + id, {credentials:'include'})
+  fetch(API + '/mental/protocols/' + id, {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(p) {
       document.getElementById('proto-modal-title').textContent = p.name;
@@ -650,7 +669,7 @@ function saveProtocolSession() {
   if (!selectedProtoId) return;
   fetch(API + '/mental/protocols/' + selectedProtoId + '/complete', {
     method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
+    headers:_authHeaders({'Content-Type':'application/json'}),
     body: JSON.stringify({protocol_id: selectedProtoId, rating: selectedProtoRating || null})
   })
     .then(function(r){ return r.json(); })
@@ -734,7 +753,7 @@ function saveBreathSession() {
   var pid = protoMap[breathProto.id] || 'breath_box';
   fetch(API + '/mental/protocols/' + pid + '/complete', {
     method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
+    headers:_authHeaders({'Content-Type':'application/json'}),
     body: JSON.stringify({protocol_id: pid, duration_min: breathMaxCycles * 2, rating: breathRating || null})
   })
     .then(function(r){ return r.json(); })
@@ -754,7 +773,7 @@ function saveBreathSession() {
 function loadCorrelations() {
   var container = document.getElementById('corr-content');
   container.innerHTML = '<div class="loader">Calculando correlaciones...</div>';
-  fetch(API + '/mental/correlations?days=30', {credentials:'include'})
+  fetch(API + '/mental/correlations?days=30', {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(d) { renderCorrelations(d); })
     .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar correlaciones.</div>'; });
@@ -807,7 +826,7 @@ function renderCorrelations(d) {
 function loadPreRace() {
   var container = document.getElementById('prerace-content');
   container.innerHTML = '<div class="loader">Cargando protocolo pre-carrera...</div>';
-  fetch(API + '/mental/pre-race', {credentials:'include'})
+  fetch(API + '/mental/pre-race', {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(d) { renderPreRace(d); })
     .catch(function(){ container.innerHTML = '<div class="empty-state">Error al cargar.</div>'; });
