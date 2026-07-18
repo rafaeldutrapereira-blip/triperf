@@ -266,6 +266,13 @@ var METRICS = {
     unidad: 'g/hora',
   },
 
+  huella_flor: {
+    nombre: 'Mi Huella de Datos',
+    emoji: '🌸',
+    definicion: 'Los números son tu <strong>historial real sincronizado desde Garmin Connect</strong> — LabX nunca genera datos de muestra. Cada uno de los 6 pétalos representa cuánta historia tenés acumulada por categoría: pétalos grandes y luminosos = mucha data; chicos y opacos = todavía poca. Si un pétalo está chico, es porque esa métrica todavía no tiene suficiente historial en tu cuenta (por ejemplo, HRV o sueño solo se registran algunas noches).',
+    unidad: 'días conectado',
+  },
+
   nutricion_sodio: {
     nombre: 'Sodio por hora',
     emoji: '🧂',
