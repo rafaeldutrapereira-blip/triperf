@@ -84,6 +84,12 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .panel-head{padding:.9rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
 .panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 
+/* Cumplimiento semanal — donuts real vs plan por deporte */
+.compl-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:1.25rem;padding:1.4rem 1.2rem}
+.compl-item{display:flex;flex-direction:column;align-items:center;gap:.55rem}
+.compl-pct{font-family:'Barlow Condensed',sans-serif;font-weight:900}
+.compl-name{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+
 /* ── WEEK CALENDAR ── */
 .cal-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:560px;gap:1px;background:var(--border2)}
 .cal-day{background:var(--bg);padding:.7rem .6rem;min-height:130px;display:flex;flex-direction:column;gap:.3rem;transition:background var(--ease)}
@@ -305,6 +311,15 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 <!-- MAIN CONTENT -->
 <div class="main">
   <div class="c">
+
+    <!-- CUMPLIMIENTO SEMANAL -->
+    <div class="panel sr" id="s-compl">
+      <div class="panel-head">
+        <div class="panel-title">Cumplimiento semanal</div>
+        <div class="ph-sub" id="compl-range" style="margin:0"></div>
+      </div>
+      <div class="compl-row" id="compl-row"></div>
+    </div>
 
     <!-- CALENDAR PANEL -->
     <div class="panel sr" id="s-cal">
@@ -1054,11 +1069,53 @@ function renderSummary(){
 }
 
 // ──────────────────────────────────────
+// CUMPLIMIENTO SEMANAL — real vs plan por deporte (semana calendario actual)
+// ──────────────────────────────────────
+function renderWeeklyCompliance(){
+  var mon = weekMon(new Date()), sun = addDays(mon,6);
+  document.getElementById('compl-range').textContent =
+    mon.getDate()+' '+MONTHS_S[mon.getMonth()]+' – '+sun.getDate()+' '+MONTHS_S[sun.getMonth()];
+
+  var all  = sessionsInRange(iso(mon), iso(sun));
+  var row  = document.getElementById('compl-row');
+  var R = 26, C = 2*Math.PI*R;
+
+  row.innerHTML = Object.keys(SPORT).map(function(sport){
+    var sp = SPORT[sport];
+    var planned = all.filter(function(s){ return s.source==='local'  && s.sport===sport; });
+    var done    = all.filter(function(s){ return s.source==='garmin' && s.sport===sport; });
+
+    var pct;
+    if(!planned.length && !done.length){ pct = null; }
+    else if(!planned.length){ pct = 100; } // sin plan pero se entrenó → 100%
+    else {
+      var tPlan = planned.reduce(function(t,s){ return t+(s.tss||0); },0);
+      var tDone = done.reduce(function(t,s){ return t+(s.tss||0); },0);
+      pct = tPlan>0 ? Math.round(Math.min(tDone/tPlan*100,100)) : (done.length ? 100 : 0);
+    }
+
+    var dash = pct===null ? C : C*(1-pct/100);
+    var color = pct===null ? 'var(--border2)' : sp.color;
+    var label = pct===null ? '—' : pct+'%';
+
+    return '<div class="compl-item">'
+      +'<svg viewBox="0 0 64 64" width="72" height="72">'
+      +'<circle cx="32" cy="32" r="'+R+'" fill="none" stroke="var(--border2)" stroke-width="7"/>'
+      +(pct!==null ? '<circle cx="32" cy="32" r="'+R+'" fill="none" stroke="'+color+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(2)+'" stroke-dashoffset="'+dash.toFixed(2)+'" transform="rotate(-90 32 32)"/>' : '')
+      +'<text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="'+(pct===null?'var(--dim)':'var(--text)')+'" font-family=\'Barlow Condensed,sans-serif\'>'+label+'</text>'
+      +'</svg>'
+      +'<span class="compl-name">'+sp.icon+' '+sp.label+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// ──────────────────────────────────────
 // MASTER RENDER
 // ──────────────────────────────────────
 function render(){
   renderConfigBar();
   renderHeader();
+  renderWeeklyCompliance();
   if(S.view==='week')        renderWeekCal();
   else if(S.view==='month')  renderMonthCal();
   else                       renderPeriodCal();
