@@ -1857,9 +1857,26 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
         // en localStorage: el Dashboard (que recalcula en vivo) y el Plan
         // (que leía el valor viejo cacheado) terminaban mostrando % de
         // cumplimiento distintos para la misma semana.
-        var freshDates = {};
-        data.planned_workouts.forEach(function(p){ freshDates[p.date_iso] = true; });
-        plan = plan.filter(function(s){ return !(s.source === 'garmin_planned' && freshDates[s.date_iso]); });
+        var freshKeys = {};
+        data.planned_workouts.forEach(function(p){
+          var sport = p.sport;
+          if(sport === 'strength') sport = 'str';
+          if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
+          if(['swim','bike','run','str'].indexOf(sport) === -1) return;
+          freshKeys[p.date_iso+'|'+sport] = true;
+        });
+        // Purgar cualquier entrada vieja que ocupe una de estas fechas+deporte —
+        // incluye basura de sesiones de desarrollo anteriores a este sistema
+        // (sin el campo `source`, con ids arbitrarios) que ni el filtro por
+        // source:'garmin_planned' ni el refresco de pullAssignments detectan,
+        // y que bloqueaban para siempre la actualización del valor real.
+        // Se preservan solo sesiones manuales reales (id 'plan-...') y las
+        // de coach (id 'api_...', que se refrescan solas en pullAssignments).
+        plan = plan.filter(function(s){
+          var key = s.date_iso+'|'+s.sport;
+          if(!freshKeys[key]) return true;
+          return s.id && (s.id.indexOf('plan-')===0 || s.id.indexOf('api_')===0);
+        });
 
         data.planned_workouts.forEach(function(p){
           var sport = p.sport;
