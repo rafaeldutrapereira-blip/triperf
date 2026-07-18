@@ -80,11 +80,11 @@ VISIBILITY  = {"public", "followers", "coach_only", "private"}
 VISIBILITY_DEFAULT = "followers"
 
 SPORT_ICON = {
-    "swim": "ðŸŠ", "bike": "ðŸš´", "run": "ðŸƒ",
-    "strength": "ðŸ’ª", "brick": "âš¡", "other": "ðŸ…",
+    "swim": "🏊", "bike": "🚴", "run": "🏃",
+    "strength": "💪", "brick": "⚡", "other": "🏅",
 }
 KUDO_EMOJI = {
-    "power": "ðŸ’ª", "fire": "ðŸ”¥", "trophy": "ðŸ†", "epic": "ðŸ˜Ž", "love": "â¤ï¸",
+    "power": "💪", "fire": "🔥", "trophy": "🏆", "epic": "😎", "love": "❤️",
 }
 
 
@@ -355,21 +355,33 @@ def create_post(
             GarminTrainingLoad.date_iso == act.date_iso,
         ).first()
 
-    post = CommunityPost(
-        id         = _new_id(),
-        user_id    = me.id,
-        activity_id= act.id if act else None,
-        post_type  = body.post_type,
-        body       = body.body,
-        visibility = body.visibility,
-        sport      = act.sport if act else None,
-        dist_km    = act.dist_km if act else None,
-        dur_min    = act.dur_min if act else None,
-        tss        = act.tss    if act else None,
-        ctl_day    = tl.ctl     if act and tl else None,
-        tsb_day    = tl.tsb     if act and tl else None,
+    # El feed puede haber creado ya un CommunityPost para esta actividad
+    # (auto-post del sync, o _get_or_create_post_for_activity al construir
+    # el feed) â€” reutilizarlo en vez de duplicar, si no el caption del
+    # usuario queda en un post huÃ©rfano que el feed nunca vuelve a mostrar.
+    post = (
+        db.query(CommunityPost).filter(CommunityPost.activity_id == act.id).first()
+        if act else None
     )
-    db.add(post)
+    if post:
+        post.body       = body.body
+        post.visibility = body.visibility
+    else:
+        post = CommunityPost(
+            id         = _new_id(),
+            user_id    = me.id,
+            activity_id= act.id if act else None,
+            post_type  = body.post_type,
+            body       = body.body,
+            visibility = body.visibility,
+            sport      = act.sport if act else None,
+            dist_km    = act.dist_km if act else None,
+            dur_min    = act.dur_min if act else None,
+            tss        = act.tss    if act else None,
+            ctl_day    = tl.ctl     if act and tl else None,
+            tsb_day    = tl.tsb     if act and tl else None,
+        )
+        db.add(post)
     db.commit()
     db.refresh(post)
     return _serialize_post(post, me.id)
@@ -519,12 +531,13 @@ def give_kudo(
     kudo = Kudo(id=_new_id(), post_id=post_id, user_id=me.id, kudo_type=body.kudo_type)
     db.add(kudo)
 
-    emoji = KUDO_EMOJI.get(body.kudo_type, "ðŸ‘")
+    emoji = KUDO_EMOJI.get(body.kudo_type, "👍")
     _notif(db, post.user_id, me.id, "kudo",
            f"{me.nombre or me.email} reaccionÃ³ {emoji} a tu actividad",
            post_id=post_id)
     db.commit()
-    return {"ok": True, "kudo_type": body.kudo_type}
+    kudo_count = db.query(Kudo).filter(Kudo.post_id == post_id).count()
+    return {"ok": True, "kudo_type": body.kudo_type, "kudo_count": kudo_count}
 
 
 @router.delete("/posts/{post_id}/kudo")
@@ -542,7 +555,8 @@ def remove_kudo(
     if kudo:
         db.delete(kudo)
         db.commit()
-    return {"ok": True}
+    kudo_count = db.query(Kudo).filter(Kudo.post_id == post_id).count()
+    return {"ok": True, "kudo_count": kudo_count}
 
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1412,20 +1426,20 @@ def flag_post(
 # =============================================================================
 
 SPORT_EMOJI_S17 = {
-    "running": "ðŸƒ", "run": "ðŸƒ",
-    "cycling": "ðŸš´", "bike": "ðŸš´", "riding": "ðŸš´",
-    "swimming": "ðŸŠ", "swim": "ðŸŠ",
-    "triathlon": "ðŸ",
-    "trail_running": "ðŸ”ï¸", "trail": "ðŸ”ï¸",
-    "strength": "ðŸ’ª", "workout": "ðŸ’ª",
-    "other": "âš¡",
+    "running": "🏃", "run": "🏃",
+    "cycling": "🚴", "bike": "🚴", "riding": "🚴",
+    "swimming": "🏊", "swim": "🏊",
+    "triathlon": "🏁",
+    "trail_running": "🏔️", "trail": "🏔️",
+    "strength": "💪", "workout": "💪",
+    "other": "⚡",
 }
 
 COUNTRY_FLAG = {
-    "CL": "ðŸ‡¨ðŸ‡±", "BR": "ðŸ‡§ðŸ‡·", "AR": "ðŸ‡¦ðŸ‡·", "MX": "ðŸ‡²ðŸ‡½",
-    "CO": "ðŸ‡¨ðŸ‡´", "PE": "ðŸ‡µðŸ‡ª", "EC": "ðŸ‡ªðŸ‡¨", "UY": "ðŸ‡ºðŸ‡¾",
-    "PY": "ðŸ‡µðŸ‡¾", "BO": "ðŸ‡§ðŸ‡´", "VE": "ðŸ‡»ðŸ‡ª",
-    "US": "ðŸ‡ºðŸ‡¸", "ES": "ðŸ‡ªðŸ‡¸", "PT": "ðŸ‡µðŸ‡¹",
+    "CL": "🇨🇱", "BR": "🇧🇷", "AR": "🇦🇷", "MX": "🇲🇽",
+    "CO": "🇨🇴", "PE": "🇵🇪", "EC": "🇪🇨", "UY": "🇺🇾",
+    "PY": "🇵🇾", "BO": "🇧🇴", "VE": "🇻🇪",
+    "US": "🇺🇸", "ES": "🇪🇸", "PT": "🇵🇹",
 }
 
 RECOVERY_LEVEL_LABEL = {
@@ -1437,9 +1451,41 @@ RECOVERY_LEVEL_LABEL = {
 }
 
 
+def _get_or_create_post_for_activity(act, db):
+    """
+    El feed muestra GarminActivity, pero kudos/comentarios se guardan contra
+    CommunityPost (Kudo.post_id -> community_posts.id). Sin este puente, el
+    frontend mandaba el id de la actividad como si fuera un post_id y
+    give_kudo() nunca encontraba el post (404 silencioso, "no guarda kudos").
+    La mayoría de actividades ya tienen su post auto-creado en el sync
+    (garmin_pull_service.py, actividades >=10min) — para las que no, se crea
+    aquí mismo bajo demanda.
+    """
+    post = db.query(CommunityPost).filter(CommunityPost.activity_id == act.id).first()
+    if post:
+        return post
+    post = CommunityPost(
+        id          = _new_id(),
+        user_id     = act.user_id,
+        activity_id = act.id,
+        post_type   = "activity",
+        visibility  = "followers",
+        sport       = act.sport,
+        dist_km     = act.dist_km,
+        dur_min     = act.dur_min,
+        tss         = act.tss,
+    )
+    db.add(post)
+    db.flush()
+    return post
+
+
 def _build_activity_card_s17(act, viewer_id, db):
     owner    = db.query(User).filter_by(id=act.user_id).first()
     act_date = act.date_iso
+    post     = _get_or_create_post_for_activity(act, db)
+    kudo_count = db.query(Kudo).filter(Kudo.post_id == post.id).count()
+    my_kudo    = db.query(Kudo).filter(Kudo.post_id == post.id, Kudo.user_id == viewer_id).first()
 
     rec = None
     if act_date:
@@ -1460,8 +1506,12 @@ def _build_activity_card_s17(act, viewer_id, db):
     country   = getattr(owner, "country_code", None) if owner else None
 
     return {
-        "id":          act.id,
+        "id":          post.id,
+        "activity_id": act.id,
         "type":        "garmin_activity",
+        "kudo_count":  kudo_count,
+        "my_kudo":     my_kudo.kudo_type if my_kudo else None,
+        "caption":     post.body,
         "user": {
             "id":             owner.id if owner else None,
             "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "â€”",
@@ -1525,6 +1575,7 @@ def garmin_activity_feed(
     )
 
     cards = [_build_activity_card_s17(a, me.id, db) for a in acts]
+    db.commit()  # persiste cualquier CommunityPost creado on-the-fly en _get_or_create_post_for_activity
     return {
         "feed":            cards,
         "count":           len(cards),
@@ -1678,7 +1729,7 @@ def my_community_stats(
 ):
     follower_count  = db.query(Follow).filter_by(followed_id=me.id).count()
     following_count = db.query(Follow).filter_by(follower_id=me.id).count()
-    my_posts        = db.query(CommunityPost).filter_by(author_id=me.id).all()
+    my_posts        = db.query(CommunityPost).filter_by(user_id=me.id).all()
     post_ids        = [p.id for p in my_posts]
     kudos_received  = (
         db.query(Kudo).filter(Kudo.post_id.in_(post_ids)).count()
