@@ -889,65 +889,24 @@ var MC = {
   }
 };
 
-// ─── MOCK DATA (LCG determinista por métrica) ─────────────────────────────────
-function mkLCG(seed) {
-  var s = seed >>> 0;
-  return function() { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
-}
-
-function genDaily(seed, days, start, lo, hi, vol, drift) {
-  var r = mkLCG(seed), arr = [], v = start, today = new Date();
-  drift = drift || 0;
-  for (var i = days - 1; i >= 0; i--) {
-    var d = new Date(today); d.setDate(today.getDate() - i);
-    v += drift + (r() - 0.475) * vol;
-    v = Math.max(lo, Math.min(hi, v));
-    arr.push({ date: d.toISOString().slice(0,10), value: Math.round(v * 10) / 10 });
-  }
-  return arr;
-}
-
-function genWeekly(seed, weeks, start, lo, hi, vol) {
-  var r = mkLCG(seed), arr = [], v = start, today = new Date();
-  var dow = today.getDay();
-  var mon = new Date(today); mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-  for (var i = weeks - 1; i >= 0; i--) {
-    var d = new Date(mon); d.setDate(mon.getDate() - i * 7);
-    v += (r() - 0.44) * vol;
-    v = Math.max(lo, Math.min(hi, v));
-    arr.push({ date: d.toISOString().slice(0,10), value: Math.round(v) });
-  }
-  return arr;
-}
-
+// Los históricos parten vacíos — se llenan exclusivamente desde
+// fetchRealData() (más abajo) con la respuesta real de /athlete/dashboard.
+// Antes acá se generaba 1-2 años de curvas sintéticas (LCG con semilla fija)
+// como "placeholder", y solo se reemplazaban si el fetch tenía éxito — si
+// fallaba (sin token, 401, red caída) esas curvas falsas quedaban
+// mostradas indefinidamente, indistinguibles de un histórico real. render()
+// ya sabe mostrar "Sin datos disponibles" cuando el array está vacío, así
+// que no hace falta ningún seed: sin datos reales, se ve ese estado en vez
+// de un histórico inventado.
 var ALL = {
-  ctl:  genDaily(0xDEAD,  730, 50,  28,  92, 1.3, 0.04),
-  atl:  genDaily(0xBEEF,  730, 60,  18, 112, 4.2, 0.02),
-  tsb:  genDaily(0xCAFE,  730, -8, -48,  22, 2.5, 0.01),
-  hrv:  genDaily(0xF00D,  730, 57,  36,  82, 2.0, 0.008),
-  tss:  genWeekly(0xABCD, 104, 340, 130, 740, 85),
-  vo2:  genDaily(0x1234,  730, 51,  43,  63, 0.35, 0.004),
-  acwr: genDaily(0xAC01,  365, 1.0, 0.5, 1.6, 0.08, 0.0) // placeholder: reemplazado por API
+  ctl:  [],
+  atl:  [],
+  tsb:  [],
+  hrv:  [],
+  tss:  [],
+  vo2:  [],
+  acwr: []
 };
-
-// ─── PMC SHARED DATA ─────────────────────────────────────────────────────────
-function mergePmcReal(synth, real){
-  var arr = synth.map(function(e){ return Object.assign({},e); });
-  real.forEach(function(p){
-    if(!p.dt) return;
-    var best=4.5, idx=-1;
-    arr.forEach(function(e,i){
-      var d=Math.abs(new Date(e.dt)-new Date(p.dt))/86400000;
-      if(d<best){best=d;idx=i;}
-    });
-    if(idx>=0){
-      arr[idx].ctl = p.ctl||arr[idx].ctl;
-      arr[idx].atl = p.atl||arr[idx].atl;
-      arr[idx].tss = p.tss||arr[idx].tss;
-    }
-  });
-  return arr;
-}
 
 var KL_PMC_ALL = [];
 
@@ -967,7 +926,6 @@ function filterPeriod(all) {
 
 var DT_SPORT_LABELS  = {swim:'Natación', bike:'Ciclismo', run:'Trote', strength:'Preparación Física'};
 var DT_SPORT_COLORS  = {swim:'#22D3EE', bike:'#FF6535', run:'#10B981', strength:'#A855F7'};
-var DT_SPORT_SEQ     = ['swim','bike','run','bike','run','swim','run','bike','strength','run','bike','swim'];
 
 function fmtDateLong(iso){
   if(!iso) return '';
@@ -1001,27 +959,6 @@ function dateToXIdx(iso, pmcData){
   var t0=new Date(pmcData[0].dt).getTime(), tN=new Date(pmcData[pmcData.length-1].dt).getTime();
   if(tN===t0) return 0;
   return Math.max(0,Math.min(pmcData.length-1,(t-t0)/(tN-t0)*(pmcData.length-1)));
-}
-
-function makeHistoricalDotsDt(pmcData){
-  var real=(window.KL_DATA&&KL_DATA.activities)?KL_DATA.activities:[];
-  var earliest='9999-99-99';
-  real.forEach(function(a){if(a.date_iso&&a.date_iso<earliest)earliest=a.date_iso;});
-  var seed=0xA5F3C2;
-  function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/0x100000000;}
-  var dots=[],si=0;
-  pmcData.forEach(function(p){
-    if(!p.dt||!p.tss||p.dt>=earliest) return;
-    var nSess=3+Math.floor(rnd()*4), baseMs=new Date(p.dt).getTime(), pool=p.tss;
-    for(var j=0;j<nSess&&pool>15;j++){
-      var dStr=new Date(baseMs-Math.floor(rnd()*7)*86400000).toISOString().slice(0,10);
-      var frac=(j===nSess-1)?1:(.2+rnd()*.35);
-      var tss=Math.max(20,Math.min(Math.round(pool*frac*(1.6/(nSess-j))),200));
-      pool=Math.max(0,pool-tss);
-      dots.push({date_iso:dStr,tss:tss,sport:DT_SPORT_SEQ[(si++)%DT_SPORT_SEQ.length],isGen:true});
-    }
-  });
-  return dots;
 }
 
 function getPmcFiltered() {
@@ -1216,6 +1153,46 @@ function setStatCard(id, val, u, sub) {
   if (dateEl) dateEl.textContent = sub;
 }
 
+// ─── Actividades reales para los puntos del PMC ──────────────────────────────
+// KL_DATA.activities (del payload de /athlete/dashboard) está limitado a las
+// últimas 100 actividades — suficiente para el dashboard, pero deja sin
+// puntitos cualquier período más viejo cuando se mira "Todo" el histórico.
+// Se trae el rango completo real desde /athlete/activities (paginado, sin
+// ese tope) y se cachea por rango de fechas para no repetir el fetch en
+// cada redibujado del mismo período.
+window._pmcActsCache = window._pmcActsCache || {};
+
+function _detalleAuthTok(){
+  try{
+    var t = localStorage.getItem('lx_co_token');
+    if(t) return t;
+    var s = JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');
+    return (s && s.token) ? s.token : null;
+  }catch(e){ return null; }
+}
+
+function fetchActivitiesRange(fromISO, toISO, cb){
+  var key = fromISO + '|' + toISO;
+  if (window._pmcActsCache[key]) { cb(window._pmcActsCache[key]); return; }
+  var tok = _detalleAuthTok();
+  if (!tok) { cb(null); return; }
+  var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  var all = [];
+  function loadPage(page){
+    fetch(API+'/athlete/activities?from='+fromISO+'&to='+toISO+'&per_page=200&page='+page,
+          { headers:{ Authorization:'Bearer '+tok } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if(!d){ cb(null); return; }
+        all = all.concat(d.items||[]);
+        if(d.has_next){ loadPage(page+1); }
+        else { window._pmcActsCache[key] = all; cb(all); }
+      })
+      .catch(function(){ cb(null); });
+  }
+  loadPage(1);
+}
+
 function renderChart(d, cfg) {
   var ctx = document.getElementById('main-chart').getContext('2d');
 
@@ -1257,15 +1234,30 @@ function renderChart(d, cfg) {
     function eTSSDt(a){var FTP=240,FC=180,h=(a.dur_min||0)/60;if(!h)return 0;if(a.avg_power&&normSportDt(a.sport)==='bike'){var IF=a.avg_power/FTP;return Math.round(h*IF*IF*100);}if(a.avg_hr){var IF2=a.avg_hr/(FC*0.89);return Math.round(h*IF2*IF2*100);}return Math.round(h*50);}
 
     var pS = pmcD.length ? pmcD[0].dt : '', pE = pmcD.length ? pmcD[pmcD.length-1].dt : '';
-    var histDots = makeHistoricalDotsDt(pmcD);
+
+    // Mientras llega el rango completo real (o si no hay token/falla el
+    // fetch), se dibuja de una vez con lo que ya está en KL_DATA.activities
+    // (últimas 100) para no dejar el gráfico vacío; en cuanto el rango
+    // completo llega se re-renderiza con la cobertura real.
     var realActs = (window.KL_DATA && KL_DATA.activities) ? KL_DATA.activities : [];
+    if (pS && pE) {
+      var _rangeKey = pS + '|' + pE;
+      if (window._pmcActsCache[_rangeKey]) {
+        realActs = window._pmcActsCache[_rangeKey];
+      } else if (!window._pmcActsFetching || window._pmcActsFetching !== _rangeKey) {
+        window._pmcActsFetching = _rangeKey;
+        fetchActivitiesRange(pS, pE, function(full){
+          window._pmcActsFetching = null;
+          if (full && metric === 'pmc') render();
+        });
+      }
+    }
     var allDots  = [];
 
-    histDots.forEach(function(a){
-      if(!a.date_iso||a.date_iso<pS||a.date_iso>pE||!a.tss||a.tss<=0) return;
-      var pmc = pmcAtDateDt(a.date_iso);
-      allDots.push({date_iso:a.date_iso, tss:a.tss, sport:normSportDt(a.sport), pmc:pmc, isGen:true});
-    });
+    // Solo sesiones reales — antes se rellenaban con sesiones inventadas
+    // (deporte/TSS/fecha fabricados vía LCG) los períodos sin actividades
+    // individuales sincronizadas; el tooltip las mostraba igual que una
+    // sesión real, sin ningún aviso de que eran estimadas.
     realActs.forEach(function(a){
       if(!a.date_iso||a.date_iso<pS||a.date_iso>pE) return;
       var tss = a.tss!=null ? a.tss : eTSSDt(a);
