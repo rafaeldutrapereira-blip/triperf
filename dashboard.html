@@ -1901,78 +1901,6 @@ function renderWeekAdherence(){
 
   /* ── Update discipline cards from KL_DATA.weekly_disc ─────────────────── */
   var wd = (window.KL_DATA && KL_DATA.weekly_disc) || {};
-  // Targets desde el plan real (TrainingPeaks/Garmin Coach/LabX, vía
-  // garmin_planned_workouts) — suma dist_km Y dur_min por deporte. Muchos
-  // workouts estructurados (bloques de potencia, por ej.) son por duración,
-  // no por distancia: si el plan no define km para una disciplina pero sí
-  // minutos, se compara por minutos en vez de caer al default genérico.
-  // Sin defaults inventados: si el coach no programó nada de una disciplina
-  // esta semana (ej. sin sesión de fuerza en el calendario de Garmin), la
-  // meta queda en 0 y la tarjeta debe decir "Sin plan esta semana" — no
-  // fijar un número genérico (antes Fuerza siempre asumía "meta: 2 sesiones"
-  // aunque no hubiera ningún plan real detrás).
-  var DC_TGTS = (function(){
-    var t = {swim:{km:0,min:0}, bike:{km:0,min:0}, run:{km:0,min:0}, str:0};
-    var cp = window._coachPlanData;
-    if(cp && cp.length){
-      cp.forEach(function(a){
-        var tmpl=a.template||{}, sp=tmpl.sport;
-        if(t[sp]){ t[sp].km += (tmpl.dist_km||0); t[sp].min += (tmpl.dur_min||0); }
-        else if(sp==='strength'||sp==='gym') t.str++;
-      });
-    }
-    return t;
-  })();
-  function updDC(sp, actualKm, actualMin, tgt, isCount){
-    if(isCount){
-      var valEl0 = document.getElementById('dc-'+sp+'-val');
-      var pctEl0 = document.getElementById('dc-'+sp+'-pct');
-      var barEl0 = document.getElementById('dc-'+sp+'-bar');
-      var tgtEl0 = document.getElementById('dc-'+sp+'-tgt');
-      if(valEl0) valEl0.textContent = actualKm;
-      if(tgt>0){
-        var pct0 = Math.round(actualKm/tgt*100); // % real, sin tope
-        var c0 = pct0>=90 ? 'var(--green)' : pct0>=60 ? 'var(--gold)' : 'var(--red)';
-        if(pctEl0){ pctEl0.textContent = pct0+'%'; pctEl0.style.color = c0; }
-        if(barEl0){ var w0=Math.min(100,pct0); barEl0.setAttribute('data-w',w0); barEl0.style.width=w0+'%'; barEl0.style.background=c0; }
-        if(tgtEl0) tgtEl0.textContent = 'meta: ' + tgt + ' sesiones';
-      } else {
-        if(pctEl0){ pctEl0.textContent = ''; }
-        if(barEl0){ barEl0.setAttribute('data-w',0); barEl0.style.width='0%'; }
-        if(tgtEl0){ tgtEl0.textContent = 'Sin plan esta semana'; tgtEl0.style.fontStyle='italic'; tgtEl0.style.opacity='.7'; }
-      }
-      return;
-    }
-    // Elegir unidad: km si el plan define distancia; si no, minutos si el
-    // plan define duración.
-    var useMin = !tgt.km && tgt.min > 0;
-    var actual = useMin ? actualMin : actualKm;
-    var target = useMin ? tgt.min : tgt.km;
-
-    var valEl  = document.getElementById('dc-'+sp+'-val');
-    var pctEl  = document.getElementById('dc-'+sp+'-pct');
-    var barEl  = document.getElementById('dc-'+sp+'-bar');
-    var unitEl = document.getElementById('dc-'+sp+'-unit');
-    var tgtEl  = document.getElementById('dc-'+sp+'-tgt');
-    if(valEl) valEl.textContent = useMin ? Math.round(actual) : (Math.round(actual*10)/10);
-    if(unitEl) unitEl.textContent = useMin ? ' min' : ' km';
-
-    if(target>0){
-      var pct = Math.round(actual/target*100); // % real, sin tope de 120%
-      if(tgtEl){ tgtEl.textContent = 'meta: ' + (useMin ? Math.round(target)+' min' : target+' km'); tgtEl.style.fontStyle=''; tgtEl.style.opacity=''; }
-      var c = pct>=90 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
-      if(pctEl){ pctEl.textContent = pct+'%'; pctEl.style.color = c; }
-      if(barEl){ var w = Math.min(100, pct); barEl.setAttribute('data-w', w); barEl.style.width = w+'%'; barEl.style.background = c; }
-    } else {
-      if(pctEl){ pctEl.textContent = ''; }
-      if(barEl){ barEl.setAttribute('data-w', 0); barEl.style.width = '0%'; }
-      if(tgtEl){ tgtEl.textContent = 'Sin plan esta semana'; tgtEl.style.fontStyle='italic'; tgtEl.style.opacity='.7'; }
-    }
-  }
-  if(wd.swim_km    != null) updDC('swim', wd.swim_km, wd.swim_min||0, DC_TGTS.swim, false);
-  if(wd.bike_km    != null) updDC('bike', wd.bike_km, wd.bike_min||0, DC_TGTS.bike, false);
-  if(wd.run_km     != null) updDC('run',  wd.run_km,  wd.run_min||0,  DC_TGTS.run,  false);
-  if(wd.strength_n != null) updDC('str',  wd.strength_n, 0, DC_TGTS.str, true);
 
   // TSS real por disciplina — suma de los mismos acts ya asignados a los días de la semana
   var tssBySport = {swim:0, bike:0, run:0, gym:0};
@@ -1985,6 +1913,54 @@ function renderWeekAdherence(){
       }
     });
   });
+
+  // Targets desde el plan real (TrainingPeaks/Garmin Coach/LabX, vía
+  // garmin_planned_workouts) — TSS planificado por deporte. Mismo criterio
+  // que training_plan.html (Cumplimiento Semanal: TSS real ÷ TSS
+  // planificado, tope 100%) para que las dos páginas midan "cumplimiento"
+  // con la misma fórmula y no muestren números distintos para la misma
+  // semana. Sin defaults inventados: si el coach no programó nada de una
+  // disciplina esta semana, la meta queda en 0 y la tarjeta debe decir
+  // "Sin plan esta semana".
+  var DC_TGTS = (function(){
+    var t = {swim:0, bike:0, run:0, str:0};
+    var cp = window._coachPlanData;
+    if(cp && cp.length){
+      cp.forEach(function(a){
+        var tmpl=a.template||{}, sp=tmpl.sport;
+        if(sp==='strength'||sp==='gym') sp='str';
+        if(t.hasOwnProperty(sp)) t[sp] += (tmpl.tss||0);
+      });
+    }
+    return t;
+  })();
+
+  function updDC(sp, actualDisplay, actualUnit, tssActual, tssPlanned){
+    var valEl  = document.getElementById('dc-'+sp+'-val');
+    var pctEl  = document.getElementById('dc-'+sp+'-pct');
+    var barEl  = document.getElementById('dc-'+sp+'-bar');
+    var unitEl = document.getElementById('dc-'+sp+'-unit');
+    var tgtEl  = document.getElementById('dc-'+sp+'-tgt');
+    if(valEl) valEl.textContent = actualDisplay;
+    if(unitEl) unitEl.textContent = actualUnit;
+
+    if(tssPlanned > 0){
+      var pct = Math.round(Math.min(tssActual/tssPlanned*100, 100)); // mismo tope que training_plan.html
+      if(tgtEl){ tgtEl.textContent = 'meta: ' + Math.round(tssPlanned) + ' TSS'; tgtEl.style.fontStyle=''; tgtEl.style.opacity=''; }
+      var c = pct>=90 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
+      if(pctEl){ pctEl.textContent = pct+'%'; pctEl.style.color = c; }
+      if(barEl){ barEl.setAttribute('data-w', pct); barEl.style.width = pct+'%'; barEl.style.background = c; }
+    } else {
+      if(pctEl){ pctEl.textContent = ''; }
+      if(barEl){ barEl.setAttribute('data-w', 0); barEl.style.width = '0%'; }
+      if(tgtEl){ tgtEl.textContent = 'Sin plan esta semana'; tgtEl.style.fontStyle='italic'; tgtEl.style.opacity='.7'; }
+    }
+  }
+  if(wd.swim_km    != null) updDC('swim', Math.round(wd.swim_km*10)/10, ' km', tssBySport.swim, DC_TGTS.swim);
+  if(wd.bike_km    != null) updDC('bike', Math.round(wd.bike_km*10)/10, ' km', tssBySport.bike, DC_TGTS.bike);
+  if(wd.run_km     != null) updDC('run',  Math.round(wd.run_km*10)/10,  ' km', tssBySport.run,  DC_TGTS.run);
+  if(wd.strength_n != null) updDC('str',  wd.strength_n, ' sesiones', tssBySport.gym, DC_TGTS.str);
+
   ['swim','bike','run','gym'].forEach(function(sp){
     var el = document.getElementById('dc-' + (sp === 'gym' ? 'str' : sp) + '-tss');
     if(el) el.textContent = Math.round(tssBySport[sp]);
