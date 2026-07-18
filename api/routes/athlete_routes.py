@@ -970,24 +970,20 @@ def athlete_dashboard(
             sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
-        "planned_workouts": _get_planned_week(db, me.id),
+        "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo
     }
     cache_set(cache_key, result, ttl_seconds=300)
     return result
 
 
-def _get_planned_week(db: Session, user_id: str) -> list:
-    """Devuelve los workouts planificados de la semana actual (lun→dom)."""
-    from datetime import date, timedelta
-    today    = date.today()
-    mon      = today - timedelta(days=today.weekday())
-    sun      = mon + timedelta(days=6)
+def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) -> list:
+    """Devuelve los workouts planificados (Training Peaks/Garmin) entre start_iso y end_iso."""
     rows = (
         db.query(GarminPlannedWorkout)
           .filter(
               GarminPlannedWorkout.user_id  == user_id,
-              GarminPlannedWorkout.date_iso >= mon.isoformat(),
-              GarminPlannedWorkout.date_iso <= sun.isoformat(),
+              GarminPlannedWorkout.date_iso >= start_iso,
+              GarminPlannedWorkout.date_iso <= end_iso,
           )
           .order_by(GarminPlannedWorkout.date_iso)
           .all()
@@ -1014,6 +1010,31 @@ def _get_planned_week(db: Session, user_id: str) -> list:
             "source":   r.source,
         })
     return out
+
+
+def _get_planned_week(db: Session, user_id: str) -> list:
+    """Devuelve los workouts planificados de la semana actual (lun→dom)."""
+    from datetime import date, timedelta
+    today = date.today()
+    mon   = today - timedelta(days=today.weekday())
+    sun   = mon + timedelta(days=6)
+    return _get_planned_range(db, user_id, mon.isoformat(), sun.isoformat())
+
+
+@router.get("/planned-workouts")
+def get_planned_workouts_range(
+    start: str = Query(..., description="YYYY-MM-DD"),
+    end:   str = Query(..., description="YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    """
+    Workouts planificados (Training Peaks/Garmin, tabla garmin_planned_workouts)
+    en un rango de fechas arbitrario. Usado por training_plan.html para calcular
+    "Cumplimiento" en las vistas Mes/Período, no solo la semana actual (que es lo
+    único que cubre planned_workouts dentro de /athlete/dashboard).
+    """
+    return _get_planned_range(db, me.id, start, end)
 
 
 # ─────────────────────────────────────────────

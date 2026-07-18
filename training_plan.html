@@ -322,7 +322,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
     <!-- CUMPLIMIENTO SEMANAL -->
     <div class="panel sr" id="s-compl">
       <div class="panel-head">
-        <div class="panel-title">Cumplimiento semanal</div>
+        <div class="panel-title" id="compl-title">Cumplimiento semanal</div>
         <div class="ph-sub" id="compl-range" style="margin:0"></div>
       </div>
       <div class="compl-row" id="compl-row"></div>
@@ -1112,28 +1112,89 @@ var COMPL_GRAD = {
   str:  ['#A855F7','#6366F1'],
 };
 
+// Caché en memoria (NO localStorage) del TSS planificado por rango de
+// fechas, para que el panel de cumplimiento pueda seguir a la vista
+// activa (Semana/Mes/Período) en vez de estar fijo a la semana actual.
+// Cada rango se pide una sola vez por carga de página; si el coach tiene
+// plan real asignado ese rango, reemplaza (no se suma) al de Training
+// Peaks/Garmin, igual criterio que dashboard.html.
+var _complCache = {};
+function _complAuth(){
+  var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
+  var tok = localStorage.getItem('lx_ath_token') || localStorage.getItem('lx_co_token');
+  if(!tok){
+    try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){}
+  }
+  return {API:API, tok:tok};
+}
+function fetchPlanTSSRange(startIso, endIso){
+  var key = startIso+'|'+endIso;
+  if(_complCache[key]) return; // ya cacheado o ya en curso
+  var auth = _complAuth();
+  if(!auth.tok) return;
+  _complCache[key] = 'pending';
+  var swimWords = /nata|swim|piscina|pool/i;
+
+  var pTP = fetch(auth.API+'/athlete/planned-workouts?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows){
+      var t = {swim:0,bike:0,run:0,str:0};
+      (rows||[]).forEach(function(p){
+        var sport = p.sport;
+        if(sport==='strength') sport='str';
+        if(sport==='other' && swimWords.test(p.title||'')) sport='swim';
+        if(t.hasOwnProperty(sport)) t[sport] += (p.tss||0);
+      });
+      return t;
+    }).catch(function(){ return {swim:0,bike:0,run:0,str:0}; });
+
+  var pCoach = fetch(auth.API+'/athlete/plan?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(assignments){
+      if(!assignments || !assignments.length) return null; // sin plan de coach real -> usar Training Peaks/Garmin
+      var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
+      var t = {swim:0,bike:0,run:0,str:0};
+      assignments.forEach(function(a){
+        var sp = sportMap[a.template.sport];
+        if(sp) t[sp] += (a.template.tss||0);
+      });
+      return t;
+    }).catch(function(){ return null; });
+
+  Promise.all([pTP, pCoach]).then(function(results){
+    _complCache[key] = results[1] || results[0]; // coach real tiene precedencia
+    render();
+  });
+}
+
 function renderWeeklyCompliance(){
-  var mon = weekMon(new Date()), sun = addDays(mon,6);
+  var range = currentRange(); // {start,end} ISO — ya calculado acorde a S.view (semana/mes/período)
+  var startIso = range.start, endIso = range.end;
+
+  var titleEl = document.getElementById('compl-title');
+  if(titleEl) titleEl.textContent = S.view==='week' ? 'Cumplimiento semanal' : S.view==='month' ? 'Cumplimiento mensual' : 'Cumplimiento del período';
+
+  var sD = new Date(startIso+'T00:00:00'), eD = new Date(endIso+'T00:00:00');
   document.getElementById('compl-range').textContent =
-    mon.getDate()+' '+MONTHS_S[mon.getMonth()]+' – '+sun.getDate()+' '+MONTHS_S[sun.getMonth()];
+    sD.getDate()+' '+MONTHS_S[sD.getMonth()]+' – '+eD.getDate()+' '+MONTHS_S[eD.getMonth()];
 
   // Real: directo de KL_DATA.activities (siempre fresco, sin caché).
-  // Plan: directo de window._weeklyPlanTSS (fetch en memoria del bridge,
-  // sin localStorage de por medio) — misma fuente y mismo criterio de
-  // precedencia coach-plan > Training Peaks/Garmin que usa dashboard.html.
   var acts = (window.KL_DATA && KL_DATA.activities) || [];
-  var monIso = iso(mon), sunIso = iso(sun);
-  var planTSS = window._weeklyPlanTSS || {swim:0,bike:0,run:0,str:0};
+  var key = startIso+'|'+endIso;
+  var cached = _complCache[key];
+  if(cached === undefined) fetchPlanTSSRange(startIso, endIso);
+  var loading = cached === undefined || cached === 'pending';
+  var planTSS = loading ? {swim:0,bike:0,run:0,str:0} : cached;
   var row  = document.getElementById('compl-row');
   var R = 60, C = 2*Math.PI*R;
 
   var data = Object.keys(SPORT).map(function(sport){
     var sp = SPORT[sport];
-    var done = acts.filter(function(a){ return a.sport===sport && a.date_iso>=monIso && a.date_iso<=sunIso; });
+    var done = acts.filter(function(a){ return a.sport===sport && a.date_iso>=startIso && a.date_iso<=endIso; });
     var tPlan = planTSS[sport] || 0;
 
     var pct;
-    if(tPlan<=0){ pct = null; } // sin plan asignado esta semana → no hay "cumplimiento" que medir
+    if(loading || tPlan<=0){ pct = null; } // cargando, o sin plan asignado en este rango → no hay "cumplimiento" que medir
     else {
       var tDone = done.reduce(function(t,a){ return t+estTSS(a); },0);
       pct = Math.round(Math.min(tDone/tPlan*100,100));
@@ -1846,54 +1907,9 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
         window.KL_DATA.activities = data.activities;
       }
 
-      // TSS planificado de ESTA semana por deporte, para "Cumplimiento
-      // Semanal" — SOLO en memoria, nunca tocando localStorage. Es la misma
-      // solución que ya usa dashboard.html (DC_TGTS/_coachPlanData): sin
-      // caché persistente no hay caché que se quede vieja. Se reemplazó
-      // a propósito el merge anterior a kl_training_plan (que arrastraba
-      // basura de versiones viejas de la página y nunca se limpiaba del
-      // todo) por este cálculo que se recalcula 100% de cero en cada carga.
-      window._weeklyPlanTSS = {swim:0, bike:0, run:0, str:0};
-      (data.planned_workouts || []).forEach(function(p){
-        var sport = p.sport;
-        if(sport === 'strength') sport = 'str';
-        if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
-        if(window._weeklyPlanTSS.hasOwnProperty(sport)) window._weeklyPlanTSS[sport] += (p.tss||0);
-      });
-
       if(typeof window._tpRender === 'function') window._tpRender();
     })
     .catch(function(){});
-
-  // Plan de coach asignado (si existe) para la semana actual — mismo
-  // criterio de precedencia que dashboard.html: si hay un plan de coach
-  // real en LabX, reemplaza al de Training Peaks/Garmin en vez de sumarse.
-  (function(){
-    // weekMon()/iso() viven en la IIFE del script principal (arriba, con su
-    // propio scope) — no son accesibles acá, este es un <script> separado.
-    // Se duplica el mismo cálculo seguro (hora local en 0 antes de pasar a
-    // ISO, para no correr de fecha por huso horario) en vez de asumir que
-    // esas funciones existen en este scope.
-    var now = new Date(); now.setHours(0,0,0,0);
-    var dow = now.getDay()||7;
-    var mon = new Date(now); mon.setDate(mon.getDate()-dow+1);
-    var sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    var isoOf = function(d){ return d.toISOString().slice(0,10); };
-    fetch(API+'/athlete/plan?start='+isoOf(mon)+'&end='+isoOf(sun), { headers:{Authorization:'Bearer '+tok} })
-      .then(function(r){ return r.ok ? r.json() : []; })
-      .then(function(assignments){
-        if(!assignments || !assignments.length) return;
-        var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
-        var t = {swim:0, bike:0, run:0, str:0};
-        assignments.forEach(function(a){
-          var sport = sportMap[a.template.sport];
-          if(sport) t[sport] += (a.template.tss||0);
-        });
-        window._weeklyPlanTSS = t;
-        if(typeof window._tpRender === 'function') window._tpRender();
-      })
-      .catch(function(){});
-  })();
 })();
 </script>
 
