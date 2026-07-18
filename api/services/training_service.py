@@ -272,6 +272,119 @@ def build_training_alerts(tsb: float, acwr: float, acwr_zone: str, ctl: float) -
     return alerts
 
 
+# ─── Insight del día — síntesis multi-señal para el dashboard ────────────────
+
+def build_daily_insight(
+    *,
+    tsb: float,
+    atl: float,
+    ctl: float,
+    acwr: float,
+    acwr_zone: str,
+    hrv_last_night: Optional[float] = None,
+    hrv_7d_avg: Optional[float] = None,
+    hrv_trend: Optional[float] = None,
+    sleep_total_h: Optional[float] = None,
+    sleep_trend: Optional[float] = None,
+    rhr_trend: Optional[float] = None,
+) -> dict:
+    """
+    Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
+    conclusión accionable, en vez de dejar que el atleta cruce 5 números por
+    su cuenta. Reglas priorizadas: primero lo que compromete salud (ACWR/TSB
+    extremos), después combinaciones de fatiga+mala recuperación, y solo si
+    nada de eso aplica, el caso positivo o el neutral por falta de datos.
+    """
+    poor_sleep = (sleep_total_h is not None and sleep_total_h < 6.5) or (sleep_trend is not None and sleep_trend < -0.5)
+    hrv_down   = hrv_trend is not None and hrv_trend <= -4
+    hrv_up     = hrv_trend is not None and hrv_trend > 0
+    rhr_up     = rhr_trend is not None and rhr_trend >= 4
+    hrv_pct    = round(hrv_trend / (hrv_last_night - hrv_trend) * 100) if (hrv_down and hrv_last_night) else None
+
+    # tone: mismo lenguaje de color que el resto de LabX — rojo = preocupante,
+    # ámbar = precaución, verde = bien, texto normal = sin señal fuerte.
+    drivers = []
+    if hrv_last_night is not None:
+        hrv_tone = "bad" if hrv_down else "good" if hrv_up else "neutral"
+        hrv_delta = f"↓ {abs(hrv_pct)}%" if hrv_pct else (f"↑ {hrv_trend:.0f}ms" if hrv_up else None)
+        drivers.append({
+            "label": "HRV anoche", "value": f"{round(hrv_last_night)}ms",
+            "tone": hrv_tone, "delta": hrv_delta,
+        })
+    tsb_tone = "bad" if tsb < -20 else "caution" if tsb < -8 else "good" if tsb > 15 else "neutral"
+    drivers.append({
+        "label": "TSB (forma)", "value": f"{tsb:+.0f}".replace("+-", "-"),
+        "tone": tsb_tone, "delta": None,
+    })
+    if sleep_total_h is not None:
+        h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
+        sleep_tone = "bad" if poor_sleep else "good" if (sleep_trend or 0) > 0 else "neutral"
+        drivers.append({
+            "label": "Sueño anoche", "value": f"{h}h {m:02d}m",
+            "tone": sleep_tone, "delta": None,
+        })
+
+    def _base(severity, headline, message, cta=None):
+        return {"severity": severity, "headline": headline, "message": message,
+                "drivers": drivers, "cta_label": cta}
+
+    # 1. Combinación crítica: mala recuperación (HRV/sueño) + carga ya alta
+    if hrv_down and poor_sleep and (tsb < -8 or acwr_zone in ("warning", "danger")):
+        hrv_pct_txt = f" ({hrv_pct}%)" if hrv_pct else ""
+        return _base(
+            "reduce", "Reducir carga hoy",
+            f"Tu HRV bajó{hrv_pct_txt} a {round(hrv_last_night)}ms y tu forma (TSB) está en {tsb:.0f} "
+            f"con fatiga acumulada (ATL {atl:.0f}). Sumado a que dormiste menos de lo habitual, hoy conviene "
+            f"una sesión aeróbica suave o descanso — evita intervalos de alta intensidad.",
+            "Ver protocolo de recuperación sugerido",
+        )
+
+    # 2. ACWR en zona de riesgo — prioridad de seguridad
+    if acwr_zone == "danger":
+        return _base(
+            "reduce", "Riesgo de lesión",
+            f"Tu ACWR es {acwr:.2f}, muy por encima del rango seguro (0.8–1.3). Subiste la carga demasiado rápido "
+            f"esta semana respecto a tu promedio de 28 días — reduce volumen o intensidad hoy.",
+            "Ver histórico de carga",
+        )
+
+    # 3. Fatiga acumulada profunda (TSB muy negativo) aunque HRV/sueño no acompañen datos
+    if tsb < -20:
+        return _base(
+            "caution", "Fatiga acumulada",
+            f"Tu TSB está en {tsb:.0f} — nivel de fatiga alto tras varios días de carga sostenida (ATL {atl:.0f}). "
+            f"Mantén la intensidad baja y prioriza descanso esta semana para no entrar en sobreentrenamiento.",
+            "Ver histórico PMC",
+        )
+
+    # 4. Señal única de alerta (HRV o sueño o FC reposo, sin combinarse con carga alta)
+    if hrv_down or poor_sleep or rhr_up:
+        parts = []
+        if hrv_down:   parts.append(f"tu HRV bajó a {round(hrv_last_night)}ms")
+        if poor_sleep: parts.append("dormiste menos de lo habitual")
+        if rhr_up:     parts.append(f"tu FC en reposo subió {rhr_trend:+.0f}bpm")
+        return _base(
+            "caution", "Presta atención a tu recuperación",
+            f"Hoy {', '.join(parts)}. Tu carga de entrenamiento (TSB {tsb:.0f}, ACWR {acwr:.2f}) todavía está en rango "
+            f"razonable, pero vale la pena monitorear cómo te sientes antes de una sesión exigente.",
+        )
+
+    # 5. Forma óptima — momento de exigir
+    if tsb > 15 and acwr_zone in ("optimal", "low") and not hrv_down:
+        return _base(
+            "good", "Buen momento para exigir",
+            f"Tu forma está en su punto más alto (TSB {tsb:.0f}) con carga en rango saludable (ACWR {acwr:.2f}) "
+            f"y tu recuperación se ve estable. Es un buen día para una sesión de calidad o un test.",
+        )
+
+    # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
+    return _base(
+        "neutral", "Todo en rango normal",
+        f"Tu carga (TSB {tsb:.0f}, ACWR {acwr:.2f}) y tu recuperación están dentro de lo esperado hoy. "
+        f"Sigue tu plan de entrenamiento con normalidad.",
+    )
+
+
 # ─── Recálculo completo CTL/ATL/TSB ──────────────────────────
 
 def recalculate_training_load(db: Session, user_id: str) -> int:

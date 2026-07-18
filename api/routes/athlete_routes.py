@@ -22,7 +22,7 @@ from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember
-from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts
+from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
 logger = logging.getLogger("labx.athlete")
@@ -963,6 +963,12 @@ def athlete_dashboard(
         "race_goal_date": me.race_goal_date,
         # Alertas de sobreentrenamiento
         "alerts": _svc_alerts(tsb=tsb, acwr=acwr, acwr_zone=acwr_zone, ctl=ctl),
+        # Insight del día — síntesis carga + recuperación en una sola conclusión
+        "insight": build_daily_insight(
+            tsb=tsb, atl=atl, ctl=ctl, acwr=acwr, acwr_zone=acwr_zone,
+            hrv_last_night=hrv_last_night, hrv_7d_avg=hrv_7d_avg, hrv_trend=hrv_trend,
+            sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
+        ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),
     }

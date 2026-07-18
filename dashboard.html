@@ -137,29 +137,73 @@ ul { list-style: none; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
 
+/* -- INSIGHT DEL DÍA + META A (hero row) ------------------------------------ */
+.hero-sec { padding: 1.5rem 0 0; }
+.hero-row { display:grid; grid-template-columns: 2fr 1fr; gap:1rem; align-items:stretch; }
+@media (max-width:1100px) { .hero-row { grid-template-columns: 1fr; } }
+
+.insight-card { display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; min-height:212px; padding:1.6rem 1.8rem; }
+.insight-card::before {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.55;
+  background:radial-gradient(420px 260px at 92% -20%, rgba(240,165,0,.10), transparent 60%);
+}
+.insight-top { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.75rem; position:relative; }
+.insight-kicker {
+  display:inline-flex; align-items:center; font-family:'Oswald',sans-serif; font-size:.66rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--orange);
+  background:rgba(255,101,53,.12); border:1px solid rgba(255,101,53,.3);
+  padding:.34rem .7rem; border-radius:20px;
+}
+.insight-severity {
+  display:inline-flex; align-items:center; gap:.4rem; font-family:'Oswald',sans-serif; font-size:.72rem;
+  font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:.34rem .75rem; border-radius:20px;
+  white-space:nowrap; flex-shrink:0;
+}
+.insight-severity svg { width:12px; height:12px; }
+.sev-reduce  { background:rgba(239,68,68,.15);  color:var(--red);    border:1px solid rgba(239,68,68,.32); }
+.sev-caution { background:rgba(240,165,0,.15);  color:var(--gold);   border:1px solid rgba(240,165,0,.32); }
+.sev-good    { background:rgba(16,185,129,.15); color:var(--green);  border:1px solid rgba(16,185,129,.32); }
+.sev-neutral { background:rgba(127,179,204,.12);color:var(--muted);  border:1px solid var(--border); }
+.insight-text { font-size:1.05rem; line-height:1.6; color:var(--text); max-width:66ch; position:relative; }
+.insight-drivers { display:flex; gap:1.7rem; margin-top:1.1rem; flex-wrap:wrap; position:relative; }
+.insight-driver { display:flex; flex-direction:column; gap:.15rem; }
+.insight-driver-lbl { font-family:'Oswald',sans-serif; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); }
+.insight-driver-val { font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; font-weight:800; }
+.insight-driver-val.dr-bad { color:var(--red); }
+.insight-driver-val.dr-caution { color:var(--gold); }
+.insight-driver-val.dr-good { color:var(--green); }
+.insight-driver-val small { font-family:'Inter',sans-serif; font-size:.72rem; font-weight:600; margin-left:.3rem; opacity:.85; }
+.insight-cta {
+  display:inline-flex; align-items:center; gap:.4rem; margin-top:1.1rem; font-family:'Oswald',sans-serif;
+  font-size:.75rem; font-weight:700; letter-spacing:.04em; text-decoration:none; width:fit-content;
+  color:var(--gold); position:relative;
+}
+.insight-cta:hover { text-decoration:underline; }
+
 /* -- KPI CARDS ------------------------------------------------------------- */
 .kpi-sec { padding: 1.5rem 0; }
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(6,1fr);
+  grid-template-columns: repeat(4,1fr);
   gap: 1rem;
 }
-@media (max-width:1100px){ .kpi-grid { grid-template-columns: repeat(3,1fr); } }
-@media (max-width:580px)  { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width:380px)  { .kpi-grid { grid-template-columns: 1fr 1fr; gap:.6rem; } }
+@media (max-width:1100px){ .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width:580px)  { .kpi-grid { grid-template-columns: 1fr; } }
 @media (max-height:500px) and (orientation:landscape) { .kpi-grid { grid-template-columns: repeat(4,1fr); gap:.6rem; } }
 
-/* -- ACWR + RACE ROW (below KPI grid) -------------------------------------- */
+/* Mismo respiro interno que el card Insight del día — antes .kc usaba
+   padding compacto (.75rem 1rem) pensado para 6-8 cards por fila. */
+.kc-roomy { padding: 1.6rem 1.8rem; }
+
+/* -- PROGRESO SEMANAL ROW (debajo del grid KPI) ---------------------------- */
 .kpi-bottom-sec { padding: 0 0 .5rem; }
 .kpi-bottom-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 2.8fr 1.6fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
   margin-top: 1rem;
   align-items: stretch;
 }
-@media (max-width:1100px) { .kpi-bottom-row { grid-template-columns: 1fr 1fr; } }
-@media (max-width:580px) { .kpi-bottom-row { grid-template-columns: 1fr; } }
 
 .kc {
   background: linear-gradient(145deg,#08121E,#060E1C);
@@ -825,7 +869,7 @@ ul { list-style: none; }
 .dr-no-results span{font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}
 
 /* -- RACE COUNTDOWN CARD --------------------------------------------------- */
-.kc-race { --kc: #FF6535; }
+.kc-race { --kc: #FF6535; padding: 1.6rem 1.8rem; }
 .kc-race:hover::before { transform: scaleX(1); }
 .kc-cd {
   display: flex; align-items: flex-end; gap: .3rem;
@@ -834,21 +878,21 @@ ul { list-style: none; }
 .kc-cd-unit { display: flex; flex-direction: column; align-items: center; min-width: 0; flex: 1; }
 .kc-cd-val {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.7rem; font-weight: 900; line-height: 1;
+  font-size: 2.15rem; font-weight: 900; line-height: 1;
   color: var(--text); letter-spacing: -.02em;
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 6px; padding: .15rem .25rem;
+  border-radius: 6px; padding: .22rem .25rem;
   width: 100%; text-align: center;
   transition: color .2s;
 }
 .kc-cd-lbl {
-  font-family: 'Oswald', sans-serif; font-size: .5rem; font-weight: 600;
+  font-family: 'Oswald', sans-serif; font-size: .56rem; font-weight: 600;
   letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
-  margin-top: .2rem;
+  margin-top: .28rem;
 }
 .kc-cd-sep {
-  font-family: 'Barlow Condensed', sans-serif; font-size: 1.6rem; font-weight: 900;
-  color: var(--border2); line-height: 1.1; margin-bottom: .65rem; flex: 0 0 auto;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 2rem; font-weight: 900;
+  color: var(--border2); line-height: 1.1; margin-bottom: .8rem; flex: 0 0 auto;
 }
 .kc-cd-sep-s { color: rgba(255,101,53,.3); }
 #cd-s { color: var(--orange); animation: cd-pulse 1s ease infinite; }
@@ -927,7 +971,7 @@ ul { list-style: none; }
       </div>
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div class="chip-row" role="status" aria-live="polite">
-          <div class="chip"><span class="dot dot-g"></span>Readiness <strong id="readiness-chip-val">78 / 100</strong></div>
+          <div class="chip"><span class="dot dot-g"></span>Readiness <strong id="readiness-chip-val">— / 100</strong></div>
           <div class="chip" style="border-color:rgba(34,211,238,.22)">
             <span class="dot dot-c"></span>
             <span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span>
@@ -947,144 +991,33 @@ ul { list-style: none; }
   </div>
 </div>
 
-<!-- ---------------------------- KPI CARDS --------------------------------- -->
-<section class="kpi-sec" aria-label="Indicadores clave de rendimiento">
+<!-- ---------------------- INSIGHT DEL DÍA + META A ------------------------- -->
+<section class="hero-sec" aria-label="Insight del día y próxima carrera">
   <div class="c">
-    <div class="kpi-grid">
+    <div class="hero-row">
 
-      <div class="kc sr" style="--kc:#10B981" onclick="goMetric('ctl')" role="button" tabindex="0" aria-label="Ver histórico CTL Fitness">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <div class="badge b-up" id="badge-ctl-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="ctl" data-t="72">0</span></div>
-        <div class="kc-name" data-lx-info="ctl" data-lx-info-val="[data-kl='ctl']">CTL — Fitness</div>
-        <div class="kc-sub">Carga crónica · 42 días</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr" style="--kc:#FF6535" onclick="goMetric('atl')" role="button" tabindex="0" aria-label="Ver histórico ATL Fatiga">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <div id="badge-atl" class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="atl" data-t="85">0</span></div>
-        <div class="kc-name" data-lx-info="atl" data-lx-info-val="[data-kl='atl']">ATL — Fatiga</div>
-        <div class="kc-sub">Carga aguda · 7 días</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr" style="--kc:#F0A500" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB Forma">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          <div id="badge-tsb" class="badge b-warn">Construyendo</div>
-        </div>
-        <div class="kc-val" id="tsb-val" style="color:var(--gold)">-<span class="cu" data-kl="tsb" data-t="13">0</span></div>
-        <div class="kc-name" data-lx-info="tsb" data-lx-info-val="#tsb-val">TSB — Forma</div>
-        <div class="kc-sub">CTL - ATL · meta: 0 → +5</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr" style="--kc:#22D3EE" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <div id="badge-hrv" class="badge">—</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></div>
-        <div class="kc-name" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</div>
-        <div class="kc-sub">Anoche · promedio 7d: <span id="hrv-7d-val">—</span>ms</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr" style="--kc:#A855F7" onclick="goMetric('tss')" role="button" tabindex="0" aria-label="Ver histórico TSS Semanal">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div id="badge-tss" class="badge b-warn">—</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="tss_week" data-t="487">0</span></div>
-        <div class="kc-name" data-i18n="kpi_tss_week" data-lx-info="tss" data-lx-info-val="[data-kl='tss_week']">TSS Semana</div>
-        <div class="kc-sub" id="tss-week-meta"></div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr" style="--kc:#0EA5E9" onclick="goMetric('vo2')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          <div id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</div>
-        </div>
-        <div class="kc-val" id="kl-vo2max-val">—<span class="u"></span></div>
-        <div class="kc-name" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max</div>
-        <div class="kc-sub">ml/kg/min · estimado</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-    </div><!-- /kpi-grid -->
-  </div><!-- /.c -->
-</section><!-- /kpi-sec -->
-
-<!-- ── ACWR + RACE COUNTDOWN ROW ─────────────────────────────────────────── -->
-<section class="kpi-bottom-sec">
-  <div class="c">
-    <div class="kpi-bottom-row">
-
-      <!-- ACWR card -->
-      <div class="kc sr" id="kc-acwr" style="--kc:#10B981" onclick="goMetric('acwr')" role="button" tabindex="0" aria-label="Ver histórico ACWR Carga">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <div class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</div>
-        </div>
-        <div class="kc-val" id="kc-acwr-val" style="color:#10B981">1.18</div>
-        <div class="kc-name" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</div>
-        <div class="kc-sub">Ratio aguda/crónica · óptimo 0.8–1.3</div>
-        <div style="flex:1"></div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <!-- RHR (Frecuencia Cardíaca en Reposo) card -->
-      <div class="kc sr" id="kc-rhr" style="--kc:#F43F5E" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><polyline points="4 12 8 12 10 9 13 15 15 12 20 12"/></svg>
-          <div id="badge-rhr" class="badge">—</div>
-        </div>
-        <div class="kc-val" id="kc-rhr-val" style="color:#F43F5E">—<span class="u">bpm</span></div>
-        <div class="kc-name" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</div>
-        <div class="kc-sub">Hoy · promedio 7d: <span id="rhr-7d-val">—</span>bpm</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <!-- WEEKLY PROGRESS CARD -->
-      <div class="wp-card kc">
-        <div class="wp-header">
-          <div class="wp-title">Progreso Semanal</div>
-          <div class="wp-sport-btns" id="wp-sport-btns">
-            <button class="wp-sport-btn on" data-sport="all">Todo</button>
-            <button class="wp-sport-btn" data-sport="swim">🏊</button>
-            <button class="wp-sport-btn" data-sport="bike">🚴</button>
-            <button class="wp-sport-btn" data-sport="run">🏃</button>
-            <button class="wp-sport-btn" data-sport="gym">💪</button>
+      <!-- INSIGHT CARD -->
+      <div class="panel sr insight-card lx-card" id="insight-card" data-lx-info="insight">
+        <div>
+          <div class="insight-top">
+            <div class="insight-kicker">Insight del día</div>
+            <span class="insight-severity sev-neutral" id="insight-severity">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+              <span id="insight-headline">Cargando…</span>
+            </span>
           </div>
+          <p class="insight-text" id="insight-message">Analizando tu carga y recuperación…</p>
         </div>
-        <div class="wp-stats">
-          <div>
-            <div class="wp-stat-lbl">Esta semana</div>
-            <div class="wp-stat-val" id="wp-dist">--<span class="wp-stat-unit">km</span></div>
-          </div>
-          <div>
-            <div class="wp-stat-lbl">Tiempo</div>
-            <div class="wp-stat-val" id="wp-time">--</div>
-          </div>
-          <div>
-            <div class="wp-stat-lbl">Acts</div>
-            <div class="wp-stat-val" id="wp-acts">--</div>
-          </div>
-        </div>
-        <div class="wp-chart-wrap">
-          <svg id="wp-chart" viewBox="0 0 600 105" preserveAspectRatio="none"></svg>
-          <div class="wp-tooltip" id="wp-tooltip"></div>
+        <div>
+          <div class="insight-drivers" id="insight-drivers"></div>
+          <a class="insight-cta" id="insight-cta" href="#" style="display:none">
+            <span id="insight-cta-label"></span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
         </div>
       </div>
 
-      <!-- RACE COUNTDOWN card -->
+      <!-- RACE COUNTDOWN card (Meta A) -->
       <div class="kc kc-race" id="kc-race" onclick="location.href='athlete_profile.html'" role="button" tabindex="0" aria-label="Countdown próxima carrera — editar en Perfil">
         <div id="kc-race-content">
           <div class="kc-row">
@@ -1124,6 +1057,147 @@ ul { list-style: none; }
         <div style="flex:1"></div>
         <div class="kc-hint" style="cursor:pointer">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Editar en Perfil
+        </div>
+      </div>
+
+    </div><!-- /hero-row -->
+  </div><!-- /.c -->
+</section><!-- /hero-sec -->
+
+<!-- ---------------------------- KPI CARDS --------------------------------- -->
+<section class="kpi-sec" aria-label="Indicadores clave de rendimiento">
+  <div class="c">
+    <div class="kpi-grid">
+
+      <div class="kc sr kc-roomy" style="--kc:#10B981" onclick="goMetric('ctl')" role="button" tabindex="0" aria-label="Ver histórico CTL Fitness">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <div class="badge b-up" id="badge-ctl-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-kl="ctl" data-t="0">0</span></div>
+        <div class="kc-name" data-lx-info="ctl" data-lx-info-val="[data-kl='ctl']">CTL — Fitness</div>
+        <div class="kc-sub">Carga crónica · 42 días</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <div class="kc sr kc-roomy" style="--kc:#FF6535" onclick="goMetric('atl')" role="button" tabindex="0" aria-label="Ver histórico ATL Fatiga">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div id="badge-atl" class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-kl="atl" data-t="0">0</span></div>
+        <div class="kc-name" data-lx-info="atl" data-lx-info-val="[data-kl='atl']">ATL — Fatiga</div>
+        <div class="kc-sub">Carga aguda · 7 días</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <div class="kc sr kc-roomy" style="--kc:#F0A500" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB Forma">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <div id="badge-tsb" class="badge b-warn">Construyendo</div>
+        </div>
+        <div class="kc-val" id="tsb-val" style="color:var(--gold)">-<span class="cu" data-kl="tsb" data-t="0">0</span></div>
+        <div class="kc-name" data-lx-info="tsb" data-lx-info-val="#tsb-val">TSB — Forma</div>
+        <div class="kc-sub">CTL - ATL · meta: 0 → +5</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <div class="kc sr kc-roomy" style="--kc:#22D3EE" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div id="badge-hrv" class="badge">—</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></div>
+        <div class="kc-name" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</div>
+        <div class="kc-sub">Anoche · promedio 7d: <span id="hrv-7d-val">—</span>ms</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <div class="kc sr kc-roomy" style="--kc:#A855F7" onclick="goMetric('tss')" role="button" tabindex="0" aria-label="Ver histórico TSS Semanal">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div id="badge-tss" class="badge b-warn">—</div>
+        </div>
+        <div class="kc-val"><span class="cu" data-kl="tss_week" data-t="0">0</span></div>
+        <div class="kc-name" data-i18n="kpi_tss_week" data-lx-info="tss" data-lx-info-val="[data-kl='tss_week']">TSS Semana</div>
+        <div class="kc-sub" id="tss-week-meta"></div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <div class="kc sr kc-roomy" style="--kc:#0EA5E9" onclick="goMetric('vo2')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <div id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</div>
+        </div>
+        <div class="kc-val" id="kl-vo2max-val">—<span class="u"></span></div>
+        <div class="kc-name" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max</div>
+        <div class="kc-sub">ml/kg/min · estimado</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <!-- ACWR card -->
+      <div class="kc sr kc-roomy" id="kc-acwr" style="--kc:#10B981" onclick="goMetric('acwr')" role="button" tabindex="0" aria-label="Ver histórico ACWR Carga">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</div>
+        </div>
+        <div class="kc-val" id="kc-acwr-val" style="color:#10B981">1.18</div>
+        <div class="kc-name" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</div>
+        <div class="kc-sub">Ratio aguda/crónica · óptimo 0.8–1.3</div>
+        <div style="flex:1"></div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+      <!-- RHR (Frecuencia Cardíaca en Reposo) card -->
+      <div class="kc sr kc-roomy" id="kc-rhr" style="--kc:#F43F5E" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
+        <div class="kc-row">
+          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><polyline points="4 12 8 12 10 9 13 15 15 12 20 12"/></svg>
+          <div id="badge-rhr" class="badge">—</div>
+        </div>
+        <div class="kc-val" id="kc-rhr-val" style="color:#F43F5E">—<span class="u">bpm</span></div>
+        <div class="kc-name" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</div>
+        <div class="kc-sub">Hoy · promedio 7d: <span id="rhr-7d-val">—</span>bpm</div>
+        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+      </div>
+
+    </div><!-- /kpi-grid -->
+  </div><!-- /.c -->
+</section><!-- /kpi-sec -->
+
+<!-- ── PROGRESO SEMANAL ROW ──────────────────────────────────────────────── -->
+<section class="kpi-bottom-sec">
+  <div class="c">
+    <div class="kpi-bottom-row">
+
+      <!-- WEEKLY PROGRESS CARD -->
+      <div class="wp-card kc">
+        <div class="wp-header">
+          <div class="wp-title">Progreso Semanal</div>
+          <div class="wp-sport-btns" id="wp-sport-btns">
+            <button class="wp-sport-btn on" data-sport="all">Todo</button>
+            <button class="wp-sport-btn" data-sport="swim">🏊</button>
+            <button class="wp-sport-btn" data-sport="bike">🚴</button>
+            <button class="wp-sport-btn" data-sport="run">🏃</button>
+            <button class="wp-sport-btn" data-sport="gym">💪</button>
+          </div>
+        </div>
+        <div class="wp-stats">
+          <div>
+            <div class="wp-stat-lbl">Esta semana</div>
+            <div class="wp-stat-val" id="wp-dist">--<span class="wp-stat-unit">km</span></div>
+          </div>
+          <div>
+            <div class="wp-stat-lbl">Tiempo</div>
+            <div class="wp-stat-val" id="wp-time">--</div>
+          </div>
+          <div>
+            <div class="wp-stat-lbl">Acts</div>
+            <div class="wp-stat-val" id="wp-acts">--</div>
+          </div>
+        </div>
+        <div class="wp-chart-wrap">
+          <svg id="wp-chart" viewBox="0 0 600 105" preserveAspectRatio="none"></svg>
+          <div class="wp-tooltip" id="wp-tooltip"></div>
         </div>
       </div>
 
@@ -1285,11 +1359,11 @@ ul { list-style: none; }
                   <circle cx="17.5" cy="5.5" r="2.5"/>
                 </svg>
               </div>
-              <div class="dc-pct" id="dc-swim-pct">87%</div>
+              <div class="dc-pct" id="dc-swim-pct">—</div>
             </div>
             <div class="dc-name">Natación</div>
-            <div class="dc-val"><span id="dc-swim-val">5.2</span><span id="dc-swim-unit"> km</span></div>
-            <div class="dc-tgt" id="dc-swim-tgt">meta: 6.0 km</div>
+            <div class="dc-val"><span id="dc-swim-val">—</span><span id="dc-swim-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-swim-tgt">Cargando…</div>
             <div class="bar-t"><div class="bar-f" id="dc-swim-bar" data-w="87"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-swim-tss">—</strong> TSS</span>
@@ -1306,11 +1380,11 @@ ul { list-style: none; }
                   <path d="M5.5 17.5l3-8 3 3 2-5.5"/>
                 </svg>
               </div>
-              <div class="dc-pct" id="dc-bike-pct">89%</div>
+              <div class="dc-pct" id="dc-bike-pct">—</div>
             </div>
             <div class="dc-name">Ciclismo</div>
-            <div class="dc-val"><span id="dc-bike-val">142</span><span id="dc-bike-unit"> km</span></div>
-            <div class="dc-tgt" id="dc-bike-tgt">meta: 160 km</div>
+            <div class="dc-val"><span id="dc-bike-val">—</span><span id="dc-bike-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-bike-tgt">Cargando…</div>
             <div class="bar-t"><div class="bar-f" id="dc-bike-bar" data-w="89"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-bike-tss">—</strong> TSS</span>
@@ -1327,11 +1401,11 @@ ul { list-style: none; }
                   <path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/>
                 </svg>
               </div>
-              <div class="dc-pct" id="dc-run-pct">80%</div>
+              <div class="dc-pct" id="dc-run-pct">—</div>
             </div>
             <div class="dc-name">Carrera</div>
-            <div class="dc-val"><span id="dc-run-val">28</span><span id="dc-run-unit"> km</span></div>
-            <div class="dc-tgt" id="dc-run-tgt">meta: 35 km</div>
+            <div class="dc-val"><span id="dc-run-val">—</span><span id="dc-run-unit"> km</span></div>
+            <div class="dc-tgt" id="dc-run-tgt">Cargando…</div>
             <div class="bar-t"><div class="bar-f" id="dc-run-bar" data-w="80"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-run-tss">—</strong> TSS</span>
@@ -1346,11 +1420,11 @@ ul { list-style: none; }
                   <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 8.5v7M18 8.5v7"/>
                 </svg>
               </div>
-              <div class="dc-pct" id="dc-str-pct">100%</div>
+              <div class="dc-pct" id="dc-str-pct">—</div>
             </div>
             <div class="dc-name">Fuerza</div>
-            <div class="dc-val"><span id="dc-str-val">2</span><span> ses.</span></div>
-            <div class="dc-tgt" id="dc-str-tgt">meta: 2 sesiones</div>
+            <div class="dc-val"><span id="dc-str-val">—</span><span> ses.</span></div>
+            <div class="dc-tgt" id="dc-str-tgt">Cargando…</div>
             <div class="bar-t"><div class="bar-f" id="dc-str-bar" data-w="100"></div></div>
             <div class="dc-stats">
               <span class="dc-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><strong id="dc-str-tss">—</strong> TSS</span>
@@ -1550,6 +1624,34 @@ function countUp(el,target,dur){
 }
 
 /* -- Gauge -- */
+function renderInsight(ins){
+  if(!ins) return;
+  var sevEl = document.getElementById('insight-severity');
+  var sevClass = {reduce:'sev-reduce', caution:'sev-caution', good:'sev-good', neutral:'sev-neutral'}[ins.severity] || 'sev-neutral';
+  sevEl.className = 'insight-severity ' + sevClass;
+  document.getElementById('insight-headline').textContent = ins.headline || '';
+  document.getElementById('insight-message').textContent = ins.message || '';
+
+  var driversEl = document.getElementById('insight-drivers');
+  driversEl.innerHTML = (ins.drivers || []).map(function(dr){
+    var toneCls = dr.tone && dr.tone !== 'neutral' ? ' dr-' + dr.tone : '';
+    var deltaHtml = dr.delta ? '<small>' + dr.delta + '</small>' : '';
+    return '<div class="insight-driver">'
+      + '<span class="insight-driver-lbl">' + dr.label + '</span>'
+      + '<span class="insight-driver-val' + toneCls + '">' + dr.value + deltaHtml + '</span>'
+      + '</div>';
+  }).join('');
+
+  var ctaEl = document.getElementById('insight-cta');
+  if(ins.cta_label){
+    document.getElementById('insight-cta-label').textContent = ins.cta_label;
+    ctaEl.style.display = 'inline-flex';
+    ctaEl.href = ins.severity === 'reduce' || ins.severity === 'caution' ? 'recovery.html' : 'detalle.html?metric=ctl';
+  } else {
+    ctaEl.style.display = 'none';
+  }
+}
+
 function animGauge(score){
   var arc=document.getElementById('g-arc'), numEl=document.getElementById('g-num');
   var C=2*Math.PI*68, end=C-(score/100)*C, st=null, dur=1550;
@@ -2143,6 +2245,33 @@ document.addEventListener('DOMContentLoaded', function(){
   renderWeeklyProgress('all');
 });
 
+function showDashboardLoadError(){
+  // Si /athlete/dashboard nunca respondió, no debe quedar en pantalla
+  // ningún número que parezca un resultado real de Garmin.
+  ['ctl','atl','tss_week','hrv_last_night','tsb'].forEach(function(key){
+    var el = document.querySelector('[data-kl="'+key+'"]');
+    if(el){ el.textContent = '—'; el.removeAttribute('data-t'); }
+  });
+  ['badge-ctl-change','badge-atl','badge-tsb'].forEach(function(id){
+    var b = document.getElementById(id);
+    if(b){ b.className = 'badge'; b.textContent = '—'; }
+  });
+  var acwrVal = document.getElementById('kc-acwr-val');
+  if(acwrVal){ acwrVal.textContent = '—'; acwrVal.style.color = ''; }
+  var acwrBadge = document.getElementById('kc-acwr-badge');
+  if(acwrBadge){ acwrBadge.textContent = '—'; acwrBadge.style.background=''; acwrBadge.style.color=''; acwrBadge.style.borderColor=''; }
+  ['swim','bike','run','str'].forEach(function(sp){
+    var pctEl = document.getElementById('dc-'+sp+'-pct');
+    var valEl = document.getElementById('dc-'+sp+'-val');
+    var tgtEl = document.getElementById('dc-'+sp+'-tgt');
+    if(pctEl) pctEl.textContent = '—';
+    if(valEl) valEl.textContent = '—';
+    if(tgtEl) tgtEl.textContent = 'Sin datos de Garmin';
+  });
+  var rChip = document.getElementById('readiness-chip-val');
+  if(rChip) rChip.textContent = '— / 100';
+}
+
 function patchData(){
   var d = window.KL_DATA;
   if(!d) return;
@@ -2352,10 +2481,14 @@ function patchData(){
       danger:  {label:'⚠ Alto riesgo', color:'#EF4444', tip:'ACWR >1.5 — reduce carga esta semana'},
       warning: {label:'Carga alta',    color:'#F0A500', tip:'ACWR 1.3–1.5 — monitorea recuperación'},
       optimal: {label:'Óptimo',        color:'#10B981', tip:'Zona óptima de entrenamiento (0.8–1.3)'},
-      low:     {label:'Sub-carga',     color:'#0EA5E9', tip:'ACWR <0.8 — puedes incrementar volumen'}
+      low:     {label:'Sub-carga',     color:'#0EA5E9', tip:'ACWR <0.8 — puedes incrementar volumen'},
+      // BP-03: sin 7 días de actividad el backend no puede calcular ACWR real
+      // (devuelve 0.0) — antes caía al fallback "Óptimo" en verde, mostrando
+      // una zona que no corresponde a ningún cálculo real.
+      no_data: {label:'Sin datos suficientes', color:'#3D6880', tip:'Necesitas al menos 7 días de actividad sincronizada para calcular ACWR'},
     };
-    var z = zones[d.acwr_zone] || zones.optimal;
-    if(acwrVal)   { acwrVal.textContent = d.acwr; acwrVal.style.color = z.color; }
+    var z = zones[d.acwr_zone] || zones.no_data;
+    if(acwrVal)   { acwrVal.textContent = d.acwr_zone === 'no_data' ? '—' : d.acwr; acwrVal.style.color = z.color; }
     if(acwrCard)  acwrCard.style.setProperty('--kc', z.color);
     if(acwrBadge) {
       acwrBadge.textContent = z.label;
@@ -2376,6 +2509,9 @@ function patchData(){
 
   // Gauge — animate with real value regardless of when observer fired
   if(d.readiness != null){ window._gaugeScore = d.readiness; animGauge(d.readiness); }
+
+  // Insight del día
+  renderInsight(d.insight);
 
   // Activities list
   renderActivities(d.activities || []);
@@ -2645,8 +2781,15 @@ function _showSyncBanner(secsTotal){
         }).catch(function(){});
     }
   }).catch(function(){
-    window._apiFetching = false;
-    if(genEl) genEl.textContent = 'Datos locales (sin conexión)';
+    // No resetear _apiFetching acá: si se pone en false sin datos reales
+    // cargados, el guard del IntersectionObserver (línea ~3133) deja de
+    // proteger y anima los .cu con los data-t de ejemplo que quedan
+    // escritos en el HTML estático (72/85/-13/487) — se verían como datos
+    // reales de Garmin sin serlo. Se deja _apiFetching=true (bloquea esa
+    // animación) y se limpian a "—" los valores que ya se hubieran
+    // renderizado antes de este fallo.
+    showDashboardLoadError();
+    if(genEl) genEl.textContent = 'No se pudo cargar tu data de Garmin — reintenta más tarde';
   });
 
   /* Cargar perfil del atleta: benchmarks + carrera objetivo */
@@ -3025,7 +3168,7 @@ var io=new IntersectionObserver(function(entries){
     var el=entry.target;
     el.classList.add('vis');
     el.querySelectorAll('.cu').forEach(function(c){
-      if(window._apiFetching){ c.textContent='0'; return; } // esperar API antes de animar
+      if(window._apiFetching){ c.textContent = c.hasAttribute('data-t') ? '0' : '—'; return; } // esperar API antes de animar (o "—" si ya se confirmó que no hay datos)
       var t=parseInt(c.dataset.t,10)||0; var st=null;
       requestAnimationFrame(function step(ts){
         if(!st) st=ts;
@@ -3039,7 +3182,7 @@ var io=new IntersectionObserver(function(entries){
     el.querySelectorAll('.tb-f,.tm-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},250); });
     if(!gaugeDone && el.querySelector('#g-arc')){
       gaugeDone=true;
-      if(!window._apiFetching) setTimeout(function(){animGauge(window._gaugeScore||78);},150);
+      if(!window._apiFetching) setTimeout(function(){animGauge(window._gaugeScore != null ? window._gaugeScore : 0);},150);
     }
     if(!pmcDone && el.querySelector('#pmc')){
       pmcDone=true; drawPMC();
