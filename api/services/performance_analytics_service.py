@@ -705,6 +705,8 @@ def compute_zone_calibration(
     css_result = None
     s400 = [a for a in swim_acts if 0.38 <= a.dist_km <= 0.42]
     s200 = [a for a in swim_acts if 0.18 <= a.dist_km <= 0.22]
+    css_s100 = None
+    css_source = None
     if s400 and s200:
         best_400 = min(s400, key=lambda a: a.dur_min)
         best_200 = min(s200, key=lambda a: a.dur_min)
@@ -716,11 +718,33 @@ def compute_zone_calibration(
         if t_diff > 0:
             css_ms   = d_diff / t_diff   # m/s
             css_s100 = 100 / css_ms      # seg/100m
-            css_result = {
-                "css_sec_100m": round(css_s100),
-                "css_fmt":      _fmt_pace(css_s100 / 60),
-                "source":       f"test 200/400m ({_fmt_dur(best_200.dur_min)} / {_fmt_dur(best_400.dur_min)})",
-            }
+            css_source = f"test 200/400m ({_fmt_dur(best_200.dur_min)} / {_fmt_dur(best_400.dur_min)})"
+    else:
+        # La mayoría de los usuarios nunca nadan un test formal 200m+400m
+        # aislado — solo sesiones continuas (ej. 2-3km en piscina). Sin este
+        # fallback, "natación" quedaba sin datos aunque hubiera decenas de
+        # nados reales, a diferencia de ciclismo/running que ya usan el mejor
+        # esfuerzo real como proxy en vez de exigir un protocolo de test.
+        sustained = [a for a in swim_acts if a.dist_km >= 1.5 and (a.dur_min or 0) >= 20]
+        if sustained:
+            best = min(sustained, key=lambda a: a.dur_min / max(a.dist_km * 10, 0.001))
+            pace_100m_min = best.dur_min / max(best.dist_km * 10, 0.001)  # min/100m
+            css_s100 = pace_100m_min * 60  # seg/100m
+            css_source = f"mejor ritmo sostenido ({round(best.dist_km,2)}km, {_fmt_dur(best.dur_min)}) — estimado, no test formal"
+
+    if css_s100:
+        css_result = {
+            "css_sec_100m": round(css_s100),
+            "css_fmt":      _fmt_pace(css_s100 / 60),
+            "source":       css_source,
+            "zones": {
+                "Z1": f">{_fmt_pace(css_s100 * 1.20 / 60)}/100m (recuperación)",
+                "Z2": f"{_fmt_pace(css_s100 * 1.10 / 60)}-{_fmt_pace(css_s100 * 1.20 / 60)}/100m (aeróbico)",
+                "Z3": f"{_fmt_pace(css_s100 * 1.04 / 60)}-{_fmt_pace(css_s100 * 1.10 / 60)}/100m (tempo)",
+                "Z4": f"{_fmt_pace(css_s100 * 0.98 / 60)}-{_fmt_pace(css_s100 * 1.04 / 60)}/100m (umbral/CSS)",
+                "Z5": f"<{_fmt_pace(css_s100 * 0.98 / 60)}/100m (VO2max)",
+            },
+        }
 
     return {
         "cycling":   ftp_result,
