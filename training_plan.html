@@ -1244,29 +1244,22 @@ document.getElementById('sport-filters').addEventListener('click',function(e){
   if(!btn) return;
   var sport = btn.dataset.sport;
 
-  if(sport===''){
-    // "Todos" — clear all specific filters
-    S.filters = [];
-    document.querySelectorAll('.sf').forEach(function(b){
-      b.className = 'sf'+(b.dataset.sport===''?' on-all':'');
-    });
-  } else {
-    // Toggle specific sport
-    var idx = S.filters.indexOf(sport);
-    if(idx>=0) S.filters.splice(idx,1);
-    else        S.filters.push(sport);
+  // Single-select, como cualquier otra tab de la app (Perfil/Rendimiento,
+  // Semana/Mes/Período, etc): elegir un deporte reemplaza al anterior en
+  // vez de sumarse — antes sumaba (multi-select) mientras el estilo visual
+  // ya parecía de tab única, así que "Ciclismo" después de "Natación"
+  // seguía mostrando los datos de ambos combinados.
+  S.filters = sport==='' ? [] : [sport];
 
-    // Update button states
-    document.querySelectorAll('.sf').forEach(function(b){
-      var sp = b.dataset.sport;
-      if(sp===''){
-        b.className = 'sf'+(S.filters.length===0?' on-all':'');
-      } else {
-        var active = S.filters.indexOf(sp)>=0;
-        b.className = 'sf'+(active?' on-'+sp:'');
-      }
-    });
-  }
+  document.querySelectorAll('.sf').forEach(function(b){
+    var sp = b.dataset.sport;
+    if(sp===''){
+      b.className = 'sf'+(S.filters.length===0?' on-all':'');
+    } else {
+      var active = S.filters.indexOf(sp)>=0;
+      b.className = 'sf'+(active?' on-'+sp:'');
+    }
+  });
   render();
 });
 
