@@ -704,8 +704,25 @@ function renderConfigBar(){
 // dashboard sí las estimaba desde FC/potencia — dos números de
 // "Cumplimiento Semanal" distintos para la misma semana con las mismas
 // actividades reales.
+// sRPE (método de Foster): Session Load = RPE (1-10) × duración (min),
+// normalizado ÷6 para quedar en escala comparable al TSS de las otras
+// disciplinas (~100 puntos = una hora a esfuerzo máximo). Se usa el RPE
+// REAL si el atleta lo logueó al completar una sesión de coach asignada
+// (WorkoutLog.rpe, ya viene embebido en la respuesta de /athlete/plan —
+// ver window._strengthRpeByDate, poblado en fetchPlanTSSRange). Si no hay
+// RPE reportado ese día, se asume un esfuerzo "moderado" (RPE 6) como
+// default explícito — a diferencia de cardio, no hay FC/potencia
+// confiable para medir el esfuerzo real de una sesión de fuerza sin que
+// el atleta lo reporte.
+function estStrengthTSS(a){
+  var byDate = window._strengthRpeByDate || {};
+  var rpe = byDate[a.date_iso] != null ? byDate[a.date_iso] : 6;
+  return Math.round(rpe * (a.dur_min||0) / 6);
+}
+
 function estTSS(a){
   if(a.tss) return Math.round(a.tss);
+  if(a.sport==='str' || a.sport==='gym') return estStrengthTSS(a);
   var FTP   = window._athleteFTP   || 240;
   var FCMax = window._athleteFCMax || 180;
   var h=(a.dur_min||0)/60, IF;
@@ -716,7 +733,7 @@ function estTSS(a){
   else if(a.sport==='swim')
     IF = (a.avg_hr||120)/(0.82*FCMax);
   else
-    IF = (a.avg_hr||110)/(0.75*FCMax);
+    IF = (a.avg_hr||110)/(0.75*FCMax); // fallback genérico (deportes sin mapeo, ej. "other")
   return Math.round(h * Math.min(1.25,Math.max(0.4,IF)) ** 2 * 100);
 }
 
@@ -1151,7 +1168,21 @@ function fetchPlanTSSRange(startIso, endIso){
   var pCoach = fetch(auth.API+'/athlete/plan?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(assignments){
-      if(!assignments || !assignments.length) return null; // sin plan de coach real -> usar Training Peaks/Garmin
+      if(!assignments || !assignments.length) return null;
+
+      // RPE real de sesiones de Fuerza logueadas (WorkoutLog.rpe, ya viene
+      // embebido en cada assignment.logs[]) — alimenta estStrengthTSS()
+      // para el sRPE, independiente de qué plan (coach o Training Peaks)
+      // termine ganando para el TSS objetivo de esta función.
+      window._strengthRpeByDate = window._strengthRpeByDate || {};
+      assignments.forEach(function(a){
+        if(a.template.sport !== 'strength' || !a.logs) return;
+        a.logs.forEach(function(log){
+          if(log.completado && log.rpe != null) window._strengthRpeByDate[a.date_iso] = log.rpe;
+        });
+      });
+
+      // sin plan de coach real -> el caller usa Training Peaks/Garmin en su lugar
       var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
       var t = {swim:0,bike:0,run:0,str:0};
       assignments.forEach(function(a){

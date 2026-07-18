@@ -1727,8 +1727,20 @@ function renderWeekAdherence(){
   })();
 
   /* ── 3. TSS estimator from activity ─────────────────────────── */
+  // sRPE (método de Foster) para Fuerza: Session Load = RPE (1-10) ×
+  // duración (min), normalizado ÷6 para quedar en escala TSS-equivalente.
+  // Usa el RPE real logueado (WorkoutLog.rpe, vía window._strengthRpeByDate
+  // — poblado más abajo desde /athlete/plan) si existe para esa fecha; si
+  // no, asume esfuerzo "moderado" (RPE 6) por default explícito. Idéntico
+  // a training_plan.html — ver ese archivo para el detalle del porqué.
+  function estStrengthTSS(a){
+    var byDate = window._strengthRpeByDate || {};
+    var rpe = byDate[a.date_iso] != null ? byDate[a.date_iso] : 6;
+    return Math.round(rpe * (a.dur_min||0) / 6);
+  }
   function estTSS(a){
     if(a.tss) return Math.round(a.tss);
+    if(a.sport==='gym' || a.sport==='str') return estStrengthTSS(a);
     var h=(a.dur_min||0)/60, IF;
     if(a.sport==='bike')
       IF = a.avg_power ? a.avg_power/FTP : (a.avg_hr||120)/(0.88*FCMax);
@@ -1737,7 +1749,7 @@ function renderWeekAdherence(){
     else if(a.sport==='swim')
       IF = (a.avg_hr||120)/(0.82*FCMax);
     else
-      IF = (a.avg_hr||110)/(0.75*FCMax);
+      IF = (a.avg_hr||110)/(0.75*FCMax); // fallback genérico (deportes sin mapeo)
     return Math.round(h * Math.min(1.25,Math.max(0.4,IF)) ** 2 * 100);
   }
 
@@ -2863,6 +2875,15 @@ function _showSyncBanner(secsTotal){
       // real por una condición de carrera entre estos dos fetches.
       if(assigns && assigns.length){
         window._coachPlanData = assigns;
+        // RPE real de sesiones de Fuerza logueadas (WorkoutLog.rpe, ya
+        // embebido en assignment.logs[]) — alimenta estStrengthTSS() (sRPE).
+        window._strengthRpeByDate = window._strengthRpeByDate || {};
+        assigns.forEach(function(a){
+          if((a.template||{}).sport !== 'strength' || !a.logs) return;
+          a.logs.forEach(function(log){
+            if(log.completado && log.rpe != null) window._strengthRpeByDate[a.date_iso] = log.rpe;
+          });
+        });
         renderWeekAdherence(); // re-renderiza con plan real (anula versión sin plan)
       }
       if(!assigns || !assigns.length) return;
