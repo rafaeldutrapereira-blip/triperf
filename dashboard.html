@@ -2874,7 +2874,25 @@ function _showSyncBanner(secsTotal){
       // TrainingPeaks/etc), en vez de resetearlo a [] y perder ese plan
       // real por una condición de carrera entre estos dos fetches.
       if(assigns && assigns.length){
-        window._coachPlanData = assigns;
+        // Merge POR DEPORTE, no todo-o-nada: si el coach asignó un solo
+        // Ciclismo esta semana, no debe borrar el plan de Training Peaks/
+        // Garmin de Natación/Carrera/Fuerza que ya estuviera en
+        // _coachPlanData — antes, con un solo deporte asignado por el
+        // coach, se reemplazaba TODO _coachPlanData y los otros 3
+        // deportes quedaban en "Sin plan esta semana" aunque sí tuvieran
+        // TSS real planificado en Training Peaks.
+        var coveredSports = {};
+        assigns.forEach(function(a){
+          var sp = (a.template||{}).sport;
+          if(sp==='strength'||sp==='gym') sp='str';
+          coveredSports[sp] = true;
+        });
+        var keepFromTP = (window._coachPlanData||[]).filter(function(a){
+          var sp = (a.template||{}).sport;
+          if(sp==='strength'||sp==='gym') sp='str';
+          return !coveredSports[sp];
+        });
+        window._coachPlanData = keepFromTP.concat(assigns);
         // RPE real de sesiones de Fuerza logueadas (WorkoutLog.rpe, ya
         // embebido en assignment.logs[]) — alimenta estStrengthTSS() (sRPE).
         window._strengthRpeByDate = window._strengthRpeByDate || {};

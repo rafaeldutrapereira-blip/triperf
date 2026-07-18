@@ -1182,18 +1182,28 @@ function fetchPlanTSSRange(startIso, endIso){
         });
       });
 
-      // sin plan de coach real -> el caller usa Training Peaks/Garmin en su lugar
+      // Precedencia POR DEPORTE, no todo-o-nada: si el coach asignó un solo
+      // Ciclismo esta semana, eso no debe borrar el plan de Training Peaks
+      // de Natación/Carrera/Fuerza — antes, con solo un deporte asignado
+      // por el coach, se descartaba el plan de TP de los otros 3 deportes
+      // completos (quedaban en "Sin datos" aunque sí tuvieran TSS real ahí).
       var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
       var t = {swim:0,bike:0,run:0,str:0};
+      var coveredByCoach = {swim:false,bike:false,run:false,str:false};
       assignments.forEach(function(a){
         var sp = sportMap[a.template.sport];
-        if(sp) t[sp] += (a.template.tss||0);
+        if(sp){ t[sp] += (a.template.tss||0); coveredByCoach[sp] = true; }
       });
-      return t;
+      return {tss:t, covered:coveredByCoach};
     }).catch(function(){ return null; });
 
   Promise.all([pTP, pCoach]).then(function(results){
-    _complCache[key] = results[1] || results[0]; // coach real tiene precedencia
+    var tp = results[0], coach = results[1];
+    var merged = {swim:0,bike:0,run:0,str:0};
+    Object.keys(merged).forEach(function(sp){
+      merged[sp] = (coach && coach.covered[sp]) ? coach.tss[sp] : tp[sp];
+    });
+    _complCache[key] = merged;
     render();
   });
 }
