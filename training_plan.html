@@ -1103,8 +1103,7 @@ function renderWeeklyCompliance(){
     var done    = all.filter(function(s){ return s.source==='garmin' && s.sport===sport; });
 
     var pct;
-    if(!planned.length && !done.length){ pct = null; }
-    else if(!planned.length){ pct = 100; } // sin plan pero se entrenó → 100%
+    if(!planned.length){ pct = null; } // sin plan asignado esta semana → no hay "cumplimiento" que medir
     else {
       var tPlan = planned.reduce(function(t,s){ return t+(s.tss||0); },0);
       var tDone = done.reduce(function(t,s){ return t+(s.tss||0); },0);
@@ -1565,11 +1564,18 @@ window._tpRender = render;  // expuesto para el bridge API
     });
   }
 
-  // Fetch 60-day window and merge into localStorage planned sessions
+  // Fetch window and merge into localStorage planned sessions.
+  // Arranca en el lunes de esta semana (no en "hoy") para que los días ya
+  // transcurridos de la semana actual también entren — si no, el cálculo de
+  // Cumplimiento Semanal nunca ve el plan de lunes-viernes al abrir la
+  // página un sábado, y esos deportes quedan sin plan detectado.
   function pullAssignments(){
-    var today = new Date().toISOString().slice(0,10);
+    var now = new Date();
+    var dow = now.getDay();
+    var mon = new Date(now); mon.setDate(now.getDate() - (dow===0?6:dow-1));
+    var start = mon.toISOString().slice(0,10);
     var end   = new Date(Date.now()+60*24*3600*1000).toISOString().slice(0,10);
-    coGet('/athlete/plan?start='+today+'&end='+end).then(function(assignments){
+    coGet('/athlete/plan?start='+start+'&end='+end).then(function(assignments){
       if(!assignments||!assignments.length) return;
       var raw = localStorage.getItem('kl_training_plan');
       var plan = [];
