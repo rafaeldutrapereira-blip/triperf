@@ -1188,7 +1188,11 @@ function renderWeeklyCompliance(){
   var row  = document.getElementById('compl-row');
   var R = 60, C = 2*Math.PI*R;
 
-  var data = Object.keys(SPORT).map(function(sport){
+  // El filtro de deporte (Todos/Natación/Ciclismo/Carrera/Fuerza) también
+  // recorta qué pelotas se muestran — sin filtro activo, se ven las 4.
+  var sportsToShow = S.filters.length ? S.filters : Object.keys(SPORT);
+
+  var data = sportsToShow.map(function(sport){
     var sp = SPORT[sport];
     var done = acts.filter(function(a){ return a.sport===sport && a.date_iso>=startIso && a.date_iso<=endIso; });
     var tPlan = planTSS[sport] || 0;
