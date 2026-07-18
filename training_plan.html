@@ -1801,14 +1801,25 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
       if(data.planned_workouts && data.planned_workouts.length){
         var raw = localStorage.getItem('kl_training_plan');
         var plan = []; try{ if(raw) plan = JSON.parse(raw); }catch(e){}
-        var changed = false;
+
+        // Refrescar SIEMPRE las entradas 'garmin_planned' de las fechas que
+        // acaba de traer el servidor — el TSS planificado puede cambiar
+        // (Training Peaks lo edita, o el server corrige un duplicado), y
+        // antes se guardaban una sola vez y quedaban pegadas para siempre
+        // en localStorage: el Dashboard (que recalcula en vivo) y el Plan
+        // (que leía el valor viejo cacheado) terminaban mostrando % de
+        // cumplimiento distintos para la misma semana.
+        var freshDates = {};
+        data.planned_workouts.forEach(function(p){ freshDates[p.date_iso] = true; });
+        plan = plan.filter(function(s){ return !(s.source === 'garmin_planned' && freshDates[s.date_iso]); });
+
         data.planned_workouts.forEach(function(p){
           var sport = p.sport;
           if(sport === 'strength') sport = 'str';
           if(sport === 'other' && swimWords.test(p.title || '')) sport = 'swim';
           if(['swim','bike','run','str'].indexOf(sport) === -1) return;
-          var already = plan.some(function(s){ return s.date_iso===p.date_iso && s.sport===sport; });
-          if(already) return; // no pisar un plan de coach/manual ya presente ese día+deporte
+          var coveredByOther = plan.some(function(s){ return s.date_iso===p.date_iso && s.sport===sport; });
+          if(coveredByOther) return; // ya cubierto por un plan de coach/manual real ese día+deporte
           plan.push({
             id: 'gpw_'+p.date_iso+'_'+sport,
             sport: sport, date_iso: p.date_iso,
@@ -1816,9 +1827,8 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
             name: p.title || SPORT[sport].label,
             status: 'planned', source: 'garmin_planned',
           });
-          changed = true;
         });
-        if(changed) localStorage.setItem('kl_training_plan', JSON.stringify(plan));
+        localStorage.setItem('kl_training_plan', JSON.stringify(plan));
       }
 
       if(typeof window._tpRender === 'function') window._tpRender();
