@@ -540,13 +540,32 @@ function initMap(){
       var ly = padY + li*laneH;
       svg += '<line x1="'+padX+'" y1="'+ly+'" x2="'+(padX+laneW)+'" y2="'+ly+'" stroke="rgba(14,165,233,.15)" stroke-width="1"/>';
     }
-    // Swimmer path animation
-    for(var si=0;si<Math.min(numLanes,4);si++){
+    // Nadador animado: se mueve de punta a punta de cada carril en bucle,
+    // con velocidad y arranque escalonados para que no naden todos en
+    // espejo. Respeta prefers-reduced-motion (queda un dot fijo, sin loop).
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var x1 = padX+8, x2 = padX+laneW-8;
+    var animLanes = Math.min(numLanes, 8);
+    for(var si=0; si<animLanes; si++){
       var sy = padY + si*laneH + laneH/2;
-      var goRight = si%2===0;
-      var x1 = padX+8, x2 = padX+laneW-8;
-      svg += '<line x1="'+(goRight?x1:x2)+'" y1="'+sy+'" x2="'+(goRight?x2:x1)+'" y2="'+sy+'" stroke="var(--cyan)" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>';
-      svg += '<circle cx="'+(goRight?x2:x1)+'" cy="'+sy+'" r="5" fill="var(--cyan)" opacity="0.8"/>';
+      var goRight  = si%2===0;
+      var startX   = goRight ? x1 : x2;
+      var endX     = goRight ? x2 : x1;
+      var dur      = 3 + (si%3)*0.5;
+      var delay    = -(si*0.6);
+
+      svg += '<line x1="'+x1+'" y1="'+sy+'" x2="'+x2+'" y2="'+sy+'" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.22"/>';
+
+      if(reduceMotion){
+        svg += '<circle cx="'+((startX+endX)/2)+'" cy="'+sy+'" r="5" fill="var(--cyan)" opacity="0.85"/>';
+      } else {
+        svg += '<circle cy="'+sy+'" r="8" fill="var(--cyan)" opacity="0.12">'
+             + '<animate attributeName="cx" values="'+startX+';'+endX+';'+startX+'" keyTimes="0;0.5;1" dur="'+dur+'s" begin="'+delay+'s" repeatCount="indefinite"/>'
+             + '</circle>';
+        svg += '<circle cy="'+sy+'" r="5" fill="var(--cyan)" opacity="0.9">'
+             + '<animate attributeName="cx" values="'+startX+';'+endX+';'+startX+'" keyTimes="0;0.5;1" dur="'+dur+'s" begin="'+delay+'s" repeatCount="indefinite"/>'
+             + '</circle>';
+      }
     }
     svg += '<text x="'+(padX-8)+'" y="'+(padY+laneH/2+4)+'" text-anchor="end" fill="var(--dim)" font-size="9" font-family="Oswald,sans-serif">25m</text>';
     if(ACT.dist_km){
@@ -831,24 +850,33 @@ function renderSplitsReal(splits, sport){
     inner.innerHTML = noDataBlock('Sin datos de parciales disponibles para esta actividad.');
     return;
   }
-  var isRun = sport==='run';
-  var unitLbl = isRun ? 'Ritmo' : 'Vel. Media';
+  var isRun  = sport==='run';
+  var isSwim = sport==='swim';
+  var unitLbl = isSwim ? 'Ritmo /100m' : isRun ? 'Ritmo' : 'Vel. Media';
+  var lastCol = isSwim ? 'Largos' : 'Potencia';
+
   var rows = splits.map(function(s){
-    var distLbl = isRun ? (s.distance_m/1000).toFixed(2)+' km' : (s.distance_m/1000).toFixed(1)+' km';
+    var distLbl = isSwim ? Math.round(s.distance_m)+' m'
+      : isRun ? (s.distance_m/1000).toFixed(2)+' km'
+      : (s.distance_m/1000).toFixed(1)+' km';
     var pace = '—';
-    if(isRun && s.avg_pace_s_per_km){ pace = fmtPace(s.avg_pace_s_per_km); }
-    else if(!isRun && s.duration_s){ pace = ((s.distance_m/1000)/(s.duration_s/3600)).toFixed(1)+' km/h'; }
+    if(isSwim && s.avg_pace_s_per_100m){ pace = fmtPace100(s.avg_pace_s_per_100m); }
+    else if(isRun && s.avg_pace_s_per_km){ pace = fmtPace(s.avg_pace_s_per_km); }
+    else if(!isRun && !isSwim && s.duration_s){ pace = ((s.distance_m/1000)/(s.duration_s/3600)).toFixed(1)+' km/h'; }
+    var lastVal = isSwim
+      ? (s.lengths!=null ? s.lengths : '—')
+      : (s.avg_power!=null ? s.avg_power+' W' : '—');
     return '<tr>'
       + '<td>'+s.idx+'</td>'
       + '<td>'+distLbl+'</td>'
       + '<td>'+fmtDur(s.duration_s/60)+'</td>'
       + '<td>'+pace+'</td>'
-      + '<td>'+(s.avg_power!=null ? s.avg_power+' W' : '—')+'</td>'
+      + '<td>'+lastVal+'</td>'
       + '<td>'+(s.avg_hr!=null ? s.avg_hr+' bpm' : '—')+'</td>'
       + '</tr>';
   }).join('');
   inner.innerHTML = '<div style="overflow-x:auto"><table class="split-table">'
-    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>Potencia</th><th>FC</th></tr></thead>'
+    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th><th>FC</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
 }
 

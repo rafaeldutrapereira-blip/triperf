@@ -217,6 +217,29 @@ def _try_download_gps_track(client, activity_id: str) -> None:
         cache_file.write_text(json.dumps(pts))
 
 
+def _try_download_splits(client, activity_id: str) -> None:
+    """Descarga best-effort los laps/parciales reales de Garmin
+    (get_activity_splits). Para natación en piscina Garmin no manda
+    distancia acumulada continua en la telemetría segundo a segundo —
+    los parciales reales (por lap, con largos/SWOLF/brazadas) solo vienen
+    por esta vía. También sirve como parcial real para run/bike.
+    No bloqueante: si Garmin no tiene splits, simplemente no cachea.
+    """
+    from pathlib import Path
+    import json as _json
+
+    splits_dir = Path("data/splits")
+    splits_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = splits_dir / f"{activity_id}.json"
+    if cache_file.exists() and cache_file.stat().st_size > 10:
+        return
+
+    data = client.get_activity_splits(int(activity_id))
+    laps = (data or {}).get("lapDTOs") or []
+    if laps:
+        cache_file.write_text(_json.dumps(laps))
+
+
 def _try_download_telemetry(client, activity_id: str) -> None:
     """Descarga best-effort la telemetría segundo a segundo (potencia/FC/
     cadencia/velocidad/elevación/distancia) de una actividad nueva.
@@ -909,6 +932,13 @@ class GarminPullService:
                     _try_download_telemetry(client, act_id)
                 except Exception as _tel_err:
                     logger.debug("Telemetry download fallo (no bloqueante) activity=%s: %s", act_id, _tel_err)
+
+                # Parciales reales por lap (esencial para natación, donde la
+                # telemetría no trae distancia continua); no bloqueante.
+                try:
+                    _try_download_splits(client, act_id)
+                except Exception as _splits_err:
+                    logger.debug("Splits download fallo (no bloqueante) activity=%s: %s", act_id, _splits_err)
 
                 # B-14 Community: auto-publicar actividad con visibilidad "followers"
                 # Solo actividades con duración mínima significativa (>= 10 min)

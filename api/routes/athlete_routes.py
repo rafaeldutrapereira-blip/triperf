@@ -2102,6 +2102,50 @@ def _compute_activity_splits(samples: list, sport: str) -> list:
     return splits
 
 
+def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
+    """Parciales reales por lap de Garmin (get_activity_splits) — necesarios
+    para natación en piscina, donde la telemetría no trae distancia continua
+    (los largos se cuentan aparte). Se usan como respaldo cuando el cálculo
+    por distancia (_compute_activity_splits) no arroja nada."""
+    from pathlib import Path
+    import json as _json
+
+    path = Path("data/splits") / f"{activity_id}.json"
+    if not path.exists():
+        return []
+    try:
+        laps = _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+    out = []
+    idx = 0
+    for lap in laps:
+        dist = lap.get("distance") or 0
+        if dist <= 0:
+            # Lap de descanso (pausa entre series) — no es un parcial de nado/
+            # carrera/ciclismo real, se omite para no ensuciar la tabla.
+            continue
+        idx += 1
+        dur = lap.get("duration") or 0
+        spd = lap.get("averageSpeed")
+        row = {
+            "idx":         idx,
+            "distance_m":  round(dist),
+            "duration_s":  round(dur),
+            "avg_power":   None,
+            "avg_hr":      round(lap["averageHR"]) if lap.get("averageHR") else None,
+            "avg_pace_s_per_km": None,
+        }
+        if sport == "swim":
+            row["avg_pace_s_per_100m"] = round(100 / spd) if spd else None
+            row["lengths"] = lap.get("numberOfActiveLengths")
+        elif spd:
+            row["avg_pace_s_per_km"] = round(1000 / spd)
+        out.append(row)
+    return out
+
+
 @router.get("/activities/{activity_id}/telemetry")
 def get_activity_telemetry(
     activity_id: str,
@@ -2157,6 +2201,8 @@ def get_activity_telemetry(
         zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(owner.ftp))
 
     splits = _compute_activity_splits(samples, act.sport)
+    if not splits:
+        splits = _splits_from_garmin_laps(activity_id, act.sport)
 
     if not is_own:
         prefs = _get_share_prefs(owner)
