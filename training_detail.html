@@ -87,6 +87,10 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .chart-ann{display:flex;align-items:center;gap:.28rem}
 .chart-ann-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .chart-svg{display:block;width:100%;height:120px}
+.chart-svg-wrap{position:relative;cursor:crosshair}
+.chart-hover-line{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;pointer-events:none;transition:opacity .1s}
+.chart-hover-dot{stroke:#04080F;stroke-width:1.5;pointer-events:none;transition:opacity .1s}
+.chart-tooltip{position:absolute;top:6px;transform:translateX(-50%);background:rgba(4,8,15,.92);border:1px solid var(--border);border-radius:5px;padding:.3rem .6rem;font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.04em;color:var(--text);white-space:nowrap;pointer-events:none;z-index:5;backdrop-filter:blur(4px)}
 .chart-taxis{display:flex;justify-content:space-between;padding:.25rem 1.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.05em}
 
 /* ── ZONES ── */
@@ -695,19 +699,88 @@ function _sparkline(values, W, H, pad){
   return {d:d, min:minV, max:maxV};
 }
 
-function renderChartBlock(name, values, color, unit, avgVal){
+var _chartRegistry = [];
+
+function renderChartBlock(name, values, tArr, color, unit, avgVal){
   var W=600, H=110, pad=6;
   var res = _sparkline(values, W, H, pad);
   if(!res) return '';
+  var chartId = 'chart-svg-' + _chartRegistry.length;
+  _chartRegistry.push({
+    id: chartId, values: values, t: tArr, color: color, unit: unit,
+    W: W, H: H, pad: pad, min: res.min, max: res.max
+  });
   return '<div class="chart-block">'
     + '<div class="chart-lbl"><div class="chart-name">'+name+'</div>'
     + '<div class="chart-anns">'
       + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>Prom '+Math.round(avgVal)+' '+unit+'</div>' : '')
       + '<div class="chart-ann">Máx '+Math.round(res.max)+' '+unit+'</div>'
     + '</div></div>'
-    + '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+    + '<div class="chart-svg-wrap">'
+      + '<svg class="chart-svg" id="'+chartId+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+        + '<path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'
+        + '<line class="chart-hover-line" x1="0" y1="0" x2="0" y2="'+H+'" opacity="0"/>'
+        + '<circle class="chart-hover-dot" r="4" fill="'+color+'" opacity="0"/>'
+      + '</svg>'
+      + '<div class="chart-tooltip" style="display:none"></div>'
+    + '</div>'
     + '<div class="chart-taxis"><span>Inicio</span><span>Fin</span></div>'
     + '</div>';
+}
+
+function _fmtChartTime(secs){
+  var m = Math.floor(secs/60), s = Math.round(secs%60);
+  return m+':'+(s<10?'0':'')+s;
+}
+
+function wireChartHover(){
+  _chartRegistry.forEach(function(chart){
+    var svg = document.getElementById(chart.id);
+    if(!svg) return;
+    var wrap      = svg.parentElement;
+    var tooltip   = wrap.querySelector('.chart-tooltip');
+    var hoverLine = svg.querySelector('.chart-hover-line');
+    var hoverDot  = svg.querySelector('.chart-hover-dot');
+    var n = chart.values.length;
+    var span = (chart.max - chart.min) || 1;
+
+    function onMove(clientX){
+      var rect = svg.getBoundingClientRect();
+      if(!rect.width) return;
+      var relX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      var idx = Math.round(relX * (n - 1));
+      var v = chart.values[idx];
+      if(v == null){
+        hoverLine.style.opacity = 0;
+        hoverDot.style.opacity  = 0;
+        tooltip.style.display   = 'none';
+        return;
+      }
+      var x = chart.pad + (idx/(n-1))*(chart.W - chart.pad*2);
+      var y = chart.H - chart.pad - ((v - chart.min)/span)*(chart.H - chart.pad*2);
+      hoverLine.setAttribute('x1', x); hoverLine.setAttribute('x2', x);
+      hoverLine.style.opacity = 1;
+      hoverDot.setAttribute('cx', x); hoverDot.setAttribute('cy', y);
+      hoverDot.style.opacity = 1;
+
+      var label = (Math.round(v*10)/10) + ' ' + chart.unit;
+      var timeLabel = (chart.t && chart.t[idx] != null) ? _fmtChartTime(chart.t[idx]) : null;
+      tooltip.textContent = timeLabel ? (timeLabel + ' · ' + label) : label;
+      tooltip.style.display = 'block';
+      var leftPct = (x / chart.W) * 100;
+      tooltip.style.left = Math.min(90, Math.max(10, leftPct)) + '%';
+    }
+
+    wrap.addEventListener('mousemove', function(e){ onMove(e.clientX); });
+    wrap.addEventListener('touchmove', function(e){
+      if(e.touches && e.touches[0]){ onMove(e.touches[0].clientX); e.preventDefault(); }
+    }, {passive:false});
+    wrap.addEventListener('mouseleave', function(){
+      hoverLine.style.opacity = 0;
+      hoverDot.style.opacity  = 0;
+      tooltip.style.display   = 'none';
+    });
+  });
 }
 
 function _fmtSecMin(s){
@@ -797,12 +870,17 @@ function renderTelemetry(){
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
       if(!data){ fallbackNoData(); return; }
+      _chartRegistry = [];
+      var tArr = data.series.t;
       var blocks = '';
-      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, '#FF6535', 'W', ACT.avg_power);
-      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, '#EF4444', 'bpm', ACT.avg_hr);
-      if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, '#F0A500', 'rpm', null);
-      if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, '#10B981', 'm/s', null);
-      if(chartsInner) chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
+      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power);
+      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr);
+      if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'rpm', null);
+      if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, tArr, '#10B981', 'm/s', null);
+      if(chartsInner){
+        chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
+        wireChartHover();
+      }
 
       renderZonesReal(data.zones || {}, (data.is_own===false && data.owner_name) ? data.owner_name : null);
       renderSplitsReal(data.splits, data.sport);
