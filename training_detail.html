@@ -209,7 +209,6 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 
 
 
-<script src="data/dashboard_data.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
@@ -248,8 +247,8 @@ function boot(activities){
       if(activities[i].activity_id == idNum){ ACT = activities[i]; break; }
     }
   }
-  // Fallback: most recent activity
-  if(!ACT && activities.length){ ACT = activities[0]; }
+  // Sin id en la URL: la API ya devuelve la más reciente del usuario real.
+  if(!actId && activities.length){ ACT = activities[0]; }
 
   if(!ACT){
     document.getElementById('no-act-state').style.display = 'block';
@@ -949,24 +948,31 @@ window.goBack = function(){
 } // end boot()
 
 // ─────────────────────────────────────────────────────
-// BOOTSTRAP: traer la actividad real vía API (propia del usuario logueado);
-// si no hay id en la URL, o la llamada falla, usar el dataset estático de respaldo.
+// BOOTSTRAP: siempre datos reales vía API (propia del usuario logueado, o
+// de alguien que sigue en Comunidad — ver _find_viewable_activity backend).
+// Sin id → se pide la actividad más reciente REAL del usuario (no un
+// dataset estático). Si la API falla o no autoriza, se muestra el estado
+// honesto "sin actividad" — nunca se sustituye por datos de demo.
 // ─────────────────────────────────────────────────────
-var _staticActivities = (KL_DATA && KL_DATA.activities) || [];
-
-function _bootFromApi(){
+(function _bootFromApi(){
   var tok = localStorage.getItem('lx_co_token');
   if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
   var api = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
-  if(!tok){ boot(_staticActivities); return; }
+  if(!tok){ boot([]); return; }
 
-  fetch(api+'/athlete/activities/'+encodeURIComponent(actId), {headers:{Authorization:'Bearer '+tok}})
+  var url = actId
+    ? api+'/athlete/activities/'+encodeURIComponent(actId)
+    : api+'/athlete/activities?per_page=1';
+
+  fetch(url, {headers:{Authorization:'Bearer '+tok}})
     .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(liveAct){ boot(liveAct ? [liveAct] : _staticActivities); })
-    .catch(function(){ boot(_staticActivities); });
-}
-
-if(actId){ _bootFromApi(); } else { boot(_staticActivities); }
+    .then(function(data){
+      if(!data){ boot([]); return; }
+      var act = actId ? data : (data.items && data.items[0]);
+      boot(act ? [act] : []);
+    })
+    .catch(function(){ boot([]); });
+})();
 
 })();
 </script>

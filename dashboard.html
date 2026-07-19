@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LabX — Dashboard del Atleta</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
-<script src="data/dashboard_data.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
@@ -2579,7 +2578,7 @@ function renderActivities(acts){
     if(a.swim_pace) meta += '<span>Paso: <strong>'+a.swim_pace+'</strong></span>';
     if(a.calories) meta += '<span>'+a.calories+' kcal</span>';
 
-    var detail_link = a.activity_id ? 'training_detail.html' : '#';
+    var detail_link = a.activity_id ? 'training_detail.html?id='+encodeURIComponent(a.activity_id) : '#';
     html +=
       '<a href="'+detail_link+'" class="ac" style="text-decoration:none;color:inherit">'+
         '<div class="ac-icon" style="background:'+a.color+'">'+
@@ -3217,7 +3216,11 @@ var io=new IntersectionObserver(function(entries){
       if(!window._apiFetching) setTimeout(function(){animGauge(window._gaugeScore != null ? window._gaugeScore : 0);},150);
     }
     if(!pmcDone && el.querySelector('#pmc')){
-      pmcDone=true; drawPMC();
+      pmcDone=true;
+      // Evita dibujar la curva PMC de respaldo (52 semanas de valores fijos,
+      // ver PMC_ALL más arriba) antes de que llegue el fetch real — se
+      // redibuja con datos reales en el callback de /athlete/dashboard.
+      if(!window._apiFetching) drawPMC();
     }
     io.unobserve(el);
   });
