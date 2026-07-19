@@ -1240,10 +1240,15 @@ function renderWeeklyCompliance(){
     var tPlan = planTSS[sport] || 0;
     var tDone = done.reduce(function(t,a){ return t+estTSS(a); },0);
 
-    var pct;
-    if(loading || tPlan<=0){ pct = null; } // cargando, o sin plan asignado en este rango → no hay "cumplimiento" que medir
-    else { pct = Math.round(Math.min(tDone/tPlan*100,100)); }
-    return {sport:sport, sp:sp, pct:pct, tDone:Math.round(tDone), tPlan:Math.round(tPlan)};
+    // pct = número real mostrado en el centro (SIN tope, ej. 253% si te
+    // excediste del plan); ringPct = qué tan lleno se ve el anillo (topeado
+    // en 100%, un anillo no puede dibujar "más que completo"). Antes ambos
+    // se topeaban igual y un atleta que duplicaba su plan se veía idéntico
+    // a uno que apenas lo cumplía.
+    var pct, ringPct;
+    if(loading || tPlan<=0){ pct = null; ringPct = null; } // cargando, o sin plan asignado en este rango → no hay "cumplimiento" que medir
+    else { pct = Math.round(tDone/tPlan*100); ringPct = Math.min(pct,100); }
+    return {sport:sport, sp:sp, pct:pct, ringPct:ringPct, tDone:Math.round(tDone), tPlan:Math.round(tPlan)};
   });
 
   row.innerHTML = data.map(function(d, idx){
@@ -1264,7 +1269,7 @@ function renderWeeklyCompliance(){
       +'</svg>'
       +'<div class="compl-ctr">'
         +'<div class="compl-pct" data-idx="'+idx+'" style="'+(d.pct===null?'color:var(--dim);':'background:'+textFill+';background-clip:text;-webkit-background-clip:text')+'">'+(d.pct===null?'—':'0')+'</div>'
-        +'<div class="compl-lbl">'+(d.pct===null?'Sin datos':'/ 100')+'</div>'
+        +'<div class="compl-lbl">'+(d.pct===null?'Sin datos':(d.pct>100?'del plan':'/ 100'))+'</div>'
       +'</div>'
       +'</div>'
       +'<span class="compl-name">'+d.sp.icon+' '+d.sp.label+'</span>'
@@ -1272,13 +1277,13 @@ function renderWeeklyCompliance(){
       +'</div>';
   }).join('');
 
-  // Animación: arco + conteo del número, igual que animGauge() del dashboard
+  // Animación: arco (topeado a 100%) + conteo del número (real, sin tope)
   data.forEach(function(d, idx){
     if(d.pct===null) return;
     var arc  = row.querySelector('.compl-arc[data-idx="'+idx+'"]');
     var numEl= row.querySelector('.compl-pct[data-idx="'+idx+'"]');
     if(!arc || !numEl) return;
-    var end = C - (d.pct/100)*C, st = null, dur = 1500;
+    var end = C - (d.ringPct/100)*C, st = null, dur = 1500;
     requestAnimationFrame(function step(ts){
       if(!st) st = ts;
       var p = Math.min((ts-st)/dur,1), e = 1-Math.pow(1-p,3);

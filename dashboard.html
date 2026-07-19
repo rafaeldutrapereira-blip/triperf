@@ -1957,11 +1957,16 @@ function renderWeekAdherence(){
     if(unitEl) unitEl.textContent = actualUnit;
 
     if(tssPlanned > 0){
-      var pct = Math.round(Math.min(tssActual/tssPlanned*100, 100)); // mismo tope que training_plan.html
+      // pct = número real mostrado (SIN tope, ej. 253% si te excediste del
+      // plan); la barra sí se topea en 100% (una barra no puede dibujarse
+      // "más que llena"). Antes ambos se topeaban igual y superar el plan
+      // al doble se veía idéntico a apenas cumplirlo.
+      var pct = Math.round(tssActual/tssPlanned*100);
+      var barPct = Math.min(pct, 100);
       if(tgtEl){ tgtEl.textContent = 'meta: ' + Math.round(tssPlanned) + ' TSS'; tgtEl.style.fontStyle=''; tgtEl.style.opacity=''; }
       var c = pct>=90 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
       if(pctEl){ pctEl.textContent = pct+'%'; pctEl.style.color = c; }
-      if(barEl){ barEl.setAttribute('data-w', pct); barEl.style.width = pct+'%'; barEl.style.background = c; }
+      if(barEl){ barEl.setAttribute('data-w', barPct); barEl.style.width = barPct+'%'; barEl.style.background = c; }
     } else {
       if(pctEl){ pctEl.textContent = ''; }
       if(barEl){ barEl.setAttribute('data-w', 0); barEl.style.width = '0%'; }
