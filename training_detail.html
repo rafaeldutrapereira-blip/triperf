@@ -37,6 +37,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .back-btn:hover{color:var(--muted)}
 .back-btn svg{width:14px;height:14px}
 .ah-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.9rem,4vw,3rem);font-weight:800;line-height:1;letter-spacing:.02em;margin-bottom:.55rem}
+.owner-badge{display:inline-flex;align-items:center;gap:.35rem;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);border-radius:5px;padding:.3rem .7rem;margin-bottom:.7rem}
 .ah-meta{display:flex;align-items:center;gap:.65rem;font-family:'Oswald',sans-serif;font-size:.77rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap;margin-bottom:1.25rem}
 .ah-meta-sep{color:var(--dim)}
 .ah-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);border-radius:var(--radius);overflow:hidden}
@@ -150,6 +151,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver al Plan
       </div>
+      <div class="owner-badge" id="owner-badge" style="display:none"></div>
       <div class="ah-title" id="act-title">—</div>
       <div class="ah-meta" id="act-meta"></div>
       <div class="ah-stats" id="act-kpis"></div>
@@ -307,6 +309,16 @@ function getActConfig(act){
 var sp = SPORT[ACT.sport]||SPORT.bike;
 document.title = 'LabX — '+(ACT.name||sp.label);
 document.getElementById('act-title').textContent = ACT.name||sp.label;
+
+var ownerBadge = document.getElementById('owner-badge');
+if(ownerBadge){
+  if(ACT.is_own === false && ACT.owner_name){
+    ownerBadge.style.display = '';
+    ownerBadge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Actividad de '+ACT.owner_name;
+  } else {
+    ownerBadge.style.display = 'none';
+  }
+}
 
 var d = new Date(ACT.date_iso+'T12:00:00');
 var durH = Math.floor(ACT.dur_min/60), durM = Math.round(ACT.dur_min%60);
@@ -703,7 +715,7 @@ function _fmtSecMin(s){
   return m+':'+(ss<10?'0':'')+ss;
 }
 
-function renderZonesReal(zonesData){
+function renderZonesReal(zonesData, ownerNote){
   if(!zonesGrid) return;
   var cols = [];
   if(zonesData.hr && zonesData.hr.length){
@@ -731,7 +743,7 @@ function renderZonesReal(zonesData){
             + '</div>';
         }).join('')
       + '</div>';
-  }).join('');
+  }).join('') + (ownerNote ? '<div style="grid-column:1/-1;padding:.6rem 1.4rem;font-size:.68rem;color:var(--dim);border-top:1px solid var(--border2)">Zonas calculadas con el FTP / FC máx configurados por '+ownerNote+', no los tuyos.</div>' : '');
   // revelar barras ya mismo (no depender solo del IntersectionObserver,
   // que puede haber disparado antes de que este fetch async terminara)
   zonesGrid.querySelectorAll('.zone-bar-f[data-w]').forEach(function(b,i){
@@ -792,7 +804,7 @@ function renderTelemetry(){
       if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, '#10B981', 'm/s', null);
       if(chartsInner) chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
 
-      renderZonesReal(data.zones || {});
+      renderZonesReal(data.zones || {}, (data.is_own===false && data.owner_name) ? data.owner_name : null);
       renderSplitsReal(data.splits, data.sport);
     })
     .catch(function(){ fallbackNoData(); });

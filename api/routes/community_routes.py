@@ -1,44 +1,44 @@
 """
-LabX Comunidad TriatlÃ³n LATAM â€” Routes completas (Sprint 13 / MÃ³dulo Â§10-11)
+LabX Comunidad Triatlón LATAM — Routes completas (Sprint 13 / Módulo §10-11)
 
 Endpoints:
-  POST   /community/follow/{user_id}             â€” Seguir usuario
-  DELETE /community/follow/{user_id}             â€” Unfollow
-  GET    /community/followers                    â€” Mis seguidores
-  GET    /community/following                    â€” Usuarios que sigo
-  GET    /community/suggestions                  â€” Sugerencias de seguir
+  POST   /community/follow/{user_id}             — Seguir usuario
+  DELETE /community/follow/{user_id}             — Unfollow
+  GET    /community/followers                    — Mis seguidores
+  GET    /community/following                    — Usuarios que sigo
+  GET    /community/suggestions                  — Sugerencias de seguir
 
-  POST   /community/posts                        â€” Publicar actividad / nota
-  GET    /community/feed                         â€” Feed paginado
-  GET    /community/feed/CommunityGroup/{group_id}        â€” Feed de grupo
-  GET    /community/posts/{post_id}              â€” Detalle de post
-  DELETE /community/posts/{post_id}              â€” Borrar post
+  POST   /community/posts                        — Publicar actividad / nota
+  GET    /community/feed                         — Feed paginado
+  GET    /community/feed/CommunityGroup/{group_id}        — Feed de grupo
+  GET    /community/posts/{post_id}              — Detalle de post
+  DELETE /community/posts/{post_id}              — Borrar post
 
-  POST   /community/posts/{post_id}/kudo         â€” Dar kudo
-  DELETE /community/posts/{post_id}/kudo         â€” Retirar kudo
-  POST   /community/posts/{post_id}/comments     â€” Comentar
-  GET    /community/posts/{post_id}/comments     â€” Listar comentarios
-  DELETE /community/comments/{comment_id}        â€” Borrar comentario
+  POST   /community/posts/{post_id}/kudo         — Dar kudo
+  DELETE /community/posts/{post_id}/kudo         — Retirar kudo
+  POST   /community/posts/{post_id}/comments     — Comentar
+  GET    /community/posts/{post_id}/comments     — Listar comentarios
+  DELETE /community/comments/{comment_id}        — Borrar comentario
 
-  POST   /community/groups                       â€” Crear grupo
-  GET    /community/groups                       â€” Listar grupos (search)
-  GET    /community/groups/{group_id}            â€” Detalle grupo
-  POST   /community/groups/{group_id}/join       â€” Unirse
-  DELETE /community/groups/{group_id}/leave      â€” Salir
-  GET    /community/groups/{group_id}/members    â€” Lista miembros
-  GET    /community/groups/{group_id}/leaderboard â€” Leaderboard semanal
+  POST   /community/groups                       — Crear grupo
+  GET    /community/groups                       — Listar grupos (search)
+  GET    /community/groups/{group_id}            — Detalle grupo
+  POST   /community/groups/{group_id}/join       — Unirse
+  DELETE /community/groups/{group_id}/leave      — Salir
+  GET    /community/groups/{group_id}/members    — Lista miembros
+  GET    /community/groups/{group_id}/leaderboard — Leaderboard semanal
 
-  POST   /community/groups/{group_id}/challenges â€” Crear reto
-  GET    /community/groups/{group_id}/challenges â€” Listar retos
-  GET    /community/challenges/{challenge_id}/leaderboard â€” Ranking reto
+  POST   /community/groups/{group_id}/challenges — Crear reto
+  GET    /community/groups/{group_id}/challenges — Listar retos
+  GET    /community/challenges/{challenge_id}/leaderboard — Ranking reto
 
-  GET    /community/notifications                â€” Mis notificaciones
-  POST   /community/notifications/mark-read      â€” Marcar leÃ­das
-  GET    /community/notifications/count          â€” Contador no leÃ­das
+  GET    /community/notifications                — Mis notificaciones
+  POST   /community/notifications/mark-read      — Marcar leídas
+  GET    /community/notifications/count          — Contador no leídas
 
-  GET    /community/profile/{user_id}            â€” Perfil pÃºblico
-  PATCH  /community/settings                     â€” Visibilidad default
-  POST   /community/posts/{post_id}/share-card   â€” Generar imagen para compartir
+  GET    /community/profile/{user_id}            — Perfil público
+  PATCH  /community/settings                     — Visibilidad default
+  POST   /community/posts/{post_id}/share-card   — Generar imagen para compartir
 """
 from __future__ import annotations
 
@@ -88,9 +88,9 @@ KUDO_EMOJI = {
 }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _new_id() -> str:
     return str(_uuid_mod.uuid4())
@@ -105,7 +105,7 @@ def _notif(
     post_id:   str | None = None,
     group_id:  str | None = None,
 ) -> None:
-    """Crea una notificaciÃ³n in-app y la emite por SSE si hay broker disponible."""
+    """Crea una notificación in-app y la emite por SSE si hay broker disponible."""
     if user_id == actor_id:
         return
     n = CommunityNotification(
@@ -119,7 +119,7 @@ def _notif(
     )
     db.add(n)
 
-    # Emitir SSE si el broker estÃ¡ disponible
+    # Emitir SSE si el broker está disponible
     try:
         from ..sse_broker import broker
         if broker:
@@ -142,7 +142,7 @@ def _serialize_post(p: CommunityPost, viewer_id: str) -> dict:
     return {
         "id":          p.id,
         "user_id":     p.user_id,
-        "author":      p.user.nombre if p.user else "â€”",
+        "author":      p.user.nombre if p.user else "—",
         "post_type":   p.post_type,
         "title":       p.title,
         "body":        p.body,
@@ -169,7 +169,7 @@ def _serialize_comment(c: Comment) -> dict:
         "id":        c.id,
         "post_id":   c.post_id,
         "user_id":   c.user_id,
-        "author":    c.author.nombre if c.author else "â€”",
+        "author":    c.author.nombre if c.author else "—",
         "parent_id": c.parent_id,
         "body":      c.body if not c.deleted_at else "[eliminado]",
         "deleted":   bool(c.deleted_at),
@@ -200,9 +200,9 @@ def _serialize_group(g: CommunityGroup, viewer_id: str, db: Session) -> dict:
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ FOLLOW SYSTEM
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § FOLLOW SYSTEM
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/follow/{target_user_id}", status_code=201)
 def follow_user(
@@ -227,7 +227,7 @@ def follow_user(
     follow = Follow(id=_new_id(), follower_id=me.id, followed_id=target_user_id)
     db.add(follow)
     _notif(db, target_user_id, me.id, "follow",
-           f"{me.nombre or me.email} comenzÃ³ a seguirte")
+           f"{me.nombre or me.email} comenzó a seguirte")
     db.commit()
     return {"ok": True, "following": target_user_id}
 
@@ -254,7 +254,7 @@ def my_followers(
     me: User    = Depends(get_current_user),
 ):
     rows = db.query(Follow).filter(Follow.followed_id == me.id).all()
-    return [{"user_id": r.follower_id, "nombre": r.follower.nombre if r.follower else "â€”"} for r in rows]
+    return [{"user_id": r.follower_id, "nombre": r.follower.nombre if r.follower else "—"} for r in rows]
 
 
 @router.get("/following")
@@ -263,7 +263,7 @@ def my_following(
     me: User    = Depends(get_current_user),
 ):
     rows = db.query(Follow).filter(Follow.follower_id == me.id).all()
-    return [{"user_id": r.followed_id, "nombre": r.followed.nombre if r.followed else "â€”"} for r in rows]
+    return [{"user_id": r.followed_id, "nombre": r.followed.nombre if r.followed else "—"} for r in rows]
 
 
 @router.get("/suggestions")
@@ -278,7 +278,7 @@ def follow_suggestions(
     }
     already_following.add(me.id)
 
-    # CompaÃ±eros de grupo
+    # Compañeros de grupo
     my_group_ids = [gm.group_id for gm in db.query(CommunityGroupMember).filter(CommunityGroupMember.user_id == me.id).all()]
     candidates = []
     if my_group_ids:
@@ -306,9 +306,9 @@ def follow_suggestions(
     return result[:8]
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ POSTS â€” FEED
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § POSTS — FEED
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _PostIn(BaseModel):
     body:       Optional[str]  = None
@@ -329,7 +329,7 @@ class _PostIn(BaseModel):
         if v:
             v = v.strip()
             if len(v) > 1000:
-                raise ValueError("body mÃ¡ximo 1000 caracteres")
+                raise ValueError("body máximo 1000 caracteres")
         return v
 
 
@@ -349,7 +349,7 @@ def create_post(
         if not act:
             raise HTTPException(404, "Actividad no encontrada")
 
-        # Traer CTL/TSB del dÃ­a de la actividad
+        # Traer CTL/TSB del día de la actividad
         tl = db.query(GarminTrainingLoad).filter(
             GarminTrainingLoad.user_id  == me.id,
             GarminTrainingLoad.date_iso == act.date_iso,
@@ -357,8 +357,8 @@ def create_post(
 
     # El feed puede haber creado ya un CommunityPost para esta actividad
     # (auto-post del sync, o _get_or_create_post_for_activity al construir
-    # el feed) â€” reutilizarlo en vez de duplicar, si no el caption del
-    # usuario queda en un post huÃ©rfano que el feed nunca vuelve a mostrar.
+    # el feed) — reutilizarlo en vez de duplicar, si no el caption del
+    # usuario queda en un post huérfano que el feed nunca vuelve a mostrar.
     post = (
         db.query(CommunityPost).filter(CommunityPost.activity_id == act.id).first()
         if act else None
@@ -437,7 +437,7 @@ def get_public_feed(
     db:       Session       = Depends(get_db),
     me:       User          = Depends(get_current_user),
 ):
-    """Feed pÃºblico â€” para la landing y para nuevos usuarios."""
+    """Feed público — para la landing y para nuevos usuarios."""
     q = db.query(CommunityPost).filter(CommunityPost.visibility == "public")
     if sport:
         q = q.filter(CommunityPost.sport == sport)
@@ -494,9 +494,9 @@ def delete_post(
     return {"ok": True}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ KUDOS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § KUDOS
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _KudoIn(BaseModel):
     kudo_type: str
@@ -533,7 +533,7 @@ def give_kudo(
 
     emoji = KUDO_EMOJI.get(body.kudo_type, "👍")
     _notif(db, post.user_id, me.id, "kudo",
-           f"{me.nombre or me.email} reaccionÃ³ {emoji} a tu actividad",
+           f"{me.nombre or me.email} reaccionó {emoji} a tu actividad",
            post_id=post_id)
     db.commit()
     kudo_count = db.query(Kudo).filter(Kudo.post_id == post_id).count()
@@ -559,9 +559,9 @@ def remove_kudo(
     return {"ok": True, "kudo_count": kudo_count}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ COMMENTS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § COMMENTS
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _CommentIn(BaseModel):
     body:      str
@@ -572,9 +572,9 @@ class _CommentIn(BaseModel):
     def validate_body(cls, v):
         v = v.strip()
         if not v:
-            raise ValueError("El comentario no puede estar vacÃ­o")
+            raise ValueError("El comentario no puede estar vacío")
         if len(v) > 500:
-            raise ValueError("MÃ¡ximo 500 caracteres")
+            raise ValueError("Máximo 500 caracteres")
         return v
 
 
@@ -599,7 +599,7 @@ def add_comment(
     db.add(comment)
 
     _notif(db, post.user_id, me.id, "comment",
-           f"{me.nombre or me.email} comentÃ³ en tu actividad: \"{body.body[:60]}\"",
+           f"{me.nombre or me.email} comentó en tu actividad: \"{body.body[:60]}\"",
            post_id=post_id)
     db.commit()
     db.refresh(comment)
@@ -638,9 +638,9 @@ def delete_comment(
     return {"ok": True}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ GROUPS / CLUBS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § GROUPS / CLUBS
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _GroupIn(BaseModel):
     name:        str
@@ -655,8 +655,8 @@ class _GroupIn(BaseModel):
     @classmethod
     def validate_name(cls, v):
         v = v.strip()
-        if len(v) < 3:   raise ValueError("Nombre mÃ­nimo 3 caracteres")
-        if len(v) > 60:  raise ValueError("Nombre mÃ¡ximo 60 caracteres")
+        if len(v) < 3:   raise ValueError("Nombre mínimo 3 caracteres")
+        if len(v) > 60:  raise ValueError("Nombre máximo 60 caracteres")
         return v
 
 
@@ -743,7 +743,7 @@ def join_group(
     if not g:
         raise HTTPException(404, "Grupo no encontrado")
     if g.is_private and g.invite_code != invite_code:
-        raise HTTPException(403, "CÃ³digo de invitaciÃ³n incorrecto")
+        raise HTTPException(403, "Código de invitación incorrecto")
 
     existing = db.query(CommunityGroupMember).filter(
         CommunityGroupMember.group_id == group_id,
@@ -790,7 +790,7 @@ def list_members(
     return [
         {
             "user_id":   m.user_id,
-            "nombre":    m.user.nombre if m.user else "â€”",
+            "nombre":    m.user.nombre if m.user else "—",
             "rol_app":   m.user.rol if m.user else None,
             "role":      m.role,
             "joined_at": m.joined_at.isoformat(),
@@ -901,9 +901,9 @@ def group_leaderboard(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ CHALLENGES â€” RETOS DE GRUPO
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § CHALLENGES — RETOS DE GRUPO
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _ChallengeIn(BaseModel):
     name:        str
@@ -1035,7 +1035,7 @@ def challenge_leaderboard(
         user = db.query(User).filter(User.id == entry.user_id).first()
         board.append({
             "user_id":  entry.user_id,
-            "nombre":   user.nombre if user else "â€”",
+            "nombre":   user.nombre if user else "—",
             "progress": value,
             "pct":      round(value / ch.target * 100, 1) if ch.target else 0,
             "is_me":    entry.user_id == me.id,
@@ -1058,9 +1058,9 @@ def challenge_leaderboard(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ NOTIFICATIONS
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § NOTIFICATIONS
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/notifications")
 def my_notifications(
@@ -1079,7 +1079,7 @@ def my_notifications(
             {
                 "id":         n.id,
                 "type":       n.notif_type,
-                "actor":      n.actor.nombre if n.actor else "â€”",
+                "actor":      n.actor.nombre if n.actor else "—",
                 "body":       n.body,
                 "post_id":    n.post_id,
                 "group_id":   n.group_id,
@@ -1119,9 +1119,9 @@ def mark_notifs_read(
     return {"ok": True}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ PROFILE PÃšBLICO
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § PROFILE PÚBLICO
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/profile/{user_id}")
 def public_profile(
@@ -1139,7 +1139,7 @@ def public_profile(
         Follow.follower_id == me.id, Follow.followed_id == user_id
     ).first() is not None
 
-    # Stats del aÃ±o actual
+    # Stats del año actual
     yr = date.today().year
     from ..models import GarminActivity as GA
     year_acts = db.query(GA).filter(
@@ -1148,7 +1148,7 @@ def public_profile(
         GA.date_iso <= f"{yr}-12-31",
     ).all()
 
-    # Posts pÃºblicos
+    # Posts públicos
     posts = (
         db.query(CommunityPost)
         .filter(
@@ -1177,9 +1177,9 @@ def public_profile(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ SHARE CARD â€” Imagen PNG para Instagram/WhatsApp
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § SHARE CARD — Imagen PNG para Instagram/WhatsApp
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/posts/{post_id}/share-card")
 def generate_share_card(
@@ -1189,7 +1189,7 @@ def generate_share_card(
 ):
     """
     B-23 ext: Genera imagen 1080x1080 PNG para compartir en redes sociales.
-    Requiere Pillow. Si no estÃ¡ instalado, devuelve URL placeholder.
+    Requiere Pillow. Si no está instalado, devuelve URL placeholder.
     """
     import os
 
@@ -1210,7 +1210,7 @@ def generate_share_card(
         img  = Image.new("RGB", (W, H), color=(11, 15, 26))   # --bg
         draw = ImageDraw.Draw(img)
 
-        # Fondo gradiente simulado (rectÃ¡ngulos)
+        # Fondo gradiente simulado (rectángulos)
         for i in range(H):
             ratio = i / H
             r = int(11  + (26  - 11)  * ratio)
@@ -1252,7 +1252,7 @@ def generate_share_card(
         if post.tss:      stats.append(f"TSS {int(post.tss)}")
         if post.ctl_day:  stats.append(f"CTL {int(post.ctl_day)}")
 
-        draw.text((60, 420), " Â· ".join(stats), fill=(232, 236, 244), font=font_big)
+        draw.text((60, 420), " · ".join(stats), fill=(232, 236, 244), font=font_big)
 
         # Body / caption
         if post.body:
@@ -1277,9 +1277,9 @@ def generate_share_card(
     return {"card_url": f"/api/community/posts/{post_id}/share-card", "ready": False}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ SETTINGS â€” Visibilidad default
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § SETTINGS — Visibilidad default
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _SettingsIn(BaseModel):
     default_visibility: str
@@ -1298,15 +1298,15 @@ def update_community_settings(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Actualiza configuraciÃ³n de privacidad por defecto del atleta."""
+    """Actualiza configuración de privacidad por defecto del atleta."""
     if not hasattr(me, "community_visibility"):
-        pass  # campo no en modelo bÃ¡sico â€” se gestiona via JSON extra si hay columna
+        pass  # campo no en modelo básico — se gestiona via JSON extra si hay columna
     return {"ok": True, "default_visibility": body.default_visibility}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Â§ 16 â€” IA: Smart Kudos Context + Feed Ranking
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# § 16 — IA: Smart Kudos Context + Feed Ranking
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/posts/{post_id}/ai-context")
 def ai_kudo_context(
@@ -1316,8 +1316,8 @@ def ai_kudo_context(
 ):
     """
     Genera contexto inteligente para el kudo:
-    â€” detecta si fue una sesiÃ³n excepcional (TSS > CTL, TSB negativo, PB implÃ­cito)
-    â€” devuelve mensaje sugerido para comentar
+    — detecta si fue una sesión excepcional (TSS > CTL, TSB negativo, PB implícito)
+    — devuelve mensaje sugerido para comentar
     """
     post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
     if not post:
@@ -1329,27 +1329,27 @@ def ai_kudo_context(
     if post.tss and post.ctl_day:
         ratio = post.tss / post.ctl_day if post.ctl_day else 0
         if ratio >= 1.5:
-            insights.append(f"TSS {int(post.tss)} â€” {ratio:.1f}Ã— su CTL habitual. SesiÃ³n excepcional.")
+            insights.append(f"TSS {int(post.tss)} — {ratio:.1f}× su CTL habitual. Sesión excepcional.")
             kudo_suggestion = "epic"
         elif ratio >= 1.0:
-            insights.append(f"TSS {int(post.tss)} â€” por encima de su CTL ({int(post.ctl_day)}). Buen esfuerzo.")
+            insights.append(f"TSS {int(post.tss)} — por encima de su CTL ({int(post.ctl_day)}). Buen esfuerzo.")
             kudo_suggestion = "fire"
 
     if post.tsb_day is not None and post.tsb_day < -20:
-        insights.append(f"TSB en {int(post.tsb_day)}: entrenÃ³ bajo fatiga acumulada. Pura garra.")
+        insights.append(f"TSB en {int(post.tsb_day)}: entrenó bajo fatiga acumulada. Pura garra.")
         kudo_suggestion = "trophy"
 
     if post.dist_km and post.sport in ("run", "bike"):
         ref = {"run": 42.2, "bike": 180.0}
         if post.dist_km >= ref.get(post.sport, 999):
-            insights.append(f"{post.dist_km} km en {post.sport} â€” distancia de competencia.")
+            insights.append(f"{post.dist_km} km en {post.sport} — distancia de competencia.")
             kudo_suggestion = "trophy"
 
     if not insights:
         insights.append("Consistencia es la clave del rendimiento.")
 
     author = post.user.nombre if post.user else "El atleta"
-    comment = f"{author} â€” {insights[0]}"
+    comment = f"{author} — {insights[0]}"
 
     return {
         "post_id":          post_id,
@@ -1367,9 +1367,9 @@ def ranked_feed(
     me:       User    = Depends(get_current_user),
 ):
     """
-    Feed con ranking IA â€” posts ordenados por relevancia:
+    Feed con ranking IA — posts ordenados por relevancia:
     score = kudos_total * 3 + n_comments * 2 + tss_normalized + recency_decay
-    Favorece contenido de calidad sobre cronologÃ­a pura.
+    Favorece contenido de calidad sobre cronología pura.
     """
     following_ids = {
         r.followed_id
@@ -1410,7 +1410,7 @@ def flag_post(
     db:      Session = Depends(get_db),
     me:      User    = Depends(get_current_user),
 ):
-    """Â§ 17 Security â€” Reportar post inapropiado."""
+    """§ 17 Security — Reportar post inapropiado."""
     post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
     if not post:
         raise HTTPException(404, "Post no encontrado")
@@ -1418,11 +1418,11 @@ def flag_post(
     post.flagged_by = me.id
     db.commit()
     logger.warning("Post flagged: post_id=%s by user=%s", post_id, me.id)
-    return {"ok": True, "message": "Reporte enviado. El equipo revisarÃ¡ el contenido."}
+    return {"ok": True, "message": "Reporte enviado. El equipo revisará el contenido."}
 
 
 # =============================================================================
-# SPRINT 17 â€” ENRICHED ACTIVITY FEED + LATAM LEADERBOARD + SEARCH + STATS
+# SPRINT 17 — ENRICHED ACTIVITY FEED + LATAM LEADERBOARD + SEARCH + STATS
 # =============================================================================
 
 SPORT_EMOJI_S17 = {
@@ -1443,9 +1443,9 @@ COUNTRY_FLAG = {
 }
 
 RECOVERY_LEVEL_LABEL = {
-    "optimal":  "Forma Ã³ptima",
+    "optimal":  "Forma óptima",
     "good":     "Bien recuperado",
-    "moderate": "RecuperaciÃ³n moderada",
+    "moderate": "Recuperación moderada",
     "low":      "Fatiga acumulada",
     "critical": "Descanso urgente",
 }
@@ -1502,6 +1502,15 @@ def _route_preview_for_activity(activity_id, max_points=40):
     return [[round(p["lat"], 5), round(p["lon"], 5)] for p in sampled if "lat" in p and "lon" in p]
 
 
+def _owner_shares_route(owner) -> bool:
+    """Respeta la preferencia de privacidad share_route del dueño de la
+    actividad para el mini-mapa del feed (ver /athlete/community-privacy)."""
+    if not owner:
+        return False
+    from .athlete_routes import _get_share_prefs
+    return _get_share_prefs(owner)["share_route"]
+
+
 def _build_activity_card_s17(act, viewer_id, db):
     owner    = db.query(User).filter_by(id=act.user_id).first()
     act_date = act.date_iso
@@ -1536,13 +1545,13 @@ def _build_activity_card_s17(act, viewer_id, db):
         "caption":     post.body,
         "user": {
             "id":             owner.id if owner else None,
-            "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "â€”",
+            "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "—",
             "avatar_initial": ((owner.nombre or owner.email)[0]).upper() if owner else "?",
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
         "sport":        sport_raw,
-        "sport_emoji":  SPORT_EMOJI_S17.get(sport_key, "âš¡"),
+        "sport_emoji":  SPORT_EMOJI_S17.get(sport_key, "⚡"),
         "name":         act.name or sport_raw.capitalize(),
         "date_iso":     act_date,
         "distance_km":  round(act.dist_km or 0, 2),
@@ -1552,7 +1561,11 @@ def _build_activity_card_s17(act, viewer_id, db):
         "avg_hr":       act.avg_hr,
         "avg_pace_min_km": act.pace_str,
         "avg_power_w":  act.avg_power,
-        "route_preview": _route_preview_for_activity(act.activity_id),
+        "route_preview": (
+            _route_preview_for_activity(act.activity_id)
+            if act.user_id == viewer_id or _owner_shares_route(owner)
+            else None
+        ),
         "recovery": {
             "score":      rec.score if rec else None,
             "level":      rec.level if rec else None,
@@ -1688,7 +1701,7 @@ def latam_leaderboard(
     metric_labels = {
         "tss":         "TSS Total",
         "distance_km": "Km Totales",
-        "elevation_m": "ElevaciÃ³n (m)",
+        "elevation_m": "Elevación (m)",
         "duration_h":  "Horas de entrenamiento",
     }
     return {

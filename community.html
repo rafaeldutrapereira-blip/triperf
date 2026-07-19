@@ -142,6 +142,12 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .prof-meta{font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.06em}
 .follow-btn{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.28rem .7rem;border-radius:5px;border:1.5px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer;transition:all .15s;flex-shrink:0}
 .follow-btn:hover,.follow-btn.following{background:var(--cyan);color:#000}
+/* ── PRIVACY PANEL ── */
+.priv-row{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;font-size:.84rem;color:var(--text);cursor:pointer}
+.priv-row input{width:16px;height:16px;accent-color:var(--cyan);cursor:pointer}
+.priv-sub{margin-left:1.6rem;border-left:2px solid var(--border2);padding-left:.9rem;transition:opacity .15s}
+.priv-sub.off{opacity:.4;pointer-events:none}
+.priv-desc{font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:1rem}
 
 /* ── SEARCH BAR ── */
 .search-bar{display:flex;gap:.5rem;margin-bottom:1.25rem}
@@ -285,6 +291,24 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <!-- ══ TAB: MI PERFIL ══ -->
 <div class="tab-pane" id="tab-profile">
   <div id="my-profile-content"></div>
+
+  <div class="panel" style="margin-top:1.25rem">
+    <div class="panel-head"><div class="panel-title">Privacidad de mis actividades</div></div>
+    <div style="padding:1.25rem">
+      <div class="priv-desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
+      <label class="priv-row"><input type="checkbox" id="priv-details" onchange="_privToggleMaster()"> Permitir que mis seguidores vean el detalle de mis actividades</label>
+      <div class="priv-sub" id="priv-sub">
+        <label class="priv-row"><input type="checkbox" id="priv-route"> Mapa / recorrido</label>
+        <label class="priv-row"><input type="checkbox" id="priv-hr"> Frecuencia cardíaca</label>
+        <label class="priv-row"><input type="checkbox" id="priv-power"> Potencia / cadencia</label>
+        <label class="priv-row"><input type="checkbox" id="priv-pace"> Ritmo / velocidad / parciales</label>
+      </div>
+      <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem">
+        <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()">Guardar</button>
+        <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem">✓ Guardado</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -522,7 +546,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       var hrStr   = c.avg_hr ? c.avg_hr + ' bpm' : '';
       var statParts = [distStr, durStr, tssStr, hrStr].filter(Boolean);
 
-      var canOpen = c.is_viewer_activity && c.activity_id;
+      var canOpen = !!c.activity_id; // propia o de alguien que seguís (autorizado en el backend)
       var rowAttrs = canOpen
         ? ' class="ac-row clickable" onclick="location.href=\'training_detail.html?id=' + c.activity_id + '\'"'
         : ' class="ac-row"';
@@ -899,6 +923,44 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     var el = document.getElementById('my-profile-content');
     if (el) el.innerHTML = '<div class="alert-chip info">Completa tu perfil en Configuración para mostrar tu página pública.</div>';
   }
+
+  window._privToggleMaster = function () {
+    var on = document.getElementById('priv-details').checked;
+    document.getElementById('priv-sub').classList.toggle('off', !on);
+  };
+
+  function loadPrivacyPrefs() {
+    fetch(API + '/athlete/community-privacy', { headers: hdrs })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var p = (d && d.prefs) || {};
+        document.getElementById('priv-details').checked = p.share_details !== false;
+        document.getElementById('priv-route').checked   = p.share_route  !== false;
+        document.getElementById('priv-hr').checked       = p.share_hr     !== false;
+        document.getElementById('priv-power').checked    = p.share_power  !== false;
+        document.getElementById('priv-pace').checked     = p.share_pace   !== false;
+        _privToggleMaster();
+      }).catch(function () {});
+  }
+
+  window.savePrivacyPrefs = function () {
+    var body = {
+      share_details: document.getElementById('priv-details').checked,
+      share_route:   document.getElementById('priv-route').checked,
+      share_hr:      document.getElementById('priv-hr').checked,
+      share_power:   document.getElementById('priv-power').checked,
+      share_pace:    document.getElementById('priv-pace').checked,
+    };
+    fetch(API + '/athlete/community-privacy', { method: 'PUT', headers: hdrs, body: JSON.stringify(body) })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function () {
+        var msg = document.getElementById('priv-saved-msg');
+        msg.style.display = '';
+        setTimeout(function () { msg.style.display = 'none'; }, 2200);
+      }).catch(function () {});
+  };
+
+  loadPrivacyPrefs();
 
   // ═════════════════════════════════════════════════════════════════════════
   // INIT

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -21,7 +22,7 @@ from pydantic import BaseModel, field_validator
 from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
-from ..models import Group, GroupMember
+from ..models import Group, GroupMember, Follow
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
@@ -1626,14 +1627,28 @@ def get_activity_detail(
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
-    """Detalle de una actividad puntual del atleta (para training_detail.html)."""
-    act = db.query(GarminActivity).filter(
-        GarminActivity.activity_id == activity_id,
-        GarminActivity.user_id     == me.id,
-    ).first()
+    """Detalle de una actividad puntual (para training_detail.html).
+    Visible si es propia o de alguien que seguís en Comunidad."""
+    act = _find_viewable_activity(activity_id, me, db)
     if not act:
         raise HTTPException(404, "Actividad no encontrada")
-    return _activity_dict(act)
+    out = _activity_dict(act)
+    is_own = act.user_id == me.id
+    owner = me if is_own else db.query(User).filter(User.id == act.user_id).first()
+    out["is_own"]     = is_own
+    out["owner_name"] = None if is_own else (owner.nombre or owner.email.split("@")[0]) if owner else None
+
+    if not is_own and owner:
+        prefs = _get_share_prefs(owner)
+        if not prefs["share_hr"]:
+            out["avg_hr"] = None
+        if not prefs["share_power"]:
+            out["avg_power"] = None
+        if not prefs["share_pace"]:
+            out["pace_str"]  = None
+            out["swim_pace"] = None
+
+    return out
 
 
 @router.get("/zones")
@@ -1907,6 +1922,86 @@ def get_activity_photo(
                     headers={"Cache-Control": "max-age=86400"})
 
 
+_DEFAULT_SHARE_PREFS = {
+    "share_details": True,   # maestro: seguidores pueden abrir el detalle
+    "share_route":   True,   # mapa / recorrido GPS
+    "share_hr":      True,   # frecuencia cardíaca
+    "share_power":   True,   # potencia / cadencia
+    "share_pace":    True,   # ritmo, velocidad y parciales
+}
+
+
+def _get_share_prefs(user: User) -> dict:
+    """Preferencias de privacidad de Comunidad del usuario (qué comparte con
+    sus seguidores). None guardado = todo compartido (default histórico)."""
+    prefs = dict(_DEFAULT_SHARE_PREFS)
+    if user.community_share_prefs:
+        try:
+            saved = json.loads(user.community_share_prefs)
+            if isinstance(saved, dict):
+                for k in _DEFAULT_SHARE_PREFS:
+                    if k in saved:
+                        prefs[k] = bool(saved[k])
+        except Exception:
+            pass
+    return prefs
+
+
+def _find_viewable_activity(activity_id: str, me: User, db: Session) -> GarminActivity | None:
+    """Busca una actividad por su activity_id de Garmin, autorizando solo si
+    es propia o de alguien que el usuario actual sigue Y que no desactivó el
+    detalle compartido (share_details) en su configuración de privacidad.
+
+    Nota: activity_id puede repetirse entre cuentas demo/QA sembradas con el
+    mismo dataset sintético — por eso se buscan TODOS los candidatos y se
+    prioriza siempre la propia, para no devolver por error la fila de otro
+    usuario cuando también existe la propia con el mismo id.
+    """
+    candidates = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id
+    ).all()
+    if not candidates:
+        return None
+    own = next((a for a in candidates if a.user_id == me.id), None)
+    if own:
+        return own
+    followed_ids = {f.followed_id for f in db.query(Follow).filter_by(follower_id=me.id).all()}
+    for a in candidates:
+        if a.user_id in followed_ids:
+            owner = db.query(User).filter(User.id == a.user_id).first()
+            if owner and _get_share_prefs(owner)["share_details"]:
+                return a
+    return None
+
+
+@router.get("/community-privacy")
+def get_community_privacy(me: User = Depends(get_current_user)):
+    """Preferencias de qué info del detalle de actividad ve tus seguidores."""
+    return {"prefs": _get_share_prefs(me)}
+
+
+class _SharePrefsIn(BaseModel):
+    share_details: Optional[bool] = None
+    share_route:   Optional[bool] = None
+    share_hr:      Optional[bool] = None
+    share_power:   Optional[bool] = None
+    share_pace:    Optional[bool] = None
+
+
+@router.put("/community-privacy")
+def update_community_privacy(
+    body: _SharePrefsIn,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    prefs = _get_share_prefs(me)
+    updates = body.model_dump(exclude_unset=True)
+    prefs.update({k: bool(v) for k, v in updates.items() if k in prefs})
+    me.community_share_prefs = json.dumps(prefs)
+    db.commit()
+    return {"ok": True, "prefs": prefs}
+
+
 @router.get("/activities/{activity_id}/track")
 def get_activity_track(
     activity_id: str,
@@ -1916,16 +2011,18 @@ def get_activity_track(
     """
     GPS track real (lat/lon/ele) de una actividad, si fue descargado
     (ver download_gps.py). No genera datos sintéticos: 404 si no existe.
+    Visible si es propia o de alguien que seguís.
     """
     from pathlib import Path
     import json as _json
 
-    act = db.query(GarminActivity).filter(
-        GarminActivity.activity_id == activity_id,
-        GarminActivity.user_id     == me.id,
-    ).first()
+    act = _find_viewable_activity(activity_id, me, db)
     if not act:
         raise HTTPException(404, "Actividad no encontrada")
+    if act.user_id != me.id:
+        owner = db.query(User).filter(User.id == act.user_id).first()
+        if not owner or not _get_share_prefs(owner)["share_route"]:
+            raise HTTPException(404, "Actividad no encontrada")
 
     track_path = Path("data/tracks") / f"{activity_id}.json"
     if not track_path.exists():
@@ -2016,17 +2113,19 @@ def get_activity_telemetry(
     de una actividad, si fue descargada. Incluye series para gráfico
     (downsampled), distribución de zonas y parciales por distancia —
     todo calculado desde datos reales de Garmin, sin generar nada sintético.
+    Visible si es propia o de alguien que seguís; las zonas siempre se
+    calculan con el FTP/FC máx del DUEÑO de la actividad, no del que mira.
     """
     from pathlib import Path
     import json as _json
     from ..services.training_service import hr_zones, ftp_zones
 
-    act = db.query(GarminActivity).filter(
-        GarminActivity.activity_id == activity_id,
-        GarminActivity.user_id     == me.id,
-    ).first()
+    act = _find_viewable_activity(activity_id, me, db)
     if not act:
         raise HTTPException(404, "Actividad no encontrada")
+
+    is_own = act.user_id == me.id
+    owner  = me if is_own else (db.query(User).filter(User.id == act.user_id).first() or me)
 
     tel_path = Path("data/telemetry") / f"{activity_id}.json"
     if not tel_path.exists():
@@ -2052,12 +2151,27 @@ def get_activity_telemetry(
     }
 
     zones = {}
-    if me.fcmax:
-        zones["hr"] = _bucket_time_in_zone(samples, "hr", hr_zones(me.fcmax))
-    if me.ftp and act.sport == "bike":
-        zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(me.ftp))
+    if owner.fcmax:
+        zones["hr"] = _bucket_time_in_zone(samples, "hr", hr_zones(owner.fcmax))
+    if owner.ftp and act.sport == "bike":
+        zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(owner.ftp))
 
     splits = _compute_activity_splits(samples, act.sport)
+
+    if not is_own:
+        prefs = _get_share_prefs(owner)
+        if not prefs["share_hr"]:
+            series["hr"] = [None] * len(series["hr"])
+            zones.pop("hr", None)
+        if not prefs["share_power"]:
+            series["power"]   = [None] * len(series["power"])
+            series["cadence"] = [None] * len(series["cadence"])
+            zones.pop("power", None)
+        if not prefs["share_pace"]:
+            series["speed"] = [None] * len(series["speed"])
+            splits = []
+        if not prefs["share_route"]:
+            series["elevation"] = [None] * len(series["elevation"])
 
     return {
         "activity_id": activity_id,
@@ -2065,6 +2179,8 @@ def get_activity_telemetry(
         "series":      series,
         "zones":       zones,
         "splits":      splits,
+        "is_own":      is_own,
+        "owner_name":  None if is_own else (owner.nombre or owner.email.split("@")[0]),
     }
 
 

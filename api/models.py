@@ -81,6 +81,9 @@ class User(Base):
     # Comunidad — código de país ISO-3166 alfa-2 ("CL","BR",...), para el
     # filtro "comparar por país" del leaderboard LATAM
     country_code           = Column(String,   nullable=True)
+    # Privacidad Comunidad — JSON con qué info del detalle de actividad se
+    # comparte con seguidores. None = todo compartido (default histórico).
+    community_share_prefs  = Column(Text,     nullable=True)
 
     # relations
     groups_coached = relationship("Group",       back_populates="coach",   foreign_keys="Group.coach_id")
