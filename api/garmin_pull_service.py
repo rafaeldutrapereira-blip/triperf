@@ -196,6 +196,83 @@ _SPORT_COLOR = {
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _try_download_gps_track(client, activity_id: str) -> None:
+    """Descarga best-effort el track GPS (GPX) de una actividad nueva outdoor.
+
+    No bloqueante: si Garmin no tiene GPS (actividad indoor/Zwift/piscina) o
+    falla la descarga, simplemente no se cachea nada — no rompe el sync.
+    """
+    from garmin_connector import _parse_gpx, TRACKS_DIR
+    from garminconnect import Garmin
+
+    TRACKS_DIR.mkdir(parents=True, exist_ok=True)
+    cache_file = TRACKS_DIR / f"{activity_id}.json"
+    if cache_file.exists() and cache_file.stat().st_size > 10:
+        return
+    gpx_bytes = client.download_activity(
+        int(activity_id), dl_fmt=Garmin.ActivityDownloadFormat.GPX
+    )
+    pts = _parse_gpx(gpx_bytes)
+    if pts:
+        cache_file.write_text(json.dumps(pts))
+
+
+def _try_download_telemetry(client, activity_id: str) -> None:
+    """Descarga best-effort la telemetría segundo a segundo (potencia/FC/
+    cadencia/velocidad/elevación/distancia) de una actividad nueva.
+
+    Garmin Connect SÍ expone esta serie vía get_activity_details() — no
+    requiere GPS (funciona también para Zwift, piscina, indoor). No
+    bloqueante: si Garmin no tiene detalle disponible, simplemente no cachea.
+    """
+    from pathlib import Path
+    import json as _json
+
+    telemetry_dir = Path("data/telemetry")
+    telemetry_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = telemetry_dir / f"{activity_id}.json"
+    if cache_file.exists() and cache_file.stat().st_size > 10:
+        return
+
+    details = client.get_activity_details(int(activity_id))
+    descriptors = details.get("metricDescriptors") or []
+    rows = details.get("activityDetailMetrics") or []
+    if not descriptors or not rows:
+        return
+
+    idx = {d.get("key"): d.get("metricsIndex") for d in descriptors}
+    i_t    = idx.get("sumElapsedDuration")
+    i_pwr  = idx.get("directPower")
+    i_hr   = idx.get("directHeartRate")
+    i_cad  = idx.get("directBikeCadence")
+    if i_cad is None:
+        i_cad = idx.get("directRunCadence")
+    i_spd  = idx.get("directSpeed")
+    i_ele  = idx.get("directElevation")
+    i_dist = idx.get("sumDistance")
+
+    def _g(m, i):
+        if i is None or i >= len(m):
+            return None
+        return m[i]
+
+    samples = []
+    for row in rows:
+        m = row.get("metrics") or []
+        samples.append({
+            "t":    _g(m, i_t),
+            "power":_g(m, i_pwr),
+            "hr":   _g(m, i_hr),
+            "cad":  _g(m, i_cad),
+            "spd":  _g(m, i_spd),
+            "ele":  _g(m, i_ele),
+            "dist": _g(m, i_dist),
+        })
+
+    if samples:
+        cache_file.write_text(_json.dumps(samples))
+
+
 def _norm_sport(raw: str | None) -> str:
     if not raw:
         return "other"
@@ -816,6 +893,22 @@ class GarminPullService:
                 )
                 db.add(new_act)
                 db.flush()  # obtener ID antes de crear el post
+
+                # Mini-mapa del feed de comunidad: intentar bajar el track GPS
+                # solo para actividades outdoor nuevas (bike/run); no bloqueante.
+                if parsed["sport"] in ("bike", "run"):
+                    try:
+                        _try_download_gps_track(client, act_id)
+                    except Exception as _gps_err:
+                        logger.debug("GPS download fallo (no bloqueante) activity=%s: %s", act_id, _gps_err)
+
+                # Telemetría segundo a segundo (potencia/FC/cadencia/ritmo) para
+                # el gráfico, zonas y parciales de training_detail.html. Aplica
+                # a cualquier deporte (no requiere GPS); no bloqueante.
+                try:
+                    _try_download_telemetry(client, act_id)
+                except Exception as _tel_err:
+                    logger.debug("Telemetry download fallo (no bloqueante) activity=%s: %s", act_id, _tel_err)
 
                 # B-14 Community: auto-publicar actividad con visibilidad "followers"
                 # Solo actividades con duración mínima significativa (>= 10 min)

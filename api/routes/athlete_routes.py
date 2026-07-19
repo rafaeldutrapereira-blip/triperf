@@ -1620,6 +1620,22 @@ def list_activities(
     }
 
 
+@router.get("/activities/{activity_id}")
+def get_activity_detail(
+    activity_id: str,
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """Detalle de una actividad puntual del atleta (para training_detail.html)."""
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id     == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    return _activity_dict(act)
+
+
 @router.get("/zones")
 def get_training_zones(
     db: Session = Depends(get_db),
@@ -1921,6 +1937,135 @@ def get_activity_track(
         raise HTTPException(500, "Error leyendo el track GPS")
 
     return {"activity_id": activity_id, "points": points}
+
+
+def _bucket_time_in_zone(samples: list, field: str, zdef: dict) -> list:
+    """Tiempo acumulado (seg) en cada zona, ponderado por el intervalo real
+    entre muestras consecutivas (los samples de Garmin no son 1seg parejo)."""
+    totals  = {k: 0.0 for k in zdef}
+    prev_t  = None
+    for s in samples:
+        t = s.get("t")
+        v = s.get(field)
+        if prev_t is not None and t is not None and v is not None:
+            dt = t - prev_t
+            if dt > 0:
+                for k, (lo, hi) in zdef.items():
+                    if v >= lo and (v < hi or hi >= 9999):
+                        totals[k] += dt
+                        break
+        if t is not None:
+            prev_t = t
+    total = sum(totals.values()) or 1.0
+    out = []
+    for k, (lo, hi) in zdef.items():
+        secs = totals[k]
+        out.append({
+            "key": k, "min": lo, "max": (hi if hi < 9999 else None),
+            "seconds": round(secs), "pct": round(secs/total*100, 1),
+        })
+    return out
+
+
+def _compute_activity_splits(samples: list, sport: str) -> list:
+    """Parciales por segmento de distancia (1km carrera, 5km ciclismo).
+    Usa distancia y tiempo acumulados reales de Garmin — no estima nada."""
+    seg_m = 1000 if sport == "run" else 5000 if sport == "bike" else None
+    if not seg_m:
+        return []
+    valid = [s for s in samples if s.get("dist") is not None and s.get("t") is not None]
+    if len(valid) < 2:
+        return []
+
+    splits = []
+    idx = 1
+    seg_t0, seg_d0 = valid[0]["t"], valid[0]["dist"]
+    pw, hr = [], []
+
+    def _flush(dist_m, dur_s):
+        return {
+            "idx": idx, "distance_m": round(dist_m), "duration_s": round(dur_s),
+            "avg_power": round(sum(pw)/len(pw)) if pw else None,
+            "avg_hr":    round(sum(hr)/len(hr))  if hr else None,
+            "avg_pace_s_per_km": round(dur_s/(dist_m/1000)) if dist_m else None,
+        }
+
+    for s in valid:
+        if s.get("power") is not None: pw.append(s["power"])
+        if s.get("hr")    is not None: hr.append(s["hr"])
+        if s["dist"] - seg_d0 >= seg_m:
+            splits.append(_flush(seg_m, s["t"] - seg_t0))
+            idx += 1
+            seg_t0, seg_d0 = s["t"], s["dist"]
+            pw, hr = [], []
+
+    last_d = valid[-1]["dist"] - seg_d0
+    if last_d > seg_m * 0.2:
+        splits.append(_flush(last_d, valid[-1]["t"] - seg_t0))
+    return splits
+
+
+@router.get("/activities/{activity_id}/telemetry")
+def get_activity_telemetry(
+    activity_id: str,
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """
+    Telemetría segundo a segundo (potencia/FC/cadencia/velocidad/elevación)
+    de una actividad, si fue descargada. Incluye series para gráfico
+    (downsampled), distribución de zonas y parciales por distancia —
+    todo calculado desde datos reales de Garmin, sin generar nada sintético.
+    """
+    from pathlib import Path
+    import json as _json
+    from ..services.training_service import hr_zones, ftp_zones
+
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id     == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+
+    tel_path = Path("data/telemetry") / f"{activity_id}.json"
+    if not tel_path.exists():
+        raise HTTPException(404, "Sin telemetría sincronizada para esta actividad")
+
+    try:
+        samples = _json.loads(tel_path.read_text(encoding="utf-8"))
+    except Exception:
+        raise HTTPException(500, "Error leyendo telemetría")
+    if not samples:
+        raise HTTPException(404, "Telemetría vacía")
+
+    max_pts = 200
+    stride  = max(1, len(samples) // max_pts)
+    ss      = samples[::stride]
+    series  = {
+        "t":         [s.get("t")     for s in ss],
+        "power":     [s.get("power") for s in ss],
+        "hr":        [s.get("hr")    for s in ss],
+        "cadence":   [s.get("cad")   for s in ss],
+        "speed":     [s.get("spd")   for s in ss],
+        "elevation": [s.get("ele")   for s in ss],
+    }
+
+    zones = {}
+    if me.fcmax:
+        zones["hr"] = _bucket_time_in_zone(samples, "hr", hr_zones(me.fcmax))
+    if me.ftp and act.sport == "bike":
+        zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(me.ftp))
+
+    splits = _compute_activity_splits(samples, act.sport)
+
+    return {
+        "activity_id": activity_id,
+        "sport":       act.sport,
+        "series":      series,
+        "zones":       zones,
+        "splits":      splits,
+    }
 
 
 @router.get("/year-in-review")

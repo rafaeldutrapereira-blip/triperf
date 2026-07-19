@@ -71,6 +71,11 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .indoor-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--dim);letter-spacing:.08em}
 .pool-wrap{padding:1.5rem 2rem;background:var(--surface)}
 .pool-svg{display:block;width:100%;max-height:260px}
+.zwift-wrap{position:relative;background:radial-gradient(ellipse at center,rgba(255,101,53,.06),transparent 70%),var(--surface);padding:1rem}
+.zwift-svg{display:block;width:100%;height:300px}
+.zwift-tag{position:absolute;top:10px;left:12px;z-index:5;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.75;backdrop-filter:blur(6px)}
+.zwift-tag strong{color:var(--text);display:block;font-size:.78rem;margin-bottom:.15rem}
+.zwift-note{position:absolute;bottom:10px;right:12px;z-index:5;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.04em;backdrop-filter:blur(6px);max-width:220px;text-align:right}
 
 /* ── CHARTS ── */
 .chart-block{border-bottom:1px solid var(--border2)}
@@ -88,12 +93,19 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 @media(max-width:640px){.zone-grid{grid-template-columns:1fr}}
 .zone-col{background:var(--bg);padding:1.15rem 1.4rem}
 .zone-title{font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
-.zone-row{display:grid;grid-template-columns:150px 1fr 40px 40px;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.zone-row{display:grid;grid-template-columns:92px 1fr 34px 34px;align-items:center;gap:.4rem;margin-bottom:.6rem}
 .zone-name{font-size:.72rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zone-bar-bg{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}
 .zone-bar-f{height:100%;border-radius:3px;width:0;transition:width .9s cubic-bezier(.4,0,.2,1)}
 .zone-pct{font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;color:var(--text);text-align:right}
 .zone-min{font-size:.65rem;color:var(--dim);text-align:right;white-space:nowrap}
+/* Splits table */
+.split-table{width:100%;border-collapse:collapse}
+.split-table th{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:right;padding:.6rem .9rem;border-bottom:1px solid var(--border2)}
+.split-table th:first-child{text-align:left}
+.split-table td{font-family:'Barlow Condensed',sans-serif;font-size:.92rem;font-weight:700;text-align:right;padding:.55rem .9rem;border-bottom:1px solid var(--border2)}
+.split-table td:first-child{text-align:left;color:var(--muted);font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600}
+.split-table tr:last-child td{border-bottom:none}
 
 /* ── SPLITS ── */
 .splits-tbl{width:100%;border-collapse:collapse}
@@ -204,7 +216,8 @@ var SPORT = {
   bike: {icon:'🚴', label:'Ciclismo',   color:'var(--orange)', badge:'b-o'},
   run:  {icon:'🏃', label:'Carrera',    color:'var(--green)',  badge:'b-g'},
   swim: {icon:'🏊', label:'Natación',   color:'var(--cyan)',   badge:'b-c'},
-  str:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'}
+  str:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'},
+  gym:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'}
 };
 var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
@@ -217,23 +230,25 @@ function getURLParam(name){
 }
 
 var actId = getURLParam('id');
-var activities = (KL_DATA && KL_DATA.activities) || [];
 
-// Find by activity_id (stored as number in JSON)
-var ACT = null;
-if(actId){
-  var idNum = parseFloat(actId);
-  for(var i=0;i<activities.length;i++){
-    if(activities[i].activity_id == idNum){ ACT = activities[i]; break; }
+function boot(activities){
+  activities = activities || [];
+
+  // Find by activity_id (stored as number in JSON)
+  var ACT = null;
+  if(actId){
+    var idNum = parseFloat(actId);
+    for(var i=0;i<activities.length;i++){
+      if(activities[i].activity_id == idNum){ ACT = activities[i]; break; }
+    }
   }
-}
-// Fallback: most recent activity
-if(!ACT && activities.length){ ACT = activities[0]; }
+  // Fallback: most recent activity
+  if(!ACT && activities.length){ ACT = activities[0]; }
 
-if(!ACT){
-  document.getElementById('no-act-state').style.display = 'block';
-  return;
-}
+  if(!ACT){
+    document.getElementById('no-act-state').style.display = 'block';
+    return;
+  }
 
 document.getElementById('act-header').style.display = '';
 document.getElementById('act-main').style.display   = '';
@@ -274,10 +289,10 @@ function fmtDate(iso){
 // ─────────────────────────────────────────────────────
 function getActConfig(act){
   var nm = (act.name||'').toLowerCase();
-  if(nm.indexOf('zwift')>=0)    return {type:'indoor', icon:'🖥️', location:'Zwift — Indoor Trainer'};
+  if(nm.indexOf('zwift')>=0)    return {type:'zwift', icon:'🖥️', location:'Zwift — Indoor Trainer'};
   if(nm.indexOf('piscina')>=0 || act.sport==='swim')
                                 return {type:'pool',   icon:'🏊', location:'Piscina'};
-  if(act.sport==='str')         return {type:'indoor', icon:'🏋️', location:'Gimnasio'};
+  if(act.sport==='str'||act.sport==='gym') return {type:'indoor', icon:'🏋️', location:'Gimnasio'};
   if(nm.indexOf('las condes')>=0 || nm.indexOf('condes')>=0)
     return {type:'outdoor', lat:-33.408, lng:-70.583, location:'Las Condes, Santiago'};
   if(nm.indexOf('colina')>=0)
@@ -366,7 +381,126 @@ var cfg = getActConfig(ACT);
 var mapWrap = document.getElementById('map-wrap');
 var leafletMap = null;
 
+function _lxToken(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  return tok;
+}
+function _lxApi(){
+  return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+}
+
+// ─────────────────────────────────────────────────────
+// ANIMACIÓN DE RECORRIDO: dibuja el trazado de inicio a fin
+// con un punto que recorre la ruta. Funciona sobre cualquier
+// <path> SVG (tanto el SVG propio de Zwift como el <path>
+// que Leaflet genera internamente para sus polylines).
+// ─────────────────────────────────────────────────────
+function animateRoutePath(pathEl, dotColor, durationMs){
+  if(!pathEl || typeof pathEl.getTotalLength !== 'function') return;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var len = pathEl.getTotalLength();
+  if(reduceMotion || !len) return;
+
+  pathEl.style.strokeDasharray  = len;
+  pathEl.style.strokeDashoffset = len;
+  pathEl.getBoundingClientRect(); // forzar reflow antes de animar
+
+  var svg = pathEl.ownerSVGElement;
+  var dot = null;
+  if(svg){
+    dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('r','6');
+    dot.setAttribute('fill', dotColor);
+    dot.setAttribute('stroke','#04080F');
+    dot.setAttribute('stroke-width','2');
+    svg.appendChild(dot);
+  }
+
+  var t0 = null;
+  function frame(ts){
+    if(!t0) t0 = ts;
+    var t = Math.min(1, (ts - t0) / durationMs);
+    var eased = t < .5 ? 2*t*t : -1 + (4-2*t)*t; // easeInOutQuad
+    pathEl.style.strokeDashoffset = String(len * (1 - eased));
+    if(dot){
+      var p = pathEl.getPointAtLength(len * eased);
+      dot.setAttribute('cx', p.x);
+      dot.setAttribute('cy', p.y);
+    }
+    if(t < 1) requestAnimationFrame(frame);
+    else if(dot) dot.remove();
+  }
+  requestAnimationFrame(frame);
+}
+
+function renderZwiftRoute(points, color){
+  var lats = points.map(function(p){ return p[0]; });
+  var lons = points.map(function(p){ return p[1]; });
+  var minLat = Math.min.apply(null, lats), maxLat = Math.max.apply(null, lats);
+  var minLon = Math.min.apply(null, lons), maxLon = Math.max.apply(null, lons);
+  var W = 800, H = 300, pad = 24;
+  var spanLat = (maxLat - minLat) || 0.0005;
+  var spanLon = (maxLon - minLon) || 0.0005;
+  var scale = Math.min((W - pad*2) / spanLon, (H - pad*2) / spanLat);
+  var offX = (W - spanLon*scale) / 2;
+  var offY = (H - spanLat*scale) / 2;
+  var d = points.map(function(p, i){
+    var x = offX + (p[1]-minLon)*scale;
+    var y = H - (offY + (p[0]-minLat)*scale);
+    return (i===0?'M':'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  var start = points[0], end = points[points.length-1];
+  function pt(p){
+    var x = offX + (p[1]-minLon)*scale;
+    var y = H - (offY + (p[0]-minLat)*scale);
+    return [x.toFixed(1), y.toFixed(1)];
+  }
+  var sp0 = pt(start), sp1 = pt(end);
+  return '<svg class="zwift-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'
+    +'<path d="'+d+'" fill="none" stroke="#3D6880" stroke-width="4" stroke-opacity=".35" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<path id="zwift-route-fg" d="'+d+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+sp0[0]+'" cy="'+sp0[1]+'" r="5" fill="#10B981" stroke="#04080F" stroke-width="2"/>'
+    +'<circle cx="'+sp1[0]+'" cy="'+sp1[1]+'" r="5" fill="'+color+'" stroke="#04080F" stroke-width="2"/>'
+    +'</svg>';
+}
+
 function initMap(){
+  if(cfg.type==='zwift'){
+    var tok = _lxToken();
+    function zwiftNoRoute(){
+      mapWrap.innerHTML =
+        '<div class="indoor-card">'
+        +'<div class="indoor-icon">'+cfg.icon+'</div>'
+        +'<div class="indoor-label">'+cfg.location+'</div>'
+        +'<div class="indoor-sub">'+(ACT.name||sp.label)+' · '+durStr+(ACT.dist_km?' · '+ACT.dist_km.toFixed(1)+' km':'')+'</div>'
+        +'<div class="indoor-sub" style="margin-top:.4rem">Sin ruta del mundo virtual sincronizada</div>'
+        +'</div>';
+    }
+    if(!tok || !ACT.activity_id){ zwiftNoRoute(); return; }
+    fetch(_lxApi()+'/athlete/activities/'+ACT.activity_id+'/track', {headers:{Authorization:'Bearer '+tok}})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(trackData){
+        if(!trackData || !trackData.points || trackData.points.length < 2){ zwiftNoRoute(); return; }
+        var route = trackData.points.map(function(p){ return [p.lat, p.lon]; });
+        var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
+        mapWrap.innerHTML = '<div class="zwift-wrap">'
+          + '<div class="zwift-tag"><strong>'+cfg.location+'</strong>'
+            + (ACT.avg_power ? '⚡ '+ACT.avg_power+'W avg<br>' : '')
+            + (ACT.dist_km ? '📍 '+ACT.dist_km.toFixed(1)+' km<br>' : '')
+            + (ACT.avg_hr ? '❤️ '+ACT.avg_hr+' bpm' : '')
+          + '</div>'
+          + '<div class="zwift-note">Ruta del mundo virtual — trazado real de la sesión, no una ubicación geográfica</div>'
+          + renderZwiftRoute(route, lineColor)
+          + '</div>';
+        requestAnimationFrame(function(){
+          animateRoutePath(document.getElementById('zwift-route-fg'), '#fff', 2400);
+        });
+      })
+      .catch(function(){ zwiftNoRoute(); });
+    return;
+  }
+
   if(cfg.type==='indoor'){
     mapWrap.innerHTML =
       '<div class="indoor-card">'
@@ -462,9 +596,12 @@ function initMap(){
       }).addTo(leafletMap);
 
       var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
-      L.polyline(route, {color:lineColor, weight:10, opacity:.15}).addTo(leafletMap);
+      L.polyline(route, {color:'#3D6880', weight:4, opacity:.35}).addTo(leafletMap);
       var poly = L.polyline(route, {color:lineColor, weight:3, opacity:.95}).addTo(leafletMap);
       leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
+      requestAnimationFrame(function(){
+        animateRoutePath(poly.getElement(), '#fff', 2400);
+      });
 
       function circleIcon(color){
         return L.divIcon({
@@ -510,24 +647,157 @@ function noDataBlock(msg){
 }
 
 var chartsInner = document.getElementById('charts-inner');
-if(chartsInner) chartsInner.innerHTML = noDataBlock('Sin datos de telemetría disponibles. LabX no recibe series segundo a segundo (potencia, FC, cadencia, ritmo) desde Garmin para esta actividad.');
+var zonesGrid   = document.getElementById('zones-grid');
 
-function renderZones(){
-  var zonesGrid = document.getElementById('zones-grid');
-  if(!zonesGrid) return;
-  zonesGrid.style.gridTemplateColumns = '1fr';
-  zonesGrid.innerHTML = noDataBlock('Sin datos de distribución de zonas disponibles. Requiere telemetría segundo a segundo que LabX no sincroniza desde Garmin.');
+var HR_ZONE = {
+  z1:{label:'Z1 Recuperación', color:'#0EA5E9'},
+  z2:{label:'Z2 Aeróbico',     color:'#10B981'},
+  z3:{label:'Z3 Tempo',        color:'#F0A500'},
+  z4:{label:'Z4 Umbral',       color:'#FF6535'},
+  z5:{label:'Z5 VO2max',       color:'#EF4444'}
+};
+var POWER_ZONE = {
+  z1_active_recovery:{label:'Z1 Recuperación', color:'#0EA5E9'},
+  z2_endurance:      {label:'Z2 Resistencia',  color:'#10B981'},
+  z3_tempo:          {label:'Z3 Tempo',        color:'#F0A500'},
+  z4_threshold:      {label:'Z4 Umbral',       color:'#FF6535'},
+  z5_vo2max:         {label:'Z5 VO2max',       color:'#EF4444'},
+  z6_anaerobic:      {label:'Z6 Anaeróbico',   color:'#A855F7'},
+  z7_neuromuscular:  {label:'Z7 Neuromuscular',color:'#EC4899'}
+};
+
+function _sparkline(values, W, H, pad){
+  var idxVals = [];
+  for(var i=0;i<values.length;i++){ if(values[i]!=null) idxVals.push({i:i, v:values[i]}); }
+  if(idxVals.length < 2) return null;
+  var vals = idxVals.map(function(o){ return o.v; });
+  var minV = Math.min.apply(null, vals), maxV = Math.max.apply(null, vals);
+  if(minV===maxV){ minV -= 1; maxV += 1; }
+  var n = values.length, d = '';
+  for(i=0;i<values.length;i++){
+    if(values[i]==null) continue;
+    var x = pad + (i/(n-1))*(W-pad*2);
+    var y = H - pad - ((values[i]-minV)/(maxV-minV))*(H-pad*2);
+    d += (d?'L':'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  }
+  return {d:d, min:minV, max:maxV};
 }
-renderZones();
 
-function renderSplits(){
+function renderChartBlock(name, values, color, unit, avgVal){
+  var W=600, H=110, pad=6;
+  var res = _sparkline(values, W, H, pad);
+  if(!res) return '';
+  return '<div class="chart-block">'
+    + '<div class="chart-lbl"><div class="chart-name">'+name+'</div>'
+    + '<div class="chart-anns">'
+      + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>Prom '+Math.round(avgVal)+' '+unit+'</div>' : '')
+      + '<div class="chart-ann">Máx '+Math.round(res.max)+' '+unit+'</div>'
+    + '</div></div>'
+    + '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+    + '<div class="chart-taxis"><span>Inicio</span><span>Fin</span></div>'
+    + '</div>';
+}
+
+function _fmtSecMin(s){
+  var m = Math.floor(s/60), ss = Math.round(s%60);
+  return m+':'+(ss<10?'0':'')+ss;
+}
+
+function renderZonesReal(zonesData){
+  if(!zonesGrid) return;
+  var cols = [];
+  if(zonesData.hr && zonesData.hr.length){
+    cols.push({title:'Frecuencia Cardíaca', rows:zonesData.hr, def:HR_ZONE});
+  }
+  if(zonesData.power && zonesData.power.length){
+    cols.push({title:'Potencia', rows:zonesData.power, def:POWER_ZONE});
+  }
+  if(!cols.length){
+    zonesGrid.style.gridTemplateColumns = '1fr';
+    zonesGrid.innerHTML = noDataBlock('Sin FC máx / FTP configurados en tu perfil para calcular zonas de esta actividad.');
+    return;
+  }
+  zonesGrid.style.gridTemplateColumns = cols.length>1 ? '1fr 1fr' : '1fr';
+  zonesGrid.innerHTML = cols.map(function(col){
+    return '<div class="zone-col"><div class="zone-title">'+col.title+'</div>'
+      + col.rows.map(function(r){
+          var meta = col.def[r.key] || {label:r.key, color:'var(--muted)'};
+          var range = r.max!=null ? r.min+'–'+r.max : r.min+'+';
+          return '<div class="zone-row">'
+            + '<div class="zone-name" title="'+range+'">'+meta.label+'</div>'
+            + '<div class="zone-bar-bg"><div class="zone-bar-f" data-w="'+r.pct+'" style="background:'+meta.color+'"></div></div>'
+            + '<div class="zone-pct">'+r.pct+'%</div>'
+            + '<div class="zone-min">'+_fmtSecMin(r.seconds)+'</div>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }).join('');
+  // revelar barras ya mismo (no depender solo del IntersectionObserver,
+  // que puede haber disparado antes de que este fetch async terminara)
+  zonesGrid.querySelectorAll('.zone-bar-f[data-w]').forEach(function(b,i){
+    setTimeout(function(){ b.style.width = b.dataset.w+'%'; }, i*55);
+  });
+}
+
+function renderSplitsReal(splits, sport){
   var inner = document.getElementById('splits-inner');
   if(!inner) return;
-  var titleEl = document.getElementById('splits-title');
-  if(titleEl) titleEl.textContent = ACT.sport==='str' ? 'Ejercicios de la Sesión' : 'Parciales';
-  inner.innerHTML = noDataBlock('Sin datos de parciales disponibles. LabX no recibe detalle por segmento/set desde Garmin para esta actividad.');
+  if(!splits || !splits.length){
+    inner.innerHTML = noDataBlock('Sin datos de parciales disponibles para esta actividad.');
+    return;
+  }
+  var isRun = sport==='run';
+  var unitLbl = isRun ? 'Ritmo' : 'Vel. Media';
+  var rows = splits.map(function(s){
+    var distLbl = isRun ? (s.distance_m/1000).toFixed(2)+' km' : (s.distance_m/1000).toFixed(1)+' km';
+    var pace = '—';
+    if(isRun && s.avg_pace_s_per_km){ pace = fmtPace(s.avg_pace_s_per_km); }
+    else if(!isRun && s.duration_s){ pace = ((s.distance_m/1000)/(s.duration_s/3600)).toFixed(1)+' km/h'; }
+    return '<tr>'
+      + '<td>'+s.idx+'</td>'
+      + '<td>'+distLbl+'</td>'
+      + '<td>'+fmtDur(s.duration_s/60)+'</td>'
+      + '<td>'+pace+'</td>'
+      + '<td>'+(s.avg_power!=null ? s.avg_power+' W' : '—')+'</td>'
+      + '<td>'+(s.avg_hr!=null ? s.avg_hr+' bpm' : '—')+'</td>'
+      + '</tr>';
+  }).join('');
+  inner.innerHTML = '<div style="overflow-x:auto"><table class="split-table">'
+    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>Potencia</th><th>FC</th></tr></thead>'
+    + '<tbody>'+rows+'</tbody></table></div>';
 }
-renderSplits();
+
+function renderTelemetry(){
+  var titleEl = document.getElementById('splits-title');
+  if(titleEl) titleEl.textContent = (ACT.sport==='str'||ACT.sport==='gym') ? 'Ejercicios de la Sesión' : 'Parciales';
+
+  function fallbackNoData(){
+    if(chartsInner) chartsInner.innerHTML = noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
+    if(zonesGrid){ zonesGrid.style.gridTemplateColumns='1fr'; zonesGrid.innerHTML = noDataBlock('Sin datos de distribución de zonas disponibles para esta actividad.'); }
+    var inner = document.getElementById('splits-inner');
+    if(inner) inner.innerHTML = noDataBlock('Sin datos de parciales disponibles para esta actividad.');
+  }
+
+  var tok = _lxToken();
+  if(!tok || !ACT.activity_id){ fallbackNoData(); return; }
+
+  fetch(_lxApi()+'/athlete/activities/'+ACT.activity_id+'/telemetry', {headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(!data){ fallbackNoData(); return; }
+      var blocks = '';
+      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, '#FF6535', 'W', ACT.avg_power);
+      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, '#EF4444', 'bpm', ACT.avg_hr);
+      if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, '#F0A500', 'rpm', null);
+      if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, '#10B981', 'm/s', null);
+      if(chartsInner) chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
+
+      renderZonesReal(data.zones || {});
+      renderSplitsReal(data.splits, data.sport);
+    })
+    .catch(function(){ fallbackNoData(); });
+}
+renderTelemetry();
 
 // ─────────────────────────────────────────────────────
 // SCROLL ANIMATIONS + ZONE BAR ANIMATION
@@ -557,6 +827,28 @@ window.goBack = function(){
     location.href='training_plan.html';
   }
 };
+
+} // end boot()
+
+// ─────────────────────────────────────────────────────
+// BOOTSTRAP: traer la actividad real vía API (propia del usuario logueado);
+// si no hay id en la URL, o la llamada falla, usar el dataset estático de respaldo.
+// ─────────────────────────────────────────────────────
+var _staticActivities = (KL_DATA && KL_DATA.activities) || [];
+
+function _bootFromApi(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  var api = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  if(!tok){ boot(_staticActivities); return; }
+
+  fetch(api+'/athlete/activities/'+encodeURIComponent(actId), {headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(liveAct){ boot(liveAct ? [liveAct] : _staticActivities); })
+    .catch(function(){ boot(_staticActivities); });
+}
+
+if(actId){ _bootFromApi(); } else { boot(_staticActivities); }
 
 })();
 </script>

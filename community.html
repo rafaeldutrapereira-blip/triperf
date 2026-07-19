@@ -69,6 +69,13 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .ac-body{padding:.5rem 1rem .75rem}
 .ac-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:.4rem}
 .ac-caption{font-size:.85rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem;white-space:pre-wrap}
+.ac-row{display:flex;align-items:flex-start;gap:.75rem}
+.ac-row.clickable{cursor:pointer;border-radius:8px;margin:-.3rem;padding:.3rem;transition:background .15s}
+.ac-row.clickable:hover{background:var(--surface2)}
+.ac-row.clickable:hover .ac-title{color:var(--cyan)}
+.ac-info{flex:1;min-width:0}
+.ac-map{width:74px;height:74px;flex-shrink:0;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+.ac-map svg{width:100%;height:100%;display:block}
 .ac-stats{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:.5rem}
 .ac-stat{font-size:.72rem;color:var(--muted)}
 .ac-stat strong{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--text)}
@@ -463,6 +470,30 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  function renderMiniMap(points, color) {
+    if (!points || points.length < 2) return '';
+    var lats = points.map(function (p) { return p[0]; });
+    var lons = points.map(function (p) { return p[1]; });
+    var minLat = Math.min.apply(null, lats), maxLat = Math.max.apply(null, lats);
+    var minLon = Math.min.apply(null, lons), maxLon = Math.max.apply(null, lons);
+    var W = 90, H = 90, pad = 6;
+    var spanLat = (maxLat - minLat) || 0.0005;
+    var spanLon = (maxLon - minLon) || 0.0005;
+    // escala uniforme para no deformar el trazado, centrada en el viewBox
+    var scale = Math.min((W - pad * 2) / spanLon, (H - pad * 2) / spanLat);
+    var offX = (W - spanLon * scale) / 2;
+    var offY = (H - spanLat * scale) / 2;
+    var d = points.map(function (p, i) {
+      var x = offX + (p[1] - minLon) * scale;
+      var y = H - (offY + (p[0] - minLat) * scale); // invertir Y (lat sube, SVG y baja)
+      return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
+      '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="6" stroke-opacity=".18" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+  }
+
   function renderActivityCards(cards) {
     var el = document.getElementById('feed-container');
     cards.forEach(function (c) {
@@ -480,11 +511,21 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           '</div>'
         : '';
 
+      var mapColor = c.sport === 'run' ? '#10B981' : (c.sport === 'swim' ? '#0EA5E9' : '#FF6535');
+      var mapHtml = c.route_preview && c.route_preview.length >= 2
+        ? '<div class="ac-map">' + renderMiniMap(c.route_preview, mapColor) + '</div>'
+        : '';
+
       var distStr = c.distance_km > 0 ? c.distance_km + ' km' : '';
       var durStr  = c.duration_min > 0 ? Math.floor(c.duration_min / 60) + 'h ' + Math.round(c.duration_min % 60) + 'm' : '';
       var tssStr  = c.tss ? 'TSS ' + c.tss : '';
       var hrStr   = c.avg_hr ? c.avg_hr + ' bpm' : '';
       var statParts = [distStr, durStr, tssStr, hrStr].filter(Boolean);
+
+      var canOpen = c.is_viewer_activity && c.activity_id;
+      var rowAttrs = canOpen
+        ? ' class="ac-row clickable" onclick="location.href=\'training_detail.html?id=' + c.activity_id + '\'"'
+        : ' class="ac-row"';
 
       var cardId = 'ac-' + c.id;
       var html = '<div class="activity-card" id="' + cardId + '">' +
@@ -498,10 +539,15 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         '</div>' +
         '<div class="ac-body">' +
           recHtml +
-          '<div class="ac-title">' + (c.name || '') + '</div>' +
-          (c.caption ? '<div class="ac-caption">' + _escCaption(c.caption) + '</div>' : '') +
-          '<div class="ac-stats">' +
-            statParts.map(function (s) { return '<span class="ac-stat"><strong>' + s + '</strong></span>'; }).join('') +
+          '<div' + rowAttrs + '>' +
+            '<div class="ac-info">' +
+              '<div class="ac-title">' + (c.name || '') + '</div>' +
+              (c.caption ? '<div class="ac-caption">' + _escCaption(c.caption) + '</div>' : '') +
+              '<div class="ac-stats">' +
+                statParts.map(function (s) { return '<span class="ac-stat"><strong>' + s + '</strong></span>'; }).join('') +
+              '</div>' +
+            '</div>' +
+            mapHtml +
           '</div>' +
         '</div>' +
         '<div class="ac-foot">' +

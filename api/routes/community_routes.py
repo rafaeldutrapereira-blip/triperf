@@ -1480,6 +1480,28 @@ def _get_or_create_post_for_activity(act, db):
     return post
 
 
+def _route_preview_for_activity(activity_id, max_points=40):
+    """Polyline simplificada [[lat,lon],...] para mini-mapa del feed, o None si no hay track GPS."""
+    from pathlib import Path
+    import json as _json
+
+    track_path = Path("data/tracks") / f"{activity_id}.json"
+    if not track_path.exists():
+        return None
+    try:
+        points = _json.loads(track_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not points or len(points) < 2:
+        return None
+
+    stride = max(1, len(points) // max_points)
+    sampled = points[::stride]
+    if sampled[-1] is not points[-1]:
+        sampled.append(points[-1])
+    return [[round(p["lat"], 5), round(p["lon"], 5)] for p in sampled if "lat" in p and "lon" in p]
+
+
 def _build_activity_card_s17(act, viewer_id, db):
     owner    = db.query(User).filter_by(id=act.user_id).first()
     act_date = act.date_iso
@@ -1507,7 +1529,7 @@ def _build_activity_card_s17(act, viewer_id, db):
 
     return {
         "id":          post.id,
-        "activity_id": act.id,
+        "activity_id": act.activity_id,
         "type":        "garmin_activity",
         "kudo_count":  kudo_count,
         "my_kudo":     my_kudo.kudo_type if my_kudo else None,
@@ -1530,6 +1552,7 @@ def _build_activity_card_s17(act, viewer_id, db):
         "avg_hr":       act.avg_hr,
         "avg_pace_min_km": act.pace_str,
         "avg_power_w":  act.avg_power,
+        "route_preview": _route_preview_for_activity(act.activity_id),
         "recovery": {
             "score":      rec.score if rec else None,
             "level":      rec.level if rec else None,
