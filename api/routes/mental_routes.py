@@ -267,20 +267,23 @@ def _get_or_compute_mfs(user_id: str, date_iso: str, db: Session, force: bool = 
 
 @router.get("/dashboard")
 def mental_dashboard(
+    date_iso: Optional[str] = Query(None, description="Fecha local del cliente (YYYY-MM-DD); evita desfase por huso horario vs UTC del servidor"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Vista maestra — score del día + protocolo + tendencia 7d + próxima carrera."""
-    today = _today()
+    today = date_iso or _today()
     mfs   = _get_or_compute_mfs(current_user.id, today, db)
     checkin = db.query(MentalCheckin).filter_by(
         user_id=current_user.id, date_iso=today
     ).first()
 
+    today_date = datetime.strptime(today, "%Y-%m-%d").date()
+
     # 7-day trend
     trend = []
     for i in range(6, -1, -1):
-        d = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=i)).date().isoformat()
+        d = (today_date - timedelta(days=i)).isoformat()
         m = db.query(MentalFatigueScore).filter_by(
             user_id=current_user.id, date_iso=d
         ).first()
@@ -296,8 +299,7 @@ def mental_dashboard(
     pre_race_protocol = None
     if next_race:
         days_to_race = (
-            datetime.strptime(next_race.date_iso, "%Y-%m-%d").date() -
-            datetime.now(timezone.utc).replace(tzinfo=None).date()
+            datetime.strptime(next_race.date_iso, "%Y-%m-%d").date() - today_date
         ).days
         if days_to_race <= 1:
             pre_race_protocol = PROTOCOL_BY_ID.get("race_morning")

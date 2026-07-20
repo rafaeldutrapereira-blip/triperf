@@ -436,6 +436,17 @@ function _authHeaders(extra) {
   return h;
 }
 var checkinData = {};
+
+// Fecha LOCAL del navegador (no UTC) — evita que el "hoy" del servidor
+// (calculado en UTC) se desfase varias horas del día real del usuario
+// en husos horarios detrás de UTC (ej. Chile), donde el check-in de la
+// tarde/noche podía "desaparecer" al cruzar la medianoche UTC.
+function _localDateISO() {
+  var d = new Date();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
 var selectedProtoId = null;
 var selectedProtoRating = 0;
 var breathProto = {id:'box', name:'Caja', inhale:4, hold1:4, exhale:4, hold2:4};
@@ -460,7 +471,7 @@ function switchTab(name) {
 
 // ─── LOAD DASHBOARD ─────────────────────────────────────────────────────────
 function loadDashboard() {
-  fetch(API + '/mental/dashboard', {credentials:'include', headers:_authHeaders()})
+  fetch(API + '/mental/dashboard?date_iso=' + _localDateISO(), {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       renderMFS(d.today);
@@ -577,6 +588,7 @@ function setStars(key, val) {
 
 function submitCheckin() {
   var payload = {
+    date_iso:   _localDateISO(),
     anxiety:    checkinData.anxiety    || null,
     motivation: checkinData.motivation || null,
     focus:      checkinData.focus      || null,
