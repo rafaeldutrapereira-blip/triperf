@@ -53,9 +53,16 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 .mt2{margin-top:1.5rem}
-.map-zones-row{display:grid;grid-template-columns:1.3fr 1fr;gap:1.25rem;align-items:start}
-.map-zones-row #s-map,.map-zones-row #s-zones{margin-top:0}
-@media(max-width:860px){.map-zones-row{grid-template-columns:1fr}}
+
+/* ── DETAIL TABS (Zonas / Gráficos / Parciales) — mismo estándar underline
+   que athlete_profile.html ── */
+.dt-tabs{display:flex;gap:.2rem;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.dt-tabs::-webkit-scrollbar{display:none}
+.dt-tab-btn{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.75rem 1.2rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:color .18s,border-color .18s;margin-bottom:-1px}
+.dt-tab-btn:hover{color:var(--text)}
+.dt-tab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+.dt-pane{display:none}
+.dt-pane.active{display:block}
 
 /* ── MAP ── */
 .map-wrap{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
@@ -183,27 +190,33 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 <div class="main" id="act-main" style="display:none">
   <div class="c">
 
-    <!-- MAP + ZONES side by side -->
-    <div class="map-zones-row">
-      <div class="sr" id="s-map">
-        <div class="map-wrap" id="map-wrap">
-          <!-- Leaflet map, indoor card, or pool SVG injected here -->
-        </div>
-      </div>
-
-      <div class="panel sr" id="s-zones">
-        <div class="panel-head"><div class="panel-title" id="zones-title">Distribución de Zonas</div></div>
-        <div class="zone-grid" id="zones-grid"></div>
+    <!-- MAP (hero, ancho completo) -->
+    <div class="sr" id="s-map">
+      <div class="map-wrap" id="map-wrap">
+        <!-- Leaflet map, indoor card, or pool SVG injected here -->
       </div>
     </div>
 
-    <!-- CHARTS -->
-    <div class="panel mt2 sr" id="s-charts">
+    <!-- TABS: Zonas / Gráficos / Parciales — cada bloque a ancho completo,
+         nunca compiten por altura entre sí (parciales puede tener 5 filas
+         o 30, según la actividad; emparejarlo en columnas con otra cosa
+         de alto fijo se veía desbalanceado) -->
+    <div class="dt-tabs mt2" id="dt-tabs">
+      <button class="dt-tab-btn active" onclick="switchDetailTab('zones',this)">Distribución de Zonas</button>
+      <button class="dt-tab-btn" onclick="switchDetailTab('charts',this)">Gráficos</button>
+      <button class="dt-tab-btn" onclick="switchDetailTab('splits',this)">Parciales</button>
+    </div>
+
+    <div class="panel dt-pane active" id="s-zones">
+      <div class="panel-head"><div class="panel-title" id="zones-title">Distribución de Zonas</div></div>
+      <div class="zone-grid" id="zones-grid"></div>
+    </div>
+
+    <div class="panel dt-pane" id="s-charts">
       <div id="charts-inner"></div>
     </div>
 
-    <!-- SPLITS / EXERCISES -->
-    <div class="panel mt2 sr" id="s-splits">
+    <div class="panel dt-pane" id="s-splits">
       <div class="panel-head"><div class="panel-title" id="splits-title">Detalles por Segmento</div></div>
       <div id="splits-inner"></div>
     </div>
@@ -824,9 +837,7 @@ function renderZonesReal(zonesData, ownerNote){
     zonesGrid.innerHTML = noDataBlock('Sin FC máx / FTP configurados en tu perfil para calcular zonas de esta actividad.');
     return;
   }
-  // Siempre 1 columna: el panel de zonas ahora vive al lado del mapa
-  // (mitad del ancho de página), 2 columnas internas quedarían muy angostas.
-  zonesGrid.style.gridTemplateColumns = '1fr';
+  zonesGrid.style.gridTemplateColumns = cols.length>1 ? '1fr 1fr' : '1fr';
   zonesGrid.innerHTML = cols.map(function(col){
     return '<div class="zone-col"><div class="zone-title">'+col.title+'</div>'
       + col.rows.map(function(r){
@@ -949,6 +960,17 @@ window.goBack = function(){
   } else {
     location.href='training_plan.html';
   }
+};
+
+// ─────────────────────────────────────────────────────
+// DETAIL TABS: Zonas / Gráficos / Parciales
+// ─────────────────────────────────────────────────────
+window.switchDetailTab = function(name, btn){
+  document.querySelectorAll('.dt-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.dt-pane').forEach(function(p){ p.classList.remove('active'); });
+  var pane = document.getElementById('s-' + name);
+  if(pane) pane.classList.add('active');
 };
 
 } // end boot()
