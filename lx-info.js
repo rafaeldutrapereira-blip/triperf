@@ -286,6 +286,14 @@ var METRICS = {
     unidad: 'mg/hora',
   },
 
+  insight: {
+    nombre: 'Insight del Día',
+    emoji: '🧭',
+    definicion: 'Es la <strong>conclusión combinada</strong> de tus señales de carga y recuperación de hoy — no un consejo genérico. LabX cruza tu <strong>TSB</strong> (forma) y <strong>ACWR</strong> (riesgo de carga) con tu <strong>HRV</strong>, horas de sueño y tendencia de FC en reposo de anoche, y te devuelve una sola recomendación priorizada: primero avisa si hay algo que compromete tu salud (ACWR o TSB en zona extrema), después si hay fatiga combinada con mala recuperación, y solo si nada de eso aplica, te dice que estás en rango normal.',
+    formula: 'TSB + ACWR (carga) cruzados con HRV, sueño y FC en reposo (recuperación) → una recomendación accionable',
+    pro_tip: 'Si el insight menciona un factor específico (ej. "tu HRV bajó 12%"), ese es el dato que más está pesando en la recomendación de hoy — no lo ignores aunque el resto se vea bien. Y si no hay datos suficientes todavía, LabX te lo dice directamente en vez de inventar una recomendación.',
+  },
+
 };
 
 /* ── HTML del panel ──────────────────────────────────────────────────── */
