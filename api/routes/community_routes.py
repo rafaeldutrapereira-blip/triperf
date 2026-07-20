@@ -1129,21 +1129,23 @@ def public_profile(
     db:      Session = Depends(get_db),
     me:      User    = Depends(get_current_user),
 ):
-    user = db.query(User).filter(User.id == user_id, User.activo == True).first()
+    """Perfil público de un usuario. user_id='me' → el propio usuario logueado."""
+    target_id = me.id if user_id == "me" else user_id
+    user = db.query(User).filter(User.id == target_id, User.activo == True).first()
     if not user:
         raise HTTPException(404, "Usuario no encontrado")
 
-    n_followers = db.query(func.count(Follow.id)).filter(Follow.followed_id == user_id).scalar()
-    n_following = db.query(func.count(Follow.id)).filter(Follow.follower_id == user_id).scalar()
+    n_followers = db.query(func.count(Follow.id)).filter(Follow.followed_id == target_id).scalar()
+    n_following = db.query(func.count(Follow.id)).filter(Follow.follower_id == target_id).scalar()
     is_following = db.query(Follow).filter(
-        Follow.follower_id == me.id, Follow.followed_id == user_id
+        Follow.follower_id == me.id, Follow.followed_id == target_id
     ).first() is not None
 
     # Stats del año actual
     yr = date.today().year
     from ..models import GarminActivity as GA
     year_acts = db.query(GA).filter(
-        GA.user_id  == user_id,
+        GA.user_id  == target_id,
         GA.date_iso >= f"{yr}-01-01",
         GA.date_iso <= f"{yr}-12-31",
     ).all()
@@ -1152,7 +1154,7 @@ def public_profile(
     posts = (
         db.query(CommunityPost)
         .filter(
-            CommunityPost.user_id    == user_id,
+            CommunityPost.user_id    == target_id,
             CommunityPost.visibility == "public",
         )
         .order_by(desc(CommunityPost.created_at))
@@ -1160,14 +1162,20 @@ def public_profile(
         .all()
     )
 
+    country = getattr(user, "country_code", None)
     return {
-        "user_id":     user.id,
-        "nombre":      user.nombre,
-        "rol":         user.rol,
-        "n_followers": n_followers,
-        "n_following": n_following,
-        "is_following":is_following,
-        "year_stats": {
+        "user": {
+            "id":             user.id,
+            "name":           user.nombre or user.email.split("@")[0],
+            "avatar_initial": ((user.nombre or user.email)[0]).upper(),
+            "country_code":   country,
+            "country_flag":   COUNTRY_FLAG.get(country or "", ""),
+        },
+        "rol":              user.rol,
+        "follower_count":   n_followers,
+        "following_count":  n_following,
+        "is_following":      is_following,
+        "season_stats": {
             "activities": len(year_acts),
             "km":         round(sum(a.dist_km or 0 for a in year_acts), 1),
             "hours":      round(sum(a.dur_min or 0 for a in year_acts) / 60, 1),
