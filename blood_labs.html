@@ -227,6 +227,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 <!-- ══ TAB 1: RESUMEN CLÍNICO ══ -->
 <div class="tab-pane on" id="tab-resumen">
 
+<div id="resumen-empty-state" style="display:none">
+  <p style="color:var(--dim);padding:2rem">No hay exámenes registrados. Usa la pestaña Registrar Examen para agregar el primero.</p>
+</div>
+
+<div id="resumen-content">
+
   <!-- KPI 3 cards -->
   <div class="g3 sr" id="kpi-section">
     <div class="kpi" id="kpi-muscle">
@@ -275,6 +281,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     <div class="sec-h">Tabla Completa de Biomarcadores</div>
     <div id="bm-table-container"></div>
   </div>
+
+</div>
 </div>
 
 <!-- ══ TAB 2: TENDENCIAS ══ -->
@@ -400,7 +408,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="data/blood_labs_data.js"></script>
-<script src="data/dashboard_data.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -577,7 +584,15 @@ function switchExam() {
 // RENDER ALL
 // ══════════════════════════════════════════════════════════════
 function renderAll() {
-  if(!EXAMS.length){ document.getElementById('tab-resumen').innerHTML='<p style="color:var(--dim);padding:2rem">No hay exámenes registrados. Usa la pestaña Registrar Examen para agregar el primero.</p>'; return; }
+  var emptyState = document.getElementById('resumen-empty-state');
+  var content    = document.getElementById('resumen-content');
+  if(!EXAMS.length){
+    if(emptyState) emptyState.style.display = '';
+    if(content)    content.style.display    = 'none';
+    return;
+  }
+  if(emptyState) emptyState.style.display = 'none';
+  if(content)    content.style.display    = '';
   var latest = EXAMS[EXAM_IDX];
   var prev   = COMP_IDX >= 0 && COMP_IDX !== EXAM_IDX ? EXAMS[COMP_IDX] : null;
   var lv = latest.values;
@@ -1067,20 +1082,31 @@ function saveExam() {
     values: values
   };
 
-  // Update KL_BLOOD in memory
-  var idx = EXAMS.findIndex(function(e){ return e.date === dateVal; });
-  if(idx >= 0){ EXAMS[idx] = newExam; }
-  else { EXAMS.push(newExam); EXAMS.sort(function(a,b){ return a.date<b.date?-1:1; }); }
+  var tok = _blApiToken();
+  if(!tok){ showSaveMsg('⚠️ Sesión expirada — volvé a iniciar sesión para guardar.','err'); return; }
 
-  // Save to localStorage (persistence within session)
-  localStorage.setItem('kl_blood_labs', JSON.stringify({biomarkers:BM, exams:EXAMS}));
+  fetch(_blApiBase()+'/athlete/blood-labs', {
+    method: 'POST', headers: {'Content-Type':'application/json', Authorization:'Bearer '+tok},
+    body: JSON.stringify({
+      date_iso: newExam.date, lab_name: newExam.lab, context: newExam.context,
+      values_json: JSON.stringify(values)
+    })
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(row){
+      var savedExam = _examFromRow(row);
+      var idx = EXAMS.findIndex(function(e){ return e.date === dateVal; });
+      if(idx >= 0){ EXAMS[idx] = savedExam; }
+      else { EXAMS.push(savedExam); EXAMS.sort(function(a,b){ return a.date<b.date?-1:1; }); }
 
-  EXAM_IDX = EXAMS.length-1;
-  COMP_IDX = EXAMS.length-2;
-  buildExamSelectors();
-  renderAll();
-
-  showSaveMsg('✅ Examen del '+dateVal+' guardado con '+Object.keys(values).length+' marcadores.','ok');
+      EXAM_IDX = EXAMS.length-1;
+      COMP_IDX = EXAMS.length-2;
+      buildExamSelectors();
+      renderAll();
+      showSaveMsg('✅ Examen del '+dateVal+' guardado con '+Object.keys(values).length+' marcadores.','ok');
+    })
+    .catch(function(){
+      showSaveMsg('⚠️ No se pudo guardar el examen — revisá tu conexión e intentá de nuevo.','err');
+    });
 }
 
 function clearForm() {
@@ -1114,15 +1140,44 @@ var io = new IntersectionObserver(function(e){e.forEach(function(x){if(x.isInter
 document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
 
 // ══════════════════════════════════════════════════════════════
+// API — datos reales de /athlete/blood-labs (BloodLabExam en la BD)
+// ══════════════════════════════════════════════════════════════
+function _blApiToken(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  return tok;
+}
+function _blApiBase(){
+  return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+}
+function _examFromRow(row){
+  var values = {};
+  try{ values = JSON.parse(row.values_json||'{}'); }catch(e){}
+  return { id: row.id, date: row.date_iso, lab: row.lab_name || 'Laboratorio Clínico', context: row.context || '', values: values };
+}
+
+// ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 (function init(){
-  // Try localStorage first (user may have saved more exams)
-  var stored = localStorage.getItem('kl_blood_labs');
-  if(stored){ try{ var d=JSON.parse(stored); if(d.exams&&d.exams.length>=EXAMS.length){ EXAMS.splice(0,EXAMS.length); d.exams.forEach(function(e){ EXAMS.push(e); }); if(d.biomarkers) Object.assign(BM,d.biomarkers); } }catch(e){} }
   buildExamSelectors();
   buildForm();
   renderAll();
+
+  var tok = _blApiToken();
+  if(!tok) return;
+  fetch(_blApiBase()+'/athlete/blood-labs', {headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(rows){
+      if(!rows) return; // sin conexión/permiso: se queda con lo que ya había en pantalla (vacío por defecto)
+      EXAMS.splice(0, EXAMS.length);
+      rows.map(_examFromRow).sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(e){ EXAMS.push(e); });
+      EXAM_IDX = EXAMS.length-1;
+      COMP_IDX = EXAMS.length-2;
+      buildExamSelectors();
+      renderAll();
+    })
+    .catch(function(){});
 })();
 </script>
 <script src="auth.js"></script>
