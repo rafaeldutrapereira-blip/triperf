@@ -96,6 +96,17 @@ def _new_id() -> str:
     return str(_uuid_mod.uuid4())
 
 
+def _avatar_initials(name: str) -> str:
+    """Iniciales de nombre + apellido para el avatar (ej. 'Rafael Dutra
+    Pereira' -> 'RP'). Con un solo nombre, o vacío, cae a una sola letra."""
+    parts = [p for p in (name or "").strip().split() if p]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][0].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
 def _notif(
     db:        Session,
     user_id:   str,
@@ -297,10 +308,13 @@ def follow_suggestions(
     for u in candidates:
         if u and u.id not in seen:
             seen.add(u.id)
+            country = getattr(u, "country_code", None)
             result.append({
-                "user_id": u.id,
-                "nombre":  u.nombre or u.email,
-                "reason":  "Comparte un grupo contigo",
+                "user_id":        u.id,
+                "nombre":         u.nombre or u.email,
+                "avatar_initial": _avatar_initials(u.nombre or u.email),
+                "country_flag":   COUNTRY_FLAG.get(country or "", ""),
+                "reason":         "Comparte un grupo contigo",
             })
 
     return result[:8]
@@ -1167,7 +1181,7 @@ def public_profile(
         "user": {
             "id":             user.id,
             "name":           user.nombre or user.email.split("@")[0],
-            "avatar_initial": ((user.nombre or user.email)[0]).upper(),
+            "avatar_initial": _avatar_initials(user.nombre or user.email),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
@@ -1554,7 +1568,7 @@ def _build_activity_card_s17(act, viewer_id, db):
         "user": {
             "id":             owner.id if owner else None,
             "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "—",
-            "avatar_initial": ((owner.nombre or owner.email)[0]).upper() if owner else "?",
+            "avatar_initial": _avatar_initials(owner.nombre or owner.email) if owner else "?",
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
@@ -1692,7 +1706,7 @@ def latam_leaderboard(
             "user": {
                 "id":             u.id,
                 "name":           (u.nombre or u.email.split("@")[0]),
-                "avatar_initial": ((u.nombre or u.email)[0]).upper(),
+                "avatar_initial": _avatar_initials(u.nombre or u.email),
                 "country_code":   country,
                 "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             },
@@ -1755,7 +1769,7 @@ def search_athletes_s17(
         results.append({
             "id":             u.id,
             "name":           u.nombre or u.email.split("@")[0],
-            "avatar_initial": ((u.nombre or u.email)[0]).upper(),
+            "avatar_initial": _avatar_initials(u.nombre or u.email),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             "is_following":   u.id in following_ids,

@@ -40,6 +40,36 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 @media(max-width:600px){.g5,.g3,.g2{grid-template-columns:1fr}}
 .mt2{margin-top:1.5rem}.mt1{margin-top:1rem}
 
+/* ── 3-COLUMN LAYOUT (estilo Strava/Instagram) ── */
+.community-layout{display:grid;grid-template-columns:240px minmax(0,1fr) 280px;gap:1.5rem;align-items:start}
+.cl-side{position:sticky;top:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.cl-center{min-width:0}
+@media(max-width:1100px){
+  .community-layout{grid-template-columns:1fr}
+  .cl-side{display:none}
+}
+
+.cl-profile-card{padding:1.5rem 1.25rem;text-align:center}
+.cl-profile-av{width:56px;height:56px;margin:0 auto .7rem;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--cyan)}
+.cl-profile-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
+.cl-profile-flag{font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.06em;margin-top:.15rem}
+.cl-profile-stats{display:flex;justify-content:center;gap:1.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border2)}
+.cl-profile-n{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;color:var(--text)}
+.cl-profile-l{font-family:'Oswald',sans-serif;font-size:.55rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem}
+.cl-profile-km{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--cyan);letter-spacing:.04em;margin-top:.85rem}
+
+.cl-mini-panel{padding:1.1rem}
+.cl-mini-head{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem}
+.cl-sugg-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem}
+.cl-sugg-av{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;color:var(--cyan);flex-shrink:0}
+.cl-sugg-name{font-size:.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-sugg-reason{font-size:.63rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-lb-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;font-size:.78rem}
+.cl-lb-rank{width:18px;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;color:var(--dim);text-align:center}
+.cl-lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-lb-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--cyan)}
+.cl-empty{font-size:.72rem;color:var(--dim);line-height:1.5}
+
 /* ── PAGE HEADER ── */
 .ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
 .ph-inner{padding:1.5rem 0 1.2rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
@@ -193,6 +223,26 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <div style="padding:1.75rem 0 5rem">
 <div class="c">
 
+<div class="community-layout">
+
+<!-- ══ LEFT SIDEBAR: mini perfil ══ -->
+<aside class="cl-side cl-side-left">
+  <div class="panel cl-profile-card" id="cl-profile-card">
+    <div class="cl-profile-av" id="cl-profile-av">?</div>
+    <div class="cl-profile-name" id="cl-profile-name">—</div>
+    <div class="cl-profile-flag" id="cl-profile-flag"></div>
+    <div class="cl-profile-stats">
+      <div><div class="cl-profile-n" id="cl-profile-followers">—</div><div class="cl-profile-l">Seguidores</div></div>
+      <div><div class="cl-profile-n" id="cl-profile-following">—</div><div class="cl-profile-l">Siguiendo</div></div>
+    </div>
+    <div class="cl-profile-km" id="cl-profile-km">— km esta temporada</div>
+    <button class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-top:.9rem" onclick="switchTab('profile',document.querySelectorAll('.tab-btn')[4])">Ver mi perfil</button>
+  </div>
+</aside>
+
+<!-- ══ CENTER: tabs + contenido (igual que antes) ══ -->
+<div class="cl-center">
+
 <!-- ══ TABS ══ -->
 <div class="tabs-bar sr" id="tabs-bar">
   <button class="tab-btn on"  onclick="switchTab('feed',this)">🏃 Feed</button>
@@ -310,6 +360,24 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     </div>
   </div>
 </div>
+
+</div>
+<!-- fin .cl-center -->
+
+<!-- ══ RIGHT SIDEBAR: sugerencias + leaderboard ══ -->
+<aside class="cl-side cl-side-right">
+  <div class="panel cl-mini-panel">
+    <div class="cl-mini-head">Sugerencias para seguir</div>
+    <div id="cl-suggestions"></div>
+  </div>
+  <div class="panel cl-mini-panel">
+    <div class="cl-mini-head">Top Semanal · TSS</div>
+    <div id="cl-mini-leaderboard"></div>
+  </div>
+</aside>
+
+</div>
+<!-- fin .community-layout -->
 
 </div>
 </div>
@@ -489,6 +557,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   }
 
   window.loadMoreFeed = function () { loadFeed(false); };
+
+  function _avatarInitials(name) {
+    var parts = (name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 
   function _escCaption(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -962,12 +1037,88 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   loadPrivacyPrefs();
 
   // ═════════════════════════════════════════════════════════════════════════
+  // SIDEBAR: mini perfil + sugerencias + leaderboard (layout 3 columnas)
+  // ═════════════════════════════════════════════════════════════════════════
+
+  function loadSidebarProfile() {
+    fetch(API + '/community/profile/me', { headers: hdrs })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        var u = d.user || {};
+        var ss = d.season_stats || {};
+        var av = document.getElementById('cl-profile-av');
+        if (av) av.textContent = u.avatar_initial || '?';
+        var nm = document.getElementById('cl-profile-name');
+        if (nm) nm.textContent = u.name || '—';
+        var fl = document.getElementById('cl-profile-flag');
+        if (fl) fl.textContent = (u.country_flag ? u.country_flag + ' ' : '') + (u.country_code || '');
+        var fo = document.getElementById('cl-profile-followers');
+        if (fo) fo.textContent = d.follower_count || 0;
+        var fg = document.getElementById('cl-profile-following');
+        if (fg) fg.textContent = d.following_count || 0;
+        var km = document.getElementById('cl-profile-km');
+        if (km) km.textContent = (ss.km || 0) + ' km esta temporada';
+      }).catch(function () {});
+  }
+
+  function loadSidebarSuggestions() {
+    fetch(API + '/community/suggestions', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var users = Array.isArray(d) ? d : (d.suggestions || d.users || []);
+        var el = document.getElementById('cl-suggestions');
+        if (!el) return;
+        if (!users.length) {
+          el.innerHTML = '<div class="cl-empty">No hay sugerencias por ahora — probá buscar atletas en Descubrir.</div>';
+          return;
+        }
+        el.innerHTML = users.slice(0, 4).map(function (u) {
+          var name = u.nombre || u.name || '—';
+          var initial = u.avatar_initial || _avatarInitials(name);
+          return '<div class="cl-sugg-row">' +
+            '<div class="cl-sugg-av">' + initial + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div class="cl-sugg-name">' + name + '</div>' +
+              '<div class="cl-sugg-reason">' + (u.reason || '') + '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  function loadSidebarLeaderboard() {
+    fetch(API + '/community/leaderboard?scope=social&metric=tss&period=week&limit=5', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var el = document.getElementById('cl-mini-leaderboard');
+        if (!el) return;
+        var rows = d.leaderboard || [];
+        if (!rows.length) {
+          el.innerHTML = '<div class="cl-empty">Seguí atletas para ver el ranking semanal.</div>';
+          return;
+        }
+        el.innerHTML = rows.map(function (r) {
+          var medal = r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank;
+          return '<div class="cl-lb-row">' +
+            '<div class="cl-lb-rank">' + medal + '</div>' +
+            '<div class="cl-lb-name">' + (r.user.country_flag ? r.user.country_flag + ' ' : '') + r.user.name + '</div>' +
+            '<div class="cl-lb-val">' + Math.round(r.value) + '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
   // INIT
   // ═════════════════════════════════════════════════════════════════════════
 
   loadStats();
   loadRecentActivities();
   loadFeed(true);
+  loadSidebarProfile();
+  loadSidebarSuggestions();
+  loadSidebarLeaderboard();
 
   setTimeout(function () {
     document.getElementById('tabs-bar').classList.add('vis');
