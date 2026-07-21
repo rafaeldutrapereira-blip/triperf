@@ -287,6 +287,7 @@ def build_daily_insight(
     sleep_total_h: Optional[float] = None,
     sleep_trend: Optional[float] = None,
     rhr_trend: Optional[float] = None,
+    acwr_by_sport: Optional[dict] = None,
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -324,47 +325,98 @@ def build_daily_insight(
             "tone": sleep_tone, "delta": None,
         })
 
-    def _base(severity, headline, message, cta=None):
+    def _base(severity, headline, message, message_technical=None, cta=None, cta_href=None):
+        # message: lenguaje llano, sin jerga ni números — lo que ve todo el
+        # mundo por default. message_technical: la versión con TSB/ACWR/ATL
+        # exactos, detrás del toggle "ver por qué" para quien quiera el dato duro.
+        # cta_href: a dónde lleva el botón — explícito por caso, en vez de
+        # inferirlo del severity en el frontend (eso mandaba todos los casos
+        # "reduce" a recovery.html, aunque el CTA hablara de carga/ACWR).
         return {"severity": severity, "headline": headline, "message": message,
-                "drivers": drivers, "cta_label": cta}
+                "message_technical": message_technical or message,
+                "drivers": drivers, "cta_label": cta, "cta_href": cta_href}
 
     # 1. Combinación crítica: mala recuperación (HRV/sueño) + carga ya alta
     if hrv_down and poor_sleep and (tsb < -8 or acwr_zone in ("warning", "danger")):
         hrv_pct_txt = f" ({hrv_pct}%)" if hrv_pct else ""
         return _base(
             "reduce", "Reducir carga hoy",
+            "Tu cuerpo no se recuperó bien anoche y venís acumulando cansancio de varios días. "
+            "Hoy conviene una sesión suave o descanso — evita los intervalos de alta intensidad.",
             f"Tu HRV bajó{hrv_pct_txt} a {round(hrv_last_night)}ms y tu forma (TSB) está en {tsb:.0f} "
             f"con fatiga acumulada (ATL {atl:.0f}). Sumado a que dormiste menos de lo habitual, hoy conviene "
             f"una sesión aeróbica suave o descanso — evita intervalos de alta intensidad.",
             "Ver protocolo de recuperación sugerido",
+            "recovery.html",
         )
 
     # 2. ACWR en zona de riesgo — prioridad de seguridad
     if acwr_zone == "danger":
         return _base(
             "reduce", "Riesgo de lesión",
+            "Subiste tu carga de entrenamiento muy rápido esta semana respecto a tus semanas previas. "
+            "Bajale el volumen o la intensidad hoy para reducir el riesgo de lesión.",
             f"Tu ACWR es {acwr:.2f}, muy por encima del rango seguro (0.8–1.3). Subiste la carga demasiado rápido "
             f"esta semana respecto a tu promedio de 28 días — reduce volumen o intensidad hoy.",
             "Ver histórico de carga",
+            "detalle.html?metric=acwr",
         )
+
+    # 2.5. Riesgo oculto por disciplina: el ACWR agregado puede verse bien
+    # mientras UNA disciplina específica tiene un pico peligroso de carga —
+    # las lesiones por sobreuso son tejido-específicas, así que un pico en
+    # una sola disciplina no se "diluye" promediando con el resto.
+    if acwr_by_sport:
+        risky_sports = [
+            s for s in acwr_by_sport.values()
+            if s.get("zone") == "danger" and not s.get("insufficient_data") and s.get("acwr") is not None
+        ]
+        if risky_sports:
+            worst = max(risky_sports, key=lambda s: s["acwr"])
+            drivers.append({
+                "label": "ACWR " + worst["label"], "value": f"{worst['acwr']:.2f}",
+                "tone": "bad", "delta": None,
+            })
+            return _base(
+                "reduce", f"Riesgo de lesión en {worst['label']}",
+                f"Tu carga general se ve bien, pero en {worst['label'].lower()} subiste el volumen mucho más rápido "
+                f"que en el resto de tu entrenamiento. Bajale el ritmo en esa disciplina esta semana.",
+                f"ACWR de {worst['label']} = {worst['acwr']:.2f} (zona de riesgo, >1.5) mientras el ACWR general es "
+                f"{acwr:.2f} ({acwr_zone}). Las lesiones por sobreuso son específicas de tejido — un pico aislado en "
+                f"una disciplina no se compensa con el resto.",
+                "Ver ACWR por disciplina",
+                "detalle.html?metric=acwr",
+            )
 
     # 3. Fatiga acumulada profunda (TSB muy negativo) aunque HRV/sueño no acompañen datos
     if tsb < -20:
         return _base(
             "caution", "Fatiga acumulada",
+            "Venís acumulando cansancio por varios días seguidos de entrenamiento exigente. "
+            "Mantené la intensidad baja y priorizá el descanso esta semana.",
             f"Tu TSB está en {tsb:.0f} — nivel de fatiga alto tras varios días de carga sostenida (ATL {atl:.0f}). "
             f"Mantén la intensidad baja y prioriza descanso esta semana para no entrar en sobreentrenamiento.",
             "Ver histórico PMC",
+            "detalle.html?metric=ctl",
         )
 
     # 4. Señal única de alerta (HRV o sueño o FC reposo, sin combinarse con carga alta)
     if hrv_down or poor_sleep or rhr_up:
         parts = []
-        if hrv_down:   parts.append(f"tu HRV bajó a {round(hrv_last_night)}ms")
-        if poor_sleep: parts.append("dormiste menos de lo habitual")
-        if rhr_up:     parts.append(f"tu FC en reposo subió {rhr_trend:+.0f}bpm")
+        parts_plain = []
+        if hrv_down:
+            parts.append(f"tu HRV bajó a {round(hrv_last_night)}ms")
+            parts_plain.append("tu recuperación nocturna bajó")
+        if poor_sleep:
+            parts.append("dormiste menos de lo habitual")
+            parts_plain.append("dormiste menos de lo habitual")
+        if rhr_up:
+            parts.append(f"tu FC en reposo subió {rhr_trend:+.0f}bpm")
+            parts_plain.append("tu frecuencia cardíaca en reposo subió")
         return _base(
             "caution", "Presta atención a tu recuperación",
+            f"Hoy {', '.join(parts_plain)}. Tu entrenamiento sigue en un nivel razonable, pero prestá atención "
+            f"a cómo te sentís antes de una sesión exigente.",
             f"Hoy {', '.join(parts)}. Tu carga de entrenamiento (TSB {tsb:.0f}, ACWR {acwr:.2f}) todavía está en rango "
             f"razonable, pero vale la pena monitorear cómo te sientes antes de una sesión exigente.",
         )
@@ -373,6 +425,8 @@ def build_daily_insight(
     if tsb > 15 and acwr_zone in ("optimal", "low") and not hrv_down:
         return _base(
             "good", "Buen momento para exigir",
+            "Estás en tu mejor momento de forma y tu recuperación se ve estable. "
+            "Es un buen día para una sesión de calidad o un test.",
             f"Tu forma está en su punto más alto (TSB {tsb:.0f}) con carga en rango saludable (ACWR {acwr:.2f}) "
             f"y tu recuperación se ve estable. Es un buen día para una sesión de calidad o un test.",
         )
@@ -380,6 +434,7 @@ def build_daily_insight(
     # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
     return _base(
         "neutral", "Todo en rango normal",
+        "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy. Seguí tu plan con normalidad.",
         f"Tu carga (TSB {tsb:.0f}, ACWR {acwr:.2f}) y tu recuperación están dentro de lo esperado hoy. "
         f"Sigue tu plan de entrenamiento con normalidad.",
     )
