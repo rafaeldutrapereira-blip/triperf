@@ -383,6 +383,13 @@ function _render(metricId, currentValue){
     try { rdData = JSON.parse(currentValue); } catch(e){ rdData = null; }
   }
 
+  // Insight del día pasa el objeto real ya calculado por el backend
+  // (severity, headline, message, drivers[]) — ver window._lastInsight
+  var inData = null;
+  if(metricId === 'insight' && currentValue){
+    try { inData = JSON.parse(currentValue); } catch(e){ inData = null; }
+  }
+
   var activeRange = _findRange(m, pmcData ? pmcData.tsb : (rdData ? rdData.drs : currentValue));
   var html = '';
 
@@ -436,6 +443,34 @@ function _render(metricId, currentValue){
     if(rdData.training_guidance){
       html += '<div class="li-section-title">Guía para hoy</div>';
       html += '<div class="li-def" style="font-size:.8rem">'+rdData.training_guidance+'</div>';
+    }
+  } else if(inData){
+    var sevColors = {reduce:'#EF4444', caution:'#F59E0B', good:'#10B981', neutral:'#6B7280'};
+    var icol = sevColors[inData.severity] || sevColors.neutral;
+    html += '<div class="li-current-box" style="background:'+icol+'12;border-color:'+icol+'33">'
+      +'<div class="li-cb-label">Tu insight de hoy</div>'
+      +'<div class="li-cb-interp"><strong style="color:'+icol+'">'+(inData.headline||'')+'</strong></div>'
+      +'<div class="li-def" style="font-size:.8rem;margin-top:.4rem">'+(inData.message||'')+'</div>'
+      +(inData.message_technical && inData.message_technical !== inData.message
+        ? '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>Detalle técnico:</strong> '+inData.message_technical+'</div>'
+        : '')
+      +'</div>';
+
+    if(inData.drivers && inData.drivers.length){
+      html += '<div class="li-section-title">Señales que se cruzaron para esta recomendación</div>';
+      html += '<div class="li-range-bar">';
+      var toneColors = {bad:'#EF4444', caution:'#F59E0B', good:'#10B981', neutral:'#6B7280'};
+      inData.drivers.forEach(function(dr){
+        var dcol = toneColors[dr.tone] || toneColors.neutral;
+        html += '<div class="li-range-row">'
+          +'<div class="li-range-dot" style="background:'+dcol+'"></div>'
+          +'<div style="flex:1">'
+          +'<div class="li-range-label" style="color:'+dcol+';display:flex;justify-content:space-between;gap:.5rem">'
+          +'<span>'+dr.label+'</span><span>'+dr.value+(dr.delta?' '+dr.delta:'')+'</span>'
+          +'</div>'
+          +'</div></div>';
+      });
+      html += '</div>';
     }
   } else if(metricId === 'readiness' && currentValue === null){
     html += '<div class="li-def" style="font-size:.78rem;color:#6B7280;font-style:italic;margin-bottom:1rem">No se pudo cargar tu desglose en vivo — mostrando solo la referencia general.</div>';
@@ -616,6 +651,13 @@ window.lxInfo = {
     });
   },
 
+  /** Muestra el Insight del Día con su severidad, mensaje y drivers reales
+   *  (guardados por dashboard.html en window._lastInsight al renderizarlo). */
+  showInsightLive: function(){
+    var data = (typeof window !== 'undefined') ? window._lastInsight : null;
+    lxInfo.show('insight', data ? JSON.stringify(data) : null);
+  },
+
   /** Muestra la Dieta Diaria Personalizada (fetch a /nutrition/diet-plan). */
   showDietPlan: function(){
     _ensurePanel();
@@ -665,6 +707,7 @@ window.lxInfo = {
         e.stopPropagation();
         if(mid === 'pmc'){ lxInfo.showPmcLive(); return; }
         if(mid === 'readiness'){ lxInfo.showReadinessLive(); return; }
+        if(mid === 'insight'){ lxInfo.showInsightLive(); return; }
         if(mid === 'diet_plan'){ lxInfo.showDietPlan(); return; }
         var val = null;
         if(vsel){
