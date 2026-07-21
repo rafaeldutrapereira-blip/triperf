@@ -146,12 +146,9 @@ ul { list-style: none; }
   content:""; position:absolute; inset:0; pointer-events:none; opacity:.55;
   background:radial-gradient(420px 260px at 92% -20%, rgba(240,165,0,.10), transparent 60%);
 }
-.insight-top { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.75rem; position:relative; }
-.insight-kicker {
-  display:inline-flex; align-items:center; font-family:'Oswald',sans-serif; font-size:.66rem; font-weight:700;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--orange);
-  background:rgba(255,101,53,.12); border:1px solid rgba(255,101,53,.3);
-  padding:.34rem .7rem; border-radius:20px;
+.insight-top {
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  margin-bottom:.75rem; padding-bottom:.75rem; border-bottom:1px solid var(--border); position:relative;
 }
 .insight-severity {
   display:inline-flex; align-items:center; gap:.4rem; font-family:'Oswald',sans-serif; font-size:.72rem;
@@ -178,21 +175,63 @@ ul { list-style: none; }
   color:var(--gold); position:relative;
 }
 .insight-cta:hover { text-decoration:underline; }
-
-/* -- KPI CARDS ------------------------------------------------------------- */
-.kpi-sec { padding: 1.5rem 0; }
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 1rem;
+.insight-why-toggle {
+  display:inline-flex; align-items:center; gap:.3rem; margin-top:.6rem; font-family:'Inter',sans-serif;
+  font-size:.72rem; font-weight:600; color:var(--dim); background:none; border:none; cursor:pointer;
+  padding:0; position:relative;
 }
-@media (max-width:1100px){ .kpi-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width:580px)  { .kpi-grid { grid-template-columns: 1fr; } }
-@media (max-height:500px) and (orientation:landscape) { .kpi-grid { grid-template-columns: repeat(4,1fr); gap:.6rem; } }
+.insight-why-toggle:hover { color:var(--muted); }
+.insight-why-toggle svg { width:9px; height:9px; transition:transform .15s; }
+.insight-why-toggle.open svg { transform:rotate(180deg); }
+.insight-technical {
+  font-size:.85rem; line-height:1.55; color:var(--dim); max-width:66ch; margin-top:.5rem;
+  padding-top:.6rem; border-top:1px solid var(--border); display:none; position:relative;
+}
+.insight-technical.open { display:block; }
 
-/* Mismo respiro interno que el card Insight del día — antes .kc usaba
-   padding compacto (.75rem 1rem) pensado para 6-8 cards por fila. */
-.kc-roomy { padding: 1.6rem 1.8rem; }
+/* -- KPI CARDS: 3 cards ejecutivas agrupadas por pregunta ------------------
+   (Carga / Hoy / Objetivo) en vez de 8 tiles sueltas al mismo nivel — cada
+   fila interna conserva su propio click-a-detalle y su tooltip "i" por
+   métrica, solo cambia la presentación a lista compacta. */
+.kpi-sec { padding: 1.5rem 0; }
+.kpi-cluster-row3 { display:grid; grid-template-columns: repeat(3,1fr); gap:1.4rem; }
+@media (max-width:1100px){ .kpi-cluster-row3 { grid-template-columns: 1fr; } }
+
+.kpi-card { padding:1.4rem 1.5rem 1rem; }
+.kpi-card-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.5rem; }
+.kpi-card-q {
+  font-family:'Oswald',sans-serif; font-size:.92rem; font-weight:700; letter-spacing:.01em;
+  color:var(--text); margin:0;
+}
+
+.kcr {
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:.85rem 0; border-top:1px solid var(--border2); cursor:pointer;
+}
+.kcr:hover { background:rgba(255,255,255,.02); margin:0 -.4rem; padding-left:.4rem; padding-right:.4rem; border-radius:8px; }
+.kcr-label {
+  font-family:'Oswald',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.02em;
+  color:var(--muted); display:flex; flex-direction:column; gap:.15rem;
+}
+/* El texto y el botón "i" (inyectado por lx-info.js dentro de este span)
+   quedan en la misma línea — evita que el ícono caiga a una línea aparte. */
+.kcr-label-main { display:inline-flex; align-items:center; gap:.35rem; }
+.kcr-sub { font-family:'Inter',sans-serif; font-size:.66rem; font-weight:500; letter-spacing:0; color:var(--dim); }
+.kcr-right { display:flex; align-items:center; gap:.6rem; flex-shrink:0; }
+.kcr-val { font-family:'Barlow Condensed',sans-serif; font-size:1.65rem; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; }
+.kcr-val .u { font-family:'Inter',sans-serif; font-size:.7rem; font-weight:600; color:var(--dim); margin-left:.15rem; }
+.kcr .badge { flex-shrink:0; }
+.kcr-spark { flex-shrink:0; display:block; }
+
+/* Badges que son un DELTA numérico (CTL/HRV/TSS/RHR) se muestran como texto
+   chico junto al valor grande, en vez de pill con fondo — mismo patrón que
+   el mockup Dashboard B. Los badges de ESTADO (ATL/TSB/ACWR/VO2, que llevan
+   una palabra, no un número) se quedan como pill. Se apunta por id porque
+   el JS reescribe el className del badge en cada refresh. */
+#badge-ctl-change, #badge-hrv, #badge-tss, #badge-rhr {
+  background:none; border:none; padding:0; border-radius:0;
+  font-size:.7rem; font-weight:700;
+}
 
 /* -- PROGRESO SEMANAL ROW (debajo del grid KPI) ---------------------------- */
 .kpi-bottom-sec { padding: 0 0 .5rem; }
@@ -871,6 +910,7 @@ ul { list-style: none; }
 
 /* -- RACE COUNTDOWN CARD --------------------------------------------------- */
 .kc-race { --kc: #FF6535; padding: 1.6rem 1.8rem; }
+.kc-race-head { border-bottom:1px solid var(--border); padding-bottom:.75rem; margin-bottom:1rem; }
 .kc-race:hover::before { transform: scaleX(1); }
 .kc-cd {
   display: flex; align-items: flex-end; gap: .3rem;
@@ -1001,13 +1041,18 @@ ul { list-style: none; }
       <div class="panel sr insight-card lx-card" id="insight-card" data-lx-info="insight">
         <div>
           <div class="insight-top">
-            <div class="insight-kicker">Insight del día</div>
+            <h3 class="kpi-card-q">Insight del día</h3>
             <span class="insight-severity sev-neutral" id="insight-severity">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
               <span id="insight-headline">Cargando…</span>
             </span>
           </div>
           <p class="insight-text" id="insight-message">Analizando tu carga y recuperación…</p>
+          <button class="insight-why-toggle" id="insight-why-toggle" type="button" style="display:none" onclick="toggleInsightWhy()">
+            <span id="insight-why-label">Ver por qué</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <p class="insight-technical" id="insight-technical"></p>
         </div>
         <div>
           <div class="insight-drivers" id="insight-drivers"></div>
@@ -1021,9 +1066,8 @@ ul { list-style: none; }
       <!-- RACE COUNTDOWN card (Meta A) -->
       <div class="kc kc-race" id="kc-race" onclick="location.href='athlete_profile.html'" role="button" tabindex="0" aria-label="Countdown próxima carrera — editar en Perfil">
         <div id="kc-race-content">
-          <div class="kc-row">
-            <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <div class="badge" style="background:rgba(255,101,53,.12);color:var(--orange);border-color:rgba(255,101,53,.3)">META A</div>
+          <div class="kc-race-head">
+            <h3 class="kpi-card-q">Próxima Carrera</h3>
           </div>
           <div class="kc-cd">
             <div class="kc-cd-unit">
@@ -1068,100 +1112,68 @@ ul { list-style: none; }
 <!-- ---------------------------- KPI CARDS --------------------------------- -->
 <section class="kpi-sec" aria-label="Indicadores clave de rendimiento">
   <div class="c">
-    <div class="kpi-grid">
+    <div class="kpi-cluster-row3">
 
-      <div class="kc sr kc-roomy" style="--kc:#10B981" onclick="goMetric('ctl')" role="button" tabindex="0" aria-label="Ver histórico CTL Fitness">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <div class="badge b-up" id="badge-ctl-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</div>
+      <!-- CARD 1: ¿Cómo va mi carga? — CTL, ATL, TSB, ACWR -->
+      <div class="panel sr kpi-card">
+        <div class="kpi-card-head">
+          <h3 class="kpi-card-q">¿Cómo va mi carga?</h3>
+          <span class="insight-severity sev-neutral" id="cluster-carga-pill"><span class="cp-label">—</span></span>
         </div>
-        <div class="kc-val"><span class="cu" data-kl="ctl" data-t="0">0</span></div>
-        <div class="kc-name" data-lx-info="ctl" data-lx-info-val="[data-kl='ctl']">CTL — Fitness</div>
-        <div class="kc-sub">Carga crónica · 42 días</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+
+        <div class="kcr" onclick="goMetric('ctl')" role="button" tabindex="0" aria-label="Ver histórico CTL Fitness">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="ctl" data-lx-info-val="[data-kl='ctl']">CTL — Fitness</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-ctl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="ctl" data-t="0">0</span></span><span class="badge b-up" id="badge-ctl-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+3.2</span></span>
+        </div>
+        <div class="kcr" onclick="goMetric('atl')" role="button" tabindex="0" aria-label="Ver histórico ATL Fatiga">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="atl" data-lx-info-val="[data-kl='atl']">ATL — Fatiga</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-atl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="atl" data-t="0">0</span></span><span id="badge-atl" class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</span></span>
+        </div>
+        <div class="kcr" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB Forma">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="tsb" data-lx-info-val="#tsb-val">TSB — Forma</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-tsb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="tsb-val" style="color:var(--gold)">-<span class="cu" data-kl="tsb" data-t="0">0</span></span><span id="badge-tsb" class="badge b-warn">Construyendo</span></span>
+        </div>
+        <div class="kcr" id="kc-acwr" onclick="goMetric('acwr')" role="button" tabindex="0" aria-label="Ver histórico ACWR Carga">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-val" style="color:#10B981">1.18</span><span class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</span></span>
+        </div>
       </div>
 
-      <div class="kc sr kc-roomy" style="--kc:#FF6535" onclick="goMetric('atl')" role="button" tabindex="0" aria-label="Ver histórico ATL Fatiga">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <div id="badge-atl" class="badge b-dn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>Alta</div>
+      <!-- CARD 2: ¿Cómo estoy hoy? — HRV, FC Reposo -->
+      <div class="panel sr kpi-card">
+        <div class="kpi-card-head">
+          <h3 class="kpi-card-q">¿Cómo estoy hoy?</h3>
+          <span class="insight-severity sev-neutral" id="cluster-hoy-pill"><span class="cp-label">—</span></span>
         </div>
-        <div class="kc-val"><span class="cu" data-kl="atl" data-t="0">0</span></div>
-        <div class="kc-name" data-lx-info="atl" data-lx-info-val="[data-kl='atl']">ATL — Fatiga</div>
-        <div class="kc-sub">Carga aguda · 7 días</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+
+        <div class="kcr" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV">
+          <span class="kcr-label"><span class="kcr-label-main" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</span><span class="kcr-sub">Anoche · 7d: <span id="hrv-7d-val">—</span>ms</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-hrv" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></span><span id="badge-hrv" class="badge">—</span></span>
+        </div>
+        <div class="kcr" id="kc-rhr" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</span><span class="kcr-sub">Hoy · 7d: <span id="rhr-7d-val">—</span>bpm</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-rhr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-rhr-val">—<span class="u">bpm</span></span><span id="badge-rhr" class="badge">—</span></span>
+        </div>
       </div>
 
-      <div class="kc sr kc-roomy" style="--kc:#F0A500" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB Forma">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          <div id="badge-tsb" class="badge b-warn">Construyendo</div>
+      <!-- CARD 3: ¿Hacia dónde voy? — TSS Semana, VO2 Max -->
+      <div class="panel sr kpi-card">
+        <div class="kpi-card-head">
+          <h3 class="kpi-card-q">¿Hacia dónde voy?</h3>
+          <span class="insight-severity sev-neutral" id="cluster-objetivo-pill"><span class="cp-label">—</span></span>
         </div>
-        <div class="kc-val" id="tsb-val" style="color:var(--gold)">-<span class="cu" data-kl="tsb" data-t="0">0</span></div>
-        <div class="kc-name" data-lx-info="tsb" data-lx-info-val="#tsb-val">TSB — Forma</div>
-        <div class="kc-sub">CTL - ATL · meta: 0 → +5</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
+
+        <div class="kcr" onclick="goMetric('tss')" role="button" tabindex="0" aria-label="Ver histórico TSS Semanal">
+          <span class="kcr-label"><span class="kcr-label-main" data-i18n="kpi_tss_week" data-lx-info="tss" data-lx-info-val="[data-kl='tss_week']">TSS Semana</span><span class="kcr-sub" id="tss-week-meta"></span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="tss_week" data-t="0">0</span></span><span id="badge-tss" class="badge b-warn">—</span></span>
+        </div>
+        <div class="kcr" onclick="goMetric('vo2')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max</span><span class="kcr-sub">ml/kg/min · estimado</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-val">—<span class="u"></span></span><span id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</span></span>
+        </div>
       </div>
 
-      <div class="kc sr kc-roomy" style="--kc:#22D3EE" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <div id="badge-hrv" class="badge">—</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></div>
-        <div class="kc-name" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</div>
-        <div class="kc-sub">Anoche · promedio 7d: <span id="hrv-7d-val">—</span>ms</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr kc-roomy" style="--kc:#A855F7" onclick="goMetric('tss')" role="button" tabindex="0" aria-label="Ver histórico TSS Semanal">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div id="badge-tss" class="badge b-warn">—</div>
-        </div>
-        <div class="kc-val"><span class="cu" data-kl="tss_week" data-t="0">0</span></div>
-        <div class="kc-name" data-i18n="kpi_tss_week" data-lx-info="tss" data-lx-info-val="[data-kl='tss_week']">TSS Semana</div>
-        <div class="kc-sub" id="tss-week-meta"></div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <div class="kc sr kc-roomy" style="--kc:#0EA5E9" onclick="goMetric('vo2')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          <div id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</div>
-        </div>
-        <div class="kc-val" id="kl-vo2max-val">—<span class="u"></span></div>
-        <div class="kc-name" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max</div>
-        <div class="kc-sub">ml/kg/min · estimado</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <!-- ACWR card -->
-      <div class="kc sr kc-roomy" id="kc-acwr" style="--kc:#10B981" onclick="goMetric('acwr')" role="button" tabindex="0" aria-label="Ver histórico ACWR Carga">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <div class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</div>
-        </div>
-        <div class="kc-val" id="kc-acwr-val" style="color:#10B981">1.18</div>
-        <div class="kc-name" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</div>
-        <div class="kc-sub">Ratio aguda/crónica · óptimo 0.8–1.3</div>
-        <div style="flex:1"></div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-      <!-- RHR (Frecuencia Cardíaca en Reposo) card -->
-      <div class="kc sr kc-roomy" id="kc-rhr" style="--kc:#F43F5E" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
-        <div class="kc-row">
-          <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><polyline points="4 12 8 12 10 9 13 15 15 12 20 12"/></svg>
-          <div id="badge-rhr" class="badge">—</div>
-        </div>
-        <div class="kc-val" id="kc-rhr-val" style="color:#F43F5E">—<span class="u">bpm</span></div>
-        <div class="kc-name" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</div>
-        <div class="kc-sub">Hoy · promedio 7d: <span id="rhr-7d-val">—</span>bpm</div>
-        <div class="kc-hint"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Ver histórico</div>
-      </div>
-
-    </div><!-- /kpi-grid -->
+    </div><!-- /kpi-cluster-row3 -->
   </div><!-- /.c -->
 </section><!-- /kpi-sec -->
 
@@ -1635,13 +1647,131 @@ function countUp(el,target,dur){
 }
 
 /* -- Gauge -- */
+function _sparkPoints(vals){
+  if(!vals || vals.length < 2) return null;
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  var range = (max - min) || 1;
+  var w = 46, h = 20, pad = 2.5, n = vals.length;
+  return vals.map(function(v,i){
+    return [ (i/(n-1)) * w, h - pad - ((v - min) / range) * (h - pad*2) ];
+  });
+}
+function drawSparkline(id, vals, color){
+  var svg = document.getElementById(id);
+  if(!svg) return;
+  var pts = _sparkPoints(vals);
+  if(!pts){ svg.innerHTML = ''; return; }
+  var poly = pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ');
+  var last = pts[pts.length-1];
+  svg.innerHTML =
+    '<polyline points="'+poly+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.3" fill="'+color+'"/>';
+}
+function updateLoadSparklines(d){
+  // CTL/ATL/TSB: últimas semanas reales de PMC_ALL (ya reconstruido desde
+  // Garmin en el fetch de /athlete/dashboard, sin datos sintéticos).
+  if(typeof PMC_ALL !== 'undefined' && PMC_ALL && PMC_ALL.length > 1){
+    var recent = PMC_ALL.slice(-10);
+    drawSparkline('spark-ctl', recent.map(function(p){ return p.ctl; }), '#10B981');
+    drawSparkline('spark-atl', recent.map(function(p){ return p.atl; }), '#FF6535');
+    drawSparkline('spark-tsb', recent.map(function(p){ return p.ctl - p.atl; }), '#F0A500');
+  }
+  // ACWR: historial real calculado por el backend (acwr_history), coloreado
+  // igual que el badge de la zona actual.
+  if(d.acwr_history && d.acwr_history.length > 1){
+    var acwrValEl = document.getElementById('kc-acwr-val');
+    var acwrColor = (acwrValEl && acwrValEl.style.color) || '#10B981';
+    var recentAcwr = d.acwr_history.slice(-14);
+    drawSparkline('spark-acwr', recentAcwr.map(function(p){ return p.acwr; }), acwrColor);
+  }
+
+  // HRV / FC reposo: historial real de Garmin (hrv_history / rhr_history,
+  // ya vienen en el payload de /athlete/dashboard, hasta 90 días).
+  if(d.hrv_history && d.hrv_history.length > 1){
+    var hrvPts = d.hrv_history.filter(function(p){ return p.hrv != null; }).slice(-14);
+    if(hrvPts.length > 1) drawSparkline('spark-hrv', hrvPts.map(function(p){ return p.hrv; }), '#22D3EE');
+  }
+  if(d.rhr_history && d.rhr_history.length > 1){
+    var rhrPts = d.rhr_history.filter(function(p){ return p.rhr != null; }).slice(-14);
+    var rhrSparkColor = (document.getElementById('kc-rhr-val') || {}).style.color || '#0EA5E9';
+    if(rhrPts.length > 1) drawSparkline('spark-rhr', rhrPts.map(function(p){ return p.rhr; }), rhrSparkColor);
+  }
+
+  // TSS semanal: mismas semanas reales de PMC_ALL usadas arriba.
+  if(typeof PMC_ALL !== 'undefined' && PMC_ALL && PMC_ALL.length > 1){
+    var recentTss = PMC_ALL.slice(-10);
+    drawSparkline('spark-tss', recentTss.map(function(p){ return p.tss; }), '#A855F7');
+  }
+
+  // VO2 max: historial real de estimaciones de Garmin (vo2_history).
+  if(d.vo2_history && d.vo2_history.length > 1){
+    var vo2Pts = d.vo2_history.filter(function(p){ return p.vo2 != null; }).slice(-14);
+    if(vo2Pts.length > 1) drawSparkline('spark-vo2', vo2Pts.map(function(p){ return p.vo2; }), '#0EA5E9');
+  }
+}
+
+function _setClusterPill(id, st){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.className = 'insight-severity ' + st.cls;
+  var lbl = el.querySelector('.cp-label');
+  if(lbl) lbl.textContent = st.label;
+}
+
+function updateClusterPills(d){
+  var sevMap = {
+    reduce:  {cls:'sev-reduce',  label:'Reducir carga'},
+    caution: {cls:'sev-caution', label:'Precaución'},
+    good:    {cls:'sev-good',    label:'Óptimo'},
+    neutral: {cls:'sev-neutral', label:'En rango'},
+  };
+
+  // Card "Carga": mismos umbrales de ACWR/TSB que ya usa el resto del dashboard
+  var carga = {cls:'sev-good', label:'En rango'};
+  if(d.acwr_zone === 'danger' || (d.tsb != null && d.tsb < -20)) carga = {cls:'sev-reduce', label:'Riesgo alto'};
+  else if(d.acwr_zone === 'warning' || (d.tsb != null && d.tsb < -8)) carga = {cls:'sev-caution', label:'Precaución'};
+  else if(d.acwr_zone === 'no_data') carga = {cls:'sev-neutral', label:'Sin datos'};
+  _setClusterPill('cluster-carga-pill', carga);
+
+  // Card "Hoy": reusa el severity que ya calculó el Insight del día
+  // (cruza HRV + sueño + FC reposo + TSB) para no duplicar la lógica.
+  var hoy = (d.insight && sevMap[d.insight.severity]) || sevMap.neutral;
+  _setClusterPill('cluster-hoy-pill', hoy);
+
+  // Card "Objetivo": informativa, sin semáforo de riesgo
+  _setClusterPill('cluster-objetivo-pill', {cls:'sev-neutral', label:'Seguimiento'});
+}
+
+function toggleInsightWhy(){
+  var techEl = document.getElementById('insight-technical');
+  var btn = document.getElementById('insight-why-toggle');
+  var open = techEl.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  document.getElementById('insight-why-label').textContent = open ? 'Ocultar detalle' : 'Ver por qué';
+}
+
 function renderInsight(ins){
   if(!ins) return;
+  window._lastInsight = ins; // usado por lx-info.js para el detalle "i" con datos reales
   var sevEl = document.getElementById('insight-severity');
   var sevClass = {reduce:'sev-reduce', caution:'sev-caution', good:'sev-good', neutral:'sev-neutral'}[ins.severity] || 'sev-neutral';
   sevEl.className = 'insight-severity ' + sevClass;
   document.getElementById('insight-headline').textContent = ins.headline || '';
   document.getElementById('insight-message').textContent = ins.message || '';
+
+  var whyToggle = document.getElementById('insight-why-toggle');
+  var techEl = document.getElementById('insight-technical');
+  var techMsg = ins.message_technical || '';
+  if (techMsg && techMsg !== ins.message) {
+    techEl.textContent = techMsg;
+    whyToggle.style.display = 'inline-flex';
+    whyToggle.classList.remove('open');
+    document.getElementById('insight-why-label').textContent = 'Ver por qué';
+    techEl.classList.remove('open');
+  } else {
+    whyToggle.style.display = 'none';
+    techEl.classList.remove('open');
+  }
 
   var driversEl = document.getElementById('insight-drivers');
   driversEl.innerHTML = (ins.drivers || []).map(function(dr){
@@ -1657,7 +1787,7 @@ function renderInsight(ins){
   if(ins.cta_label){
     document.getElementById('insight-cta-label').textContent = ins.cta_label;
     ctaEl.style.display = 'inline-flex';
-    ctaEl.href = ins.severity === 'reduce' || ins.severity === 'caution' ? 'recovery.html' : 'detalle.html?metric=ctl';
+    ctaEl.href = ins.cta_href || 'detalle.html?metric=ctl';
   } else {
     ctaEl.style.display = 'none';
   }
@@ -2398,6 +2528,12 @@ function patchData(){
   var rhrValEl = document.getElementById('kc-rhr-val');
   if(rhrValEl){
     rhrValEl.innerHTML = (d.resting_hr != null ? Math.round(d.resting_hr) : '—') + '<span class="u">bpm</span>';
+    // FC reposo BAJA es buena señal (atleta entrenado) — el color no puede
+    // ser rojo fijo, tiene que reflejar si el valor es bueno o no.
+    rhrValEl.style.color = d.resting_hr == null ? ''
+      : d.resting_hr <= 55 ? '#10B981'
+      : d.resting_hr <= 70 ? '#0EA5E9'
+      : '#F43F5E';
   }
   var bRhr = document.getElementById('badge-rhr');
   if(bRhr){
@@ -2516,6 +2652,8 @@ function patchData(){
 
   // Insight del día
   renderInsight(d.insight);
+  updateClusterPills(d);
+  updateLoadSparklines(d);
 
   // Activities list
   renderActivities(d.activities || []);
