@@ -444,8 +444,8 @@ footer {
     <button class="ptab" data-p="30"  onclick="setPeriod(30)"  role="tab">Mes</button>
     <button class="ptab" data-p="90"  onclick="setPeriod(90)"  role="tab">3 Meses</button>
     <button class="ptab" data-p="180" onclick="setPeriod(180)" role="tab">6 Meses</button>
-    <button class="ptab on" data-p="365" onclick="setPeriod(365)" role="tab" aria-selected="true">Año</button>
-    <button class="ptab" data-p="0"   onclick="setPeriod(0)"   role="tab">Todo</button>
+    <button class="ptab" data-p="365" onclick="setPeriod(365)" role="tab">Año</button>
+    <button class="ptab on" data-p="0"   onclick="setPeriod(0)"   role="tab" aria-selected="true">Todo</button>
   </div>
 </div>
 
@@ -914,6 +914,10 @@ var KL_PMC_ALL = [];
 var metric = 'ctl';
 var period  = 365;
 var CHART   = null;
+// VO2 Max se estima por separado para running y ciclismo (Garmin da 2
+// métricas distintas, no la misma con 2 nombres) — ?metric=vo2&sport=running|cycling
+// para no mezclar ambas series en el mismo gráfico.
+var VO2_SPORT = new URLSearchParams(location.search).get('sport');
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function filterPeriod(all) {
@@ -2510,14 +2514,22 @@ function renderCycleTable(a, b, c){
         }
       } catch(e) { console.error('detalle.html: error procesando HRV', e); }
 
-      // VO2max from vo2_history — mismo patrón que HRV
+      // VO2max from vo2_history — mismo patrón que HRV. Si viene ?sport=running
+      // o ?sport=cycling usa la serie específica de esa disciplina (son
+      // estimaciones distintas de Garmin), si no la serie "blended" de siempre.
       try {
-        if(d.vo2_history){
-          var newVo2 = d.vo2_history.map(function(p){ return {date:p.dt, value:p.vo2}; })
-                                    .filter(function(p){ return p.value != null; });
+        var _vo2Src = VO2_SPORT === 'cycling' ? d.vo2_history_cycling
+                    : VO2_SPORT === 'running' ? d.vo2_history_running
+                    : d.vo2_history;
+        var _vo2Latest = VO2_SPORT === 'cycling' ? d.vo2max_cycling_garmin
+                        : VO2_SPORT === 'running' ? d.vo2max_running_garmin
+                        : d.vo2max_garmin;
+        if(_vo2Src){
+          var newVo2 = _vo2Src.map(function(p){ return {date:p.dt, value:p.vo2}; })
+                              .filter(function(p){ return p.value != null; });
           ALL.vo2 = newVo2;
-          if(d.vo2max_garmin != null && ALL.vo2.length && ALL.vo2[ALL.vo2.length-1].date < todayISO)
-            ALL.vo2.push({date:todayISO, value:d.vo2max_garmin});
+          if(_vo2Latest != null && ALL.vo2.length && ALL.vo2[ALL.vo2.length-1].date < todayISO)
+            ALL.vo2.push({date:todayISO, value:_vo2Latest});
         }
       } catch(e) { console.error('detalle.html: error procesando VO2max', e); }
 
@@ -2553,7 +2565,15 @@ function renderCycleTable(a, b, c){
   var params = new URLSearchParams(location.search);
   var m = params.get('metric') || 'ctl';
   metric = MC[m] ? m : 'ctl';
-  period = (metric === 'tss' || metric === 'pmc') ? 0 : metric === 'wellbeing' ? 90 : 365;
+  // Sin tope por defecto para ningún indicador — "Todo" el histórico real
+  // disponible. El usuario puede acotar manualmente con las pestañas de período.
+  period = 0;
+
+  if(metric === 'vo2' && (VO2_SPORT === 'running' || VO2_SPORT === 'cycling')){
+    var sportLbl = VO2_SPORT === 'cycling' ? 'Ciclismo' : 'Running';
+    MC.vo2.title   = 'VO₂ Max Estimado — ' + sportLbl;
+    MC.vo2.eyebrow = 'Capacidad Aeróbica Máxima (' + sportLbl + ')';
+  }
 
   document.querySelectorAll('.ptab').forEach(function(b) {
     var bp = b.dataset.p === '0' ? 0 : parseInt(b.dataset.p);
