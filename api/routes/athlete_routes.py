@@ -768,6 +768,17 @@ def athlete_dashboard(
                        for r in _health_vo2 if r.vo2max_cycling is not None]
     vo2max_garmin = vo2_history[-1]["vo2"] if vo2_history else None
 
+    # Garmin calcula el VO2max por separado para running y ciclismo (son
+    # estimaciones distintas, no la misma métrica con dos nombres) — se
+    # exponen las 2 series reales para mostrarlas desglosadas en el
+    # dashboard, en vez de solo la versión "blended" (vo2_history de arriba,
+    # que prioriza running y se usa para no romper vistas que ya la leían).
+    vo2_history_running = [{"dt": r.date_iso, "vo2": r.vo2max_running} for r in _vo2_running_rows]
+    vo2_history_cycling = [{"dt": r.date_iso, "vo2": r.vo2max_cycling}
+                            for r in _health_vo2 if r.vo2max_cycling is not None]
+    vo2max_running_garmin = vo2_history_running[-1]["vo2"] if vo2_history_running else None
+    vo2max_cycling_garmin = vo2_history_cycling[-1]["vo2"] if vo2_history_cycling else None
+
     hrv_last_night   = health_today.hrv_last_night    if health_today else None
     hrv_7d_avg       = health_today.hrv_weekly_avg     if health_today else None
     body_battery_end = health_today.body_battery_end   if health_today else None
@@ -947,6 +958,10 @@ def athlete_dashboard(
         "bb_history":    bb_history,
         "vo2max_garmin": vo2max_garmin,
         "vo2_history":   vo2_history,
+        "vo2max_running_garmin": vo2max_running_garmin,
+        "vo2max_cycling_garmin": vo2max_cycling_garmin,
+        "vo2_history_running":   vo2_history_running,
+        "vo2_history_cycling":   vo2_history_cycling,
         # Actividades
         "activities": activities,
         # Resumen semanal por disciplina

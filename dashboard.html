@@ -1167,9 +1167,13 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-i18n="kpi_tss_week" data-lx-info="tss" data-lx-info-val="[data-kl='tss_week']">TSS Semana</span><span class="kcr-sub" id="tss-week-meta"></span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="tss_week" data-t="0">0</span></span><span id="badge-tss" class="badge b-warn">—</span></span>
         </div>
-        <div class="kcr" onclick="goMetric('vo2')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max">
-          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max</span><span class="kcr-sub">ml/kg/min · estimado</span></span>
-          <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-val">—<span class="u"></span></span><span id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</span></span>
+        <div class="kcr" onclick="goMetric('vo2','running')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max Running">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-val">VO2 Max Running</span><span class="kcr-sub">ml/kg/min · estimado</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-val">—<span class="u"></span></span><span id="badge-vo2" class="badge" style="color:var(--dim)">Perfil</span></span>
+        </div>
+        <div class="kcr" onclick="goMetric('vo2','cycling')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max Ciclismo">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-cycling-val">VO2 Max Ciclismo</span><span class="kcr-sub">ml/kg/min · estimado</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-cycling-val">—<span class="u"></span></span><span id="badge-vo2-cycling" class="badge" style="color:var(--dim)">—</span></span>
         </div>
       </div>
 
@@ -1621,10 +1625,11 @@ function handlePmcClick(e){
 }
 
 /* -- Navigate to metric detail -- */
-function goMetric(m){
+function goMetric(m, sport){
   document.body.style.transition='opacity .22s';
   document.body.style.opacity='0';
-  setTimeout(function(){ location.href='detalle.html?metric='+m; },200);
+  var url = 'detalle.html?metric=' + m + (sport ? '&sport=' + sport : '');
+  setTimeout(function(){ location.href = url; },200);
 }
 /* keyboard support for KPI cards */
 document.addEventListener('keydown',function(e){
@@ -1703,10 +1708,15 @@ function updateLoadSparklines(d){
     drawSparkline('spark-tss', recentTss.map(function(p){ return p.tss; }), '#A855F7');
   }
 
-  // VO2 max: historial real de estimaciones de Garmin (vo2_history).
-  if(d.vo2_history && d.vo2_history.length > 1){
-    var vo2Pts = d.vo2_history.filter(function(p){ return p.vo2 != null; }).slice(-14);
-    if(vo2Pts.length > 1) drawSparkline('spark-vo2', vo2Pts.map(function(p){ return p.vo2; }), '#0EA5E9');
+  // VO2 max running / ciclismo: Garmin estima cada uno por separado (son
+  // métricas distintas, no la misma con dos nombres) — series reales.
+  if(d.vo2_history_running && d.vo2_history_running.length > 1){
+    var vo2RunPts = d.vo2_history_running.filter(function(p){ return p.vo2 != null; }).slice(-14);
+    if(vo2RunPts.length > 1) drawSparkline('spark-vo2-run', vo2RunPts.map(function(p){ return p.vo2; }), '#0EA5E9');
+  }
+  if(d.vo2_history_cycling && d.vo2_history_cycling.length > 1){
+    var vo2BikePts = d.vo2_history_cycling.filter(function(p){ return p.vo2 != null; }).slice(-14);
+    if(vo2BikePts.length > 1) drawSparkline('spark-vo2-bike', vo2BikePts.map(function(p){ return p.vo2; }), '#FF6535');
   }
 }
 
@@ -2888,16 +2898,29 @@ function _showSyncBanner(secsTotal){
         };
       });
     }
-    if(fresh.vo2max_garmin != null){
+    if(fresh.vo2max_running_garmin != null){
       var vo2El = document.getElementById('kl-vo2max-val');
       if(vo2El){
-        var vo2str = String(fresh.vo2max_garmin);
+        var vo2str = String(fresh.vo2max_running_garmin);
         var dot = vo2str.indexOf('.');
         vo2El.innerHTML = dot >= 0 ? vo2str.slice(0,dot)+'<span class="u">'+vo2str.slice(dot)+'</span>' : vo2str+'<span class="u"></span>';
       }
       var bVo2El = document.getElementById('badge-vo2');
       if(bVo2El){ bVo2El.className='badge b-up'; bVo2El.textContent='Garmin'; }
       window._vo2GarminApplied = true;
+    }
+    if(fresh.vo2max_cycling_garmin != null){
+      var vo2CyEl = document.getElementById('kl-vo2max-cycling-val');
+      if(vo2CyEl){
+        var vo2cystr = String(fresh.vo2max_cycling_garmin);
+        var dotcy = vo2cystr.indexOf('.');
+        vo2CyEl.innerHTML = dotcy >= 0 ? vo2cystr.slice(0,dotcy)+'<span class="u">'+vo2cystr.slice(dotcy)+'</span>' : vo2cystr+'<span class="u"></span>';
+      }
+      var bVo2Cy = document.getElementById('badge-vo2-cycling');
+      if(bVo2Cy){ bVo2Cy.className='badge b-up'; bVo2Cy.textContent='Garmin'; }
+    } else {
+      var bVo2CyEmpty = document.getElementById('badge-vo2-cycling');
+      if(bVo2CyEmpty){ bVo2CyEmpty.textContent = 'Sin datos'; }
     }
     window._apiFetching = false;
     patchData();
