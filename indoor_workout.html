@@ -208,7 +208,7 @@ select option{background:var(--surface2)}
     </div>
     <div>
       <div style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">FTP Referencia</div>
-      <div class="iw-ftp-badge"><span id="ftp-display">235</span>W<span>FTP · <a href="athlete_profile.html" style="color:var(--orange)">editar</a></span></div>
+      <div class="iw-ftp-badge"><span id="ftp-display">—</span>W<span id="ftp-status">FTP · <a href="athlete_profile.html" style="color:var(--orange)">editar</a></span></div>
     </div>
   </div>
 
@@ -384,18 +384,56 @@ function zoneColor(pct){
 }
 
 /* ─────────── STATE ──────────────────────────────────────────── */
-var FTP     = 235;
+// Sin default fabricado: hasta que se confirme un FTP real (perfil vía API,
+// o localStorage como fallback inmediato mientras carga), FTP queda sin
+// configurar. 200W se usa solo como referencia matemática interna para que
+// el builder no rompa (%FTP relativo sigue siendo válido igual), pero la UI
+// deja explícito que no es el FTP real del atleta.
+var FTP        = 200;
+var FTP_IS_REAL = false;
 var blocks  = [];   /* array of block objects */
 var editId  = null; /* currently editing saved workout id */
 
+function _renderFtp(){
+  document.getElementById('ftp-display').textContent = FTP_IS_REAL ? FTP : '—';
+  var statusEl = document.getElementById('ftp-status');
+  if(statusEl){
+    statusEl.innerHTML = FTP_IS_REAL
+      ? 'FTP · <a href="athlete_profile.html" style="color:var(--orange)">editar</a>'
+      : 'Sin configurar · <a href="athlete_profile.html" style="color:var(--orange)">configurar FTP</a>';
+  }
+  if(typeof renderChart === 'function') renderChart();
+}
+
+function _iwApiToken(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){
+    try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){}
+  }
+  return tok;
+}
+function _iwApiBase(){
+  return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+}
+
 /* ─────────── INIT ───────────────────────────────────────────── */
 (function init(){
-  /* Load FTP from athlete profile */
+  /* Valor inmediato desde localStorage (mientras carga el perfil real) */
   try{
     var prof = JSON.parse(localStorage.getItem('kl_athlete_data')||'null');
-    if(prof && prof.ftp) FTP = parseInt(prof.ftp) || FTP;
+    if(prof && prof.ftp){ FTP = parseInt(prof.ftp) || FTP; FTP_IS_REAL = true; }
   }catch(e){}
-  document.getElementById('ftp-display').textContent = FTP;
+  _renderFtp();
+
+  /* Perfil real de la API — fuente de verdad, pisa el valor de localStorage */
+  var tok = _iwApiToken();
+  if(tok){
+    fetch(_iwApiBase() + '/athlete/profile', { headers: { Authorization: 'Bearer ' + tok } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(p){
+        if(p && p.ftp){ FTP = parseInt(p.ftp) || FTP; FTP_IS_REAL = true; _renderFtp(); }
+      }).catch(function(){});
+  }
 
   /* Prefill date from URL ?date= */
   var params = new URLSearchParams(window.location.search);
