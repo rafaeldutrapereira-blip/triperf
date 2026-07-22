@@ -1357,6 +1357,7 @@ class WeightLog(Base):
     weight_kg  = Column(Float,   nullable=False)
     body_fat_pct = Column(Float, nullable=True)    # si el atleta tiene bÃ¡scula de composiciÃ³n
     notes      = Column(String,  nullable=True)
+    source     = Column(String,  nullable=False, default="manual")  # "manual" | "garmin" — manual nunca se pisa por un sync
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     user = relationship("User", backref="weight_logs")

@@ -508,6 +508,7 @@ def log_weight(
         existing.weight_kg    = body.weight_kg
         existing.body_fat_pct = body.body_fat_pct
         existing.notes        = body.notes
+        existing.source       = "manual"  # una carga manual siempre gana, aunque el día ya tuviera un valor de Garmin
     else:
         db.add(WeightLog(
             user_id      = me.id,
@@ -515,6 +516,7 @@ def log_weight(
             weight_kg    = body.weight_kg,
             body_fat_pct = body.body_fat_pct,
             notes        = body.notes,
+            source       = "manual",
         ))
     db.commit()
     return {"ok": True, "date_iso": d_iso, "weight_kg": body.weight_kg}

@@ -33,7 +33,7 @@ from .models   import (
     GarminActivity, GarminSyncStatus, GarminTrainingLoad, User,
     GarminHealthDaily, GarminSleepSession,
     CommunityPost, GarminTrainingLoad as _TL,
-    GarminPlannedWorkout,
+    GarminPlannedWorkout, WeightLog,
 )
 
 # ── Token storage ─────────────────────────────────────────────────────────────
@@ -975,7 +975,14 @@ class GarminPullService:
 
         # Sincronizar datos de salud — incremental: solo desde el último día
         # guardado (+1 de margen por si Garmin actualiza el día anterior).
-        # Fallback a 30 días solo si el usuario nunca sincronizó salud antes.
+        # Sin tope: si el usuario no sincroniza por meses, el próximo sync
+        # rellena el hueco completo en vez de perder para siempre los días
+        # más allá de un límite fijo (antes topeaba a 30 días — un gap de,
+        # por ejemplo, 90 días dejaba 60 días de HRV/sueño/body battery
+        # vacíos de forma irrecuperable). _sync_health_data ya hace 1
+        # request por día con reintentos no bloqueantes, así que un gap
+        # grande solo tarda más, no falla. Techo de cordura de 10 años
+        # (nunca debería alcanzarse con una cuenta real).
         try:
             last_health = (
                 db.query(GarminHealthDaily)
@@ -985,12 +992,20 @@ class GarminPullService:
             )
             if last_health:
                 gap_days = (date.today() - date.fromisoformat(last_health.date_iso)).days
-                health_days = max(2, min(gap_days + 1, 30))
+                health_days = max(2, min(gap_days + 1, 3650))
             else:
                 health_days = 30
             self._sync_health_data(client, user_id, days=health_days)
         except Exception as exc:
             logger.warning("Health sync parcial user=%s: %s", user_id, exc)
+
+        # Peso corporal (báscula Garmin Index, si el atleta tiene una) —
+        # antes solo se podía cargar a mano aunque Garmin ya lo tuviera.
+        # Nunca pisa una carga manual del mismo día (ver source="manual").
+        try:
+            self._sync_weight_data(client, user_id, days=health_days)
+        except Exception as exc:
+            logger.warning("Weight sync parcial user=%s: %s", user_id, exc)
 
         # Calcular y persistir el LabX Daily Readiness Score (4 dimensiones)
         self._update_readiness(user_id)
@@ -1730,6 +1745,79 @@ class GarminPullService:
         except Exception as exc:
             db.rollback()
             logger.error("Health sync commit error user=%s: %s", user_id, exc)
+
+    def _sync_weight_data(self, client, user_id: str, days: int = 30) -> None:
+        """
+        Trae peso corporal real de una báscula Garmin Index (get_body_composition,
+        endpoint weight/dateRange) para los últimos `days` días y hace upsert en
+        weight_logs. Si el atleta no tiene báscula conectada, Garmin devuelve una
+        lista vacía y no se guarda nada (nunca se inventa un peso).
+
+        Una carga MANUAL del mismo día siempre gana — este sync nunca pisa una
+        fila con source="manual", solo crea filas nuevas o actualiza filas que
+        ya eran source="garmin" (de un sync anterior).
+        """
+        db = self._db
+        today = date.today()
+        start_iso = (today - timedelta(days=days)).isoformat()
+        end_iso   = today.isoformat()
+
+        try:
+            raw = _retry(lambda: client.get_body_composition(start_iso, end_iso), max_attempts=2, base_delay=1.0)
+        except Exception as exc:
+            logger.debug("get_body_composition falló user=%s: %s", user_id, exc)
+            return
+
+        entries = (raw or {}).get("dateWeightList") or []
+        if not entries:
+            return
+
+        saved = 0
+        for entry in entries:
+            try:
+                weight_g = entry.get("weight")
+                if weight_g is None:
+                    continue
+                d_iso = entry.get("calendarDate")
+                if not d_iso:
+                    ts_ms = entry.get("date")
+                    if not ts_ms:
+                        continue
+                    d_iso = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).date().isoformat()
+
+                weight_kg = round(weight_g / 1000.0, 1)
+                body_fat  = entry.get("bodyFat")
+
+                existing = (
+                    db.query(WeightLog)
+                      .filter(WeightLog.user_id == user_id, WeightLog.date_iso == d_iso)
+                      .first()
+                )
+                if existing:
+                    if existing.source == "manual":
+                        continue  # nunca se pisa una carga manual
+                    existing.weight_kg    = weight_kg
+                    existing.body_fat_pct = body_fat
+                    existing.source       = "garmin"
+                else:
+                    db.add(WeightLog(
+                        user_id      = user_id,
+                        date_iso     = d_iso,
+                        weight_kg    = weight_kg,
+                        body_fat_pct = body_fat,
+                        source       = "garmin",
+                    ))
+                saved += 1
+            except Exception as exc:
+                logger.debug("Weight entry skip user=%s: %s", user_id, exc)
+
+        if saved:
+            try:
+                db.commit()
+                logger.info("Weight sync ok user=%s days=%d rows=%d", user_id, days, saved)
+            except Exception as exc:
+                db.rollback()
+                logger.error("Weight sync commit error user=%s: %s", user_id, exc)
 
     def _set_status(
         self,
