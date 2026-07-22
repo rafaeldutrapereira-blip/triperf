@@ -107,6 +107,14 @@ def _avatar_initials(name: str) -> str:
     return (parts[0][0] + parts[-1][0]).upper()
 
 
+def _avatar_url(user) -> str | None:
+    """URL de la foto de perfil real si el usuario tiene una — el frontend
+    cae a la pelota con iniciales (_avatar_initials) cuando esto da None."""
+    if user is not None and getattr(user, "avatar_photo_path", None):
+        return f"/api/athlete/profile/avatar/{user.id}"
+    return None
+
+
 def _notif(
     db:        Session,
     user_id:   str,
@@ -313,6 +321,7 @@ def follow_suggestions(
                 "user_id":        u.id,
                 "nombre":         u.nombre or u.email,
                 "avatar_initial": _avatar_initials(u.nombre or u.email),
+                "avatar_url":     _avatar_url(u),
                 "country_flag":   COUNTRY_FLAG.get(country or "", ""),
                 "reason":         "Comparte un grupo contigo",
             })
@@ -1182,6 +1191,7 @@ def public_profile(
             "id":             user.id,
             "name":           user.nombre or user.email.split("@")[0],
             "avatar_initial": _avatar_initials(user.nombre or user.email),
+            "avatar_url":     _avatar_url(user),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
@@ -1569,6 +1579,7 @@ def _build_activity_card_s17(act, viewer_id, db):
             "id":             owner.id if owner else None,
             "name":           (owner.nombre or owner.email.split("@")[0]) if owner else "—",
             "avatar_initial": _avatar_initials(owner.nombre or owner.email) if owner else "?",
+            "avatar_url":     _avatar_url(owner),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
         },
@@ -1707,6 +1718,7 @@ def latam_leaderboard(
                 "id":             u.id,
                 "name":           (u.nombre or u.email.split("@")[0]),
                 "avatar_initial": _avatar_initials(u.nombre or u.email),
+                "avatar_url":     _avatar_url(u),
                 "country_code":   country,
                 "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             },
@@ -1770,6 +1782,7 @@ def search_athletes_s17(
             "id":             u.id,
             "name":           u.nombre or u.email.split("@")[0],
             "avatar_initial": _avatar_initials(u.nombre or u.email),
+            "avatar_url":     _avatar_url(u),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             "is_following":   u.id in following_ids,

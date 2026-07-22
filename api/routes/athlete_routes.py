@@ -1938,6 +1938,99 @@ def get_activity_photo(
                     headers={"Cache-Control": "max-age=86400"})
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Foto de perfil (avatar) — misma lógica de compresión que la foto de actividad,
+# pero pública dentro de la app (cualquiera que vea tu perfil/feed de Comunidad
+# debe poder cargarla, no solo vos).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_AVATAR_PREFIX = "avatar_photos"
+
+
+@router.post("/profile/avatar")
+async def upload_avatar_photo(
+    file: UploadFile = File(...),
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """Subir foto de perfil (JPEG/PNG, max 8 MB → guardada como JPEG 200x200)."""
+    import io
+    from ..storage import storage
+
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
+        raise HTTPException(400, "Solo se aceptan imágenes (JPEG / PNG)")
+
+    raw = await file.read()
+    if len(raw) > _MAX_PHOTO_BYTES:
+        raise HTTPException(400, "Imagen demasiado grande (máx 8 MB)")
+
+    try:
+        from PIL import Image
+        img = Image.open(io.BytesIO(raw))
+        # Recorte cuadrado centrado antes de reducir, para que la pelota de
+        # avatar no salga deformada con fotos rectangulares.
+        w, h = img.size
+        side = min(w, h)
+        img = img.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2))
+        img.thumbnail((200, 200), Image.LANCZOS)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=80, optimize=True)
+        compressed = buf.getvalue()
+    except ImportError:
+        compressed = raw  # Pillow no instalado: guardar tal cual
+
+    key = f"{_AVATAR_PREFIX}/{me.id}.jpg"
+    storage.save(key, compressed)
+
+    me.avatar_photo_path = key
+    db.commit()
+
+    return {"ok": True, "avatar_url": f"/api/athlete/profile/avatar/{me.id}"}
+
+
+@router.delete("/profile/avatar")
+def delete_avatar_photo(
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """Quitar la foto de perfil — vuelve a mostrarse la pelota con iniciales."""
+    from ..storage import storage
+    if me.avatar_photo_path:
+        try:
+            storage.delete(me.avatar_photo_path)
+        except Exception:
+            pass
+        me.avatar_photo_path = None
+        db.commit()
+    return {"ok": True}
+
+
+@router.get("/profile/avatar/{user_id}")
+def get_avatar_photo(
+    user_id: str,
+    db:  Session = Depends(get_db),
+):
+    """
+    Descargar foto de perfil de cualquier usuario. Sin auth a propósito: se
+    referencia desde <img src="..."> en Comunidad (feed/leaderboard/sugerencias
+    de OTROS usuarios), y un <img> no puede mandar el Bearer token — igual
+    que un avatar público de cualquier red social, no es dato sensible.
+    """
+    from ..storage import storage
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.avatar_photo_path:
+        raise HTTPException(404, "Sin foto de perfil")
+    try:
+        data = storage.load(user.avatar_photo_path)
+    except FileNotFoundError:
+        raise HTTPException(404, "Archivo no encontrado")
+    return Response(content=data, media_type="image/jpeg",
+                    headers={"Cache-Control": "max-age=3600"})
+
+
 _DEFAULT_SHARE_PREFS = {
     "share_details": True,   # maestro: seguidores pueden abrir el detalle
     "share_route":   True,   # mapa / recorrido GPS

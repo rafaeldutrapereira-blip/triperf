@@ -84,6 +84,9 @@ class User(Base):
     # Privacidad Comunidad — JSON con qué info del detalle de actividad se
     # comparte con seguidores. None = todo compartido (default histórico).
     community_share_prefs  = Column(Text,     nullable=True)
+    # Foto de perfil (avatar) — key en el storage backend (ver api/storage.py).
+    # None = sin foto, se muestra la pelota con iniciales (_avatar_initials()).
+    avatar_photo_path      = Column(String,   nullable=True)
 
     # relations
     groups_coached = relationship("Group",       back_populates="coach",   foreign_keys="Group.coach_id")
