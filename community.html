@@ -170,6 +170,13 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .prof-av{width:48px;height:48px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--cyan);flex-shrink:0}
 .prof-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
 .prof-meta{font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.06em}
+.avatar-edit-btn{
+  position:absolute; bottom:-2px; right:-2px; width:22px; height:22px; border-radius:50%;
+  background:var(--cyan); color:#04080F; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; border:2px solid var(--bg); transition:transform .15s;
+}
+.avatar-edit-btn:hover{ transform:scale(1.08); }
+.avatar-edit-btn svg{ width:11px; height:11px; }
 .follow-btn{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.28rem .7rem;border-radius:5px;border:1.5px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer;transition:all .15s;flex-shrink:0}
 .follow-btn:hover,.follow-btn.following{background:var(--cyan);color:#000}
 /* ── PRIVACY PANEL ── */
@@ -385,7 +392,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 
 
 <!-- CREATE CLUB MODAL -->
-<div id="modal-club" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-club')">
+<div id="modal-club" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-club')">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:min(420px,90vw);max-height:90vh;overflow-y:auto">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:1rem">CREAR CLUB</div>
     <input id="club-name" type="text" placeholder="Nombre del club*" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
@@ -405,7 +412,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     </div>
   </div>
 </div>
-<div id="modal-club" style="display:none"></div>
 
 <!-- CREATE CHALLENGE MODAL -->
 <div id="modal-challenge" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-challenge')">
@@ -458,6 +464,20 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     } catch (e) { return ''; }
   }
   var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _authTok() };
+
+  // Pelota de avatar: foto real si el usuario tiene una (avatar_url viene del
+  // backend), si no las iniciales de siempre. avatar_url ya es servible sin
+  // token (un <img> no puede mandar Authorization), así que se usa tal cual.
+  function _avatarBall(cls, u, extraStyle) {
+    var initial = (u && u.avatar_initial) || '?';
+    var url = u && u.avatar_url;
+    var style = (extraStyle ? extraStyle + ';' : '') + (url ? 'padding:0;overflow:hidden' : '');
+    var styleAttr = style ? ' style="' + style + '"' : '';
+    if (url) {
+      return '<div class="' + cls + '"' + styleAttr + '><img src="' + url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"></div>';
+    }
+    return '<div class="' + cls + '"' + styleAttr + '>' + initial + '</div>';
+  }
 
   var _feedOffset = 0;
   var _feedLoading = false;
@@ -629,7 +649,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       var cardId = 'ac-' + c.id;
       var html = '<div class="activity-card" id="' + cardId + '">' +
         '<div class="ac-head">' +
-          '<div class="ac-avatar">' + (c.user.avatar_initial || '?') + '</div>' +
+          _avatarBall('ac-avatar', c.user) +
           '<div class="ac-user">' +
             '<div class="ac-name">' + (c.user.country_flag ? c.user.country_flag + ' ' : '') + (c.user.name || '—') + '</div>' +
             '<div class="ac-meta">' + (c.date_iso || '') + '</div>' +
@@ -773,7 +793,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           var val = metric === 'duration_h' ? r.value.toFixed(1) : Math.round(r.value);
           return '<div class="lb-row' + (r.is_me ? ' lb-me' : '') + '">' +
             '<div class="lb-rank" style="color:' + rankColor + '">' + (r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank-1] : r.rank) + '</div>' +
-            '<div class="lb-av">' + (r.user.avatar_initial || '?') + '</div>' +
+            _avatarBall('lb-av', r.user) +
             '<div class="lb-name">' + (r.user.country_flag ? r.user.country_flag + ' ' : '') + r.user.name + (r.is_me ? ' <span style="font-size:.6rem;color:var(--purple);font-family:\'Oswald\',sans-serif;letter-spacing:.06em">(TÚ)</span>' : '') + '</div>' +
             '<div class="lb-value">' + val + suffix + '</div>' +
             '<div class="lb-acts">' + r.activity_count + ' acts</div>' +
@@ -817,7 +837,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   function profileCardHtml(u) {
     var ctlStr = u.ctl ? ' · CTL ' + u.ctl : '';
     return '<div class="profile-card">' +
-      '<div class="prof-av">' + (u.avatar_initial || '?') + '</div>' +
+      _avatarBall('prof-av', u) +
       '<div style="flex:1;min-width:0">' +
         '<div class="prof-name">' + (u.country_flag ? u.country_flag + ' ' : '') + (u.name || '—') + '</div>' +
         '<div class="prof-meta">' + (u.city || '') + ctlStr + '</div>' +
@@ -973,7 +993,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         el.innerHTML =
           '<div class="panel" style="margin-bottom:1.25rem">' +
           '<div style="padding:1.5rem;display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">' +
-          '<div class="prof-av" style="width:60px;height:60px;font-size:1.6rem">' + (u.avatar_initial || '?') + '</div>' +
+          '<div style="position:relative;flex-shrink:0;width:60px;height:60px">' +
+          _avatarBall('prof-av', u, 'width:60px;height:60px;font-size:1.6rem') +
+          '<label class="avatar-edit-btn" title="Cambiar foto de perfil">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>' +
+            '<input type="file" accept="image/*" style="display:none" onchange="uploadMyAvatar(this)">' +
+          '</label>' +
+          '</div>' +
           '<div style="flex:1">' +
           '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900">' + (u.name || '—') + '</div>' +
           '<div style="font-family:\'Oswald\',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.08em;margin:.15rem 0 .75rem">' + (u.country_flag || '') + ' ' + (u.country_code || '') + '</div>' +
@@ -997,6 +1023,27 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     var el = document.getElementById('my-profile-content');
     if (el) el.innerHTML = '<div class="alert-chip info">Completa tu perfil en Configuración para mostrar tu página pública.</div>';
   }
+
+  window.uploadMyAvatar = function (input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { lxToast && lxToast.warn('Solo se aceptan imágenes'); return; }
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch(API + '/athlete/profile/avatar', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + _authTok() }, // sin Content-Type: FormData lo setea con el boundary correcto
+      body: fd,
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) { lxToast && lxToast.warn('No se pudo subir la foto'); return; }
+        input.value = '';
+        loadMyProfile();      // refresca la card grande de "Mi Perfil"
+        loadSidebarProfile(); // y la mini-card de la sidebar
+      })
+      .catch(function () { lxToast && lxToast.warn('No se pudo subir la foto'); });
+  };
 
   window._privToggleMaster = function () {
     var on = document.getElementById('priv-details').checked;
@@ -1048,7 +1095,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var u = d.user || {};
         var ss = d.season_stats || {};
         var av = document.getElementById('cl-profile-av');
-        if (av) av.textContent = u.avatar_initial || '?';
+        if (av) av.outerHTML = _avatarBall('cl-profile-av', u).replace('<div ', '<div id="cl-profile-av" ');
         var nm = document.getElementById('cl-profile-name');
         if (nm) nm.textContent = u.name || '—';
         var fl = document.getElementById('cl-profile-flag');
@@ -1075,9 +1122,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         }
         el.innerHTML = users.slice(0, 4).map(function (u) {
           var name = u.nombre || u.name || '—';
-          var initial = u.avatar_initial || _avatarInitials(name);
+          if (!u.avatar_initial) u.avatar_initial = _avatarInitials(name);
           return '<div class="cl-sugg-row">' +
-            '<div class="cl-sugg-av">' + initial + '</div>' +
+            _avatarBall('cl-sugg-av', u) +
             '<div style="flex:1;min-width:0">' +
               '<div class="cl-sugg-name">' + name + '</div>' +
               '<div class="cl-sugg-reason">' + (u.reason || '') + '</div>' +
