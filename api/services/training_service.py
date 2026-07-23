@@ -288,6 +288,7 @@ def build_daily_insight(
     sleep_trend: Optional[float] = None,
     rhr_trend: Optional[float] = None,
     acwr_by_sport: Optional[dict] = None,
+    mental_score: Optional[float] = None,
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -398,6 +399,35 @@ def build_daily_insight(
             f"Mantén la intensidad baja y prioriza descanso esta semana para no entrar en sobreentrenamiento.",
             "Ver histórico PMC",
             "detalle.html?metric=ctl",
+        )
+
+    # 3.5. Fatiga mental alta (check-in de mental.html) aunque la carga y la
+    # recuperación física se vean bien — Garmin no puede medir esto, es la
+    # única señal subjetiva del atleta. Va ANTES de la señal física única
+    # (regla 4) a propósito: esa regla es muy permisiva (se dispara con
+    # cualquier señal leve, ej. dormir un poco menos) y si quedara primero
+    # se comía silenciosamente una fatiga mental crítica real (bug detectado
+    # con el check-in real de Rafael: MFS ~14/100 nunca se mostraba porque
+    # el sueño levemente bajo de esa noche disparaba la regla 4 antes).
+    # Solo se activa si hizo el check-in (mental_score no es None); nunca
+    # se inventa el dato.
+    if mental_score is not None and mental_score < 55:
+        mfs_label = "crítica" if mental_score < 40 else "alta"
+        drivers.append({
+            "label": "Fatiga mental (check-in)", "value": f"{round(mental_score)}/100",
+            "tone": "bad" if mental_score < 40 else "caution", "delta": None,
+        })
+        return _base(
+            "caution" if mental_score >= 40 else "reduce",
+            "Fatiga mental " + mfs_label,
+            "Tu carga y tu recuperación física se ven bien, pero tu check-in mental de hoy muestra fatiga "
+            + mfs_label + ". Considerá acortar la sesión o priorizar descanso mental — el rendimiento no es "
+            "solo físico.",
+            f"Mental Fatigue Score = {round(mental_score)}/100 (checkin de mental.html) mientras la carga física "
+            f"(TSB {tsb:.0f}, ACWR {acwr:.2f}) está en rango razonable — la fatiga viene del lado subjetivo, no "
+            f"del entrenamiento.",
+            "Ver protocolos de recuperación mental",
+            "mental.html",
         )
 
     # 4. Señal única de alerta (HRV o sueño o FC reposo, sin combinarse con carga alta)

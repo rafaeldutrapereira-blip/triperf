@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import (
     User, AssignedWorkout, WorkoutLog, WellnessLog, BloodLabExam, NutritionPlan,
     GarminActivity, GarminTrainingLoad, GarminSyncStatus, Message, AthleteNote,
-    FoodDiaryEntry, GarminPlannedWorkout, RaceEvent,
+    FoodDiaryEntry, GarminPlannedWorkout, RaceEvent, MentalCheckin,
 )
 from ..schemas import (
     AssignedWorkoutOut, WorkoutLogCreate, WorkoutLogOut,
@@ -24,6 +24,7 @@ from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember, Follow
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
+from .mental_routes import _mfs_from_checkin
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
 logger = logging.getLogger("labx.athlete")
@@ -610,6 +611,22 @@ def athlete_dashboard(
     acwr, acwr_zone = compute_acwr(list(load_rows))
     acwr_by_sport = compute_acwr_by_sport(me.id, db)
 
+    # Mental Fatigue Score del check-in más reciente (hoy o ayer — se acepta
+    # ayer para no perder la señal por el mismo desfase de huso horario ya
+    # corregido en mental.html: "hoy" en UTC puede ya haber rotado mientras
+    # todavía es "hoy" en la tarde/noche de Chile).
+    _mental_recent = (
+        db.query(MentalCheckin)
+          .filter(MentalCheckin.user_id == me.id)
+          .order_by(MentalCheckin.date_iso.desc())
+          .first()
+    )
+    mental_score = None
+    if _mental_recent:
+        _days_old = (_date_.today() - _date_.fromisoformat(_mental_recent.date_iso)).days
+        if _days_old <= 1:
+            mental_score = _mfs_from_checkin(_mental_recent)
+
     # ── PMC (historial completo, muestreado semanal) + ACWR history ─────────
     # Sin tope de fecha: la opción "Todo" de detalle.html filtra en el
     # cliente sobre este mismo payload, así que si acá se corta a 52
@@ -984,7 +1001,7 @@ def athlete_dashboard(
             tsb=tsb, atl=atl, ctl=ctl, acwr=acwr, acwr_zone=acwr_zone,
             hrv_last_night=hrv_last_night, hrv_7d_avg=hrv_7d_avg, hrv_trend=hrv_trend,
             sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
-            acwr_by_sport=acwr_by_sport,
+            acwr_by_sport=acwr_by_sport, mental_score=mental_score,
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo
