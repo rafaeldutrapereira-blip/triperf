@@ -1098,13 +1098,27 @@ class GarminPullService:
                 any_computed = True
 
         if any_computed:
-            return round(total, 1)
+            # Nivel 1: objetivo real por paso — precisión alta, respeta la
+            # estructura de trabajo/descanso tal como la definió el plan.
+            return round(total, 1), True
 
-        # Nivel 2: promedio de toda la sesión
+        # Nivel 2: promedio de TODA la sesión (distancia total ÷ duración
+        # total) contra el benchmark del atleta. Sirve como aproximación para
+        # deportes de esfuerzo continuo (ciclismo/carrera de fondo), pero para
+        # cualquier entrenamiento con series+descanso (natación casi siempre,
+        # intervalos de bici/carrera) sobreestima: el promedio "distancia
+        # total/tiempo total" no baja proporcionalmente al tiempo de descanso,
+        # así que implica un esfuerzo sostenido mucho más duro que el real
+        # (detectado con datos reales: un plan de nado de 60min daba un ritmo
+        # implícito de 105% del CSS sostenido toda la hora — fisiológicamente
+        # irreal, es el ritmo de una serie corta, no de la sesión completa).
+        # Techo de intensidad más conservador acá (0.90 en vez de 1.3) porque
+        # es una aproximación agregada sin la estructura real detrás, para
+        # cualquier atleta y cualquier plataforma de origen del plan.
         dur_secs = workout.get("estimatedDurationInSecs")
         dist_m   = workout.get("estimatedDistanceInMeters")
         if not dur_secs or not dist_m:
-            return None
+            return None, False
         avg_speed_ms = dist_m / dur_secs
         intensity = None
         if sport == "run" and run_pace_s_km and avg_speed_ms:
@@ -1114,9 +1128,9 @@ class GarminPullService:
             avg_pace_s_100m = 100 / avg_speed_ms
             intensity = css_s_100m / avg_pace_s_100m
         if intensity is None:
-            return None
-        intensity = max(0.3, min(1.3, intensity))
-        return round((dur_secs / 3600) * (intensity ** 2) * 100, 1)
+            return None, False
+        intensity = max(0.3, min(0.90, intensity))
+        return round((dur_secs / 3600) * (intensity ** 2) * 100, 1), False
 
     def _sync_planned_workouts(self, client, user_id: str, months_ahead: int = 2, ftp: int = 250) -> None:
         """
@@ -1161,7 +1175,7 @@ class GarminPullService:
               .all()
         )
         for r in _existing_resolved:
-            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km, "tss_est": r.tss_planned}
+            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km, "tss_est": r.tss_planned, "tss_precise": r.tss_planned_precise}
 
         months_to_fetch = []
         # Mes anterior (para semanas que cruzan fin de mes)
@@ -1292,31 +1306,37 @@ class GarminPullService:
                          item.get("trainingStressScore") or None)
 
                 workout_id = workout_id_raw
+                tss_p_precise = None
                 if workout_id and (not dur_secs or not dist_m or tss_p is None):
                     if workout_id in _workout_cache:
                         cached = _workout_cache[workout_id]
                         dur_secs = dur_secs or (cached["dur_min"]*60 if cached["dur_min"] else 0)
                         dist_m   = dist_m   or (cached["dist_km"]*1000 if cached["dist_km"] else 0)
-                        if tss_p is None: tss_p = cached.get("tss_est")
+                        if tss_p is None:
+                            tss_p = cached.get("tss_est")
+                            tss_p_precise = cached.get("tss_precise")
                     else:
                         try:
                             wk = _retry(lambda w=workout_id: client.get_workout_by_id(w),
                                         max_attempts=2, base_delay=1.0)
                             wk_dur  = (wk or {}).get("estimatedDurationInSecs") or 0
                             wk_dist = (wk or {}).get("estimatedDistanceInMeters") or 0
-                            wk_tss  = self._estimate_planned_tss(
+                            wk_tss, wk_tss_precise = self._estimate_planned_tss(
                                 wk or {}, sport, ftp, _fcmax, _run_pace_s_km, _css_s_100m)
                             dur_secs = dur_secs or wk_dur
                             dist_m   = dist_m or wk_dist
-                            if tss_p is None: tss_p = wk_tss
+                            if tss_p is None:
+                                tss_p = wk_tss
+                                tss_p_precise = wk_tss_precise
                             _workout_cache[workout_id] = {
                                 "dur_min": round(wk_dur/60, 1) if wk_dur else None,
                                 "dist_km": round(wk_dist/1000, 2) if wk_dist else None,
                                 "tss_est": wk_tss,
+                                "tss_precise": wk_tss_precise,
                             }
                         except Exception as exc:
                             logger.debug("get_workout_by_id %s user=%s: %s", workout_id, user_id, exc)
-                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None, "tss_est": None}
+                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None, "tss_est": None, "tss_precise": None}
 
                 dur_min = round(dur_secs / 60, 1) if dur_secs else None
                 dist_km = round(dist_m / 1000, 2) if dist_m else None
@@ -1335,6 +1355,7 @@ class GarminPullService:
                     existing_row.dur_min     = dur_min
                     existing_row.dist_km     = dist_km
                     existing_row.tss_planned = float(tss_p) if tss_p is not None else existing_row.tss_planned
+                    existing_row.tss_planned_precise = tss_p_precise if tss_p is not None else existing_row.tss_planned_precise
                     existing_row.source      = source_lbl
                     existing_row.raw_json    = _json.dumps(item, ensure_ascii=False)[:4000]
                     updated += 1
@@ -1351,6 +1372,7 @@ class GarminPullService:
                         dur_min             = dur_min,
                         dist_km             = dist_km,
                         tss_planned         = float(tss_p) if tss_p is not None else None,
+                        tss_planned_precise = tss_p_precise,
                         source              = source_lbl,
                         raw_json            = _json.dumps(item, ensure_ascii=False)[:4000],
                     ))

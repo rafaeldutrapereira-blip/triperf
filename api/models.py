@@ -1956,5 +1956,9 @@ class GarminPlannedWorkout(Base):
     dur_min             = Column(Float,   nullable=True)
     dist_km             = Column(Float,   nullable=True)
     tss_planned         = Column(Float,   nullable=True)    # si Training Peaks lo incluye
+    # True = objetivo real por paso (potencia/FC/ritmo); False = aproximación
+    # por promedio de sesión (distancia÷duración total, sobreestima series
+    # con descanso como natación); None = no se pudo estimar en absoluto.
+    tss_planned_precise = Column(Boolean, nullable=True)
     source              = Column(String,  nullable=True)    # 'trainingpeaks'|'garmin'|etc
     raw_json            = Column(Text,    nullable=True)    # payload original

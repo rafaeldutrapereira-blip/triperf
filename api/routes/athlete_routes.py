@@ -1026,6 +1026,13 @@ def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) 
     # MISMO workout al calendario dos veces con scheduledWorkoutId distintos
     # (confirmado: mismo workout_id, dos filas) — sin esto, el "Cumplimiento
     # Semanal" del dashboard sumaba el TSS planificado doble para ese día.
+    #
+    # NO se deduplica por "mismo día + mismo deporte + TSS parecido pero
+    # workout_id distinto" — se intentó (un caso parecía duplicado: dos
+    # bloques de ciclismo el mismo día, ~154 TSS cada uno, "outdoor" e
+    # "indoor") pero el usuario confirmó que son 2 sesiones reales distintas
+    # programadas a propósito por su coach (doble sesión el mismo día). TSS
+    # similar en el mismo día NO es evidencia suficiente de duplicado.
     seen = set()
     out = []
     for r in rows:
@@ -1041,6 +1048,11 @@ def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) 
             "dur_min":  r.dur_min,
             "dist_km":  r.dist_km,
             "tss":      r.tss_planned,
+            # True = TSS calculado con objetivo real por paso (preciso);
+            # False = aproximación por promedio de sesión completa (puede
+            # sobreestimar en series con descanso, ver _estimate_planned_tss);
+            # None = no se pudo estimar.
+            "tss_precise": r.tss_planned_precise,
             "source":   r.source,
         })
     return out
