@@ -82,7 +82,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.4rem}
 #s-cal #cal-area{overflow-x:auto}
 .panel-head{padding:.9rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
-.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.05em}
 
 /* Cumplimiento semanal — donuts real vs plan por deporte (mismo estándar
    dinámico que el gauge "Estado del Atleta" del dashboard: arco con
@@ -97,6 +97,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .compl-lbl{font-family:'Oswald',sans-serif;font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
 .compl-name{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .compl-detail{font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.04em}
+.compl-sessions{font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.04em;margin-top:-.4rem}
 
 /* ── WEEK CALENDAR ── */
 .cal-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:560px;gap:1px;background:var(--border2)}
@@ -279,8 +280,8 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 
       <!-- View selector -->
       <div class="view-tabs">
-        <button class="vt" data-view="week">Semana</button>
-        <button class="vt on" data-view="month">Mes</button>
+        <button class="vt on" data-view="week">Semana</button>
+        <button class="vt" data-view="month">Mes</button>
         <button class="vt" data-view="period">Período</button>
       </div>
 
@@ -535,7 +536,7 @@ var TARGETS = {swim:10, bike:200, run:40, str:3};  // weekly km / sessions
 // STATE
 // ──────────────────────────────────────
 var S = {
-  view:     'month',        // 'week' | 'month' | 'period'
+  view:     'week',         // 'week' | 'month' | 'period'
   ref:      new Date(),     // reference date for week/month nav
   filters:  [],             // [] = all; else array of sport keys
   pStart:   null,           // period view start Date
@@ -612,8 +613,14 @@ function sessionsInRange(startIso, endIso){
     .map(function(a){ return Object.assign({},a,{source:'garmin',status:'done'}); });
   var plans = getPlanned()
     .filter(function(p){ return p.date_iso>=startIso && p.date_iso<=endIso; })
-    .map(function(p){ return Object.assign({},p,{source:'local',status:'planned'}); });
-  return acts.concat(plans);
+    .map(function(p){ return Object.assign({},p,{source:'local',status:'planned',editable:true}); });
+  // Planes reales sincronizados (Training Peaks/Garmin o asignados por el
+  // coach) — se muestran igual que un plan manual (source:'local') para
+  // reusar toda la lógica de sessAdherence/render ya existente, pero
+  // marcados editable:false porque no viven en localStorage.
+  var extPlans = getExternalPlanned(startIso, endIso)
+    .filter(function(p){ return p.date_iso>=startIso && p.date_iso<=endIso; });
+  return acts.concat(plans).concat(extPlans);
 }
 
 function applyFilter(arr){
@@ -810,6 +817,30 @@ function sessAdherence(s, allDay) {
   return {key:'planned', pct:null, style:ADH.planned};
 }
 
+// Un plan sincronizado (source:'local') y la actividad real que lo cumple
+// (source:'garmin', mismo día+deporte) antes se mostraban como 2 tarjetas
+// separadas una vez completada la sesión. Empareja cada actividad real con
+// UN plan del mismo deporte ese día (1:1, no todos-contra-todos — si hay 2
+// planes y solo 1 real, el segundo plan sigue visible como pendiente) para
+// poder ocultar la tarjeta de plan duplicada y ofrecer comparación plan-vs-real.
+window._planMatchByActId = window._planMatchByActId || {};
+function pairPlanAndReal(allDay){
+  var hiddenPlanned = {};
+  var planByActId = {};
+  allDay.filter(function(s){ return s.source==='garmin'; }).forEach(function(g){
+    for(var i=0;i<allDay.length;i++){
+      var p = allDay[i];
+      if(p.source==='local' && p.sport===g.sport && !hiddenPlanned[p.id]){
+        hiddenPlanned[p.id] = true;
+        planByActId[g.activity_id] = p;
+        window._planMatchByActId[g.activity_id] = p;
+        break;
+      }
+    }
+  });
+  return {hiddenPlanned:hiddenPlanned, planByActId:planByActId};
+}
+
 function adhBadgeHtml(adh, isDone) {
   var st  = adh.style;
   var lbl = adh.pct !== null
@@ -833,7 +864,8 @@ function renderWeekCal(){
     var isPast  = dIso<todayS;
     var cls     = 'cal-day'+(isToday?' today':(!isPast?' future':''));
     var allDaySess= sessionsInRange(dIso,dIso);
-    var daySess   = applyFilter(allDaySess)
+    var pair      = pairPlanAndReal(allDaySess);
+    var daySess   = applyFilter(allDaySess.filter(function(s){ return !(s.source==='local' && pair.hiddenPlanned[s.id]); }))
       .sort(function(a,b){ return a.status==='done'?-1:1; });
     var dayTss  = daySess.reduce(function(t,s){ return t+(s.tss||0); },0);
 
@@ -847,10 +879,10 @@ function renderWeekCal(){
       var ast = adh.style;
       var sc  = 'sess';
       var oc  = s.source==='garmin'
-        ? 'goDetail('+s.activity_id+')'
+        ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
         : 'showDetail('+JSON.stringify(s.id)+')';
       var meta= fmtDur(s.dur_min)+(s.dist_km?' · '+fmtDist(s.dist_km,s.sport):'');
-      var dd  = (s.source==='local') ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
+      var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
       var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
       html += '<div class="'+sc+'"'+dd+' style="'+sty+'" onclick="'+oc+'" title="'+(s.name||m.label)+' · '+(adh.pct!==null?Math.round(adh.pct)+'%':adh.key)+'">';
       html += '<span class="sess-ico">'+m.icon+'</span>';
@@ -899,7 +931,8 @@ function renderMonthCal(){
         + (!inMon?' out-month':isFut?' future':'');
 
       var allDaySess= sessionsInRange(dIso,dIso);
-      var daySess   = applyFilter(allDaySess)
+      var pair      = pairPlanAndReal(allDaySess);
+      var daySess   = applyFilter(allDaySess.filter(function(s){ return !(s.source==='local' && pair.hiddenPlanned[s.id]); }))
         .sort(function(a,b){ return a.status==='done'?-1:1; });
       var visible = daySess.slice(0,2);
       var extra   = daySess.length-2;
@@ -912,9 +945,9 @@ function renderMonthCal(){
         var ast = adh.style;
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
-          ? 'goDetail('+s.activity_id+')'
+          ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
           : 'showDetail('+JSON.stringify(s.id)+')';
-        var dd  = (s.source==='local') ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
+        var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
         var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
         var pctLbl = adh.pct!==null?' '+Math.round(adh.pct)+'%':adh.key==='extra'?' Extra':'';
         html += '<div class="'+sc+'"'+dd+' style="'+sty+'" onclick="'+oc+'" title="'+(s.name||sp.label)+pctLbl+'">';
@@ -984,8 +1017,10 @@ function renderPeriodCal(){
         + (!inRange?' out-range':isFut?' future':'');
 
       var allDaySess = inRange ? sessionsInRange(dIso,dIso) : [];
+      var pair       = inRange ? pairPlanAndReal(allDaySess) : {hiddenPlanned:{}, planByActId:{}};
       var daySess    = inRange
-        ? applyFilter(allDaySess).sort(function(a,b){ return a.status==='done'?-1:1; })
+        ? applyFilter(allDaySess.filter(function(s){ return !(s.source==='local' && pair.hiddenPlanned[s.id]); }))
+            .sort(function(a,b){ return a.status==='done'?-1:1; })
         : [];
 
       html += '<div class="'+cls+'" data-date-iso="'+dIso+'">';
@@ -998,9 +1033,9 @@ function renderPeriodCal(){
         var ast = adh.style;
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
-          ? 'goDetail('+s.activity_id+')'
+          ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
           : 'showDetail('+JSON.stringify(s.id)+')';
-        var dd  = (s.source==='local') ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
+        var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
         var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
         var pctLbl = adh.pct!==null?' '+Math.round(adh.pct)+'%':adh.key==='extra'?' Extra':'';
         html += '<div class="'+sc+'"'+dd+' style="'+sty+'" onclick="'+oc+'" title="'+(s.name||sp.label)+pctLbl+'">';
@@ -1026,7 +1061,20 @@ function renderPeriodCal(){
 // ──────────────────────────────────────
 function renderList(){
   var range = currentRange();
-  var all   = applyFilter(sessionsInRange(range.start,range.end))
+  var raw   = applyFilter(sessionsInRange(range.start,range.end));
+
+  // Agrupar por día para emparejar plan-vs-real y ocultar la fila de plan
+  // duplicada una vez que la sesión ya se ejecutó (mismo criterio que las
+  // vistas de calendario).
+  var byDay = {};
+  raw.forEach(function(s){ (byDay[s.date_iso] = byDay[s.date_iso]||[]).push(s); });
+  var hiddenIds = {}, planByActId = {};
+  Object.keys(byDay).forEach(function(dIso){
+    var pair = pairPlanAndReal(byDay[dIso]);
+    Object.keys(pair.hiddenPlanned).forEach(function(k){ hiddenIds[k] = true; });
+    Object.keys(pair.planByActId).forEach(function(k){ planByActId[k] = pair.planByActId[k]; });
+  });
+  var all = raw.filter(function(s){ return !(s.source==='local' && hiddenIds[s.id]); })
     .sort(function(a,b){ return a.date_iso>b.date_iso?1:a.date_iso<b.date_iso?-1:0; });
 
   var tbody = document.getElementById('list-body');
@@ -1037,9 +1085,9 @@ function renderList(){
   tbody.innerHTML = all.map(function(s){
     var sp  = SPORT[s.sport]||{icon:'🏅',label:'Sesión',color:'var(--muted)'};
     var oc  = s.source==='garmin'
-      ? 'goDetail('+s.activity_id+')'
+      ? (planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
       : 'showDetail('+JSON.stringify(s.id)+')';
-    var allDay = sessionsInRange(s.date_iso, s.date_iso);
+    var allDay = byDay[s.date_iso] || [s];
     var adh    = sessAdherence(s, allDay);
     var ast    = adh.style;
     var pctTxt = adh.pct!==null
@@ -1135,6 +1183,73 @@ var COMPL_GRAD = {
 // Cada rango se pide una sola vez por carga de página; si el coach tiene
 // plan real asignado ese rango, reemplaza (no se suma) al de Training
 // Peaks/Garmin, igual criterio que dashboard.html.
+// ──────────────────────────────────────
+// PLANES REALES SINCRONIZADOS → sesiones para el calendario
+// (mismo origen de datos que fetchPlanTSSRange, pero como sesiones
+// individuales en vez de totales agregados por deporte)
+// ──────────────────────────────────────
+var _extPlanCache = {};
+window._extPlanById = window._extPlanById || {};
+
+function fetchExternalPlanned(startIso, endIso){
+  var key = startIso+'|'+endIso;
+  if(_extPlanCache[key]) return; // ya cacheado o ya en curso
+  var auth = _complAuth();
+  if(!auth.tok) return;
+  _extPlanCache[key] = 'pending';
+  var swimWords = /nata|swim|piscina|pool/i;
+
+  var pTP = fetch(auth.API+'/athlete/planned-workouts?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows){
+      return (rows||[]).map(function(p,i){
+        var sport = p.sport;
+        if(sport==='strength') sport='str';
+        if(sport==='other' && swimWords.test(p.title||'')) sport='swim';
+        return {
+          id:'ext-tp-'+p.date_iso+'-'+sport+'-'+i, date_iso:p.date_iso, sport:sport,
+          name:p.title, dur_min:p.dur_min, dist_km:p.dist_km, tss:p.tss,
+          source:'local', status:'planned', editable:false
+        };
+      });
+    }).catch(function(){ return []; });
+
+  var pCoach = fetch(auth.API+'/athlete/plan?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(assignments){ return assignments||[]; })
+    .catch(function(){ return []; });
+
+  Promise.all([pTP, pCoach]).then(function(results){
+    var tpSess = results[0], assignments = results[1];
+    // Misma precedencia por deporte que fetchPlanTSSRange: si el coach
+    // asignó plan para un deporte ese rango, ese deporte usa SU plan
+    // (no el de Training Peaks) para evitar tarjetas duplicadas.
+    var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
+    var coveredByCoach = {};
+    var coachSess = assignments.map(function(a,i){
+      var sp = sportMap[a.template.sport] || a.template.sport;
+      coveredByCoach[sp] = true;
+      return {
+        id:'ext-coach-'+a.date_iso+'-'+sp+'-'+i, date_iso:a.date_iso, sport:sp,
+        name:a.template.name, dur_min:a.template.dur_min, dist_km:a.template.dist_km,
+        tss:a.template.tss, notes:a.template.notes, coach_comment:a.coach_comment,
+        source:'local', status:'planned', editable:false
+      };
+    });
+    var mergedSess = coachSess.concat(tpSess.filter(function(s){ return !coveredByCoach[s.sport]; }));
+    mergedSess.forEach(function(s){ window._extPlanById[s.id] = s; });
+    _extPlanCache[key] = mergedSess;
+    render();
+  });
+}
+
+function getExternalPlanned(startIso, endIso){
+  var key = startIso+'|'+endIso;
+  var cached = _extPlanCache[key];
+  if(cached === undefined) fetchExternalPlanned(startIso, endIso);
+  return (cached && cached !== 'pending') ? cached : [];
+}
+
 var _complCache = {};
 function _complAuth(){
   var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
@@ -1156,14 +1271,26 @@ function fetchPlanTSSRange(startIso, endIso){
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows){
       var t = {swim:0,bike:0,run:0,str:0};
+      var count = {swim:0,bike:0,run:0,str:0};
+      // Si CUALQUIER workout de ese deporte en el rango usó la aproximación
+      // por promedio de sesión (tss_precise===false) en vez del objetivo
+      // real por paso, se marca el total como "estimado" — ver
+      // _estimate_planned_tss en garmin_pull_service.py.
+      var approx = {swim:false,bike:false,run:false,str:false};
       (rows||[]).forEach(function(p){
         var sport = p.sport;
         if(sport==='strength') sport='str';
         if(sport==='other' && swimWords.test(p.title||'')) sport='swim';
-        if(t.hasOwnProperty(sport)) t[sport] += (p.tss||0);
+        if(t.hasOwnProperty(sport)){
+          t[sport] += (p.tss||0);
+          count[sport]++;
+          if(p.tss_precise === false) approx[sport] = true;
+        }
       });
+      t._approx = approx;
+      t._count = count;
       return t;
-    }).catch(function(){ return {swim:0,bike:0,run:0,str:0}; });
+    }).catch(function(){ return {swim:0,bike:0,run:0,str:0,_approx:{},_count:{}}; });
 
   var pCoach = fetch(auth.API+'/athlete/plan?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
     .then(function(r){ return r.ok ? r.json() : []; })
@@ -1189,19 +1316,26 @@ function fetchPlanTSSRange(startIso, endIso){
       // completos (quedaban en "Sin datos" aunque sí tuvieran TSS real ahí).
       var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
       var t = {swim:0,bike:0,run:0,str:0};
+      var count = {swim:0,bike:0,run:0,str:0};
       var coveredByCoach = {swim:false,bike:false,run:false,str:false};
       assignments.forEach(function(a){
         var sp = sportMap[a.template.sport];
-        if(sp){ t[sp] += (a.template.tss||0); coveredByCoach[sp] = true; }
+        if(sp){ t[sp] += (a.template.tss||0); count[sp]++; coveredByCoach[sp] = true; }
       });
-      return {tss:t, covered:coveredByCoach};
+      return {tss:t, count:count, covered:coveredByCoach};
     }).catch(function(){ return null; });
 
   Promise.all([pTP, pCoach]).then(function(results){
     var tp = results[0], coach = results[1];
-    var merged = {swim:0,bike:0,run:0,str:0};
-    Object.keys(merged).forEach(function(sp){
-      merged[sp] = (coach && coach.covered[sp]) ? coach.tss[sp] : tp[sp];
+    var merged = {swim:0,bike:0,run:0,str:0,_approx:{},_count:{}};
+    Object.keys(SPORT).forEach(function(sp){
+      var fromCoach = coach && coach.covered[sp];
+      merged[sp] = fromCoach ? coach.tss[sp] : tp[sp];
+      // El plan de coach usa el TSS objetivo que el propio coach definió —
+      // no es una aproximación. Solo el fallback de Training Peaks/Garmin
+      // puede venir de la estimación por promedio de sesión.
+      merged._approx[sp] = !fromCoach && !!(tp._approx && tp._approx[sp]);
+      merged._count[sp] = fromCoach ? coach.count[sp] : (tp._count ? tp._count[sp] : 0);
     });
     _complCache[key] = merged;
     render();
@@ -1247,7 +1381,9 @@ function renderWeeklyCompliance(){
     var pct, ringPct;
     if(loading || tPlan<=0){ pct = null; ringPct = null; } // cargando, o sin plan asignado en este rango → no hay "cumplimiento" que medir
     else { pct = Math.round(tDone/tPlan*100); ringPct = Math.min(pct,100); }
-    return {sport:sport, sp:sp, pct:pct, ringPct:ringPct, tDone:Math.round(tDone), tPlan:Math.round(tPlan)};
+    var approx = !loading && !!(planTSS._approx && planTSS._approx[sport]);
+    var planCount = loading ? null : ((planTSS._count && planTSS._count[sport]) || 0);
+    return {sport:sport, sp:sp, pct:pct, ringPct:ringPct, tDone:Math.round(tDone), tPlan:Math.round(tPlan), approx:approx, doneCount:done.length, planCount:planCount};
   });
 
   row.innerHTML = data.map(function(d, idx){
@@ -1272,7 +1408,10 @@ function renderWeeklyCompliance(){
       +'</div>'
       +'</div>'
       +'<span class="compl-name">'+d.sp.icon+' '+d.sp.label+'</span>'
-      +'<span class="compl-detail">'+(d.pct!==null ? d.tDone+' / '+d.tPlan+' TSS' : (d.tDone>0 ? d.tDone+' TSS (sin plan)' : ''))+'</span>'
+      +'<span class="compl-detail">'+(d.pct!==null ? d.tDone+' / '+d.tPlan+' TSS' : (d.tDone>0 ? d.tDone+' TSS (sin plan)' : ''))
+        +(d.approx ? ' <span title="El plan no trajo el detalle de cada intervalo — el TSS planificado es una aproximación por promedio de sesión, puede sobreestimar series con descanso." style="color:var(--dim);cursor:help">≈ estimado</span>' : '')
+      +'</span>'
+      +(d.planCount!==null && (d.doneCount>0 || d.planCount>0) ? '<span class="compl-sessions">'+d.doneCount+' / '+d.planCount+' sesiones</span>' : '')
       +'</div>';
   }).join('');
 
@@ -1434,7 +1573,7 @@ window.saveSession = function(){
 // MODAL: Detalle sesión planificada
 // ──────────────────────────────────────
 window.showDetail = function(id){
-  var s = getPlanned().filter(function(p){ return p.id===id; })[0];
+  var s = getPlanned().filter(function(p){ return p.id===id; })[0] || window._extPlanById[id];
   if(!s) return;
   var sp = SPORT[s.sport]||{icon:'🏅',label:'Sesión',color:'var(--muted)'};
   var d  = new Date(s.date_iso+'T12:00:00');
@@ -1451,24 +1590,33 @@ window.showDetail = function(id){
     +(s.notes?'<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:.7rem;font-size:.81rem;color:var(--muted);margin-bottom:.5rem">'+s.notes+'</div>':'')
     +(s.coach_comment?'<div style="background:rgba(255,101,53,.06);border:1px solid rgba(255,101,53,.22);border-radius:8px;padding:.6rem .7rem;font-size:.81rem"><span style="font-family:\'Oswald\',sans-serif;font-size:.66rem;color:var(--orange);letter-spacing:.08em;text-transform:uppercase">Coach · </span>'+s.coach_comment+'</div>':'');
 
-  var logBtn = s.status !== 'done'
-    ? '<button class="btn btn-p btn-sm" onclick="openLogModal('+JSON.stringify(id)+')" data-i18n="btn_register_result">Registrar resultado</button>'
-    : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>';
+  // Los planes sincronizados (Training Peaks/Garmin o asignados por el
+  // coach, editable:false) no viven en localStorage: no se pueden editar,
+  // borrar ni "registrar resultado" manualmente a mano — su cumplimiento
+  // se detecta solo automáticamente al calzar con la actividad real.
+  var editable = s.editable !== false;
+  var logBtn = !editable ? ''
+    : s.status !== 'done'
+      ? '<button class="btn btn-p btn-sm" onclick="openLogModal('+JSON.stringify(id)+')" data-i18n="btn_register_result">Registrar resultado</button>'
+      : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>';
   var zwiftBtn = '';
   if(s.sport === 'bike' && s.status !== 'done'){
     if(s.blocks_json){
       /* Template tiene estructura — .zwo enviado automáticamente por email al asignar */
       zwiftBtn = '<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,101,53,.08);border:1px solid rgba(255,101,53,.3);border-radius:6px;padding:5px 12px;font-size:.78rem;color:#FF6535">⚡ Zwift .zwo enviado por email</span>';
-    }else{
-      /* Sin estructura — abre el builder */
+    }else if(editable){
+      /* Sin estructura — abre el builder (solo para planes editables) */
       zwiftBtn = '<a href="indoor_workout.html?date='+s.date_iso+'&name='+encodeURIComponent(s.name||'Ciclismo indoor')+'" class="btn btn-g btn-sm" style="color:var(--orange);border-color:rgba(255,101,53,.3)">🚴 Zwift Builder</a>';
     }
   }
+  var delBtn = editable
+    ? '<button class="btn btn-g btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.28)" onclick="deleteSession('+JSON.stringify(id)+')">Eliminar</button>'
+    : '';
   document.getElementById('det-foot').innerHTML =
     '<button class="btn btn-g btn-sm" onclick="closeModal(\'modal-detail\')">Cerrar</button>'
     + logBtn
     + zwiftBtn
-    +'<button class="btn btn-g btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.28)" onclick="deleteSession('+JSON.stringify(id)+')">Eliminar</button>';
+    + delBtn;
   document.getElementById('modal-detail').classList.add('open');
 };
 
@@ -1569,6 +1717,61 @@ window.goDetail = function(id){
 };
 window.closeModal  = function(id){ document.getElementById(id).classList.remove('open'); };
 window.closeModalOv= function(e,id){ if(e.target===document.getElementById(id)) closeModal(id); };
+
+// ──────────────────────────────────────
+// DETALLE: PLAN VS REAL (sesión completada que calzó con un plan sincronizado)
+// ──────────────────────────────────────
+function cmpRow(label, planNum, realNum, unit, decimals){
+  decimals = decimals || 0;
+  var planTxt = (planNum!=null) ? planNum.toFixed(decimals)+unit : '—';
+  var realTxt = (realNum!=null) ? realNum.toFixed(decimals)+unit : '—';
+  var diffTxt = '—', diffColor = 'var(--dim)';
+  if(planNum!=null && realNum!=null){
+    var diff = realNum - planNum;
+    var pctDiff = planNum ? (diff/planNum*100) : 0;
+    diffColor = Math.abs(pctDiff) <= 10 ? 'var(--green)' : (diff < 0 ? 'var(--red)' : 'var(--gold)');
+    diffTxt = (diff>=0?'+':'')+diff.toFixed(decimals)+unit+' ('+(pctDiff>=0?'+':'')+Math.round(pctDiff)+'%)';
+  }
+  return '<div style="font-size:.8rem;color:var(--muted)">'+label+'</div>'
+    +'<div style="font-size:.84rem;text-align:right;font-family:\'Barlow Condensed\',sans-serif">'+planTxt+'</div>'
+    +'<div style="font-size:.84rem;text-align:right;font-weight:600;font-family:\'Barlow Condensed\',sans-serif">'+realTxt+'</div>'
+    +'<div style="font-size:.76rem;text-align:right;color:'+diffColor+'">'+diffTxt+'</div>';
+}
+
+window.showCompareDetail = function(activityId){
+  var acts = (window.KL_DATA && window.KL_DATA.activities) || [];
+  var a = null;
+  for(var i=0;i<acts.length;i++){ if(acts[i].activity_id == activityId){ a = acts[i]; break; } }
+  var p = window._planMatchByActId[activityId];
+  if(!a || !p) return goDetail(activityId);
+
+  var sp = SPORT[a.sport]||{icon:'🏅',label:'Sesión',color:'var(--muted)'};
+  var realTss = estTSS(a);
+  var pct = computePct(p, Object.assign({}, a, {tss:realTss}));
+  var pctKey = pct>=90 ? 'done' : pct>=60 ? 'partial' : 'miss';
+
+  document.getElementById('det-title').textContent = sp.icon+' '+(a.name||sp.label)+' · Plan vs Real';
+  document.getElementById('det-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:1.2fr .85fr .85fr 1.3fr;gap:.4rem .5rem;align-items:center;margin-bottom:.7rem">'
+    +'<div></div>'
+    +'<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;text-align:right">Plan</div>'
+    +'<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;text-align:right">Real</div>'
+    +'<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;text-align:right">Diferencia</div>'
+    +cmpRow('Duración', p.dur_min, a.dur_min, ' min', 0)
+    +((p.dist_km || a.dist_km) ? cmpRow('Distancia', p.dist_km, a.dist_km, ' km', 1) : '')
+    +cmpRow('TSS', p.tss, realTss, '', 0)
+    +'</div>'
+    +'<div style="text-align:center;padding:.5rem 0;border-top:1px solid var(--border2)">'
+    +'<span class="badge '+ADH[pctKey].bdgCls+'" style="font-size:.85rem">'+Math.round(pct)+'% cumplimiento</span>'
+    +'</div>'
+    +(p.notes?'<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:.6rem;font-size:.8rem;color:var(--muted);margin-top:.6rem">'+p.notes+'</div>':'')
+    +(p.coach_comment?'<div style="background:rgba(255,101,53,.06);border:1px solid rgba(255,101,53,.22);border-radius:8px;padding:.55rem .65rem;font-size:.8rem;margin-top:.5rem"><span style="font-family:\'Oswald\',sans-serif;font-size:.62rem;color:var(--orange);letter-spacing:.08em;text-transform:uppercase">Coach · </span>'+p.coach_comment+'</div>':'');
+
+  document.getElementById('det-foot').innerHTML =
+    '<button class="btn btn-g btn-sm" onclick="closeModal(\'modal-detail\')">Cerrar</button>'
+    +'<a class="btn btn-p btn-sm" href="training_detail.html?id='+activityId+'">Ver actividad completa</a>';
+  document.getElementById('modal-detail').classList.add('open');
+};
 
 // ──────────────────────────────────────
 // DRAG & DROP
