@@ -35,6 +35,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
 from sqlalchemy import asc, desc
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -42,8 +43,9 @@ from ..auth import get_current_user
 from ..models import (
     User, GarminHealthDaily, GarminTrainingLoad, GarminActivity,
     RecoveryScore, RaceEvent, CoachAthlete,
-    PlanAdaptation, WeeklyPlanSnapshot,
+    PlanAdaptation, WeeklyPlanSnapshot, GarminPlannedWorkout,
 )
+from ..services.periodization_service import _phase_label
 from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.adaptive")
@@ -322,9 +324,13 @@ def _compliance_7d(user_id: str, db: Session) -> Optional[float]:
         GarminTrainingLoad.user_id  == user_id,
         GarminTrainingLoad.date_iso >= cutoff,
     ).all()
+    planned_rows = db.query(GarminPlannedWorkout).filter(
+        GarminPlannedWorkout.user_id  == user_id,
+        GarminPlannedWorkout.date_iso >= cutoff,
+    ).all()
 
-    planned_total = sum((r.tss_planned or 0) for r in tl_rows)
-    actual_total  = sum((r.tss_day or 0)     for r in tl_rows)
+    actual_total  = sum((r.tss or 0) for r in tl_rows)
+    planned_total = sum((r.tss_planned or 0) for r in planned_rows)
 
     if planned_total < 5:
         return None  # Sin datos de plan suficientes
@@ -372,9 +378,17 @@ def _get_or_compute_adaptation(
         GarminTrainingLoad.user_id  == user_id,
         GarminTrainingLoad.date_iso == date_iso,
     ).first()
-    tsb         = tl_row.tsb     if tl_row else None
-    planned_tss = tl_row.tss_planned if tl_row else None
-    actual_tss  = tl_row.tss_day    if tl_row else None
+    tsb         = tl_row.tsb if tl_row else None
+    actual_tss  = tl_row.tss if tl_row else None
+    # El TSS planificado vive en garmin_planned_workouts, no en
+    # garmin_training_load (esa tabla solo guarda carga ya ejecutada) —
+    # bug real: referenciaba campos inexistentes (tss_planned/tss_day)
+    # en el modelo equivocado, tiraba 500 en cada carga de adaptive.html.
+    planned_row = db.query(GarminPlannedWorkout).filter(
+        GarminPlannedWorkout.user_id == user_id,
+        GarminPlannedWorkout.date_iso == date_iso,
+    ).first()
+    planned_tss = planned_row.tss_planned if planned_row else None
 
     race        = _next_race(user_id, db)
     compliance  = _compliance_7d(user_id, db)
@@ -446,7 +460,21 @@ def _get_or_compute_adaptation(
     else:
         row = PlanAdaptation(user_id=user_id, date_iso=date_iso, **fields)
         db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Carrera: /adaptive/dashboard y /adaptive/week pueden pedir el mismo
+        # día casi al mismo tiempo — ambos ven "no existe" y ambos intentan
+        # insertar. El segundo pisa el UNIQUE(user_id, date_iso); en vez de
+        # tirar 500, se recupera la fila que sí quedó insertada y se actualiza.
+        db.rollback()
+        row = db.query(PlanAdaptation).filter(
+            PlanAdaptation.user_id  == user_id,
+            PlanAdaptation.date_iso == date_iso,
+        ).first()
+        for k, v in fields.items():
+            setattr(row, k, v)
+        db.commit()
     db.refresh(row)
     return _adaptation_to_dict(row)
 
@@ -539,7 +567,8 @@ def adaptive_dashboard(
 
         "phase": {
             "current":          phase,
-            "week":             phase_week,
+            "phase_label":      _phase_label(phase),
+            "phase_week":       phase_week,
             "total_weeks":      PHASE_DURATION.get(race.distance if race else "custom", {}).get(phase, 4) if race else 4,
             "days_to_race":     days_to_race if race else None,
             "race_name":        race.name    if race else None,
@@ -591,7 +620,7 @@ def adaptive_week(
         GarminTrainingLoad.user_id  == me.id,
         GarminTrainingLoad.date_iso.in_(days),
     ).all()
-    tss_actual = sum((r.tss_day or 0) for r in actual_rows)
+    tss_actual = sum((r.tss or 0) for r in actual_rows)
 
     # Snapshot de la semana
     _upsert_week_snapshot(me.id, mon.isoformat(), adaptations, tss_actual, db)
@@ -683,8 +712,12 @@ def _build_compliance_history(user_id: str, db: Session, weeks: int = 8) -> list
             GarminTrainingLoad.user_id  == user_id,
             GarminTrainingLoad.date_iso.in_(w_days),
         ).all()
-        planned = sum((r.tss_planned or 0) for r in tl_rows)
-        actual  = sum((r.tss_day     or 0) for r in tl_rows)
+        planned_rows = db.query(GarminPlannedWorkout).filter(
+            GarminPlannedWorkout.user_id  == user_id,
+            GarminPlannedWorkout.date_iso.in_(w_days),
+        ).all()
+        planned = sum((r.tss_planned or 0) for r in planned_rows)
+        actual  = sum((r.tss or 0)         for r in tl_rows)
         pct     = round(actual / max(planned, 1) * 100, 1) if planned > 0 else None
         history.append({
             "week_start":    w_start.isoformat(),

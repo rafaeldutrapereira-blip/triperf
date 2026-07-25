@@ -75,6 +75,22 @@ var METRICS = {
     unidad: 'ratio (sin unidad)',
   },
 
+  compliance: {
+    nombre: 'Cumplimiento Semanal',
+    emoji: '📊',
+    definicion: 'Mide qué porcentaje del <strong>plan de esa semana realmente completaste</strong>, comparando el TSS de tus actividades reales contra el TSS que el plan (ajustado por el motor adaptativo) tenía programado. En el gráfico, la altura de cada barra representa cuánto se planificó esa semana y el relleno de color representa cuánto se cumplió.',
+    formula: 'Cumplimiento = (TSS real de la semana ÷ TSS planificado ajustado) × 100',
+    rangos: [
+      {min:0,   max:70,  label:'Bajo',       color:'#EF4444', advice:'Sesiones incompletas frecuentes. El motor adaptativo ya está reduciendo la carga futura para acomodarse a tu ritmo real — prioriza consistencia antes que volumen.'},
+      {min:70,  max:85,  label:'Moderado',   color:'#F59E0B', advice:'Cumples la mayoría del plan pero con sesiones sueltas incompletas. Normal en semanas cargadas; vigila que no se vuelva la tendencia.'},
+      {min:85,  max:105, label:'Alto ✓',     color:'#10B981', advice:'Estás completando el plan con alta fidelidad. El motor adaptativo puede mantener o incluso subir la carga si tu recuperación acompaña.'},
+      {min:105, max:999, label:'Sobre-cumplimiento', color:'#A855F7', advice:'Estás haciendo más de lo planificado. Ocasional está bien, pero sostenido puede acumular fatiga no planeada — modera.'},
+    ],
+    meta_triathlon: 'Objetivo saludable: 85-105% sostenido — más importante que un solo pico alto es la tendencia semana a semana.',
+    pro_tip: 'Una tendencia a la baja durante 2-3 semanas seguidas suele anticipar que el plan necesita un ajuste de volumen, no solo fuerza de voluntad.',
+    unidad: '%',
+  },
+
   tss: {
     nombre: 'TSS — Training Stress Score',
     emoji: '💪',
