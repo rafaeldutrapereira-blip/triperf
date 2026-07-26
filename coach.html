@@ -3573,7 +3573,9 @@ document.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){
     var tok = localStorage.getItem('lx_co_token');
     if (!tok) return;
-    fetch(API+'/coach/alerts',{headers:{Authorization:'Bearer '+tok}})
+    // 'API' vive en el otro bloque <script> (otro scope) — acá no existe.
+    var _apiBase = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
+    fetch(_apiBase+'/coach/alerts',{headers:{Authorization:'Bearer '+tok}})
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(data){
         if (!data) return;
