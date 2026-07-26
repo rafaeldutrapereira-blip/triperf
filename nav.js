@@ -139,17 +139,6 @@
     var links = '';
 
     mods.forEach(function(m){
-      /* Módulo Coach: siempre visible y navegable para cualquier rol, sin
-         candado de plan. coach.html tiene su propio login-wall que ya
-         valida el rol real (ver coLogin()/init()) — bloquearlo acá con un
-         "Requiere plan X" no tiene sentido, el requisito real es de ROL
-         (ser coach), no de plan, y ningún upgrade de plan daría acceso. */
-      if(m.id === 'coach'){
-        var activeC = (m.file === page);
-        links += '<a href="'+_escH(m.file)+'" class="sb-lnk'+(activeC?' on':'')+'" data-kl-module="'+m.id+'">'+m.icon+m.label+'</a>';
-        return;
-      }
-
       /* Coach/admin only → hide for athletes */
       var coachOnly = m.roles && m.roles.length > 0 &&
                       m.roles.every(function(r){ return r==='coach'||r==='admin'; });
