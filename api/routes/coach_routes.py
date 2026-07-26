@@ -1383,7 +1383,7 @@ def athlete_report(
 @router.get("/alerts")
 def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     """Atletas con fatigue>=4 o RPE>=8 en últimas 48h. Badge en coach.html."""
-    from datetime import datetime, timedelta as _td
+    from datetime import datetime, timedelta as _td, timezone
     cutoff_dt  = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).isoformat()
     cutoff_day = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).date().isoformat()
 
