@@ -1137,11 +1137,13 @@ function showLoginWall(){
 function showApp(){
   document.getElementById('login-wall').style.display='none';
   document.getElementById('coach-app').style.display='block';
-  var initials = (_me.nombre||'C').charAt(0).toUpperCase();
-  document.getElementById('co-avatar').textContent   = initials;
-  document.getElementById('co-av-tb').textContent    = initials;
-  document.getElementById('co-uname').textContent    = _me.nombre;
-  document.getElementById('co-urole').textContent    = _me.rol==='admin'?'Admin':'Coach';
+  // co-avatar/co-av-tb/co-uname/co-urole ya no existen en el HTML (quedaron
+  // de un header viejo, el nombre/avatar ahora los muestra el sidebar
+  // compartido vía _syncKlSession()) — referenciarlos tiraba
+  // "Cannot set properties of null" y abortaba el resto de la función
+  // ANTES de actualizar app-heading y de llamar loadOverview(): la app
+  // quedaba visible pero completamente vacía, sin ningún error visible
+  // (el throw quedaba atrapado en el catch silencioso de coLogin()).
   document.getElementById('app-heading').textContent = 'Hola, '+_me.nombre;
   _syncKlSession();
   loadOverview();
