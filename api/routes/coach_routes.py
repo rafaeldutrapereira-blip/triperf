@@ -10,7 +10,7 @@ from ..database import get_db
 from ..models import (
     User, Group, GroupMember, WorkoutTemplate,
     AssignedWorkout, WorkoutLog, WeekTemplate, WeekTemplateDay,
-    WellnessLog,
+    WellnessLog, CoachAthlete,
 )
 from ..schemas import (
     GroupCreate, GroupOut, AddMemberRequest,
@@ -18,7 +18,7 @@ from ..schemas import (
     AssignRequest, AssignedWorkoutOut,
     AthleteAdherence, UserOut,
     GarminCredentials, GarminSyncResult,
-    UserCreate, UserUpdate,
+    UserCreate, UserUpdate, AthleteInvite,
     PlanVsActualItem,
     AthleteReport, ReportSportRow, ReportWeek,
     WeekTemplateCreate, WeekTemplateDayCreate, WeekTemplateOut, WeekTemplateDayOut,
@@ -69,6 +69,47 @@ def list_athletes(db: Session = Depends(get_db), coach: User = Depends(_coach)):
         .all()
     )
     return [UserOut.from_orm_user(u) for u in members]
+
+
+@router.get("/athletes/pending")
+def list_pending_athletes(db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """Invitaciones enviadas por este coach que el atleta aún no reclamó/aceptó."""
+    rows = (
+        db.query(CoachAthlete, User)
+        .join(User, User.id == CoachAthlete.athlete_id)
+        .filter(CoachAthlete.coach_id == coach.id, CoachAthlete.status == "pending")
+        .all()
+    )
+    return [
+        {
+            "id":       ca.id,
+            "nombre":   u.nombre,
+            "email":    u.email,
+            "is_new":   u.pending_invite,  # True = cuenta nueva sin reclamar; False = ya tenía cuenta, falta que acepte
+            "group_id": ca.group_id,
+        }
+        for ca, u in rows
+    ]
+
+
+@router.delete("/athletes/pending/{ca_id}", status_code=204)
+def cancel_pending_athlete(ca_id: str, db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """Cancela una invitación pendiente. Si la cuenta era nueva (creada por
+    la invitación, nunca reclamada), se borra también — de lo contrario el
+    email quedaría tomado para siempre por una invitación abandonada."""
+    ca = db.query(CoachAthlete).filter(CoachAthlete.id == ca_id, CoachAthlete.coach_id == coach.id).first()
+    if not ca:
+        raise HTTPException(404, "Invitación no encontrada")
+    athlete = db.query(User).filter(User.id == ca.athlete_id).first()
+    db.delete(ca)
+    if athlete and athlete.pending_invite:
+        other_links = db.query(CoachAthlete).filter(
+            CoachAthlete.athlete_id == athlete.id, CoachAthlete.id != ca.id
+        ).count()
+        if other_links == 0:
+            db.delete(athlete)
+    db.commit()
+    return None
 
 
 # ── Groups ──────────────────────────────────────────────────
@@ -897,22 +938,57 @@ def adherence(
     return result
 
 
-# ── Crear atleta (coach crea la cuenta) ────────────────────
-@router.post("/athletes", response_model=UserOut, status_code=201)
-def create_athlete(body: UserCreate, db: Session = Depends(get_db), coach: User = Depends(_coach)):
-    """Coach registra un nuevo atleta en el sistema."""
-    if db.query(User).filter(User.email == body.email.lower()).first():
-        raise HTTPException(409, "Email ya registrado")
+# ── Invitar atleta (sin contraseña — el coach nunca la define ni la ve) ──
+@router.post("/athletes", status_code=201)
+def create_athlete(
+    body: AthleteInvite,
+    group_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    Invita a un atleta al equipo del coach, sin compartir contraseñas
+    (ni de LabX ni de Garmin — el atleta las define/conecta él mismo):
+
+    - Si el email NO existe en LabX: se crea una cuenta "pendiente" (sin
+      password usable, activo=False) + una relación CoachAthlete
+      status='pending'. Se activa sola cuando esa persona se registra
+      con el mismo email en /auth/register (ver _claim_pending_invite).
+    - Si el email YA existe (persona ya usa LabX por su cuenta): no se
+      toca su cuenta, solo se crea la relación CoachAthlete
+      status='pending' — el atleta debe aceptarla desde su propio
+      perfil (GET/POST /athlete/pending-coach-invites).
+    """
+    email = body.email.lower().strip()
+    existing = db.query(User).filter(User.email == email).first()
+
+    if existing:
+        if existing.rol != "atleta":
+            raise HTTPException(409, "Ese email pertenece a una cuenta que no es de atleta")
+        dup = db.query(CoachAthlete).filter(
+            CoachAthlete.coach_id   == coach.id,
+            CoachAthlete.athlete_id == existing.id,
+        ).first()
+        if dup:
+            raise HTTPException(409, f"Ya existe una relación con este atleta (estado: {dup.status})")
+        ca = CoachAthlete(coach_id=coach.id, athlete_id=existing.id, group_id=group_id, status="pending")
+        db.add(ca); db.commit()
+        return {"status": "pending_existing", "message": f"{existing.nombre} ya tiene cuenta en LabX — se le envió una invitación para aceptar desde su perfil."}
+
+    import secrets
     u = User(
-        email         = body.email.lower(),
-        nombre        = body.nombre,
-        password_hash = hash_password(body.password),
-        rol           = "athlete",
-        plan_nivel    = body.plan_nivel or "basico",
-        activo        = True,
+        email          = email,
+        nombre         = body.nombre.strip(),
+        password_hash  = hash_password(secrets.token_urlsafe(32)),  # inutilizable — nadie la conoce
+        rol            = "atleta",
+        plan_nivel     = body.plan_nivel or "basico",
+        activo         = False,
+        pending_invite = True,
     )
-    db.add(u); db.commit(); db.refresh(u)
-    return UserOut.from_orm_user(u)
+    db.add(u); db.flush()
+    ca = CoachAthlete(coach_id=coach.id, athlete_id=u.id, group_id=group_id, status="pending")
+    db.add(ca); db.commit()
+    return {"status": "pending_new", "message": f"{u.nombre} quedó pendiente — se activa solo cuando se registre en LabX con {email}."}
 
 
 # ── Sync Garmin: enviar una asignación al Garmin del atleta ──

@@ -22,13 +22,52 @@ from pydantic import BaseModel, field_validator
 from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
-from ..models import Group, GroupMember, Follow
+from ..models import Group, GroupMember, Follow, CoachAthlete
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
 from .mental_routes import _mfs_from_checkin
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
 logger = logging.getLogger("labx.athlete")
 router = APIRouter(prefix="/athlete", tags=["athlete"])
+
+
+# ── Invitaciones de coach pendientes de aceptar (Caso B: el atleta ya
+#    tenía cuenta propia en LabX antes de que un coach intentara agregarlo) ──
+@router.get("/pending-coach-invites")
+def list_pending_coach_invites(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    rows = (
+        db.query(CoachAthlete, User)
+        .join(User, User.id == CoachAthlete.coach_id)
+        .filter(CoachAthlete.athlete_id == me.id, CoachAthlete.status == "pending")
+        .all()
+    )
+    return [{"id": ca.id, "coach_nombre": u.nombre, "coach_email": u.email} for ca, u in rows]
+
+
+@router.post("/pending-coach-invites/{ca_id}/accept")
+def accept_coach_invite(ca_id: str, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    ca = db.query(CoachAthlete).filter(CoachAthlete.id == ca_id, CoachAthlete.athlete_id == me.id).first()
+    if not ca:
+        raise HTTPException(404, "Invitación no encontrada")
+    ca.status = "active"
+    if ca.group_id:
+        already = db.query(GroupMember).filter(
+            GroupMember.group_id == ca.group_id, GroupMember.athlete_id == me.id
+        ).first()
+        if not already:
+            db.add(GroupMember(group_id=ca.group_id, athlete_id=me.id))
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/pending-coach-invites/{ca_id}/reject")
+def reject_coach_invite(ca_id: str, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    ca = db.query(CoachAthlete).filter(CoachAthlete.id == ca_id, CoachAthlete.athlete_id == me.id).first()
+    if not ca:
+        raise HTTPException(404, "Invitación no encontrada")
+    db.delete(ca)
+    db.commit()
+    return {"ok": True}
 
 
 def _read_garmin_pwd(user: "User", db: "Session") -> str | None:

@@ -71,6 +71,14 @@ class UserCreate(BaseModel):
     rol:        str = "atleta"
     plan_nivel: str = "basico"
 
+class AthleteInvite(BaseModel):
+    """Coach invita a un atleta — sin contraseña: el coach nunca la define
+    ni la conoce. El atleta la fija él mismo al registrarse (o acepta la
+    invitación desde su propio perfil si ya tenía cuenta)."""
+    email:      EmailStr
+    nombre:     str
+    plan_nivel: str = "basico"
+
 class UserOut(BaseModel):
     id:             str
     email:          str

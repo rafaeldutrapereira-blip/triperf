@@ -167,6 +167,9 @@
     <!-- PAGE HEADER -->
     <div class="ph"></div>
 
+    <!-- Invitaciones de coach pendientes de aceptar -->
+    <div id="pending-coach-invites-wrap"></div>
+
     <!-- TABS -->
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('perfil')">Perfil</button>
@@ -1108,9 +1111,44 @@ function deleteAccount() {
     .catch(function(){ toast('Error al eliminar cuenta', 'err'); });
 }
 
+/* ── Invitaciones de coach pendientes de aceptar (un coach quiso
+   agregarte y ya tenías cuenta propia — nunca ve ni define tu password) ── */
+function loadPendingCoachInvites(){
+  var wrap = document.getElementById('pending-coach-invites-wrap');
+  if(!wrap) return;
+  fetch(API + '/athlete/pending-coach-invites', { headers: authH(false) })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows){
+      if(!rows || !rows.length){ wrap.innerHTML=''; return; }
+      wrap.innerHTML = rows.map(function(r){
+        return '<div class="card" style="margin-bottom:1rem;border-color:rgba(240,165,0,.35);background:rgba(240,165,0,.05)">'
+          +'<div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">'
+          +'<div><strong>'+esc(r.coach_nombre)+'</strong> quiere agregarte a su equipo de entrenamiento.'
+          +'<div style="font-size:.72rem;color:var(--dim)">'+esc(r.coach_email)+'</div></div>'
+          +'<div style="display:flex;gap:.5rem">'
+          +'<button class="btn btn-ghost btn-sm" onclick="rejectCoachInvite(\''+r.id+'\')">Rechazar</button>'
+          +'<button class="btn btn-primary btn-sm" onclick="acceptCoachInvite(\''+r.id+'\')">Aceptar</button>'
+          +'</div></div></div>';
+      }).join('');
+    }).catch(function(){});
+}
+function acceptCoachInvite(id){
+  fetch(API + '/athlete/pending-coach-invites/' + id + '/accept', { method:'POST', headers: authH(false) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){ toast('Invitación aceptada','ok'); loadPendingCoachInvites(); })
+    .catch(function(){ toast('Error al aceptar','err'); });
+}
+function rejectCoachInvite(id){
+  fetch(API + '/athlete/pending-coach-invites/' + id + '/reject', { method:'POST', headers: authH(false) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){ toast('Invitación rechazada','ok'); loadPendingCoachInvites(); })
+    .catch(function(){ toast('Error al rechazar','err'); });
+}
+
 /* ── Init ─────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function() {
   loadProfile();
+  loadPendingCoachInvites();
 });
 </script>
 <script src="nav.js"></script>

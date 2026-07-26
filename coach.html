@@ -298,8 +298,9 @@ tr:hover td{background:rgba(14,165,233,.04)}
   <!-- TAB: ATHLETES -->
   <div class="tab-panel" id="tab-athletes">
     <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
-      <button class="btn btn-primary" onclick="openModal('modal-new-athlete')">+ Nuevo Atleta</button>
+      <button class="btn btn-primary" onclick="openModal('modal-new-athlete')">+ Invitar Atleta</button>
     </div>
+    <div id="pending-athletes-wrap"></div>
     <div class="card">
       <div class="card-hd">
         <h3 data-i18n="sec_team_athletes">Atletas del equipo</h3>
@@ -688,11 +689,15 @@ tr:hover td{background:rgba(14,165,233,.04)}
   </div>
 </div>
 
-<!-- Modal: Nuevo Atleta -->
+<!-- Modal: Invitar Atleta -->
 <div class="modal-backdrop" id="modal-new-athlete">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-new-athlete')">✕</button>
-    <h2>Registrar Atleta</h2>
+    <h2>Invitar Atleta</h2>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
+      Solo necesitas su nombre y email — el atleta define su propia contraseña
+      (y conecta su propio Garmin) al aceptar. Tú nunca ves esos datos.
+    </p>
     <div class="field-row">
       <div class="field" style="margin:0"><label>Nombre completo</label><input type="text" id="na-nombre" placeholder="Juan Pérez"></div>
       <div class="field" style="margin:0"><label>Plan</label>
@@ -703,16 +708,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
         </select>
       </div>
     </div>
-    <div class="field"><label>Email (será su usuario)</label><input type="email" id="na-email" placeholder="atleta@ejemplo.com"></div>
-    <div class="field"><label>Contraseña temporal</label><input type="text" id="na-pass" placeholder="labx2026" autocomplete="off"></div>
-    <div style="background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.2);border-radius:var(--radius-sm);padding:.75rem;margin-bottom:1rem">
-      <div style="font-size:.72rem;color:var(--cyan);font-weight:600;margin-bottom:.3rem">Credenciales Garmin del atleta (opcional)</div>
-      <div class="field-row" style="margin-top:.3rem">
-        <div class="field" style="margin:0"><label>Email Garmin</label><input type="email" id="na-garmin-email" placeholder="atleta@gmail.com"></div>
-        <div class="field" style="margin:0"><label>Contraseña Garmin</label><input type="password" id="na-garmin-pass" placeholder="••••••••" autocomplete="off"></div>
-      </div>
-      <div style="font-size:.7rem;color:var(--dim);margin-top:.4rem">Si se cargan, sus workouts asignados se enviarán directamente a Garmin Connect.</div>
-    </div>
+    <div class="field"><label>Email</label><input type="email" id="na-email" placeholder="atleta@ejemplo.com"></div>
     <div id="na-group-section">
       <div class="field"><label>Agregar a grupo (opcional)</label>
         <select id="na-group"><option value="">Sin grupo por ahora</option></select>
@@ -720,7 +716,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
     </div>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-ghost" onclick="closeModal('modal-new-athlete')">Cancelar</button>
-      <button class="btn btn-primary" onclick="createAthlete()">Crear Atleta</button>
+      <button class="btn btn-primary" onclick="createAthlete()">Enviar Invitación</button>
     </div>
   </div>
 </div>
@@ -1087,7 +1083,7 @@ window.closeModal=function(id){ document.getElementById(id).classList.remove('op
 window.switchTab=function(name){
   document.querySelectorAll('.coach-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===name); });
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('on', p.id==='tab-'+name); });
-  if(name==='athletes'){ loadAthletes(); populateGroupsInAthleteModal(); }
+  if(name==='athletes'){ loadAthletes(); populateGroupsInAthleteModal(); loadPendingAthletes(); }
   if(name==='groups')   loadGroups();
   if(name==='workouts') loadWorkouts();
   if(name==='assign')   loadAssignTab();
@@ -1494,58 +1490,55 @@ window.addMember=async function(){
 
 // ── Crear atleta ──────────────────────────────────────────────
 window.createAthlete=async function(){
-  var nombre     = document.getElementById('na-nombre').value.trim();
-  var email      = document.getElementById('na-email').value.trim();
-  var pass       = document.getElementById('na-pass').value.trim();
-  var plan       = document.getElementById('na-plan').value;
-  var gEmail     = document.getElementById('na-garmin-email').value.trim();
-  var gPass      = document.getElementById('na-garmin-pass').value.trim();
-  var groupId    = document.getElementById('na-group').value;
+  var nombre  = document.getElementById('na-nombre').value.trim();
+  var email   = document.getElementById('na-email').value.trim();
+  var plan    = document.getElementById('na-plan').value;
+  var groupId = document.getElementById('na-group').value;
 
-  if(!nombre||!email||!pass){ toast('Nombre, email y contraseña requeridos','err'); return; }
+  if(!nombre||!email){ toast('Nombre y email requeridos','err'); return; }
 
   try{
-    // 1. Crear usuario atleta
-    var newUser = await apiPost('/coach/athletes',{
-      email: email, nombre: nombre, password: pass,
-      rol: 'athlete', plan_nivel: plan
-    });
-    toast('Atleta '+nombre+' creado');
+    // Invitación sin contraseña — el atleta la define él mismo al aceptar
+    // (ver diseño en modal: nunca vemos ni definimos su password/Garmin).
+    var qs = groupId ? '?group_id='+encodeURIComponent(groupId) : '';
+    var res = await apiPost('/coach/athletes'+qs, {email:email, nombre:nombre, plan_nivel:plan});
+    toast(res.message || 'Invitación enviada','ok');
 
-    // 2. Guardar credenciales Garmin si se ingresaron
-    if(gEmail && gPass){
-      toast('Verificando credenciales Garmin...','ok');
-      try{
-        // Llamamos al endpoint del atleta — necesitamos hacer login como el atleta
-        // para guardar sus credenciales. Hacemos POST directo al admin endpoint.
-        await fetch(API+'/admin/users/'+newUser.id+'/garmin',{
-          method:'POST',
-          headers:{'Content-Type':'application/json',Authorization:'Bearer '+getToken()},
-          body: JSON.stringify({garmin_email:gEmail,garmin_password:gPass})
-        }).then(function(r){
-          if(!r.ok) return r.json().then(function(d){ throw new Error(d.detail||'Error'); });
-          return r.json();
-        });
-        toast('Garmin conectado para '+nombre,'ok');
-      }catch(e2){
-        toast('Atleta creado, Garmin falló: '+e2.message,'err');
-      }
-    }
-
-    // 3. Agregar al grupo si se seleccionó
-    if(groupId){
-      try{
-        await apiPost('/coach/groups/'+groupId+'/members',{user_id:newUser.id});
-      }catch(e3){ /* grupo ya puede estar lleno o error */ }
-    }
-
-    // Limpiar modal
-    ['na-nombre','na-email','na-pass','na-garmin-email','na-garmin-pass'].forEach(function(id){
-      document.getElementById(id).value='';
-    });
+    ['na-nombre','na-email'].forEach(function(id){ document.getElementById(id).value=''; });
     closeModal('modal-new-athlete');
-    loadAthletes();
+    loadPendingAthletes();
     loadOverview();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+};
+
+// ── Invitaciones pendientes ────────────────────────────────────
+async function loadPendingAthletes(){
+  var wrap = document.getElementById('pending-athletes-wrap');
+  if(!wrap) return;
+  try{
+    var rows = await apiGet('/coach/athletes/pending');
+    if(!rows.length){ wrap.innerHTML=''; return; }
+    wrap.innerHTML = '<div class="card" style="margin-bottom:1.25rem;border-color:rgba(240,165,0,.3);background:rgba(240,165,0,.04)">'
+      +'<div class="card-hd"><h3>⏳ Invitaciones pendientes</h3></div>'
+      + rows.map(function(r){
+        var sub = r.is_new
+          ? 'Se activa sola cuando '+esc(r.nombre)+' se registre en LabX con '+esc(r.email)
+          : esc(r.nombre)+' ya tiene cuenta — falta que acepte desde su perfil';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border2)">'
+          +'<div><strong>'+esc(r.nombre)+'</strong><div style="font-size:.72rem;color:var(--dim)">'+sub+'</div></div>'
+          +'<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="cancelPendingAthlete(\''+r.id+'\')">Cancelar</button>'
+          +'</div>';
+      }).join('')
+      +'</div>';
+  }catch(e){ wrap.innerHTML=''; }
+}
+
+window.cancelPendingAthlete = async function(id){
+  if(!confirm('¿Cancelar esta invitación?')) return;
+  try{
+    await apiDelete('/coach/athletes/pending/'+id);
+    toast('Invitación cancelada','ok');
+    loadPendingAthletes();
   }catch(e){ toast('Error: '+e.message,'err'); }
 };
 

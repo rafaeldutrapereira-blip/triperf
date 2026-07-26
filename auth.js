@@ -111,17 +111,20 @@
       return r.json();
     })
     .then(function(data) {
-      /* Guardar JWT para Coach API — SOLO si la cuenta que acaba de loguearse
-         es coach/admin. Antes se escribía siempre, para cualquier rol: un
-         atleta logueándose en esta misma pestaña/navegador pisaba el token
-         de coach ya guardado (mismo localStorage compartido), y coach.html
-         seguía usando ese lx_co_token corrupto → 403 "requiere rol coach"
-         en todas las pestañas, aunque el usuario sí fuera coach. */
-      if (data.rol === 'coach' || data.rol === 'admin') {
-        localStorage.setItem('lx_co_token',  data.access_token);
-        localStorage.setItem('lx_co_rol',    data.rol);
-        localStorage.setItem('lx_co_nombre', data.nombre);
-      }
+      /* lx_co_token es el bearer token GENERAL que usan dashboard.html,
+         training_plan.html, athlete_profile.html, etc. para CUALQUIER
+         usuario logueado (nombre histórico confuso, no es exclusivo de
+         coach) — por eso se guarda siempre, sin filtrar por rol. Filtrarlo
+         acá rompería el login normal de cualquier atleta en esas páginas.
+         (Se probó gatear esto por rol para evitar que un login de atleta
+         pisara una sesión de coach abierta en coach.html en el MISMO
+         navegador — pero es un escenario de testing con 2 identidades a
+         la vez en la misma pestaña, no un caso real de uso; coach.html
+         para "ver mi propio plan como atleta" ya usa una clave separada,
+         lx_ath_token, precisamente para no chocar con esto.) */
+      localStorage.setItem('lx_co_token',  data.access_token);
+      localStorage.setItem('lx_co_rol',    data.rol);
+      localStorage.setItem('lx_co_nombre', data.nombre);
 
       var plan = PLAN_MAP[data.plan_nivel] || 'basic';
       var sess = {

@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request,
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User
+from ..models import User, CoachAthlete, GroupMember
 from ..schemas import LoginRequest, TokenResponse, UserCreate, UserOut
 from ..auth import (
     hash_password, verify_password, create_token, get_current_user,
@@ -358,28 +358,63 @@ def change_password(
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
-    """Auto-registro público — crea una cuenta 'atleta' con plan 'basico'."""
+    """Auto-registro público — crea una cuenta 'atleta' con plan 'basico'.
+
+    Si el email ya existe pero es una invitación pendiente de un coach
+    (pending_invite=True, creada por /coach/athletes sin contraseña real),
+    en vez de rechazar por "email ya registrado" se RECLAMA: el atleta fija
+    su propia contraseña acá, la cuenta se activa, y las relaciones
+    CoachAthlete asociadas pasan de 'pending' a 'active' automáticamente
+    (sin correo, sin token de invitación — la coincidencia de email + este
+    registro normal es la "aceptación").
+    """
     ip = ip_from_request(request)
     _check_rate_limit(ip, db, max_attempts=_MAX_REGISTER_PER_IP)
 
-    email = body.email.lower().strip()
-    if db.query(User).filter(User.email == email).first():
+    email    = body.email.lower().strip()
+    existing = db.query(User).filter(User.email == email).first()
+
+    if existing and not existing.pending_invite:
         _record_failed(ip, db)
         raise HTTPException(status_code=409, detail="Este email ya está registrado.")
     _validate_password_strength(body.password)
 
-    user = User(
-        email         = email,
-        nombre        = body.nombre.strip(),
-        password_hash = hash_password(body.password),
-        rol           = "atleta",
-        plan_nivel    = "basico",
-        activo        = True,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    logger.info("Nuevo registro user_id=%s email=%s", user.id, email)
+    if existing:
+        # Reclamar invitación pendiente: la cuenta ya existe (la creó un
+        # coach), acá el atleta fija su propia contraseña por primera vez.
+        user = existing
+        user.nombre         = body.nombre.strip() or user.nombre
+        user.password_hash  = hash_password(body.password)
+        user.activo         = True
+        user.pending_invite = False
+        db.commit()
+
+        links = db.query(CoachAthlete).filter(
+            CoachAthlete.athlete_id == user.id, CoachAthlete.status == "pending"
+        ).all()
+        for link in links:
+            link.status = "active"
+            if link.group_id:
+                already = db.query(GroupMember).filter(
+                    GroupMember.group_id == link.group_id, GroupMember.athlete_id == user.id
+                ).first()
+                if not already:
+                    db.add(GroupMember(group_id=link.group_id, athlete_id=user.id))
+        db.commit()
+        logger.info("Invitación reclamada user_id=%s email=%s coaches=%d", user.id, email, len(links))
+    else:
+        user = User(
+            email         = email,
+            nombre        = body.nombre.strip(),
+            password_hash = hash_password(body.password),
+            rol           = "atleta",
+            plan_nivel    = "basico",
+            activo        = True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info("Nuevo registro user_id=%s email=%s", user.id, email)
 
     # Enviar email de bienvenida (best-effort, no bloquea)
     try:

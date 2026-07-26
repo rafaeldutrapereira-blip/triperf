@@ -32,6 +32,11 @@ class User(Base):
     rol           = Column(String, nullable=False, default="atleta")   # admin | coach | atleta
     plan_nivel    = Column(String, default="basico")                   # basico | agegroup | elite
     activo        = Column(Boolean, default=True)
+    # True = cuenta creada por un coach vía invitación, aún sin reclamar
+    # (password_hash es un valor aleatorio inutilizable, activo=False).
+    # Se reclama cuando esa persona se registra con el mismo email en
+    # /auth/register: ahí se setea su password real y se activa.
+    pending_invite = Column(Boolean, default=False)
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     last_login_at = Column(DateTime, nullable=True)                    # analytics: último inicio de sesión
     # Credenciales Garmin del atleta (para sync directo a su cuenta)
