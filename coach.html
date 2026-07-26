@@ -17,7 +17,7 @@
   --green:#10B981;--red:#EF4444;--purple:#A855F7;
   --text:#F0F9FF;--muted:#7FB3CC;--dim:#3D6880;
   --radius:12px;--radius-sm:8px;--ease:220ms cubic-bezier(.4,0,.2,1);
-  --sb-w:240px;
+  --sb-w:220px; /* debe calzar con el ancho real de #sidebar en nav.css */
 }
 html{scroll-behavior:smooth}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
@@ -72,7 +72,10 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
 }
 
 /* ── LAYOUT ── */
-.coach-wrap{margin-left:var(--sb-w);padding:2rem 2rem 4rem}
+/* nav.css ya aplica body{padding-left:220px} para el sidebar — un
+   margin-left acá duplicaba el offset, dejando un hueco entre el
+   menú y el contenido (mismo bug ya visto en indoor_workout.html). */
+.coach-wrap{padding:2rem 2rem 4rem}
 .coach-header{margin-bottom:2rem}
 .coach-header h1{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:600;color:var(--text)}
 .coach-header p{font-size:.875rem;color:var(--muted);margin-top:.2rem}
@@ -1102,6 +1105,7 @@ window.coLogin=async function(){
   errEl.style.display='none';
   try{
     var data = await apiPost('/auth/login',{email:email,password:pass});
+    if(data.rol==='atleta'){ toast('Sin acceso coach','err'); return; }
     setToken(data.access_token);
     _me = data;
     showApp();
@@ -1114,6 +1118,7 @@ window.coLogout=function(){
   localStorage.removeItem('lx_co_token');
   localStorage.removeItem('lx_co_rol');
   localStorage.removeItem('lx_co_nombre');
+  if(window.KL) KL.clearSession();
   _token=null; _me=null;
   showLoginWall();
 };
@@ -1124,7 +1129,7 @@ async function init(){
   if(!t){ showLoginWall(); return; }
   try{
     _me = await apiGet('/auth/me');
-    if(_me.rol==='athlete'){ toast('Sin acceso coach','err'); showLoginWall(); return; }
+    if(_me.rol==='atleta'){ toast('Sin acceso coach','err'); showLoginWall(); return; }
     showApp();
   }catch(e){ showLoginWall(); }
 }
@@ -1142,7 +1147,31 @@ function showApp(){
   document.getElementById('co-uname').textContent    = _me.nombre;
   document.getElementById('co-urole').textContent    = _me.rol==='admin'?'Admin':'Coach';
   document.getElementById('app-heading').textContent = 'Hola, '+_me.nombre;
+  _syncKlSession();
   loadOverview();
+}
+
+// nav.js (sidebar compartido con las páginas de atleta) espera la sesión
+// en kl_s — esta página siempre tuvo su propio login/token (lx_co_token)
+// independiente de auth.js, así que nav.js nunca se incluyó y el
+// <aside id="sidebar"> quedaba completamente vacío. Se traduce _me al
+// formato kl_s manualmente (mismo mapping que auth.js login()) para que
+// el sidebar se pinte, sin tocar el flujo de login/token propio de esta página.
+function _syncKlSession(){
+  if(!window.KL || !_me) return;
+  var planMap  = {elite:'elite', agegroup:'agegroup', basico:'basic'};
+  var initials = (_me.nombre||'C').split(' ').slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase();
+  KL.saveSession({
+    username: _me.email,
+    email:    _me.email,
+    name:     _me.nombre,
+    initials: initials,
+    role:     _me.rol==='admin' ? 'Admin · Coach' : 'Coach',
+    plan:     planMap[_me.plan_nivel] || 'basic',
+    api_rol:  _me.rol,
+    user_id:  _me.id,
+    ts:       Date.now()
+  }, true);
 }
 
 // ── Overview ──────────────────────────────────────────────────
@@ -3723,6 +3752,8 @@ document.addEventListener('DOMContentLoaded', function(){
 }
 </style>
 
+<script src="auth.js"></script>
+<script src="nav.js"></script>
 <script src="i18n.js"></script>
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>

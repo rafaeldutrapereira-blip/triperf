@@ -25,9 +25,9 @@
 
   /* rol API → etiqueta amigable */
   var ROLE_LABELS = {
-    admin:   'Admin · Coach',
-    coach:   'Coach',
-    athlete: 'Atleta'
+    admin:  'Admin · Coach',
+    coach:  'Coach',
+    atleta: 'Atleta' /* el rol real en la BD es 'atleta' (español), no 'athlete' */
   };
 
   /* PLANS derivado de LX_ROUTES para evitar duplicación.
@@ -111,10 +111,17 @@
       return r.json();
     })
     .then(function(data) {
-      /* Guardar JWT para Coach API */
-      localStorage.setItem('lx_co_token',  data.access_token);
-      localStorage.setItem('lx_co_rol',    data.rol);
-      localStorage.setItem('lx_co_nombre', data.nombre);
+      /* Guardar JWT para Coach API — SOLO si la cuenta que acaba de loguearse
+         es coach/admin. Antes se escribía siempre, para cualquier rol: un
+         atleta logueándose en esta misma pestaña/navegador pisaba el token
+         de coach ya guardado (mismo localStorage compartido), y coach.html
+         seguía usando ese lx_co_token corrupto → 403 "requiere rol coach"
+         en todas las pestañas, aunque el usuario sí fuera coach. */
+      if (data.rol === 'coach' || data.rol === 'admin') {
+        localStorage.setItem('lx_co_token',  data.access_token);
+        localStorage.setItem('lx_co_rol',    data.rol);
+        localStorage.setItem('lx_co_nombre', data.nombre);
+      }
 
       var plan = PLAN_MAP[data.plan_nivel] || 'basic';
       var sess = {
