@@ -34,18 +34,18 @@
       sidebar: true,
       public:  false
     },
+    /* ── Plan Agegroup ────────────────────────────────── */
     {
       id:      'huella',
       file:    'huella.html',
       label:   'Mi Huella',
       labelI18n: 'nav_huella',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
-      minPlan: 'basic',
+      minPlan: 'agegroup', /* antes 'basic' — Básico ahora es solo Dashboard+Perfil */
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
     },
-    /* ── Plan Pro ────────────────────────────────────── */
     {
       id:      'training_plan',
       file:    'training_plan.html',
