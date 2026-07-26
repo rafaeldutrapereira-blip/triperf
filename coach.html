@@ -1240,7 +1240,10 @@ async function loadOverviewWellness(){
   try{
     var data=await apiGet('/coach/team-wellness');
     var alerts=data.filter(function(w){
-      return w.fatigue!=null&&(w.fatigue>=4||w.soreness>=4);
+      // fatigue puede venir null aunque haya check-in real (algunos solo
+      // registran soreness/mood) — antes eso descartaba alertas de dolor
+      // real por exigir fatiga no-nula además.
+      return w.date_iso!=null&&((w.fatigue!=null&&w.fatigue>=4)||(w.soreness!=null&&w.soreness>=4));
     });
     sub.textContent=data.length+' atletas · '+alerts.length+' alerta'+(alerts.length!==1?'s':'');
     if(!alerts.length){
@@ -3488,7 +3491,9 @@ window.syncAthleteGarmin = async function(athleteId, nombre, btn){
   try {
     // Obtiene las últimas asignaciones del atleta y sincroniza la más reciente sin log
     var assigns = await window._coApiGet('/coach/assignments/athlete/'+athleteId);
-    var pending = (assigns||[]).filter(function(a){ return !a.log_completado; }).slice(0,3);
+    // El log real vive en a.logs[] (WorkoutLogOut) — a.log_completado no
+    // existe en esta respuesta, así que TODO se contaba como pendiente.
+    var pending = (assigns||[]).filter(function(a){ return !(a.logs && a.logs[0] && a.logs[0].completado); }).slice(0,3);
     if (!pending.length) { window._coToast(nombre+': sin sesiones pendientes de sync','ok'); return; }
     var synced = 0;
     for (var i=0; i<pending.length; i++){
@@ -3671,10 +3676,13 @@ document.addEventListener('DOMContentLoaded', function(){
             var sp = (s.template && s.template.sport) || 'other';
             var col = SPORT_COLORS[sp]||SPORT_COLORS.other;
             var ic  = SPORT_ICONS[sp]||SPORT_ICONS.other;
-            var done = s.log_completado;
+            // El log real vive en s.logs[] (WorkoutLogOut), no en campos
+            // planos s.log_* — con eso, "completado" siempre daba false.
+            var log  = s.logs && s.logs[0];
+            var done = !!(log && log.completado);
             var bg   = done ? col+'22' : 'var(--surface2)';
             var border = done ? col : 'var(--border)';
-            var rpe = s.log_rpe ? ' · RPE'+s.log_rpe : '';
+            var rpe = (log && log.rpe) ? ' · RPE'+log.rpe : '';
             return '<div title="'+(s.template?esc(s.template.nombre):'sesión')+(done?' ✓':'')+rpe+'" style="font-size:.68rem;padding:.15rem .3rem;border-radius:4px;border:1px solid '+border+';background:'+bg+';margin:.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">'
               +ic+' '+(done?'<span style="color:'+col+'">✓</span> ':'')+(s.template?esc(s.template.nombre.slice(0,12)):sp)
               +'</div>';
@@ -3682,7 +3690,7 @@ document.addEventListener('DOMContentLoaded', function(){
           return '<td style="border:1px solid var(--border2);padding:.25rem .3rem;vertical-align:top">'+content+'</td>';
         }).join('');
 
-        var doneCount = item.assigns.filter(function(a){return a.log_completado;}).length;
+        var doneCount = item.assigns.filter(function(a){return a.logs && a.logs[0] && a.logs[0].completado;}).length;
         var pct = item.assigns.length ? Math.round(doneCount/item.assigns.length*100) : 0;
         var pctCol = pct>=80?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
 

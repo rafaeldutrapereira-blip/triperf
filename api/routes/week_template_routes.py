@@ -264,15 +264,20 @@ def get_template_calendar(
     db: Session = Depends(get_db),
     coach: User = Depends(_coach)
 ):
-    # Atletas activos (filtrado por grupo opcional)
-    ath_q = db.query(User).filter(User.activo == True, User.rol == "atleta")
-    if group_id:
-        ath_q = (
-            ath_q
-            .join(GroupMember, GroupMember.athlete_id == User.id)
-            .filter(GroupMember.group_id == group_id)
-        )
-    athletes = ath_q.all()
+    # Atletas del coach (nunca de otros coaches) — opcionalmente acotado a un grupo
+    coach_group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
+    if group_id and group_id not in coach_group_ids:
+        raise HTTPException(404, "Grupo no encontrado")
+    scope_group_ids = [group_id] if group_id else coach_group_ids
+    if not scope_group_ids:
+        return []
+    athletes = (
+        db.query(User)
+        .join(GroupMember, GroupMember.athlete_id == User.id)
+        .filter(User.activo == True, User.rol == "atleta", GroupMember.group_id.in_(scope_group_ids))
+        .distinct()
+        .all()
+    )
     athlete_ids = {a.id for a in athletes}
     athlete_map = {a.id: a for a in athletes}
 
