@@ -1294,7 +1294,11 @@ async function loadWeekSummary(today){
 
 // ── Athletes ──────────────────────────────────────────────────
 function _wellnessBadge(w){
-  if(!w||w.fatigue==null) return '<span style="font-size:.72rem;color:var(--dim)">Sin datos</span>';
+  // Exigir específicamente w.fatigue no-null ocultaba el badge para
+  // check-ins que solo registran soreness/mood (sin fatigue/sleep_q) —
+  // el check real de "hay datos" es la fecha del registro, no un campo
+  // particular que puede venir vacío según qué preguntas respondió el atleta.
+  if(!w||!w.date_iso) return '<span style="font-size:.72rem;color:var(--dim)">Sin datos</span>';
   var maxVal=Math.max(w.fatigue||0,w.soreness||0);
   var color=maxVal>=4?'var(--red)':maxVal>=3?'var(--yellow)':'var(--green)';
   var label=maxVal>=4?'Alerta':maxVal>=3?'Moderado':'OK';

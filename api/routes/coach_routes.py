@@ -120,6 +120,7 @@ def list_groups(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     for g in groups:
         out        = GroupOut.model_validate(g)
         out.member_count = len(g.members)
+        out.members      = [{"athlete_id": m.athlete_id} for m in g.members]
         result.append(out)
     return result
 

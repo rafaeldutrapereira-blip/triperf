@@ -145,6 +145,7 @@ class GroupOut(BaseModel):
     coach_id:    str
     created_at:  datetime
     member_count: Optional[int] = 0
+    members:     Optional[list] = None  # [{"athlete_id": "..."}] — el frontend lo usa para mostrar a qué grupo pertenece cada atleta
 
     model_config = {"from_attributes": True}
 
