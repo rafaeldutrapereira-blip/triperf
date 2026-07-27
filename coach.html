@@ -600,7 +600,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
       </div>
       <div class="field" style="margin:0">
         <label>Tipo de sesión</label>
-        <select id="mw-tipo">
+        <select id="mw-tipo" onchange="_mwAutoTSS()">
           <option value="">— Sin clasificar —</option>
           <option value="endurance">Endurance / Base aeróbica</option>
           <option value="tempo">Tempo / Fartlek</option>
@@ -617,7 +617,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
     </div>
     <div class="field-row">
       <div class="field" style="margin:0">
-        <label>Duración total (min)</label><input type="number" id="mw-dur" placeholder="60" min="1">
+        <label>Duración total (min)</label><input type="number" id="mw-dur" placeholder="60" min="1" oninput="_mwAutoTSS()">
       </div>
       <div class="field" style="margin:0">
         <label>Distancia (km)</label><input type="number" id="mw-dist" placeholder="10" step="0.1" min="0">
@@ -2112,7 +2112,24 @@ window.deleteWorkout = async function(id){
 };
 
 // ── P1: Auto-TSS desde bloques estructurados ─────────────────
+// (metodología LabX: TSS = intensidad_relativa² × horas × 100 — misma
+// fórmula que usa toda la app, ya sea la intensidad venga de %FTP/%CSS/
+// zona de ritmo en bloques estructurados, o de un tipo de sesión típico
+// cuando el template es simple, sin bloques.)
 var _ZONE_IF = {Z1:0.68, Z2:0.79, Z3:0.87, Z4:0.94, Z5:1.05};
+
+// Intensidad relativa típica por tipo de sesión — igual de válida para
+// cualquier atleta (no depende de su FTP/ritmo/CSS específico), para
+// templates SIN bloques estructurados. Con bloques, esos ya traen su
+// propia intensidad relativa (%FTP/%CSS/zona) y tienen prioridad.
+var _TIPO_IF = {
+  recuperacion: 0.60,
+  endurance:    0.75,
+  tempo:        0.85,
+  umbral:       0.92,
+  vo2max:       1.00,
+  race:         0.90,
+};
 
 function _parsePaceMinPerKm(paceStr){
   if(!paceStr) return 5.0;
@@ -2158,6 +2175,20 @@ function _mwAutoTSS(){
       if(b.type==='main') durSec += (b.repeat||1)*(b.rest_sec||20);
       tss += (durSec/3600)*IF*IF*100;
     });
+  }
+
+  // Sin bloques estructurados (template simple): estimar con la
+  // intensidad relativa típica del "Tipo de sesión" — mismo principio
+  // (TSS = IF² × horas × 100), solo que la intensidad viene del tipo
+  // en vez de %FTP/%CSS/zona por bloque. No aplica a Fuerza (usa sRPE,
+  // no duración×intensidad de ritmo/potencia).
+  if(tss===0 && sport!=='str'){
+    var tipo = document.getElementById('mw-tipo').value;
+    var durMinInput = parseFloat(document.getElementById('mw-dur').value) || 0;
+    var tipoIF = _TIPO_IF[tipo];
+    if(tipoIF && durMinInput>0){
+      tss = (durMinInput/60) * tipoIF * tipoIF * 100;
+    }
   }
 
   tss = Math.round(tss);
