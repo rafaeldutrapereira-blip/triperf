@@ -162,6 +162,14 @@ def delete_group(group_id: str, db: Session = Depends(get_db), coach: User = Dep
     g = db.query(Group).filter(Group.id == group_id, Group.coach_id == coach.id).first()
     if not g:
         raise HTTPException(404, "Grupo no encontrado")
+    if db.query(Group).filter(Group.parent_group_id == group_id).first():
+        raise HTTPException(409, "Este grupo tiene subgrupos — elimínalos primero")
+    # CoachAthlete.group_id y AssignedWorkout.group_id son referencias
+    # informativas (a qué grupo pertenece/de qué grupo vino la asignación),
+    # no la relación real (esa es GroupMember, que sí cascadea al borrar
+    # el grupo) — se limpian en vez de bloquear el borrado con un FK error.
+    db.query(CoachAthlete).filter(CoachAthlete.group_id == group_id).update({"group_id": None})
+    db.query(AssignedWorkout).filter(AssignedWorkout.group_id == group_id).update({"group_id": None})
     db.delete(g); db.commit()
 
 
