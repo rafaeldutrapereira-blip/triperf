@@ -1435,13 +1435,14 @@ window.createGroup=async function(){
 
 // Popula el selector de "grupo padre" con los grupos principales (sin
 // padre) del coach cada vez que se abre el modal de Nuevo Grupo.
-function populateParentGroupSelect(){
+// window.* porque se llama desde un onclick inline (scope global).
+window.populateParentGroupSelect = function(){
   var sel = document.getElementById('mg-parent');
   if(!sel) return;
   sel.innerHTML = '<option value="">Grupo principal (sin padre)</option>'
     + (_cache.groups||[]).filter(function(g){ return !g.parent_group_id; })
       .map(function(g){ return '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>'; }).join('');
-}
+};
 
 window.deleteGroup=async function(id){
   if(!confirm('Eliminar este grupo y todas sus asignaciones?')) return;
