@@ -135,8 +135,9 @@ class GarminSyncResult(BaseModel):
 # GROUPS
 # ─────────────────────────────────────────────
 class GroupCreate(BaseModel):
-    nombre:      str
-    competencia: Optional[str] = None
+    nombre:          str
+    competencia:     Optional[str] = None
+    parent_group_id: Optional[str] = None  # subgrupo dentro de otro grupo (ej. "Niza" dentro de "AR3")
 
 class GroupOut(BaseModel):
     id:          str
@@ -144,6 +145,7 @@ class GroupOut(BaseModel):
     competencia: Optional[str]
     coach_id:    str
     created_at:  datetime
+    parent_group_id: Optional[str] = None
     member_count: Optional[int] = 0
     members:     Optional[list] = None  # [{"athlete_id": "..."}] — el frontend lo usa para mostrar a qué grupo pertenece cada atleta
 

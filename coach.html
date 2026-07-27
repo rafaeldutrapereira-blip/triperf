@@ -326,7 +326,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
   <!-- TAB: GROUPS -->
   <div class="tab-panel" id="tab-groups">
     <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
-      <button class="btn btn-primary" onclick="openModal('modal-group')">+ Nuevo Grupo</button>
+      <button class="btn btn-primary" onclick="populateParentGroupSelect();openModal('modal-group')">+ Nuevo Grupo</button>
     </div>
     <div id="groups-grid" class="grid2"></div>
   </div>
@@ -572,6 +572,10 @@ tr:hover td{background:rgba(14,165,233,.04)}
     <h2 data-i18n="btn_new_group">Nuevo Grupo</h2>
     <div class="field"><label>Nombre del grupo</label><input type="text" id="mg-nombre" placeholder="Ej: Equipo 70.3 Concón"></div>
     <div class="field"><label>Competencia objetivo</label><input type="text" id="mg-comp" placeholder="Ej: 70.3 Concón Agosto 2026"></div>
+    <div class="field"><label>Grupo padre (opcional)</label>
+      <select id="mg-parent"><option value="">Grupo principal (sin padre)</option></select>
+      <div style="font-size:.72rem;color:var(--dim);margin-top:.3rem">Si eliges uno, este será un subgrupo (ej. "Niza" dentro de "AR3") — al asignar entrenamientos podrás elegir el subgrupo específico.</div>
+    </div>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-ghost" onclick="closeModal('modal-group')">Cancelar</button>
       <button class="btn btn-primary" onclick="createGroup()">Crear Grupo</button>
@@ -1362,6 +1366,27 @@ async function loadAthletes(){
 }
 
 // ── Groups ────────────────────────────────────────────────────
+// Etiqueta para <option> de selects de grupo: antepone "↳" a los
+// subgrupos para diferenciarlos de los grupos principales en la lista.
+function _groupOptLabel(g){
+  return (g.parent_group_id ? '↳ ' : '') + esc(g.nombre);
+}
+
+function _groupCardHtml(g, isSub){
+  var cnt = g.member_count;
+  return '<div class="card" id="grp-card-'+g.id+'"'+(isSub?' style="border-color:rgba(14,165,233,.25);background:rgba(14,165,233,.03)"':'')+'>'
+    +'<div class="card-hd"><h3>'+(isSub?'↳ ':'')+esc(g.nombre)+'</h3>'
+    +'<button class="btn btn-danger btn-sm btn-icon" title="Eliminar '+(isSub?'subgrupo':'grupo')+'" onclick="deleteGroup(\''+g.id+'\')">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'
+    +(g.competencia?'<p style="font-size:.78rem;color:var(--dim);margin-bottom:.75rem">'+esc(g.competencia)+'</p>':'')
+    +'<button onclick="toggleGroupMembers(\''+g.id+'\')" style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--cyan);margin-bottom:.75rem;background:none;border:none;cursor:pointer;padding:0">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+    +cnt+' atleta'+(cnt!==1?'s':'')+' <span id="grp-arrow-'+g.id+'">▸</span></button>'
+    +'<div id="grp-members-'+g.id+'" style="display:none;margin-bottom:.75rem"></div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="openAddMemberGroup(\''+g.id+'\',\''+esc(g.nombre)+'\')">+ Agregar atleta</button>'
+    +'</div>';
+}
+
 async function loadGroups(){
   var grid=document.getElementById('groups-grid');
   grid.innerHTML='<p style="color:var(--dim)">Cargando...</p>';
@@ -1369,19 +1394,25 @@ async function loadGroups(){
     var grps = await apiGet('/coach/groups');
     _cache.groups=grps;
     if(!grps.length){ grid.innerHTML='<div class="empty"><p>Sin grupos. Crea el primero.</p></div>'; return; }
-    grid.innerHTML=grps.map(function(g){
-      var cnt = g.member_count;
-      return '<div class="card" id="grp-card-'+g.id+'">'
-        +'<div class="card-hd"><h3>'+esc(g.nombre)+'</h3>'
-        +'<button class="btn btn-danger btn-sm btn-icon" title="Eliminar grupo" onclick="deleteGroup(\''+g.id+'\')">'
-        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'
-        +(g.competencia?'<p style="font-size:.78rem;color:var(--dim);margin-bottom:.75rem">'+esc(g.competencia)+'</p>':'')
-        +'<button onclick="toggleGroupMembers(\''+g.id+'\')" style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--cyan);margin-bottom:.75rem;background:none;border:none;cursor:pointer;padding:0">'
-        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-        +cnt+' atleta'+(cnt!==1?'s':'')+' <span id="grp-arrow-'+g.id+'">▸</span></button>'
-        +'<div id="grp-members-'+g.id+'" style="display:none;margin-bottom:.75rem"></div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="openAddMemberGroup(\''+g.id+'\',\''+esc(g.nombre)+'\')">+ Agregar atleta</button>'
-        +'</div>';
+
+    var byId = {}; grps.forEach(function(g){ byId[g.id] = g; });
+    var subsByParent = {};
+    grps.forEach(function(g){
+      if(g.parent_group_id && byId[g.parent_group_id]){
+        (subsByParent[g.parent_group_id] = subsByParent[g.parent_group_id] || []).push(g);
+      }
+    });
+    // Grupos principales = sin padre, o con padre que ya no existe (huérfano defensivo)
+    var topLevel = grps.filter(function(g){ return !g.parent_group_id || !byId[g.parent_group_id]; });
+
+    grid.innerHTML = topLevel.map(function(g){
+      var subs = subsByParent[g.id] || [];
+      var subsHtml = subs.length
+        ? '<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;padding-left:1.5rem;margin:-.25rem 0 .5rem">'
+          + subs.map(function(s){ return _groupCardHtml(s, true); }).join('')
+          + '</div>'
+        : '';
+      return _groupCardHtml(g, false) + subsHtml;
     }).join('');
   }catch(e){ grid.innerHTML='<p style="color:var(--red)">Error: '+esc(e.message)+'</p>'; }
 }
@@ -1389,16 +1420,28 @@ async function loadGroups(){
 window.createGroup=async function(){
   var nombre=document.getElementById('mg-nombre').value.trim();
   var comp  =document.getElementById('mg-comp').value.trim();
+  var parentId = document.getElementById('mg-parent').value;
   if(!nombre){ toast('Nombre requerido','err'); return; }
   try{
-    await apiPost('/coach/groups',{nombre:nombre,competencia:comp||null});
+    await apiPost('/coach/groups',{nombre:nombre,competencia:comp||null,parent_group_id:parentId||null});
     closeModal('modal-group');
     document.getElementById('mg-nombre').value='';
     document.getElementById('mg-comp').value='';
-    toast('Grupo creado');
+    document.getElementById('mg-parent').value='';
+    toast(parentId?'Subgrupo creado':'Grupo creado');
     loadGroups();
   }catch(e){ toast('Error: '+e.message,'err'); }
 };
+
+// Popula el selector de "grupo padre" con los grupos principales (sin
+// padre) del coach cada vez que se abre el modal de Nuevo Grupo.
+function populateParentGroupSelect(){
+  var sel = document.getElementById('mg-parent');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Grupo principal (sin padre)</option>'
+    + (_cache.groups||[]).filter(function(g){ return !g.parent_group_id; })
+      .map(function(g){ return '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>'; }).join('');
+}
 
 window.deleteGroup=async function(id){
   if(!confirm('Eliminar este grupo y todas sus asignaciones?')) return;
@@ -1643,7 +1686,7 @@ function populateGroupsInAthleteModal(){
   if(!sel) return;
   sel.innerHTML='<option value="">Sin grupo por ahora</option>';
   _cache.groups.forEach(function(g){
-    sel.innerHTML+='<option value="'+g.id+'">'+esc(g.nombre)+'</option>';
+    sel.innerHTML+='<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';
   });
 }
 
@@ -2152,7 +2195,7 @@ window.openCopyWeek = function(){
   var gSel = document.getElementById('cw-group');
   gSel.innerHTML = '<option value="">Seleccionar...</option>';
   (_cache.groups||[]).forEach(function(g){
-    gSel.innerHTML += '<option value="'+g.id+'">'+esc(g.nombre)+'</option>';
+    gSel.innerHTML += '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';
   });
   openModal('modal-copy-week');
 };
@@ -2299,7 +2342,7 @@ async function loadAssignTab(){
   var gSel=document.getElementById('asgn-group');
   gSel.innerHTML='<option value="">Seleccionar grupo...</option>';
   _cache.groups.forEach(function(g){
-    gSel.innerHTML+='<option value="'+g.id+'">'+esc(g.nombre)+'</option>';
+    gSel.innerHTML+='<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';
   });
 
   // default date = today
@@ -2421,7 +2464,7 @@ function loadAdherenceFilters(){
   var gSel=document.getElementById('adh-group-filter');
   gSel.innerHTML='<option value="">Todos</option>';
   _cache.groups.forEach(function(g){
-    gSel.innerHTML+='<option value="'+g.id+'">'+esc(g.nombre)+'</option>';
+    gSel.innerHTML+='<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';
   });
   // default last 30 days
   var t=todayISO();
@@ -3037,7 +3080,7 @@ window.loadCalendar = async function(){
   var gSel = document.getElementById('cal-group-filter');
   if(gSel.children.length <= 1){
     _cache.groups.forEach(function(g){
-      gSel.innerHTML += '<option value="'+g.id+'">'+esc(g.nombre)+'</option>';
+      gSel.innerHTML += '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';
     });
   }
   var gid = gSel.value;
@@ -3245,7 +3288,7 @@ window.openWtApply = function(wtId, nombre){
   _cache.athletes.forEach(function(a){ aSel.innerHTML += '<option value="'+a.id+'">'+esc(a.nombre)+'</option>'; });
   var gSel = document.getElementById('wta-group');
   gSel.innerHTML = '<option value="">Seleccionar...</option>';
-  _cache.groups.forEach(function(g){ gSel.innerHTML += '<option value="'+g.id+'">'+esc(g.nombre)+'</option>'; });
+  _cache.groups.forEach(function(g){ gSel.innerHTML += '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>'; });
   document.getElementById('wta-garmin').checked = false;
   openModal('modal-wt-apply');
 };
@@ -3451,7 +3494,7 @@ window.openMcApply = function(mcId, nombre, weekCount){
     +_cache.athletes.map(function(u){return '<option value="'+u.id+'">'+esc(u.nombre)+'</option>';}).join('');
   var grpSel = document.getElementById('mca-group');
   grpSel.innerHTML = '<option value="">Seleccionar...</option>'
-    +_cache.groups.map(function(g){return '<option value="'+g.id+'">'+esc(g.nombre)+'</option>';}).join('');
+    +_cache.groups.map(function(g){return '<option value="'+g.id+'">'+_groupOptLabel(g)+'</option>';}).join('');
   document.getElementById('mca-target-type').value='athlete';
   toggleMcaTarget();
   openModal('modal-mc-apply');

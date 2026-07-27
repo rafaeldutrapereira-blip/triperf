@@ -127,7 +127,16 @@ def list_groups(db: Session = Depends(get_db), coach: User = Depends(_coach)):
 
 @router.post("/groups", response_model=GroupOut, status_code=201)
 def create_group(body: GroupCreate, db: Session = Depends(get_db), coach: User = Depends(_coach)):
-    g = Group(nombre=body.nombre, competencia=body.competencia, coach_id=coach.id)
+    if body.parent_group_id:
+        parent = db.query(Group).filter(
+            Group.id == body.parent_group_id, Group.coach_id == coach.id
+        ).first()
+        if not parent:
+            raise HTTPException(404, "Grupo padre no encontrado")
+    g = Group(
+        nombre=body.nombre, competencia=body.competencia, coach_id=coach.id,
+        parent_group_id=body.parent_group_id,
+    )
     db.add(g); db.commit(); db.refresh(g)
     out              = GroupOut.model_validate(g)
     out.member_count = 0

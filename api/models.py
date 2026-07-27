@@ -10,7 +10,7 @@ from sqlalchemy import (
     Boolean, Column, Date, DateTime, Float,
     ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from .database import Base
 
@@ -112,10 +112,18 @@ class Group(Base):
     descripcion = Column(Text, nullable=True)
     competencia = Column(String)
     coach_id    = Column(String, ForeignKey("users.id"), nullable=False)
+    # Subgrupo (ej. "Niza", "Valdivia Full") dentro de un grupo mayor (ej.
+    # "AR3") — mismo modelo Group, solo con padre. Un atleta puede
+    # pertenecer al grupo padre Y a un subgrupo (membresías independientes
+    # en GroupMember); asignar un workout a un subgrupo ya funciona igual
+    # que a cualquier grupo, sin lógica nueva.
+    parent_group_id = Column(String, ForeignKey("groups.id"), nullable=True)
     created_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
-    coach   = relationship("User",        back_populates="groups_coached", foreign_keys=[coach_id])
-    members = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan")
+    coach     = relationship("User",        back_populates="groups_coached", foreign_keys=[coach_id])
+    members   = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan")
+    subgroups = relationship("Group", backref=backref("parent_group", remote_side=[id]),
+                              foreign_keys=[parent_group_id])
     assigned_workouts = relationship("AssignedWorkout", back_populates="group",
                                      foreign_keys="AssignedWorkout.group_id")
 
