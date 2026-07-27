@@ -56,18 +56,26 @@ def _read_garmin_pwd(user: "User", db: "Session") -> str | None:
 # ── Athletes under this coach ───────────────────────────────
 @router.get("/athletes", response_model=List[UserOut])
 def list_athletes(db: Session = Depends(get_db), coach: User = Depends(_coach)):
-    """Atletas que pertenecen a al menos un grupo del coach. Incluye has_garmin."""
+    """
+    Atletas del coach — unión de relación CoachAthlete activa (la fuente
+    real, desde la invitación) y membresía de grupo (categorización
+    opcional). Antes solo miraba GroupMember: un atleta recién aceptado
+    que aún no está en ningún grupo desaparecía por completo de esta
+    lista (y de cualquier selector que dependa de ella), aunque la
+    relación coach-atleta ya estuviera activa.
+    """
     group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
-    if not group_ids:
+    from_groups = db.query(User.id).join(
+        GroupMember, GroupMember.athlete_id == User.id
+    ).filter(GroupMember.group_id.in_(group_ids)) if group_ids else db.query(User.id).filter(False)
+    from_relation = db.query(User.id).join(
+        CoachAthlete, CoachAthlete.athlete_id == User.id
+    ).filter(CoachAthlete.coach_id == coach.id, CoachAthlete.status == "active")
+
+    athlete_ids = {r[0] for r in from_groups.all()} | {r[0] for r in from_relation.all()}
+    if not athlete_ids:
         return []
-    members = (
-        db.query(User)
-        .join(GroupMember, GroupMember.athlete_id == User.id)
-        .filter(GroupMember.group_id.in_(group_ids))
-        .filter(User.activo == True)
-        .distinct()
-        .all()
-    )
+    members = db.query(User).filter(User.id.in_(athlete_ids), User.activo == True).all()
     return [UserOut.from_orm_user(u) for u in members]
 
 
