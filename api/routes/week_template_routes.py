@@ -3,7 +3,6 @@ Endpoints: Semanas Tipo (Week Templates) + Calendario
 """
 from __future__ import annotations
 
-import copy
 from collections import defaultdict
 from datetime import date as _date, timedelta
 from typing import List, Optional
@@ -281,8 +280,17 @@ def get_template_calendar(
     athlete_ids = {a.id for a in athletes}
     athlete_map = {a.id: a for a in athletes}
 
-    # Asignaciones individuales del período
-    ind_assigns = (
+    # Todas las asignaciones del período — incluye tanto las individuales
+    # como las de grupo: assign_workout() (POST /coach/assign) ya expande
+    # una asignación grupal a UNA fila por miembro en el momento de crearla
+    # (athlete_id + group_id ambos poblados), así que filtrar por
+    # athlete_id ya las captura todas. (Antes había acá una segunda
+    # "expansión" que volvía a duplicar cada fila de grupo por cada
+    # miembro ACTUAL del grupo vía copy.copy() de un objeto ORM — rompía
+    # el lazy-load de .template con "Deferred loader failed to populate
+    # correctly" en cuanto había una asignación de grupo real, y además
+    # habría duplicado las tarjetas del calendario.)
+    all_assigns = (
         db.query(AssignedWorkout)
         .filter(
             AssignedWorkout.date_iso >= start,
@@ -291,31 +299,6 @@ def get_template_calendar(
         )
         .all()
     )
-
-    # Asignaciones grupales → expandir a miembros
-    grp_assigns = (
-        db.query(AssignedWorkout)
-        .filter(
-            AssignedWorkout.date_iso >= start,
-            AssignedWorkout.date_iso <= end,
-            AssignedWorkout.group_id.isnot(None),
-        )
-        .all()
-    )
-    extra = []
-    for ga in grp_assigns:
-        members = (
-            db.query(GroupMember.athlete_id)
-            .filter(GroupMember.group_id == ga.group_id)
-            .all()
-        )
-        for (uid,) in members:
-            if uid in athlete_ids:
-                v = copy.copy(ga)
-                v.athlete_id = uid
-                extra.append(v)
-
-    all_assigns = ind_assigns + extra
 
     # Agrupar fecha → atleta → lista
     by_date: dict = defaultdict(lambda: defaultdict(list))
