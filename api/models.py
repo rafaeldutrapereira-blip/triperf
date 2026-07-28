@@ -764,8 +764,13 @@ class GarminActivity(Base):
     swolf            = Column(Float,   nullable=True)   # strokes + seconds per length
     avg_cadence_spm  = Column(Float,   nullable=True)   # strokes per minute
     pool_length_m    = Column(Integer, nullable=True)   # 25 or 50
-    # B-23: activity photo
+    # B-23: activity photo (foto única subida a mano por el atleta)
     photo_path       = Column(String,  nullable=True)   # relative: activity_photos/{id}.jpg
+    # Fotos auto-importadas desde Strava (ej. capturas de Zwift) — lista de
+    # URLs externas (hospedadas en Strava), JSON. Separado de photo_path
+    # (esa es una sola foto subida manualmente, esto puede ser varias y
+    # vienen de la sincronización, no de una subida del usuario).
+    strava_photos_json = Column(Text, nullable=True)
 
     user = relationship("User", backref="garmin_activities")
 

@@ -42,6 +42,7 @@ Endpoints:
 """
 from __future__ import annotations
 
+import json
 import logging
 import secrets
 import uuid as _uuid_mod
@@ -1599,6 +1600,7 @@ def _build_activity_card_s17(act, viewer_id, db):
             if act.user_id == viewer_id or _owner_shares_route(owner)
             else None
         ),
+        "photos": json.loads(act.strava_photos_json) if act.strava_photos_json else [],
         "recovery": {
             "score":      rec.score if rec else None,
             "level":      rec.level if rec else None,

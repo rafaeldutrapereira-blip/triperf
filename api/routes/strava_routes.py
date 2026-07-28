@@ -15,6 +15,7 @@ Env vars requeridas:
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 from datetime import datetime, date, timedelta, timezone
@@ -27,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_user
-from ..models import User
+from ..models import User, GarminActivity
 
 logger = logging.getLogger("labx.strava")
 router = APIRouter(prefix="/strava", tags=["strava"])
@@ -223,10 +224,11 @@ async def strava_sync(
     token = await _get_valid_access_token(me, db)
 
     after_ts = int((datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).timestamp())
-    imported = 0
-    skipped  = 0
-    errors   = 0
-    page     = 1
+    imported  = 0
+    updated   = 0
+    duplicates = 0  # ya existían como actividad Garmin — solo se les agregaron fotos
+    errors    = 0
+    page      = 1
 
     async with httpx.AsyncClient(timeout=20) as client:
         while True:
@@ -246,8 +248,27 @@ async def strava_sync(
 
             for a in acts:
                 try:
-                    _upsert_strava_activity(a, me.id, db)
-                    imported += 1
+                    status, target_activity_id = _upsert_strava_activity(a, me.id, db)
+                    if status == "imported":
+                        imported += 1
+                    elif status == "updated":
+                        updated += 1
+                    elif status == "duplicate":
+                        duplicates += 1
+
+                    # Fotos: solo se consultan para actividades nuevas o
+                    # recién detectadas como duplicado de Garmin — no en
+                    # cada re-sync de una fila ya procesada, para no gastar
+                    # cupo de la API de Strava innecesariamente.
+                    if status in ("imported", "duplicate") and a.get("total_photo_count", 0) > 0:
+                        photos = await _fetch_strava_photos(a["id"], token, client)
+                        if photos:
+                            target = db.query(GarminActivity).filter(
+                                GarminActivity.activity_id == target_activity_id,
+                                GarminActivity.user_id == me.id,
+                            ).first()
+                            if target:
+                                target.strava_photos_json = json.dumps(photos)
                 except Exception as exc:
                     logger.warning("Error importando actividad strava id=%s: %s", a.get("id"), exc)
                     errors += 1
@@ -258,18 +279,47 @@ async def strava_sync(
 
     db.commit()
     return {
-        "ok":       True,
-        "imported": imported,
-        "skipped":  skipped,
-        "errors":   errors,
-        "days":     days,
+        "ok":         True,
+        "imported":   imported,
+        "updated":    updated,
+        "duplicates": duplicates,
+        "errors":     errors,
+        "days":       days,
     }
 
 
-def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session):
-    """Convierte una actividad Strava y la inserta/actualiza en garmin_activities."""
-    from ..models import GarminActivity
+async def _fetch_strava_photos(strava_activity_id: int, token: str, client: httpx.AsyncClient) -> list[str]:
+    """Fotos de una actividad Strava (ej. capturas de Zwift) — la URL de mayor tamaño disponible de cada una."""
+    try:
+        r = await client.get(
+            f"{_STRAVA_API}/activities/{strava_activity_id}/photos",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"size": 800},
+        )
+        if r.status_code != 200:
+            return []
+        urls = []
+        for p in r.json():
+            sizes = (p.get("urls") or {})
+            if sizes:
+                urls.append(list(sizes.values())[-1])  # el tamaño más grande queda al final
+        return urls
+    except Exception as exc:
+        logger.warning("Error trayendo fotos Strava activity=%s: %s", strava_activity_id, exc)
+        return []
 
+
+def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session) -> tuple[str, str]:
+    """
+    Convierte una actividad Strava y la inserta/actualiza en garmin_activities.
+    Retorna (status, activity_id_afectado):
+      - "updated":   ya existía esta misma fila de Strava, se refrescó
+      - "duplicate": el mismo entrenamiento real ya existe como actividad
+                     de OTRO origen (típicamente Garmin — ej. Zwift subió
+                     a ambos) — no se crea una fila nueva, se devuelve el
+                     activity_id de Garmin para adjuntarle las fotos ahí
+      - "imported":  actividad nueva, no existía en ningún origen
+    """
     act_id    = f"strava_{a['id']}"
     sport_raw = a.get("sport_type") or a.get("type") or "Run"
     sport     = _SPORT_MAP.get(sport_raw, "run")
@@ -319,25 +369,44 @@ def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session):
         existing.pace_str   = pace_str
         existing.calories   = a.get("calories") or a.get("kilojoules")
         existing.tss        = tss
-    else:
-        row = GarminActivity(
-            activity_id = act_id,
-            user_id     = user_id,
-            sport       = sport,
-            icon        = _icons.get(sport, "🏃"),
-            color       = _colors.get(sport, "#FF6535"),
-            name        = a.get("name", "Strava activity"),
-            date_iso    = start_str,
-            date_label  = start_str,
-            dur_min     = dur_min,
-            dist_km     = dist_km,
-            avg_hr      = a.get("average_heartrate"),
-            avg_power   = a.get("average_watts"),
-            pace_str    = pace_str,
-            calories    = a.get("calories") or a.get("kilojoules"),
-            tss         = tss,
-        )
-        db.add(row)
+        return "updated", existing.activity_id
+
+    # Deduplicar contra una actividad de OTRO origen que ya represente este
+    # mismo entrenamiento real (típico: Zwift sube la misma sesión tanto a
+    # Garmin como a Strava). Match por fecha + deporte + duración similar
+    # (tolerancia de 5 min o 10%, lo que sea mayor) — no exacto porque cada
+    # plataforma puede redondear/registrar el tiempo levemente distinto.
+    tol_min = max(5.0, dur_min * 0.10)
+    dup = db.query(GarminActivity).filter(
+        GarminActivity.user_id == user_id,
+        GarminActivity.date_iso == start_str,
+        GarminActivity.sport == sport,
+        GarminActivity.activity_id.notlike("strava_%"),
+        GarminActivity.dur_min.between(dur_min - tol_min, dur_min + tol_min),
+    ).first()
+    if dup:
+        return "duplicate", dup.activity_id
+
+    row = GarminActivity(
+        activity_id = act_id,
+        user_id     = user_id,
+        sport       = sport,
+        icon        = _icons.get(sport, "🏃"),
+        color       = _colors.get(sport, "#FF6535"),
+        name        = a.get("name", "Strava activity"),
+        date_iso    = start_str,
+        date_label  = start_str,
+        dur_min     = dur_min,
+        dist_km     = dist_km,
+        avg_hr      = a.get("average_heartrate"),
+        avg_power   = a.get("average_watts"),
+        pace_str    = pace_str,
+        calories    = a.get("calories") or a.get("kilojoules"),
+        tss         = tss,
+    )
+    db.add(row)
+    db.flush()
+    return "imported", row.activity_id
 
 
 @router.delete("/disconnect")
