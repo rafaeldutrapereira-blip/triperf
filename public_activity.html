@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Actividad compartida</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme-vars.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:640px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.logo{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:.05em;display:inline-block;margin-bottom:2rem}
+.logo span{color:var(--orange)}
+.card{background:linear-gradient(145deg,var(--surface),var(--bg));border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden}
+.card-head{padding:1.4rem 1.5rem;display:flex;align-items:center;gap:.85rem;border-bottom:1px solid var(--border2)}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--cyan);flex-shrink:0;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.owner-name{font-weight:700;font-size:.95rem}
+.owner-sub{font-size:.72rem;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.card-body{padding:1.5rem}
+.act-title{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;line-height:1.05;margin-bottom:1.2rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:1px;background:var(--border2);border-radius:8px;overflow:hidden;margin-bottom:1.4rem}
+.stat{background:var(--surface);padding:.9rem 1rem}
+.stat-v{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums}
+.stat-l{font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:.1rem}
+.map-wrap{border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:1.2rem;background:var(--surface2)}
+#map-leaflet{height:260px}
+.cta{text-align:center;padding:1.5rem;border-top:1px solid var(--border2)}
+.cta-text{font-size:.82rem;color:var(--muted);margin-bottom:.9rem}
+.btn-cta{display:inline-block;background:var(--orange);color:#fff;font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.7rem 1.8rem;border-radius:6px}
+.empty{text-align:center;padding:4rem 1rem;color:var(--dim)}
+.empty-icon{font-size:2.5rem;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="landing.html">LAB<span>X</span></a>
+  <div id="content">
+    <div class="empty"><div class="empty-icon">⏳</div>Cargando…</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  var token = new URLSearchParams(window.location.search).get('t');
+  var content = document.getElementById('content');
+
+  var SPORT_LABEL = {bike:'Ciclismo', run:'Carrera', swim:'Natación', str:'Fuerza', gym:'Fuerza'};
+  var SPORT_EMOJI = {bike:'🚴', run:'🏃', swim:'🏊', str:'💪', gym:'💪'};
+
+  function empty(msg){
+    content.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>' + msg + '</div>';
+  }
+
+  if(!token){ empty('Este link no incluye una actividad válida.'); return; }
+
+  fetch(API + '/public/activities/' + encodeURIComponent(token))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d){ empty('Este link no existe o su dueño dejó de compartirlo.'); return; }
+
+      var durH = Math.floor((d.dur_min||0)/60), durM = Math.round((d.dur_min||0)%60);
+      var durStr = durH ? durH+'h '+(durM?durM+'m':'') : durM+'m';
+      var stats = [];
+      if(d.dist_km) stats.push({v: d.dist_km.toFixed(1)+' km', l:'Distancia'});
+      stats.push({v: durStr, l:'Duración'});
+      if(d.avg_hr) stats.push({v: d.avg_hr, l:'FC media (bpm)'});
+      if(d.avg_power) stats.push({v: d.avg_power, l:'Potencia (W)'});
+      if(d.pace_str) stats.push({v: d.pace_str, l:'Ritmo (min/km)'});
+      if(d.swim_pace) stats.push({v: d.swim_pace, l:'Ritmo (100m)'});
+      if(d.tss) stats.push({v: Math.round(d.tss), l:'TSS'});
+      if(d.elev_m) stats.push({v: Math.round(d.elev_m)+' m', l:'Desnivel'});
+
+      var avatarHtml = d.owner.avatar_url
+        ? '<img src="'+d.owner.avatar_url+'" alt="">'
+        : (d.owner.name||'?')[0].toUpperCase();
+
+      var mapHtml = (d.route_preview && d.route_preview.length >= 2)
+        ? '<div class="map-wrap"><div id="map-leaflet"></div></div>'
+        : '';
+
+      content.innerHTML =
+        '<div class="card">' +
+          '<div class="card-head">' +
+            '<div class="avatar">'+avatarHtml+'</div>' +
+            '<div><div class="owner-name">'+(d.owner.name||'Atleta LabX')+'</div>' +
+            '<div class="owner-sub">'+(d.date_iso||'')+'</div></div>' +
+          '</div>' +
+          '<div class="card-body">' +
+            '<div class="act-title">'+(SPORT_EMOJI[d.sport]||'⚡')+' '+(d.name||SPORT_LABEL[d.sport]||'Actividad')+'</div>' +
+            mapHtml +
+            '<div class="stats">' + stats.map(function(s){
+              return '<div class="stat"><div class="stat-v">'+s.v+'</div><div class="stat-l">'+s.l+'</div></div>';
+            }).join('') + '</div>' +
+          '</div>' +
+          '<div class="cta">' +
+            '<div class="cta-text">Entrená, analizá y compartí tus actividades de triatlón con LabX.</div>' +
+            '<a class="btn-cta" href="registro.html">Crear cuenta gratis</a>' +
+          '</div>' +
+        '</div>';
+
+      if(mapHtml){
+        var leafletCss = document.createElement('link');
+        leafletCss.rel = 'stylesheet';
+        leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(leafletCss);
+        var leafletJs = document.createElement('script');
+        leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        leafletJs.onload = function(){
+          var route = d.route_preview;
+          var map = L.map('map-leaflet', {zoomControl:true, attributionControl:true, scrollWheelZoom:false});
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+            subdomains: 'abcd', maxZoom: 20
+          }).addTo(map);
+          var lineColor = d.sport==='run' ? '#EF4444' : d.sport==='bike' ? '#EC4899' : '#0EA5E9';
+          L.polyline(route, {color:'#ffffff', weight:7, opacity:.9}).addTo(map);
+          L.polyline(route, {color:'#000000', weight:5, opacity:.35}).addTo(map);
+          var poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(map);
+          map.fitBounds(poly.getBounds(), {padding:[20,20]});
+        };
+        document.head.appendChild(leafletJs);
+      }
+    })
+    .catch(function(){ empty('No se pudo cargar esta actividad. Intenta de nuevo más tarde.'); });
+})();
+</script>
+</body>
+</html>

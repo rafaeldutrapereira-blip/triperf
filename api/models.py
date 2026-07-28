@@ -771,6 +771,14 @@ class GarminActivity(Base):
     # (esa es una sola foto subida manualmente, esto puede ser varias y
     # vienen de la sincronización, no de una subida del usuario).
     strava_photos_json = Column(Text, nullable=True)
+    # Token opaco para el link público "Compartir actividad" (sin login) —
+    # None = nunca compartida. Se genera bajo demanda (POST .../share), se
+    # puede revocar (DELETE .../share) regenerándolo a None. A propósito NO
+    # es el mismo id interno (evita que cualquiera adivine URLs de otros
+    # simplemente iterando ids), y a propósito es opt-in explícito por
+    # actividad en vez de un flag global "todo público" — igual patrón que
+    # un link de "compartir" de Google Docs, no un perfil público indexable.
+    share_token = Column(String, nullable=True, unique=True, index=True)
 
     user = relationship("User", backref="garmin_activities")
 

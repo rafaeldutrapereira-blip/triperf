@@ -1721,6 +1721,7 @@ def get_activity_detail(
     owner = me if is_own else db.query(User).filter(User.id == act.user_id).first()
     out["is_own"]     = is_own
     out["owner_name"] = None if is_own else (owner.nombre or owner.email.split("@")[0]) if owner else None
+    out["share_url"]  = f"/public_activity.html?t={act.share_token}" if (is_own and act.share_token) else None
 
     if not is_own and owner:
         prefs = _get_share_prefs(owner)
@@ -1733,6 +1734,46 @@ def get_activity_detail(
             out["swim_pace"] = None
 
     return out
+
+
+@router.post("/activities/{activity_id}/share")
+def share_activity(
+    activity_id: str,
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """Genera (o devuelve el existente) link público de la actividad —
+    accesible sin login por cualquiera que tenga la URL exacta, igual que
+    'compartir' de Google Docs. Solo el dueño puede generarlo."""
+    import secrets
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    if not act.share_token:
+        act.share_token = secrets.token_urlsafe(16)
+        db.commit()
+    return {"ok": True, "share_token": act.share_token, "share_url": f"/public_activity.html?t={act.share_token}"}
+
+
+@router.delete("/activities/{activity_id}/share")
+def unshare_activity(
+    activity_id: str,
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """Revoca el link público — cualquiera que lo tuviera guardado deja de poder verlo."""
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    act.share_token = None
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/zones")

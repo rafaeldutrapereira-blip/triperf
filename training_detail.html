@@ -31,6 +31,18 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .back-btn svg{width:14px;height:14px}
 .ah-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.9rem,4vw,3rem);font-weight:800;line-height:1;letter-spacing:.02em;margin-bottom:.55rem}
 .owner-badge{display:inline-flex;align-items:center;gap:.35rem;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);border-radius:5px;padding:.3rem .7rem;margin-bottom:.7rem}
+.ah-top-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.share-btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:6px;padding:.45rem .9rem;cursor:pointer;transition:all var(--ease);margin-bottom:1.1rem}
+.share-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.share-btn svg{width:14px;height:14px}
+.share-modal{display:none;position:fixed;inset:0;z-index:1500;background:rgba(4,8,15,.75);align-items:center;justify-content:center;padding:1.5rem}
+.share-modal.on{display:flex}
+.share-modal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:100%}
+.share-modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:.4rem}
+.share-modal-sub{font-size:.8rem;color:var(--muted);margin-bottom:1rem;line-height:1.5}
+.share-url-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.share-url-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;color:var(--text);font-size:.8rem;font-family:'Oswald',sans-serif}
+.share-modal-actions{display:flex;justify-content:space-between;gap:.5rem}
 .ah-meta{display:flex;align-items:center;gap:.65rem;font-family:'Oswald',sans-serif;font-size:.77rem;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap;margin-bottom:1.25rem}
 .ah-meta-sep{color:var(--dim)}
 .ah-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);border-radius:var(--radius);overflow:hidden}
@@ -150,9 +162,15 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 <div class="ah" id="act-header" style="display:none">
   <div class="c">
     <div class="ah-inner">
-      <div class="back-btn" onclick="goBack()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Volver al Plan
+      <div class="ah-top-row">
+        <div class="back-btn" onclick="goBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Volver al Plan
+        </div>
+        <button class="share-btn" id="share-btn" style="display:none" onclick="openShareModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+          Compartir
+        </button>
       </div>
       <div class="owner-badge" id="owner-badge" style="display:none"></div>
       <div class="ah-title" id="act-title">—</div>
@@ -328,6 +346,42 @@ if(ownerBadge){
     ownerBadge.style.display = 'none';
   }
 }
+
+// Compartir: solo el dueño puede generar/revocar el link público.
+var shareBtn = document.getElementById('share-btn');
+if(shareBtn && ACT.is_own !== false){
+  shareBtn.style.display = '';
+}
+
+window.openShareModal = function(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  var api = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  fetch(api+'/athlete/activities/'+ACT.activity_id+'/share', {method:'POST', headers:{Authorization:'Bearer '+tok}})
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(d){
+      var fullUrl = window.location.origin + d.share_url;
+      document.getElementById('share-url-input').value = fullUrl;
+      document.getElementById('share-modal').classList.add('on');
+    })
+    .catch(function(){ alert('No se pudo generar el link de compartir'); });
+};
+window.closeShareModal = function(){
+  document.getElementById('share-modal').classList.remove('on');
+};
+window.copyShareUrl = function(){
+  var inp = document.getElementById('share-url-input');
+  inp.select();
+  navigator.clipboard && navigator.clipboard.writeText(inp.value);
+};
+window.revokeShareUrl = function(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  var api = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+  fetch(api+'/athlete/activities/'+ACT.activity_id+'/share', {method:'DELETE', headers:{Authorization:'Bearer '+tok}})
+    .then(function(){ closeShareModal(); })
+    .catch(function(){ alert('No se pudo dejar de compartir'); });
+};
 
 var d = new Date(ACT.date_iso+'T12:00:00');
 var durH = Math.floor(ACT.dur_min/60), durM = Math.round(ACT.dur_min%60);
@@ -961,6 +1015,22 @@ window.switchDetailTab = function(name, btn){
 
 })();
 </script>
+<!-- Compartir actividad: link público sin login -->
+<div class="share-modal" id="share-modal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal-card">
+    <div class="share-modal-title">Compartir actividad</div>
+    <div class="share-modal-sub">Cualquiera con este link puede ver esta actividad, sin necesidad de iniciar sesión en LabX. Respeta tus preferencias de privacidad de Comunidad (mapa, FC, potencia, ritmo).</div>
+    <div class="share-url-row">
+      <input class="share-url-input" id="share-url-input" readonly>
+      <button class="btn btn-p btn-sm" onclick="copyShareUrl()">Copiar</button>
+    </div>
+    <div class="share-modal-actions">
+      <button class="btn btn-g btn-sm" style="color:var(--red);border-color:var(--red)" onclick="revokeShareUrl()">Dejar de compartir</button>
+      <button class="btn btn-g btn-sm" onclick="closeShareModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script src="auth.js"></script>
 <script>KL.guard('training_detail');</script>
 <style>.kl-locked{opacity:.4!important;cursor:not-allowed!important}</style>

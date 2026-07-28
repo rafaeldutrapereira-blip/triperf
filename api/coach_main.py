@@ -30,6 +30,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response as StarletteResponse
 
 from .database import engine, Base
+from .routes.public_routes           import router as public_router
 from .routes.auth_routes            import router as auth_router
 from .routes.admin_routes           import router as admin_router
 from .routes.coach_routes           import router as coach_router
@@ -439,6 +440,7 @@ def create_app() -> FastAPI:
         )
 
     # ── Routers ───────────────────────────────────────────────────
+    _app.include_router(public_router,        prefix="/api")
     _app.include_router(auth_router,          prefix="/api")
     _app.include_router(admin_router,         prefix="/api")
     _app.include_router(coach_router,         prefix="/api")
