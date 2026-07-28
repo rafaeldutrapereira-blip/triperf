@@ -3565,11 +3565,12 @@ window.addEventListener('load', init);
 
 <script>
 // Este bloque <script> es independiente del principal (arriba) — 'API'
-// se declaraba solo allá, así que cualquier fetch(API+...) acá tiraba
-// "ReferenceError: API is not defined". Se redeclara localmente para
-// que todo el código de este bloque (Vista Equipo, alertas, sync
-// Garmin) pueda usarla igual que el resto de la página.
+// y 'esc' se declaraban solo allá, así que cualquier uso acá tiraba
+// ReferenceError. Se redeclaran localmente para que todo el código de
+// este bloque (Vista Equipo, alertas, sync Garmin) las tenga disponibles
+// igual que el resto de la página.
 var API = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
+function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // P5 — Sync Garmin por-atleta desde coach
 window.syncAthleteGarmin = async function(athleteId, nombre, btn){
