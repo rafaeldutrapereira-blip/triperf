@@ -82,11 +82,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .indoor-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--dim);letter-spacing:.08em}
 .pool-wrap{padding:1.5rem 2rem;background:var(--surface);min-height:280px;display:flex;align-items:center;justify-content:center}
 .pool-svg{display:block;width:100%;max-height:260px}
-.zwift-wrap{position:relative;background:radial-gradient(ellipse at center,rgba(255,101,53,.06),transparent 70%),var(--surface);padding:1rem}
-.zwift-svg{display:block;width:100%;height:300px}
-.zwift-tag{position:absolute;top:10px;left:12px;z-index:5;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.75;backdrop-filter:blur(6px)}
-.zwift-tag strong{color:var(--text);display:block;font-size:.78rem;margin-bottom:.15rem}
-.zwift-note{position:absolute;bottom:10px;right:12px;z-index:5;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.04em;backdrop-filter:blur(6px);max-width:220px;text-align:right}
+.map-zwift-note{position:absolute;top:10px;right:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.62rem;color:var(--dim);letter-spacing:.04em;backdrop-filter:blur(6px);max-width:220px;text-align:right}
 
 /* ── CHARTS ── */
 .chart-block{border-bottom:1px solid var(--border2)}
@@ -466,35 +462,81 @@ function animateRoutePath(pathEl, dotColor, durationMs){
   requestAnimationFrame(frame);
 }
 
-function renderZwiftRoute(points, color){
-  var lats = points.map(function(p){ return p[0]; });
-  var lons = points.map(function(p){ return p[1]; });
-  var minLat = Math.min.apply(null, lats), maxLat = Math.max.apply(null, lats);
-  var minLon = Math.min.apply(null, lons), maxLon = Math.max.apply(null, lons);
-  var W = 800, H = 300, pad = 24;
-  var spanLat = (maxLat - minLat) || 0.0005;
-  var spanLon = (maxLon - minLon) || 0.0005;
-  var scale = Math.min((W - pad*2) / spanLon, (H - pad*2) / spanLat);
-  var offX = (W - spanLon*scale) / 2;
-  var offY = (H - spanLat*scale) / 2;
-  var d = points.map(function(p, i){
-    var x = offX + (p[1]-minLon)*scale;
-    var y = H - (offY + (p[0]-minLat)*scale);
-    return (i===0?'M':'L') + x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-  var start = points[0], end = points[points.length-1];
-  function pt(p){
-    var x = offX + (p[1]-minLon)*scale;
-    var y = H - (offY + (p[0]-minLat)*scale);
-    return [x.toFixed(1), y.toFixed(1)];
+// Renderiza el track (lat/lon reales) sobre el mapa Leaflet real —
+// usado tanto para actividades outdoor como para Zwift: Zwift asigna
+// a cada mundo virtual coordenadas reales fijas (por eso Strava puede
+// mostrar la ruta de una sesión de Zwift sobre un mapa normal, con
+// nombres de lugar reales tipo "La Pérouse"), así que el mismo track
+// que ya descargamos sirve para dibujar el mapa real en vez del SVG
+// abstracto que se usaba antes.
+function renderRealMap(trackData, extraNoteHtml){
+  var route = trackData.points.map(function(p){ return [p.lat, p.lon]; });
+
+  mapWrap.innerHTML = '<div id="map-leaflet"></div><div class="map-badge" id="map-badge"></div><div class="map-outdoor-label" id="map-loc"></div>'
+    + (extraNoteHtml || '');
+
+  var badge = document.getElementById('map-badge');
+  var locEl  = document.getElementById('map-loc');
+  if(ACT.sport==='bike' && ACT.avg_power){
+    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
+      +'⚡ '+ACT.avg_power+'W avg<br>'
+      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
+      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
+  } else if(ACT.sport==='run'){
+    var rPace = ACT.dist_km ? fmtPace(Math.round((ACT.dur_min*60)/ACT.dist_km)) : '—';
+    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
+      +'🏃 '+rPace+'<br>'
+      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
+      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
   }
-  var sp0 = pt(start), sp1 = pt(end);
-  return '<svg class="zwift-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'
-    +'<path d="'+d+'" fill="none" stroke="#3D6880" stroke-width="4" stroke-opacity=".35" stroke-linecap="round" stroke-linejoin="round"/>'
-    +'<path id="zwift-route-fg" d="'+d+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
-    +'<circle cx="'+sp0[0]+'" cy="'+sp0[1]+'" r="5" fill="#10B981" stroke="#04080F" stroke-width="2"/>'
-    +'<circle cx="'+sp1[0]+'" cy="'+sp1[1]+'" r="5" fill="'+color+'" stroke="#04080F" stroke-width="2"/>'
-    +'</svg>';
+  locEl.textContent = cfg.location;
+
+  leafletMap = L.map('map-leaflet', {
+    zoomControl: true,
+    attributionControl: true,
+    scrollWheelZoom: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(leafletMap);
+
+  var lineColor = ACT.sport==='run' ? '#EF4444' : ACT.sport==='bike' ? '#EC4899' : '#0EA5E9';
+  L.polyline(route, {color:'#ffffff', weight:7, opacity:.9}).addTo(leafletMap);
+  L.polyline(route, {color:'#000000', weight:5, opacity:.35}).addTo(leafletMap);
+  var poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
+  leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
+  requestAnimationFrame(function(){
+    animateRoutePath(poly.getElement(), '#fff', 2400);
+  });
+
+  function circleIcon(color){
+    return L.divIcon({
+      className:'',
+      html:'<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
+      iconSize:[14,14], iconAnchor:[7,7]
+    });
+  }
+
+  L.marker(route[0], {icon: circleIcon('#10B981')})
+    .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
+  L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
+    .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
+
+  var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
+  var stepsPerKm  = route.length / (ACT.dist_km||1);
+  for(var mk=markerEvery; mk<(ACT.dist_km||0); mk+=markerEvery){
+    var idx = Math.round(mk * stepsPerKm);
+    if(idx < route.length){
+      L.marker(route[idx], {icon: L.divIcon({
+        className:'',
+        html:'<div style="font-family:Oswald,sans-serif;font-size:10px;color:#F0A500;background:rgba(4,8,15,.8);padding:1px 5px;border-radius:4px;border:1px solid rgba(240,165,0,.4);white-space:nowrap">'+mk+' km</div>',
+        iconAnchor:[20,10]
+      })}).addTo(leafletMap);
+    }
+  }
 }
 
 function initMap(){
@@ -514,20 +556,7 @@ function initMap(){
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(trackData){
         if(!trackData || !trackData.points || trackData.points.length < 2){ zwiftNoRoute(); return; }
-        var route = trackData.points.map(function(p){ return [p.lat, p.lon]; });
-        var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
-        mapWrap.innerHTML = '<div class="zwift-wrap">'
-          + '<div class="zwift-tag"><strong>'+cfg.location+'</strong>'
-            + (ACT.avg_power ? '⚡ '+ACT.avg_power+'W avg<br>' : '')
-            + (ACT.dist_km ? '📍 '+ACT.dist_km.toFixed(1)+' km<br>' : '')
-            + (ACT.avg_hr ? '❤️ '+ACT.avg_hr+' bpm' : '')
-          + '</div>'
-          + '<div class="zwift-note">Ruta del mundo virtual — trazado real de la sesión, no una ubicación geográfica</div>'
-          + renderZwiftRoute(route, lineColor)
-          + '</div>';
-        requestAnimationFrame(function(){
-          animateRoutePath(document.getElementById('zwift-route-fg'), '#fff', 2400);
-        });
+        renderRealMap(trackData, '<div class="map-zwift-note">Zwift — mundo virtual con coordenadas reales; el trazado es de la sesión, no una ubicación física visitada</div>');
       })
       .catch(function(){ zwiftNoRoute(); });
     return;
@@ -595,24 +624,6 @@ function initMap(){
 
   // OUTDOOR: Leaflet map — SOLO con track GPS real de Garmin. Sin datos
   // reales, se muestra un estado vacío en vez de generar una ruta falsa.
-  mapWrap.innerHTML = '<div id="map-leaflet"></div><div class="map-badge" id="map-badge"></div><div class="map-outdoor-label" id="map-loc"></div>';
-
-  var badge = document.getElementById('map-badge');
-  var locEl  = document.getElementById('map-loc');
-  if(ACT.sport==='bike' && ACT.avg_power){
-    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
-      +'⚡ '+ACT.avg_power+'W avg<br>'
-      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
-      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
-  } else if(ACT.sport==='run'){
-    var rPace = ACT.dist_km ? fmtPace(Math.round((ACT.dur_min*60)/ACT.dist_km)) : '—';
-    badge.innerHTML = '<strong>'+cfg.location+'</strong>'
-      +'🏃 '+rPace+'<br>'
-      +(ACT.dist_km?'📍 '+ACT.dist_km.toFixed(1)+' km<br>':'')
-      +(ACT.avg_hr?'❤️ '+ACT.avg_hr+' bpm':'');
-  }
-  locEl.textContent = cfg.location;
-
   function noGpsState(){
     mapWrap.innerHTML = '<div class="indoor-card">'
       +'<div class="indoor-icon">📍</div>'
@@ -631,68 +642,7 @@ function initMap(){
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(trackData){
       if(!trackData || !trackData.points || trackData.points.length < 2){ noGpsState(); return; }
-
-      var route = trackData.points.map(function(p){ return [p.lat, p.lon]; });
-
-      leafletMap = L.map('map-leaflet', {
-        zoomControl: true,
-        attributionControl: true,
-        scrollWheelZoom: false
-      });
-
-      // Mapa de calles limpio (CARTO Voyager) en vez del topográfico
-      // anterior — OpenTopoMap trae curvas de nivel + sombreado de
-      // relieve pensado para trekking, que se ve "cargado" para
-      // actividades urbanas; Voyager es el mismo tipo de estilo nítido
-      // que se ve en apps de ruteo (calles, parques y agua sin textura
-      // de relieve encima), a costa de no calzar 100% con el tema
-      // oscuro del resto de la app.
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
-        subdomains: 'abcd',
-        maxZoom: 20
-      }).addTo(leafletMap);
-
-      // Colores elegidos para no confundirse con los propios colores del
-      // mapa base (parques en verde, vías principales en amarillo/naranjo)
-      // — antes carrera=verde y ciclismo=naranjo se perdían contra esos
-      // mismos colores.
-      var lineColor = ACT.sport==='run' ? '#EF4444' : ACT.sport==='bike' ? '#EC4899' : '#0EA5E9';
-      // Contorno blanco grueso debajo de la línea de color — separa la
-      // ruta del mapa sin importar qué haya debajo (calle, parque, agua).
-      L.polyline(route, {color:'#ffffff', weight:7, opacity:.9}).addTo(leafletMap);
-      L.polyline(route, {color:'#000000', weight:5, opacity:.35}).addTo(leafletMap);
-      var poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
-      leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
-      requestAnimationFrame(function(){
-        animateRoutePath(poly.getElement(), '#fff', 2400);
-      });
-
-      function circleIcon(color){
-        return L.divIcon({
-          className:'',
-          html:'<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
-          iconSize:[14,14], iconAnchor:[7,7]
-        });
-      }
-
-      L.marker(route[0], {icon: circleIcon('#10B981')})
-        .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
-      L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
-        .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
-
-      var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
-      var stepsPerKm  = route.length / (ACT.dist_km||1);
-      for(var mk=markerEvery; mk<(ACT.dist_km||0); mk+=markerEvery){
-        var idx = Math.round(mk * stepsPerKm);
-        if(idx < route.length){
-          L.marker(route[idx], {icon: L.divIcon({
-            className:'',
-            html:'<div style="font-family:Oswald,sans-serif;font-size:10px;color:#F0A500;background:rgba(4,8,15,.8);padding:1px 5px;border-radius:4px;border:1px solid rgba(240,165,0,.4);white-space:nowrap">'+mk+' km</div>',
-            iconAnchor:[20,10]
-          })}).addTo(leafletMap);
-        }
-      }
+      renderRealMap(trackData);
     }).catch(function(){ noGpsState(); });
 }
 
