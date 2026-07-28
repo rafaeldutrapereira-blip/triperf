@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import (
     User, AssignedWorkout, WorkoutLog, WellnessLog, BloodLabExam, NutritionPlan,
     GarminActivity, GarminTrainingLoad, GarminSyncStatus, Message, AthleteNote,
-    FoodDiaryEntry, GarminPlannedWorkout, RaceEvent, MentalCheckin,
+    FoodDiaryEntry, GarminPlannedWorkout, RaceEvent, MentalCheckin, ActivityPhoto,
 )
 from ..schemas import (
     AssignedWorkoutOut, WorkoutLogCreate, WorkoutLogOut,
@@ -2004,6 +2004,146 @@ def get_activity_photo(
         raise HTTPException(404, "Archivo no encontrado")
     return Response(content=data, media_type="image/jpeg",
                     headers={"Cache-Control": "max-age=86400"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Galería de fotos adicionales por actividad — a diferencia del "photo_path"
+# de arriba (una sola foto de portada, sin uso desde el frontend todavía),
+# esto permite subir varias fotos por actividad (equipo, selfie, paisaje) y
+# se muestran en el feed de Comunidad junto a las auto-importadas de Strava.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_MAX_PHOTOS_PER_ACTIVITY = 8
+
+
+def _compress_photo(raw: bytes) -> bytes:
+    import io
+    try:
+        from PIL import Image
+        img = Image.open(io.BytesIO(raw))
+        img.thumbnail((1080, 1080), Image.LANCZOS)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=78, optimize=True)
+        return buf.getvalue()
+    except ImportError:
+        return raw  # Pillow no instalado: guardar tal cual
+
+
+@router.post("/activities/{activity_id}/photos")
+async def upload_activity_photos(
+    activity_id: str,
+    files: List[UploadFile] = File(...),
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """Subir 1+ fotos adicionales para una actividad propia (equipo, selfie,
+    paisaje, etc.). Máx 8 fotos por actividad en total."""
+    from ..storage import storage
+
+    act = db.query(GarminActivity).filter(
+        GarminActivity.activity_id == activity_id,
+        GarminActivity.user_id == me.id,
+    ).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+
+    existing_count = db.query(ActivityPhoto).filter(ActivityPhoto.activity_id == act.id).count()
+    if existing_count + len(files) > _MAX_PHOTOS_PER_ACTIVITY:
+        raise HTTPException(400, f"Máx {_MAX_PHOTOS_PER_ACTIVITY} fotos por actividad")
+
+    created = []
+    for file in files:
+        content_type = file.content_type or ""
+        if not content_type.startswith("image/"):
+            raise HTTPException(400, "Solo se aceptan imágenes (JPEG / PNG)")
+        raw = await file.read()
+        if len(raw) > _MAX_PHOTO_BYTES:
+            raise HTTPException(400, "Imagen demasiado grande (máx 8 MB)")
+
+        compressed = _compress_photo(raw)
+        photo = ActivityPhoto(activity_id=act.id, user_id=me.id, storage_key="")
+        db.add(photo)
+        db.flush()  # obtener photo.id antes de guardar el archivo con ese key
+        key = f"{_PHOTO_PREFIX}/{act.id}/{photo.id}.jpg"
+        storage.save(key, compressed)
+        photo.storage_key = key
+        created.append(photo)
+
+    db.commit()
+    return {
+        "ok": True,
+        "photos": [
+            {"id": p.id, "url": f"/api/athlete/activities/{activity_id}/photos/{p.id}"}
+            for p in created
+        ],
+    }
+
+
+@router.get("/activities/{activity_id}/photos")
+def list_activity_photos(
+    activity_id: str,
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(get_current_user),
+):
+    """Lista las fotos adicionales de una actividad propia o de alguien
+    que seguís (mismas reglas de visibilidad que /track)."""
+    act = _find_viewable_activity(activity_id, me, db)
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    rows = db.query(ActivityPhoto).filter(ActivityPhoto.activity_id == act.id).order_by(ActivityPhoto.created_at).all()
+    return {
+        "photos": [
+            {"id": p.id, "url": f"/api/athlete/activities/{activity_id}/photos/{p.id}", "is_mine": p.user_id == me.id}
+            for p in rows
+        ]
+    }
+
+
+@router.get("/activities/{activity_id}/photos/{photo_id}")
+def get_activity_gallery_photo(
+    activity_id: str,
+    photo_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Descargar una foto de la galería de una actividad. Sin auth a propósito
+    — se referencia desde <img src="..."> en el feed de Comunidad, igual
+    que el avatar y las fotos de Strava (no es dato sensible una vez que la
+    actividad ya es visible en el feed).
+    """
+    from ..storage import storage
+    photo = db.query(ActivityPhoto).filter(ActivityPhoto.id == photo_id).first()
+    if not photo:
+        raise HTTPException(404, "Foto no encontrada")
+    try:
+        data = storage.load(photo.storage_key)
+    except FileNotFoundError:
+        raise HTTPException(404, "Archivo no encontrado")
+    return Response(content=data, media_type="image/jpeg",
+                    headers={"Cache-Control": "max-age=86400"})
+
+
+@router.delete("/activities/{activity_id}/photos/{photo_id}")
+def delete_activity_gallery_photo(
+    activity_id: str,
+    photo_id: str,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    """Borrar una foto propia de la galería de una actividad."""
+    from ..storage import storage
+    photo = db.query(ActivityPhoto).filter(
+        ActivityPhoto.id == photo_id,
+        ActivityPhoto.user_id == me.id,
+    ).first()
+    if not photo:
+        raise HTTPException(404, "Foto no encontrada")
+    storage.delete(photo.storage_key)
+    db.delete(photo)
+    db.commit()
+    return {"ok": True}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

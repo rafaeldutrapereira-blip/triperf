@@ -775,6 +775,28 @@ class GarminActivity(Base):
     user = relationship("User", backref="garmin_activities")
 
 
+class ActivityPhoto(Base):
+    """
+    Galería de fotos adicionales subidas a mano por el atleta para una
+    actividad (equipo, selfie, paisaje durante el entrenamiento, etc.) —
+    a diferencia de GarminActivity.photo_path (una sola "foto de portada"),
+    esto es una lista de 0..N fotos por actividad, visibles en el feed de
+    Comunidad igual que las fotos auto-importadas de Strava.
+    """
+    __tablename__ = "activity_photos"
+    __table_args__ = (
+        Index("ix_activity_photos_activity", "activity_id"),
+    )
+
+    id            = Column(String, primary_key=True, default=_uuid)
+    activity_id   = Column(String, ForeignKey("garmin_activities.id"), nullable=False)
+    user_id       = Column(String, ForeignKey("users.id"), nullable=False)
+    storage_key   = Column(String, nullable=False)
+    created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    activity = relationship("GarminActivity", backref="extra_photos")
+
+
 class GarminTrainingLoad(Base):
     """
     Carga de entrenamiento diaria calculada (CTL/ATL/TSB/TSS/ACWR).

@@ -70,6 +70,7 @@ from ..models import (
     GarminActivity,
     GarminTrainingLoad,
     RecoveryScore,
+    ActivityPhoto,
 )
 
 logger = logging.getLogger("labx.community")
@@ -1600,7 +1601,22 @@ def _build_activity_card_s17(act, viewer_id, db):
             if act.user_id == viewer_id or _owner_shares_route(owner)
             else None
         ),
-        "photos": json.loads(act.strava_photos_json) if act.strava_photos_json else [],
+        "photos": (
+            [
+                {
+                    "url": f"/api/athlete/activities/{act.activity_id}/photos/{p.id}",
+                    "photo_id": p.id,
+                    "deletable": p.user_id == viewer_id,
+                }
+                for p in db.query(ActivityPhoto).filter(ActivityPhoto.activity_id == act.id)
+                    .order_by(ActivityPhoto.created_at).all()
+            ]
+            + [
+                {"url": u, "photo_id": None, "deletable": False}
+                for u in (json.loads(act.strava_photos_json) if act.strava_photos_json else [])
+            ]
+        ),
+        "can_add_photos": act.user_id == viewer_id,
         "recovery": {
             "score":      rec.score if rec else None,
             "level":      rec.level if rec else None,

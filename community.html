@@ -104,10 +104,16 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .ac-info{flex:1;min-width:0}
 .ac-map{width:74px;height:74px;flex-shrink:0;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
 .ac-map svg{width:100%;height:100%;display:block}
-/* Fotos auto-importadas de Strava (ej. capturas de Zwift) */
+/* Fotos de la actividad: auto-importadas de Strava + subidas a mano */
 .ac-photos{display:flex;gap:.4rem;overflow-x:auto;margin-top:.6rem;padding-bottom:.1rem}
-.ac-photo{width:110px;height:110px;flex-shrink:0;border-radius:8px;object-fit:cover;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:opacity .15s}
+.ac-photo-item{position:relative;flex-shrink:0}
+.ac-photo{width:110px;height:110px;display:block;border-radius:8px;object-fit:cover;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:opacity .15s}
 .ac-photo:hover{opacity:.85}
+.ac-photo-del{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(4,8,15,.75);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.65rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s}
+.ac-photo-item:hover .ac-photo-del{opacity:1}
+.ac-photo-add{width:110px;height:110px;flex-shrink:0;border-radius:8px;background:var(--surface2);border:1px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;cursor:pointer;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.04em;transition:border-color .15s,color .15s}
+.ac-photo-add:hover{border-color:var(--cyan);color:var(--cyan)}
+.ac-photo-add svg{width:20px;height:20px}
 .ac-stats{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:.5rem}
 .ac-stat{font-size:.72rem;color:var(--muted)}
 .ac-stat strong{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--text)}
@@ -637,12 +643,35 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         ? '<div class="ac-map">' + renderMiniMap(c.route_preview, mapColor) + '</div>'
         : '';
 
-      // Fotos auto-importadas de Strava (ej. capturas de Zwift) — solo si
-      // el backend ya encontró alguna al sincronizar esta actividad.
-      var photosHtml = (c.photos && c.photos.length)
-        ? '<div class="ac-photos">' + c.photos.map(function (url) {
-            return '<img src="' + _escCaption(url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();window.open(\'' + _escCaption(url) + '\',\'_blank\')">';
-          }).join('') + '</div>'
+      var cardId = 'ac-' + c.id;
+
+      // Fotos: auto-importadas de Strava + subidas a mano por el dueño
+      // de la actividad (equipo, selfie, paisaje). Solo el dueño ve el
+      // botón "Agregar" y solo puede borrar las que subió él mismo (las
+      // de Strava no son borrables desde acá).
+      // Se guardan las fotos de Strava (no editables acá) por tarjeta para
+      // poder reconstruir la tira completa tras subir/borrar una foto manual
+      // sin tener que releer todo el feed.
+      window._acStravaPhotos = window._acStravaPhotos || {};
+      window._acStravaPhotos[cardId] = (c.photos || []).filter(function (ph) { return !ph.photo_id; });
+
+      var photoItems = (c.photos || []).map(function (ph) {
+        var delBtn = ph.deletable
+          ? '<div class="ac-photo-del" onclick="event.stopPropagation();deleteActivityPhoto(\'' + c.activity_id + '\',\'' + ph.photo_id + '\',\'' + cardId + '\')">✕</div>'
+          : '';
+        return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();window.open(\'' + _escCaption(ph.url) + '\',\'_blank\')">' + delBtn + '</div>';
+      }).join('');
+
+      var addBtn = c.can_add_photos
+        ? '<label class="ac-photo-add" onclick="event.stopPropagation()">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
+          + 'Agregar'
+          + '<input type="file" accept="image/*" multiple style="display:none" onchange="uploadActivityPhotos(this,\'' + c.activity_id + '\',\'' + cardId + '\')" onclick="event.stopPropagation()">'
+          + '</label>'
+        : '';
+
+      var photosHtml = (photoItems || addBtn)
+        ? '<div class="ac-photos" id="ac-photos-' + cardId + '">' + photoItems + addBtn + '</div>'
         : '';
 
       var distStr = c.distance_km > 0 ? c.distance_km + ' km' : '';
@@ -656,7 +685,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         ? ' class="ac-row clickable" onclick="location.href=\'training_detail.html?id=' + c.activity_id + '\'"'
         : ' class="ac-row"';
 
-      var cardId = 'ac-' + c.id;
       var html = '<div class="activity-card" id="' + cardId + '">' +
         '<div class="ac-head">' +
           _avatarBall('ac-avatar', c.user) +
@@ -701,6 +729,64 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       el.insertAdjacentHTML('beforeend', html);
     });
   }
+
+  function _photoAddButtonHtml(activityId, cardId) {
+    return '<label class="ac-photo-add" onclick="event.stopPropagation()">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
+      + 'Agregar'
+      + '<input type="file" accept="image/*" multiple style="display:none" onchange="uploadActivityPhotos(this,\'' + activityId + '\',\'' + cardId + '\')" onclick="event.stopPropagation()">'
+      + '</label>';
+  }
+
+  // Reconstruye la tira de fotos de una tarjeta tras subir/borrar una foto
+  // manual, combinando las fotos manuales recién leídas con las de Strava
+  // que se guardaron al renderizar el feed (esas no cambian acá).
+  function _refreshCardPhotos(cardId, activityId) {
+    fetch(API + '/athlete/activities/' + activityId + '/photos', { headers: { Authorization: 'Bearer ' + _authTok() } })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (d) {
+        var manual = (d.photos || []).map(function (p) {
+          return { url: p.url, photo_id: p.id, deletable: p.is_mine };
+        });
+        var strava = (window._acStravaPhotos && window._acStravaPhotos[cardId]) || [];
+        var wrap = document.getElementById('ac-photos-' + cardId);
+        if (!wrap) return;
+        var itemsHtml = manual.concat(strava).map(function (ph) {
+          var delBtn = ph.deletable
+            ? '<div class="ac-photo-del" onclick="event.stopPropagation();deleteActivityPhoto(\'' + activityId + '\',\'' + ph.photo_id + '\',\'' + cardId + '\')">✕</div>'
+            : '';
+          return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();window.open(\'' + _escCaption(ph.url) + '\',\'_blank\')">' + delBtn + '</div>';
+        }).join('');
+        wrap.innerHTML = itemsHtml + _photoAddButtonHtml(activityId, cardId);
+      })
+      .catch(function () { /* no romper la tarjeta si falla el refresh */ });
+  }
+
+  window.uploadActivityPhotos = function (inputEl, activityId, cardId) {
+    var files = inputEl.files;
+    if (!files || !files.length) return;
+    var fd = new FormData();
+    for (var i = 0; i < files.length; i++) fd.append('files', files[i]);
+    fetch(API + '/athlete/activities/' + activityId + '/photos', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + _authTok() },
+      body: fd,
+    })
+      .then(function (r) { return r.ok ? r.json() : r.json().then(function (e) { return Promise.reject(e); }); })
+      .then(function () { inputEl.value = ''; _refreshCardPhotos(cardId, activityId); })
+      .catch(function (e) { alert((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo subir la foto'); });
+  };
+
+  window.deleteActivityPhoto = function (activityId, photoId, cardId) {
+    if (!confirm('¿Borrar esta foto?')) return;
+    fetch(API + '/athlete/activities/' + activityId + '/photos/' + photoId, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + _authTok() },
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function () { _refreshCardPhotos(cardId, activityId); })
+      .catch(function () { alert('No se pudo borrar la foto'); });
+  };
 
   var KUDO_TYPE = 'fire';
 
