@@ -220,7 +220,16 @@ async def strava_sync(
     _require_strava()
     if days < 1 or days > 90:
         raise HTTPException(400, "days debe ser entre 1 y 90")
+    return await _sync_strava_activities(me, db, days)
 
+
+async def _sync_strava_activities(me: User, db: Session, days: int = 7) -> dict:
+    """
+    Núcleo del sync — separado del endpoint HTTP para que también lo pueda
+    llamar el job en background (scheduler): una vez que el usuario conecta
+    su cuenta Strava, la sincronización queda automática (cada 2h, igual que
+    Garmin) — no tiene que volver a apretar "Sincronizar" nunca más.
+    """
     token = await _get_valid_access_token(me, db)
 
     after_ts = int((datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).timestamp())

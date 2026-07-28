@@ -301,6 +301,46 @@ def _background_garmin_sync_all() -> None:
         db.close()
 
 
+def _background_strava_sync_all() -> None:
+    """
+    Sincroniza actividades Strava (últimas 24h) para todos los atletas con
+    cuenta Strava conectada — corre cada 2h, igual que el sync de Garmin.
+    Así conectar Strava es "una vez y listo": el usuario nunca tiene que
+    apretar el botón "Sincronizar" a mano después de la primera vez.
+    """
+    import asyncio
+    from .database import SessionLocal
+    from .models import User
+
+    db = SessionLocal()
+    try:
+        from .routes.strava_routes import _sync_strava_activities, _strava_available
+        if not _strava_available():
+            return
+
+        users = db.query(User).filter(
+            User.strava_access_token.isnot(None),
+            User.activo == True,
+        ).all()
+        if not users:
+            return
+
+        synced = 0
+        for u in users:
+            try:
+                asyncio.run(_sync_strava_activities(u, db, days=1))
+                synced += 1
+            except Exception as e:
+                logger.warning("Background Strava sync failed user=%s: %s", u.id, e)
+
+        if synced:
+            logger.info("Background Strava sync: %d atletas sincronizados", synced)
+    except Exception as e:
+        logger.error("Background Strava sync global error: %s", e)
+    finally:
+        db.close()
+
+
 # ── B-11: Proactive daily AI insights ──────────────────────────
 
 def _daily_proactive_insights() -> None:
@@ -599,6 +639,14 @@ def start_scheduler(database_url: str | None = None) -> None:
         _background_garmin_sync_all,
         "interval", hours=2,
         id="garmin_sync_2h", replace_existing=True,
+        misfire_grace_time=1800,
+    )
+
+    # Background Strava sync cada 2h para todos los atletas con cuenta conectada
+    _scheduler.add_job(
+        _background_strava_sync_all,
+        "interval", hours=2,
+        id="strava_sync_2h", replace_existing=True,
         misfire_grace_time=1800,
     )
 
