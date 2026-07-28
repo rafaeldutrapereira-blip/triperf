@@ -640,21 +640,23 @@ function initMap(){
         scrollWheelZoom: false
       });
 
-      // Mapa de terreno (relieve, costa, cobertura vegetal) en vez del
-      // estilo oscuro solo-calles anterior — mucho más útil para ver el
-      // recorrido real en contexto (igual al mapa que ya muestra Strava
-      // para la misma actividad), a costa de no calzar 100% con el tema
+      // Mapa de calles limpio (CARTO Voyager) en vez del topográfico
+      // anterior — OpenTopoMap trae curvas de nivel + sombreado de
+      // relieve pensado para trekking, que se ve "cargado" para
+      // actividades urbanas; Voyager es el mismo tipo de estilo nítido
+      // que se ve en apps de ruteo (calles, parques y agua sin textura
+      // de relieve encima), a costa de no calzar 100% con el tema
       // oscuro del resto de la app.
-      L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
-        attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA) — datos: OpenStreetMap',
-        subdomains: 'abc',
-        maxZoom: 17
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+        subdomains: 'abcd',
+        maxZoom: 20
       }).addTo(leafletMap);
 
       // Colores elegidos para no confundirse con los propios colores del
-      // mapa de terreno (parques en verde, autopistas en naranjo/amarillo)
+      // mapa base (parques en verde, vías principales en amarillo/naranjo)
       // — antes carrera=verde y ciclismo=naranjo se perdían contra esos
-      // mismos colores del mapa base.
+      // mismos colores.
       var lineColor = ACT.sport==='run' ? '#EF4444' : ACT.sport==='bike' ? '#EC4899' : '#0EA5E9';
       // Contorno blanco grueso debajo de la línea de color — separa la
       // ruta del mapa sin importar qué haya debajo (calle, parque, agua).
