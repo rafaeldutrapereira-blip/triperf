@@ -863,11 +863,16 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     if (!inp || !inp.value.trim()) return;
     fetch(API + '/community/posts/' + actId + '/comments', {
       method: 'POST', headers: hdrs,
-      body: JSON.stringify({ content: inp.value.trim() })
-    }).then(function () {
-      inp.value = '';
-      loadComments(actId);
-    }).catch(function () {});
+      body: JSON.stringify({ body: inp.value.trim() })
+    })
+      .then(function (r) { return r.ok ? r.json() : r.json().then(function (e) { return Promise.reject(e); }); })
+      .then(function () {
+        inp.value = '';
+        loadComments(actId);
+      })
+      .catch(function (e) {
+        alert((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo publicar el comentario');
+      });
   };
 
   window.submitPost = function () {
