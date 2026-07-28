@@ -3564,9 +3564,14 @@ window.addEventListener('load', init);
 </script>
 
 <script>
-// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
+// Este bloque <script> es independiente del principal (arriba) — 'API'
+// se declaraba solo allá, así que cualquier fetch(API+...) acá tiraba
+// "ReferenceError: API is not defined". Se redeclara localmente para
+// que todo el código de este bloque (Vista Equipo, alertas, sync
+// Garmin) pueda usarla igual que el resto de la página.
+var API = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
+
 // P5 — Sync Garmin por-atleta desde coach
-// �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 window.syncAthleteGarmin = async function(athleteId, nombre, btn){
   var orig = btn.textContent;
   btn.disabled = true; btn.textContent = '⟳ Sincronizando...';
@@ -3655,9 +3660,7 @@ document.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){
     var tok = localStorage.getItem('lx_co_token');
     if (!tok) return;
-    // 'API' vive en el otro bloque <script> (otro scope) — acá no existe.
-    var _apiBase = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
-    fetch(_apiBase+'/coach/alerts',{headers:{Authorization:'Bearer '+tok}})
+    fetch(API+'/coach/alerts',{headers:{Authorization:'Bearer '+tok}})
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(data){
         if (!data) return;
