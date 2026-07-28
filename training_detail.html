@@ -651,9 +651,16 @@ function initMap(){
         maxZoom: 17
       }).addTo(leafletMap);
 
-      var lineColor = ACT.sport==='run' ? '#10B981' : '#FF6535';
-      L.polyline(route, {color:'#3D6880', weight:4, opacity:.35}).addTo(leafletMap);
-      var poly = L.polyline(route, {color:lineColor, weight:3, opacity:.95}).addTo(leafletMap);
+      // Colores elegidos para no confundirse con los propios colores del
+      // mapa de terreno (parques en verde, autopistas en naranjo/amarillo)
+      // — antes carrera=verde y ciclismo=naranjo se perdían contra esos
+      // mismos colores del mapa base.
+      var lineColor = ACT.sport==='run' ? '#EF4444' : ACT.sport==='bike' ? '#EC4899' : '#0EA5E9';
+      // Contorno blanco grueso debajo de la línea de color — separa la
+      // ruta del mapa sin importar qué haya debajo (calle, parque, agua).
+      L.polyline(route, {color:'#ffffff', weight:7, opacity:.9}).addTo(leafletMap);
+      L.polyline(route, {color:'#000000', weight:5, opacity:.35}).addTo(leafletMap);
+      var poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
       leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
       requestAnimationFrame(function(){
         animateRoutePath(poly.getElement(), '#fff', 2400);
