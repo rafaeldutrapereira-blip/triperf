@@ -227,10 +227,25 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class ContentSizeLimitMiddleware(BaseHTTPMiddleware):
-    """Rechaza requests con body > 1 MB para prevenir abusos."""
+    """
+    Rechaza requests con body > 1 MB para prevenir abusos — salvo en los
+    endpoints de subida de archivos (fotos, GPX, .fit/.tcx), que ya validan
+    su propio límite más generoso en el handler (8MB fotos, 15MB GPX, etc.)
+    y con un teléfono real esto se pasaba de 1MB casi siempre, tirando 413
+    antes de que el request llegara al endpoint (bug real: fotos de cámara
+    nunca lograban subirse, ni en avatar ni en galería de actividad).
+    """
     _MAX_BYTES = 1 * 1024 * 1024
+    _EXEMPT_PREFIXES = (
+        "/api/athlete/profile/avatar",
+        "/api/athlete/activities/",   # /{id}/photo y /{id}/photos/*
+        "/api/import/import-activity",
+        "/api/races/parse-gpx",
+    )
 
     async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith(self._EXEMPT_PREFIXES):
+            return await call_next(request)
         cl = request.headers.get("content-length")
         if cl and int(cl) > self._MAX_BYTES:
             return JSONResponse(
