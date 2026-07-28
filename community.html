@@ -114,6 +114,11 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .ac-photo-add{width:110px;height:110px;flex-shrink:0;border-radius:8px;background:var(--surface2);border:1px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;cursor:pointer;color:var(--dim);font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.04em;transition:border-color .15s,color .15s}
 .ac-photo-add:hover{border-color:var(--cyan);color:var(--cyan)}
 .ac-photo-add svg{width:20px;height:20px}
+/* Lightbox: ver cualquier foto (avatar, galería de actividad) en grande */
+.photo-lightbox{position:fixed;inset:0;z-index:2000;background:rgba(4,8,15,.92);display:none;align-items:center;justify-content:center;padding:2rem;cursor:zoom-out}
+.photo-lightbox.on{display:flex}
+.photo-lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5);cursor:default}
+.photo-lightbox-close{position:absolute;top:16px;right:20px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ac-stats{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:.5rem}
 .ac-stat{font-size:.72rem;color:var(--muted)}
 .ac-stat strong{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--text)}
@@ -448,6 +453,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   </div>
 </div>
 
+<!-- Lightbox: ver foto grande (avatar o galería de actividad) -->
+<div class="photo-lightbox" id="photo-lightbox" onclick="closePhotoLightbox()">
+  <div class="photo-lightbox-close" onclick="closePhotoLightbox()">✕</div>
+  <img id="photo-lightbox-img" src="" alt="">
+</div>
+
 <script src="auth.js"></script>
 <script src="nav.js" defer></script>
 <script src="footer.js"></script>
@@ -476,16 +487,28 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   // Pelota de avatar: foto real si el usuario tiene una (avatar_url viene del
   // backend), si no las iniciales de siempre. avatar_url ya es servible sin
   // token (un <img> no puede mandar Authorization), así que se usa tal cual.
-  function _avatarBall(cls, u, extraStyle) {
+  // clickable=true (solo se usa en "Mi Perfil") abre la foto en grande.
+  function _avatarBall(cls, u, extraStyle, clickable) {
     var initial = (u && u.avatar_initial) || '?';
     var url = u && u.avatar_url;
-    var style = (extraStyle ? extraStyle + ';' : '') + (url ? 'padding:0;overflow:hidden' : '');
+    var style = (extraStyle ? extraStyle + ';' : '') + (url ? 'padding:0;overflow:hidden' : '') + (clickable && url ? ';cursor:pointer' : '');
     var styleAttr = style ? ' style="' + style + '"' : '';
     if (url) {
-      return '<div class="' + cls + '"' + styleAttr + '><img src="' + url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"></div>';
+      var onclickAttr = clickable ? ' onclick="openPhotoLightbox(\'' + url + '\')"' : '';
+      return '<div class="' + cls + '"' + styleAttr + onclickAttr + '><img src="' + url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"></div>';
     }
     return '<div class="' + cls + '"' + styleAttr + '>' + initial + '</div>';
   }
+
+  window.openPhotoLightbox = function (url) {
+    document.getElementById('photo-lightbox-img').src = url;
+    document.getElementById('photo-lightbox').classList.add('on');
+  };
+  window.closePhotoLightbox = function () {
+    document.getElementById('photo-lightbox').classList.remove('on');
+    document.getElementById('photo-lightbox-img').src = '';
+  };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePhotoLightbox(); });
 
   var _feedOffset = 0;
   var _feedLoading = false;
@@ -659,7 +682,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var delBtn = ph.deletable
           ? '<div class="ac-photo-del" onclick="event.stopPropagation();deleteActivityPhoto(\'' + c.activity_id + '\',\'' + ph.photo_id + '\',\'' + cardId + '\')">✕</div>'
           : '';
-        return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();window.open(\'' + _escCaption(ph.url) + '\',\'_blank\')">' + delBtn + '</div>';
+        return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();openPhotoLightbox(\'' + _escCaption(ph.url) + '\')">' + delBtn + '</div>';
       }).join('');
 
       var addBtn = c.can_add_photos
@@ -755,7 +778,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           var delBtn = ph.deletable
             ? '<div class="ac-photo-del" onclick="event.stopPropagation();deleteActivityPhoto(\'' + activityId + '\',\'' + ph.photo_id + '\',\'' + cardId + '\')">✕</div>'
             : '';
-          return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();window.open(\'' + _escCaption(ph.url) + '\',\'_blank\')">' + delBtn + '</div>';
+          return '<div class="ac-photo-item"><img src="' + _escCaption(ph.url) + '" loading="lazy" class="ac-photo" onclick="event.stopPropagation();openPhotoLightbox(\'' + _escCaption(ph.url) + '\')">' + delBtn + '</div>';
         }).join('');
         wrap.innerHTML = itemsHtml + _photoAddButtonHtml(activityId, cardId);
       })
@@ -1091,7 +1114,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           '<div class="panel" style="margin-bottom:1.25rem">' +
           '<div style="padding:1.5rem;display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">' +
           '<div style="position:relative;flex-shrink:0;width:60px;height:60px">' +
-          _avatarBall('prof-av', u, 'width:60px;height:60px;font-size:1.6rem') +
+          _avatarBall('prof-av', u, 'width:60px;height:60px;font-size:1.6rem', true) +
           '<label class="avatar-edit-btn" title="Cambiar foto de perfil">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>' +
             '<input type="file" accept="image/*" style="display:none" onchange="uploadMyAvatar(this)">' +
@@ -1192,7 +1215,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var u = d.user || {};
         var ss = d.season_stats || {};
         var av = document.getElementById('cl-profile-av');
-        if (av) av.outerHTML = _avatarBall('cl-profile-av', u).replace('<div ', '<div id="cl-profile-av" ');
+        if (av) av.outerHTML = _avatarBall('cl-profile-av', u, null, true).replace('<div ', '<div id="cl-profile-av" ');
         var nm = document.getElementById('cl-profile-name');
         if (nm) nm.textContent = u.name || '—';
         var fl = document.getElementById('cl-profile-flag');
