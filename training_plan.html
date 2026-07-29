@@ -375,7 +375,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 <div class="modal-ov" id="modal-add" onclick="closeModalOv(event,'modal-add')">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title">+ Agregar Sesión</div>
+      <div class="modal-title" id="modal-add-title">+ Agregar Sesión</div>
       <button class="modal-close" onclick="closeModal('modal-add')">✕</button>
     </div>
     <div class="modal-body">
@@ -419,7 +419,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
     </div>
     <div class="modal-foot">
       <button class="btn btn-g btn-sm" onclick="closeModal('modal-add')" data-i18n="btn_cancel" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="saveSession()" data-i18n="btn_save_session" data-i18n="btn_save_session">Guardar Sesión</button>
+      <button class="btn btn-p btn-sm" id="btn-save-session" onclick="saveSession()" data-i18n="btn_save_session" data-i18n="btn_save_session">Guardar Sesión</button>
     </div>
   </div>
 </div>
@@ -567,8 +567,21 @@ function isoWeekNum(d){
   return Math.ceil(((d - jan4)/86400000 + jan4.getDay()+1)/7);
 }
 
+// Los onclick="..." de esta página van entre comillas DOBLES — JSON.stringify
+// de un id string (ej. "plan-123") también usa comillas dobles, así que
+// embebido tal cual corta el atributo a la mitad ('onclick="showDetail("').
+// Bug real encontrado con Playwright: cualquier sesión propia (id string) no
+// abría el modal de detalle al hacer click real — silenciosamente rompía en
+// el primer id que no fuera un número de actividad Garmin (esos sí quedaban
+// bien porque se embeben sin comillas). jsArg() da un literal JS seguro para
+// meter dentro de un atributo con comillas dobles.
+function jsArg(v){
+  return typeof v==='string' ? "'"+v.replace(/[\\']/g,'\\$&')+"'" : JSON.stringify(v);
+}
+
 function fmtDur(min){
   if(!min) return '—';
+  min = Math.round(min); // algunas duraciones vienen calculadas (division de distancia/ritmo)
   var h=Math.floor(min/60), m=min%60;
   return h ? h+'h'+(m?String(m).padStart(2,'0'):'') : m+'min';
 }
@@ -606,7 +619,15 @@ function sessionsInRange(startIso, endIso){
     .map(function(a){ return Object.assign({},a,{source:'garmin',status:'done'}); });
   var plans = getPlanned()
     .filter(function(p){ return p.date_iso>=startIso && p.date_iso<=endIso; })
-    .map(function(p){ return Object.assign({},p,{source:'local',status:'planned',editable:true}); });
+    .map(function(p){
+      // pullAssignments() cachea acá mismo (kl_training_plan) los planes
+      // asignados por el coach, marcados con api_assignment_id — esos NO
+      // son un plan propio del atleta y no deben poder editarse, borrarse
+      // ni arrastrarse a otra fecha (mismo criterio que getExternalPlanned,
+      // ver comentario abajo). Antes de este fix, editable:true se pisaba
+      // sobre TODO lo que hubiera en kl_training_plan sin distinguir.
+      return Object.assign({},p,{source:'local',status:'planned',editable:!p.api_assignment_id});
+    });
   // Planes reales sincronizados (Training Peaks/Garmin o asignados por el
   // coach) — se muestran igual que un plan manual (source:'local') para
   // reusar toda la lógica de sessAdherence/render ya existente, pero
@@ -873,7 +894,7 @@ function renderWeekCal(){
       var sc  = 'sess';
       var oc  = s.source==='garmin'
         ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
-        : 'showDetail('+JSON.stringify(s.id)+')';
+        : 'showDetail('+jsArg(s.id)+')';
       var meta= fmtDur(s.dur_min)+(s.dist_km?' · '+fmtDist(s.dist_km,s.sport):'');
       var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
       var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
@@ -939,7 +960,7 @@ function renderMonthCal(){
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
           ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
-          : 'showDetail('+JSON.stringify(s.id)+')';
+          : 'showDetail('+jsArg(s.id)+')';
         var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
         var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
         var pctLbl = adh.pct!==null?' '+Math.round(adh.pct)+'%':adh.key==='extra'?' Extra':'';
@@ -1027,7 +1048,7 @@ function renderPeriodCal(){
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
           ? (pair.planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
-          : 'showDetail('+JSON.stringify(s.id)+')';
+          : 'showDetail('+jsArg(s.id)+')';
         var dd  = (s.source==='local' && s.editable!==false) ? ' draggable="true" data-sess-id="'+s.id+'"' : '';
         var sty = 'border-color:'+ast.border+';background:'+ast.bg+';'+(ast.dashed?'border-style:dashed;':'');
         var pctLbl = adh.pct!==null?' '+Math.round(adh.pct)+'%':adh.key==='extra'?' Extra':'';
@@ -1079,7 +1100,7 @@ function renderList(){
     var sp  = SPORT[s.sport]||{icon:'🏅',label:'Sesión',color:'var(--muted)'};
     var oc  = s.source==='garmin'
       ? (planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
-      : 'showDetail('+JSON.stringify(s.id)+')';
+      : 'showDetail('+jsArg(s.id)+')';
     var allDay = byDay[s.date_iso] || [s];
     var adh    = sessAdherence(s, allDay);
     var ast    = adh.style;
@@ -1525,13 +1546,42 @@ document.getElementById('list-tabs').addEventListener('click',function(e){
 // ──────────────────────────────────────
 // MODAL: Agregar Sesión
 // ──────────────────────────────────────
+window._editingSessId = null;
+
 window.openModal = function(defaultDate){
+  window._editingSessId = null;
+  document.getElementById('modal-add-title').textContent = '+ Agregar Sesión';
+  document.getElementById('btn-save-session').textContent = 'Guardar Sesión';
+  document.getElementById('f-sport').value = 'bike';
   document.getElementById('f-date').value  = defaultDate || todayIso();
   document.getElementById('f-name').value  = '';
   document.getElementById('f-dur').value   = '';
   document.getElementById('f-dist').value  = '';
   document.getElementById('f-tss').value   = '';
   document.getElementById('f-notes').value = '';
+  document.getElementById('modal-add').classList.add('open');
+  setTimeout(function(){ document.getElementById('f-name').focus(); },80);
+};
+
+// Reutiliza el mismo modal de "Agregar Sesión" para editar: precarga los
+// campos con la sesión existente y saveSession() actualiza en vez de crear.
+// Solo para sesiones propias (editable!==false) — un plan asignado por el
+// coach o sincronizado de Training Peaks no vive en localStorage, así que
+// no se puede editar/mover/borrar desde acá (ver comentario en showDetail).
+window.editSession = function(id){
+  var s = getPlanned().filter(function(p){ return p.id===id; })[0];
+  if(!s) return;
+  window._editingSessId = id;
+  document.getElementById('modal-add-title').textContent = 'Editar Sesión';
+  document.getElementById('btn-save-session').textContent = 'Guardar Cambios';
+  document.getElementById('f-sport').value = s.sport || 'bike';
+  document.getElementById('f-date').value  = s.date_iso || todayIso();
+  document.getElementById('f-name').value  = s.name || '';
+  document.getElementById('f-dur').value   = s.dur_min || '';
+  document.getElementById('f-dist').value  = s.dist_km != null ? s.dist_km : '';
+  document.getElementById('f-tss').value   = s.tss != null ? s.tss : '';
+  document.getElementById('f-notes').value = s.notes || '';
+  closeModal('modal-detail');
   document.getElementById('modal-add').classList.add('open');
   setTimeout(function(){ document.getElementById('f-name').focus(); },80);
 };
@@ -1544,9 +1594,7 @@ window.saveSession = function(){
   if(!date){ alert('Selecciona una fecha'); return; }
   if(!dur)  { alert('Ingresa la duración en minutos'); return; }
 
-  var plans = getPlanned();
-  plans.push({
-    id:       'plan-'+Date.now(),
+  var fields = {
     sport:    document.getElementById('f-sport').value,
     name:     name,
     date_iso: date,
@@ -1554,10 +1602,22 @@ window.saveSession = function(){
     dist_km:  parseFloat(document.getElementById('f-dist').value)||null,
     tss:      parseInt(document.getElementById('f-tss').value)||null,
     notes:    document.getElementById('f-notes').value.trim()||null,
-    calories: null,
-    created:  new Date().toISOString()
-  });
+  };
+
+  var plans = getPlanned();
+  if(window._editingSessId){
+    plans = plans.map(function(p){
+      return p.id===window._editingSessId ? Object.assign({},p,fields) : p;
+    });
+  } else {
+    plans.push(Object.assign({
+      id:       'plan-'+Date.now(),
+      calories: null,
+      created:  new Date().toISOString()
+    }, fields));
+  }
   savePlanned(plans);
+  window._editingSessId = null;
   closeModal('modal-add');
   render();
 };
@@ -1587,10 +1647,14 @@ window.showDetail = function(id){
   // coach, editable:false) no viven en localStorage: no se pueden editar,
   // borrar ni "registrar resultado" manualmente a mano — su cumplimiento
   // se detecta solo automáticamente al calzar con la actividad real.
-  var editable = s.editable !== false;
+  // getPlanned() devuelve el objeto crudo (no el decorado de sessionsInRange),
+  // así que acá también hay que excluir por api_assignment_id: una sesión
+  // asignada por el coach y cacheada localmente para Cumplimiento Semanal
+  // nunca trae editable:false explícito en el objeto crudo.
+  var editable = s.editable !== false && !s.api_assignment_id;
   var logBtn = !editable ? ''
     : s.status !== 'done'
-      ? '<button class="btn btn-p btn-sm" onclick="openLogModal('+JSON.stringify(id)+')" data-i18n="btn_register_result">Registrar resultado</button>'
+      ? '<button class="btn btn-p btn-sm" onclick="openLogModal('+jsArg(id)+')" data-i18n="btn_register_result">Registrar resultado</button>'
       : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>';
   var zwiftBtn = '';
   if(s.sport === 'bike' && s.status !== 'done'){
@@ -1602,13 +1666,17 @@ window.showDetail = function(id){
       zwiftBtn = '<a href="indoor_workout.html?date='+s.date_iso+'&name='+encodeURIComponent(s.name||'Ciclismo indoor')+'" class="btn btn-g btn-sm" style="color:var(--orange);border-color:rgba(255,101,53,.3)">🚴 Zwift Builder</a>';
     }
   }
+  var editBtn = (editable && s.status !== 'done')
+    ? '<button class="btn btn-g btn-sm" onclick="editSession('+jsArg(id)+')">Editar</button>'
+    : '';
   var delBtn = editable
-    ? '<button class="btn btn-g btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.28)" onclick="deleteSession('+JSON.stringify(id)+')">Eliminar</button>'
+    ? '<button class="btn btn-g btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.28)" onclick="deleteSession('+jsArg(id)+')">Eliminar</button>'
     : '';
   document.getElementById('det-foot').innerHTML =
     '<button class="btn btn-g btn-sm" onclick="closeModal(\'modal-detail\')">Cerrar</button>'
     + logBtn
     + zwiftBtn
+    + editBtn
     + delBtn;
   document.getElementById('modal-detail').classList.add('open');
 };
