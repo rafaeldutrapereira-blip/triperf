@@ -671,6 +671,12 @@ def athlete_dashboard(
     # cliente sobre este mismo payload, así que si acá se corta a 52
     # semanas, "Todo" nunca puede mostrar más que eso aunque haya años de
     # historial real sincronizado.
+    # Los últimos _PMC_DAILY_DAYS días van día por día (no solo domingos):
+    # detalle.html filtra "Semana"/"Mes" recortando este mismo arreglo por
+    # fecha, así que con muestreo semanal esas dos pestañas casi nunca
+    # tenían más de 1 punto real dentro de la ventana pedida.
+    _PMC_DAILY_DAYS = 35
+    _pmc_daily_cutoff_iso = (_date_.today() - _td(days=_PMC_DAILY_DAYS)).isoformat()
     pmc = []
     acwr_history = []
     mo  = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
@@ -680,7 +686,7 @@ def athlete_dashboard(
             dt = _date_.fromisoformat(r.date_iso)
         except ValueError:
             continue
-        if dt.weekday() == 6:  # domingos
+        if dt.weekday() == 6 or r.date_iso >= _pmc_daily_cutoff_iso:
             pmc.append({
                 "dt":  r.date_iso,
                 "l":   f"{dt.day} {mo[dt.month-1]}",
@@ -697,6 +703,26 @@ def athlete_dashboard(
                 acute7    = sum(x.tss for x in slice7)  / len(slice7)
                 acwr_val  = round(acute7 / chronic28, 2) if chronic28 > 1 else 0.0
                 acwr_history.append({"dt": r.date_iso, "acwr": acwr_val})
+
+    # TSS Semanal (suma real de los 7 días de cada semana calendario) —
+    # independiente del muestreo de "pmc" de arriba. "pmc" solo trae 1 fila
+    # por domingo para semanas viejas, así que sumar tss ahí da el TSS de
+    # UN SOLO día disfrazado de "semanal" (bug real reportado por un tester:
+    # "me marca muy pocos TSS" — la barra se veía correcta solo en las
+    # semanas recientes, que sí tienen datos diarios completos).
+    _tss_wk_buckets = {}
+    _tss_wk_order = []
+    for r in load_list:
+        try:
+            dt = _date_.fromisoformat(r.date_iso)
+        except ValueError:
+            continue
+        wk_iso = (dt - _td(days=dt.weekday())).isoformat()  # lunes de esa semana
+        if wk_iso not in _tss_wk_buckets:
+            _tss_wk_buckets[wk_iso] = 0.0
+            _tss_wk_order.append(wk_iso)
+        _tss_wk_buckets[wk_iso] += r.tss or 0
+    tss_weekly = [{"wk": wk, "tss": round(_tss_wk_buckets[wk], 1)} for wk in _tss_wk_order]
 
     # ── Activities (últimas 100, ordenadas desc) ──────────────────────────────
     acts_orm = (
@@ -1007,6 +1033,7 @@ def athlete_dashboard(
         # PMC
         "pmc": pmc,
         "acwr_history": acwr_history,
+        "tss_weekly": tss_weekly,
         # Históricos wellbeing (90 días) para detalle.html?metric=wellbeing
         "sleep_history": sleep_history,
         "hrv_history":   hrv_history,

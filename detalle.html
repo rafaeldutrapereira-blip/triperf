@@ -116,6 +116,36 @@ a { color: inherit; text-decoration: none; }
   background: var(--accent); color: #fff; border-color: var(--accent);
   box-shadow: 0 4px 18px rgba(0,0,0,.3);
 }
+.period-custom-wrap { position: relative; display: inline-flex; }
+.period-custom-panel {
+  position: absolute; top: calc(100% + .5rem); left: 0; z-index: 20;
+  display: flex; flex-wrap: wrap; align-items: end; gap: .7rem;
+  padding: .9rem 1rem; border-radius: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.period-custom-panel label {
+  display: flex; flex-direction: column; gap: .3rem;
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.period-custom-panel input[type="date"] {
+  font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; font-weight: 600;
+  padding: .4rem .55rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  color-scheme: dark;
+}
+.period-custom-panel .pc-apply {
+  font-family: 'Oswald', sans-serif; font-size: .72rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: .46rem 1.1rem; border-radius: 6px; border: none; cursor: pointer;
+  background: var(--accent); color: #fff; transition: opacity var(--ease);
+}
+.period-custom-panel .pc-apply:hover { opacity: .88; }
+.period-custom-panel .pc-err {
+  flex-basis: 100%; font-size: .68rem; color: var(--orange, #FF6535); display: none;
+}
+.period-custom-panel .pc-err.on { display: block; }
 
 /* MAIN CONTENT */
 .content {
@@ -427,6 +457,15 @@ footer {
     <button class="ptab" data-p="180" onclick="setPeriod(180)" role="tab">6 Meses</button>
     <button class="ptab" data-p="365" onclick="setPeriod(365)" role="tab">Año</button>
     <button class="ptab on" data-p="0"   onclick="setPeriod(0)"   role="tab" aria-selected="true">Todo</button>
+    <div class="period-custom-wrap">
+      <button class="ptab" id="ptab-custom" data-p="custom" onclick="toggleCustomPeriodPanel()" role="tab" aria-haspopup="true" aria-expanded="false">Período</button>
+      <div class="period-custom-panel" id="period-custom-panel" style="display:none;">
+        <label>Desde <input type="date" id="pc-start"></label>
+        <label>Hasta <input type="date" id="pc-end"></label>
+        <button class="pc-apply" type="button" onclick="applyCustomPeriod()">Aplicar</button>
+        <div class="pc-err" id="pc-err">Elegí una fecha de inicio anterior a la de término.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -894,6 +933,8 @@ var KL_PMC_ALL = [];
 // ─── STATE ────────────────────────────────────────────────────────────────────
 var metric = 'ctl';
 var period  = 365;
+var customStart = null;  // 'YYYY-MM-DD' — solo se usa cuando period === 'custom'
+var customEnd   = null;
 var CHART   = null;
 // VO2 Max se estima por separado para running y ciclismo (Garmin da 2
 // métricas distintas, no la misma con 2 nombres) — ?metric=vo2&sport=running|cycling
@@ -902,6 +943,9 @@ var VO2_SPORT = new URLSearchParams(location.search).get('sport');
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function filterPeriod(all) {
+  if (period === 'custom') {
+    return all.filter(function(p){ return p.date >= customStart && p.date <= customEnd; });
+  }
   if (period === 0) return all;
   var cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - period);
@@ -947,6 +991,9 @@ function dateToXIdx(iso, pmcData){
 }
 
 function getPmcFiltered() {
+  if (period === 'custom') {
+    return KL_PMC_ALL.filter(function(p){ return p.dt >= customStart && p.dt <= customEnd; });
+  }
   if (period === 0) return KL_PMC_ALL;
   var cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - period);
@@ -1689,13 +1736,16 @@ function renderWellbeing() {
 
   var d = window.KL_DATA || {};
   var cutoff = '';
-  if (period > 0) {
+  var endBound = '';
+  if (period === 'custom') {
+    cutoff = customStart; endBound = customEnd;
+  } else if (period > 0) {
     var co = new Date(); co.setDate(co.getDate() - period);
     cutoff = co.toISOString().slice(0,10);
   }
   function sliceDt(arr) {
     if (!period) return arr;
-    return (arr||[]).filter(function(p){ return p.dt >= cutoff; });
+    return (arr||[]).filter(function(p){ return p.dt >= cutoff && (!endBound || p.dt <= endBound); });
   }
   function avgArr(arr, key) {
     var f = arr.filter(function(p){ return p[key] != null && p[key] > 0; });
@@ -1976,7 +2026,10 @@ function renderAcwrBySport() {
   var d = window.KL_DATA || {};
   var bySport = d.acwr_by_sport || {};
   var cutoff = '';
-  if (period > 0) {
+  var endBound = '';
+  if (period === 'custom') {
+    cutoff = customStart; endBound = customEnd;
+  } else if (period > 0) {
     var co = new Date(); co.setDate(co.getDate() - period);
     cutoff = co.toISOString().slice(0,10);
   }
@@ -2020,7 +2073,7 @@ function renderAcwrBySport() {
 
   ACWR_SPORTS.forEach(function(s){
     var info = bySport[s.key] || {};
-    var hist = (info.history || []).filter(function(p){ return !cutoff || p.dt >= cutoff; });
+    var hist = (info.history || []).filter(function(p){ return (!cutoff || p.dt >= cutoff) && (!endBound || p.dt <= endBound); });
 
     var badgeEl = document.getElementById('acwr-badge-' + s.key);
     var rangeEl = document.getElementById('acwr-range-' + s.key);
@@ -2134,6 +2187,56 @@ function setPeriod(p) {
     b.classList.toggle('on', on);
     b.setAttribute('aria-selected', on ? 'true' : 'false');
   });
+  closeCustomPeriodPanel();
+  render();
+}
+
+// ─── PERÍODO PERSONALIZADO (fecha inicio/fin a elección) ─────────────────────
+function closeCustomPeriodPanel() {
+  var panel = document.getElementById('period-custom-panel');
+  var btn   = document.getElementById('ptab-custom');
+  if (panel) panel.style.display = 'none';
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleCustomPeriodPanel() {
+  var panel = document.getElementById('period-custom-panel');
+  var btn   = document.getElementById('ptab-custom');
+  if (!panel) return;
+  var opening = panel.style.display === 'none';
+  panel.style.display = opening ? 'flex' : 'none';
+  if (btn) btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+  if (opening) {
+    var todayISO = new Date().toISOString().slice(0,10);
+    var startEl = document.getElementById('pc-start');
+    var endEl   = document.getElementById('pc-end');
+    if (startEl && !startEl.value) startEl.value = customStart || '';
+    if (endEl   && !endEl.value)   endEl.value   = customEnd   || todayISO;
+    if (endEl) endEl.max = todayISO;
+    if (startEl) startEl.max = todayISO;
+  }
+}
+
+function applyCustomPeriod() {
+  var startEl = document.getElementById('pc-start');
+  var endEl   = document.getElementById('pc-end');
+  var errEl   = document.getElementById('pc-err');
+  var s = startEl ? startEl.value : '';
+  var e = endEl ? endEl.value : '';
+  if (!s || !e || s > e) {
+    if (errEl) errEl.classList.add('on');
+    return;
+  }
+  if (errEl) errEl.classList.remove('on');
+  customStart = s;
+  customEnd   = e;
+  period = 'custom';
+  document.querySelectorAll('.ptab').forEach(function(b) {
+    var on = b.id === 'ptab-custom';
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  closeCustomPeriodPanel();
   render();
 }
 
@@ -2145,6 +2248,7 @@ function switchMetric(m) {
     var on = bp === period;
     b.classList.toggle('on', on);
   });
+  closeCustomPeriodPanel();
   history.replaceState(null, '', '?metric=' + m);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   render();
@@ -2514,27 +2618,27 @@ function renderCycleTable(a, b, c){
         }
       } catch(e) { console.error('detalle.html: error procesando VO2max', e); }
 
-      // Rebuild KL_PMC_ALL for metric=pmc chart + TSS weekly from PMC
+      // Rebuild KL_PMC_ALL for metric=pmc chart
       try {
         if(d.pmc && d.pmc.length){
           KL_PMC_ALL = d.pmc.map(function(p){
             return {dt:p.dt, l:p.l||p.dt, ctl:p.ctl||0, atl:p.atl||0, tss:p.tss||0};
           });
         }
-        if(d.pmc){
-          var byWeek = {};
-          d.pmc.forEach(function(p){
-            if(!p.tss) return;
-            var dt = new Date(p.dt);
-            var dow = dt.getDay();
-            var mon = new Date(dt); mon.setDate(dt.getDate() - (dow===0?6:dow-1));
-            var wk = mon.toISOString().slice(0,10);
-            byWeek[wk] = (byWeek[wk]||0) + (p.tss||0);
-          });
-          var tssArr = Object.keys(byWeek).sort().map(function(wk){ return {date:wk, value:Math.round(byWeek[wk])}; });
-          ALL.tss = tssArr;
+      } catch(e) { console.error('detalle.html: error procesando PMC', e); }
+
+      // TSS Semanal — usa tss_weekly (suma real de los 7 días de cada semana,
+      // calculada en el backend sobre el historial diario completo). ANTES
+      // se sumaba a partir de "pmc", que solo trae 1 fila por domingo en
+      // semanas viejas — eso hacía que cada barra mostrara el TSS de un
+      // solo día disfrazado de "semanal" (bug real reportado por un tester:
+      // "me marca muy pocos TSS", con una sola barra reciente viéndose
+      // proporcionalmente mucho más alta que el resto).
+      try {
+        if(d.tss_weekly){
+          ALL.tss = d.tss_weekly.map(function(p){ return {date:p.wk, value:Math.round(p.tss)}; });
         }
-      } catch(e) { console.error('detalle.html: error procesando PMC/TSS', e); }
+      } catch(e) { console.error('detalle.html: error procesando TSS semanal', e); }
 
       render();
     })
