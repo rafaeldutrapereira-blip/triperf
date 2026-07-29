@@ -244,6 +244,7 @@ def apply_week_template(
                                     "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
                                     "notes": tpl.notas or "",
                                     "blocks_json": tpl.blocks_json, "ftp": ath.ftp,
+                                    "fcmax": ath.fcmax,
                                 },
                                 target_date=date_iso,
                                 athlete_id=ath.id,

@@ -407,6 +407,118 @@ def _bike_blocks_to_garmin_steps(blocks: list, ftp: int) -> list:
     return steps
 
 
+def _pace_str_to_speed_range_mps(pace_str: str, tolerance_sec_per_km: int = 3) -> tuple[float, float] | None:
+    """
+    '4:30' (min:seg por km) -> rango de velocidad en m/s (±tolerance_sec_per_km),
+    que es como Garmin guarda un target de ritmo (PACE_ZONE) — velocidad, no
+    el ritmo en sí. Más rápido = más m/s, por eso el ritmo objetivo pasa a
+    ser el límite ALTO de velocidad (targetValueTwo) y el ritmo +tolerancia
+    (más lento) el límite BAJO (targetValueOne).
+    """
+    if not pace_str or ":" not in pace_str:
+        return None
+    try:
+        m, s = pace_str.split(":")
+        pace_sec = int(m) * 60 + int(s)
+    except (ValueError, TypeError):
+        return None
+    if pace_sec <= 0:
+        return None
+    slow_sec = pace_sec + tolerance_sec_per_km
+    fast_sec = max(pace_sec - tolerance_sec_per_km, 1)
+    return (1000.0 / slow_sec, 1000.0 / fast_sec)  # (m/s más lento, m/s más rápido)
+
+
+def _executable_run_step(step_order: int, step_kind: str, duration_seconds: float | None,
+                          distance_meters: float | None,
+                          pace_str: str | None, hr_zone: str | None, fcmax: int | None):
+    """
+    Análogo a _executable_power_step() pero para carrera: target de ritmo
+    (PACE_ZONE, en m/s) si hay pace_str, si no target de zona de FC
+    (HEART_RATE_ZONE, en bpm) si hay hr_zone+fcmax, si no sin objetivo.
+    El end-condition es por DISTANCIA si se pasa distance_meters (series con
+    metros objetivo), o por TIEMPO si se pasa duration_seconds (calentamiento/
+    vuelta a la calma/continuo) — nunca ambos.
+    """
+    from garminconnect.workout import ExecutableStep, ConditionType, TargetType
+
+    step_type_id, step_type_key, display_order = _STEP_TYPE_META[step_kind]
+    kwargs = dict(
+        stepOrder=step_order,
+        stepType={"stepTypeId": step_type_id, "stepTypeKey": step_type_key, "displayOrder": display_order},
+    )
+    if distance_meters is not None:
+        kwargs["endCondition"] = {
+            "conditionTypeId": ConditionType.DISTANCE, "conditionTypeKey": "distance",
+            "displayOrder": 3, "displayable": True,
+        }
+        kwargs["endConditionValue"] = distance_meters
+    else:
+        kwargs["endCondition"] = {
+            "conditionTypeId": ConditionType.TIME, "conditionTypeKey": "time",
+            "displayOrder": 2, "displayable": True,
+        }
+        kwargs["endConditionValue"] = duration_seconds or 300
+
+    speed_range = _pace_str_to_speed_range_mps(pace_str) if pace_str else None
+    if speed_range:
+        kwargs["targetType"] = {
+            "workoutTargetTypeId": TargetType.PACE_ZONE,
+            "workoutTargetTypeKey": "pace.zone",
+            "displayOrder": TargetType.PACE_ZONE,
+        }
+        kwargs["targetValueOne"] = round(speed_range[0], 3)
+        kwargs["targetValueTwo"] = round(speed_range[1], 3)
+    elif hr_zone and fcmax:
+        from api.services.zones_service import hr_zones
+        zone_n = int(str(hr_zone).replace("Z", "") or 0)
+        zones = hr_zones(fcmax)
+        z = next((zz for zz in zones if zz["zone"] == zone_n), None)
+        if z:
+            kwargs["targetType"] = {
+                "workoutTargetTypeId": TargetType.HEART_RATE_ZONE,
+                "workoutTargetTypeKey": "heart.rate.zone",
+                "displayOrder": TargetType.HEART_RATE_ZONE,
+            }
+            kwargs["targetValueOne"] = z["min_bpm"]
+            kwargs["targetValueTwo"] = z["max_bpm"]
+        else:
+            kwargs["targetType"] = {"workoutTargetTypeId": TargetType.NO_TARGET, "workoutTargetTypeKey": "no.target", "displayOrder": 1}
+    else:
+        kwargs["targetType"] = {"workoutTargetTypeId": TargetType.NO_TARGET, "workoutTargetTypeKey": "no.target", "displayOrder": 1}
+
+    return ExecutableStep(**kwargs)
+
+
+def _run_blocks_to_garmin_steps(blocks: list, fcmax: int | None) -> list:
+    """
+    Traduce el blocks_json de carrera (formato propio de coach.html —
+    _mwGetRunJson(): distinto del de bici, ver ese código — dur_min/zone
+    para warmup-cooldown-steady, repeat/dist_m/pace/rec_sec/rec_zone para
+    series) a workoutSteps reales de Garmin.
+    """
+    from garminconnect.workout import create_repeat_group
+
+    steps = []
+    order = 1
+    for b in blocks:
+        t = b.get("type", "steady")
+        if t in ("warmup", "cooldown"):
+            dur = (b.get("dur_min") or 5) * 60
+            steps.append(_executable_run_step(order, t, dur, None, None, b.get("zone"), fcmax))
+            order += 1
+        elif t == "steady":
+            dur = (b.get("dur_min") or 20) * 60
+            steps.append(_executable_run_step(order, "interval", dur, None, b.get("pace"), b.get("zone"), fcmax))
+            order += 1
+        elif t == "intervals":
+            on_step  = _executable_run_step(1, "interval", None, b.get("dist_m", 400), b.get("pace"), None, fcmax)
+            off_step = _executable_run_step(2, "recovery", b.get("rec_sec", 60), None, None, b.get("rec_zone"), fcmax)
+            steps.append(create_repeat_group(b.get("repeat", 1), [on_step, off_step], order))
+            order += 1
+    return steps
+
+
 def _build_workout_body(session: dict) -> dict:
     """
     Build Garmin workout JSON with required segment/step structure.
@@ -424,16 +536,22 @@ def _build_workout_body(session: dict) -> dict:
 
     blocks_json = session.get("blocks_json")
     ftp         = session.get("ftp")
+    fcmax       = session.get("fcmax")
     workout_steps = None
-    if session.get("sport") == "bike" and blocks_json and ftp:
-        try:
+    try:
+        if session.get("sport") == "bike" and blocks_json and ftp:
             blocks = json.loads(blocks_json)
             garmin_steps = _bike_blocks_to_garmin_steps(blocks, ftp)
             if garmin_steps:
                 workout_steps = [s.model_dump(exclude_none=True, mode="json") for s in garmin_steps]
-        except Exception as e:
-            log.warning("No se pudo construir workoutSteps estructurados, usando fallback genérico: %s", e)
-            workout_steps = None
+        elif session.get("sport") == "run" and blocks_json:
+            blocks = json.loads(blocks_json)
+            garmin_steps = _run_blocks_to_garmin_steps(blocks, fcmax)
+            if garmin_steps:
+                workout_steps = [s.model_dump(exclude_none=True, mode="json") for s in garmin_steps]
+    except Exception as e:
+        log.warning("No se pudo construir workoutSteps estructurados, usando fallback genérico: %s", e)
+        workout_steps = None
 
     if not workout_steps:
         workout_steps = [

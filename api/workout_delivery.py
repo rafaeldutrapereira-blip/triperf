@@ -205,6 +205,7 @@ def auto_garmin_sync(assignment, athlete: "User", tpl: "WorkoutTemplate") -> dic
         "notes":       tpl.notas or (assignment.notas or ""),
         "blocks_json": tpl.blocks_json,
         "ftp":         athlete.ftp,
+        "fcmax":       athlete.fcmax,
     }
     try:
         from garmin_connector import schedule_workout_for_athlete
@@ -229,15 +230,24 @@ def auto_garmin_sync(assignment, athlete: "User", tpl: "WorkoutTemplate") -> dic
 
 def deliver_bike_workout(assignment, athlete: "User", tpl: "WorkoutTemplate") -> dict:
     """
-    Entrega automática completa para un workout de bicicleta con bloques.
-    Ejecutar en background (threading) para no bloquear la respuesta HTTP.
+    Entrega automática completa para un workout con bloques estructurados.
+    El nombre quedó de cuando esto era solo bici (Sprint original) — desde
+    el Sprint D del 2026-07-29 también entrega carrera (sync a Garmin con
+    steps reales; el .zwo/email sigue siendo solo bici, ver el chequeo
+    `tpl.sport == "bike"` más abajo, porque el .zwo es un formato de Zwift,
+    específico de ciclismo). Ejecutar en background (threading) para no
+    bloquear la respuesta HTTP.
 
     Retorna resumen {"email_sent": bool, "garmin_ok": bool, "garmin_skipped": bool}
     """
     result = {"email_sent": False, "garmin_ok": False, "garmin_skipped": False}
 
-    # 1. Zwift email
-    if tpl.blocks_json and athlete.email:
+    # 1. Zwift email — solo bici, el .zwo asume campos de potencia
+    # (power/power_low/power_high) que los bloques de carrera no tienen
+    # (usan pace/zone/dist_m). Sin este chequeo, asignar un template de
+    # carrera con esta misma función (ver Sprint D) mandaría un .zwo
+    # corrupto/sin sentido para Zwift, que es específico de ciclismo.
+    if tpl.sport == "bike" and tpl.blocks_json and athlete.email:
         try:
             zwo = generate_zwo_bytes(tpl.blocks_json, tpl.nombre, assignment.date_iso)
             if zwo:

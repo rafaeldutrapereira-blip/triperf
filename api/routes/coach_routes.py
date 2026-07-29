@@ -341,7 +341,7 @@ def assign_workout(body: AssignRequest,
         if not assignments:
             raise HTTPException(400, "El grupo no tiene miembros")
         # Auto-entrega para cada miembro si es workout bici con bloques
-        if tpl.sport == "bike" and tpl.blocks_json:
+        if tpl.sport in ("bike", "run") and tpl.blocks_json:
             from ..workout_delivery import deliver_bike_workout
             for a in assignments:
                 db.refresh(a)
@@ -397,7 +397,7 @@ def assign_workout(body: AssignRequest,
     db.add(a); db.commit(); db.refresh(a)
     # Auto-entrega si es workout bici con bloques
     athlete = db.query(User).filter(User.id == body.athlete_id).first()
-    if tpl.sport == "bike" and tpl.blocks_json and athlete:
+    if tpl.sport in ("bike", "run") and tpl.blocks_json and athlete:
         from ..workout_delivery import deliver_bike_workout
         threading.Thread(
             target=deliver_bike_workout,
@@ -914,6 +914,7 @@ def sync_to_garmin(
         "notes":       tpl.notas or (a.notas or ""),
         "blocks_json": tpl.blocks_json,
         "ftp":         athlete.ftp,
+        "fcmax":       athlete.fcmax,
     }
 
     try:
@@ -984,7 +985,8 @@ def sync_group_to_garmin(
                 session          = {"name": tpl.nombre, "sport": tpl.sport,
                                     "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
                                     "notes": tpl.notas or "",
-                                    "blocks_json": tpl.blocks_json, "ftp": athlete.ftp},
+                                    "blocks_json": tpl.blocks_json, "ftp": athlete.ftp,
+                                    "fcmax": athlete.fcmax},
                 target_date      = a.date_iso,
                 athlete_id       = athlete.id,
                 athlete_email    = athlete.garmin_email,
