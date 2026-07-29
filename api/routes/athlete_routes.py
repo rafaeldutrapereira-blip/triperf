@@ -1776,6 +1776,72 @@ def unshare_activity(
     return {"ok": True}
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Indoor Workout Builder (indoor_workout.html) → envío directo a Garmin.
+# A diferencia de la asignación de un coach (workout_delivery.py), acá el
+# atleta arma su propio workout y lo manda a SU PROPIA cuenta Garmin — mismo
+# motor de traducción de bloques (garmin_connector.py, Sprints A-E), pero
+# sin pasar por AssignedWorkout/WorkoutTemplate (esto nunca se guarda en
+# LabX, solo se genera y se envía).
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _SendToGarminIn(BaseModel):
+    name:   str
+    date:   str  # YYYY-MM-DD
+    blocks: list
+
+
+def _blocks_total_duration_sec(blocks: list) -> int:
+    total = 0
+    for b in blocks:
+        if b.get("type") == "intervals":
+            total += int(b.get("repeat", 1)) * (int(b.get("on_duration", 0)) + int(b.get("off_duration", 0)))
+        else:
+            total += int(b.get("duration", 0))
+    return total
+
+
+@router.post("/indoor-workout/send-to-garmin")
+def send_indoor_workout_to_garmin(
+    body: _SendToGarminIn,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    """Envía un workout armado en indoor_workout.html directo a la cuenta
+    Garmin del propio atleta logueado — sin descargar ni importar archivos."""
+    if not me.garmin_email or not me.garmin_password:
+        raise HTTPException(400, "Conectá tu cuenta Garmin desde tu Perfil antes de poder enviar entrenamientos.")
+    if not me.ftp:
+        raise HTTPException(400, "Configurá tu FTP en tu Perfil para calcular los objetivos de potencia.")
+    if not body.blocks:
+        raise HTTPException(400, "El entrenamiento no tiene bloques.")
+
+    from garmin_connector import schedule_workout_for_athlete
+    from ..crypto import decrypt_credential
+
+    session = {
+        "name":        body.name or "LabX Indoor Workout",
+        "sport":       "bike",
+        "dur_min":     _blocks_total_duration_sec(body.blocks) / 60,
+        "dist_km":     0,
+        "notes":       "",
+        "blocks_json": json.dumps(body.blocks),
+        "ftp":         me.ftp,
+    }
+    try:
+        result = schedule_workout_for_athlete(
+            session          = session,
+            target_date      = body.date,
+            athlete_id       = me.id,
+            athlete_email    = me.garmin_email,
+            athlete_password = decrypt_credential(me.garmin_password),
+        )
+    except Exception as e:
+        raise HTTPException(502, f"No se pudo enviar a Garmin: {e}")
+
+    return {"ok": True, "workout_id": result.get("workoutId"), "date": body.date}
+
+
 @router.get("/zones")
 def get_training_zones(
     db: Session = Depends(get_db),
@@ -2306,9 +2372,14 @@ def _get_share_prefs(user: User) -> dict:
 
 
 def _find_viewable_activity(activity_id: str, me: User, db: Session) -> GarminActivity | None:
-    """Busca una actividad por su activity_id de Garmin, autorizando solo si
-    es propia o de alguien que el usuario actual sigue Y que no desactivó el
-    detalle compartido (share_details) en su configuración de privacidad.
+    """Busca una actividad por su activity_id de Garmin, autorizando si:
+    1. es propia,
+    2. o de alguien que el usuario actual sigue Y que no desactivó el
+       detalle compartido (share_details) en su configuración de privacidad,
+    3. o — si `me` es coach/admin — de un atleta propio (CoachAthlete activo
+       o miembro de un grupo suyo). El coach ve el detalle de sus atletas
+       siempre, sin depender de share_details: esa preferencia gobierna qué
+       ven los SEGUIDORES en Comunidad, no la relación de entrenamiento.
 
     Nota: activity_id puede repetirse entre cuentas demo/QA sembradas con el
     mismo dataset sintético — por eso se buscan TODOS los candidatos y se
@@ -2323,6 +2394,14 @@ def _find_viewable_activity(activity_id: str, me: User, db: Session) -> GarminAc
     own = next((a for a in candidates if a.user_id == me.id), None)
     if own:
         return own
+
+    if me.rol in ("coach", "admin"):
+        from ..permissions import get_athletes_for_coach
+        coached_ids = set(get_athletes_for_coach(me.id, db))
+        for a in candidates:
+            if a.user_id in coached_ids:
+                return a
+
     followed_ids = {f.followed_id for f in db.query(Follow).filter_by(follower_id=me.id).all()}
     for a in candidates:
         if a.user_id in followed_ids:

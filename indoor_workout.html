@@ -120,6 +120,9 @@ select option{background:var(--surface2)}
 .iw-exp-btn.erg:hover{background:rgba(14,165,233,.2)}
 .iw-exp-btn.mrc{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green)}
 .iw-exp-btn.mrc:hover{background:rgba(16,185,129,.2)}
+.iw-exp-btn.garmin{background:rgba(240,165,0,.12);border:1px solid rgba(240,165,0,.35);color:var(--gold)}
+.iw-exp-btn.garmin:hover{background:rgba(240,165,0,.22)}
+.iw-exp-btn.garmin:disabled{opacity:.5;cursor:not-allowed}
 .iw-exp-path{font-size:.62rem;color:var(--dim);margin-top:.5rem;line-height:1.5;text-align:left;background:rgba(0,0,0,.2);border-radius:4px;padding:.4rem .6rem}
 .iw-exp-path code{color:var(--aqua);font-size:.6rem}
 
@@ -290,6 +293,19 @@ select option{background:var(--surface2)}
           <h3>Exportar Workout</h3>
         </div>
         <div class="iw-export-body">
+
+          <div class="iw-exp-card">
+            <div class="iw-exp-logo">⌚</div>
+            <div class="iw-exp-name">Mi reloj Garmin</div>
+            <div class="iw-exp-fmt">Envío directo, sin archivos</div>
+            <button class="iw-exp-btn garmin" onclick="sendToGarmin()" id="btn-send-garmin">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+              Enviar a mi Garmin
+            </button>
+            <div class="iw-exp-path">
+              Necesitás tu cuenta Garmin conectada y tu FTP configurado en tu Perfil
+            </div>
+          </div>
 
           <div class="iw-exp-card">
             <div class="iw-exp-logo">🟠</div>
@@ -853,6 +869,36 @@ function download(filename, content, mime){
   a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
 }
+
+window.sendToGarmin = function(){
+  var wo = getWorkoutData(null);
+  if(!wo.blocks.length){ toast('Sin bloques para enviar', false); return; }
+  if(!wo.date){ toast('Elegí una fecha primero', false); return; }
+  if(!FTP_IS_REAL){ toast('Configurá tu FTP real en tu Perfil antes de enviar', false); return; }
+
+  var btn = document.getElementById('btn-send-garmin');
+  btn.disabled = true;
+  var originalHtml = btn.innerHTML;
+  btn.innerHTML = 'Enviando…';
+
+  fetch(_iwApiBase() + '/athlete/indoor-workout/send-to-garmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _iwApiToken() },
+    body: JSON.stringify({ name: wo.name, date: wo.date, blocks: wo.blocks }),
+  })
+    .then(function(r){ return r.ok ? r.json() : r.json().then(function(e){ return Promise.reject(e); }); })
+    .then(function(){
+      toast('✓ Enviado a tu Garmin — programado para ' + wo.date, true);
+    })
+    .catch(function(e){
+      var msg = (e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo enviar a Garmin';
+      toast(msg, false);
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    });
+};
 
 function toast(msg, ok){
   var el = document.getElementById('toast-msg');

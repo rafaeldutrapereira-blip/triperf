@@ -2726,12 +2726,13 @@ window.loadPlanVsActual = async function(){
     el.innerHTML = summaryHtml + data.map(function(r){
       var cfg = statusCfg[r.status]||statusCfg.pending;
       var garminBlock = r.garmin_matched
-        ? '<div style="margin-top:.35rem;padding:.3rem .55rem;background:rgba(14,165,233,.08);border-radius:4px;font-size:.71rem;color:var(--cyan)">'
+        ? '<div onclick="event.stopPropagation();window.open(\'training_detail.html?id='+encodeURIComponent(r.garmin_activity_id)+'\',\'_blank\')" title="Ver detalle de la actividad" style="margin-top:.35rem;padding:.3rem .55rem;background:rgba(14,165,233,.08);border-radius:4px;font-size:.71rem;color:var(--cyan);cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'rgba(14,165,233,.16)\'" onmouseout="this.style.background=\'rgba(14,165,233,.08)\'">'
           +'<strong>Garmin:</strong> '+esc(r.garmin_name||'Actividad')
           +' &nbsp;'+fmtDist(r.garmin_dist_km)
           +' &nbsp;'+fmtSecs(r.garmin_dur_secs)
           +(r.garmin_avg_hr?' &nbsp;❤️ '+Math.round(r.garmin_avg_hr)+' bpm':'')
           +(r.garmin_tss?' &nbsp;TSS '+Math.round(r.garmin_tss):'')
+          +' &nbsp;<span style="opacity:.7">→ ver detalle</span>'
           +'</div>' : '';
       var logBlock = r.log_completado
         ? '<div style="margin-top:.2rem;font-size:.71rem;color:var(--green)">✓ Log: '+fmtDist(r.log_dist_real)+' / '+fmtDur(r.log_dur_real)+(r.log_tss_real?' / TSS '+r.log_tss_real:'')+(r.log_rpe?' · <span style="color:var(--orange)">RPE '+r.log_rpe+'/10</span>':'')+'</div>' : '';
