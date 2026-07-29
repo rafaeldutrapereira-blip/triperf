@@ -634,6 +634,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
         </div>
       </div>
       <div id="mw-blocks" style="display:flex;flex-direction:column;gap:.35rem"></div>
+      <div id="mw-bike-chart" style="margin-top:.5rem;background:var(--surface);border-radius:6px;overflow:hidden"></div>
       <div style="font-size:.62rem;color:var(--dim);margin-top:.45rem">Potencia en % FTP · Duración en minutos · Al asignar, el atleta verá el botón <strong style="color:var(--orange)">Descargar Zwift</strong> en su plan.</div>
     </div>
 
@@ -649,6 +650,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
         </div>
       </div>
       <div id="mw-run-blocks" style="display:flex;flex-direction:column;gap:.35rem"></div>
+      <div id="mw-run-chart" style="margin-top:.5rem;background:var(--surface);border-radius:6px;overflow:hidden"></div>
       <div style="font-size:.62rem;color:var(--dim);margin-top:.45rem">Ritmo en min:sec/km (ej: 4:30) · Zona FC: Z1–Z5 · Distancia en metros · Recuperación en segundos</div>
     </div>
 
@@ -664,6 +666,7 @@ tr:hover td{background:rgba(14,165,233,.04)}
         </div>
       </div>
       <div id="mw-swim-blocks" style="display:flex;flex-direction:column;gap:.35rem"></div>
+      <div id="mw-swim-chart" style="margin-top:.5rem;background:var(--surface);border-radius:6px;overflow:hidden"></div>
       <div style="font-size:.62rem;color:var(--dim);margin-top:.45rem">% CSS = ritmo relativo a tu Critical Swim Speed · Distancia en metros · Pausa en segundos · 100% CSS = ritmo umbral</div>
     </div>
 
@@ -1741,7 +1744,7 @@ function _mwReset(){
   document.getElementById('mw-sport').value = 'swim';
   document.getElementById('mw-tipo').value  = '';
   _mwBlocks=[]; _mwRunBlocks=[]; _mwSwimBlocks=[];
-  ['mw-blocks','mw-run-blocks','mw-swim-blocks'].forEach(function(id){
+  ['mw-blocks','mw-run-blocks','mw-swim-blocks','mw-bike-chart','mw-run-chart','mw-swim-chart'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.innerHTML='';
   });
   ['mw-zwift-sec','mw-run-sec','mw-swim-sec'].forEach(function(id){
@@ -1848,23 +1851,23 @@ function _mwRenderBlocks(){
     var fields = '';
     if(b.type==='intervals'){
       fields =
-        '<input type="number" value="'+b.repeat+'" min="1" style="width:48px" title="Repeticiones" onchange="_mwUpd(\''+b.id+'\',\'repeat\',+this.value)">'
+        '<input type="number" value="'+b.repeat+'" min="1" style="width:48px" title="Repeticiones" oninput="_mwUpd(\''+b.id+'\',\'repeat\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">×</span>'
-        +'<input type="number" value="'+b.ondur+'" min="1" step="0.5" style="width:50px" title="Min trabajo" onchange="_mwUpd(\''+b.id+'\',\'ondur\',+this.value)">'
+        +'<input type="number" value="'+b.ondur+'" min="1" step="0.5" style="width:50px" title="Min trabajo" oninput="_mwUpd(\''+b.id+'\',\'ondur\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">min@</span>'
-        +'<input type="number" value="'+b.onpow+'" min="50" max="200" style="width:50px" title="% FTP trabajo" onchange="_mwUpd(\''+b.id+'\',\'onpow\',+this.value)">'
+        +'<input type="number" value="'+b.onpow+'" min="50" max="200" style="width:50px" title="% FTP trabajo" oninput="_mwUpd(\''+b.id+'\',\'onpow\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">% / </span>'
-        +'<input type="number" value="'+b.offdur+'" min="0.5" step="0.5" style="width:48px" title="Min descanso" onchange="_mwUpd(\''+b.id+'\',\'offdur\',+this.value)">'
+        +'<input type="number" value="'+b.offdur+'" min="0.5" step="0.5" style="width:48px" title="Min descanso" oninput="_mwUpd(\''+b.id+'\',\'offdur\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">min@</span>'
-        +'<input type="number" value="'+b.offpow+'" min="30" max="100" style="width:50px" title="% FTP descanso" onchange="_mwUpd(\''+b.id+'\',\'offpow\',+this.value)">'
+        +'<input type="number" value="'+b.offpow+'" min="30" max="100" style="width:50px" title="% FTP descanso" oninput="_mwUpd(\''+b.id+'\',\'offpow\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">%</span>';
     }else{
       fields =
-        '<input type="number" value="'+b.dur+'" min="1" step="0.5" style="width:52px" title="Duración (min)" onchange="_mwUpd(\''+b.id+'\',\'dur\',+this.value)">'
+        '<input type="number" value="'+b.dur+'" min="1" step="0.5" style="width:52px" title="Duración (min)" oninput="_mwUpd(\''+b.id+'\',\'dur\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">min'+(b.type==='warmup'||b.type==='cooldown'?'':'')+' @</span>'
         +(b.type==='warmup'||b.type==='cooldown'
-          ? '<input type="number" value="'+b.plow+'" min="30" max="100" style="width:48px" title="% FTP inicio" onchange="_mwUpd(\''+b.id+'\',\'plow\',+this.value)"><span style="color:var(--dim);font-size:.65rem">→</span><input type="number" value="'+b.phigh+'" min="30" max="130" style="width:48px" title="% FTP fin" onchange="_mwUpd(\''+b.id+'\',\'phigh\',+this.value)"><span style="color:var(--dim);font-size:.65rem">%</span>'
-          : '<input type="number" value="'+b.pow+'" min="40" max="200" style="width:52px" title="% FTP" onchange="_mwUpd(\''+b.id+'\',\'pow\',+this.value)"><span style="color:var(--dim);font-size:.65rem">% FTP</span>');
+          ? '<input type="number" value="'+b.plow+'" min="30" max="100" style="width:48px" title="% FTP inicio" oninput="_mwUpd(\''+b.id+'\',\'plow\',+this.value)"><span style="color:var(--dim);font-size:.65rem">→</span><input type="number" value="'+b.phigh+'" min="30" max="130" style="width:48px" title="% FTP fin" oninput="_mwUpd(\''+b.id+'\',\'phigh\',+this.value)"><span style="color:var(--dim);font-size:.65rem">%</span>'
+          : '<input type="number" value="'+b.pow+'" min="40" max="200" style="width:52px" title="% FTP" oninput="_mwUpd(\''+b.id+'\',\'pow\',+this.value)"><span style="color:var(--dim);font-size:.65rem">% FTP</span>');
     }
     return '<div style="display:flex;align-items:center;gap:.35rem;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:.3rem .5rem;flex-wrap:wrap">'
       +'<div style="width:3px;height:22px;border-radius:2px;background:'+col+';flex-shrink:0"></div>'
@@ -1878,6 +1881,8 @@ function _mwRenderBlocks(){
 window._mwUpd = function(id,key,val){
   var b = _mwBlocks.find(function(x){ return x.id===id; });
   if(b) b[key]=val;
+  _mwRenderBikeChart();
+  _mwAutoTSS();
 };
 
 function _mwGetBlocksJson(){
@@ -1921,6 +1926,8 @@ window.mwRemoveRunBlock = function(id){
 window._mwUpdRun = function(id,key,val){
   var b = _mwRunBlocks.find(function(x){ return x.id===id; });
   if(b) b[key]=val;
+  _mwRenderRunChart();
+  _mwAutoTSS();
 };
 
 var _runBlockColors = {warmup:'#64B5F6',cooldown:'#64B5F6',intervals:'#EF4444',steady:'#10B981'};
@@ -1940,27 +1947,27 @@ function _mwRenderRunBlocks(){
     var fields = '';
     if(b.type==='intervals'){
       fields =
-        '<input type="number" value="'+b.repeat+'" min="1" style="width:44px" title="Repeticiones" onchange="_mwUpdRun(\''+b.id+'\',\'repeat\',+this.value)">'
+        '<input type="number" value="'+b.repeat+'" min="1" style="width:44px" title="Repeticiones" oninput="_mwUpdRun(\''+b.id+'\',\'repeat\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">×</span>'
-        +'<input type="number" value="'+b.dist+'" min="100" step="100" style="width:62px" title="Distancia (m)" onchange="_mwUpdRun(\''+b.id+'\',\'dist\',+this.value)">'
+        +'<input type="number" value="'+b.dist+'" min="100" step="100" style="width:62px" title="Distancia (m)" oninput="_mwUpdRun(\''+b.id+'\',\'dist\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">m@</span>'
-        +'<input type="text" value="'+b.pace+'" style="width:52px" placeholder="4:00" title="Ritmo (min:sec/km)" onchange="_mwUpdRun(\''+b.id+'\',\'pace\',this.value)">'
+        +'<input type="text" value="'+b.pace+'" style="width:52px" placeholder="4:00" title="Ritmo (min:sec/km)" oninput="_mwUpdRun(\''+b.id+'\',\'pace\',this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">/km rec:</span>'
-        +'<input type="number" value="'+b.rec_sec+'" min="10" step="10" style="width:48px" title="Recuperación (seg)" onchange="_mwUpdRun(\''+b.id+'\',\'rec_sec\',+this.value)">'
+        +'<input type="number" value="'+b.rec_sec+'" min="10" step="10" style="width:48px" title="Recuperación (seg)" oninput="_mwUpdRun(\''+b.id+'\',\'rec_sec\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">s</span>'
-        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona rec" onchange="_mwUpdRun(\''+b.id+'\',\'rec_zone\',this.value)">'+_zoneOpts.replace('value="'+b.rec_zone+'"','value="'+b.rec_zone+'" selected')+'</select>';
+        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona rec" oninput="_mwUpdRun(\''+b.id+'\',\'rec_zone\',this.value)">'+_zoneOpts.replace('value="'+b.rec_zone+'"','value="'+b.rec_zone+'" selected')+'</select>';
     }else if(b.type==='warmup'||b.type==='cooldown'){
       fields =
-        '<input type="number" value="'+b.dur+'" min="5" step="5" style="width:50px" title="Duración (min)" onchange="_mwUpdRun(\''+b.id+'\',\'dur\',+this.value)">'
+        '<input type="number" value="'+b.dur+'" min="5" step="5" style="width:50px" title="Duración (min)" oninput="_mwUpdRun(\''+b.id+'\',\'dur\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">min</span>'
-        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona FC" onchange="_mwUpdRun(\''+b.id+'\',\'zone\',this.value)">'+_zoneOpts.replace('value="'+b.zone+'"','value="'+b.zone+'" selected')+'</select>';
+        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona FC" oninput="_mwUpdRun(\''+b.id+'\',\'zone\',this.value)">'+_zoneOpts.replace('value="'+b.zone+'"','value="'+b.zone+'" selected')+'</select>';
     }else{
       fields =
-        '<input type="number" value="'+b.dur+'" min="5" step="5" style="width:50px" title="Duración (min)" onchange="_mwUpdRun(\''+b.id+'\',\'dur\',+this.value)">'
+        '<input type="number" value="'+b.dur+'" min="5" step="5" style="width:50px" title="Duración (min)" oninput="_mwUpdRun(\''+b.id+'\',\'dur\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">min@</span>'
-        +'<input type="text" value="'+(b.pace||'')+'" style="width:52px" placeholder="5:00" title="Ritmo objetivo (min:sec/km)" onchange="_mwUpdRun(\''+b.id+'\',\'pace\',this.value)">'
+        +'<input type="text" value="'+(b.pace||'')+'" style="width:52px" placeholder="5:00" title="Ritmo objetivo (min:sec/km)" oninput="_mwUpdRun(\''+b.id+'\',\'pace\',this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">/km</span>'
-        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona FC" onchange="_mwUpdRun(\''+b.id+'\',\'zone\',this.value)">'+_zoneOpts.replace('value="'+b.zone+'"','value="'+b.zone+'" selected')+'</select>';
+        +'<select style="font-size:.65rem;padding:.1rem .2rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px" title="Zona FC" oninput="_mwUpdRun(\''+b.id+'\',\'zone\',this.value)">'+_zoneOpts.replace('value="'+b.zone+'"','value="'+b.zone+'" selected')+'</select>';
     }
     return '<div style="display:flex;align-items:center;gap:.3rem;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:.3rem .5rem;flex-wrap:wrap">'
       +'<div style="width:3px;height:22px;border-radius:2px;background:'+col+';flex-shrink:0"></div>'
@@ -2009,6 +2016,8 @@ window.mwRemoveSwimBlock = function(id){
 window._mwUpdSwim = function(id,key,val){
   var b = _mwSwimBlocks.find(function(x){ return x.id===id; });
   if(b) b[key]=val;
+  _mwRenderSwimChart();
+  _mwAutoTSS();
 };
 
 var _swimBlockColors = {warmup:'#64B5F6',cooldown:'#64B5F6',main:'#EF4444',recovery:'#0EA5E9'};
@@ -2027,19 +2036,19 @@ function _mwRenderSwimBlocks(){
     var fields = '';
     if(b.type==='main'){
       fields =
-        '<input type="number" value="'+b.repeat+'" min="1" style="width:44px" title="Repeticiones" onchange="_mwUpdSwim(\''+b.id+'\',\'repeat\',+this.value)">'
+        '<input type="number" value="'+b.repeat+'" min="1" style="width:44px" title="Repeticiones" oninput="_mwUpdSwim(\''+b.id+'\',\'repeat\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">×</span>'
-        +'<input type="number" value="'+b.dist+'" min="25" step="25" style="width:60px" title="Distancia por rep (m)" onchange="_mwUpdSwim(\''+b.id+'\',\'dist\',+this.value)">'
+        +'<input type="number" value="'+b.dist+'" min="25" step="25" style="width:60px" title="Distancia por rep (m)" oninput="_mwUpdSwim(\''+b.id+'\',\'dist\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">m@</span>'
-        +'<input type="number" value="'+b.css_pct+'" min="60" max="120" style="width:50px" title="% CSS" onchange="_mwUpdSwim(\''+b.id+'\',\'css_pct\',+this.value)">'
+        +'<input type="number" value="'+b.css_pct+'" min="60" max="120" style="width:50px" title="% CSS" oninput="_mwUpdSwim(\''+b.id+'\',\'css_pct\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">% CSS pausa:</span>'
-        +'<input type="number" value="'+b.rest_sec+'" min="5" step="5" style="width:50px" title="Pausa (seg)" onchange="_mwUpdSwim(\''+b.id+'\',\'rest_sec\',+this.value)">'
+        +'<input type="number" value="'+b.rest_sec+'" min="5" step="5" style="width:50px" title="Pausa (seg)" oninput="_mwUpdSwim(\''+b.id+'\',\'rest_sec\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">s</span>';
     }else{
       fields =
-        '<input type="number" value="'+b.dist+'" min="25" step="25" style="width:64px" title="Distancia (m)" onchange="_mwUpdSwim(\''+b.id+'\',\'dist\',+this.value)">'
+        '<input type="number" value="'+b.dist+'" min="25" step="25" style="width:64px" title="Distancia (m)" oninput="_mwUpdSwim(\''+b.id+'\',\'dist\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">m@</span>'
-        +'<input type="number" value="'+b.css_pct+'" min="60" max="110" style="width:50px" title="% CSS" onchange="_mwUpdSwim(\''+b.id+'\',\'css_pct\',+this.value)">'
+        +'<input type="number" value="'+b.css_pct+'" min="60" max="110" style="width:50px" title="% CSS" oninput="_mwUpdSwim(\''+b.id+'\',\'css_pct\',+this.value)">'
         +'<span style="color:var(--dim);font-size:.65rem">% CSS</span>';
     }
     return '<div style="display:flex;align-items:center;gap:.3rem;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:.3rem .5rem;flex-wrap:wrap">'
@@ -2194,13 +2203,95 @@ function _mwAutoTSS(){
   }
 }
 
-// Llamar auto-TSS al final de cada render de bloques
+// ── Curva de intensidad por deporte (mismo estilo visual que el
+// builder de indoor_workout.html — el usuario pidió ver la serie
+// también al crear el template, no solo en el builder de autoservicio) ──
+function _mwRenderBikeChart(){
+  var el = document.getElementById('mw-bike-chart');
+  if(!el) return;
+  var wire = [];
+  try{ wire = JSON.parse(_mwGetBlocksJson() || '[]') || []; }catch(e){}
+  var segs = WorkoutBlocks.buildSegments(wire);
+  el.innerHTML = WorkoutBlocks.renderCurveSvg(segs, {
+    xFmt: function(v){ return Math.floor(v/60)+"'"; },
+    refLine: {value: 1.0, label: 'FTP', color: 'rgba(255,101,53,.6)'},
+  });
+}
+
+// Traduce _mwRunBlocks (estado del builder de carrera) a segmentos
+// {ts,te,ps,pe} en segundos — misma fórmula de intensidad (IF) que ya
+// usa _mwAutoTSS(), para que el gráfico y la estimación de TSS cuenten
+// siempre la misma historia.
+function _mwRunBlocksToSegments(){
+  var segs = []; var t = 0;
+  _mwRunBlocks.forEach(function(b){
+    if(b.type==='intervals'){
+      var pace = _parsePaceMinPerKm(b.pace);
+      var onDur = Math.max(1, (b.dist||400)/1000*pace*60);
+      var onIF  = pace<4.25?1.05:pace<4.75?0.95:pace<5.25?0.88:0.80;
+      var recIF = _ZONE_IF[b.rec_zone||'Z1']||0.68;
+      var recDur = b.rec_sec||90;
+      for(var r=0;r<(b.repeat||1);r++){
+        segs.push({ts:t, te:t+onDur, ps:onIF, pe:onIF});
+        t += onDur;
+        segs.push({ts:t, te:t+recDur, ps:recIF, pe:recIF});
+        t += recDur;
+      }
+    }else{
+      var dur = (b.dur||10)*60;
+      var iv  = _ZONE_IF[b.zone||'Z2']||0.79;
+      segs.push({ts:t, te:t+dur, ps:iv, pe:iv});
+      t += dur;
+    }
+  });
+  return segs;
+}
+function _mwRenderRunChart(){
+  var el = document.getElementById('mw-run-chart');
+  if(!el) return;
+  el.innerHTML = WorkoutBlocks.renderCurveSvg(_mwRunBlocksToSegments(), {
+    xFmt: function(v){ return Math.floor(v/60)+"'"; },
+  });
+}
+
+// Traduce _mwSwimBlocks a segmentos — acá el eje X es DISTANCIA (metros),
+// no tiempo, porque una serie de pileta se piensa en metros, no en minutos.
+// Las pausas (rest_sec) no avanzan distancia, así que no generan un
+// segmento propio — solo importa el metraje real nadado.
+function _mwSwimBlocksToSegments(){
+  var segs = []; var d = 0;
+  _mwSwimBlocks.forEach(function(b){
+    var iv = (b.css_pct||80)/100;
+    if(b.type==='main'){
+      var repDist = b.dist||100;
+      for(var r=0;r<(b.repeat||1);r++){
+        segs.push({ts:d, te:d+repDist, ps:iv, pe:iv});
+        d += repDist;
+      }
+    }else{
+      var dist = b.dist||400;
+      segs.push({ts:d, te:d+dist, ps:iv, pe:iv});
+      d += dist;
+    }
+  });
+  return segs;
+}
+function _mwRenderSwimChart(){
+  var el = document.getElementById('mw-swim-chart');
+  if(!el) return;
+  el.innerHTML = WorkoutBlocks.renderCurveSvg(_mwSwimBlocksToSegments(), {
+    xFmt: function(v){ return Math.round(v)+'m'; },
+    xStep: 200,
+  });
+}
+
+// Llamar auto-TSS + redibujar la curva al final de cada render de bloques
 var _origRenderBlocks    = _mwRenderBlocks;
 var _origRenderRunBlocks = _mwRenderRunBlocks;
 var _origRenderSwimBlocks= _mwRenderSwimBlocks;
-_mwRenderBlocks     = function(){ _origRenderBlocks();     _mwAutoTSS(); };
-_mwRenderRunBlocks  = function(){ _origRenderRunBlocks();  _mwAutoTSS(); };
-_mwRenderSwimBlocks = function(){ _origRenderSwimBlocks(); _mwAutoTSS(); };
+_mwRenderBlocks     = function(){ _origRenderBlocks();     _mwAutoTSS(); _mwRenderBikeChart(); };
+_mwRenderRunBlocks  = function(){ _origRenderRunBlocks();  _mwAutoTSS(); _mwRenderRunChart(); };
+_mwRenderSwimBlocks = function(){ _origRenderSwimBlocks(); _mwAutoTSS(); _mwRenderSwimChart(); };
 
 // ── P3: Copiar semana ─────────────────────────────────────────
 window.openCopyWeek = function(){

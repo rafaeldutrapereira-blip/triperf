@@ -179,6 +179,70 @@
     return header + points.map(function (p) { return p[0] + '\t' + p[1]; }).join('\r\n') + '\r\n[END COURSE DATA]';
   }
 
+  // Color por intensidad relativa (0..~1.2) — mismo criterio que
+  // indoor_workout.html usa para la curva de potencia de bici, generalizado
+  // acá para reusarlo también en las curvas de carrera/natación de coach.html.
+  function zoneColor(pct) {
+    if (pct < 0.55) return '#64B5F6';
+    if (pct < 0.75) return '#0EA5E9';
+    if (pct < 0.90) return '#10B981';
+    if (pct < 1.05) return '#FF6535';
+    if (pct < 1.20) return '#EF4444';
+    return '#A855F7';
+  }
+
+  // Dibuja una curva de intensidad (área apilada por bloque) a partir de
+  // segmentos {ts, te, ps, pe[, free]} — mismo tipo de dato que buildSegments()
+  // devuelve para bici. El eje X puede ser tiempo (segundos) o distancia
+  // (metros); opts.xFmt define cómo se formatean las etiquetas del eje.
+  // Devuelve un string SVG listo para insertar en innerHTML — sin depender
+  // de ningún elemento del DOM, así sirve igual para bici (indoor_workout.html
+  // ya tenía su propia versión probada) como para carrera/natación (coach.html).
+  function renderCurveSvg(segments, opts) {
+    opts = opts || {};
+    var W = opts.width || 800, H = opts.height || 140;
+    var padB = opts.padBottom != null ? opts.padBottom : 20;
+    var padT = opts.padTop != null ? opts.padTop : 8;
+    var xFmt = opts.xFmt || function (v) { return String(Math.round(v)); };
+    var xStep = opts.xStep;
+    var refLine = opts.refLine; // {value, label, color}
+
+    if (!segments || !segments.length) {
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;display:block">' +
+        '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="11" letter-spacing="2">SIN BLOQUES</text></svg>';
+    }
+
+    var totalX = segments[segments.length - 1].te;
+    if (!totalX) totalX = 1;
+    var chartH = H - padB - padT;
+    var maxY = Math.max(1.25, Math.max.apply(null, segments.map(function (s) { return Math.max(s.ps, s.pe); })) * 1.1);
+
+    function xOf(v) { return (v / totalX) * W; }
+    function yOf(v) { return padT + chartH * (1 - Math.min(v, maxY) / maxY); }
+
+    var paths = '';
+    segments.forEach(function (s) {
+      var x1 = xOf(s.ts), x2 = xOf(s.te), y1 = yOf(s.ps), y2 = yOf(s.pe);
+      var col = s.free ? '#A855F7' : zoneColor((s.ps + s.pe) / 2);
+      var bottom = padT + chartH;
+      paths += '<polygon points="' + x1 + ',' + bottom + ' ' + x1 + ',' + y1 + ' ' + x2 + ',' + y2 + ' ' + x2 + ',' + bottom + '" fill="' + col + '" opacity="0.75"/>';
+    });
+
+    var labels = '';
+    var step = xStep || (totalX <= 3600 ? 600 : totalX <= 7200 ? 1800 : Math.ceil(totalX / 8));
+    for (var v = 0; v <= totalX; v += step) {
+      var lx = xOf(v);
+      labels += '<text x="' + lx + '" y="' + (H - 4) + '" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="9">' + xFmt(v) + '</text>';
+    }
+    if (refLine) {
+      var ry = yOf(refLine.value);
+      labels += '<line x1="0" y1="' + ry + '" x2="' + W + '" y2="' + ry + '" stroke="' + (refLine.color || 'rgba(255,101,53,.4)') + '" stroke-width="1" stroke-dasharray="4,3"/>';
+      labels += '<text x="4" y="' + (ry - 3) + '" fill="' + (refLine.color || 'rgba(255,101,53,.7)') + '" font-family="Oswald,sans-serif" font-size="9">' + (refLine.label || '') + '</text>';
+    }
+
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;display:block">' + paths + labels + '</svg>';
+  }
+
   global.WORKOUT_BLOCK_TYPES = WORKOUT_BLOCK_TYPES;
   global.WorkoutBlocks = {
     TYPES: WORKOUT_BLOCK_TYPES,
@@ -189,5 +253,7 @@
     blocksToZwoXml: blocksToZwoXml,
     blocksToErgText: blocksToErgText,
     blocksToMrcText: blocksToMrcText,
+    zoneColor: zoneColor,
+    renderCurveSvg: renderCurveSvg,
   };
 })(window);

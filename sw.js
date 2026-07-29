@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '31';  // 2026-07-29: fix real de indoor_workout.html (renderChart/parseDur no expuestos en window)
+var BUILD_VERSION = '32';  // 2026-07-29: curva de intensidad (bici/carrera/natación) en coach.html "Nuevo Template"
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
