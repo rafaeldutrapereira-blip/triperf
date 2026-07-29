@@ -925,6 +925,15 @@ document.getElementById('wk-name').addEventListener('input', saveDraft);
 document.getElementById('wk-desc').addEventListener('input', saveDraft);
 document.getElementById('wk-date').addEventListener('input', saveDraft);
 
+// Los onchange/oninput inline (HTML) ejecutan en scope global, no adentro
+// de esta IIFE — sin esto, "renderChart is not defined"/"parseDur is not
+// defined" en cada cambio de bloque (bug real encontrado con un test de
+// navegador de verdad, no antes). Se exponen ACÁ, después de declaradas,
+// para no romper el hoisting de function renderChart(){}/parseDur(){}
+// que necesita código más arriba en el archivo (ej. init()).
+window.renderChart = renderChart;
+window.parseDur    = parseDur;
+
 })();
 </script>
 </body>

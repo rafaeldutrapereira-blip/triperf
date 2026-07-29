@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '30';  // 2026-07-29: fix real de indoor_workout.html (parseDur revertía a 5min a medio editar)
+var BUILD_VERSION = '31';  // 2026-07-29: fix real de indoor_workout.html (renderChart/parseDur no expuestos en window)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
