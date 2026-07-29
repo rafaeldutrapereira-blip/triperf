@@ -907,11 +907,13 @@ def sync_to_garmin(
 
     tpl = a.template
     session_dict = {
-        "name":    tpl.nombre,
-        "sport":   tpl.sport,
-        "dur_min": tpl.dur_min,
-        "dist_km": tpl.dist_km,
-        "notes":   tpl.notas or (a.notas or ""),
+        "name":        tpl.nombre,
+        "sport":       tpl.sport,
+        "dur_min":     tpl.dur_min,
+        "dist_km":     tpl.dist_km,
+        "notes":       tpl.notas or (a.notas or ""),
+        "blocks_json": tpl.blocks_json,
+        "ftp":         athlete.ftp,
     }
 
     try:
@@ -981,7 +983,8 @@ def sync_group_to_garmin(
             res = schedule_workout_for_athlete(
                 session          = {"name": tpl.nombre, "sport": tpl.sport,
                                     "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
-                                    "notes": tpl.notas or ""},
+                                    "notes": tpl.notas or "",
+                                    "blocks_json": tpl.blocks_json, "ftp": athlete.ftp},
                 target_date      = a.date_iso,
                 athlete_id       = athlete.id,
                 athlete_email    = athlete.garmin_email,

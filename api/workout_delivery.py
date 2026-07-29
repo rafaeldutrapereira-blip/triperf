@@ -198,11 +198,13 @@ def auto_garmin_sync(assignment, athlete: "User", tpl: "WorkoutTemplate") -> dic
         return {"ok": False, "skipped": True, "error": None}
 
     session_dict = {
-        "name":    tpl.nombre,
-        "sport":   tpl.sport,
-        "dur_min": tpl.dur_min,
-        "dist_km": tpl.dist_km,
-        "notes":   tpl.notas or (assignment.notas or ""),
+        "name":        tpl.nombre,
+        "sport":       tpl.sport,
+        "dur_min":     tpl.dur_min,
+        "dist_km":     tpl.dist_km,
+        "notes":       tpl.notas or (assignment.notas or ""),
+        "blocks_json": tpl.blocks_json,
+        "ftp":         athlete.ftp,
     }
     try:
         from garmin_connector import schedule_workout_for_athlete

@@ -312,11 +312,141 @@ _SPORT_MAP = {
 _DEFAULT_SPORT = {"sportTypeId": 0, "sportTypeKey": "other"}
 
 
+_STEP_TYPE_META = {
+    "warmup":    (1, "warmup",    1),
+    "cooldown":  (2, "cooldown",  2),
+    "interval":  (3, "interval",  3),
+    "recovery":  (4, "recovery",  4),
+}
+
+
+def _executable_power_step(step_order: int, step_kind: str, duration_seconds: float,
+                            power_low_frac: float | None, power_high_frac: float | None,
+                            ftp: int | None):
+    """
+    Construye un ExecutableStep directamente (no vía los helpers create_*_step
+    de la librería) porque esos helpers solo aceptan un dict `targetType` —
+    targetValueOne/targetValueTwo son campos EXTRA del step, hermanos de
+    targetType, no anidados dentro — un primer intento los anidó mal ahí
+    adentro (bug encontrado antes de cualquier push real, corregido acá).
+    Target en watts absolutos (no %FTP — así lo espera Garmin, a diferencia
+    del %FTP relativo de un .zwo de Zwift).
+    """
+    from garminconnect.workout import ExecutableStep, ConditionType, TargetType
+
+    step_type_id, step_type_key, display_order = _STEP_TYPE_META[step_kind]
+    kwargs = dict(
+        stepOrder=step_order,
+        stepType={"stepTypeId": step_type_id, "stepTypeKey": step_type_key, "displayOrder": display_order},
+        endCondition={
+            "conditionTypeId": ConditionType.TIME, "conditionTypeKey": "time",
+            "displayOrder": 2, "displayable": True,
+        },
+        endConditionValue=duration_seconds,
+    )
+    if power_low_frac is None or power_high_frac is None or not ftp:
+        kwargs["targetType"] = {"workoutTargetTypeId": TargetType.NO_TARGET, "workoutTargetTypeKey": "no.target", "displayOrder": 1}
+    else:
+        kwargs["targetType"] = {
+            "workoutTargetTypeId": TargetType.POWER_ZONE,
+            "workoutTargetTypeKey": "power.zone",
+            "displayOrder": TargetType.POWER_ZONE,
+        }
+        kwargs["targetValueOne"] = round(power_low_frac * ftp)
+        kwargs["targetValueTwo"] = round(power_high_frac * ftp)
+    return ExecutableStep(**kwargs)
+
+
+def _bike_blocks_to_garmin_steps(blocks: list, ftp: int) -> list:
+    """
+    Traduce blocks_json (mismo formato wire que workout-blocks.js/
+    workout_delivery.py: duration en segundos, power como fracción 0..1)
+    a workoutSteps reales de Garmin con targets de potencia — en vez del
+    step único "sin objetivo" que se mandaba antes. Los intervalos se
+    codifican como un RepeatGroup (N iteraciones de trabajo+descanso),
+    que es como Garmin modela series repetidas — no como pasos sueltos.
+    """
+    from garminconnect.workout import create_repeat_group
+
+    steps = []
+    order = 1
+    for b in blocks:
+        t = b.get("type", "steady")
+        if t == "warmup":
+            steps.append(_executable_power_step(
+                order, "warmup", b.get("duration", 300),
+                b.get("power_low", 0.5), b.get("power_high", 0.75), ftp))
+            order += 1
+        elif t == "cooldown":
+            steps.append(_executable_power_step(
+                order, "cooldown", b.get("duration", 300),
+                b.get("power_high", 0.75), b.get("power_low", 0.5), ftp))
+            order += 1
+        elif t == "ramp":
+            # Garmin no tiene un step-type de "rampa" propio — se modela como
+            # interval con target de rango amplio (low→high), igual que se
+            # hace ya con warmup/cooldown.
+            steps.append(_executable_power_step(
+                order, "interval", b.get("duration", 300),
+                b.get("power_low", 0.6), b.get("power_high", 1.0), ftp))
+            order += 1
+        elif t == "steady":
+            p = b.get("power", 0.75)
+            steps.append(_executable_power_step(order, "interval", b.get("duration", 300), p, p, ftp))
+            order += 1
+        elif t == "freeride":
+            steps.append(_executable_power_step(order, "interval", b.get("duration", 300), None, None, None))
+            order += 1
+        elif t == "intervals":
+            on_power  = b.get("on_power", 0.95)
+            off_power = b.get("off_power", 0.55)
+            on_step  = _executable_power_step(1, "interval", b.get("on_duration", 240), on_power, on_power, ftp)
+            off_step = _executable_power_step(2, "recovery", b.get("off_duration", 120), off_power, off_power, ftp)
+            steps.append(create_repeat_group(b.get("repeat", 1), [on_step, off_step], order))
+            order += 1
+    return steps
+
+
 def _build_workout_body(session: dict) -> dict:
-    """Build Garmin workout JSON with required segment/step structure."""
+    """
+    Build Garmin workout JSON with required segment/step structure.
+
+    Si session trae blocks_json (bloques estructurados) y sport=='bike' y
+    ftp real del atleta, genera los workoutSteps reales con targets de
+    potencia por zona — así el atleta ve las series en el reloj, no solo
+    "andá en bici 45min sin objetivo". Sin eso (otros deportes por ahora,
+    o un template simple sin bloques), sigue el step único genérico de
+    antes — comportamiento sin cambios para esos casos.
+    """
     sport    = _SPORT_MAP.get(session.get("sport", ""), _DEFAULT_SPORT)
     dur_secs = int((session.get("dur_min") or 60) * 60)
     dist_m   = int((session.get("dist_km") or 0) * 1000) or None
+
+    blocks_json = session.get("blocks_json")
+    ftp         = session.get("ftp")
+    workout_steps = None
+    if session.get("sport") == "bike" and blocks_json and ftp:
+        try:
+            blocks = json.loads(blocks_json)
+            garmin_steps = _bike_blocks_to_garmin_steps(blocks, ftp)
+            if garmin_steps:
+                workout_steps = [s.model_dump(exclude_none=True, mode="json") for s in garmin_steps]
+        except Exception as e:
+            log.warning("No se pudo construir workoutSteps estructurados, usando fallback genérico: %s", e)
+            workout_steps = None
+
+    if not workout_steps:
+        workout_steps = [
+            {
+                "type":      "ExecutableStepDTO",
+                "stepOrder": 1,
+                "stepType":  {"stepTypeId": 3, "stepTypeKey": "interval"},
+                "endCondition": {"conditionTypeId": 2, "conditionTypeKey": "time"},
+                "endConditionValue": dur_secs,
+                "targetType": {"workoutTargetTypeId": 1, "workoutTargetTypeKey": "no.target"},
+            }
+        ]
+
     return {
         "workoutName": session.get("name", "LabX Workout"),
         "description": session.get("notes") or "",
@@ -327,16 +457,7 @@ def _build_workout_body(session: dict) -> dict:
             {
                 "segmentOrder": 1,
                 "sportType":    sport,
-                "workoutSteps": [
-                    {
-                        "type":      "ExecutableStepDTO",
-                        "stepOrder": 1,
-                        "stepType":  {"stepTypeId": 3, "stepTypeKey": "interval"},
-                        "endCondition": {"conditionTypeId": 2, "conditionTypeKey": "time"},
-                        "endConditionValue": dur_secs,
-                        "targetType": {"workoutTargetTypeId": 1, "workoutTargetTypeKey": "no.target"},
-                    }
-                ],
+                "workoutSteps": workout_steps,
             }
         ],
     }
