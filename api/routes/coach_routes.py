@@ -919,6 +919,7 @@ def sync_to_garmin(
         result = schedule_workout_for_athlete(
             session        = session_dict,
             target_date    = a.date_iso,
+            athlete_id     = athlete.id,
             athlete_email  = athlete.garmin_email,
             athlete_password = _read_garmin_pwd(athlete, db),
         )
@@ -982,6 +983,7 @@ def sync_group_to_garmin(
                                     "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
                                     "notes": tpl.notas or ""},
                 target_date      = a.date_iso,
+                athlete_id       = athlete.id,
                 athlete_email    = athlete.garmin_email,
                 athlete_password = _read_garmin_pwd(athlete, db),
             )

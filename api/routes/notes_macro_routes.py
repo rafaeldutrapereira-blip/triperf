@@ -276,7 +276,18 @@ def apply_macrocycle(
                 for ath in athletes_to_sync:
                     if ath.garmin_email and ath.garmin_password:
                         try:
-                            _sync_garmin(ath, tpl, target_date)
+                            from ..crypto import decrypt_credential
+                            _sync_garmin(
+                                session={
+                                    "name": tpl.nombre, "sport": tpl.sport,
+                                    "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
+                                    "notes": tpl.notas or "",
+                                },
+                                target_date=target_date,
+                                athlete_id=ath.id,
+                                athlete_email=ath.garmin_email,
+                                athlete_password=decrypt_credential(ath.garmin_password),
+                            )
                             total_synced += 1
                         except Exception:
                             pass

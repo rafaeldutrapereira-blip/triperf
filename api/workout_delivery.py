@@ -209,6 +209,7 @@ def auto_garmin_sync(assignment, athlete: "User", tpl: "WorkoutTemplate") -> dic
         result = schedule_workout_for_athlete(
             session          = session_dict,
             target_date      = assignment.date_iso,
+            athlete_id       = athlete.id,
             athlete_email    = athlete.garmin_email,
             athlete_password = decrypt_credential(athlete.garmin_password),
         )

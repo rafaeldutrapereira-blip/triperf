@@ -237,7 +237,18 @@ def apply_week_template(
                 for ath in athletes_to_sync:
                     if ath.garmin_email and ath.garmin_password:
                         try:
-                            schedule_workout_for_athlete(ath, tpl, date_iso)
+                            from ..crypto import decrypt_credential
+                            schedule_workout_for_athlete(
+                                session={
+                                    "name": tpl.nombre, "sport": tpl.sport,
+                                    "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
+                                    "notes": tpl.notas or "",
+                                },
+                                target_date=date_iso,
+                                athlete_id=ath.id,
+                                athlete_email=ath.garmin_email,
+                                athlete_password=decrypt_credential(ath.garmin_password),
+                            )
                             synced += 1
                         except Exception:
                             pass

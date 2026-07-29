@@ -384,6 +384,7 @@ def reschedule_workout(session: dict, old_date: str, new_date: str) -> dict:
 def schedule_workout_for_athlete(
     session: dict,
     target_date: str,
+    athlete_id: str,
     athlete_email: str,
     athlete_password: str,
 ) -> dict:
@@ -393,17 +394,30 @@ def schedule_workout_for_athlete(
     Uses a temporary, per-call client — does NOT touch the module-level
     singleton (_CLIENT) which belongs to the coach/admin account.
 
+    Reutiliza api.garmin_pull_service._garmin_login() (mismo helper que usa
+    el sync normal de actividades) en vez de loguearse con usuario/contraseña
+    desde cero en cada asignación — ese login "fresco" repetido es lo que
+    generaba riesgo real de rate-limit/bloqueo de Garmin al asignar a un
+    grupo grande (N atletas = N logins simultáneos). _garmin_login() intenta
+    primero resumir la sesión guardada (garth token en data/garmin_tokens/)
+    y solo cae a login por credenciales si hace falta.
+
     session dict keys: name, sport, dur_min, dist_km, notes
     target_date: 'YYYY-MM-DD'
     """
-    try:
-        from garminconnect import Garmin
-    except ImportError:
-        raise ImportError("Run: pip install garminconnect")
+    from api.garmin_pull_service import _garmin_login, GarminMFARequired
 
-    log.info("Authenticating Garmin for athlete: %s", athlete_email)
-    client = Garmin(athlete_email, athlete_password)
-    client.login()
+    log.info("Authenticating Garmin for athlete: %s (id=%s)", athlete_email, athlete_id)
+    try:
+        client = _garmin_login(athlete_id, athlete_email, athlete_password)
+    except GarminMFARequired:
+        # Un push en background no puede resolver un código MFA interactivo —
+        # fallar con un mensaje claro en vez de colgar o crashear el thread.
+        raise RuntimeError(
+            "Garmin requiere verificación (MFA) para este atleta — "
+            "debe reconectar su cuenta desde Perfil → Reconectar Garmin "
+            "antes de que el push automático pueda funcionar."
+        )
     log.info("Garmin auth OK for %s", athlete_email)
 
     workout_body = _build_workout_body(session)
