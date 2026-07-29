@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '28';  // S44: SSE Redis Pub/Sub multi-worker + Compliance Trending
+var BUILD_VERSION = '29';  // 2026-07-29: fotos/comentarios/mapas/Garmin push + fix Curva de Potencia
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
