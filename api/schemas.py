@@ -224,6 +224,11 @@ class AssignedWorkoutOut(BaseModel):
     template:       WorkoutTemplateOut
     logs:           List["WorkoutLogOut"] = []
     created_at:     datetime
+    # Sprint E (auditoría 2026-07-28): estado del push automático a Garmin —
+    # None = nunca se intentó (deporte sin soporte, o sin bloques).
+    garmin_push_status: Optional[str] = None
+    garmin_push_error:  Optional[str] = None
+    garmin_push_at:     Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

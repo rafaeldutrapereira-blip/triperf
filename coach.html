@@ -2633,6 +2633,24 @@ window.setApMode = function(mode){
   if(isPva) loadPlanVsActual(); else loadAthletePlan();
 };
 
+// Sprint E (auditoría 2026-07-28): antes un fallo del push automático a
+// Garmin solo quedaba en el log del servidor — el coach nunca se enteraba
+// si de verdad le llegó al reloj al atleta. a.garmin_push_status viene del
+// backend: null (nunca se intentó, ej. natación/fuerza o sin bloques),
+// 'ok', 'skipped' (atleta sin credenciales Garmin) o 'failed'.
+function garminPushBadge(a){
+  var st = a.garmin_push_status;
+  if(!st) return '';
+  var cfg = {
+    ok:      {icon:'⌚', color:'var(--green)', title:'Enviado al reloj Garmin'},
+    skipped: {icon:'⌚', color:'var(--dim)',   title:'Atleta sin credenciales Garmin conectadas'},
+    failed:  {icon:'⌚', color:'var(--red)',   title:'Falló el envío a Garmin: '+(a.garmin_push_error||'error desconocido')},
+  }[st];
+  if(!cfg) return '';
+  var strike = st==='ok' ? '' : ';text-decoration:line-through;text-decoration-thickness:1.5px';
+  return '<span title="'+esc(cfg.title)+'" style="font-size:.85rem;opacity:.9;color:'+cfg.color+strike+';margin-right:.3rem">'+cfg.icon+'</span>';
+}
+
 window.loadAthletePlan = async function(){
   if(!_apAthleteId) return;
   var start = document.getElementById('ap-start').value;
@@ -2657,6 +2675,7 @@ window.loadAthletePlan = async function(){
         +(a.template.dur_min?'<span style="color:var(--muted);font-size:.72rem;margin-left:.4rem">'+a.template.dur_min+' min</span>':'')
         +(a.notas?'<div style="font-size:.7rem;color:var(--dim)">'+esc(a.notas)+'</div>':'')
         +'</div>'
+        +garminPushBadge(a)
         +'<button class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="deleteAssignFromPlan(\''+a.id+'\')" style="padding:.2rem .35rem">'
         +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>'
         +'</div>';

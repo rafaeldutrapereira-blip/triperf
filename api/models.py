@@ -215,6 +215,14 @@ class AssignedWorkout(Base):
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     deleted_at    = Column(DateTime, nullable=True)         # soft-delete
 
+    # Estado del push automático a Garmin (Sprint E, auditoría 2026-07-28) —
+    # antes un fallo de deliver_bike_workout() solo quedaba en el log del
+    # servidor, el coach nunca se enteraba si de verdad llegó al reloj.
+    # None = nunca se intentó (deporte no soportado, o sin bloques).
+    garmin_push_status = Column(String, nullable=True)   # 'ok' | 'failed' | 'skipped'
+    garmin_push_error  = Column(Text,   nullable=True)    # detalle si failed
+    garmin_push_at     = Column(DateTime, nullable=True)
+
     template = relationship("WorkoutTemplate", back_populates="assigned")
     athlete  = relationship("User",  back_populates="assigned_workouts", foreign_keys=[athlete_id])
     group    = relationship("Group", back_populates="assigned_workouts", foreign_keys=[group_id])

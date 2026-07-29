@@ -262,16 +262,52 @@ def deliver_bike_workout(assignment, athlete: "User", tpl: "WorkoutTemplate") ->
             logger.error("deliver_bike_workout email error: %s", e)
 
     # 2. Garmin sync
+    push_error = None
     try:
         g = auto_garmin_sync(assignment, athlete, tpl)
         result["garmin_ok"]      = g["ok"]
         result["garmin_skipped"] = g.get("skipped", False)
+        push_error = g.get("error")
     except Exception as e:
         logger.error("deliver_bike_workout garmin error: %s", e)
+        push_error = str(e)
 
     logger.info(
         "deliver_bike_workout done: athlete=%s date=%s email=%s garmin_ok=%s garmin_skip=%s",
         athlete.id, assignment.date_iso,
         result["email_sent"], result["garmin_ok"], result["garmin_skipped"],
     )
+    _persist_push_status(assignment.id, result, push_error)
     return result
+
+
+def _persist_push_status(assignment_id: str, result: dict, error: str | None) -> None:
+    """
+    Guarda el resultado del push en la fila AssignedWorkout, para que el
+    coach pueda verlo en la UI en vez de que un fallo quede solo en el log
+    del servidor. Corre en un thread de background sin sesión de DB propia
+    (la request HTTP ya devolvió respuesta) — abre una sesión nueva acá.
+    """
+    if result["garmin_skipped"]:
+        status = "skipped"
+    elif result["garmin_ok"]:
+        status = "ok"
+    else:
+        status = "failed"
+
+    try:
+        from datetime import datetime, timezone
+        from .database import SessionLocal
+        from .models import AssignedWorkout
+        db = SessionLocal()
+        try:
+            row = db.query(AssignedWorkout).filter(AssignedWorkout.id == assignment_id).first()
+            if row:
+                row.garmin_push_status = status
+                row.garmin_push_error  = error
+                row.garmin_push_at     = datetime.now(timezone.utc).replace(tzinfo=None)
+                db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error("No se pudo persistir garmin_push_status para assignment=%s: %s", assignment_id, e)
