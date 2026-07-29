@@ -610,10 +610,10 @@ tr:hover td{background:rgba(14,165,233,.04)}
     </div>
     <div class="field-row">
       <div class="field" style="margin:0">
-        <label>Duración total (min)</label><input type="number" id="mw-dur" placeholder="60" min="1" oninput="_mwAutoTSS()">
+        <label>Duración total (min)</label><input type="number" id="mw-dur" placeholder="60" min="1" oninput="this.dataset.autoFilled='';_mwAutoTSS()">
       </div>
       <div class="field" style="margin:0">
-        <label>Distancia (km)</label><input type="number" id="mw-dist" placeholder="10" step="0.1" min="0">
+        <label>Distancia (km)</label><input type="number" id="mw-dist" placeholder="10" step="0.1" min="0" oninput="this.dataset.autoFilled=''">
       </div>
       <div class="field" style="margin:0">
         <label>TSS objetivo <span id="mw-tss-hint" style="font-size:.64rem;color:var(--cyan);font-weight:400;margin-left:.25rem"></span></label>
@@ -2140,20 +2140,24 @@ function _parsePaceMinPerKm(paceStr){
 
 function _mwAutoTSS(){
   var sport = document.getElementById('mw-sport').value;
-  var tss = 0;
+  var tss = 0, durMin = 0, distKm = null; // distKm null = bici, sin modelo de distancia en bloques
 
   if(sport==='bike'){
     _mwBlocks.forEach(function(b){
       if(b.type==='intervals'){
-        tss += (b.repeat*b.ondur/60)*Math.pow(b.onpow/100,2)*100;
-        tss += (b.repeat*b.offdur/60)*Math.pow(b.offpow/100,2)*100;
+        tss    += (b.repeat*b.ondur/60)*Math.pow(b.onpow/100,2)*100;
+        tss    += (b.repeat*b.offdur/60)*Math.pow(b.offpow/100,2)*100;
+        durMin += b.repeat*(b.ondur+b.offdur);
       }else if(b.type==='warmup'||b.type==='cooldown'){
-        tss += (b.dur/60)*Math.pow((b.plow+b.phigh)/200,2)*100;
+        tss    += (b.dur/60)*Math.pow((b.plow+b.phigh)/200,2)*100;
+        durMin += b.dur;
       }else{
-        tss += (b.dur/60)*Math.pow(b.pow/100,2)*100;
+        tss    += (b.dur/60)*Math.pow(b.pow/100,2)*100;
+        durMin += b.dur;
       }
     });
   }else if(sport==='run'){
+    distKm = 0;
     _mwRunBlocks.forEach(function(b){
       if(b.type==='intervals'){
         var pace = _parsePaceMinPerKm(b.pace);
@@ -2161,13 +2165,22 @@ function _mwAutoTSS(){
         var IF_main = pace<4.25?1.05:pace<4.75?0.95:pace<5.25?0.88:0.80;
         tss += (durMain/60)*IF_main*IF_main*100;
         var IF_rec = _ZONE_IF[b.rec_zone||'Z1']||0.68;
-        tss += (b.repeat*(b.rec_sec||90)/3600)*IF_rec*IF_rec*100;
+        var recMin = b.repeat*(b.rec_sec||90)/60;
+        tss += (recMin/60)*IF_rec*IF_rec*100;
+        durMin += durMain + recMin;
+        distKm += b.repeat*(b.dist||0)/1000;
       }else{
         var IF = _ZONE_IF[b.zone||'Z2']||0.79;
-        tss += ((b.dur||15)/60)*IF*IF*100;
+        var dMin = b.dur||15;
+        tss += (dMin/60)*IF*IF*100;
+        durMin += dMin;
+        // Distancia estimada solo si el coach puso un ritmo objetivo —
+        // sin eso no hay forma de saber cuántos km entran en esos minutos.
+        if(b.pace){ distKm += dMin/_parsePaceMinPerKm(b.pace); }
       }
     });
   }else if(sport==='swim'){
+    distKm = 0;
     var CSS_SPEED = 100/105; // m/s, ref 1:45/100m
     _mwSwimBlocks.forEach(function(b){
       var IF = (b.css_pct||80)/100;
@@ -2175,6 +2188,8 @@ function _mwAutoTSS(){
       var durSec = distM/CSS_SPEED/IF;
       if(b.type==='main') durSec += (b.repeat||1)*(b.rest_sec||20);
       tss += (durSec/3600)*IF*IF*100;
+      durMin += durSec/60;
+      distKm += distM/1000;
     });
   }
 
@@ -2201,7 +2216,29 @@ function _mwAutoTSS(){
     f.value = tss;
     f.dataset.autoFilled = '1';
   }
+
+  // Duración y distancia también se completan solas desde la Estructura
+  // de Series — mismo criterio que TSS: si el coach ya escribió un valor
+  // a mano, no se lo pisa; solo se actualiza si el campo está vacío o si
+  // el valor actual vino de un auto-llenado anterior.
+  var fd = document.getElementById('mw-dur');
+  if(fd && durMin>0 && (!fd.value || fd.dataset.autoFilled==='1')){
+    fd.value = Math.round(durMin);
+    fd.dataset.autoFilled = '1';
+  }
+  var fk = document.getElementById('mw-dist');
+  if(fk && distKm!=null && distKm>0 && (!fk.value || fk.dataset.autoFilled==='1')){
+    fk.value = Math.round(distKm*10)/10;
+    fk.dataset.autoFilled = '1';
+  }
 }
+// _mwAutoTSS() se llama desde atributos HTML inline (onchange="_mwAutoTSS()"
+// en #mw-tipo y #mw-dur), que ejecutan en scope global — sin esto,
+// "_mwAutoTSS is not defined" (mismo bug de scope ya encontrado y corregido
+// en indoor_workout.html; acá quedó latente porque la mayoría de las
+// llamadas a _mwAutoTSS() pasan por _mwUpd/_mwRenderBlocks, que SÍ están
+// en window y la resuelven bien por hoisting dentro de la IIFE).
+window._mwAutoTSS = _mwAutoTSS;
 
 // ── Curva de intensidad por deporte (mismo estilo visual que el
 // builder de indoor_workout.html — el usuario pidió ver la serie

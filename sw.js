@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '32';  // 2026-07-29: curva de intensidad (bici/carrera/natación) en coach.html "Nuevo Template"
+var BUILD_VERSION = '33';  // 2026-07-29: auto-completar duración/distancia desde bloques + fix scope _mwAutoTSS en coach.html
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
