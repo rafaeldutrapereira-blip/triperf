@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="es" translate="no">
 <head>
-<meta charset="UTF-8"><script src="routes.config.js"></script><meta name="google" content="notranslate">
+<meta charset="UTF-8"><script src="routes.config.js"></script><script src="workout-blocks.js"></script><meta name="google" content="notranslate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LabX — Coach Platform</title>
@@ -1841,11 +1841,10 @@ function _mwRenderBlocks(){
     container.innerHTML = '<div style="font-size:.68rem;color:var(--dim);text-align:center;padding:.4rem">Sin bloques — añade usando los botones de arriba.</div>';
     return;
   }
-  var colors={warmup:'#64B5F6',cooldown:'#64B5F6',steady:'#0EA5E9',intervals:'#EF4444',ramp:'#10B981'};
-  var labels={warmup:'Calentamiento',cooldown:'Vuelta calma',steady:'Steady State',intervals:'Intervalos',ramp:'Ramp'};
   container.innerHTML = _mwBlocks.map(function(b){
-    var col = colors[b.type]||'#7FB3CC';
-    var lbl = labels[b.type]||b.type;
+    var meta = WorkoutBlocks.TYPES[b.type];
+    var col = (meta && meta.color) || '#7FB3CC';
+    var lbl = (meta && meta.label) || b.type;
     var fields = '';
     if(b.type==='intervals'){
       fields =

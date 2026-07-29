@@ -349,6 +349,7 @@ select option{background:var(--surface2)}
 <script src="dash-header.js"></script>
 <script src="lx-upgrade.js"></script>
 <script src="i18n.js"></script>
+<script src="workout-blocks.js"></script>
 <script>
 (function(){
 'use strict';
@@ -357,14 +358,7 @@ select option{background:var(--surface2)}
 var LS_KEY   = 'kl_indoor_workouts';
 var LS_DRAFT = 'kl_iw_draft';
 
-var BLOCK_TYPES = {
-  warmup:    { label:'Calentamiento', color:'#64B5F6', zwotag:'Warmup',     hasRepeat:false, hasRamp:true  },
-  steady:    { label:'Steady State',  color:'#0EA5E9', zwotag:'SteadyState',hasRepeat:false, hasRamp:false },
-  intervals: { label:'Intervalos',    color:'#EF4444', zwotag:'IntervalsT', hasRepeat:true,  hasRamp:false },
-  ramp:      { label:'Ramp',          color:'#10B981', zwotag:'Ramp',       hasRepeat:false, hasRamp:true  },
-  freeride:  { label:'Free Ride',     color:'#A855F7', zwotag:'FreeRide',   hasRepeat:false, hasRamp:false },
-  cooldown:  { label:'Vuelta Calma',  color:'#64B5F6', zwotag:'Cooldown',   hasRepeat:false, hasRamp:true  }
-};
+var BLOCK_TYPES = WorkoutBlocks.TYPES;
 
 /* Power → zone color */
 function zoneColor(pct){
@@ -450,25 +444,13 @@ function _iwApiBase(){
 })();
 
 /* ─────────── BLOCK MANAGEMENT ──────────────────────────────── */
+// Metadata (BLOCK_TYPES), fábrica de bloques (makeBlock) y generadores de
+// archivo viven en workout-blocks.js — compartido con coach.html, ver ese
+// archivo para el porqué.
 var _bid = 0;
 function makeBlock(type){
   _bid++;
-  var b = { id: 'b'+_bid, type: type };
-  switch(type){
-    case 'warmup':
-    case 'cooldown':
-      b.duration = 600; b.power_low = 0.50; b.power_high = 0.75; break;
-    case 'steady':
-      b.duration = 300; b.power = 0.75; break;
-    case 'intervals':
-      b.repeat = 4; b.on_duration = 240; b.on_power = 0.95;
-      b.off_duration = 120; b.off_power = 0.55; break;
-    case 'ramp':
-      b.duration = 600; b.power_low = 0.60; b.power_high = 1.00; break;
-    case 'freeride':
-      b.duration = 300; break;
-  }
-  return b;
+  return WorkoutBlocks.makeBlock(type, 'b'+_bid);
 }
 
 window.addBlock = function(type){
@@ -546,20 +528,7 @@ function renderBlocks(){
 }
 
 function blockSummary(b){
-  var d = fmtDur(totalBlockDuration(b));
-  switch(b.type){
-    case 'warmup':
-    case 'cooldown':
-    case 'ramp':
-      return d + ' · ' + Math.round(b.power_low*100)+'%→'+Math.round(b.power_high*100)+'% FTP';
-    case 'steady':
-      return d + ' · ' + Math.round(b.power*100)+'% FTP';
-    case 'intervals':
-      return b.repeat+'×('+fmtDur(b.on_duration)+' @ '+Math.round(b.on_power*100)+'% / '+fmtDur(b.off_duration)+' @ '+Math.round(b.off_power*100)+'%)';
-    case 'freeride':
-      return d + ' · Intensidad libre';
-  }
-  return d;
+  return WorkoutBlocks.blockSummaryText(b, fmtDur);
 }
 
 function blockFields(b){
@@ -820,33 +789,8 @@ function getWorkoutData(id){
 window.exportZWO = function(id){
   var wo = getWorkoutData(id||null);
   if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
-
-  var xml = '<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n';
-  xml += '  <author>LabX Coach</author>\n';
-  xml += '  <name>'+esc(wo.name)+'</name>\n';
-  xml += '  <description>'+esc(wo.desc||wo.name)+' | FTP: '+wo.ftp+'W</description>\n';
-  xml += '  <sportType>bike</sportType>\n';
-  xml += '  <tags/>\n';
-  xml += '  <workout>\n';
-
-  wo.blocks.forEach(function(b){
-    switch(b.type){
-      case 'warmup':
-        xml += '    <Warmup Duration="'+b.duration+'" PowerLow="'+b.power_low.toFixed(2)+'" PowerHigh="'+b.power_high.toFixed(2)+'"/>\n'; break;
-      case 'cooldown':
-        xml += '    <Cooldown Duration="'+b.duration+'" PowerLow="'+b.power_high.toFixed(2)+'" PowerHigh="'+b.power_low.toFixed(2)+'"/>\n'; break;
-      case 'steady':
-        xml += '    <SteadyState Duration="'+b.duration+'" Power="'+b.power.toFixed(2)+'"/>\n'; break;
-      case 'intervals':
-        xml += '    <IntervalsT Repeat="'+b.repeat+'" OnDuration="'+b.on_duration+'" OffDuration="'+b.off_duration+'" OnPower="'+b.on_power.toFixed(2)+'" OffPower="'+b.off_power.toFixed(2)+'" pace="0"/>\n'; break;
-      case 'ramp':
-        xml += '    <Ramp Duration="'+b.duration+'" PowerLow="'+b.power_low.toFixed(2)+'" PowerHigh="'+b.power_high.toFixed(2)+'"/>\n'; break;
-      case 'freeride':
-        xml += '    <FreeRide Duration="'+b.duration+'" FlatRoad="0"/>\n'; break;
-    }
-  });
-
-  xml += '  </workout>\n</workout_file>';
+  var desc = (wo.desc||wo.name)+' | FTP: '+wo.ftp+'W';
+  var xml = WorkoutBlocks.blocksToZwoXml(wo.blocks, wo.name, desc);
   download(safeName(wo.name)+'.zwo', xml, 'application/xml');
   toast('✓ Descargado .ZWO — cópialo a Documents\\Zwift\\Workouts\\', true);
 };
@@ -855,24 +799,7 @@ window.exportERG = function(id){
   var wo = getWorkoutData(id||null);
   if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
   var ftp = wo.ftp || FTP;
-  var segs = buildSegs(wo.blocks);
-
-  var txt = '[COURSE HEADER]\r\nDESCRIPTION = '+wo.name+'\r\nFILE NAME = '+safeName(wo.name)+'\r\nMINUTES WATTS\r\n[END COURSE HEADER]\r\n[COURSE DATA]\r\n';
-
-  /* Convert segments to minute-by-minute ERG points */
-  var points = [];
-  segs.forEach(function(s){
-    var dur = (s.te-s.ts)/60;
-    var w1  = (s.free ? 0.65 : s.ps) * ftp;
-    var w2  = (s.free ? 0.65 : s.pe) * ftp;
-    if(!points.length) points.push([0, Math.round(w1)]);
-    var t   = s.ts/60;
-    points.push([parseFloat(t.toFixed(3)), Math.round(w1)]);
-    points.push([parseFloat((t+dur).toFixed(3)), Math.round(w2)]);
-  });
-
-  txt += points.map(function(p){ return p[0]+'\t'+p[1]; }).join('\r\n');
-  txt += '\r\n[END COURSE DATA]';
+  var txt = WorkoutBlocks.blocksToErgText(wo.blocks, safeName(wo.name), ftp);
   download(safeName(wo.name)+'.erg', txt, 'text/plain');
   toast('✓ Descargado .ERG — compatible con TrainerRoad, Wahoo, GoldenCheetah', true);
 };
@@ -881,53 +808,18 @@ window.exportMRC = function(id){
   var wo = getWorkoutData(id||null);
   if(!wo || !wo.blocks.length){ toast('Sin bloques para exportar', false); return; }
   var ftp = wo.ftp || FTP;
-  var segs = buildSegs(wo.blocks);
-
-  var txt = '[COURSE HEADER]\r\nDESCRIPTION = '+wo.name+'\r\nFILE NAME = '+safeName(wo.name)+'\r\nMINUTES PERCENT\r\n[END COURSE HEADER]\r\n[COURSE DATA]\r\n';
-
-  var points = [];
-  segs.forEach(function(s){
-    var t = s.ts/60;
-    var dur = (s.te-s.ts)/60;
-    var p1  = Math.round((s.free ? 0.65 : s.ps)*100);
-    var p2  = Math.round((s.free ? 0.65 : s.pe)*100);
-    if(!points.length) points.push([0, p1]);
-    points.push([parseFloat(t.toFixed(3)), p1]);
-    points.push([parseFloat((t+dur).toFixed(3)), p2]);
-  });
-
-  txt += points.map(function(p){ return p[0]+'\t'+p[1]; }).join('\r\n');
-  txt += '\r\n[END COURSE DATA]';
+  var txt = WorkoutBlocks.blocksToMrcText(wo.blocks, safeName(wo.name), ftp);
   download(safeName(wo.name)+'.mrc', txt, 'text/plain');
   toast('✓ Descargado .MRC — compatible con Garmin, CycleOps, GoldenCheetah', true);
 };
 
 /* ─────────── HELPERS ────────────────────────────────────────── */
 function buildSegs(bls){
-  var segs = []; var t = 0;
-  bls.forEach(function(b){
-    switch(b.type){
-      case 'warmup': case 'cooldown': case 'ramp':
-        segs.push({ts:t, te:t+b.duration, ps:b.power_low, pe:b.power_high}); t+=b.duration; break;
-      case 'steady':
-        segs.push({ts:t, te:t+b.duration, ps:b.power, pe:b.power}); t+=b.duration; break;
-      case 'freeride':
-        segs.push({ts:t, te:t+b.duration, ps:0.65, pe:0.65, free:true}); t+=b.duration; break;
-      case 'intervals':
-        for(var r=0;r<b.repeat;r++){
-          segs.push({ts:t, te:t+b.on_duration, ps:b.on_power, pe:b.on_power}); t+=b.on_duration;
-          segs.push({ts:t, te:t+b.off_duration, ps:b.off_power, pe:b.off_power}); t+=b.off_duration;
-        } break;
-    }
-  });
-  return segs;
+  return WorkoutBlocks.buildSegments(bls);
 }
 
 function totalBlockDuration(b){
-  switch(b.type){
-    case 'intervals': return b.repeat * (b.on_duration + b.off_duration);
-    default: return b.duration || 0;
-  }
+  return WorkoutBlocks.totalBlockDuration(b);
 }
 
 function fmtDur(sec, long){
