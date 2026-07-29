@@ -573,6 +573,7 @@ function blockFields(b){
 }
 
 window.updateBlock = function(id, key, val){
+  if(val === null || (typeof val === 'number' && isNaN(val))) return; // edición a medio terminar, no commitear todavía
   var b = blocks.find(function(x){ return x.id===id; });
   if(!b) return;
   b[key] = val;
@@ -850,12 +851,23 @@ function fmtDur(sec, long){
 }
 
 function parseDur(str){
-  if(!str) return 300;
+  /* null = "todavía no es una duración válida" (campo vacío o a medio
+     escribir, ej. borraste "10:00" para escribir "1:00" y por un
+     instante el campo queda vacío) — antes esto devolvía 300 (5min) a
+     modo de default, y como el campo actualiza en cada tecla (oninput),
+     ese 5min "fantasma" se aplicaba de verdad por una fracción de
+     segundo mientras se editaba, dando la sensación de que el valor
+     "volvía al estándar". updateBlock() ignora los null y no toca el
+     bloque hasta que se termine de escribir una duración real. */
+  if(!str) return null;
   str = str.trim();
+  if(!str) return null;
   var parts = str.split(':').map(Number);
-  if(parts.length===3) return (parts[0]*3600+parts[1]*60+parts[2])||300;
-  if(parts.length===2) return (parts[0]*60+parts[1])||300;
-  return parseInt(str)*60||300;
+  var val;
+  if(parts.length===3) val = parts[0]*3600+parts[1]*60+parts[2];
+  else if(parts.length===2) val = parts[0]*60+parts[1];
+  else val = parseInt(str)*60;
+  return (val && !isNaN(val) && val>0) ? val : null;
 }
 
 function safeName(name){ return (name||'workout').replace(/[^a-z0-9_-]/gi,'_').replace(/__+/g,'_'); }
