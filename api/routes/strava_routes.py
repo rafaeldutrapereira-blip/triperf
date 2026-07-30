@@ -257,7 +257,7 @@ async def _sync_strava_activities(me: User, db: Session, days: int = 7) -> dict:
 
             for a in acts:
                 try:
-                    status, target_activity_id = _upsert_strava_activity(a, me.id, db)
+                    status, target_activity_id = _upsert_strava_activity(a, me, db)
                     if status == "imported":
                         imported += 1
                     elif status == "updated":
@@ -318,7 +318,7 @@ async def _fetch_strava_photos(strava_activity_id: int, token: str, client: http
         return []
 
 
-def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session) -> tuple[str, str]:
+def _upsert_strava_activity(a: dict[str, Any], user: User, db: Session) -> tuple[str, str]:
     """
     Convierte una actividad Strava y la inserta/actualiza en garmin_activities.
     Retorna (status, activity_id_afectado):
@@ -329,6 +329,9 @@ def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session) -> tup
                      activity_id de Garmin para adjuntarle las fotos ahí
       - "imported":  actividad nueva, no existía en ningún origen
     """
+    from ..garmin_pull_service import _extract_tss, _parse_mmss
+
+    user_id   = user.id
     act_id    = f"strava_{a['id']}"
     sport_raw = a.get("sport_type") or a.get("type") or "Run"
     sport     = _SPORT_MAP.get(sport_raw, "run")
@@ -356,8 +359,23 @@ def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session) -> tup
     # Elevación
     elev = a.get("total_elevation_gain") or 0
 
-    # TSS estimado (simplificado — sin FTP)
-    tss = round(dur_min * 0.7) if sport in ("run", "bike") else round(dur_min * 0.5)
+    # TSS real — misma fórmula/prioridad que las actividades nativas de
+    # Garmin (potencia/ritmo real vs. fallback por %FCmax personalizado),
+    # NO la fórmula propia que había acá antes (dur_min×0.7/0.5, sin FC,
+    # sin potencia, sin ritmo — un cuarto cálculo de TSS distinto en toda
+    # la plataforma). Se arma un dict compatible con _extract_tss usando
+    # los campos que Strava sí expone.
+    fake_act = {
+        "duration":   dur_s,
+        "distance":   dist_m,
+        "averageHR":  a.get("average_heartrate"),
+        "avgPower":   a.get("average_watts"),
+        "activityType": {"typeKey": sport_raw},
+    }
+    tss = _extract_tss(
+        fake_act, user.ftp or 250, user.fcmax,
+        _parse_mmss(user.run_pace), _parse_mmss(user.css),
+    )
 
     # Ícono/color por deporte
     _icons  = {"run": "🏃", "bike": "🚴", "swim": "🏊", "gym": "💪", "walk": "🚶"}
@@ -382,17 +400,32 @@ def _upsert_strava_activity(a: dict[str, Any], user_id: str, db: Session) -> tup
 
     # Deduplicar contra una actividad de OTRO origen que ya represente este
     # mismo entrenamiento real (típico: Zwift sube la misma sesión tanto a
-    # Garmin como a Strava). Match por fecha + deporte + duración similar
-    # (tolerancia de 5 min o 10%, lo que sea mayor) — no exacto porque cada
-    # plataforma puede redondear/registrar el tiempo levemente distinto.
+    # Garmin como a Strava). Dos criterios, CUALQUIERA alcanza:
+    #  1. Duración similar (tolerancia 5 min o 10%) — bici/carrera, donde
+    #     Garmin y Strava miden el tiempo básicamente igual.
+    #  2. Distancia casi idéntica (tolerancia 3%) — necesario para NATACIÓN,
+    #     donde la duración puede diferir hasta 20 min entre plataformas
+    #     según si cuentan o no el descanso en la pared (bug real
+    #     encontrado auditando una cuenta real: 16 pares duplicados en un
+    #     mes, todos con distancia idéntica pero duración muy distinta,
+    #     invisibles para el criterio de duración solo).
     tol_min = max(5.0, dur_min * 0.10)
-    dup = db.query(GarminActivity).filter(
+    candidates = db.query(GarminActivity).filter(
         GarminActivity.user_id == user_id,
         GarminActivity.date_iso == start_str,
         GarminActivity.sport == sport,
         GarminActivity.activity_id.notlike("strava_%"),
-        GarminActivity.dur_min.between(dur_min - tol_min, dur_min + tol_min),
-    ).first()
+    ).all()
+    dup = None
+    for c in candidates:
+        dur_match = c.dur_min is not None and abs(c.dur_min - dur_min) <= tol_min
+        dist_match = (
+            dist_km > 0 and c.dist_km is not None and c.dist_km > 0
+            and abs(c.dist_km - dist_km) / max(c.dist_km, dist_km) <= 0.03
+        )
+        if dur_match or dist_match:
+            dup = c
+            break
     if dup:
         return "duplicate", dup.activity_id
 

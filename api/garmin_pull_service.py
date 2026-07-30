@@ -372,26 +372,45 @@ _GYM_TSS_DEFAULT = 25.0
 def _find_strava_duplicate(db, user_id: str, parsed: dict):
     """
     Busca una actividad ya importada desde Strava (activity_id 'strava_...')
-    que represente el MISMO entrenamiento real que 'parsed' (típico: Zwift
-    sube la misma sesión tanto a Garmin como a Strava). Match por fecha +
-    deporte + duración similar (tolerancia 5 min o 10%, lo que sea mayor) —
-    mismo criterio ya usado en strava_routes.py, en sentido inverso (ahí se
-    chequea contra Garmin al importar de Strava; acá se chequea contra
-    Strava al importar de Garmin — el gap real era que solo existía un
-    sentido de este chequeo).
+    que represente el MISMO entrenamiento real que 'parsed'. Match por
+    fecha + deporte, y CUALQUIERA de estos dos criterios:
+
+      1. Duración similar (tolerancia 5 min o 10%, lo que sea mayor) —
+         criterio original, sirve para bici/carrera donde Garmin y Strava
+         miden el tiempo básicamente igual.
+      2. Distancia casi idéntica (tolerancia 3%) — necesario porque para
+         NATACIÓN, Garmin y Strava pueden reportar duraciones MUY distintas
+         para el MISMO entrenamiento real (uno cuenta el descanso en la
+         pared entre series como parte del tiempo total, el otro no) — bug
+         real encontrado auditando la cuenta de un usuario real: 16 pares
+         duplicados en un solo mes, TODOS con distancia idéntica (0.0% de
+         diferencia) pero duraciones hasta 20 minutos distintas, muy por
+         fuera de la tolerancia de duración por sí sola. La distancia no
+         depende de cómo cada plataforma cuenta el tiempo, así que es la
+         señal confiable acá.
     """
-    dur_min = parsed.get("dur_min") or 0
-    tol_min = max(5.0, dur_min * 0.10)
-    return (
+    dur_min  = parsed.get("dur_min") or 0
+    dist_km  = parsed.get("dist_km") or 0
+    tol_min  = max(5.0, dur_min * 0.10)
+
+    candidates = (
         db.query(GarminActivity)
           .filter(GarminActivity.user_id == user_id,
                   GarminActivity.date_iso == parsed["date_iso"],
                   GarminActivity.sport == parsed["sport"],
                   GarminActivity.activity_id.like("strava_%"),
-                  GarminActivity.dur_min.between(dur_min - tol_min, dur_min + tol_min),
                   )
-          .first()
+          .all()
     )
+    for c in candidates:
+        dur_match = c.dur_min is not None and abs(c.dur_min - dur_min) <= tol_min
+        dist_match = (
+            dist_km > 0 and c.dist_km is not None and c.dist_km > 0
+            and abs(c.dist_km - dist_km) / max(c.dist_km, dist_km) <= 0.03
+        )
+        if dur_match or dist_match:
+            return c
+    return None
 
 
 def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,

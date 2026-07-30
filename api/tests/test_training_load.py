@@ -341,8 +341,17 @@ class TestStravaGarminDedup:
         assert dup is not None
         assert dup.activity_id == "strava_19512913041"
 
-    def test_no_confunde_2_sesiones_reales_distintas(self, db):
-        """Duración muy distinta (>10%/5min) = 2 sesiones reales, no debe fusionarlas."""
+    def test_detecta_duplicado_por_distancia_aunque_duracion_difiera_mucho(self, db):
+        """
+        Caso real encontrado auditando una cuenta real (16 pares en un mes):
+        Garmin y Strava pueden reportar duraciones MUY distintas para el
+        MISMO nado real (uno cuenta el descanso en la pared, el otro no) —
+        acá 54.3min vs 74min (20min de diferencia, muy fuera de la
+        tolerancia de duración por sí sola) pero exactamente la misma
+        distancia (2.85km) — el match por distancia debe encontrarlo igual.
+        Caso real: "Natación de noche" (strava) vs "Natación en piscina"
+        (Garmin nativo), 2026-07-28.
+        """
         from api.garmin_pull_service import _find_strava_duplicate
         from api.models import GarminActivity
         u = self._make_user(db)
@@ -352,7 +361,23 @@ class TestStravaGarminDedup:
         )
         db.add(strava_row); db.commit()
 
-        parsed = {"date_iso": "2026-07-28", "sport": "swim", "dur_min": 74}  # 20min de diferencia
+        parsed = {"date_iso": "2026-07-28", "sport": "swim", "dur_min": 74, "dist_km": 2.85}
+        dup = _find_strava_duplicate(db, u.id, parsed)
+        assert dup is not None
+        assert dup.activity_id == "strava_1"
+
+    def test_no_confunde_2_sesiones_reales_distintas(self, db):
+        """Ni duración NI distancia coinciden (>10%/5min y >3%) = 2 sesiones reales, no debe fusionarlas."""
+        from api.garmin_pull_service import _find_strava_duplicate
+        from api.models import GarminActivity
+        u = self._make_user(db)
+        strava_row = GarminActivity(
+            user_id=u.id, activity_id="strava_1", name="Natación de noche",
+            sport="swim", date_iso="2026-07-28", dur_min=54.3, dist_km=2.0,
+        )
+        db.add(strava_row); db.commit()
+
+        parsed = {"date_iso": "2026-07-28", "sport": "swim", "dur_min": 74, "dist_km": 2.85}
         dup = _find_strava_duplicate(db, u.id, parsed)
         assert dup is None
 
