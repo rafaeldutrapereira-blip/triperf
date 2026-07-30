@@ -598,6 +598,36 @@ function fmtDateLabel(isoStr){
 }
 
 // ──────────────────────────────────────
+// CACHE VERSION — protege a TODOS los usuarios, no solo al que reporta el
+// problema. Antes, una asignación del coach borrada/cambiada en el
+// servidor podía quedar pegada para siempre en localStorage.kl_training_plan
+// de CUALQUIER navegador — dependía de que pullAssignments() corriera
+// exitosamente en cada carga, lo cual no siempre pasa (confirmado con un
+// usuario real: cerrar y reabrir el navegador no alcanzó, porque Edge
+// puede restaurar una pestaña anterior sin necesariamente volver a
+// ejecutar todo el JS de red). Este chequeo es SINCRÓNICO y corre antes
+// de cualquier render — no depende de que ninguna llamada de red termine
+// — así que protege a cualquier usuario en su próxima carga real de la
+// página, sin que nadie tenga que limpiar nada a mano. Solo se eliminan
+// las entradas cacheadas del COACH (api_assignment_id) — las sesiones
+// propias del atleta (creadas con "+ Agregar Sesión") nunca se tocan,
+// porque esas no tienen equivalente en el servidor para volver a pedir.
+// ──────────────────────────────────────
+var KL_TP_CACHE_VERSION = '2026-07-30-reconcile-fix';
+(function(){
+  try{
+    if(localStorage.getItem('kl_tp_cache_version') !== KL_TP_CACHE_VERSION){
+      var raw = localStorage.getItem('kl_training_plan');
+      if(raw){
+        var arr = JSON.parse(raw).filter(function(s){ return !s.api_assignment_id; });
+        localStorage.setItem('kl_training_plan', JSON.stringify(arr));
+      }
+      localStorage.setItem('kl_tp_cache_version', KL_TP_CACHE_VERSION);
+    }
+  }catch(e){}
+})();
+
+// ──────────────────────────────────────
 // DATA ACCESS
 // ──────────────────────────────────────
 function garminActs(){
