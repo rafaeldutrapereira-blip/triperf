@@ -74,6 +74,102 @@ class TestCTLATLCalculations:
         assert ctl > 0,  "CTL nunca debe ser negativa"
 
 
+class TestEstimatePlannedTss:
+    """
+    _estimate_planned_tss (Nivel 1: target numérico por paso) tenía un bug
+    real, no teórico: nunca recorría los pasos ANIDADOS dentro de un
+    RepeatGroupDTO (series repetidas, ej. "4x 12min z2 + 3min fácil") — solo
+    el nivel superior del segmento. Encontrado con un ride real de 90min de
+    Training Peaks (calentamiento+enfriamiento con target numérico, bloque
+    principal de 4 repeticiones adentro de un RepeatGroupDTO): el cálculo
+    "preciso" solo sumaba los ~30min de calentar/enfriar y devolvía 12.2 TSS
+    para una sesión real de ~62 TSS — silenciosamente incompleto, sin ningún
+    error ni aviso, marcado igual como "precise=True".
+    """
+
+    def test_flat_steps_sin_repeat_group(self):
+        """Caso simple (sin RepeatGroupDTO): debe seguir funcionando igual que antes."""
+        from api.garmin_pull_service import GarminPullService
+        workout = {
+            "workoutSegments": [{"workoutSteps": [
+                {"type": "ExecutableStepDTO",
+                 "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 600.0,
+                 "targetType": {"workoutTargetTypeKey": "power.3s"},
+                 "targetValueOne": 150.0, "targetValueTwo": 150.0},
+            ]}]
+        }
+        tss, precise = GarminPullService._estimate_planned_tss(
+            workout, "bike", ftp=250, fcmax=180, run_pace_s_km=None, css_s_100m=None)
+        # 10min @ 150/250=0.6 IF: (10/60)*0.36*100 = 6.0
+        assert precise is True
+        assert abs(tss - 6.0) < 0.05
+
+    def test_repeat_group_dto_se_recorre_y_multiplica_por_iteraciones(self):
+        """
+        Reproduce el caso real (workoutId 1644077424, ride 'z2' de 90min):
+        calentamiento (20min) + 4x(12min interval + 3min rest) + enfriamiento
+        (10min). Antes del fix: solo contaba calentamiento+enfriamiento
+        (12.2 TSS). Después: cuenta también el RepeatGroupDTO completo
+        (~62.3 TSS), acorde a una sesión real de 90 minutos.
+        """
+        from api.garmin_pull_service import GarminPullService
+        ftp = 230
+        workout = {
+            "estimatedDurationInSecs": 5400,
+            "workoutSegments": [{"workoutSteps": [
+                {"type": "ExecutableStepDTO", "description": "Calentamiento",
+                 "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 1200.0,
+                 "targetType": {"workoutTargetTypeKey": "power.3s"},
+                 "targetValueOne": 94.0, "targetValueTwo": 141.0},
+                {"type": "RepeatGroupDTO", "numberOfIterations": 4, "workoutSteps": [
+                    {"type": "ExecutableStepDTO", "description": "z2 cadencia alta",
+                     "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 720.0,
+                     "targetType": {"workoutTargetTypeKey": "power.3s"},
+                     "targetValueOne": 164.0, "targetValueTwo": 176.0},
+                    {"type": "ExecutableStepDTO", "description": "Fácil",
+                     "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 180.0,
+                     "targetType": {"workoutTargetTypeKey": "power.3s"},
+                     "targetValueOne": 118.0, "targetValueTwo": 141.0},
+                ]},
+                {"type": "ExecutableStepDTO", "description": "Enfriar",
+                 "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 600.0,
+                 "targetType": {"workoutTargetTypeKey": "power.3s"},
+                 "targetValueOne": 94.0, "targetValueTwo": 118.0},
+                {"type": "ExecutableStepDTO",
+                 "endCondition": {"conditionTypeKey": "lap.button"},
+                 "targetType": {"workoutTargetTypeKey": "no.target"}},
+            ]}]
+        }
+        tss, precise = GarminPullService._estimate_planned_tss(
+            workout, "bike", ftp=ftp, fcmax=180, run_pace_s_km=None, css_s_100m=None)
+        assert precise is True
+        # Antes del fix esto daba 12.2 (solo calentamiento+enfriamiento)
+        assert tss > 50, "El bloque principal (RepeatGroupDTO) no se está contando"
+        assert abs(tss - 62.3) < 0.5
+
+    def test_repeat_group_dto_anidado_dentro_de_otro(self):
+        """Un RepeatGroupDTO dentro de otro (raro pero válido) debe multiplicar iteraciones en cadena."""
+        from api.garmin_pull_service import GarminPullService
+        workout = {
+            "workoutSegments": [{"workoutSteps": [
+                {"type": "RepeatGroupDTO", "numberOfIterations": 2, "workoutSteps": [
+                    {"type": "RepeatGroupDTO", "numberOfIterations": 3, "workoutSteps": [
+                        {"type": "ExecutableStepDTO",
+                         "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 60.0,
+                         "targetType": {"workoutTargetTypeKey": "power.3s"},
+                         "targetValueOne": 200.0, "targetValueTwo": 200.0},
+                    ]},
+                ]},
+            ]}]
+        }
+        tss, precise = GarminPullService._estimate_planned_tss(
+            workout, "bike", ftp=200, fcmax=180, run_pace_s_km=None, css_s_100m=None)
+        # 1min @ IF=1.0 = (1/60)*1*100 = 1.6667 TSS por repetición interna,
+        # x3 (interno) x2 (externo) = 6 repeticiones totales = 10.0 TSS
+        assert precise is True
+        assert abs(tss - 10.0) < 0.05
+
+
 class TestNutritionCalculations:
     """
     Tests de cálculos de nutrición para carrera.

@@ -1063,9 +1063,26 @@ class GarminPullService:
         segments = workout.get("workoutSegments") or []
         total = 0.0
         any_computed = False
-        for seg in segments:
-            for step in (seg.get("workoutSteps") or []):
-                if step.get("type") != "ExecutableStepDTO":
+
+        def _walk_steps(steps, multiplier):
+            nonlocal total, any_computed
+            for step in steps:
+                step_type = step.get("type")
+                if step_type == "RepeatGroupDTO":
+                    # Series repetidas (ej. "4x 12min z2 + 3min fácil") viven
+                    # ANIDADAS en su propio workoutSteps, no en el nivel del
+                    # segmento — bug real encontrado con un ride real de
+                    # TrainingPeaks (90min, calentar+enfriar con target
+                    # numérico pero el bloque principal de 4 repeticiones
+                    # quedaba adentro de un RepeatGroupDTO que este loop
+                    # nunca recorría): el cálculo "preciso" solo sumaba los
+                    # ~30min de calentamiento/enfriamiento y devolvía 12.2
+                    # TSS para una sesión real de ~60-65 TSS, sin ningún
+                    # error ni aviso — silenciosamente incompleto.
+                    iterations = step.get("numberOfIterations") or 1
+                    _walk_steps(step.get("workoutSteps") or [], multiplier * iterations)
+                    continue
+                if step_type != "ExecutableStepDTO":
                     continue
                 end_cond = (step.get("endCondition") or {}).get("conditionTypeKey")
                 dur_s = step.get("endConditionValue") if end_cond == "time" else None
@@ -1094,8 +1111,11 @@ class GarminPullService:
                     continue
 
                 intensity = max(0.3, min(1.3, intensity))
-                total += (dur_s / 3600) * (intensity ** 2) * 100
+                total += multiplier * (dur_s / 3600) * (intensity ** 2) * 100
                 any_computed = True
+
+        for seg in segments:
+            _walk_steps(seg.get("workoutSteps") or [], 1)
 
         if any_computed:
             # Nivel 1: objetivo real por paso — precisión alta, respeta la
