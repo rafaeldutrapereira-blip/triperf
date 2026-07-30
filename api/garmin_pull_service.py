@@ -369,6 +369,31 @@ _GYM_TSS_PER_HOUR = {
 _GYM_TSS_DEFAULT = 25.0
 
 
+def _find_strava_duplicate(db, user_id: str, parsed: dict):
+    """
+    Busca una actividad ya importada desde Strava (activity_id 'strava_...')
+    que represente el MISMO entrenamiento real que 'parsed' (típico: Zwift
+    sube la misma sesión tanto a Garmin como a Strava). Match por fecha +
+    deporte + duración similar (tolerancia 5 min o 10%, lo que sea mayor) —
+    mismo criterio ya usado en strava_routes.py, en sentido inverso (ahí se
+    chequea contra Garmin al importar de Strava; acá se chequea contra
+    Strava al importar de Garmin — el gap real era que solo existía un
+    sentido de este chequeo).
+    """
+    dur_min = parsed.get("dur_min") or 0
+    tol_min = max(5.0, dur_min * 0.10)
+    return (
+        db.query(GarminActivity)
+          .filter(GarminActivity.user_id == user_id,
+                  GarminActivity.date_iso == parsed["date_iso"],
+                  GarminActivity.sport == parsed["sport"],
+                  GarminActivity.activity_id.like("strava_%"),
+                  GarminActivity.dur_min.between(dur_min - tol_min, dur_min + tol_min),
+                  )
+          .first()
+    )
+
+
 def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,
                   run_pace_s_km: float | None = None, css_s_100m: float | None = None) -> float:
     """
@@ -954,6 +979,33 @@ class GarminPullService:
                           GarminActivity.activity_id == act_id)
                   .first()
             )
+            if not existing:
+                # Dedup contra un mismo entrenamiento real ya importado antes
+                # desde Strava — pasa exactamente igual que el gap que ya se
+                # cubría del lado de Strava (strava_routes.py) pero en
+                # sentido inverso — si Strava sincronizó esta sesión ANTES
+                # de que el sync nativo de Garmin llegara a ella (orden de
+                # sync no garantizado), acá nunca se chequeaba contra una
+                # fila "strava_" existente y quedaba duplicada (bug real
+                # encontrado: "Morning Run" strava_19512913041 vs "Las
+                # Condes - intervalos pista" 23774456525, mismos 14.01km,
+                # HR/potencia casi idénticos, dos filas separadas el mismo
+                # día).
+                strava_dup = _find_strava_duplicate(db, user_id, parsed)
+                if strava_dup:
+                    existing = strava_dup
+                    # El nativo de Garmin pasa a ser el id canónico y aporta
+                    # datos más ricos que el import de Strava (nombre real
+                    # del entrenamiento en vez del genérico "Morning Run",
+                    # distancia/paso exactos, etc).
+                    existing.activity_id = act_id
+                    existing.name        = parsed["name"]
+                    existing.dur_min     = parsed["dur_min"]
+                    existing.dist_km     = parsed["dist_km"]
+                    existing.pace_str    = parsed["pace_str"]
+                    existing.swim_pace   = parsed["swim_pace"]
+                    existing.elev_m      = parsed["elev_m"]
+
             if existing:
                 # Actualizar TSS por si cambió FTP
                 existing.tss      = parsed["tss"]

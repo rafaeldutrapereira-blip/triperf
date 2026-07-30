@@ -306,6 +306,71 @@ class TestNutritionCalculations:
         assert cho_im > cho_sprint
 
 
+class TestStravaGarminDedup:
+    """
+    Bug real encontrado revisando el calendario de un usuario real (reportó
+    "miércoles 29 hay 2 trotes" — parecían duplicados): el dedup Strava↔Garmin
+    solo corría en un sentido (strava_routes.py, al importar de Strava,
+    chequeaba contra un Garmin ya existente) — pero si el sync nativo de
+    Garmin corría DESPUÉS de que Strava ya hubiera importado la misma sesión
+    real (orden de sync no garantizado), nunca se chequeaba en sentido
+    inverso y quedaban 2 filas para el mismo entrenamiento real. Confirmado
+    con datos reales: "Morning Run" (strava_19512913041, 72.3min, 14.01km)
+    y "Las Condes - intervalos pista" (23774456525, 72min, 14.01km) — mismo
+    HR/potencia casi idénticos, mismo día, mismo deporte.
+    """
+
+    def _make_user(self, db):
+        from api.models import User
+        u = User(email="dedup@test.com", password_hash="x", nombre="Test", rol="atleta")
+        db.add(u); db.commit(); db.refresh(u)
+        return u
+
+    def test_detecta_duplicado_strava_dentro_de_tolerancia(self, db):
+        from api.garmin_pull_service import _find_strava_duplicate
+        from api.models import GarminActivity
+        u = self._make_user(db)
+        strava_row = GarminActivity(
+            user_id=u.id, activity_id="strava_19512913041", name="Morning Run",
+            sport="run", date_iso="2026-07-29", dur_min=72.3, dist_km=14.01,
+        )
+        db.add(strava_row); db.commit()
+
+        parsed = {"date_iso": "2026-07-29", "sport": "run", "dur_min": 72}
+        dup = _find_strava_duplicate(db, u.id, parsed)
+        assert dup is not None
+        assert dup.activity_id == "strava_19512913041"
+
+    def test_no_confunde_2_sesiones_reales_distintas(self, db):
+        """Duración muy distinta (>10%/5min) = 2 sesiones reales, no debe fusionarlas."""
+        from api.garmin_pull_service import _find_strava_duplicate
+        from api.models import GarminActivity
+        u = self._make_user(db)
+        strava_row = GarminActivity(
+            user_id=u.id, activity_id="strava_1", name="Natación de noche",
+            sport="swim", date_iso="2026-07-28", dur_min=54.3, dist_km=2.85,
+        )
+        db.add(strava_row); db.commit()
+
+        parsed = {"date_iso": "2026-07-28", "sport": "swim", "dur_min": 74}  # 20min de diferencia
+        dup = _find_strava_duplicate(db, u.id, parsed)
+        assert dup is None
+
+    def test_no_matchea_deporte_distinto(self, db):
+        from api.garmin_pull_service import _find_strava_duplicate
+        from api.models import GarminActivity
+        u = self._make_user(db)
+        strava_row = GarminActivity(
+            user_id=u.id, activity_id="strava_2", name="Bici",
+            sport="bike", date_iso="2026-07-29", dur_min=72, dist_km=40.0,
+        )
+        db.add(strava_row); db.commit()
+
+        parsed = {"date_iso": "2026-07-29", "sport": "run", "dur_min": 72}
+        dup = _find_strava_duplicate(db, u.id, parsed)
+        assert dup is None
+
+
 class TestHealthEndpoint:
     def test_health_returns_ok(self, client):
         r = client.get("/health")
