@@ -874,9 +874,17 @@ def athlete_dashboard(
     sleep_total_h    = round(sleep_today.total_min / 60, 1) if (sleep_today and sleep_today.total_min) else None
     sleep_deep_h     = round(sleep_today.deep_min  / 60, 1) if (sleep_today and sleep_today.deep_min)  else None
 
-    # Readiness: usa LabX Readiness Score cuando está disponible, sino fallback TSB
-    labx_readiness = health_today.labx_readiness_score if health_today else None
-    readiness_score = labx_readiness if labx_readiness is not None else max(0, min(100, round(50 + tsb)))
+    # Readiness: usa el MISMO motor (readiness_service / DRS, Sprint 23) que
+    # ya usan las otras 15+ páginas vía dash-header.js → GET /readiness/daily.
+    # Antes este endpoint calculaba el suyo propio (context_engine.py, motor
+    # viejo de 5 factores con pesos distintos, con fallback a un "50+TSB"
+    # todavía más simple) — bug real encontrado auditando "los otros KPIs"
+    # a pedido del usuario: dashboard.html mostraba un número de Readiness
+    # y cualquier otra página mostraba OTRO, ambos para el mismo día del
+    # mismo usuario (verificado con datos reales: 59 vs 68 el mismo día).
+    from ..services.readiness_service import compute_daily_readiness_for_user
+    _drs_report = compute_daily_readiness_for_user(me.id, db)
+    readiness_score = _drs_report.drs
 
     # Tendencias HRV (7 días)
     # HRV trend: hoy vs hace 7 días
@@ -1014,7 +1022,7 @@ def athlete_dashboard(
         "resting_hr":       resting_hr,
         "rhr_7d_avg":       rhr_7d_avg,
         "rhr_trend":        rhr_trend,
-        "readiness_source": "labx" if labx_readiness is not None else "tsb",
+        "readiness_source": "drs",
         # Training Readiness desglosado (B-05)
         "training_readiness":       tr_score,
         "training_readiness_label": tr_label,
