@@ -337,6 +337,18 @@ def _dur_str(minutes: int) -> str:
     return f"{h}h {m}min" if h else f"{m}min"
 
 
+def _parse_mmss(val: str | None) -> int | None:
+    """'M:SS' → segundos. Formato compartido por run_pace y css en el
+    perfil del atleta (por 1km o por 100m respectivamente)."""
+    if not val:
+        return None
+    try:
+        m, s = val.split(":")
+        return int(m) * 60 + int(s)
+    except Exception:
+        return None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # TSS desde datos Garmin
 # ─────────────────────────────────────────────────────────────────────────────
@@ -357,10 +369,26 @@ _GYM_TSS_PER_HOUR = {
 _GYM_TSS_DEFAULT = 25.0
 
 
-def _extract_tss(act: dict, ftp: int = 250) -> float:
+def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,
+                  run_pace_s_km: float | None = None, css_s_100m: float | None = None) -> float:
     """
-    Extrae TSS del activity dict de Garmin.
-    Prioridad: trainingStressScore → estimación por tipo/duración.
+    Extrae TSS del activity dict de Garmin. Prioridad:
+      1. trainingStressScore nativo de Garmin — en la práctica NUNCA se
+         observó poblado (confirmado consultando actividades reales en
+         vivo, incluso con avgPower presente), pero se deja el check por
+         si alguna cuenta/plataforma sí lo trae.
+      2. Esfuerzo real medido — potencia (bici) o ritmo real vs. umbral
+         configurado por el atleta (carrera/nado). Mismo criterio que ya
+         usa _estimate_planned_tss() para planes, para que el TSS real y
+         el planificado midan lo mismo tipo de esfuerzo. Antes de este
+         fix, TODAS las actividades reales (aunque tuvieran potenciómetro)
+         caían directo al fallback por FC de abajo, ignorando datos de
+         potencia/ritmo ya disponibles en la misma actividad.
+      3. Fallback por %FCmax (Karvonen simplificado) — solo cuando no hay
+         potencia/ritmo real disponible. Usa la FC máxima REAL del atleta
+         si está configurada; antes estaba hardcodeada a 190 para
+         cualquier usuario, sin importar su perfil real (ej. un atleta
+         con FCmax=180 real recibía un IF sistemáticamente subestimado).
     B-08: duration=None/null → _safe_float devuelve 0.0, nunca NaN.
     """
     tss = _safe_float(act.get("trainingStressScore"))
@@ -375,20 +403,53 @@ def _extract_tss(act: dict, ftp: int = 250) -> float:
     if dur_h <= 0:
         return 0.0
 
-    # Estimación básica por HR si disponible
+    def _sane(result: float) -> float:
+        if math.isnan(result) or math.isinf(result) or result < 0:
+            return 0.0
+        return round(min(result, 600.0), 1)  # cap en 600 TSS (sesión de 24h de IM es ~1000)
+
+    # Nivel 2: esfuerzo real (potencia/ritmo) — más preciso que FC porque
+    # no depende de deriva cardíaca, calor, cafeína, etc.
+    #
+    # Ritmo real = distancia total / duración total (NO act["averageSpeed"]):
+    # verificado con datos reales que para "lap_swimming" ese campo excluye
+    # el tiempo de descanso en la pared entre series (ritmo "nadando", no de
+    # sesión completa) — daba un ritmo ~35% más rápido que el real y
+    # sobreestimaba el TSS en más del doble. Para bici/carrera coincide
+    # exactamente con distancia/duración (verificado, diff 0.0%), así que
+    # calcularlo así en vez de confiar en el campo es seguro para los tres
+    # y consistente con _estimate_planned_tss (que ya hace lo mismo para
+    # workouts planificados).
+    intensity = None
+    dist_m  = _safe_float(act.get("distance"))
+    dur_s   = _safe_float(dur_raw)
+    avg_spd = (dist_m / dur_s) if (dist_m > 0 and dur_s > 0) else 0.0
+
+    if sport == "bike":
+        avg_pwr = _safe_float(act.get("avgPower"))
+        if avg_pwr > 0 and ftp and ftp > 0:
+            intensity = avg_pwr / ftp
+    elif sport == "run" and run_pace_s_km and avg_spd > 0:
+        pace_s_km = 1000 / avg_spd
+        intensity = run_pace_s_km / pace_s_km
+    elif sport == "swim" and css_s_100m and avg_spd > 0:
+        pace_s_100m = 100 / avg_spd
+        intensity = css_s_100m / pace_s_100m
+
+    if intensity is not None:
+        intensity = max(0.3, min(1.3, intensity))
+        return _sane(intensity ** 2 * dur_h * 100)
+
+    # Nivel 3: fallback por %FCmax — solo si no hubo potencia/ritmo real
     avg_hr   = _safe_float(act.get("averageHR"))
-    max_hr   = 190.0
+    max_hr   = fcmax if fcmax and fcmax > 0 else 190.0
     hrr_frac = (avg_hr / max_hr) if avg_hr > 0 else 0.7
 
     # IF estimado desde %HRmax (Karvonen simplificado)
     IF_est = hrr_frac * 0.95
 
     if sport in ("bike", "run", "swim"):
-        result = IF_est ** 2 * dur_h * 100
-        # Sanidad: nunca retornar NaN/Inf/valores absurdos
-        if math.isnan(result) or math.isinf(result) or result < 0:
-            return 0.0
-        return round(min(result, 600.0), 1)  # cap en 600 TSS (sesión de 24h de IM es ~1000)
+        return _sane(IF_est ** 2 * dur_h * 100)
 
     # Gym/strength: sin potenciómetro, el %HRmax de resistencia (bike/run/swim)
     # no sirve — el HR promedio de una sesión de fuerza está diluido por los
@@ -415,7 +476,7 @@ def _extract_tss(act: dict, ftp: int = 250) -> float:
             hr_mod = max(0.75, min(1.25, avg_hr / 80.0))
         return round(dur_h * base_rate * hr_mod, 1)
 
-    return round(IF_est ** 2 * dur_h * 100, 1)
+    return _sane(IF_est ** 2 * dur_h * 100)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -496,7 +557,8 @@ def _compute_acwr(load_rows: list[dict]) -> float:
 # PARSE de activities Garmin → formato interno
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_garmin_activity(act: dict, ftp: int = 250) -> dict:
+def _parse_garmin_activity(act: dict, ftp: int = 250, fcmax: float | None = None,
+                            run_pace_s_km: float | None = None, css_s_100m: float | None = None) -> dict:
     """
     Convierte un dict de garminconnect.get_activities_by_date() al formato
     interno de GarminActivity / KL_DATA.activities.
@@ -530,7 +592,7 @@ def _parse_garmin_activity(act: dict, ftp: int = 250) -> dict:
     avg_pwr  = _safe_int(act.get("avgPower"))
     calories = _safe_int(act.get("calories"))
     elev     = _safe_float(act.get("elevationGain"))
-    tss      = _extract_tss(act, ftp)
+    tss      = _extract_tss(act, ftp, fcmax, run_pace_s_km, css_s_100m)
 
     pace_str  = _format_pace(avg_spd)   if sport == "run"  else None
     swim_pace = _format_swim_pace(avg_spd) if sport == "swim" else None
@@ -818,8 +880,11 @@ class GarminPullService:
             g_email = user.garmin_email
             g_pass  = decrypt(user.garmin_password) or user.garmin_password
             ftp     = user.ftp or 250
+            fcmax   = user.fcmax
+            run_pace_s_km = _parse_mmss(user.run_pace)
+            css_s_100m    = _parse_mmss(user.css)
 
-            result = self._do_sync(user_id, g_email, g_pass, ftp)
+            result = self._do_sync(user_id, g_email, g_pass, ftp, fcmax, run_pace_s_km, css_s_100m)
             self._set_status(user_id, "ok", status_row,
                              activities_total=result.get("total", 0))
             logger.info("Sync ok user=%s acts=%d", user_id, result.get("total", 0))
@@ -845,7 +910,9 @@ class GarminPullService:
 
     # ── Privados ─────────────────────────────────────────────────────────────
 
-    def _do_sync(self, user_id: str, email: str, password: str, ftp: int) -> dict:
+    def _do_sync(self, user_id: str, email: str, password: str, ftp: int,
+                 fcmax: float | None = None, run_pace_s_km: int | None = None,
+                 css_s_100m: int | None = None) -> dict:
         try:
             from garminconnect import Garmin
         except ImportError:
@@ -876,7 +943,7 @@ class GarminPullService:
         # Parsear y upsert
         new_count = 0
         for raw in raw_acts:
-            parsed = _parse_garmin_activity(raw, ftp)
+            parsed = _parse_garmin_activity(raw, ftp, fcmax, run_pace_s_km, css_s_100m)
             act_id = str(parsed["activity_id"]) if parsed["activity_id"] else None
             if not act_id or not parsed["date_iso"]:
                 continue
@@ -1166,17 +1233,6 @@ class GarminPullService:
 
         _user_row = db.query(User).filter(User.id == user_id).first()
         _fcmax = _user_row.fcmax if _user_row else None
-
-        def _parse_mmss(val):
-            """'M:SS' → segundos. Formato compartido por run_pace y css
-            en el perfil del atleta (por 1km o por 100m respectivamente)."""
-            if not val:
-                return None
-            try:
-                _m, _s = val.split(":")
-                return int(_m) * 60 + int(_s)
-            except Exception:
-                return None
 
         _run_pace_s_km  = _parse_mmss(_user_row.run_pace if _user_row else None)
         _css_s_100m     = _parse_mmss(_user_row.css      if _user_row else None)
