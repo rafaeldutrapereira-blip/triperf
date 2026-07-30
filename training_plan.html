@@ -1967,10 +1967,20 @@ window._tpRender = render;  // expuesto para el bridge API
     var now = new Date();
     var dow = now.getDay();
     var mon = new Date(now); mon.setDate(now.getDate() - (dow===0?6:dow-1));
-    var start = mon.toISOString().slice(0,10);
-    var end   = new Date(Date.now()+60*24*3600*1000).toISOString().slice(0,10);
-    coGet('/athlete/plan?start='+start+'&end='+end).then(function(assignments){
-      if(!assignments||!assignments.length) return;
+    // Ventana amplia hacia ATRÁS y hacia adelante — antes solo miraba desde
+    // el lunes de la semana actual en adelante. Efecto real (bug reportado
+    // por un usuario, persistía incluso después de refrescar la página):
+    // una asignación de una semana YA PASADA que el coach borró/editó
+    // nunca se volvía a revisar una vez que esa semana quedaba atrás del
+    // lunes actual — quedaba pegada en localStorage PARA SIEMPRE, sin
+    // importar cuántas veces se recargara la página, porque localStorage
+    // no es parte de ningún caché HTTP/de página que un refresh limpie.
+    var start = new Date(mon); start.setDate(start.getDate() - 90);
+    var end   = new Date(Date.now()+60*24*3600*1000);
+    var startIso = start.toISOString().slice(0,10);
+    var endIso   = end.toISOString().slice(0,10);
+    coGet('/athlete/plan?start='+startIso+'&end='+endIso).then(function(assignments){
+      assignments = assignments || [];
       var raw = localStorage.getItem('kl_training_plan');
       var plan = [];
       try{ if(raw) plan=JSON.parse(raw); }catch(e){}
@@ -1983,9 +1993,11 @@ window._tpRender = render;  // expuesto para el bridge API
       var sportMap={swim:'swim',bike:'bike',run:'run',strength:'str'};
 
       var changed=false;
+      var freshIds={};
       assignments.forEach(function(a){
         var mappedSport = sportMap[a.template.sport];
         if(!mappedSport) return; // brick/rest/other: no soportado por Cumplimiento Semanal, no inventar deporte
+        freshIds[a.id]=true;
 
         var existing = plan.find(function(s){ return s.api_assignment_id===a.id; });
         var fresh = {
@@ -2016,6 +2028,21 @@ window._tpRender = render;  // expuesto para el bridge API
           changed=true;
         }
       });
+
+      // Reconciliar: cualquier entrada cacheada con api_assignment_id cuya
+      // fecha cae DENTRO de esta ventana revisada, pero que ya NO viene en
+      // la respuesta fresca del servidor (el coach la borró/canceló), se
+      // elimina acá. Antes nunca se eliminaba nada — solo se agregaba o
+      // actualizaba — así que un assignment borrado en el backend seguía
+      // apareciendo en el calendario del atleta indefinidamente.
+      var before = plan.length;
+      plan = plan.filter(function(s){
+        if(!s.api_assignment_id) return true;               // no es un assignment del coach, no tocar
+        if(s.date_iso < startIso || s.date_iso > endIso) return true; // fuera de la ventana revisada, no tocar
+        return !!freshIds[s.api_assignment_id];
+      });
+      if(plan.length !== before) changed = true;
+
       if(changed){
         localStorage.setItem('kl_training_plan', JSON.stringify(plan));
         render();
