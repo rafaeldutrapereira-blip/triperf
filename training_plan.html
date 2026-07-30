@@ -2047,7 +2047,13 @@ window._tpRender = render;  // expuesto para el bridge API
         localStorage.setItem('kl_training_plan', JSON.stringify(plan));
         render();
       }
-    }).catch(function(){ /* API no disponible, modo offline */ });
+    }).catch(function(e){
+      // Antes esto fallaba en silencio — si /athlete/plan fallaba por
+      // cualquier motivo (red, CORS, lo que sea) la reconciliación de
+      // arriba nunca corría y entradas viejas quedaban pegadas en
+      // localStorage sin ningún rastro visible del porqué.
+      console.error('pullAssignments: no se pudo reconciliar el plan del coach', e);
+    });
   }
 
   pullAssignments();
