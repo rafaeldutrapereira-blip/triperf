@@ -115,7 +115,10 @@ def my_plan(
     me: User = Depends(get_current_user)
 ):
     """Entrenos asignados al atleta autenticado, con filtro de fechas opcional."""
-    q = db.query(AssignedWorkout).filter(AssignedWorkout.athlete_id == me.id)
+    q = db.query(AssignedWorkout).filter(
+        AssignedWorkout.athlete_id == me.id,
+        AssignedWorkout.deleted_at.is_(None),
+    )
     if start: q = q.filter(AssignedWorkout.date_iso >= start)
     if end:   q = q.filter(AssignedWorkout.date_iso <= end)
     return q.order_by(AssignedWorkout.date_iso).all()

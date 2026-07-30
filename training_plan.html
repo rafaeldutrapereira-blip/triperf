@@ -1235,14 +1235,17 @@ function fetchExternalPlanned(startIso, endIso){
 
   Promise.all([pTP, pCoach]).then(function(results){
     var tpSess = results[0], assignments = results[1];
-    // Misma precedencia por deporte que fetchPlanTSSRange: si el coach
-    // asignó plan para un deporte ese rango, ese deporte usa SU plan
-    // (no el de Training Peaks) para evitar tarjetas duplicadas.
+    // Precedencia por DÍA+DEPORTE, no por deporte-rango-completo: si el
+    // coach asignó una sesión puntual, eso solo debe reemplazar la tarjeta
+    // de TP de ESE MISMO día+deporte — no borrar las demás sesiones de TP
+    // de ese deporte en otros días del rango (mismo bug real que en
+    // fetchPlanTSSRange, ver ese comentario para el caso concreto que lo
+    // reveló: 5 sesiones reales de bici en la semana, solo 1 se mostraba).
     var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
-    var coveredByCoach = {};
+    var coveredDaySport = {};
     var coachSess = assignments.map(function(a,i){
       var sp = sportMap[a.template.sport] || a.template.sport;
-      coveredByCoach[sp] = true;
+      coveredDaySport[a.date_iso+'|'+sp] = true;
       return {
         id:'ext-coach-'+a.date_iso+'-'+sp+'-'+i, date_iso:a.date_iso, sport:sp,
         name:a.template.name, dur_min:a.template.dur_min, dist_km:a.template.dist_km,
@@ -1250,7 +1253,7 @@ function fetchExternalPlanned(startIso, endIso){
         source:'local', status:'planned', editable:false
       };
     });
-    var mergedSess = coachSess.concat(tpSess.filter(function(s){ return !coveredByCoach[s.sport]; }));
+    var mergedSess = coachSess.concat(tpSess.filter(function(s){ return !coveredDaySport[s.date_iso+'|'+s.sport]; }));
     mergedSess.forEach(function(s){ window._extPlanById[s.id] = s; });
     _extPlanCache[key] = mergedSess;
     render();
@@ -1284,73 +1287,68 @@ function fetchPlanTSSRange(startIso, endIso){
   var pTP = fetch(auth.API+'/athlete/planned-workouts?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows){
-      var t = {swim:0,bike:0,run:0,str:0};
-      var count = {swim:0,bike:0,run:0,str:0};
-      // Si CUALQUIER workout de ese deporte en el rango usó la aproximación
-      // por promedio de sesión (tss_precise===false) en vez del objetivo
-      // real por paso, se marca el total como "estimado" — ver
-      // _estimate_planned_tss en garmin_pull_service.py.
-      var approx = {swim:false,bike:false,run:false,str:false};
-      (rows||[]).forEach(function(p){
+      return (rows||[]).map(function(p){
         var sport = p.sport;
         if(sport==='strength') sport='str';
         if(sport==='other' && swimWords.test(p.title||'')) sport='swim';
-        if(t.hasOwnProperty(sport)){
-          t[sport] += (p.tss||0);
-          count[sport]++;
-          if(p.tss_precise === false) approx[sport] = true;
-        }
-      });
-      t._approx = approx;
-      t._count = count;
-      return t;
-    }).catch(function(){ return {swim:0,bike:0,run:0,str:0,_approx:{},_count:{}}; });
+        return {date_iso:p.date_iso, sport:sport, tss:p.tss||0, precise:p.tss_precise};
+      }).filter(function(p){ return {swim:1,bike:1,run:1,str:1}[p.sport]; });
+    }).catch(function(){ return []; });
 
   var pCoach = fetch(auth.API+'/athlete/plan?start='+startIso+'&end='+endIso, {headers:{Authorization:'Bearer '+auth.tok}})
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(assignments){
-      if(!assignments || !assignments.length) return null;
-
       // RPE real de sesiones de Fuerza logueadas (WorkoutLog.rpe, ya viene
       // embebido en cada assignment.logs[]) — alimenta estStrengthTSS()
       // para el sRPE, independiente de qué plan (coach o Training Peaks)
       // termine ganando para el TSS objetivo de esta función.
       window._strengthRpeByDate = window._strengthRpeByDate || {};
-      assignments.forEach(function(a){
+      (assignments||[]).forEach(function(a){
         if(a.template.sport !== 'strength' || !a.logs) return;
         a.logs.forEach(function(log){
           if(log.completado && log.rpe != null) window._strengthRpeByDate[a.date_iso] = log.rpe;
         });
       });
-
-      // Precedencia POR DEPORTE, no todo-o-nada: si el coach asignó un solo
-      // Ciclismo esta semana, eso no debe borrar el plan de Training Peaks
-      // de Natación/Carrera/Fuerza — antes, con solo un deporte asignado
-      // por el coach, se descartaba el plan de TP de los otros 3 deportes
-      // completos (quedaban en "Sin datos" aunque sí tuvieran TSS real ahí).
       var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
-      var t = {swim:0,bike:0,run:0,str:0};
-      var count = {swim:0,bike:0,run:0,str:0};
-      var coveredByCoach = {swim:false,bike:false,run:false,str:false};
-      assignments.forEach(function(a){
+      return (assignments||[]).map(function(a){
         var sp = sportMap[a.template.sport];
-        if(sp){ t[sp] += (a.template.tss||0); count[sp]++; coveredByCoach[sp] = true; }
-      });
-      return {tss:t, count:count, covered:coveredByCoach};
-    }).catch(function(){ return null; });
+        return sp ? {date_iso:a.date_iso, sport:sp, tss:a.template.tss||0} : null;
+      }).filter(Boolean);
+    }).catch(function(){ return []; });
 
   Promise.all([pTP, pCoach]).then(function(results){
-    var tp = results[0], coach = results[1];
+    var tpRows = results[0], coachRows = results[1];
+    // Precedencia POR DÍA+DEPORTE, no por deporte-semana-completo: si el
+    // coach asignó una sola sesión de Ciclismo un día puntual, eso NO debe
+    // borrar el resto de las sesiones de Ciclismo que Training Peaks tenga
+    // programadas OTROS días de la misma semana — antes, con solo 1 sesión
+    // de un deporte asignada por el coach, se descartaban TODAS las demás
+    // sesiones de TP de ese deporte en toda la semana (bug real reportado
+    // por el usuario: el anillo de Ciclismo mostraba "1 sesión, 98 TSS"
+    // cuando en realidad había 5 sesiones reales programadas esa semana,
+    // 479 TSS — solo porque una de las 5 coincidía con una asignación del
+    // coach en otro día). Ahora solo se descarta la fila de TP que
+    // coincide EXACTAMENTE en fecha+deporte con una asignación del coach,
+    // el resto de esa semana para ese deporte sigue viniendo de TP.
+    var coachCoveredDaySport = {};
+    coachRows.forEach(function(c){ coachCoveredDaySport[c.date_iso+'|'+c.sport] = true; });
+
     var merged = {swim:0,bike:0,run:0,str:0,_approx:{},_count:{}};
-    Object.keys(SPORT).forEach(function(sp){
-      var fromCoach = coach && coach.covered[sp];
-      merged[sp] = fromCoach ? coach.tss[sp] : tp[sp];
-      // El plan de coach usa el TSS objetivo que el propio coach definió —
-      // no es una aproximación. Solo el fallback de Training Peaks/Garmin
-      // puede venir de la estimación por promedio de sesión.
-      merged._approx[sp] = !fromCoach && !!(tp._approx && tp._approx[sp]);
-      merged._count[sp] = fromCoach ? coach.count[sp] : (tp._count ? tp._count[sp] : 0);
+    var approx = {swim:false,bike:false,run:false,str:false};
+
+    coachRows.forEach(function(c){
+      merged[c.sport] += c.tss;
+      merged._count[c.sport] = (merged._count[c.sport]||0) + 1;
+      // El plan de coach usa el TSS objetivo que el propio coach definió — no es una aproximación.
     });
+    tpRows.forEach(function(p){
+      if(coachCoveredDaySport[p.date_iso+'|'+p.sport]) return; // ese día+deporte ya lo cubrió el coach
+      merged[p.sport] += p.tss;
+      merged._count[p.sport] = (merged._count[p.sport]||0) + 1;
+      if(p.precise === false) approx[p.sport] = true;
+    });
+    merged._approx = approx;
+
     _complCache[key] = merged;
     render();
   });
