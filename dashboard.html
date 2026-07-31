@@ -2596,52 +2596,17 @@ function renderActivities(acts){
   wrap.innerHTML = html;
 }
 
-/* -- PMC Chart (fallback data — overwritten by patchData if KL_DATA present) -- */
-/* PMC 52 semanas Jun 2025 - Jun 2026 */
-/* Replaces synthetic PMC entries with real Garmin data by closest date (≤4 days) */
-function mergePmcReal(synth, real){
-  var arr = synth.map(function(e){ return Object.assign({},e); }); // shallow copy
-  real.forEach(function(p){
-    if(!p.dt) return;
-    var best=4.5, idx=-1;
-    arr.forEach(function(e,i){
-      var d=Math.abs(new Date(e.dt)-new Date(p.dt))/86400000;
-      if(d<best){best=d;idx=i;}
-    });
-    if(idx>=0){
-      arr[idx].ctl = p.ctl||arr[idx].ctl;
-      arr[idx].atl = p.atl||arr[idx].atl;
-      arr[idx].tss = p.tss||arr[idx].tss;
-    }
-  });
-  return arr;
-}
-
-var PMC_ALL = (function(){
-  var base = new Date(2025,5,22);
-  var MO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var raw = [
-    [32,38,285],[34,52,395],[35,44,330],[37,60,455],
-    [39,46,345],[41,64,490],[43,48,360],[45,70,530],
-    [47,52,385],[49,74,555],[51,56,405],[53,78,580],
-    [54,60,445],[56,82,620],[58,64,470],[60,86,645],
-    [61,66,480],[63,90,670],[64,56,390],[66,92,685],
-    [67,60,435],[69,94,700],[70,62,448],[71,96,715],
-    [69,64,460],[70,90,670],[68,56,400],[67,86,640],
-    [65,52,370],[66,90,665],[68,58,415],[69,92,680],
-    [70,64,458],[72,94,700],[73,60,432],[74,97,720],
-    [75,98,730],[76,66,470],[77,100,745],[78,74,535],
-    [79,102,758],[80,70,502],[81,97,722],[82,74,530],
-    [82,99,735],[83,67,472],[82,96,712],[81,72,518],
-    [79,90,665],[77,82,598],[75,76,552],[72,85,487]
-  ];
-  return raw.map(function(r,i){
-    var d=new Date(base); d.setDate(d.getDate()+i*7);
-    var last=i===raw.length-1;
-    var lbl=last?'HOY':(MO[d.getMonth()]+' '+d.getDate());
-    return {dt:d.toISOString().slice(0,10),l:lbl,ctl:r[0],atl:r[1],tss:r[2]};
-  });
-})();
+/* -- PMC Chart -- */
+/* Arranca vacío de verdad — antes tenía 52 semanas de valores fijos como
+   "placeholder" (CTL/ATL/TSS inventados) que quedaban visibles sin aviso
+   si el fetch a /athlete/dashboard fallaba o si el usuario tocaba el
+   selector de período antes de que llegaran datos reales. drawPMC() ya
+   maneja el caso "menos de 2 puntos" mostrando el SVG vacío (sin curva),
+   que es el comportamiento correcto cuando no hay datos reales todavía.
+   Se reemplaza por completo con datos reales en patchData() cuando
+   /athlete/dashboard responde con éxito (ver "PMC: rebuild PMC_ALL
+   entirely from real Garmin historical data" más abajo). */
+var PMC_ALL = [];
 var PMC_PERIOD='1y';
 var PMC=PMC_ALL.slice(-52);
 /* PMC period selector functions */
