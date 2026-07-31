@@ -2990,33 +2990,6 @@ function pmcAtDate(iso){
   return {ctl:last.ctl,atl:last.atl,tsb:last.ctl-last.atl};
 }
 
-function makeHistoricalDots(){
-  var real=(window.KL_DATA&&KL_DATA.activities)?KL_DATA.activities:[];
-  var earliest='9999-99-99';
-  real.forEach(function(a){if(a.date_iso&&a.date_iso<earliest)earliest=a.date_iso;});
-  var seed=0xA5F3C2;
-  function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/0x100000000;}
-  var SEQ=['swim','bike','run','bike','run','swim','run','bike','strength','run','bike','swim'];
-  var dots=[],si=0;
-  PMC.forEach(function(p){
-    if(!p.dt||!p.tss||p.dt>=earliest) return;
-    var nSess=3+Math.floor(rnd()*4);
-    var baseMs=new Date(p.dt).getTime();
-    var pool=p.tss;
-    for(var j=0;j<nSess&&pool>15;j++){
-      var dayBack=Math.floor(rnd()*7);
-      var d=new Date(baseMs-dayBack*86400000);
-      var dStr=d.toISOString().slice(0,10);
-      var frac=(j===nSess-1)?1:(.2+rnd()*.35);
-      var tss=Math.round(pool*frac*(1.6/(nSess-j)));
-      tss=Math.max(20,Math.min(tss,200));
-      pool=Math.max(0,pool-tss);
-      dots.push({date_iso:dStr,tss:tss,sport:SEQ[(si++)%SEQ.length],isGen:true});
-    }
-  });
-  return dots;
-}
-
 function initPmcTooltip(){
   var tip=document.getElementById('pmc-tip');
   var svg=document.getElementById('pmc');
@@ -3149,11 +3122,12 @@ function drawPMC(){
     o+='<path d="'+pa+'" fill="none" stroke="#FF6535" stroke-width="1.2" stroke-dasharray="6 4" stroke-opacity=".35" clip-path="url(#pmcClip)"/>';
     o+='<path d="'+pt2+'" fill="none" stroke="#0EA5E9" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity=".35" clip-path="url(#pmcClip)"/>';
   })();
-  /* activity dots: real (KL_DATA) + historical (generated) */
+  /* activity dots: solo actividades reales — nunca inventar sesiones para
+     rellenar el rango de fechas donde no hay datos reales (ver makeHistoricalDots,
+     eliminada: generaba deporte/TSS falsos con un RNG determinístico). */
   var pS=PMC[0].dt, pE=PMC[n-1].dt;
   var realActs=(window.KL_DATA&&KL_DATA.activities)?KL_DATA.activities:[];
-  var histDots=makeHistoricalDots();
-  var allDots=histDots.concat(realActs.map(function(a){return {date_iso:a.date_iso,tss:a.tss!=null?a.tss:eTSS(a),sport:a.sport,isGen:false};}));
+  var allDots=realActs.map(function(a){return {date_iso:a.date_iso,tss:a.tss!=null?a.tss:eTSS(a),sport:a.sport,isGen:false};});
   o+='<g clip-path="url(#pmcClip)">';
   allDots.forEach(function(a){
     if(!a.date_iso||a.date_iso<pS||a.date_iso>pE) return;

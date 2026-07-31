@@ -727,12 +727,17 @@ def athlete_dashboard(
         _tss_wk_buckets[wk_iso] += r.tss or 0
     tss_weekly = [{"wk": wk, "tss": round(_tss_wk_buckets[wk], 1)} for wk in _tss_wk_order]
 
-    # ── Activities (últimas 100, ordenadas desc) ──────────────────────────────
+    # ── Activities (últimos 100 días, no últimas N filas) ─────────────────────
+    # El "Progreso Semanal" del dashboard grafica 12 semanas (84 días). Un
+    # límite de filas (antes: 100 filas) se agota mucho antes de esa ventana
+    # para atletas que entrenan varias veces al día, dejando semanas reales
+    # vacías por recorte de payload, no por falta de datos reales.
+    _acts_cutoff_iso = (_date_.today() - _td(days=100)).isoformat()
     acts_orm = (
         db.query(GarminActivity)
-          .filter(GarminActivity.user_id == me.id)
+          .filter(GarminActivity.user_id == me.id, GarminActivity.date_iso >= _acts_cutoff_iso)
           .order_by(GarminActivity.date_iso.desc())
-          .limit(100)
+          .limit(500)
           .all()
     )
     activities = []
