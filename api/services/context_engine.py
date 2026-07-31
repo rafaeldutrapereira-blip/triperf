@@ -456,6 +456,15 @@ def refresh_athlete_context(user_id: str, db: Session) -> Optional[dict]:
         readiness = context.get("readiness", {})
         race      = context.get("race", {})
 
+        # DRS real (readiness_service) — misma fuente que /readiness/daily y el resto de la app.
+        # No usar readiness["labx_score"] aquí: es el motor legado (solo alimenta el prompt del AI Coach)
+        # y da números distintos al DRS oficial (ver bug de dashboard.html, commit 3beb70b).
+        try:
+            from .readiness_service import compute_daily_readiness_for_user
+            current_readiness = compute_daily_readiness_for_user(user_id, db).drs
+        except Exception:
+            current_readiness = readiness.get("labx_score")
+
         row = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == user_id).first()
         if row:
             row.context_json        = json.dumps(context, ensure_ascii=False, default=str)
@@ -464,7 +473,7 @@ def refresh_athlete_context(user_id: str, db: Session) -> Optional[dict]:
             row.current_tsb         = fitness.get("tsb")
             row.current_acwr        = fitness.get("acwr")
             row.current_hrv         = health.get("hrv_last_night")
-            row.current_readiness   = readiness.get("labx_score")
+            row.current_readiness   = current_readiness
             row.injury_risk_score   = readiness.get("injury_risk")
             row.days_to_race        = race.get("days_to_race")
             row.context_built_at    = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -477,7 +486,7 @@ def refresh_athlete_context(user_id: str, db: Session) -> Optional[dict]:
                 current_tsb       = fitness.get("tsb"),
                 current_acwr      = fitness.get("acwr"),
                 current_hrv       = health.get("hrv_last_night"),
-                current_readiness = readiness.get("labx_score"),
+                current_readiness = current_readiness,
                 injury_risk_score = readiness.get("injury_risk"),
                 days_to_race      = race.get("days_to_race"),
                 context_built_at  = datetime.now(timezone.utc).replace(tzinfo=None),
@@ -707,7 +716,7 @@ def refresh_all_active_contexts(db_factory) -> None:
         athletes = (
             db.query(User)
             .filter(
-                User.rol       == "athlete",
+                User.rol       == "atleta",
                 User.activo    == True,
                 User.garmin_email.isnot(None),
             )

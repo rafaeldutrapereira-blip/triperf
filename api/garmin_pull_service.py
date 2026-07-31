@@ -2049,22 +2049,18 @@ def background_sync_user(user_id: str, force: bool = False) -> None:
             logger.info("Cache dashboard invalidado post-sync user_id=%s", user_id)
         except Exception:
             pass
+
+        # Refrescar contexto IA tras sync exitoso (usado por Squad Overview del coach)
+        if result and result.get("ok"):
+            try:
+                from .services.context_engine import refresh_athlete_context
+                refresh_athlete_context(user_id, db)
+            except Exception as _ce:
+                logger.warning("Context refresh post-sync error user=%s: %s", user_id, _ce)
+
         return result
     finally:
         db.close()
-
-    # Refrescar contexto IA tras sync exitoso
-    if result and result.get("ok"):
-        try:
-            from .database import SessionLocal as _SL
-            _db2 = _SL()
-            try:
-                from .services.context_engine import refresh_athlete_context
-                refresh_athlete_context(user_id, _db2)
-            finally:
-                _db2.close()
-        except Exception as _ce:
-            logger.warning("Context refresh post-sync error user=%s: %s", user_id, _ce)
 
 
 def dispatch_garmin_sync(user_id: str, background_tasks=None, force: bool = False) -> str:
