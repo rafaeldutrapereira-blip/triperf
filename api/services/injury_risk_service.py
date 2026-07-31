@@ -334,8 +334,10 @@ def compute_injury_risk(user_id: str, db: Session, target_date: str = None) -> d
         .order_by(GarminTrainingLoad.date_iso)
         .all()
     )
-    # Cargas diarias = ATL como proxy de carga diaria (monotonía usa variación día a día)
-    daily_loads = [r.atl for r in load_rows if r.atl is not None]
+    # Cargas diarias = TSS real del día (misma fuente que Foster Monotony canónico
+    # en garmin_pull_service.py). ATL es un promedio móvil suavizado y subestima
+    # la variabilidad día a día, lo que sobreestimaba la monotonía sistemáticamente.
+    daily_loads = [r.tss for r in load_rows if r.tss is not None]
 
     # ── 2. HRV ───────────────────────────────────────────────────────────────
     health_rows = (
@@ -353,7 +355,7 @@ def compute_injury_risk(user_id: str, db: Session, target_date: str = None) -> d
     hrv_7d_avg  = None
     hrv_values  = []
     for h in health_rows:
-        v = h.hrv_last_night or h.hrv_rmssd_night
+        v = h.hrv_last_night
         if v:
             hrv_values.append(float(v))
 
