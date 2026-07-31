@@ -3086,7 +3086,19 @@ function drawPMC(){
   /* sport helpers (inline) */
   var SCOL={swim:'#22D3EE',bike:'#FF6535',run:'#10B981',strength:'#A855F7'};
   function nSp(s){s=(s||'').toLowerCase();return s.indexOf('swim')>=0?'swim':s.indexOf('run')>=0?'run':s.indexOf('strength')>=0||s.indexOf('fuerza')>=0?'strength':'bike';}
-  function eTSS(a){var FTP=240,FC=180,h=(a.dur_min||0)/60;if(!h)return 0;if(a.avg_power&&nSp(a.sport)==='bike'){var IF=a.avg_power/FTP;return Math.round(h*IF*IF*100);}if(a.avg_hr){var IF2=a.avg_hr/(FC*0.89);return Math.round(h*IF2*IF2*100);}return Math.round(h*50);}
+  function eTSS(a){
+    // FTP/FC reales del atleta (mismo origen que estTSS más arriba en este
+    // archivo) — antes esta función usaba 240/180 fijos sin importar el
+    // perfil real, un tercer cálculo de TSS divergente del resto de la
+    // página. Solo se usa como último recurso: si a.tss ya viene del
+    // backend (caso normal tras el fix de _extract_tss), se usa directo.
+    if(a.tss!=null) return Math.round(a.tss);
+    var FTP=window._athleteFTP||240, FC=window._athleteFCMax||180, h=(a.dur_min||0)/60;
+    if(!h)return 0;
+    if(a.avg_power&&nSp(a.sport)==='bike'){var IF=a.avg_power/FTP;return Math.round(h*IF*IF*100);}
+    if(a.avg_hr){var IF2=a.avg_hr/(FC*0.89);return Math.round(h*IF2*IF2*100);}
+    return Math.round(h*50);
+  }
   function escX(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   var ctl=PMC.map(function(d){return d.ctl;});
   var atl=PMC.map(function(d){return d.atl;});
@@ -3548,7 +3560,14 @@ window.addEventListener('click', function(e){
   if(!s || s.api_rol !== 'atleta') return;
   if(localStorage.getItem('lx_onboarding_done') === '1') return;
   var _api = window.location.origin;
-  var _tok = localStorage.getItem('lx_token') || '';
+  // Bug real encontrado auditando: leía 'lx_token', una clave que NUNCA se
+  // escribe en ningún lado — auth.js guarda el token bajo 'lx_co_token'
+  // (documentado ahí mismo como "el bearer token GENERAL que usan
+  // dashboard.html..."). Con la clave equivocada, _tok siempre era '',
+  // el fetch salía sin header de Authorization, y este chequeo de
+  // "¿completó el onboarding?" fallaba en 401 silenciosamente para
+  // CUALQUIER usuario, siempre — nunca redirigía a onboarding.html.
+  var _tok = localStorage.getItem('lx_co_token') || '';
   fetch(_api + '/api/auth/me', {
     headers: _tok ? {'Authorization':'Bearer ' + _tok} : {},
     credentials: 'include'
