@@ -799,7 +799,7 @@ def coach_compliance_panel(
 
     athletes = db.query(CoachAthlete).filter(
         CoachAthlete.coach_id == me.id,
-        CoachAthlete.activo   == True,
+        CoachAthlete.status   == "active",
     ).all()
 
     result = []

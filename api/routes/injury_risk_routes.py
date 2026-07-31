@@ -164,7 +164,7 @@ def coach_injury_alerts(
     q = db.query(CoachAthlete).filter(CoachAthlete.coach_id == me.id)
     if group_id:
         q = q.filter(CoachAthlete.group_id == group_id)
-    athletes = q.filter(CoachAthlete.activo == True).all()
+    athletes = q.filter(CoachAthlete.status == "active").all()
 
     result = []
     for ca in athletes:

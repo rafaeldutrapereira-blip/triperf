@@ -19,6 +19,7 @@ from ..models import (
     BloodLabAlert,
     WorkoutPrescription,
     RaceEvent,
+    CoachAthlete,
 )
 
 _CTL_DECAY = 1 - math.exp(-1 / 42)
@@ -212,18 +213,23 @@ def _group_athlete_ids(group_ids: list[str], db: Session) -> list[str]:
 
 
 def get_squad_overview(coach: User, db: Session) -> dict:
-    """Return full squad view for the coach: all athletes sorted by risk."""
-    group_ids = _coach_group_ids(coach.id, db)
-    if not group_ids:
-        return {
-            "squad_size": 0,
-            "athletes":   [],
-            "summary":    {"critical": 0, "warning": 0, "ok": 0, "unknown": 0},
-        }
+    """Return full squad view for the coach: all athletes sorted by risk.
 
-    athlete_ids = _group_athlete_ids(group_ids, db)
-    # deduplicate (athlete may be in multiple groups)
-    athlete_ids = list(dict.fromkeys(athlete_ids))
+    Athletes are the union of group membership and active CoachAthlete
+    relation — same fix already applied to /coach/athletes (an athlete
+    recién aceptado que aún no está en ningún grupo no debe desaparecer).
+    """
+    group_ids = _coach_group_ids(coach.id, db)
+    group_athlete_ids = _group_athlete_ids(group_ids, db) if group_ids else []
+
+    rel_athlete_ids = [
+        r.athlete_id for r in db.query(CoachAthlete)
+        .filter(CoachAthlete.coach_id == coach.id, CoachAthlete.status == "active")
+        .all()
+    ]
+
+    # deduplicate (athlete may be in multiple groups and/or have a direct relation)
+    athlete_ids = list(dict.fromkeys(group_athlete_ids + rel_athlete_ids))
 
     if not athlete_ids:
         return {

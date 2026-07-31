@@ -487,7 +487,7 @@ def _notify_coach_injury_risk(user: "User", risk_result: dict, db) -> None:
     # Buscar coach del atleta
     ca = db.query(CoachAthlete).filter(
         CoachAthlete.athlete_id == user.id,
-        CoachAthlete.activo     == True,
+        CoachAthlete.status     == "active",
     ).first()
     if not ca:
         return
