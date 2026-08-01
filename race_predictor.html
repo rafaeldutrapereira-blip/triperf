@@ -608,14 +608,42 @@ footer div{font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--dim);let
 /* ── Athlete defaults — usados solo hasta que loadFromProfile()/loadFromKLData()
    corran con datos reales (perfil guardado + fetch a /athlete/dashboard) ── */
 var ATH = {
-  ftp:       235,   /* W — from athlete profile */
-  cssS:      110,   /* sec/100m — 1:50/100m avg real GPS sessions */
-  rtpS:      300,   /* sec/km  — 5:00/km threshold (best real: 4:49 @HR158) */
-  kg:         62,   /* kg real weight */
-  ctl:        91,   /* from KL_DATA (Garmin sync 2026-06-19) */
-  readiness:  38,   /* TSB-based: CTL 91, ATL 106, TSB -15 */
-  fcmax:     180
+  ftp:       235,   /* semilla interna — nunca se muestra tal cual, ver renderAthDisplay() */
+  cssS:      110,
+  rtpS:      300,
+  kg:         62,
+  ctl:        91,
+  readiness:  38,
+  fcmax:     180,
+  ftpReal: false, cssReal: false, runReal: false, weightReal: false,
+  cssEst: false, runEst: false,
 };
+// Antes estos números se mostraban directo en pantalla (m-ftp/m-css/m-run/
+// m-kg/hc-ftp) sin importar si el atleta real los tenía configurados — el
+// mismo "FTP fantasma" ya corregido en nutrition.html/indoor_workout.html.
+// renderAthDisplay() centraliza el pintado real/estimado/sin-configurar.
+function renderAthDisplay() {
+  var wkg = ATH.kg ? (ATH.ftp / ATH.kg).toFixed(2) : '—';
+  var ftpTxt = ATH.ftpReal ? ATH.ftp : 'Sin configurar';
+  var cssTxt = ATH.cssReal ? fmtMS(ATH.cssS) : (ATH.cssEst ? '≈'+fmtMS(ATH.cssS) : 'Sin configurar');
+  var runTxt = ATH.runReal ? fmtMS(ATH.rtpS) : (ATH.runEst ? '≈'+fmtMS(ATH.rtpS) : 'Sin configurar');
+  var kgTxt  = ATH.weightReal ? ATH.kg : 'Sin configurar';
+  ['m-ftp','hc-ftp'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent = ftpTxt; });
+  ['m-wkg','hc-wkg'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent = ATH.ftpReal && ATH.weightReal ? wkg : '—'; });
+  var mCss = document.getElementById('m-css'); if(mCss) mCss.textContent = cssTxt;
+  var mRun = document.getElementById('m-run'); if(mRun) mRun.textContent = runTxt;
+  var mKg  = document.getElementById('m-kg');  if(mKg)  mKg.textContent  = kgTxt;
+  var mCtl = document.getElementById('m-ctl'); if(mCtl) mCtl.textContent = ATH.ctl;
+  var hcCtl = document.getElementById('hc-ctl'); if(hcCtl) hcCtl.textContent = ATH.ctl;
+  var hcRd  = document.getElementById('hc-readiness'); if(hcRd) hcRd.textContent = ATH.readiness;
+  // Bug real corregido acá: el texto de predicción (gap-analysis, dentro de
+  // recalculate()) solo se refrescaba en algunos de los callers de esta
+  // función, no en todos — dos fetches en paralelo (dashboard + perfil)
+  // podían dejarlo con el texto de una llamada anterior a que el FTP real
+  // terminara de cargar, aunque los valores mostrados arriba ya fueran
+  // correctos. Ahora cualquier refresco de display dispara el recálculo.
+  if(typeof recalculate === 'function'){ try{ recalculate(); }catch(e){} }
+}
 
 function parseMSS(s) {
   var p = (s || '').trim().split(':');
@@ -646,32 +674,20 @@ function loadFromProfile() {
   var profileFields = { ftp:false, css:false, runPace:false, weight:false };
   try {
     var saved = JSON.parse(localStorage.getItem('kl_athlete_data') || '{}');
-    if (saved.ftp)    { ATH.ftp  = parseFloat(saved.ftp);  profileFields.ftp = true; }
-    if (saved.weight) { ATH.kg   = parseFloat(saved.weight); }
+    if (saved.ftp)    { ATH.ftp  = parseFloat(saved.ftp);  profileFields.ftp = true; ATH.ftpReal = true; }
+    if (saved.weight) { ATH.kg   = parseFloat(saved.weight); ATH.weightReal = true; profileFields.weight = true; }
     if (saved.fcmax)  { ATH.fcmax = parseFloat(saved.fcmax); }
     if (saved.css) {
       var cssP = parseMSS(saved.css);
-      if (cssP > 0) { ATH.cssS = cssP; profileFields.css = true; }
+      if (cssP > 0) { ATH.cssS = cssP; profileFields.css = true; ATH.cssReal = true; }
     }
     if (saved.runPace) {
       var runP = parseMSS(saved.runPace);
-      if (runP > 0) { ATH.rtpS = runP; profileFields.runPace = true; }
+      if (runP > 0) { ATH.rtpS = runP; profileFields.runPace = true; ATH.runReal = true; }
     }
   } catch(e) {}
 
-  /* Refresh display */
-  var wkg = (ATH.ftp / ATH.kg).toFixed(2);
-  document.getElementById('m-ftp').textContent = ATH.ftp;
-  document.getElementById('m-wkg').textContent = wkg;
-  document.getElementById('m-ctl').textContent = ATH.ctl;
-  document.getElementById('m-css').textContent = fmtMS(ATH.cssS);
-  document.getElementById('m-run').textContent = fmtMS(ATH.rtpS);
-  document.getElementById('m-kg').textContent  = ATH.kg;
-
-  document.getElementById('hc-ftp').textContent       = ATH.ftp;
-  document.getElementById('hc-wkg').textContent       = wkg;
-  document.getElementById('hc-ctl').textContent       = ATH.ctl;
-  document.getElementById('hc-readiness').textContent = ATH.readiness;
+  renderAthDisplay();
 
   /* Source badge: show which fields came from profile vs will use Garmin fallback */
   var srcEl = document.getElementById('sync-txt');
@@ -687,7 +703,7 @@ function loadFromProfile() {
 
   document.getElementById('hist-pred-sub').textContent =
     new Date().toLocaleDateString('es', {month:'short', year:'numeric'}).replace(' ','  ').trim()
-    + ' · FTP ' + ATH.ftp + 'W · CTL ' + ATH.ctl;
+    + ' · FTP ' + (ATH.ftpReal ? ATH.ftp+'W' : 'sin configurar') + ' · CTL ' + ATH.ctl;
 }
 
 /* ── Calibrate from real Garmin data (KL_DATA) ────────────────── */
@@ -707,12 +723,17 @@ function loadFromKLData() {
   if (KL_DATA.ctl      != null) ATH.ctl      = KL_DATA.ctl;
   if (KL_DATA.readiness!= null) ATH.readiness= KL_DATA.readiness;
 
-  /* ── Read what the user explicitly set in Editar Perfil ── */
-  var profileRaw = {};
-  try { profileRaw = JSON.parse(localStorage.getItem('kl_athlete_data') || '{}'); } catch(e) {}
-
-  var profileHasCSS     = !!(profileRaw.css      && parseMSS(profileRaw.css)     > 0);
-  var profileHasRunPace = !!(profileRaw.runPace   && parseMSS(profileRaw.runPace) > 0);
+  // Bug real encontrado y corregido acá: antes esto solo miraba localStorage
+  // para decidir si "ya hay un dato real" — nunca el resultado del fetch a
+  // /athlete/profile. Un atleta con CSS/ritmo configurados en el servidor
+  // pero que nunca editó su perfil DESDE ESTE navegador (localStorage vacío)
+  // tenía su dato real pisado por una estimación, sin que la marca de
+  // "real" se actualizara — se veía como dato real cuando en verdad era
+  // una estimación distinta. ATH.cssReal/runReal ya reflejan el estado
+  // verdadero (perfil real O localStorage, seteados en loadFromProfile()
+  // y en el fetch de /athlete/profile), así que se usan directo acá.
+  var profileHasCSS     = ATH.cssReal;
+  var profileHasRunPace = ATH.runReal;
 
   var acts = KL_DATA.activities || [];
 
@@ -731,7 +752,7 @@ function loadFromKLData() {
       swimPaces.sort(function(a, b) { return a - b; });
       var topN = Math.max(2, Math.ceil(swimPaces.length * 0.4));
       var css  = swimPaces.slice(0, topN).reduce(function(s, v) { return s + v; }, 0) / topN;
-      if (css > 90 && css < 160) ATH.cssS = Math.round(css);
+      if (css > 90 && css < 160) { ATH.cssS = Math.round(css); ATH.cssEst = true; }
     }
   }
 
@@ -751,18 +772,11 @@ function loadFromKLData() {
       var best = runPaces.slice(0, topR).reduce(function(s, v) { return s + v; }, 0) / topR;
       /* Threshold ≈ best sustained pace + 10s buffer */
       var derived = Math.round(best + 10);
-      if (derived > 210 && derived < 450) ATH.rtpS = derived;
+      if (derived > 210 && derived < 450) { ATH.rtpS = derived; ATH.runEst = true; }
     }
   }
 
-  /* ── Refresh display with final values ── */
-  document.getElementById('m-css').textContent = fmtMS(ATH.cssS);
-  document.getElementById('m-run').textContent = fmtMS(ATH.rtpS);
-  document.getElementById('m-ctl').textContent = ATH.ctl;
-
-  /* ── Update readiness chip (CTL/ATL/TSB may have changed) ── */
-  document.getElementById('hc-ctl').textContent      = ATH.ctl;
-  document.getElementById('hc-readiness').textContent= ATH.readiness;
+  renderAthDisplay();
 }
 
 /* ── Sync next race from API (P9) + localStorage fallback ───────── */
@@ -788,13 +802,20 @@ function loadNextRace() {
           document.querySelector('.panel-title') && (document.querySelector('.panel-title').textContent = 'Predicción para ' + profile.race_goal_name);
         }
         // Also set distance from race name if detectable
+        // Bug real encontrado y corregido: DISTS usa las claves '703'/'full',
+        // pero acá se asignaban '70.3'/'ironman' — claves que NO existen en
+        // DISTS. Cualquier atleta con meta real de 70.3 o Ironman completo
+        // (ej. Ricardo) hacía que recalculate() crasheara con
+        // "Cannot read properties of undefined" apenas cargaba la página,
+        // dejando toda la calculadora rota silenciosamente (el error queda
+        // en la consola del navegador, invisible para el usuario).
         var rn = (profile.race_goal_name || '').toLowerCase();
         if (rn.indexOf('70.3') >= 0 || rn.indexOf('middle') >= 0) {
-          if (typeof currentDist !== 'undefined') currentDist = '70.3';
+          if (typeof currentDist !== 'undefined') currentDist = '703';
         } else if (rn.indexOf('ironman') >= 0 || rn.indexOf('iron man') >= 0 || rn.indexOf(' im ') >= 0) {
-          if (typeof currentDist !== 'undefined') currentDist = 'ironman';
+          if (typeof currentDist !== 'undefined') currentDist = 'full';
         }
-        recalculate();
+        if(typeof recalculate==='function'){ try{ recalculate(); }catch(e){ console.error('race_predictor.html: recalculate() fallo', e); } }
       }).catch(function(){
         _loadNextRaceFromStorage();
       });
@@ -943,7 +964,11 @@ function recalculate() {
 
   /* — Gap analysis — */
   var wkg = (ATH.ftp / ATH.kg).toFixed(2);
-  var gapTxt = 'Con FTP actual de ' + ATH.ftp + 'W y CTL ' + ATH.ctl
+  // Si el FTP no viene de un perfil real configurado, la predicción entera
+  // se apoya en la semilla interna — se aclara explícitamente en vez de
+  // presentarla con la misma confianza que una predicción con datos reales.
+  var ftpTxtGap = ATH.ftpReal ? ('FTP actual de ' + ATH.ftp + 'W') : 'valores de referencia (configura tu FTP real en tu Perfil para mayor precisión)';
+  var gapTxt = 'Con ' + ftpTxtGap + ' y CTL ' + ATH.ctl
     + ', la predicción de <strong style="color:var(--gold)">' + totalFmt + '</strong>';
   if (GOAL_SEC > 0 && totalSec < GOAL_SEC) {
     gapTxt += ' está <strong style="color:var(--green)">por debajo del objetivo</strong>. '
@@ -1013,17 +1038,16 @@ recalculate();
       .then(function(p){
         if(!p) return;
         var changed = false;
-        if(p.ftp  && !_local.ftp){ ATH.ftp   = p.ftp;  changed=true; }
-        if(p.css  && !_local.css){ var cs=parseMSS(p.css); if(cs>0){ ATH.cssS=cs; changed=true; } }
-        if(p.weight_kg && !_local.weight){ ATH.kg = p.weight_kg; changed=true; }
+        if(p.ftp  && !_local.ftp){ ATH.ftp   = p.ftp;  ATH.ftpReal=true; changed=true; }
+        if(p.css  && !_local.css){ var cs=parseMSS(p.css); if(cs>0){ ATH.cssS=cs; ATH.cssReal=true; changed=true; } }
+        if(p.weight_kg && !_local.weight){ ATH.kg = p.weight_kg; ATH.weightReal=true; changed=true; }
         if(p.fcmax && !ATH.fcmax){ ATH.fcmax = p.fcmax; changed=true; }
-        if(p.run_pace && !_local.runPace){ var rp=parseMSS(p.run_pace); if(rp>0){ ATH.rtpS=rp; changed=true; } }
-        if(changed){
-          document.getElementById('hc-ftp').textContent = ATH.ftp;
-          document.getElementById('hc-wkg').textContent = (ATH.ftp/ATH.kg).toFixed(2);
-          if(typeof recalculate==='function') recalculate();
-        }
-      }).catch(function(){});
+        if(p.run_pace && !_local.runPace){ var rp=parseMSS(p.run_pace); if(rp>0){ ATH.rtpS=rp; ATH.runReal=true; changed=true; } }
+        renderAthDisplay();
+        if(changed && typeof recalculate==='function') recalculate();
+      }).catch(function(){ renderAthDisplay(); });
+  } else {
+    renderAthDisplay();
   }
 
   /* ── Historial real de carreras: PR + promedio (reemplaza filas hardcodeadas) ── */

@@ -1263,7 +1263,7 @@ function renderChart(d, cfg) {
     var showPts = labels.length <= 60;
 
     function normSportDt(s){ s=(s||'').toLowerCase(); return s.indexOf('swim')>=0?'swim':s.indexOf('run')>=0?'run':s.indexOf('strength')>=0||s.indexOf('fuerza')>=0?'strength':'bike'; }
-    function eTSSDt(a){var FTP=240,FC=180,h=(a.dur_min||0)/60;if(!h)return 0;if(a.avg_power&&normSportDt(a.sport)==='bike'){var IF=a.avg_power/FTP;return Math.round(h*IF*IF*100);}if(a.avg_hr){var IF2=a.avg_hr/(FC*0.89);return Math.round(h*IF2*IF2*100);}return Math.round(h*50);}
+    function eTSSDt(a){var FTP=window._athleteFTP||240,FC=window._athleteFCMax||180,h=(a.dur_min||0)/60;if(!h)return 0;if(a.avg_power&&normSportDt(a.sport)==='bike'){var IF=a.avg_power/FTP;return Math.round(h*IF*IF*100);}if(a.avg_hr){var IF2=a.avg_hr/(FC*0.89);return Math.round(h*IF2*IF2*100);}return Math.round(h*50);}
 
     var pS = pmcD.length ? pmcD[0].dt : '', pE = pmcD.length ? pmcD[pmcD.length-1].dt : '';
 
@@ -2531,6 +2531,19 @@ function renderCycleTable(a, b, c){
   }catch(e){}
   if(!tok) return;
   var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+
+  // FTP/FC máx reales del atleta — usados por eTSSDt() como fallback de TSS
+  // cuando una actividad puntual no trae TSS propio. Antes esta página
+  // usaba FTP=240/FC=180 genéricos sin importar el atleta real (mismo bug
+  // ya corregido una vez en dashboard.html, nunca aplicado acá).
+  fetch(API+'/athlete/profile', { headers:{ Authorization:'Bearer '+tok } })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(p){
+      if(!p) return;
+      if(p.ftp)   window._athleteFTP   = parseInt(p.ftp);
+      if(p.fcmax) window._athleteFCMax = parseInt(p.fcmax);
+    }).catch(function(){});
+
   fetch(API+'/athlete/dashboard', { headers:{ Authorization:'Bearer '+tok }, cache:'no-store' })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
