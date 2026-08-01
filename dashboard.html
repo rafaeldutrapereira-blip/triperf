@@ -2099,6 +2099,26 @@ function renderWeeklyProgress(sport){
 
   var lines = [];
 
+  // Gradientes — id único por color de deporte para que no choquen si en
+  // algún momento hubiera 2 instancias del chart en la misma página.
+  var gid = 'wp' + color.replace('#','');
+  lines.push(
+    '<defs>' +
+      '<linearGradient id="'+gid+'-bar-on" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="'+color+'" stop-opacity=".95"/>' +
+        '<stop offset="1" stop-color="'+color+'" stop-opacity=".55"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="'+gid+'-bar-off" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#fff" stop-opacity=".16"/>' +
+        '<stop offset="1" stop-color="#fff" stop-opacity=".05"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="'+gid+'-area" gradientUnits="userSpaceOnUse" x1="0" y1="'+padT+'" x2="0" y2="'+(padT+chartH)+'">' +
+        '<stop offset="0" stop-color="'+color+'" stop-opacity=".32"/>' +
+        '<stop offset="1" stop-color="'+color+'" stop-opacity="0"/>' +
+      '</linearGradient>' +
+    '</defs>'
+  );
+
   // Background grid
   lines.push('<line x1="'+padL+'" y1="'+padT+'" x2="'+(W-padR)+'" y2="'+padT+'" stroke="rgba(255,255,255,.04)" stroke-width="1"/>');
   lines.push('<line x1="'+padL+'" y1="'+(padT+chartH/2)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH/2)+'" stroke="rgba(255,255,255,.04)" stroke-width="1"/>');
@@ -2119,7 +2139,7 @@ function renderWeeklyProgress(sport){
     // naranja) se aplica después con _wpHighlight(), para que tanto el
     // pintado inicial (semana actual) como el hover usen la misma lógica.
     if(val > 0){
-      lines.push('<rect class="wp-bar" data-wk-idx="'+i+'" x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="rgba(255,255,255,.12)"/>');
+      lines.push('<rect class="wp-bar" data-wk-idx="'+i+'" x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="url(#'+gid+'-bar-off)"/>');
     }
 
     // Dot for line chart
@@ -2133,10 +2153,44 @@ function renderWeeklyProgress(sport){
     lines.push('<text class="wp-lbl" data-wk-idx="'+i+'" data-label="'+wk.label+'" x="'+lx+'" y="'+ly+'" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.42)">'+wk.label+'</text>');
   });
 
-  // Line connecting dots
+  // Línea de referencia: promedio de las 12 semanas (incluye semanas en 0,
+  // es el promedio real de carga, no solo de las semanas activas) — punteada,
+  // para poder leer de un vistazo si la semana actual está arriba o abajo
+  // de lo habitual sin tener que comparar mentalmente las 12 barras.
+  var avgVal = weeks.reduce(function(s,w){ return s + metricOf(w); }, 0) / weeks.length;
+  if(avgVal > 0){
+    var avgY = padT + chartH - Math.min(avgVal / maxLine, 1) * chartH;
+    lines.push('<line x1="'+padL+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,.28)" stroke-width="1" stroke-dasharray="3,3"/>');
+    lines.push('<text x="'+(W-padR)+'" y="'+(avgY-3).toFixed(1)+'" text-anchor="end" font-size="7" fill="rgba(255,255,255,.4)">prom. '+avgVal.toFixed(useDur?0:1)+metricUnit+'</text>');
+  }
+
+  // Curva suavizada (Catmull-Rom → Bézier) en vez de segmentos rectos —
+  // se calcula una sola vez y se reusa tanto para la línea como para el
+  // área rellena de abajo.
+  function _smoothPath(pts){
+    if(pts.length < 2) return '';
+    var d = 'M'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+    for(var i = 0; i < pts.length - 1; i++){
+      var p0 = pts[i-1] || pts[i];
+      var p1 = pts[i];
+      var p2 = pts[i+1];
+      var p3 = pts[i+2] || p2;
+      var c1x = p1.x + (p2.x - p0.x)/6, c1y = p1.y + (p2.y - p0.y)/6;
+      var c2x = p2.x - (p3.x - p1.x)/6, c2y = p2.y - (p3.y - p1.y)/6;
+      d += ' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+','+c2x.toFixed(1)+' '+c2y.toFixed(1)+','+p2.x.toFixed(1)+' '+p2.y.toFixed(1);
+    }
+    return d;
+  }
+
   if(dotPts.length > 1){
-    var path = dotPts.map(function(p,i){ return (i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1); }).join(' ');
-    lines.push('<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-opacity=".5" stroke-linejoin="round"/>');
+    var smooth = _smoothPath(dotPts);
+    // Área rellena bajo la curva — cierra el path contra la línea base del chart.
+    var baseline = padT + chartH;
+    var areaPath = smooth +
+      ' L'+dotPts[dotPts.length-1].x.toFixed(1)+' '+baseline +
+      ' L'+dotPts[0].x.toFixed(1)+' '+baseline + ' Z';
+    lines.push('<path d="'+areaPath+'" fill="url(#'+gid+'-area)" stroke="none"/>');
+    lines.push('<path d="'+smooth+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-opacity=".6" stroke-linejoin="round" stroke-linecap="round"/>');
   }
   // Dots — estilo neutro, _wpHighlight() decide cuál se resalta
   dotPts.forEach(function(p){
@@ -2166,9 +2220,10 @@ function _wpHighlight(idx){
   var svg = document.getElementById('wp-chart');
   if(!svg) return;
   var color = _wpActiveColor || '#FF6535';
+  var gid = 'wp' + color.replace('#','');
   svg.querySelectorAll('.wp-bar').forEach(function(el){
     var on = (+el.getAttribute('data-wk-idx') === idx);
-    el.setAttribute('fill', on ? color+'cc' : 'rgba(255,255,255,.12)');
+    el.setAttribute('fill', on ? 'url(#'+gid+'-bar-on)' : 'url(#'+gid+'-bar-off)');
   });
   svg.querySelectorAll('.wp-dot').forEach(function(el){
     var on = (+el.getAttribute('data-wk-idx') === idx);
