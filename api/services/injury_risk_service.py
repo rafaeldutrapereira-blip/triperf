@@ -288,6 +288,48 @@ def _generate_alerts_and_recs(
 
 # ── Función principal ────────────────────────────────────────────────────────
 
+def _recent_impact_load(user_id: str, db: Session, target_date: str, week_ago: str) -> Optional[float]:
+    """
+    Promedio real del Impact Load Factor (directImpactLoadFactor de Garmin)
+    en las corridas de los últimos 7 días — solo cuenta actividades cuya
+    telemetría fue sincronizada con este campo (ver _try_download_telemetry,
+    agregado 2026-08-01). Se muestra como dato transparente, NO se pondera
+    en el score compuesto: a diferencia de ACWR/HRV/Monotonía/Labs, no hay
+    un umbral clínico citable publicado para este métrico propietario de
+    Garmin — inventar uno sería presentar una fórmula no validada como si
+    lo fuera, el mismo problema de fondo que los datos falsos.
+    """
+    from pathlib import Path
+    import json as _json
+    from ..models import GarminActivity
+
+    runs = (
+        db.query(GarminActivity)
+        .filter(
+            GarminActivity.user_id == user_id,
+            GarminActivity.sport   == "run",
+            GarminActivity.date_iso >= week_ago,
+            GarminActivity.date_iso <= target_date,
+        )
+        .all()
+    )
+    values: list[float] = []
+    for r in runs:
+        tel_path = Path("data/telemetry") / f"{r.activity_id}.json"
+        if not tel_path.exists():
+            continue
+        try:
+            samples = _json.loads(tel_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        act_vals = [s["impact_load"] for s in samples if s.get("impact_load") is not None]
+        if act_vals:
+            values.append(sum(act_vals) / len(act_vals))
+    if not values:
+        return None
+    return round(sum(values) / len(values), 2)
+
+
 def compute_injury_risk(user_id: str, db: Session, target_date: str = None) -> dict:
     """
     Calcula el riesgo de lesión para un atleta en una fecha dada.
@@ -486,6 +528,10 @@ def compute_injury_risk(user_id: str, db: Session, target_date: str = None) -> d
                          "strain": strain},
             "labs":     {"score": round(labs_score, 1), "date": labs_date,  "weight": W_LABS,
                          "values": labs_values},
+            # Informativo, sin peso en el score compuesto — ver
+            # _recent_impact_load() para la razón (sin umbral clínico
+            # citable publicado para este métrico propietario de Garmin).
+            "impact_load": {"value": _recent_impact_load(user_id, db, target_date, week_ago), "weight": None},
         },
         "training": {"ctl": ctl, "atl": atl, "tsb": tsb},
         "alerts":          alerts,

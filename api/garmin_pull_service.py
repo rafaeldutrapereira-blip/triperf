@@ -241,8 +241,10 @@ def _try_download_splits(client, activity_id: str) -> None:
 
 
 def _try_download_telemetry(client, activity_id: str) -> None:
-    """Descarga best-effort la telemetría segundo a segundo (potencia/FC/
-    cadencia/velocidad/elevación/distancia) de una actividad nueva.
+    """Descarga best-effort la telemetría segundo a segundo de una actividad
+    nueva: potencia/FC/cadencia/velocidad/elevación/distancia + (verificado
+    en vivo contra la API real de Garmin, 2026-07-31) dinámica de carrera
+    completa, factor de carga de impacto y Stamina real de Garmin.
 
     Garmin Connect SÍ expone esta serie vía get_activity_details() — no
     requiere GPS (funciona también para Zwift, piscina, indoor). No
@@ -273,6 +275,18 @@ def _try_download_telemetry(client, activity_id: str) -> None:
     i_spd  = idx.get("directSpeed")
     i_ele  = idx.get("directElevation")
     i_dist = idx.get("sumDistance")
+    # Dinámica de carrera / impacto / stamina — solo existen para running,
+    # quedan None (y no se incluyen en la serie) para el resto de deportes.
+    i_stride    = idx.get("directStrideLength")
+    i_gct       = idx.get("directGroundContactTime")
+    i_gct_bal   = idx.get("directGroundContactBalanceLeft")
+    i_vert_osc  = idx.get("directVerticalOscillation")
+    i_vert_rat  = idx.get("directVerticalRatio")
+    i_impact    = idx.get("directImpactLoadFactor")
+    i_resp      = idx.get("directRespirationRate")
+    i_perf_cond = idx.get("directPerformanceCondition")
+    i_stamina   = idx.get("directAvailableStamina")
+    i_stamina_p = idx.get("directPotentialStamina")
 
     def _g(m, i):
         if i is None or i >= len(m):
@@ -282,7 +296,7 @@ def _try_download_telemetry(client, activity_id: str) -> None:
     samples = []
     for row in rows:
         m = row.get("metrics") or []
-        samples.append({
+        sample = {
             "t":    _g(m, i_t),
             "power":_g(m, i_pwr),
             "hr":   _g(m, i_hr),
@@ -290,7 +304,18 @@ def _try_download_telemetry(client, activity_id: str) -> None:
             "spd":  _g(m, i_spd),
             "ele":  _g(m, i_ele),
             "dist": _g(m, i_dist),
-        })
+        }
+        if i_stride is not None:    sample["stride"]     = _g(m, i_stride)
+        if i_gct is not None:       sample["gct"]         = _g(m, i_gct)
+        if i_gct_bal is not None:   sample["gct_bal"]     = _g(m, i_gct_bal)
+        if i_vert_osc is not None:  sample["vert_osc"]    = _g(m, i_vert_osc)
+        if i_vert_rat is not None:  sample["vert_ratio"]  = _g(m, i_vert_rat)
+        if i_impact is not None:    sample["impact_load"] = _g(m, i_impact)
+        if i_resp is not None:      sample["resp_rate"]   = _g(m, i_resp)
+        if i_perf_cond is not None: sample["perf_cond"]   = _g(m, i_perf_cond)
+        if i_stamina is not None:   sample["stamina"]     = _g(m, i_stamina)
+        if i_stamina_p is not None: sample["stamina_pot"] = _g(m, i_stamina_p)
+        samples.append(sample)
 
     if samples:
         cache_file.write_text(_json.dumps(samples))

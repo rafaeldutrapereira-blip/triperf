@@ -2625,6 +2625,7 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
         if sport == "swim":
             row["avg_pace_s_per_100m"] = round(100 / spd) if spd else None
             row["lengths"] = lap.get("numberOfActiveLengths")
+            row["avg_swolf"] = lap.get("averageSWOLF")
         elif spd:
             row["avg_pace_s_per_km"] = round(1000 / spd)
         out.append(row)
@@ -2781,12 +2782,29 @@ def get_activity_telemetry(
         "speed":     [s.get("spd")   for s in ss],
         "elevation": [s.get("ele")   for s in ss],
     }
+    # Dinámica de carrera / impacto / stamina — solo si esta actividad los
+    # tiene cacheados (telemetría descargada después de 2026-07-31). Si
+    # ninguna muestra tiene la clave, no se agrega la serie — nunca se
+    # rellena con None disfrazado de "sin datos parcial".
+    _rd_keys = {
+        "stride": "stride_length", "gct": "ground_contact_time",
+        "gct_bal": "ground_contact_balance", "vert_osc": "vertical_oscillation",
+        "vert_ratio": "vertical_ratio", "impact_load": "impact_load",
+        "resp_rate": "respiration_rate", "perf_cond": "performance_condition",
+        "stamina": "stamina", "stamina_pot": "stamina_potential",
+    }
+    for raw_key, out_key in _rd_keys.items():
+        if any(raw_key in s for s in ss):
+            series[out_key] = [s.get(raw_key) for s in ss]
 
     zones = {}
+    zone_bounds = {}
     if owner.fcmax:
         zones["hr"] = _bucket_time_in_zone(samples, "hr", hr_zones(owner.fcmax))
+        zone_bounds["hr"] = hr_zones(owner.fcmax)
     if owner.ftp and act.sport == "bike":
         zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(owner.ftp))
+        zone_bounds["power"] = ftp_zones(owner.ftp)
 
     splits = _compute_activity_splits(samples, act.sport)
     if not splits:
@@ -2803,17 +2821,25 @@ def get_activity_telemetry(
             series["power"]   = [None] * len(series["power"])
             series["cadence"] = [None] * len(series["cadence"])
             zones.pop("power", None)
+            for k in ("impact_load", "stamina", "stamina_potential"):
+                series.pop(k, None)
         if not prefs["share_pace"]:
             series["speed"] = [None] * len(series["speed"])
             splits = []
+            for k in ("stride_length", "ground_contact_time", "ground_contact_balance",
+                      "vertical_oscillation", "vertical_ratio", "performance_condition"):
+                series.pop(k, None)
         if not prefs["share_route"]:
             series["elevation"] = [None] * len(series["elevation"])
+        if not prefs["share_hr"]:
+            series.pop("respiration_rate", None)
 
     return {
         "activity_id":  activity_id,
         "sport":        act.sport,
         "series":       series,
         "zones":        zones,
+        "zone_bounds":  zone_bounds,
         "splits":       splits,
         "target_power": target_power,
         "is_own":       is_own,

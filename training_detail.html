@@ -778,7 +778,14 @@ var _chartRegistry = [];
 // (ver _bike_target_power_series). Si no hay workout asignado, el backend
 // devuelve null y acá simplemente no se dibuja ninguna línea de objetivo —
 // nunca se aproxima ni se inventa un valor.
-function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues){
+// zoneBounds (opcional): {z1:[min,max], z2:[min,max], ...} — SIEMPRE
+// derivado del FCmax/FTP real del dueño de la actividad (ver hr_zones()/
+// ftp_zones() en training_service.py, ya usados en la pestaña Zonas).
+// Dibuja bandas de fondo por zona real detrás de la curva — reemplaza
+// la necesidad de un selector "ver en zonas" aparte: la curva absoluta
+// y el contexto de zona se ven a la vez, siempre con datos reales.
+function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues, zoneBounds, zoneColorMap){
+  if(!values || !values.length) return '';
   var W=600, H=110, pad=6;
   var hasTarget = targetValues && targetValues.some(function(v){ return v!=null; });
   var res = _sparkline(values, W, H, pad, hasTarget ? targetValues : null);
@@ -789,15 +796,29 @@ function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues)
     id: chartId, values: values, t: tArr, color: color, unit: unit,
     W: W, H: H, pad: pad, min: res.min, max: res.max
   });
+  var zoneBandsSvg = '';
+  if(zoneBounds){
+    var span = (res.max - res.min) || 1;
+    Object.keys(zoneBounds).forEach(function(zk){
+      var lo = zoneBounds[zk][0], hi = zoneBounds[zk][1];
+      var yTop = H - pad - ((Math.min(hi,res.max) - res.min)/span)*(H-pad*2);
+      var yBot = H - pad - ((Math.max(lo,res.min) - res.min)/span)*(H-pad*2);
+      if(yBot <= yTop) return;
+      var zcol = (zoneColorMap && zoneColorMap[zk]) || 'var(--dim)';
+      zoneBandsSvg += '<rect x="0" y="'+yTop.toFixed(1)+'" width="'+W+'" height="'+(yBot-yTop).toFixed(1)+'" fill="'+zcol+'" opacity=".07"/>';
+    });
+  }
   return '<div class="chart-block">'
     + '<div class="chart-lbl"><div class="chart-name">'+name+'</div>'
     + '<div class="chart-anns">'
       + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>Prom '+Math.round(avgVal)+' '+unit+'</div>' : '')
       + '<div class="chart-ann">Máx '+Math.round(res.max)+' '+unit+'</div>'
       + (hasTarget ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:var(--dim);opacity:.6"></span>Objetivo del plan</div>' : '')
+      + (zoneBounds ? '<div class="chart-ann" style="color:var(--dim)">Bandas = zonas reales (FTP/FCmax)</div>' : '')
     + '</div></div>'
     + '<div class="chart-svg-wrap">'
       + '<svg class="chart-svg" id="'+chartId+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+        + zoneBandsSvg
         + (targetPath ? '<path d="'+targetPath+'" fill="none" stroke="var(--dim)" stroke-width="1.3" stroke-dasharray="4 3" opacity=".6"/>' : '')
         + '<path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'
         + '<line class="chart-hover-line" x1="0" y1="0" x2="0" y2="'+H+'" opacity="0"/>'
@@ -947,17 +968,20 @@ function renderSplitsReal(splits, sport){
     var lastVal = isSwim
       ? (s.lengths!=null ? s.lengths : '—')
       : (s.avg_power!=null ? s.avg_power+' W' : '—');
+    var swolfCol = isSwim ? '<td>'+(s.avg_swolf!=null ? s.avg_swolf : '—')+'</td>' : '';
     return '<tr'+(i===bestIdx ? ' class="best"' : '')+'>'
       + '<td>'+s.idx+'</td>'
       + '<td>'+distLbl+'</td>'
       + '<td>'+fmtDur(s.duration_s/60)+'</td>'
       + '<td>'+pace+'</td>'
       + '<td>'+lastVal+'</td>'
+      + swolfCol
       + '<td>'+(s.avg_hr!=null ? s.avg_hr+' bpm' : '—')+'</td>'
       + '</tr>';
   }).join('');
+  var swolfHead = isSwim ? '<th>Swolf</th>' : '';
   inner.innerHTML = summaryHtml + '<div style="overflow-x:auto"><table class="split-table">'
-    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th><th>FC</th></tr></thead>'
+    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th>'+swolfHead+'<th>FC</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
 }
 
@@ -982,10 +1006,27 @@ function renderTelemetry(){
       _chartRegistry = [];
       var tArr = data.series.t;
       var blocks = '';
-      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, data.target_power);
-      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr);
+      var hrZoneColors = {z1:'#0EA5E9',z2:'#10B981',z3:'#F0A500',z4:'#FF6535',z5:'#EF4444'};
+      var pwrZoneColors = {z1_active_recovery:'#0EA5E9',z2_endurance:'#10B981',z3_tempo:'#F0A500',z4_threshold:'#FF6535',z5_vo2max:'#EF4444',z6_anaerobic:'#A855F7',z7_neuromuscular:'#EC4899'};
+      var zb = data.zone_bounds || {};
+      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, data.target_power, zb.power, pwrZoneColors);
+      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr, null, zb.hr, hrZoneColors);
       if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'rpm', null);
-      if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, tArr, '#10B981', 'm/s', null);
+      if(ACT.sport==='run'){
+        blocks += renderChartBlock('Velocidad', data.series.speed, tArr, '#10B981', 'm/s', null);
+        // Dinámica de carrera + Stamina real de Garmin — cada bloque se
+        // omite solo si esta actividad no tiene ese dato cacheado (ver
+        // _try_download_telemetry, campos agregados 2026-07-31/08-01).
+        blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power);
+        blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'ppm', null);
+        blocks += renderChartBlock('Stamina', data.series.stamina, tArr, '#0EA5E9', '%', null);
+        blocks += renderChartBlock('Longitud de Zancada', data.series.stride_length, tArr, '#8B5CF6', 'cm', null);
+        blocks += renderChartBlock('Tiempo de Contacto', data.series.ground_contact_time, tArr, '#F59E0B', 'ms', null);
+        blocks += renderChartBlock('Oscilación Vertical', data.series.vertical_oscillation, tArr, '#EC4899', 'cm', null);
+        blocks += renderChartBlock('Ratio Vertical', data.series.vertical_ratio, tArr, '#EC4899', '%', null);
+        blocks += renderChartBlock('Factor de Carga de Impacto', data.series.impact_load, tArr, '#EF4444', '', null);
+        blocks += renderChartBlock('Frecuencia Respiratoria', data.series.respiration_rate, tArr, '#06B6D4', 'rpm', null);
+      }
       if(chartsInner){
         chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
         wireChartHover();
