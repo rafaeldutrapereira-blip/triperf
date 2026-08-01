@@ -79,6 +79,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .leaflet-control-attribution a{color:var(--dim)!important}
 .map-badge{position:absolute;top:10px;left:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.06em;line-height:1.75;backdrop-filter:blur(6px)}
 .map-badge strong{color:var(--text);display:block;font-size:.78rem;margin-bottom:.15rem}
+.map-effort-legend{position:absolute;bottom:10px;right:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.66rem;color:var(--muted);letter-spacing:.04em;backdrop-filter:blur(6px)}
 .map-outdoor-label{position:absolute;bottom:10px;right:12px;z-index:500;background:rgba(4,8,15,.82);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.08em;backdrop-filter:blur(6px)}
 /* Indoor / pool visuals */
 .indoor-card{height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:var(--surface);border-radius:var(--radius)}
@@ -573,7 +574,56 @@ function renderRealMap(trackData, extraNoteHtml){
   var lineColor = ACT.sport==='run' ? '#EF4444' : ACT.sport==='bike' ? '#EC4899' : '#0EA5E9';
   L.polyline(route, {color:'#ffffff', weight:7, opacity:.9}).addTo(leafletMap);
   L.polyline(route, {color:'#000000', weight:5, opacity:.35}).addTo(leafletMap);
-  var poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
+
+  // Gradiente de color por esfuerzo real (potencia en bici, velocidad en
+  // carrera) — cada punto del track se alinea PROPORCIONALMENTE con la
+  // muestra de telemetría más cercana en la misma posición relativa de
+  // la actividad (ninguno de los dos trae timestamp exacto por punto,
+  // pero ambos cubren el mismo inicio→fin real, así que la posición
+  // relativa es una alineación real, no un valor inventado). Si la
+  // telemetría de esfuerzo todavía no llegó (o no existe para esta
+  // actividad), se dibuja una sola línea sólida como antes — nunca se
+  // rellena con un gradiente falso.
+  var effortColorScale = function(frac){
+    // frac 0..1 (relativo al min/max real de la actividad) → azul→verde→naranja→rojo
+    var stops = [[0.0,'#0EA5E9'],[0.4,'#10B981'],[0.7,'#F0A500'],[1.0,'#EF4444']];
+    for(var i=0;i<stops.length-1;i++){
+      if(frac>=stops[i][0] && frac<=stops[i+1][0]) return stops[i+1][1];
+    }
+    return stops[stops.length-1][1];
+  };
+
+  function drawGradientRoute(effort){
+    var valid = effort.filter(function(v){ return v!=null; });
+    var minV = Math.min.apply(null, valid), maxV = Math.max.apply(null, valid);
+    var span = (maxV-minV) || 1;
+    var n = route.length, m = effort.length;
+    var segs = [];
+    for(var i=0;i<n-1;i++){
+      var effIdx = Math.min(m-1, Math.round(i/(n-1)*(m-1)));
+      var v = effort[effIdx];
+      var col = v!=null ? effortColorScale((v-minV)/span) : lineColor;
+      segs.push(L.polyline([route[i],route[i+1]], {color:col, weight:3.5, opacity:1}));
+    }
+    var grp = L.layerGroup(segs).addTo(leafletMap);
+    return grp;
+  }
+
+  var poly;
+  if(window._mapEffortSeries){
+    var grp = drawGradientRoute(window._mapEffortSeries);
+    poly = L.polyline(route, {opacity:0}).addTo(leafletMap); // solo para fitBounds
+    mapWrap.querySelector('#map-leaflet').insertAdjacentHTML('beforeend',
+      '<div class="map-effort-legend">'+(ACT.sport==='bike'?'Potencia':'Velocidad')+': <span style="color:#0EA5E9">menor</span> → <span style="color:#EF4444">mayor</span></div>');
+  } else {
+    poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
+    // Si la telemetría de esfuerzo llega después (fetch más lento que el
+    // render del mapa), redibujar con gradiente real en cuanto esté.
+    window._onMapEffortReady = function(){
+      leafletMap.removeLayer(poly);
+      drawGradientRoute(window._mapEffortSeries);
+    };
+  }
   leafletMap.fitBounds(poly.getBounds(), {padding:[28,28]});
   requestAnimationFrame(function(){
     animateRoutePath(poly.getElement(), '#fff', 2400);
@@ -1003,6 +1053,14 @@ function renderTelemetry(){
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
       if(!data){ fallbackNoData(); return; }
+      // Guardado para el mapa: gradiente de color por esfuerzo real
+      // (potencia en bici, velocidad en carrera) — ver renderRealMap().
+      var effortSeries = ACT.sport==='bike' ? data.series.power
+        : ACT.sport==='run' ? data.series.speed : null;
+      if(effortSeries && effortSeries.some(function(v){return v!=null;})){
+        window._mapEffortSeries = effortSeries;
+        if(typeof window._onMapEffortReady === 'function') window._onMapEffortReady();
+      }
       _chartRegistry = [];
       var tArr = data.series.t;
       var blocks = '';
