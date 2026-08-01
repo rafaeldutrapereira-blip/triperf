@@ -1001,6 +1001,8 @@ def athlete_dashboard(
 
     compliance_trend = round(compliance_week - compliance_prev) if (compliance_week is not None and compliance_prev is not None) else None
 
+    injury_risk = _dashboard_injury_risk(me.id, db)
+
     result = {
         "source":       "api_db",
         "generated":    today_iso,
@@ -1065,7 +1067,7 @@ def athlete_dashboard(
         # Actividades
         "activities": activities,
         "streak_days": _current_streak_days(acts_orm),
-        "injury_risk": _dashboard_injury_risk(me.id, db),
+        "injury_risk": injury_risk,
         # Resumen semanal por disciplina
         "weekly_disc": {
             "swim_km":    swim_km,
@@ -1087,6 +1089,7 @@ def athlete_dashboard(
             hrv_last_night=hrv_last_night, hrv_7d_avg=hrv_7d_avg, hrv_trend=hrv_trend,
             sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
             acwr_by_sport=acwr_by_sport, mental_score=mental_score,
+            injury_risk=injury_risk,
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo

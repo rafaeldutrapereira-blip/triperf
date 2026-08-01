@@ -289,6 +289,7 @@ def build_daily_insight(
     rhr_trend: Optional[float] = None,
     acwr_by_sport: Optional[dict] = None,
     mental_score: Optional[float] = None,
+    injury_risk: Optional[dict] = None,
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -388,6 +389,32 @@ def build_daily_insight(
                 "Ver ACWR por disciplina",
                 "detalle.html?metric=acwr",
             )
+
+    # 2.75. Injury Risk Score consolidado (injury_risk_service.py: ACWR 35% +
+    # HRV 30% + Monotonía 20% + Labs 15%) en zona alta/crítica por una vía
+    # que las reglas 2/2.5 de arriba NO detectan porque solo miran ACWR —
+    # ej. monotonía alta (misma carga todos los días) o un marcador de
+    # sangre alterado pueden elevar el riesgo real aunque el ACWR se vea
+    # en rango. Sin este bloque, esas señales quedaban calculadas (se ven
+    # en su propia card del dashboard) pero nunca influían en el insight.
+    if injury_risk and injury_risk.get("level") in ("high", "critical") and injury_risk.get("score") is not None:
+        drivers.append({
+            "label": "Riesgo de lesión", "value": f"{round(injury_risk['score'])}/100",
+            "tone": "bad" if injury_risk["level"] == "critical" else "caution", "delta": None,
+        })
+        critical = injury_risk["level"] == "critical"
+        return _base(
+            "reduce" if critical else "caution",
+            "Riesgo de lesión " + ("crítico" if critical else "alto"),
+            "Tu score de riesgo de lesión — que combina tu carga, HRV, monotonía de entrenamiento y tus "
+            "últimos exámenes de sangre — está elevado, aunque tu carga de hoy por sí sola no lo muestre. "
+            "Priorizá recuperación antes de sumar más intensidad.",
+            f"Injury Risk Score = {round(injury_risk['score'])}/100 ({injury_risk['level']}), motor que combina "
+            f"ACWR (35%), HRV (30%), monotonía de entrenamiento (20%) y marcadores de sangre (15%). Puede estar "
+            f"elevado por monotonía o labs aunque el ACWR aislado (hoy {acwr:.2f}) se vea en rango.",
+            "Ver detalle de riesgo de lesión",
+            "ai_coach.html",
+        )
 
     # 3. Fatiga acumulada profunda (TSB muy negativo) aunque HRV/sueño no acompañen datos
     if tsb < -20:
