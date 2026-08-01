@@ -1089,7 +1089,7 @@ def athlete_dashboard(
             hrv_last_night=hrv_last_night, hrv_7d_avg=hrv_7d_avg, hrv_trend=hrv_trend,
             sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
             acwr_by_sport=acwr_by_sport, mental_score=mental_score,
-            injury_risk=injury_risk,
+            injury_risk=injury_risk, compliance_week=compliance_week,
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo

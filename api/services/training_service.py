@@ -290,6 +290,7 @@ def build_daily_insight(
     acwr_by_sport: Optional[dict] = None,
     mental_score: Optional[float] = None,
     injury_risk: Optional[dict] = None,
+    compliance_week: Optional[float] = None,
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -478,8 +479,30 @@ def build_daily_insight(
             f"razonable, pero vale la pena monitorear cómo te sientes antes de una sesión exigente.",
         )
 
-    # 5. Forma óptima — momento de exigir
+    # 5. Forma óptima — momento de exigir. Pero un TSB alto puede venir de dos
+    # caminos muy distintos: buena forma real, o simplemente no haber
+    # entrenado lo planificado (menos carga = menos fatiga = TSB sube igual,
+    # sin que haya mejora real). Si hay compliance semanal baja, se corrige
+    # el mensaje para no invitar a "exigir" cuando en realidad el atleta
+    # viene de perderse sesiones del plan.
     if tsb > 15 and acwr_zone in ("optimal", "low") and not hrv_down:
+        low_compliance = compliance_week is not None and compliance_week < 60
+        if low_compliance:
+            drivers.append({
+                "label": "Cumplimiento semanal", "value": f"{round(compliance_week)}%",
+                "tone": "caution", "delta": None,
+            })
+            return _base(
+                "caution", "Fresco, pero por baja carga",
+                "Tu forma se ve muy bien, pero es porque entrenaste menos de lo planificado esta semana — "
+                "no necesariamente por una mejora real. Retomá el plan gradualmente en vez de forzar una "
+                "sesión muy exigente hoy.",
+                f"TSB {tsb:.0f} y ACWR {acwr:.2f} en rango saludable, pero solo cumpliste {round(compliance_week)}% "
+                f"de las sesiones planificadas esta semana. El TSB alto puede reflejar menos carga acumulada en "
+                f"vez de una mejora real de forma — conviene retomar el plan gradualmente.",
+                "Ver tu plan de la semana",
+                "training_plan.html",
+            )
         return _base(
             "good", "Buen momento para exigir",
             "Estás en tu mejor momento de forma y tu recuperación se ve estable. "
