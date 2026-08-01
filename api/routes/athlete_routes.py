@@ -2632,6 +2632,37 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
     return out
 
 
+def _swim_lengths_real(activity_id: str) -> Optional[dict]:
+    """
+    Ritmo/brazadas/Swolf por cada largo individual de 25m — más granular
+    que _splits_from_garmin_laps() (que trabaja a nivel de lap/serie, ej.
+    100m). Los lengthDTOs ya vienen cacheados en data/splits/{id}.json
+    (misma descarga que ya se usa para los Parciales), sin llamada nueva
+    a la API. None si no hay splits cacheados para esta actividad.
+    """
+    from pathlib import Path
+    import json as _json
+
+    path = Path("data/splits") / f"{activity_id}.json"
+    if not path.exists():
+        return None
+    try:
+        laps = _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    pace, strokes, swolf = [], [], []
+    for lap in laps:
+        for length in (lap.get("lengthDTOs") or []):
+            spd = length.get("averageSpeed")
+            pace.append(round(100 / spd) if spd else None)
+            strokes.append(length.get("totalNumberOfStrokes"))
+            swolf.append(length.get("averageSWOLF"))
+    if not any(v is not None for v in swolf):
+        return None
+    return {"pace_s_per_100m": pace, "strokes": strokes, "swolf": swolf}
+
+
 def _current_streak_days(acts: list) -> int:
     """
     Días consecutivos con al menos una actividad real, terminando hoy o ayer
@@ -2810,6 +2841,8 @@ def get_activity_telemetry(
     if not splits:
         splits = _splits_from_garmin_laps(activity_id, act.sport)
 
+    swim_lengths = _swim_lengths_real(activity_id) if act.sport == "swim" else None
+
     target_power = _bike_target_power_series(owner, act, series["t"], db) if is_own else None
 
     if not is_own:
@@ -2826,6 +2859,7 @@ def get_activity_telemetry(
         if not prefs["share_pace"]:
             series["speed"] = [None] * len(series["speed"])
             splits = []
+            swim_lengths = None
             for k in ("stride_length", "ground_contact_time", "ground_contact_balance",
                       "vertical_oscillation", "vertical_ratio", "performance_condition"):
                 series.pop(k, None)
@@ -2841,6 +2875,7 @@ def get_activity_telemetry(
         "zones":        zones,
         "zone_bounds":  zone_bounds,
         "splits":       splits,
+        "swim_lengths": swim_lengths,
         "target_power": target_power,
         "is_own":       is_own,
         "owner_name":   None if is_own else (owner.nombre or owner.email.split("@")[0]),

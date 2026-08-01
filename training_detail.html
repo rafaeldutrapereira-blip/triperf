@@ -1085,6 +1085,16 @@ function renderTelemetry(){
         blocks += renderChartBlock('Factor de Carga de Impacto', data.series.impact_load, tArr, '#EF4444', '', null);
         blocks += renderChartBlock('Frecuencia Respiratoria', data.series.respiration_rate, tArr, '#06B6D4', 'rpm', null);
       }
+      if(ACT.sport==='swim' && data.swim_lengths){
+        // Por LARGO individual (25m), no por tiempo — se pasa tArr=null
+        // a propósito: no hay alineación de tiempo real por largo, así
+        // que el tooltip solo muestra el valor, sin una hora inventada.
+        var sl = data.swim_lengths;
+        var paceSec = (sl.pace_s_per_100m||[]).map(function(v){ return v; });
+        blocks += renderChartBlock('Ritmo por Largo', paceSec, null, '#0EA5E9', 's/100m', null);
+        blocks += renderChartBlock('Brazadas por Largo', sl.strokes, null, '#F0A500', '', null);
+        blocks += renderChartBlock('Swolf por Largo', sl.swolf, null, '#10B981', '', null);
+      }
       if(chartsInner){
         chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
         wireChartHover();
