@@ -1027,6 +1027,18 @@ class GarminPullService:
         # Parsear y upsert
         new_count = 0
         for raw in raw_acts:
+            # Actividades "padre" multi-sport (triatlones/duatlones registrados
+            # como una sesión combinada en el reloj): Garmin YA sincroniza cada
+            # tramo real (nado/bici/carrera) como actividad propia — el padre
+            # es un resumen agregado sin su propio detalle real, marcado con
+            # "parent": true en la respuesta real de la API. Sincronizarlo
+            # además de los tramos duplica la carga de entrenamiento real de
+            # ese día (verificado en vivo: TSS del padre + TSS de cada tramo
+            # se sumaban ambos al cálculo de CTL/ATL/TSB — confirmado en 3
+            # usuarios reales con triatlones históricos, 100-490 TSS extra
+            # por carrera).
+            if raw.get("parent") is True:
+                continue
             parsed = _parse_garmin_activity(raw, ftp, fcmax, run_pace_s_km, css_s_100m)
             act_id = str(parsed["activity_id"]) if parsed["activity_id"] else None
             if not act_id or not parsed["date_iso"]:
