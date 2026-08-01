@@ -1111,6 +1111,10 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-val" style="color:#10B981">1.18</span><span class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</span></span>
         </div>
+        <div class="kcr" id="kc-injury" style="display:none" role="button" tabindex="0" aria-label="Riesgo de lesión">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="injury_risk" data-lx-info-val="#kc-injury-num">Riesgo de Lesión</span></span>
+          <span class="kcr-right"><span class="kcr-val"><span id="kc-injury-num">—</span><span class="u">/100</span></span><span class="badge" id="kc-injury-badge">—</span></span>
+        </div>
       </div>
 
       <!-- CARD 2: ¿Cómo estoy hoy? — HRV, FC Reposo -->
@@ -1127,6 +1131,10 @@ ul { list-style: none; }
         <div class="kcr" id="kc-rhr" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo">
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="resting_hr" data-lx-info-val="#kc-rhr-val">FC Reposo</span><span class="kcr-sub">Hoy · 7d: <span id="rhr-7d-val">—</span>bpm</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-rhr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-rhr-val">—<span class="u">bpm</span></span><span id="badge-rhr" class="badge">—</span></span>
+        </div>
+        <div class="kcr" id="kc-bb" style="display:none" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico Body Battery">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="body_battery" data-lx-info-val="#kc-bb-val">Body Battery</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-bb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-bb-val">—</span><span id="badge-bb" class="badge">—</span></span>
         </div>
       </div>
 
@@ -1555,6 +1563,10 @@ function updateLoadSparklines(d){
     var rhrPts = d.rhr_history.filter(function(p){ return p.rhr != null; }).slice(-14);
     var rhrSparkColor = (document.getElementById('kc-rhr-val') || {}).style.color || '#0EA5E9';
     if(rhrPts.length > 1) drawSparkline('spark-rhr', rhrPts.map(function(p){ return p.rhr; }), rhrSparkColor);
+  }
+  if(d.bb_history && d.bb_history.length > 1){
+    var bbPts = d.bb_history.filter(function(p){ return p.bb != null; }).slice(-14);
+    if(bbPts.length > 1) drawSparkline('spark-bb', bbPts.map(function(p){ return p.bb; }), '#8B5CF6');
   }
 
   // TSS semanal: mismas semanas reales de PMC_ALL usadas arriba.
@@ -2418,6 +2430,30 @@ function patchData(){
   var rhr7d = document.getElementById('rhr-7d-val');
   if(rhr7d && d.rhr_7d_avg != null) rhr7d.textContent = Math.round(d.rhr_7d_avg);
 
+  // Body Battery — card "¿Cómo estoy hoy?": ya venía en el payload
+  // (body_battery/bb_history) sin mostrarse en ningún lado de esta card.
+  // Si hoy todavía no sincronizó (típico temprano en el día), se usa el
+  // último valor real disponible del historial — mismo criterio que ya
+  // usan HRV/FC Reposo ("anoche"/último dato real, no estrictamente hoy).
+  var kcBb = document.getElementById('kc-bb');
+  var bbVal = d.body_battery;
+  var bbIsToday = bbVal != null;
+  if(bbVal == null && d.bb_history && d.bb_history.length){
+    var lastBb = d.bb_history[d.bb_history.length - 1];
+    if(lastBb && lastBb.bb != null) bbVal = lastBb.bb;
+  }
+  if(kcBb && bbVal != null){
+    kcBb.style.display = '';
+    var bbValEl = document.getElementById('kc-bb-val');
+    bbValEl.innerHTML = Math.round(bbVal) + '<span class="u">%</span>';
+    bbValEl.style.color = bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
+    var bBb = document.getElementById('badge-bb');
+    bBb.className = 'badge';
+    bBb.textContent = (bbVal >= 60 ? 'Cargada' : bbVal >= 30 ? 'Media' : 'Baja') + (bbIsToday ? '' : ' · ayer');
+    bBb.style.background = bbVal >= 60 ? 'rgba(16,185,129,.18)' : bbVal >= 30 ? 'rgba(240,165,0,.18)' : 'rgba(244,63,94,.18)';
+    bBb.style.color = bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
+  }
+
   // Readiness chip
   var rChip = document.getElementById('readiness-chip-val');
   if(rChip && d.readiness != null) rChip.textContent = d.readiness + ' / 100';
@@ -2502,6 +2538,23 @@ function patchData(){
       acwrBadge.style.background  = z.color+'18';
     }
     if(acwrTip) acwrTip.textContent = z.tip;
+  }
+
+  // Injury Risk — card "¿Cómo va mi carga?": motor oficial ya consolidado
+  // (injury_risk_service.py, mismo score que /injury/risk/today y la
+  // pestaña Lesiones del AI Coach — ver commit 6acbe38).
+  var kcInjury = document.getElementById('kc-injury');
+  if(kcInjury && d.injury_risk){
+    kcInjury.style.display = '';
+    var injLevelLabels = {low:'Bajo', moderate:'Moderado', high:'Alto', critical:'Crítico'};
+    var injValEl = document.getElementById('kc-injury-num');
+    injValEl.textContent = Math.round(d.injury_risk.score);
+    injValEl.parentElement.style.color = d.injury_risk.color;
+    var bInjury = document.getElementById('kc-injury-badge');
+    bInjury.textContent = injLevelLabels[d.injury_risk.level] || d.injury_risk.level;
+    bInjury.style.background = d.injury_risk.color + '18';
+    bInjury.style.color = d.injury_risk.color;
+    bInjury.style.borderColor = d.injury_risk.color + '55';
   }
 
   // PMC: rebuild PMC_ALL entirely from real Garmin historical data

@@ -1065,6 +1065,7 @@ def athlete_dashboard(
         # Actividades
         "activities": activities,
         "streak_days": _current_streak_days(acts_orm),
+        "injury_risk": _dashboard_injury_risk(me.id, db),
         # Resumen semanal por disciplina
         "weekly_disc": {
             "swim_km":    swim_km,
@@ -2661,6 +2662,33 @@ def _swim_lengths_real(activity_id: str) -> Optional[dict]:
     if not any(v is not None for v in swolf):
         return None
     return {"pace_s_per_100m": pace, "strokes": strokes, "swolf": swolf}
+
+
+def _dashboard_injury_risk(user_id: str, db: Session) -> Optional[dict]:
+    """
+    Injury Risk Score liviano para la card "¿Cómo va mi carga?" — mismo
+    motor oficial ya consolidado (injury_risk_service.py, ver commit
+    6acbe38). Cache-first (misma InjuryRiskSnapshot que usa /injury/risk/
+    today) para no recalcular el score completo en cada carga del
+    dashboard; solo si no hay snapshot de hoy se calcula en tiempo real.
+    """
+    from datetime import date as _d
+    from ..models import InjuryRiskSnapshot
+    from ..services.injury_risk_service import compute_injury_risk
+
+    today = _d.today().isoformat()
+    existing = (
+        db.query(InjuryRiskSnapshot)
+        .filter(InjuryRiskSnapshot.user_id == user_id, InjuryRiskSnapshot.date_iso == today)
+        .first()
+    )
+    if existing and existing.risk_score is not None:
+        return {"score": existing.risk_score, "level": existing.risk_level, "color": existing.risk_color}
+    try:
+        rpt = compute_injury_risk(user_id, db, today)
+        return {"score": rpt["risk_score"], "level": rpt["risk_level"], "color": rpt["risk_color"]}
+    except Exception:
+        return None
 
 
 def _current_streak_days(acts: list) -> int:

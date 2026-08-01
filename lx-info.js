@@ -137,6 +137,35 @@ var METRICS = {
     unidad: 'bpm (latidos por minuto)',
   },
 
+  body_battery: {
+    nombre: 'Body Battery — Energía Corporal',
+    emoji: '🔋',
+    definicion: 'Estimación de Garmin de tu <strong>energía física disponible</strong>, combinando FC, HRV, estrés, sueño y actividad. Sube mientras descansas/duermes, baja con el estrés y el ejercicio. Es una foto del día, no un histórico de fitness.',
+    formula: 'Calculado por Garmin a partir de HRV + estrés + sueño + actividad reciente',
+    rangos: [
+      {min:0,   max:30,  label:'Baja',          color:'#F43F5E', advice:'Poca energía disponible. Prioriza descanso, evita sesiones exigentes hoy.'},
+      {min:30,  max:60,  label:'Media',         color:'#F0A500', advice:'Energía moderada. Bien para sesiones suaves a moderadas.'},
+      {min:60,  max:999, label:'Cargada ✓',     color:'#10B981', advice:'Buena reserva de energía. Momento adecuado para una sesión exigente.'},
+    ],
+    pro_tip: 'Si el valor mostrado dice "· ayer" es porque Garmin todavía no sincronizó la lectura de hoy — no es un dato inventado, es el último real disponible.',
+    unidad: '% (0-100)',
+  },
+
+  injury_risk: {
+    nombre: 'Riesgo de Lesión',
+    emoji: '🛡',
+    definicion: 'Score compuesto que combina <strong>varios factores reales</strong> — no solo uno — para estimar tu riesgo de lesión: ACWR (35%), caída de HRV vs tu baseline (30%), monotonía de entrenamiento (20%) y marcadores de sangre si tenés análisis recientes (15%). A diferencia del ACWR (un solo ingrediente), este es el resultado combinado.',
+    formula: 'Score = 0.35×ACWR + 0.30×HRV + 0.20×Monotonía + 0.15×Labs (cada factor 0-100)',
+    rangos: [
+      {min:0,  max:30, label:'Bajo ✓',      color:'#10B981', advice:'Carga bien gestionada. Podés continuar con el plan habitual.'},
+      {min:30, max:55, label:'Moderado',     color:'#F0A500', advice:'Monitorea recuperación. Prioriza sueño y nutrición esta semana.'},
+      {min:55, max:75, label:'Alto',         color:'#F97316', advice:'Reduce intensidad y volumen al 70% esta semana.'},
+      {min:75, max:999,label:'Crítico ⚠',   color:'#EF4444', advice:'Descansa hoy. Consulta con tu coach antes de entrenar mañana.'},
+    ],
+    pro_tip: 'Mismo motor que usa la pestaña "Lesiones" del AI Coach — un solo número real en toda la app, no una aproximación distinta por pantalla.',
+    unidad: 'puntos (0-100)',
+  },
+
   vo2max: {
     nombre: 'VO2 Máx — Capacidad Aeróbica Máxima',
     emoji: '🫁',
