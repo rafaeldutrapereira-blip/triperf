@@ -407,7 +407,7 @@ def get_my_context(
 # ─── Sprint 20: AI Intelligence Engine v2 ─────────────────────────────────
 from ..services.ai_engine import (
     generate_workout, generate_weekly_report, forecast_ctl,
-    assess_injury_risk, generate_coach_insights,
+    generate_coach_insights,
 )
 
 
@@ -529,35 +529,50 @@ def api_forecast(
     }
 
 
+_INJURY_FACTOR_LABELS = {
+    "acwr": "Carga aguda:crónica (ACWR)", "hrv": "Caída de HRV",
+    "monotony": "Monotonía de entrenamiento", "labs": "Marcadores de sangre",
+}
+
+
 @router.get("/injury-forecast")
 def api_injury_forecast(
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
-    from ..models import AIAthleteContext, GarminTrainingLoad
+    """
+    Consolidado con injury_risk_service.py (el motor "oficial", con ACWR/HRV/
+    Monotonía/Labs/Impact Load y literatura citada) — antes esta pestaña de
+    ai_coach.html llamaba a assess_injury_risk() (ai_engine.py), un motor
+    completamente distinto que daba un número diferente al resto de la app
+    para el mismo concepto (verificado en vivo: 0.0% acá vs 11.7/100 en el
+    motor oficial, mismo usuario, mismo día). Mismo patrón ya resuelto para
+    Readiness Score (commit 3beb70b).
+    """
+    from ..services.injury_risk_service import compute_injury_risk
 
-    ctx  = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == me.id).first()
-    acwr = getattr(ctx, "current_acwr", None)
-    dtr  = getattr(ctx, "days_to_race", None)
+    rpt = compute_injury_risk(me.id, db)
+    factors = rpt.get("factors", {})
 
-    load_row = (
-        db.query(GarminTrainingLoad)
-        .filter(GarminTrainingLoad.user_id == me.id)
-        .order_by(GarminTrainingLoad.date_iso.desc())
-        .first()
-    )
-    monotony  = getattr(load_row, "monotony", None)
-    strain    = getattr(load_row, "strain", None)
-    hrv_trend = getattr(ctx, "hrv_trend", "stable") if ctx else "stable"
+    weighted = [
+        (key, (f.get("score") or 0) * (f.get("weight") or 0))
+        for key, f in factors.items() if f.get("weight")
+    ]
+    top_factor = max(weighted, key=lambda kv: kv[1])[0] if weighted and max(weighted, key=lambda kv: kv[1])[1] > 0 else None
+    primary_driver = _INJURY_FACTOR_LABELS.get(top_factor, "Sin factores de riesgo dominantes")
 
-    rpt = assess_injury_risk(acwr=acwr, monotony=monotony, strain=strain,
-                              hrv_trend=hrv_trend, days_to_race=dtr)
     return {
-        "risk_score": rpt.current_risk_score, "risk_level": rpt.risk_level,
-        "primary_driver": rpt.primary_driver, "time_at_risk_days": rpt.time_at_risk_days,
-        "recovery_days_needed": rpt.recovery_days_needed,
-        "action_plan": rpt.action_plan, "warning_signs": rpt.warning_signs,
-        "raw": {"acwr": acwr, "monotony": monotony, "strain": strain, "hrv_trend": hrv_trend},
+        "risk_score": round(rpt["risk_score"] / 100, 3), "risk_level": rpt["risk_level"],
+        "primary_driver": primary_driver,
+        "time_at_risk_days": None, "recovery_days_needed": None,
+        "action_plan": rpt.get("recommendations", []),
+        "warning_signs": [a["msg"] for a in rpt.get("alerts", [])],
+        "raw": {
+            "acwr": factors.get("acwr", {}).get("value"),
+            "monotony": factors.get("monotony", {}).get("value"),
+            "strain": factors.get("monotony", {}).get("strain"),
+            "impact_load": factors.get("impact_load", {}).get("value"),
+        },
     }
 
 
