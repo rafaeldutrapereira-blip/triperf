@@ -641,12 +641,24 @@ def _parse_garmin_activity(act: dict, ftp: int = 250, fcmax: float | None = None
     pace_str  = _format_pace(avg_spd)   if sport == "run"  else None
     swim_pace = _format_swim_pace(avg_spd) if sport == "swim" else None
 
-    # B-24: Swim metrics — Garmin returns averageSwolf, avgStrokes, avgStrokeRate, poolLength
-    swolf           = _safe_float(act.get("averageSwolf"))   or _safe_float(act.get("avgSwolf"))
-    avg_cadence_spm = _safe_float(act.get("avgStrokes"))     or _safe_float(act.get("averageStrokes"))
-    pool_length_m   = _safe_int(act.get("poolLength"))
-    if avg_cadence_spm and dur_sec:
+    # B-24: Swim metrics — verificado en vivo contra la API real de Garmin:
+    # averageSwolf sí viene en el resumen de actividad; la cadencia real está
+    # en averageSwimCadenceInStrokesPerMinute (avgStrokes/averageStrokes no
+    # existen — son campos que nunca matcheaban, por eso avg_cadence_spm
+    # quedaba siempre None); poolLength viene en CENTÍMETROS (2500 = 25m),
+    # no en metros — sin dividir por 100 quedaba guardado 100x más grande.
+    swolf           = _safe_float(act.get("averageSwolf"))
+    avg_cadence_spm = _safe_float(act.get("averageSwimCadenceInStrokesPerMinute"))
+    pool_length_raw = _safe_float(act.get("poolLength"))
+    pool_length_m   = round(pool_length_raw / 100) if pool_length_raw else None
+    if avg_cadence_spm:
         avg_cadence_spm = round(avg_cadence_spm, 1)
+
+    # Training Effect real de Garmin — viene en el resumen de la actividad,
+    # sin necesidad de telemetría ni llamadas extra a la API.
+    aerobic_te   = act.get("aerobicTrainingEffect")
+    anaerobic_te = act.get("anaerobicTrainingEffect")
+    te_label     = act.get("trainingEffectLabel")
 
     return {
         "activity_id":    act.get("activityId"),
@@ -669,6 +681,9 @@ def _parse_garmin_activity(act: dict, ftp: int = 250, fcmax: float | None = None
         "swolf":          round(swolf, 1) if swolf else None,
         "avg_cadence_spm":avg_cadence_spm,
         "pool_length_m":  pool_length_m,
+        "aerobic_te":     round(aerobic_te, 1)   if aerobic_te   is not None else None,
+        "anaerobic_te":   round(anaerobic_te, 1) if anaerobic_te is not None else None,
+        "te_label":       te_label,
     }
 
 
@@ -1030,6 +1045,13 @@ class GarminPullService:
                 existing.tss      = parsed["tss"]
                 existing.avg_hr   = parsed["avg_hr"]
                 existing.avg_power= parsed["avg_power"]
+                existing.aerobic_te   = parsed["aerobic_te"]
+                existing.anaerobic_te = parsed["anaerobic_te"]
+                existing.te_label     = parsed["te_label"]
+                if parsed["sport"] == "swim":
+                    existing.swolf           = parsed["swolf"]
+                    existing.avg_cadence_spm = parsed["avg_cadence_spm"]
+                    existing.pool_length_m   = parsed["pool_length_m"]
             else:
                 import uuid as _uuid_mod
                 new_act = GarminActivity(
@@ -1051,6 +1073,12 @@ class GarminPullService:
                     icon        = parsed["icon"],
                     color       = parsed["color"],
                     stroke      = parsed["stroke"],
+                    swolf            = parsed["swolf"],
+                    avg_cadence_spm  = parsed["avg_cadence_spm"],
+                    pool_length_m    = parsed["pool_length_m"],
+                    aerobic_te       = parsed["aerobic_te"],
+                    anaerobic_te     = parsed["anaerobic_te"],
+                    te_label         = parsed["te_label"],
                 )
                 db.add(new_act)
                 db.flush()  # obtener ID antes de crear el post
