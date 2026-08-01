@@ -728,29 +728,42 @@ var POWER_ZONE = {
   z7_neuromuscular:  {label:'Z7 Neuromuscular',color:'#EC4899'}
 };
 
-function _sparkline(values, W, H, pad){
-  var idxVals = [];
-  for(var i=0;i<values.length;i++){ if(values[i]!=null) idxVals.push({i:i, v:values[i]}); }
-  if(idxVals.length < 2) return null;
-  var vals = idxVals.map(function(o){ return o.v; });
-  var minV = Math.min.apply(null, vals), maxV = Math.max.apply(null, vals);
-  if(minV===maxV){ minV -= 1; maxV += 1; }
+function _pathFromValues(values, minV, maxV, W, H, pad){
   var n = values.length, d = '';
-  for(i=0;i<values.length;i++){
+  var span = (maxV - minV) || 1;
+  for(var i=0;i<n;i++){
     if(values[i]==null) continue;
     var x = pad + (i/(n-1))*(W-pad*2);
-    var y = H - pad - ((values[i]-minV)/(maxV-minV))*(H-pad*2);
+    var y = H - pad - ((values[i]-minV)/span)*(H-pad*2);
     d += (d?'L':'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
   }
-  return {d:d, min:minV, max:maxV};
+  return d;
+}
+
+function _sparkline(values, W, H, pad, extraValues){
+  var idxVals = [];
+  for(var i=0;i<values.length;i++){ if(values[i]!=null) idxVals.push(values[i]); }
+  if(idxVals.length < 2) return null;
+  var vals = idxVals.slice();
+  if(extraValues){ for(i=0;i<extraValues.length;i++){ if(extraValues[i]!=null) vals.push(extraValues[i]); } }
+  var minV = Math.min.apply(null, vals), maxV = Math.max.apply(null, vals);
+  if(minV===maxV){ minV -= 1; maxV += 1; }
+  return {d:_pathFromValues(values, minV, maxV, W, H, pad), min:minV, max:maxV};
 }
 
 var _chartRegistry = [];
 
-function renderChartBlock(name, values, tArr, color, unit, avgVal){
+// targetValues (opcional): serie de objetivo REAL, construida en el backend
+// solo cuando existe un workout asignado real para esa fecha+deporte+atleta
+// (ver _bike_target_power_series). Si no hay workout asignado, el backend
+// devuelve null y acá simplemente no se dibuja ninguna línea de objetivo —
+// nunca se aproxima ni se inventa un valor.
+function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues){
   var W=600, H=110, pad=6;
-  var res = _sparkline(values, W, H, pad);
+  var hasTarget = targetValues && targetValues.some(function(v){ return v!=null; });
+  var res = _sparkline(values, W, H, pad, hasTarget ? targetValues : null);
   if(!res) return '';
+  var targetPath = hasTarget ? _pathFromValues(targetValues, res.min, res.max, W, H, pad) : null;
   var chartId = 'chart-svg-' + _chartRegistry.length;
   _chartRegistry.push({
     id: chartId, values: values, t: tArr, color: color, unit: unit,
@@ -761,9 +774,11 @@ function renderChartBlock(name, values, tArr, color, unit, avgVal){
     + '<div class="chart-anns">'
       + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>Prom '+Math.round(avgVal)+' '+unit+'</div>' : '')
       + '<div class="chart-ann">Máx '+Math.round(res.max)+' '+unit+'</div>'
+      + (hasTarget ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:var(--dim);opacity:.6"></span>Objetivo del plan</div>' : '')
     + '</div></div>'
     + '<div class="chart-svg-wrap">'
       + '<svg class="chart-svg" id="'+chartId+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+        + (targetPath ? '<path d="'+targetPath+'" fill="none" stroke="var(--dim)" stroke-width="1.3" stroke-dasharray="4 3" opacity=".6"/>' : '')
         + '<path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'
         + '<line class="chart-hover-line" x1="0" y1="0" x2="0" y2="'+H+'" opacity="0"/>'
         + '<circle class="chart-hover-dot" r="4" fill="'+color+'" opacity="0"/>'
@@ -928,7 +943,7 @@ function renderTelemetry(){
       _chartRegistry = [];
       var tArr = data.series.t;
       var blocks = '';
-      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power);
+      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, data.target_power);
       blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr);
       if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'rpm', null);
       if(ACT.sport==='run')  blocks += renderChartBlock('Velocidad', data.series.speed, tArr, '#10B981', 'm/s', null);

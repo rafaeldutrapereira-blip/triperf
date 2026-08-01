@@ -12,6 +12,7 @@ from ..models import (
     User, AssignedWorkout, WorkoutLog, WellnessLog, BloodLabExam, NutritionPlan,
     GarminActivity, GarminTrainingLoad, GarminSyncStatus, Message, AthleteNote,
     FoodDiaryEntry, GarminPlannedWorkout, RaceEvent, MentalCheckin, ActivityPhoto,
+    WorkoutTemplate,
 )
 from ..schemas import (
     AssignedWorkoutOut, WorkoutLogCreate, WorkoutLogOut,
@@ -2626,6 +2627,82 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
     return out
 
 
+def _bike_target_power_series(owner: User, act: GarminActivity, t_arr: list, db: Session):
+    """
+    Serie de potencia objetivo (W) alineada a t_arr, construida SOLO si existe
+    un AssignedWorkout real (individual o de grupo) para ese atleta+fecha+bici
+    con blocks_json de Zwift (bloques definidos por duración en segundos —
+    los únicos que se pueden alinear al eje de tiempo real sin aproximar
+    nada). Si no hay workout asignado ese día, o no hay FTP configurado,
+    retorna None — nunca se inventa un objetivo.
+    """
+    import json as _json
+
+    if act.sport != "bike" or not owner.ftp:
+        return None
+
+    group_ids = [
+        gid for (gid,) in db.query(GroupMember.group_id)
+        .filter(GroupMember.athlete_id == owner.id).all()
+    ]
+    aw = (
+        db.query(AssignedWorkout, WorkoutTemplate)
+        .join(WorkoutTemplate, WorkoutTemplate.id == AssignedWorkout.template_id)
+        .filter(
+            AssignedWorkout.date_iso == act.date_iso,
+            AssignedWorkout.deleted_at.is_(None),
+            WorkoutTemplate.sport == "bike",
+            WorkoutTemplate.blocks_json.isnot(None),
+            (AssignedWorkout.athlete_id == owner.id)
+            | (AssignedWorkout.group_id.in_(group_ids) if group_ids else False),
+        )
+        .first()
+    )
+    if not aw:
+        return None
+    _, template = aw
+    try:
+        blocks = _json.loads(template.blocks_json)
+    except Exception:
+        return None
+    if not blocks:
+        return None
+
+    # Expandir bloques (duración en segundos, potencia como fracción de FTP) a
+    # una serie por segundo de potencia objetivo en vatios.
+    per_second: list = []
+    for b in blocks:
+        btype = b.get("type")
+        if btype == "intervals":
+            reps = int(b.get("repeat") or 0)
+            on_d = int(b.get("on_duration") or 0)
+            off_d = int(b.get("off_duration") or 0)
+            on_p = b.get("on_power")
+            off_p = b.get("off_power")
+            for _ in range(reps):
+                if on_d and on_p is not None:
+                    per_second.extend([round(owner.ftp * on_p)] * on_d)
+                if off_d and off_p is not None:
+                    per_second.extend([round(owner.ftp * off_p)] * off_d)
+        else:
+            dur = int(b.get("duration") or 0)
+            if not dur:
+                continue
+            if "power" in b and b.get("power") is not None:
+                per_second.extend([round(owner.ftp * b["power"])] * dur)
+            elif b.get("power_low") is not None and b.get("power_high") is not None:
+                lo, hi = b["power_low"], b["power_high"]
+                for i in range(dur):
+                    frac = lo + (hi - lo) * (i / dur if dur else 0)
+                    per_second.append(round(owner.ftp * frac))
+
+    if not per_second:
+        return None
+
+    total = len(per_second)
+    return [per_second[int(t)] if t is not None and 0 <= int(t) < total else None for t in t_arr]
+
+
 @router.get("/activities/{activity_id}/telemetry")
 def get_activity_telemetry(
     activity_id: str,
@@ -2684,6 +2761,8 @@ def get_activity_telemetry(
     if not splits:
         splits = _splits_from_garmin_laps(activity_id, act.sport)
 
+    target_power = _bike_target_power_series(owner, act, series["t"], db) if is_own else None
+
     if not is_own:
         prefs = _get_share_prefs(owner)
         if not prefs["share_hr"]:
@@ -2700,13 +2779,14 @@ def get_activity_telemetry(
             series["elevation"] = [None] * len(series["elevation"])
 
     return {
-        "activity_id": activity_id,
-        "sport":       act.sport,
-        "series":      series,
-        "zones":       zones,
-        "splits":      splits,
-        "is_own":      is_own,
-        "owner_name":  None if is_own else (owner.nombre or owner.email.split("@")[0]),
+        "activity_id":  activity_id,
+        "sport":        act.sport,
+        "series":       series,
+        "zones":        zones,
+        "splits":       splits,
+        "target_power": target_power,
+        "is_own":       is_own,
+        "owner_name":   None if is_own else (owner.nombre or owner.email.split("@")[0]),
     }
 
 
