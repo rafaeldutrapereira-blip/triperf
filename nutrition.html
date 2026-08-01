@@ -172,13 +172,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <button class="rt" onclick="setRace('ironman',this)" data-i18n="nutr_ironman">🔥 Ironman</button>
       </div>
       <div class="cfg-ath" id="cfg-ath-info">
-        <div><div class="cfg-ath-lbl">FTP</div><div class="cfg-ath-val" id="ca-ftp">240W</div></div>
+        <div><div class="cfg-ath-lbl">FTP</div><div class="cfg-ath-val" id="ca-ftp">—</div></div>
         <div style="width:1px;height:28px;background:var(--border2)"></div>
-        <div><div class="cfg-ath-lbl">CSS</div><div class="cfg-ath-val" id="ca-css">1:50/100</div></div>
+        <div><div class="cfg-ath-lbl">CSS</div><div class="cfg-ath-val" id="ca-css">—</div></div>
         <div style="width:1px;height:28px;background:var(--border2)"></div>
-        <div><div class="cfg-ath-lbl">Run</div><div class="cfg-ath-val" id="ca-run">4:20/km</div></div>
+        <div><div class="cfg-ath-lbl">Run</div><div class="cfg-ath-val" id="ca-run">—</div></div>
         <div style="width:1px;height:28px;background:var(--border2)"></div>
-        <div><div class="cfg-ath-lbl">Peso</div><div class="cfg-ath-val" id="ca-weight">72kg</div></div>
+        <div><div class="cfg-ath-lbl">Peso</div><div class="cfg-ath-val" id="ca-weight">—</div></div>
       </div>
       <button class="btn btn-g btn-sm" id="if-toggle-btn" onclick="toggleIFPanel()" title="Ajustar intensidad de bici y carrera">🎚 Intensidad<span id="if-badge" style="display:none;margin-left:.35rem;color:var(--gold)">●</span></button>
       <span id="nut-save-status" style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);opacity:0;transition:opacity .3s ease;flex-shrink:0"></span>
@@ -450,7 +450,14 @@ function kCalSwim(weight, durMin)  { return 8.0 * weight * (durMin/60); }
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // ATHLETE PROFILE (from kl_athlete_data localStorage)
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
-var ATH = {ftp:235, css:110, run:300, weight:62, name:'Rafael'};
+// Los valores numéricos son solo semillas internas para que la calculadora
+// no rompa matemáticamente antes de que llegue el perfil real — nunca se
+// muestran en pantalla como si fueran datos reales (ver loadAth(), que
+// controla qué se pinta en ca-ftp/ca-css/ca-run/ca-weight con flags
+// *Real/*Est explícitos). Antes se mostraban directo, indistinguibles
+// de un dato configurado — "FTP fantasma", mismo patrón ya corregido una
+// vez en indoor_workout.html pero nunca aplicado acá.
+var ATH = {ftp:235, css:110, run:300, weight:62, name:'Rafael', ftpReal:false, cssReal:false, cssEst:false, runReal:false, runEst:false, weightReal:false};
 var PROFILE = {};
 function nutAuthTok() {
   var t = localStorage.getItem('lx_co_token');
@@ -459,40 +466,54 @@ function nutAuthTok() {
 }
 function loadAthleteProfileFromAPI() {
   var tok = nutAuthTok();
-  if(!tok) return;
+  if(!tok) { renderAthValues(); return; }
   var api = (location.protocol === 'file:' ? 'http://localhost:8000' : '') + '/api';
   fetch(api + '/athlete/profile', { headers: { Authorization: 'Bearer ' + tok } })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(p){
-      if(!p) return;
-      PROFILE = p;
+      PROFILE = p || {};
       loadAth();
       loadFromKLData();
       renderWeeklyChart();
       nutCalc();
-    }).catch(function(){});
+    }).catch(function(e){
+      console.error('nutrition.html: no se pudo cargar el perfil real', e);
+      renderAthValues(); // sin perfil real: mostrar honesto "sin configurar", no la semilla interna
+    });
 }
 function loadAth() {
-  // Fuente de verdad: perfil real (misma que athlete_profile.html). Fallback: kl_athlete_data local.
-  if(PROFILE.ftp)       ATH.ftp    = parseInt(PROFILE.ftp)    || ATH.ftp;
-  if(PROFILE.css)       ATH.css    = parsePaceSec(PROFILE.css)     || ATH.css;
-  if(PROFILE.run_pace)  ATH.run    = parsePaceSec(PROFILE.run_pace) || ATH.run;
-  if(PROFILE.weight_kg) ATH.weight = parseFloat(PROFILE.weight_kg) || ATH.weight;
-  if(PROFILE.nombre)    ATH.name   = PROFILE.nombre;
+  // Fuente de verdad: perfil real (misma que athlete_profile.html). Si no
+  // hay perfil, kl_athlete_data local es un dato que el propio atleta ya
+  // cargó antes en esta sesión (real, no inventado) — solo si tampoco hay
+  // eso, queda sin configurar (ver renderAthValues).
+  var d = {};
   if(!Object.keys(PROFILE).length) {
-    try {
-      var d = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
-      if(d.ftp)      ATH.ftp    = parseInt(d.ftp)||235;
-      if(d.css)      ATH.css    = parsePaceSec(d.css);
-      if(d.runPace)  ATH.run    = parsePaceSec(d.runPace);
-      if(d.weight)   ATH.weight = parseFloat(d.weight)||62;
-      if(d.name)     ATH.name   = d.name;
-    } catch(e){}
+    try { d = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}'); } catch(e){}
   }
-  document.getElementById('ca-ftp').textContent    = ATH.ftp+'W';
-  document.getElementById('ca-css').textContent    = fmtPace(ATH.css)+'/100';
-  document.getElementById('ca-run').textContent    = fmtPace(ATH.run)+'/km';
-  document.getElementById('ca-weight').textContent = ATH.weight+'kg';
+  ATH.ftpReal = !!(PROFILE.ftp || d.ftp);
+  if(ATH.ftpReal) ATH.ftp = parseInt(PROFILE.ftp || d.ftp) || ATH.ftp;
+
+  ATH.cssReal = !!(PROFILE.css || d.css);
+  if(ATH.cssReal) ATH.css = parsePaceSec(PROFILE.css || d.css) || ATH.css;
+
+  ATH.runReal = !!(PROFILE.run_pace || d.runPace);
+  if(ATH.runReal) ATH.run = parsePaceSec(PROFILE.run_pace || d.runPace) || ATH.run;
+
+  ATH.weightReal = !!(PROFILE.weight_kg || d.weight);
+  if(ATH.weightReal) ATH.weight = parseFloat(PROFILE.weight_kg || d.weight) || ATH.weight;
+
+  if(PROFILE.nombre) ATH.name = PROFILE.nombre; else if(d.name) ATH.name = d.name;
+  renderAthValues();
+}
+function renderAthValues() {
+  var ftpEl = document.getElementById('ca-ftp');
+  if(ftpEl) ftpEl.textContent = ATH.ftpReal ? ATH.ftp+'W' : 'Sin configurar';
+  var cssEl = document.getElementById('ca-css');
+  if(cssEl) cssEl.textContent = ATH.cssReal ? fmtPace(ATH.css)+'/100' : (ATH.cssEst ? '≈'+fmtPace(ATH.css)+'/100' : 'Sin configurar');
+  var runEl = document.getElementById('ca-run');
+  if(runEl) runEl.textContent = ATH.runReal ? fmtPace(ATH.run)+'/km' : (ATH.runEst ? '≈'+fmtPace(ATH.run)+'/km' : 'Sin configurar');
+  var wEl = document.getElementById('ca-weight');
+  if(wEl) wEl.textContent = ATH.weightReal ? ATH.weight+'kg' : 'Sin configurar';
 }
 
 function loadFromKLData() {
@@ -520,7 +541,7 @@ function loadFromKLData() {
       swimPaces.sort(function(a,b){return a-b;});
       var topN = Math.max(2, Math.ceil(swimPaces.length * 0.4));
       var css  = swimPaces.slice(0,topN).reduce(function(s,v){return s+v;},0)/topN;
-      if (css > 90 && css < 160) ATH.css = Math.round(css);
+      if (css > 90 && css < 160) { ATH.css = Math.round(css); ATH.cssEst = true; }
     }
   }
   if (!profileHasRunPace) {
@@ -537,11 +558,10 @@ function loadFromKLData() {
       var topR = Math.max(2, Math.ceil(runPaces.length * 0.25));
       var best = runPaces.slice(0,topR).reduce(function(s,v){return s+v;},0)/topR;
       var derived = Math.round(best + 10);
-      if (derived > 210 && derived < 450) ATH.run = derived;
+      if (derived > 210 && derived < 450) { ATH.run = derived; ATH.runEst = true; }
     }
   }
-  document.getElementById('ca-css').textContent    = fmtPace(ATH.css)+'/100';
-  document.getElementById('ca-run').textContent    = fmtPace(ATH.run)+'/km';
+  renderAthValues();
 }
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
