@@ -1207,6 +1207,10 @@ ul { list-style: none; }
             <div class="wp-stat-lbl">Acts</div>
             <div class="wp-stat-val" id="wp-acts">--</div>
           </div>
+          <div id="wp-streak-wrap" style="display:none">
+            <div class="wp-stat-lbl">Racha</div>
+            <div class="wp-stat-val" id="wp-streak">--<span class="wp-stat-unit">d</span></div>
+          </div>
         </div>
         <div class="wp-chart-wrap">
           <svg id="wp-chart" viewBox="0 0 600 105" preserveAspectRatio="none"></svg>
@@ -2736,6 +2740,16 @@ function _showSyncBanner(secsTotal){
     } else {
       var bVo2CyEmpty = document.getElementById('badge-vo2-cycling');
       if(bVo2CyEmpty){ bVo2CyEmpty.textContent = 'Sin datos'; }
+    }
+    if(fresh.streak_days != null){
+      var streakWrap = document.getElementById('wp-streak-wrap');
+      var streakVal  = document.getElementById('wp-streak');
+      if(fresh.streak_days > 0){
+        if(streakVal) streakVal.innerHTML = fresh.streak_days+'<span class="wp-stat-unit">d</span>';
+        if(streakWrap) streakWrap.style.display = '';
+      } else if(streakWrap){
+        streakWrap.style.display = 'none';
+      }
     }
     window._apiFetching = false;
     patchData();

@@ -122,6 +122,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .split-table td{font-family:'Barlow Condensed',sans-serif;font-size:.92rem;font-weight:700;text-align:right;padding:.55rem .9rem;border-bottom:1px solid var(--border2)}
 .split-table td:first-child{text-align:left;color:var(--muted);font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:600}
 .split-table tr:last-child td{border-bottom:none}
+.split-table tr.best td{background:rgba(16,185,129,.07)}
 
 /* ── SPLITS ── */
 .splits-tbl{width:100%;border-collapse:collapse}
@@ -176,6 +177,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
       <div class="ah-title" id="act-title">—</div>
       <div class="ah-meta" id="act-meta"></div>
       <div class="ah-stats" id="act-kpis"></div>
+      <div id="act-te" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -428,7 +430,7 @@ if(ACT.sport==='bike'){
   kpis = [
     {lbl:'Ritmo Medio',    val:paceSwimS?fmtPace100(paceSwimS):'—',  unit:'min/100m',  col:'var(--cyan)'},
     {lbl:'FC Media',       val:ACT.avg_hr||'—',                        unit:'bpm',       col:'var(--coral)'},
-    {lbl:'Distancia',      val:distM?distM+'m':'—',                    unit:'metros',    col:'var(--aqua)'},
+    {lbl:'Swolf',          val:ACT.swolf||'—',                         unit:ACT.avg_cadence_spm?Math.round(ACT.avg_cadence_spm)+' brazadas/min':'eficiencia', col:'var(--aqua)'},
     {lbl:'Calorías',       val:ACT.calories||'—',                      unit:'kcal',      col:'var(--green)'}
   ];
 } else {
@@ -448,6 +450,24 @@ document.getElementById('act-kpis').innerHTML = kpis.map(function(k){
     +'<div class="ah-stat-unit">'+k.unit+'</div>'
     +'</div>';
 }).join('');
+
+// Training Effect real de Garmin (aeróbico/anaeróbico) — solo si Garmin lo
+// reportó para esta actividad; si no, no se muestra nada (nunca se estima).
+if(ACT.aerobic_te != null){
+  var teEl = document.getElementById('act-te');
+  var teLabels = {
+    BASE:'Base (Aeróbica baja)', TEMPO:'Tempo (Aeróbica alta)', THRESHOLD:'Umbral',
+    VO2MAX:'VO2 Max', ANAEROBIC_CAPACITY:'Capacidad Anaeróbica', SPRINT:'Sprint',
+    RECOVERY:'Recuperación', NONE:'Sin efecto de entrenamiento'
+  };
+  var teName = teLabels[ACT.te_label] || ACT.te_label || 'Efecto de Entrenamiento';
+  teEl.style.display = 'flex';
+  teEl.style.cssText = 'display:flex;gap:1.5rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border2)';
+  teEl.innerHTML =
+      '<div><div class="ah-stat-lbl">'+teName+'</div>'
+    + '<div class="ah-stat-val" style="color:var(--orange);font-size:1.1rem">'+ACT.aerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">Aeróbico</span></div></div>'
+    + (ACT.anaerobic_te != null ? '<div><div class="ah-stat-val" style="color:var(--purple);font-size:1.1rem">'+ACT.anaerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">Anaeróbico</span></div></div>' : '');
+}
 
 // ─────────────────────────────────────────────────────
 // RENDER: MAP
@@ -897,7 +917,26 @@ function renderSplitsReal(splits, sport){
   var unitLbl = isSwim ? 'Ritmo /100m' : isRun ? 'Ritmo' : 'Vel. Media';
   var lastCol = isSwim ? 'Largos' : 'Potencia';
 
-  var rows = splits.map(function(s){
+  // Ritmo óptimo (mejor parcial real) vs. ritmo medio de la actividad —
+  // ambos calculados de los mismos parciales reales ya descargados, sin
+  // estimar nada nuevo.
+  var paceField = isSwim ? 'avg_pace_s_per_100m' : isRun ? 'avg_pace_s_per_km' : null;
+  var bestIdx = -1, bestPaceVal = null;
+  if(paceField){
+    splits.forEach(function(s, i){
+      var v = s[paceField];
+      if(v && (bestPaceVal===null || v < bestPaceVal)){ bestPaceVal = v; bestIdx = i; }
+    });
+  }
+  var summaryHtml = '';
+  if(bestPaceVal!=null){
+    var fmtFn = isSwim ? fmtPace100 : fmtPace;
+    summaryHtml = '<div style="display:flex;gap:1.5rem;padding:.7rem 1.4rem;border-bottom:1px solid var(--border2);font-size:.78rem">'
+      + '<div><span style="color:var(--dim)">Ritmo óptimo&nbsp;</span><strong style="color:var(--green)">'+fmtFn(bestPaceVal)+'</strong></div>'
+      + '</div>';
+  }
+
+  var rows = splits.map(function(s, i){
     var distLbl = isSwim ? Math.round(s.distance_m)+' m'
       : isRun ? (s.distance_m/1000).toFixed(2)+' km'
       : (s.distance_m/1000).toFixed(1)+' km';
@@ -908,7 +947,7 @@ function renderSplitsReal(splits, sport){
     var lastVal = isSwim
       ? (s.lengths!=null ? s.lengths : '—')
       : (s.avg_power!=null ? s.avg_power+' W' : '—');
-    return '<tr>'
+    return '<tr'+(i===bestIdx ? ' class="best"' : '')+'>'
       + '<td>'+s.idx+'</td>'
       + '<td>'+distLbl+'</td>'
       + '<td>'+fmtDur(s.duration_s/60)+'</td>'
@@ -917,7 +956,7 @@ function renderSplitsReal(splits, sport){
       + '<td>'+(s.avg_hr!=null ? s.avg_hr+' bpm' : '—')+'</td>'
       + '</tr>';
   }).join('');
-  inner.innerHTML = '<div style="overflow-x:auto"><table class="split-table">'
+  inner.innerHTML = summaryHtml + '<div style="overflow-x:auto"><table class="split-table">'
     + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th><th>FC</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
 }

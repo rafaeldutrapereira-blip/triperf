@@ -772,6 +772,12 @@ class GarminActivity(Base):
     swolf            = Column(Float,   nullable=True)   # strokes + seconds per length
     avg_cadence_spm  = Column(Float,   nullable=True)   # strokes per minute
     pool_length_m    = Column(Integer, nullable=True)   # 25 or 50
+    # Training Effect real de Garmin (aerobicTrainingEffect/anaerobicTrainingEffect/
+    # trainingEffectLabel ya vienen en el resumen de cada actividad — verificado
+    # en vivo contra la API real, sin llamadas extra al sync existente).
+    aerobic_te       = Column(Float,   nullable=True)   # 0.0-5.0
+    anaerobic_te     = Column(Float,   nullable=True)   # 0.0-5.0
+    te_label         = Column(String,  nullable=True)   # "TEMPO" | "BASE" | "VO2MAX" | etc.
     # B-23: activity photo (foto única subida a mano por el atleta)
     photo_path       = Column(String,  nullable=True)   # relative: activity_photos/{id}.jpg
     # Fotos auto-importadas desde Strava (ej. capturas de Zwift) — lista de

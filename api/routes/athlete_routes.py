@@ -1064,6 +1064,7 @@ def athlete_dashboard(
         "vo2_history_cycling":   vo2_history_cycling,
         # Actividades
         "activities": activities,
+        "streak_days": _current_streak_days(acts_orm),
         # Resumen semanal por disciplina
         "weekly_disc": {
             "swim_km":    swim_km,
@@ -1930,6 +1931,9 @@ def _activity_dict(a: GarminActivity) -> dict:
         "swolf":          a.swolf,
         "avg_cadence_spm":a.avg_cadence_spm,
         "pool_length_m":  a.pool_length_m,
+        "aerobic_te":     a.aerobic_te,
+        "anaerobic_te":   a.anaerobic_te,
+        "te_label":       a.te_label,
         "photo_url":      ("/api/athlete/activities/"+a.id+"/photo") if a.photo_path else None,
     }
 
@@ -2625,6 +2629,33 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
             row["avg_pace_s_per_km"] = round(1000 / spd)
         out.append(row)
     return out
+
+
+def _current_streak_days(acts: list) -> int:
+    """
+    Días consecutivos con al menos una actividad real, terminando hoy o ayer
+    (si hoy todavía no hay sync, no se corta la racha por eso). Se corta en
+    el primer día real sin actividad. Basado 100% en date_iso reales de
+    GarminActivity — sin aproximar ni rellenar huecos.
+    """
+    from datetime import timedelta as _timedelta
+    dates = sorted({a.date_iso for a in acts}, reverse=True)
+    if not dates:
+        return 0
+    today = _date.today()
+    if dates[0] == today.isoformat():
+        streak = 1
+        cursor = today - _timedelta(days=1)
+    elif dates[0] == (today - _timedelta(days=1)).isoformat():
+        streak = 1
+        cursor = today - _timedelta(days=2)
+    else:
+        return 0
+    date_set = set(dates)
+    while cursor.isoformat() in date_set:
+        streak += 1
+        cursor -= _timedelta(days=1)
+    return streak
 
 
 def _bike_target_power_series(owner: User, act: GarminActivity, t_arr: list, db: Session):
