@@ -11,7 +11,7 @@
      visibilidad por rol, y si aparece en el sidebar.
   ───────────────────────────────────────────────────────────── */
   var MODULES = [
-    /* ── Siempre disponibles ─────────────────────────── */
+    /* ── Uso diario ───────────────────────────────────── */
     {
       id:      'dashboard',
       file:    'dashboard.html',
@@ -24,34 +24,45 @@
       public:  false
     },
     {
-      id:      'athlete_profile',
-      file:    'athlete_profile.html',
-      label:   'Perfil',
-      labelI18n: 'nav_profile',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
-      minPlan: 'basic',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    /* ── Plan Agegroup ────────────────────────────────── */
-    {
-      id:      'huella',
-      file:    'huella.html',
-      label:   'Mi Huella',
-      labelI18n: 'nav_huella',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
-      minPlan: 'agegroup', /* antes 'basic' — Básico ahora es solo Dashboard+Perfil */
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
       id:      'training_plan',
       file:    'training_plan.html',
       label:   'Plan',
       labelI18n: 'nav_plan',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      id:      'ai_coach',
+      file:    'ai_coach.html',
+      label:   'AI Coach',
+      labelI18n: 'nav_ai_coach',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+      minPlan: 'elite',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    /* ── Seguimiento y salud ──────────────────────────── */
+    {
+      id:      'recovery',
+      file:    'recovery.html',
+      label:   'Recuperación',
+      labelI18n: 'nav_recovery',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      id:      'mental',
+      file:    'mental.html',
+      label:   'Mental',
+      labelI18n: 'nav_mental',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
       minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
@@ -80,54 +91,6 @@
       public:  false
     },
     {
-      id:      'recovery',
-      file:    'recovery.html',
-      label:   'Recuperación',
-      labelI18n: 'nav_recovery',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-      minPlan: 'agegroup',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      id:      'mental',
-      file:    'mental.html',
-      label:   'Mental',
-      labelI18n: 'nav_mental',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-      minPlan: 'agegroup',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      id:      'race_day',
-      file:    'race_day.html',
-      label:   'Race Day',
-      labelI18n: 'nav_race_day',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-      minPlan: 'agegroup',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    /* race_predictor.html fusionado en race_day.html (Generar Plan: confianza+rango,
-       meta vs predicción, condición de agua) — ver [[project-labx-huella-yir-merge]] */
-    {
-      id:      'community',
-      file:    'community.html',
-      label:   'Comunidad',
-      labelI18n: 'nav_community',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
-      minPlan: 'agegroup',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    /* year_in_review.html fusionado en huella.html (Mi Huella) — ver [[project-labx-huella-yir-merge]] */
-    /* ── Plan Elite ──────────────────────────────────── */
-    {
       id:      'blood_labs',
       file:    'blood_labs.html',
       label:   'Labs',
@@ -149,6 +112,44 @@
       sidebar: false,
       public:  false
     },
+    /* ── Objetivo y comunidad ─────────────────────────── */
+    {
+      id:      'race_day',
+      file:    'race_day.html',
+      label:   'Race Day',
+      labelI18n: 'nav_race_day',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    /* race_predictor.html fusionado en race_day.html (Generar Plan: confianza+rango,
+       meta vs predicción, condición de agua) — ver [[project-labx-huella-yir-merge]] */
+    {
+      id:      'huella',
+      file:    'huella.html',
+      label:   'Mi Huella',
+      labelI18n: 'nav_huella',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+      minPlan: 'agegroup', /* antes 'basic' — Básico ahora es solo Dashboard+Perfil */
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    /* year_in_review.html fusionado en huella.html (Mi Huella) — ver [[project-labx-huella-yir-merge]] */
+    {
+      id:      'community',
+      file:    'community.html',
+      label:   'Comunidad',
+      labelI18n: 'nav_community',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    /* ── Herramientas puntuales ───────────────────────── */
     {
       id:      'adaptive',
       file:    'adaptive.html',
@@ -161,23 +162,24 @@
       public:  false
     },
     {
-      id:      'ai_coach',
-      file:    'ai_coach.html',
-      label:   'AI Coach',
-      labelI18n: 'nav_ai_coach',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
-      minPlan: 'elite',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
       id:      'indoor_workout',
       file:    'indoor_workout.html',
       label:   'Indoor',
       labelI18n: 'nav_indoor',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
       minPlan: 'elite',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    /* ── Cuenta ────────────────────────────────────────── */
+    {
+      id:      'athlete_profile',
+      file:    'athlete_profile.html',
+      label:   'Perfil',
+      labelI18n: 'nav_profile',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+      minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
