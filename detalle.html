@@ -1141,9 +1141,14 @@ function render() {
     document.getElementById('hero-unit').textContent = ' CTL';
     document.getElementById('hero-val-sub').textContent = 'ATL ' + pATL + ' · TSB ' + (pTSB >= 0 ? '+' : '') + pTSB + ' · ' + fmtDate(d[d.length-1].date);
   } else {
-    document.getElementById('hero-val').textContent      = last;
+    // El número grande refleja el PERÍODO seleccionado (promedio de la
+    // ventana), no un snapshot fijo — antes mostraba "Último registro",
+    // que es el mismo valor sin importar el período elegido porque todos
+    // los períodos terminan hoy (pedido explícito del usuario: el número
+    // debe cambiar al cambiar de período, ver detalle.html?metric=ctl).
+    document.getElementById('hero-val').textContent      = avg;
     document.getElementById('hero-unit').textContent     = cfg.unit ? ' ' + cfg.unit : '';
-    document.getElementById('hero-val-sub').textContent  = 'Último registro · ' + fmtDate(d[d.length-1].date);
+    document.getElementById('hero-val-sub').textContent  = 'Promedio del período · ' + fmtDate(d[0].date) + ' – ' + fmtDate(d[d.length-1].date);
   }
 
   document.getElementById('chart-metric-name').textContent = cfg.name;
