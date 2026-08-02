@@ -13,6 +13,7 @@
   var MODULES = [
     /* ── Uso diario ───────────────────────────────────── */
     {
+      group:   'daily',
       id:      'dashboard',
       file:    'dashboard.html',
       label:   'Dashboard',
@@ -24,6 +25,7 @@
       public:  false
     },
     {
+      group:   'daily',
       id:      'training_plan',
       file:    'training_plan.html',
       label:   'Plan',
@@ -35,6 +37,7 @@
       public:  false
     },
     {
+      group:   'daily',
       id:      'ai_coach',
       file:    'ai_coach.html',
       label:   'AI Coach',
@@ -47,6 +50,7 @@
     },
     /* ── Seguimiento y salud ──────────────────────────── */
     {
+      group:   'health',
       id:      'recovery',
       file:    'recovery.html',
       label:   'Recuperación',
@@ -58,6 +62,7 @@
       public:  false
     },
     {
+      group:   'health',
       id:      'mental',
       file:    'mental.html',
       label:   'Mental',
@@ -69,6 +74,7 @@
       public:  false
     },
     {
+      group:   'health',
       id:      'nutrition',
       file:    'nutrition.html',
       label:   'Nutrición',
@@ -80,6 +86,7 @@
       public:  false
     },
     {
+      group:   'health',
       id:      'analytics',
       file:    'analytics.html',
       label:   'Analytics',
@@ -91,6 +98,7 @@
       public:  false
     },
     {
+      group:   'health',
       id:      'blood_labs',
       file:    'blood_labs.html',
       label:   'Labs',
@@ -102,6 +110,7 @@
       public:  false
     },
     {
+      group:   'health',
       id:      'training_detail',
       file:    'training_detail.html',
       label:   'Sesión',
@@ -114,6 +123,7 @@
     },
     /* ── Objetivo y comunidad ─────────────────────────── */
     {
+      group:   'goal',
       id:      'race_day',
       file:    'race_day.html',
       label:   'Race Day',
@@ -127,6 +137,7 @@
     /* race_predictor.html fusionado en race_day.html (Generar Plan: confianza+rango,
        meta vs predicción, condición de agua) — ver [[project-labx-huella-yir-merge]] */
     {
+      group:   'goal',
       id:      'huella',
       file:    'huella.html',
       label:   'Mi Huella',
@@ -139,6 +150,7 @@
     },
     /* year_in_review.html fusionado en huella.html (Mi Huella) — ver [[project-labx-huella-yir-merge]] */
     {
+      group:   'goal',
       id:      'community',
       file:    'community.html',
       label:   'Comunidad',
@@ -151,6 +163,7 @@
     },
     /* ── Herramientas puntuales ───────────────────────── */
     {
+      group:   'tools',
       id:      'adaptive',
       file:    'adaptive.html',
       label:   'Adaptativo',
@@ -162,6 +175,7 @@
       public:  false
     },
     {
+      group:   'tools',
       id:      'indoor_workout',
       file:    'indoor_workout.html',
       label:   'Indoor',
@@ -174,6 +188,7 @@
     },
     /* ── Cuenta ────────────────────────────────────────── */
     {
+      group:   'account',
       id:      'athlete_profile',
       file:    'athlete_profile.html',
       label:   'Perfil',
@@ -186,6 +201,7 @@
     },
     /* ── Solo Coach / Admin ──────────────────────────── */
     {
+      group:   'account',
       id:      'coach',
       file:    'coach.html',
       label:   'Coach',

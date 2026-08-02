@@ -138,11 +138,31 @@
     var mods  = R ? R.modules.filter(function(m){ return m.sidebar && m.id; }) : [];
     var links = '';
 
+    /* Divisores de grupo — texto muy chico, se insertan solo antes del
+       primer ítem VISIBLE de cada grupo (si un grupo entero quedara oculto
+       para este rol, no deja un divisor "flotando" sin ítems debajo). */
+    var GROUP_LABELS = {
+      daily:   { i18n: 'nav_group_daily',   label: 'Uso diario' },
+      health:  { i18n: 'nav_group_health',  label: 'Seguimiento y salud' },
+      goal:    { i18n: 'nav_group_goal',    label: 'Objetivo y comunidad' },
+      tools:   { i18n: 'nav_group_tools',   label: 'Herramientas' },
+      account: { i18n: 'nav_group_account', label: 'Cuenta' }
+    };
+    var lastGroup = null;
+
     mods.forEach(function(m){
       /* Coach/admin only → hide for athletes */
       var coachOnly = m.roles && m.roles.length > 0 &&
                       m.roles.every(function(r){ return r==='coach'||r==='admin'; });
       if(coachOnly && apiRol!=='coach' && apiRol!=='admin') return;
+
+      if(m.group && m.group !== lastGroup){
+        var g = GROUP_LABELS[m.group];
+        if(g){
+          links += '<span class="sb-sect" data-i18n="' + g.i18n + '">' + _escH(g.label) + '</span>';
+        }
+        lastGroup = m.group;
+      }
 
       var active   = (m.file === page);
       var allowed  = sess ? _canAccess(sess, m.id) : false;
@@ -170,7 +190,6 @@
         '<div class="sb-tagline" data-i18n="app_tagline">Where Champions Are Built</div>' +
       '</div>' +
       '<nav class="sb-nav" aria-label="M&#xF3;dulos">' +
-        '<span class="sb-sect" data-i18n="nav_modules">M&#xF3;dulos</span>' +
         links +
       '</nav>' +
       '<div class="sb-sep"></div>' +
