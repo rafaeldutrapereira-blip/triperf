@@ -1134,12 +1134,16 @@ function render() {
   document.getElementById('hero-accent').textContent   = cfg.title;
   document.getElementById('hero-sub').textContent      = cfg.sub;
   if (metric === 'pmc') {
-    var pCTL = Math.round(ALL.ctl[ALL.ctl.length-1].value);
-    var pATL = Math.round(ALL.atl[ALL.atl.length-1].value);
-    var pTSB = Math.round(ALL.tsb[ALL.tsb.length-1].value);
-    document.getElementById('hero-val').textContent  = pCTL;
+    // Mismo criterio que la rama de métrica individual (ver else abajo):
+    // el hero muestra el PROMEDIO del período seleccionado, no el último
+    // dato — antes usaba siempre ALL.ctl/atl/tsb (arrays completos, sin
+    // filtrar), ignorando el botón de período por completo.
+    var avgCTL = calcAvg(filterPeriod(ALL.ctl));
+    var avgATL = calcAvg(filterPeriod(ALL.atl));
+    var avgTSB = calcAvg(filterPeriod(ALL.tsb));
+    document.getElementById('hero-val').textContent  = avgCTL;
     document.getElementById('hero-unit').textContent = ' CTL';
-    document.getElementById('hero-val-sub').textContent = 'ATL ' + pATL + ' · TSB ' + (pTSB >= 0 ? '+' : '') + pTSB + ' · ' + fmtDate(d[d.length-1].date);
+    document.getElementById('hero-val-sub').textContent = 'ATL ' + avgATL + ' · TSB ' + (avgTSB >= 0 ? '+' : '') + avgTSB + ' · Promedio ' + fmtDate(d[0].date) + ' – ' + fmtDate(d[d.length-1].date);
   } else {
     // El número grande refleja el PERÍODO seleccionado (promedio de la
     // ventana), no un snapshot fijo — antes mostraba "Último registro",
