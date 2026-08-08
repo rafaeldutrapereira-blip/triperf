@@ -169,6 +169,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .race-card-mini-days { font-family: 'Oswald', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--orange); text-align: right; line-height: 1; }
 .race-card-mini-days span { display: block; font-size: .52rem; color: var(--dim); font-weight: 600; text-transform: uppercase; margin-top: .15rem; }
 
+/* ── Planificado vs Real ── */
+.pvr-card { margin: .5rem 1rem .75rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; }
+.pvr-head { font-size: .62rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .4rem; }
+.pvr-row { display: flex; align-items: center; gap: .5rem; padding: .32rem 0; font-size: .82rem; border-top: 1px solid var(--border); }
+.pvr-row:first-of-type { border-top: none; }
+.pvr-lbl { flex: 1; color: var(--dim); font-size: .7rem; }
+.pvr-plan { color: #9CA3AF; font-weight: 600; min-width: 3.2rem; text-align: right; }
+.pvr-arrow { color: var(--dim); font-size: .7rem; }
+.pvr-real { color: var(--green); font-weight: 700; min-width: 3.2rem; text-align: right; }
+
 /* ── Blocks list ── */
 .block-list { display: flex; flex-direction: column; gap: .5rem; padding: 1rem; }
 .workout-block { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; display: flex; gap: .75rem; align-items: flex-start; }
@@ -817,23 +827,73 @@ function loadToday(){
   var pTP = apiFetch('/athlete/planned-workouts?start='+today+'&end='+today)
     .then(function(r){ return r.ok ? r.json() : []; })
     .catch(function(){ return []; });
+  /* Actividades REALES de hoy (Garmin) — antes esta pantalla solo miraba
+     lo planificado, nunca lo que el atleta realmente hizo. Sin esto: (1)
+     no había forma de comparar plan vs. real, y (2) una actividad hecha
+     SIN estar planificada (ej. una sesión extra o distinta a la
+     asignada) era completamente invisible en "Hoy". Se reusa
+     /athlete/dashboard (mismo endpoint que loadStatusHealth) y se
+     filtra por la fecha de hoy client-side. */
+  var pDash = apiFetch('/athlete/dashboard')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .catch(function(){ return null; });
 
-  Promise.all([pCoach, pTP]).then(function(results){
-    var coachAssigns = results[0], tpRows = results[1];
+  Promise.all([pCoach, pTP, pDash]).then(function(results){
+    var coachAssigns = results[0], tpRows = results[1], dash = results[2];
     if(coachAssigns === null){ renderNoWorkout('Sin conexión — plan no disponible'); return; }
-    if(coachAssigns.length){
-      _todayAssign = coachAssigns[0];
-      renderTodayWorkout(coachAssigns[0]);
-      return;
-    }
-    if(tpRows && tpRows.length){
-      var a = _tpRowToAssignShape(tpRows[0]);
-      _todayAssign = a;
-      renderTodayWorkout(a);
-      return;
-    }
-    renderNoWorkout('Día de descanso 🧘');
+
+    var realToday = (dash && dash.activities)
+      ? dash.activities.filter(function(act){ return act.date_iso === today; })
+      : [];
+
+    var planned = null;
+    if(coachAssigns.length) planned = coachAssigns[0];
+    else if(tpRows && tpRows.length) planned = _tpRowToAssignShape(tpRows[0]);
+
+    if(!planned && realToday.length === 0){ renderNoWorkout('Día de descanso 🧘'); return; }
+    if(!planned){ _todayAssign = null; renderUnplannedToday(realToday); return; }
+
+    _todayAssign = planned;
+    renderTodayWorkout(planned, realToday);
   });
+}
+
+/* Actividad(es) reales de hoy que NO corresponden a nada planificado —
+   antes esto era invisible, la pantalla decía "Día de descanso" aunque
+   el atleta sí hubiera entrenado (solo que no era lo asignado/planeado). */
+function renderUnplannedToday(activities){
+  var html = '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Sin plan para hoy — actividad registrada</div>';
+  activities.forEach(function(act){
+    html += _realActivityCard(act);
+  });
+  document.getElementById('today-content').innerHTML = html;
+}
+
+function _planVsRealCard(t, real){
+  function row(label, unit, plannedVal, realVal, dec){
+    if(plannedVal == null && realVal == null) return '';
+    var pv = plannedVal!=null ? (dec?Number(plannedVal).toFixed(dec):Math.round(plannedVal)) : '—';
+    var rv = realVal!=null ? (dec?Number(realVal).toFixed(dec):Math.round(realVal)) : '—';
+    return '<div class="pvr-row"><span class="pvr-lbl">'+label+'</span><span class="pvr-plan">'+pv+' '+unit+'</span><span class="pvr-arrow">→</span><span class="pvr-real">'+rv+' '+unit+'</span></div>';
+  }
+  return '<div class="pvr-card">'
+    +'<div class="pvr-head">Planificado → Real</div>'
+    +row('Duración','min', t.dur_min, real.dur_min)
+    +row('Distancia','km', t.dist_km, real.dist_km, 2)
+    +row('TSS','', t.tss, real.tss)
+    +'</div>';
+}
+
+function _realActivityCard(act){
+  var col = SPORT_COL[act.sport] || '#9CA3AF';
+  return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px">'
+    +'<div class="th-sport"><span class="th-sport-emoji">'+(act.icon||SPORT_EMOJI[act.sport]||'🏋')+'</span>'
+    +'<div><div class="th-name">'+(act.name||'Actividad')+'</div></div></div>'
+    +'<div class="th-meta-grid">'
+    +(act.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+Math.round(act.dur_min)+'</div><div class="th-meta-lbl">min</div></div>':'')
+    +(act.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+act.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
+    +(act.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+Math.round(act.tss)+'</div><div class="th-meta-lbl">TSS</div></div>':'')
+    +'</div></div>';
 }
 
 /* Normaliza una fila de /athlete/planned-workouts (shape distinto, sin
@@ -863,11 +923,17 @@ function renderNoWorkout(msg){
     +'</div>';
 }
 
-function renderTodayWorkout(a){
+function renderTodayWorkout(a, realActivities){
+  realActivities = realActivities || [];
   var t   = a.template || {};
   var sp  = t.sport || 'run';
   var col = SPORT_COL[sp] || '#9CA3AF';
-  var done= a.logs && a.logs.length > 0;
+  // Match por deporte con lo real de hoy (Garmin) — si coincide, el
+  // entreno se considera hecho aunque el atleta nunca haya tocado
+  // "Registrar resultado" (ese log manual sigue siendo válido también).
+  var matchedReal = realActivities.filter(function(r){ return r.sport === sp; });
+  var extraReal   = realActivities.filter(function(r){ return r.sport !== sp; });
+  var done = (a.logs && a.logs.length > 0) || matchedReal.length > 0;
   var blocks = [];
   try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
 
@@ -934,14 +1000,30 @@ function renderTodayWorkout(a){
     html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Descripción</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+t.notas+'</div></div>';
   }
 
+  // Planificado vs Real — solo si Garmin ya trajo una actividad de hoy
+  // que coincide en deporte con lo planificado.
+  if(matchedReal.length){
+    html += _planVsRealCard(t, matchedReal[0]);
+  }
+
   // Action buttons
   if(!done){
     html += '<button class="start-btn" onclick="startWorkout()">'
       +'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
       +' Iniciar entrenamiento'
       +'</button>';
+  } else if(matchedReal.length && !(a.logs && a.logs.length)){
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — sincronizado desde Garmin</div>';
   } else {
     html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — reportado al coach</div>';
+  }
+
+  // Actividades de hoy que NO corresponden al deporte planificado — antes
+  // eran completamente invisibles (ej. una sesión extra o de otro deporte
+  // el mismo día).
+  if(extraReal.length){
+    html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Otra actividad de hoy</div>';
+    extraReal.forEach(function(act){ html += _realActivityCard(act); });
   }
 
   document.getElementById('today-content').innerHTML = html;
