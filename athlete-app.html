@@ -165,12 +165,30 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mkc-val svg { width: 9px; height: 9px; flex-shrink: 0; }
 .mkc-pill { font-size: .58rem; font-weight: 700; padding: .16rem .5rem; border-radius: 20px; white-space: nowrap; }
 
-/* ── Próxima carrera (mini) ── */
-.race-card-mini { margin: .75rem 1rem 0; align-items: center; justify-content: space-between; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .8rem; gap: .5rem; }
-.race-card-mini-name { font-size: .8rem; font-weight: 700; }
-.race-card-mini-date { font-size: .62rem; color: var(--dim); margin-top: .1rem; }
-.race-card-mini-days { font-family: 'Oswald', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--orange); text-align: right; line-height: 1; }
-.race-card-mini-days span { display: block; font-size: .52rem; color: var(--dim); font-weight: 600; text-transform: uppercase; margin-top: .15rem; }
+/* ── Próxima carrera — mismo diseño que .kc-race del dashboard de
+   escritorio (countdown en vivo días:hrs:min:seg que se actualiza cada
+   segundo), escalado al ancho del celular. */
+.race-card-mini { margin: .75rem 1rem 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; }
+.rcm-head { border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: .6rem; font-family: 'Oswald', sans-serif; font-size: .84rem; font-weight: 700; }
+.rcm-cd { display: flex; align-items: flex-end; gap: .3rem; margin: .3rem 0 .5rem; }
+.rcm-cd-unit { display: flex; flex-direction: column; align-items: center; min-width: 0; flex: 1; }
+.rcm-cd-val {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; font-weight: 900; line-height: 1;
+  color: var(--text); letter-spacing: -.02em;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  padding: .26rem .2rem; width: 100%; text-align: center; transition: color .2s;
+}
+.rcm-cd-lbl { font-family: 'Oswald', sans-serif; font-size: .5rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-top: .22rem; }
+.rcm-cd-sep { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 900; color: var(--border); line-height: 1.1; margin-bottom: .55rem; flex: 0 0 auto; }
+.rcm-cd-sep-s { color: rgba(255,101,53,.3); }
+#rcm-s { color: var(--orange); animation: rcm-pulse 1s ease infinite; }
+@keyframes rcm-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.race-card-mini-name {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .03em; color: var(--text); line-height: 1.15;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.race-card-mini-date { font-size: .64rem; color: var(--dim); text-align: center; margin-top: .15rem; }
 
 /* ── Planificado vs Real ── */
 .pvr-card { margin: .5rem 1rem .75rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; }
@@ -846,15 +864,54 @@ function renderStatusHealth(d){
   }
 
   if(d.race_goal_name && d.race_goal_date){
+    /* Mismo diseño y misma lógica que .kc-race de dashboard.html: countdown
+       EN VIVO (días:hrs:min:seg, actualizado cada segundo vía setInterval),
+       no un número estático de días — pedido explícito del usuario para
+       que se vea "exactamente igual" al dashboard de escritorio. */
     var rc = document.getElementById('race-card-mini');
-    var days = Math.ceil((new Date(d.race_goal_date+'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
-    if(days >= 0){
-      rc.innerHTML =
-        '<div><div class="race-card-mini-name">🏁 '+d.race_goal_name+'</div><div class="race-card-mini-date">'+fmtDate(d.race_goal_date)+'</div></div>'
-        +'<div class="race-card-mini-days">'+days+'<span>días</span></div>';
-      rc.style.display = 'flex';
-    }
+    var MS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var dt = new Date(d.race_goal_date+'T12:00:00');
+    window._raceDate = new Date(d.race_goal_date+'T07:00:00');
+    rc.innerHTML =
+      '<div class="rcm-head">🏁 Próxima Carrera</div>'
+      +'<div class="rcm-cd">'
+        +'<div class="rcm-cd-unit"><span class="rcm-cd-val" id="rcm-d">--</span><span class="rcm-cd-lbl">días</span></div>'
+        +'<div class="rcm-cd-sep">:</div>'
+        +'<div class="rcm-cd-unit"><span class="rcm-cd-val" id="rcm-h">--</span><span class="rcm-cd-lbl">hrs</span></div>'
+        +'<div class="rcm-cd-sep">:</div>'
+        +'<div class="rcm-cd-unit"><span class="rcm-cd-val" id="rcm-m">--</span><span class="rcm-cd-lbl">min</span></div>'
+        +'<div class="rcm-cd-sep rcm-cd-sep-s">:</div>'
+        +'<div class="rcm-cd-unit"><span class="rcm-cd-val" id="rcm-s">--</span><span class="rcm-cd-lbl">seg</span></div>'
+      +'</div>'
+      +'<div class="race-card-mini-name" id="rcm-name">'+d.race_goal_name+'</div>'
+      +'<div class="race-card-mini-date">'+dt.getDate()+' '+MS_ES[dt.getMonth()]+' '+dt.getFullYear()+'</div>';
+    rc.style.display = 'block';
+    _raceTick();
+    if(!window._raceTickInterval){ window._raceTickInterval = setInterval(_raceTick, 1000); }
   }
+}
+
+function _raceTick(){
+  var t = window._raceDate;
+  function _set(id,v){ var el = document.getElementById(id); if(el) el.textContent = v; }
+  if(!t) return;
+  var diff = t - new Date();
+  if(diff <= 0){
+    ['rcm-d','rcm-h','rcm-m','rcm-s'].forEach(function(i){ _set(i,'00'); });
+    var nameEl = document.getElementById('rcm-name');
+    if(nameEl) nameEl.style.color = 'var(--green)';
+    return;
+  }
+  var d  = Math.floor(diff / 86400000);
+  var hh = Math.floor((diff % 86400000) / 3600000);
+  var m  = Math.floor((diff % 3600000)  / 60000);
+  var s  = Math.floor((diff % 60000)    / 1000);
+  _set('rcm-d', String(d).padStart(2,'0'));
+  _set('rcm-h', String(hh).padStart(2,'0'));
+  _set('rcm-m', String(m).padStart(2,'0'));
+  _set('rcm-s', String(s).padStart(2,'0'));
+  var dEl = document.getElementById('rcm-d');
+  if(dEl) dEl.style.color = d < 30 ? 'var(--orange)' : d < 60 ? 'var(--gold)' : '';
 }
 
 /* ── Screen 1: Hoy ──────────────────────────────────────── */
