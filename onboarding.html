@@ -397,7 +397,14 @@ async function saveProfileData() {
 async function finish() {
   await saveProfileData();
   localStorage.setItem('lx_onboarding_done', '1');
-  window.location.href = 'dashboard.html';
+  /* Si se registró desde el celular (ej. escaneando el QR de una invitación),
+     lo mandamos directo a la app móvil en vez del dashboard de escritorio —
+     ahí es donde vive el banner de instalación, y es la experiencia pensada
+     para pantalla chica. Solo afecta este momento (primera vez que termina
+     onboarding); logins posteriores siguen yendo a dashboard.html como
+     siempre, para no cambiarle el flujo a nadie que ya esté acostumbrado. */
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  window.location.href = isMobile ? 'athlete-app.html' : 'dashboard.html';
 }
 
 (async () => {
