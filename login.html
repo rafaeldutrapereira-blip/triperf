@@ -356,9 +356,22 @@ a{color:inherit;text-decoration:none}
 
 <script src="auth.js"></script>
 <script>
+/* Decisión de producto (2026-08-08): todo login de un ATLETA desde celular
+   va a la app móvil (con su banner de instalación), no al dashboard de
+   escritorio — aplica a todos los logins, no solo a los que recién se
+   registran. Coach/admin NO se redirigen: athlete-app.html es una
+   experiencia armada solo para atletas (registrar sesión, check-in de
+   bienestar), no tiene nada útil para un coach viendo su equipo. */
+function _isMobileDevice(){
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+function _postLoginDest(role){
+  return (role === 'atleta' && _isMobileDevice()) ? 'athlete-app.html' : 'dashboard.html';
+}
+
 (function(){
   var s = KL.getSession();
-  if(s){ window.location.replace('dashboard.html'); return; }
+  if(s){ window.location.replace(_postLoginDest(s.api_rol)); return; }
   var p = new URLSearchParams(window.location.search);
   if(p.get('denied')) document.getElementById('denied-box').classList.add('show');
 })();
@@ -420,7 +433,7 @@ async function doLogin(e){
     btn.style.background = 'linear-gradient(135deg,#10B981,#059669)';
     btn.style.boxShadow  = '0 4px 24px rgba(16,185,129,.35)';
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span class="btn-text">Acceso concedido</span>';
-    var _dest = (data.rol === 'atleta' && data.onboarding_done === false) ? 'onboarding.html' : 'dashboard.html';
+    var _dest = (data.rol === 'atleta' && data.onboarding_done === false) ? 'onboarding.html' : _postLoginDest(data.rol);
     setTimeout(function(){ window.location.replace(_dest); }, 700);
 
   } catch(err){
