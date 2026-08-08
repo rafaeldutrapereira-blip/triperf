@@ -329,10 +329,15 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="login-brand">LabX</div>
     <div class="login-sub">App del Atleta</div>
   </div>
-  <p style="font-size:.82rem;color:#6B7280;line-height:1.6">Para usar la app en mobile, pega tu token de sesión (cópialo desde la web en Mi Perfil → Token API).</p>
-  <input type="text" class="login-token-input" id="token-input" placeholder="Pega tu token aquí...">
-  <button class="login-btn" onclick="doLogin()">Entrar →</button>
-  <p style="font-size:.72rem;color:#4B5563">O bien, inicia sesión en la web y regresa aquí — el token se sincroniza automáticamente.</p>
+  <p style="font-size:.82rem;color:#6B7280;line-height:1.6">Iniciá sesión con la misma cuenta que usás en la web.</p>
+  <input type="email" class="login-token-input" id="login-email" placeholder="tu@email.com" autocomplete="email" autocapitalize="off">
+  <input type="password" class="login-token-input" id="login-password" placeholder="Contraseña" autocomplete="current-password">
+  <div id="login-err" style="display:none;font-size:.76rem;color:#EF4444;line-height:1.4"></div>
+  <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar →</button>
+  <p style="font-size:.72rem;color:#4B5563">
+    Si ya iniciaste sesión antes en Safari en este mismo celular, probá cerrar y
+    volver a abrir la app — a veces alcanza con eso.
+  </p>
 </div>
 
 <!-- MAIN APP -->
@@ -576,11 +581,42 @@ function getToken(){
     || (function(){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); return s&&s.token?s.token:null; }catch(e){return null;} })();
 }
 
-function doLogin(){
-  var t = document.getElementById('token-input').value.trim();
-  if(!t){ toast('Pega tu token primero',''); return; }
-  localStorage.setItem('lxapp_token', t);
-  initApp(t);
+/* Login real con email+contraseña — antes pedía pegar un "token" copiado
+   de "Mi Perfil → Token API", una pantalla que nunca existió (instrucción
+   rota, encontrada probando el flujo real de instalación en iPhone: la
+   app instalada en pantalla de inicio a veces no hereda la sesión de
+   Safari por cómo iOS aísla el storage de las PWA agregadas al home,
+   así que este login es el único camino real para un usuario nuevo). */
+async function doLogin(){
+  var email = document.getElementById('login-email').value.trim();
+  var pw    = document.getElementById('login-password').value;
+  var btn   = document.getElementById('login-btn');
+  var err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  if(!email || !pw){ err.textContent = 'Completá email y contraseña.'; err.style.display=''; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try{
+    var res = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: email, password: pw}),
+    });
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Email o contraseña incorrectos.');
+
+    localStorage.setItem('lxapp_token', data.access_token);
+    localStorage.setItem('lx_co_token', data.access_token);
+    localStorage.setItem('lx_co_rol',   data.rol);
+    localStorage.setItem('lx_co_nombre',data.nombre);
+    initApp(data.access_token);
+  } catch(e){
+    err.textContent = e.message || 'Error de conexión. Probá de nuevo.';
+    err.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Entrar →';
+  }
 }
 
 function initApp(tok){

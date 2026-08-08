@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '37';  // 2026-08-08: guía visual iOS con íconos reales (reemplaza texto ambiguo)
+var BUILD_VERSION = '38';  // 2026-08-08: login real email+contraseña en athlete-app.html (reemplaza el pegado de token roto)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
