@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '34';  // 2026-08-08: iconos PNG reales del manifest, ahora sí se precachean
+var BUILD_VERSION = '35';  // 2026-08-08: banner "Instalar app" en athlete-app.html
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
