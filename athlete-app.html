@@ -393,6 +393,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div id="status-strip" class="mkc" style="display:none"></div>
       <div id="health-strip" class="mkc" style="display:none"></div>
+      <div id="goal-strip" class="mkc" style="display:none"></div>
       <div id="race-card-mini" class="race-card-mini" style="display:none"></div>
 
       <div id="today-content">
@@ -822,6 +823,26 @@ function renderStatusHealth(d){
       '<div class="mkc-head"><span class="mkc-title">¿Cómo estoy hoy?</span><span class="mkc-badge" style="background:'+hCol+'22;color:'+hCol+';border:1px solid '+hCol+'55">'+_sevLabel(hoySev)+'</span></div>'
       + hItems;
     hstrip.style.display = 'block';
+  }
+
+  // ── Card "¿Hacia dónde voy?" — informativa, sin semáforo de riesgo
+  // (mismo criterio que la 3ª card del dashboard de escritorio). ──
+  var gItems = '';
+  if(d.tss_week != null){
+    gItems += '<div class="mkc-row"><span class="mkc-lbl">TSS Semana</span><span class="mkc-right"><span class="mkc-val" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
+  }
+  if(d.vo2max_running_garmin != null){
+    gItems += '<div class="mkc-row"><span class="mkc-lbl">VO2 Max Running</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
+  }
+  if(d.vo2max_cycling_garmin != null){
+    gItems += '<div class="mkc-row"><span class="mkc-lbl">VO2 Max Ciclismo</span><span class="mkc-right"><span class="mkc-val" style="color:#FF6535">'+d.vo2max_cycling_garmin+'</span></span></div>';
+  }
+  if(gItems){
+    var gstrip = document.getElementById('goal-strip');
+    gstrip.innerHTML =
+      '<div class="mkc-head"><span class="mkc-title">¿Hacia dónde voy?</span><span class="mkc-badge" style="background:#9CA3AF22;color:#9CA3AF;border:1px solid #9CA3AF55">Seguimiento</span></div>'
+      + gItems;
+    gstrip.style.display = 'block';
   }
 
   if(d.race_goal_name && d.race_goal_date){

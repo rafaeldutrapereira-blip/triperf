@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '43';  // 2026-08-08: tarjetas de estado estilo dashboard + título de actividad más chico
+var BUILD_VERSION = '44';  // 2026-08-08: agregar card "¿Hacia dónde voy?" (TSS Semana + VO2 Max)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
