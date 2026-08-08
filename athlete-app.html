@@ -137,30 +137,33 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .th-date { font-size: .65rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
 .th-sport { display: flex; align-items: center; gap: .5rem; }
-.th-sport-emoji { font-size: 1.8rem; }
-.th-name { font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 700; line-height: 1.1; }
+.th-sport-emoji { font-size: 1.4rem; }
+.th-name { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
 .th-tipo { font-size: .7rem; font-weight: 700; padding: .18rem .55rem; border-radius: 20px; text-transform: uppercase; letter-spacing: .08em; }
 .th-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
 .th-meta-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; text-align: center; }
 .th-meta-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
 .th-meta-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
-/* ── Status strip (Fitness/Fatiga/Forma) y Health strip (HRV/FC/Sueño) ──
-   Mismo lenguaje visual que .th-meta-* — franjas de 3 métricas arriba y
-   abajo del entrenamiento del día, con datos que /athlete/dashboard ya
-   calcula (mismos que el dashboard de escritorio), inspirado en la
-   pantalla de inicio de TrainingPeaks pero con lo que LabX ya tiene. */
-.status-strip, .health-strip { display: flex; gap: .5rem; padding: .75rem 1rem 0; }
-.status-item, .health-item { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .5rem; text-align: center; }
-.status-val, .health-val { font-family: 'Oswald', sans-serif; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .2rem; }
-.status-val svg { width: 10px; height: 10px; flex-shrink: 0; }
-.status-lbl, .health-lbl { font-size: .56rem; color: var(--dim); text-transform: uppercase; letter-spacing: .07em; margin-top: .15rem; }
-.health-stale { font-size: .5rem; color: var(--gold); margin-top: .15rem; }
-
-/* ── Injury risk chip ── */
-.injury-chip { margin: .75rem 1rem 0; align-items: center; justify-content: space-between; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .8rem; }
-.injury-chip-label { font-size: .74rem; font-weight: 600; display: flex; align-items: center; gap: .4rem; }
-.injury-chip-badge { font-size: .64rem; font-weight: 700; padding: .18rem .6rem; border-radius: 20px; }
+/* ── Tarjetas de estado (Carga / Hoy) — mismo lenguaje visual que las
+   3 cards del dashboard de escritorio ("¿Cómo va mi carga?", "¿Cómo
+   estoy hoy?"): header con badge de severidad + filas con divisores,
+   en vez de las franjas de 3 casillas de antes. En mobile van APILADAS
+   (una sola columna), no lado a lado como en desktop — no entran 3
+   cards de ese ancho en una pantalla de celular. */
+.mkc { margin: .75rem 1rem 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem .9rem; }
+.mkc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .2rem; }
+.mkc-title { font-family: 'Oswald', sans-serif; font-size: .84rem; font-weight: 700; }
+.mkc-badge { font-size: .58rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 20px; white-space: nowrap; }
+.mkc-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0; border-top: 1px solid var(--border); gap: .5rem; }
+.mkc-row:first-of-type { border-top: none; }
+.mkc-lbl { font-size: .76rem; font-weight: 600; color: var(--text); }
+.mkc-sub { font-size: .58rem; color: var(--dim); margin-top: .1rem; }
+.mkc-right { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.mkc-val { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: .2rem; }
+.mkc-val .u { font-size: .62rem; color: var(--dim); font-weight: 500; margin-left: .1rem; }
+.mkc-val svg { width: 9px; height: 9px; flex-shrink: 0; }
+.mkc-pill { font-size: .58rem; font-weight: 700; padding: .16rem .5rem; border-radius: 20px; white-space: nowrap; }
 
 /* ── Próxima carrera (mini) ── */
 .race-card-mini { margin: .75rem 1rem 0; align-items: center; justify-content: space-between; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .8rem; gap: .5rem; }
@@ -388,7 +391,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <a href="landing.html" style="display:flex;align-items:center;gap:.3rem;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#fff" class="topbar-brand"><svg class="sbl-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="lxnl-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".6"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient></defs><g class="sbl-arcs"><circle cx="50" cy="50" r="44" stroke="#F0A500" stroke-width="1.5" stroke-dasharray="62 214" stroke-linecap="round" transform="rotate(28 50 50)" stroke-opacity=".7"/><circle cx="50" cy="50" r="40" stroke="#0EA5E9" stroke-width=".8" stroke-dasharray="23 231" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-opacity=".6"/></g><g class="sbl-flower"><circle cx="50" cy="50" r="13" stroke="rgba(255,101,53,.28)" stroke-width=".8" fill="rgba(255,101,53,.05)"/><circle cx="63" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="56.5" cy="38.8" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="43.5" cy="38.8" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/><circle cx="37" cy="50" r="13" stroke="rgba(255,101,53,.2)" stroke-width=".6" fill="rgba(255,101,53,.03)"/><circle cx="43.5" cy="61.2" r="13" stroke="rgba(240,165,0,.2)" stroke-width=".6" fill="rgba(240,165,0,.03)"/><circle cx="56.5" cy="61.2" r="13" stroke="rgba(14,165,233,.2)" stroke-width=".6" fill="rgba(14,165,233,.03)"/></g><circle cx="50" cy="50" r="9.5" fill="url(#lxnl-glow)"/><circle cx="50" cy="50" r="6" fill="rgba(255,101,53,.12)" stroke="rgba(255,101,53,.35)" stroke-width=".8"/><text x="50" y="55.5" text-anchor="middle" font-size="7.5" font-family="serif" style="filter:drop-shadow(0 0 3px rgba(255,101,53,.8))">&#x1F33A;</text></svg> Lab<span style="color:#FF6535">X</span></a>
       </div>
 
-      <div id="status-strip" class="status-strip" style="display:none"></div>
+      <div id="status-strip" class="mkc" style="display:none"></div>
+      <div id="health-strip" class="mkc" style="display:none"></div>
+      <div id="race-card-mini" class="race-card-mini" style="display:none"></div>
 
       <div id="today-content">
         <!-- Filled by JS -->
@@ -397,10 +402,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <div class="no-workout-lbl">Cargando plan del día...</div>
         </div>
       </div>
-
-      <div id="health-strip" class="health-strip" style="display:none"></div>
-      <div id="injury-chip" class="injury-chip" style="display:none"></div>
-      <div id="race-card-mini" class="race-card-mini" style="display:none"></div>
     </div>
 
     <!-- SCREEN 2: DURANTE -->
@@ -746,42 +747,81 @@ function _trendArrow(v){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>';
 }
 
+/* Severidad/color/label compartidos con dashboard.html (updateClusterPills)
+   — misma paleta y mismos umbrales, para que "Precaución"/"Óptimo" signifiquen
+   lo mismo acá que en la web. */
+function _sevColor(sev){ return {reduce:'#EF4444', caution:'#F0A500', good:'#10B981', neutral:'#9CA3AF'}[sev] || '#9CA3AF'; }
+function _sevLabel(sev){ return {reduce:'Riesgo alto', caution:'Precaución', good:'Óptimo', neutral:'Sin datos'}[sev] || 'Sin datos'; }
+
 function renderStatusHealth(d){
+  // ── Card "¿Cómo va mi carga?" — mismas 3 tarjetas del dashboard de
+  // escritorio, adaptadas a una columna (en mobile no entran 3 lado a
+  // lado) y con las tarjetas de título/badge que pidió el usuario en vez
+  // de las franjas simples de 3 casillas que había antes. ──
   if(d.ctl != null){
+    var carga = 'good';
+    if(d.acwr_zone === 'danger' || (d.tsb!=null && d.tsb < -20)) carga = 'reduce';
+    else if(d.acwr_zone === 'warning' || (d.tsb!=null && d.tsb < -8)) carga = 'caution';
+    else if(d.acwr_zone === 'no_data') carga = 'neutral';
+    var cCol = _sevColor(carga);
+
+    var atl = d.atl || 0;
+    var atlLabel = atl > 100 ? 'Muy alta' : atl > 80 ? 'Alta' : atl > 60 ? 'Moderada' : 'Baja';
+    var atlCol   = atl > 80 ? '#EF4444' : atl > 60 ? '#F0A500' : '#10B981';
+
+    var tsb = d.tsb || 0;
+    var tsbLabel = tsb > 10 ? 'Frescos' : tsb > -5 ? 'Listos' : tsb > -20 ? 'Construyendo' : tsb > -35 ? 'Fatiga alta' : 'Sobrecarga';
+    var tsbCol   = tsb > 5 ? '#10B981' : tsb > -20 ? '#F0A500' : '#EF4444';
+
+    var acwrZones = {
+      danger:{label:'Alto riesgo',color:'#EF4444'}, warning:{label:'Carga alta',color:'#F0A500'},
+      optimal:{label:'Óptimo',color:'#10B981'}, low:{label:'Sub-carga',color:'#0EA5E9'},
+    };
+    var az = acwrZones[d.acwr_zone];
+
+    var rows =
+      '<div class="mkc-row"><span class="mkc-lbl">Fitness (CTL)</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</span></span></div>'
+      +'<div class="mkc-row"><span class="mkc-lbl">Fatiga (ATL)</span><span class="mkc-right"><span class="mkc-val" style="color:'+atlCol+'">'+Math.round(atl)+'</span><span class="mkc-pill" style="background:'+atlCol+'22;color:'+atlCol+'">'+atlLabel+'</span></span></div>'
+      +'<div class="mkc-row"><span class="mkc-lbl">Forma (TSB)</span><span class="mkc-right"><span class="mkc-val" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
+    if(az && d.acwr != null){
+      rows += '<div class="mkc-row"><span class="mkc-lbl">ACWR (Carga)</span><span class="mkc-right"><span class="mkc-val" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
+    }
+    if(d.injury_risk && d.injury_risk.score != null){
+      var ir = d.injury_risk;
+      var lvlLabel = {low:'Bajo', moderate:'Moderado', high:'Alto', critical:'Crítico'}[ir.level] || ir.level;
+      rows += '<div class="mkc-row"><span class="mkc-lbl">Riesgo de Lesión</span><span class="mkc-right"><span class="mkc-val" style="color:'+ir.color+'">'+Math.round(ir.score)+'<span class="u">/100</span></span><span class="mkc-pill" style="background:'+ir.color+'22;color:'+ir.color+'">'+lvlLabel+'</span></span></div>';
+    }
+
     var strip = document.getElementById('status-strip');
-    var tsbVal = d.tsb != null ? (d.tsb>=0?'+':'')+Math.round(d.tsb) : '—';
     strip.innerHTML =
-      '<div class="status-item"><div class="status-val" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</div><div class="status-lbl">Fitness</div></div>'
-      +'<div class="status-item"><div class="status-val" style="color:#F59E0B">'+Math.round(d.atl||0)+'</div><div class="status-lbl">Fatiga</div></div>'
-      +'<div class="status-item"><div class="status-val" style="color:'+((d.tsb||0)>=0?'#10B981':'#EF4444')+'">'+tsbVal+'</div><div class="status-lbl">Forma</div></div>';
-    strip.style.display = 'flex';
+      '<div class="mkc-head"><span class="mkc-title">¿Cómo va mi carga?</span><span class="mkc-badge" style="background:'+cCol+'22;color:'+cCol+';border:1px solid '+cCol+'55">'+_sevLabel(carga)+'</span></div>'
+      + rows;
+    strip.style.display = 'block';
   }
 
-  var hstrip = document.getElementById('health-strip');
+  // ── Card "¿Cómo estoy hoy?" ──
   var hItems = '';
   if(d.hrv_last_night != null){
-    hItems += '<div class="health-item"><div class="health-val" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'</div><div class="health-lbl">HRV ms</div></div>';
+    hItems += '<div class="mkc-row"><span class="mkc-lbl">HRV Score</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'<span class="u">ms</span></span></span></div>';
   }
   if(d.resting_hr != null){
-    hItems += '<div class="health-item"><div class="health-val" style="color:#FB7185">'+Math.round(d.resting_hr)+'</div><div class="health-lbl">FC Reposo</div></div>';
+    hItems += '<div class="mkc-row"><span class="mkc-lbl">FC Reposo</span><span class="mkc-right"><span class="mkc-val" style="color:#FB7185">'+Math.round(d.resting_hr)+'<span class="u">bpm</span></span></span></div>';
   }
   if(d.sleep_total_h != null){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
-    hItems += '<div class="health-item"><div class="health-val" style="color:#A855F7">'+h+'h'+(m?m:'')+'</div><div class="health-lbl">Sueño</div></div>';
+    hItems += '<div class="mkc-row"><span class="mkc-lbl">Sueño</span><span class="mkc-right"><span class="mkc-val" style="color:#A855F7">'+h+'h'+(m?' '+m+'m':'')+'</span></span></div>';
+  }
+  if(d.body_battery != null){
+    hItems += '<div class="mkc-row"><span class="mkc-lbl">Body Battery</span><span class="mkc-right"><span class="mkc-val" style="color:#F0A500">'+Math.round(d.body_battery)+'<span class="u">%</span></span></span></div>';
   }
   if(hItems){
-    hstrip.innerHTML = hItems;
-    hstrip.style.display = 'flex';
-  }
-
-  if(d.injury_risk && d.injury_risk.score != null){
-    var chip = document.getElementById('injury-chip');
-    var ir = d.injury_risk;
-    var lvlLabel = {low:'Bajo', moderate:'Moderado', high:'Alto', critical:'Crítico'}[ir.level] || ir.level;
-    chip.innerHTML =
-      '<span class="injury-chip-label">🛡️ Riesgo de lesión</span>'
-      +'<span class="injury-chip-badge" style="background:'+ir.color+'22;color:'+ir.color+';border:1px solid '+ir.color+'55">'+Math.round(ir.score)+'/100 · '+lvlLabel+'</span>';
-    chip.style.display = 'flex';
+    var hoySev = (d.insight && d.insight.severity) || 'neutral';
+    var hCol = _sevColor(hoySev);
+    var hstrip = document.getElementById('health-strip');
+    hstrip.innerHTML =
+      '<div class="mkc-head"><span class="mkc-title">¿Cómo estoy hoy?</span><span class="mkc-badge" style="background:'+hCol+'22;color:'+hCol+';border:1px solid '+hCol+'55">'+_sevLabel(hoySev)+'</span></div>'
+      + hItems;
+    hstrip.style.display = 'block';
   }
 
   if(d.race_goal_name && d.race_goal_date){
