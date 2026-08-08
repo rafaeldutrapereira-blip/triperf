@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '39';  // 2026-08-08: pantalla Hoy enriquecida (Fitness/Fatiga/Forma, Salud, Riesgo, Próxima carrera)
+var BUILD_VERSION = '40';  // 2026-08-08: fix "Día de descanso" falso — Hoy ahora también mira planes sincronizados de TrainingPeaks/Garmin
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
