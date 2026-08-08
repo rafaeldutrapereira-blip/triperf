@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '33';  // 2026-07-29: auto-completar duración/distancia desde bloques + fix scope _mwAutoTSS en coach.html
+var BUILD_VERSION = '34';  // 2026-08-08: iconos PNG reales del manifest, ahora sí se precachean
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -33,9 +33,7 @@ var PRECACHE = [
 self.addEventListener('install', function(e){
   e.waitUntil(
     caches.open(CACHE_NAME).then(function(cache){
-      return cache.addAll(PRECACHE.filter(function(url){
-        return !url.endsWith('.png'); // Ã­conos opcionales
-      }));
+      return cache.addAll(PRECACHE);
     }).then(function(){ return self.skipWaiting(); })
   );
 });
@@ -135,7 +133,7 @@ self.addEventListener('sync', function(e){
 /*
  * BP-10 FIX: El Service Worker NO puede leer HttpOnly cookies (por diseÃ±o de seguridad).
  * SoluciÃ³n: usar credentials:'include' â€” el browser adjunta la cookie automÃ¡ticamente.
- * Ya no se necesita getAuthToken() con IndexedDB; la cookie lx_access_token se envÃ­a sola.
+ * Ya no se necesita getAuthToken() con IndexedDB; la cookie lx_access_token se envía sola.
  */
 function syncPendingWorkouts(){
   return openIDB().then(function(db){
