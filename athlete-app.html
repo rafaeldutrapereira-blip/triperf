@@ -684,7 +684,18 @@ function toast(msg, cls){
 }
 
 /* ── Date helpers ────────────────────────────────────────── */
-function todayIso(){ return new Date().toISOString().slice(0,10); }
+/* Bug real encontrado en vivo: toISOString() siempre da la fecha en UTC,
+   no en hora local — para un atleta en Chile (UTC-3/-4), cualquier hora
+   pasadas ~20-21hs locales ya cae en el DÍA SIGUIENTE en UTC. Por eso
+   "Hoy" mostraba "Día de descanso" a la noche: le estaba pidiendo al
+   backend el plan de MAÑANA, no el de hoy. Mismo patrón de bug ya
+   corregido antes en dashboard.html (_isoLocal) — se usa el mismo
+   criterio acá: año/mes/día del reloj LOCAL del dispositivo. */
+function todayIso(){
+  var d = new Date();
+  var y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+  return y+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day;
+}
 function fmtDate(iso){
   var d = new Date(iso+'T12:00:00');
   var DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
