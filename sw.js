@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '36';  // 2026-08-08: screenshot real en manifest.json (tarjeta de instalación Android)
+var BUILD_VERSION = '37';  // 2026-08-08: guía visual iOS con íconos reales (reemplaza texto ambiguo)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
