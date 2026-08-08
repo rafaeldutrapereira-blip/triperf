@@ -199,6 +199,18 @@
       sidebar: true,
       public:  false
     },
+    {
+      group:   'account',
+      id:      'athlete_app',
+      file:    'athlete-app.html',
+      label:   'App Móvil',
+      labelI18n: 'nav_mobile_app',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>',
+      minPlan: 'basic',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
     /* ── Solo Coach / Admin ──────────────────────────── */
     {
       group:   'account',
@@ -217,7 +229,6 @@
     { id:'login',      file:'login.html',      sidebar:false, public:true  },
     { id:'registro',   file:'registro.html',   sidebar:false, public:true  },
     { id:'onboarding', file:'onboarding.html', sidebar:false, public:false },
-    { id:'athlete_app',file:'athlete-app.html',sidebar:false, public:false },
     { id:'gps_tracker',file:'gps_tracker.html',sidebar:false, public:false },
     { id:'detalle',    file:'detalle.html',    sidebar:false, public:false },
     { id:'privacy',    file:'privacy.html',    sidebar:false, public:true  },
