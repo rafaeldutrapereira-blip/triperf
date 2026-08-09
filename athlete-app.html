@@ -164,6 +164,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .th-meta-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
 .th-meta-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
+/* Tarjeta compacta de "Hoy" — pedido explícito: no mostrar el detalle
+   completo (bloques/notas/comparación) de entrada, solo un resumen; el
+   detalle se abre al tocar, reusando el mismo modal de "Semana". */
+.today-card-compact { display: flex; align-items: center; gap: .7rem; margin: .6rem 1rem; padding: .8rem .9rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.tcc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tcc-body { flex: 1; min-width: 0; }
+.tcc-name { font-family: 'Oswald', sans-serif; font-size: .95rem; font-weight: 700; }
+.tcc-meta { font-size: .72rem; color: var(--dim); margin-top: .15rem; }
+.tcc-status { font-size: 1rem; flex-shrink: 0; }
+.tcc-chevron { color: var(--dim); flex-shrink: 0; }
+/* El detalle completo (_workoutCardHtml) se reusa tal cual dentro del
+   modal — .today-hero ahí queda "suelto" (pensado para ir edge-to-edge
+   en la pantalla principal), esta variante lo convierte en una card
+   prolija dentro del bottom-sheet. */
+#wo-detail-body .today-hero { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 .6rem; }
+
 /* ── Tarjetas de estado (Carga / Hoy) — mismo lenguaje visual que las
    3 cards del dashboard de escritorio ("¿Cómo va mi carga?", "¿Cómo
    estoy hoy?"): header con badge de severidad + filas con divisores,
@@ -1260,18 +1276,30 @@ function renderNoWorkout(msg){
 }
 
 /* "Hoy" puede tener más de un entrenamiento planificado (doble sesión,
-   ej. bici + bici, o running + bici) — se renderiza una card por cada
-   uno, y al final las actividades reales que no coinciden con NINGÚN
-   deporte planificado ("Otra actividad de hoy"), una sola vez. */
+   ej. bici + bici, o running + bici) — se renderiza una tarjeta COMPACTA
+   por cada uno (pedido explícito: no mostrar el detalle completo acá,
+   solo un resumen), y al tocarla se abre el detalle completo en el
+   mismo modal que ya usa "Semana" (bloques/notas/comparación
+   planificado-vs-real/estado — todo lo que antes se veía siempre
+   expandido en esta pantalla). Al final, las actividades reales que no
+   coinciden con NINGÚN deporte planificado ("Otra actividad de hoy"),
+   una sola vez. */
+var _todayAssignsFlat = [];
+var _todayMatchedRealFlat = [];
+
 function renderTodayWorkout(plannedList, realActivities){
   realActivities = realActivities || [];
   var sportsPlanned = {};
   plannedList.forEach(function(a){ sportsPlanned[(a.template&&a.template.sport)||'run'] = true; });
   var extraReal = realActivities.filter(function(r){ return !sportsPlanned[r.sport]; });
 
-  var html = plannedList.map(function(a){
-    var matchedReal = realActivities.filter(function(r){ return r.sport === ((a.template&&a.template.sport)||'run'); });
-    return _workoutCardHtml(a, matchedReal);
+  _todayAssignsFlat = plannedList;
+  _todayMatchedRealFlat = plannedList.map(function(a){
+    return realActivities.filter(function(r){ return r.sport === ((a.template&&a.template.sport)||'run'); });
+  });
+
+  var html = plannedList.map(function(a, idx){
+    return _todayCardCompactHtml(a, idx, _todayMatchedRealFlat[idx]);
   }).join('');
 
   if(extraReal.length){
@@ -1280,6 +1308,38 @@ function renderTodayWorkout(plannedList, realActivities){
   }
 
   document.getElementById('today-content').innerHTML = html;
+}
+
+function _todayCardCompactHtml(a, idx, matchedReal){
+  var t    = a.template || {};
+  var sp   = t.sport || 'run';
+  var col  = SPORT_COL[sp] || '#9CA3AF';
+  var done = (a.logs && a.logs.length > 0) || (matchedReal && matchedReal.length > 0);
+  var meta = [];
+  if(t.dur_min)  meta.push(t.dur_min+' min');
+  if(t.dist_km)  meta.push(t.dist_km+' km');
+  if(t.tss)      meta.push(t.tss+' TSS');
+
+  return '<div class="today-card-compact" onclick="showTodayWorkoutDetail('+idx+')">'
+    +'<div class="tcc-dot" style="background:'+col+'"></div>'
+    +'<div class="tcc-body">'
+      +'<div class="tcc-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||'Entrenamiento')+'</div>'
+      +(meta.length?'<div class="tcc-meta">'+meta.join(' · ')+'</div>':'')
+    +'</div>'
+    +'<div class="tcc-status">'+(done?'✅':'⏳')+'</div>'
+    +'<svg class="tcc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'
+  +'</div>';
+}
+
+/* Abre el detalle completo de un entrenamiento de "Hoy" en el mismo
+   bottom-sheet que "Semana" (#wo-detail-modal) — reusa _workoutCardHtml
+   tal cual, que ya arma hero+notas+bloques+comparación+estado. */
+function showTodayWorkoutDetail(idx){
+  var a = _todayAssignsFlat[idx];
+  if(!a) return;
+  var matchedReal = _todayMatchedRealFlat[idx] || [];
+  document.getElementById('wo-detail-body').innerHTML = _workoutCardHtml(a, matchedReal);
+  document.getElementById('wo-detail-modal').style.display = 'flex';
 }
 
 function _workoutCardHtml(a, matchedReal){
