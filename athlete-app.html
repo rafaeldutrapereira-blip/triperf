@@ -589,10 +589,19 @@ async function doLogin(){
   btn.disabled = true;
   btn.textContent = 'Verificando...';
   try{
+    /* remember_me:true siempre — a diferencia de login.html (que tiene
+       un checkbox opcional), acá no tiene sentido pedirlo: es una app
+       instalada en el celular, se espera que quede logueada como
+       cualquier app real, no que expire en 8hs (TOKEN_HOURS default
+       sin remember) y tire "Sin conexión" — mensaje además engañoso,
+       la causa real era el token vencido, no falta de internet. Bug
+       real encontrado en vivo un día después de la sesión de pruebas
+       intensiva de ayer: exactamente el patrón esperado si el token de
+       8hs había expirado de un login anterior. */
     var res = await fetch(API + '/auth/login', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({email: email, password: pw}),
+      body: JSON.stringify({email: email, password: pw, remember_me: true}),
     });
     var data = await res.json();
     if(!res.ok) throw new Error(data.detail || 'Email o contraseña incorrectos.');
@@ -699,7 +708,17 @@ function weekRange(){
 
 /* ── API fetch wrapper ───────────────────────────────────── */
 function apiFetch(path, opts){
-  return fetch(API+path, Object.assign({ headers: { Authorization: 'Bearer '+_token, 'Content-Type':'application/json' } }, opts||{}));
+  return fetch(API+path, Object.assign({ headers: { Authorization: 'Bearer '+_token, 'Content-Type':'application/json' } }, opts||{}))
+    .then(function(r){
+      /* Sesión vencida (token expirado/revocado) → volver al login en
+         vez de dejar que cada pantalla lo interprete como "sin
+         conexión" (mensaje engañoso — el problema es la sesión, no
+         internet). Con remember_me:true en doLogin() esto debería ser
+         raro ahora, pero sigue pudiendo pasar (30 días también vencen,
+         o un logout desde otro dispositivo). */
+      if(r.status === 401 && _token){ doLogout(); }
+      return r;
+    });
 }
 
 /* ── Status/Salud/Riesgo/Carrera en la pantalla Hoy ──────────
