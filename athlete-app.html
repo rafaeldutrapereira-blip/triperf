@@ -411,6 +411,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     Si ya iniciaste sesión antes en Safari en este mismo celular, probá cerrar y
     volver a abrir la app — a veces alcanza con eso.
   </p>
+  <p id="app-build-indicator" style="font-size:.65rem;color:#374151;text-align:center;margin-top:1rem"></p>
 </div>
 
 <!-- MAIN APP -->
@@ -1508,6 +1509,18 @@ if('serviceWorker' in navigator){
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible') reg.update();
     });
+  }).catch(function(){});
+
+  /* Indicador de versión visible en la pantalla de login — nace de tener
+     que adivinar a ciegas, turno tras turno, si un fix ya había llegado
+     al teléfono del usuario o seguía en camino ("¿no que ya estaba
+     arreglado?"). Lee el nombre del cache activo (lxapp-v54, ver sw.js)
+     en vez de hardcodear un número en este archivo — así nunca queda
+     desincronizado del BUILD_VERSION real de sw.js. */
+  caches.keys().then(function(keys){
+    var lxCache = keys.find(function(k){ return k.indexOf('lxapp-v') === 0; });
+    var el = document.getElementById('app-build-indicator');
+    if(el) el.textContent = lxCache ? ('v'+lxCache.replace('lxapp-v','')) : '';
   }).catch(function(){});
 }
 
