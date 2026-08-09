@@ -164,6 +164,19 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .th-meta-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
 .th-meta-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
+/* Botón "Actualizar desde Garmin" — pedido explícito: el sync
+   automático al hacer login se saltea si ya sincronizó hace menos de
+   1hs (protección contra rate-limit de Garmin, ver garmin_pull_service.
+   py sync_user()), así que loguearse de nuevo después de cargar un
+   entrenamiento nuevo no siempre trae el dato fresco. Este botón llama
+   a /athlete/garmin/sync?force=true (el mismo endpoint que ya usa el
+   botón "Actualizar" de la web) para forzarlo manualmente cuando el
+   atleta sabe que hay algo nuevo. */
+.today-refresh-btn { display: flex; align-items: center; justify-content: center; gap: .4rem; width: calc(100% - 2rem); margin: .6rem 1rem 0; padding: .5rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; color: var(--dim); font-size: .74rem; font-weight: 600; cursor: pointer; }
+.today-refresh-btn:disabled { opacity: .6; }
+.today-refresh-btn.spinning svg { animation: today-refresh-spin 1s linear infinite; }
+@keyframes today-refresh-spin { to { transform: rotate(360deg); } }
+
 /* Tarjeta compacta de "Hoy" — pedido explícito: no mostrar el detalle
    completo (bloques/notas/comparación) de entrada, solo un resumen; el
    detalle se abre al tocar, reusando el mismo modal de "Semana". */
@@ -485,6 +498,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div id="health-strip" class="mkc" style="display:none"></div>
       <div id="goal-strip" class="mkc" style="display:none"></div>
       <div id="race-card-mini" class="race-card-mini" style="display:none"></div>
+
+      <button class="today-refresh-btn" id="today-refresh-btn" onclick="refreshGarminSync()">
+        <svg id="today-refresh-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        <span id="today-refresh-txt">Actualizar desde Garmin</span>
+      </button>
 
       <div id="today-content">
         <!-- Filled by JS -->
@@ -1738,6 +1756,62 @@ function loadCommunityLeaderboard(){
     _trapBack();
   });
 })();
+
+/* Fuerza un sync de Garmin manual y refresca "Hoy"/"Semana"/las cards de
+   estado cuando termina — evita que el atleta tenga que esperar el
+   chequeo automático (throttleado a 1x/hora) para ver una actividad que
+   acaba de cargar. Hace polling de /athlete/garmin/sync-status (el sync
+   real corre en background del lado del servidor) hasta que deja de
+   estar "syncing", con un tope de tiempo para no colgarse esperando si
+   algo sale mal. */
+function refreshGarminSync(){
+  var btn = document.getElementById('today-refresh-btn');
+  var txt = document.getElementById('today-refresh-txt');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  txt.textContent = 'Sincronizando...';
+
+  apiFetch('/athlete/garmin/sync?force=true', { method:'POST' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){
+      var attempts = 0;
+      var poll = function(){
+        attempts++;
+        apiFetch('/athlete/garmin/sync-status')
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(status){
+            var done = !status || status.status !== 'syncing' || attempts >= 10;
+            if(!done){ setTimeout(poll, 3000); return; }
+            btn.disabled = false;
+            btn.classList.remove('spinning');
+            txt.textContent = 'Actualizar desde Garmin';
+            if(status && status.status === 'needs_reauth'){
+              toast('Garmin pide reconectar tu cuenta — entrá a Mi Perfil desde la web','');
+            } else if(status && status.status === 'error'){
+              toast('No se pudo sincronizar con Garmin','');
+            } else {
+              toast('Actualizado ✓','ok');
+            }
+            loadToday();
+            loadWeek();
+            loadStatusHealth();
+          })
+          .catch(function(){
+            btn.disabled = false;
+            btn.classList.remove('spinning');
+            txt.textContent = 'Actualizar desde Garmin';
+          });
+      };
+      setTimeout(poll, 2000);
+    })
+    .catch(function(){
+      btn.disabled = false;
+      btn.classList.remove('spinning');
+      txt.textContent = 'Actualizar desde Garmin';
+      toast('Sin conexión — no se pudo iniciar el sync','');
+    });
+}
 
 /* ── Boot ────────────────────────────────────────────────── */
 (function(){

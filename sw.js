@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '62';  // 2026-08-09: login.html redirige a athlete-app.html en movil (una sola pantalla de login para celular)
+var BUILD_VERSION = '63';  // 2026-08-09: boton "Actualizar desde Garmin" en Hoy - forzar sync manual sin esperar el throttle de 1h
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
