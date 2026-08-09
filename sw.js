@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '52';  // 2026-08-09: fix "Sin conexion" real - ngrok mostraba su interstitial en vez de la API
+var BUILD_VERSION = '53';  // 2026-08-09: fix "Hoy" solo mostraba un entrenamiento cuando habia mas de uno planificado
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

@@ -988,15 +988,29 @@ function loadToday(){
       ? dash.activities.filter(function(act){ return act.date_iso === today; })
       : [];
 
-    var planned = null;
-    if(coachAssigns.length) planned = coachAssigns[0];
-    else if(tpRows && tpRows.length) planned = _tpRowToAssignShape(tpRows[0]);
+    /* Bug real encontrado en vivo: acá solo se tomaba coachAssigns[0] o
+       tpRows[0] — un solo entrenamiento, sin importar cuántos hubiera
+       planificados para hoy. Un día con doble sesión (ej. bici + bici,
+       o running + bici) mostraba SOLO el primero y el resto quedaba
+       invisible ("no me aparece el ciclismo, solo el running"). Misma
+       precedencia día+deporte que ya usa "Semana" (coach gana sobre TP
+       para ese deporte puntual), pero ahora se conservan TODOS los
+       entrenamientos de hoy, no solo uno. */
+    var covered = {};
+    coachAssigns.forEach(function(a){
+      var sp = (a.template && a.template.sport) || 'run';
+      covered[sp] = true;
+    });
+    var tpAsAssigns = (tpRows||[])
+      .filter(function(p){ return !covered[p.sport]; })
+      .map(_tpRowToAssignShape);
+    var plannedList = coachAssigns.concat(tpAsAssigns);
 
-    if(!planned && realToday.length === 0){ renderNoWorkout('Día de descanso 🧘'); return; }
-    if(!planned){ _todayAssign = null; renderUnplannedToday(realToday); return; }
+    if(!plannedList.length && realToday.length === 0){ renderNoWorkout('Día de descanso 🧘'); return; }
+    if(!plannedList.length){ _todayAssign = null; renderUnplannedToday(realToday); return; }
 
-    _todayAssign = planned;
-    renderTodayWorkout(planned, realToday);
+    _todayAssign = plannedList[0];
+    renderTodayWorkout(plannedList, realToday);
   });
 }
 
@@ -1175,16 +1189,37 @@ function renderNoWorkout(msg){
     +'</div>';
 }
 
-function renderTodayWorkout(a, realActivities){
+/* "Hoy" puede tener más de un entrenamiento planificado (doble sesión,
+   ej. bici + bici, o running + bici) — se renderiza una card por cada
+   uno, y al final las actividades reales que no coinciden con NINGÚN
+   deporte planificado ("Otra actividad de hoy"), una sola vez. */
+function renderTodayWorkout(plannedList, realActivities){
   realActivities = realActivities || [];
+  var sportsPlanned = {};
+  plannedList.forEach(function(a){ sportsPlanned[(a.template&&a.template.sport)||'run'] = true; });
+  var extraReal = realActivities.filter(function(r){ return !sportsPlanned[r.sport]; });
+
+  var html = plannedList.map(function(a){
+    var matchedReal = realActivities.filter(function(r){ return r.sport === ((a.template&&a.template.sport)||'run'); });
+    return _workoutCardHtml(a, matchedReal);
+  }).join('');
+
+  if(extraReal.length){
+    html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Otra actividad de hoy</div>';
+    extraReal.forEach(function(act){ html += _realActivityCard(act); });
+  }
+
+  document.getElementById('today-content').innerHTML = html;
+}
+
+function _workoutCardHtml(a, matchedReal){
+  matchedReal = matchedReal || [];
   var t   = a.template || {};
   var sp  = t.sport || 'run';
   var col = SPORT_COL[sp] || '#9CA3AF';
   // Match por deporte con lo real de hoy (Garmin) — si coincide, el
   // entreno se considera hecho aunque el atleta nunca haya tocado
   // "Registrar resultado" (ese log manual sigue siendo válido también).
-  var matchedReal = realActivities.filter(function(r){ return r.sport === sp; });
-  var extraReal   = realActivities.filter(function(r){ return r.sport !== sp; });
   var done = (a.logs && a.logs.length > 0) || matchedReal.length > 0;
   var blocks = [];
   try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
@@ -1246,15 +1281,7 @@ function renderTodayWorkout(a, realActivities){
     html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado</div>';
   }
 
-  // Actividades de hoy que NO corresponden al deporte planificado — antes
-  // eran completamente invisibles (ej. una sesión extra o de otro deporte
-  // el mismo día).
-  if(extraReal.length){
-    html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Otra actividad de hoy</div>';
-    extraReal.forEach(function(act){ html += _realActivityCard(act); });
-  }
-
-  document.getElementById('today-content').innerHTML = html;
+  return html;
 }
 
 /* ── Screen 4: Semana ────────────────────────────────────── */
