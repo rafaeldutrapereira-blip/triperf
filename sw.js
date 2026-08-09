@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '45';  // 2026-08-08: countdown en vivo días:hrs:min:seg en Próxima Carrera (igual al dashboard)
+var BUILD_VERSION = '46';  // 2026-08-08: header estándar LabX (eyebrow+saludo) en las 5 pantallas de la app
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
