@@ -2024,3 +2024,12 @@ class GarminPlannedWorkout(Base):
     tss_planned_precise = Column(Boolean, nullable=True)
     source              = Column(String,  nullable=True)    # 'trainingpeaks'|'garmin'|etc
     raw_json            = Column(Text,    nullable=True)    # payload original
+    # Detalle real por paso (series/ritmo/potencia/FC objetivo) tal como el
+    # coach lo cargó en TrainingPeaks/Garmin Coach — viene de
+    # get_workout_by_id() (workoutSegments), que antes se pedía solo para
+    # estimar el TSS y se descartaba sin persistir nada. Lista simplificada
+    # de {stepType, duration_s, distance_m, target_key, target_low,
+    # target_high, description, repeat_count} — ver _extract_workout_steps
+    # en garmin_pull_service.py.
+    steps_json          = Column(Text,    nullable=True)
+    description         = Column(Text,    nullable=True)    # descripción/nota libre del workout (si la plataforma la trae)

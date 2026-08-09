@@ -1355,6 +1355,50 @@ class GarminPullService:
         intensity = max(0.3, min(0.90, intensity))
         return round((dur_secs / 3600) * (intensity ** 2) * 100, 1), False
 
+    @staticmethod
+    def _extract_workout_steps(workout: dict) -> list:
+        """
+        Aplana workoutSegments[].workoutSteps[] (mismo schema de Garmin
+        Connect que ya usa garmin_converter.py para EMPUJAR workouts) a una
+        lista simple de pasos legibles: series/repeticiones, ritmo/potencia/
+        FC objetivo y descripción libre del coach — la info real que
+        _estimate_planned_tss() ya recorre para calcular el TSS pero
+        descartaba después de usarla. Ahora se persiste para mostrarla al
+        atleta (pedido explícito: "el coach podrá entregar más información
+        escrita como las series, ritmos, etc").
+        """
+        segments = workout.get("workoutSegments") or []
+        out = []
+
+        def _walk(steps, repeat_count):
+            for step in steps:
+                step_type = step.get("type")
+                if step_type == "RepeatGroupDTO":
+                    iterations = step.get("numberOfIterations") or 1
+                    _walk(step.get("workoutSteps") or [], repeat_count * iterations)
+                    continue
+                if step_type != "ExecutableStepDTO":
+                    continue
+                end_cond = (step.get("endCondition") or {}).get("conditionTypeKey")
+                dur_s  = step.get("endConditionValue") if end_cond == "time" else None
+                dist_m = step.get("endConditionValue") if end_cond == "distance" else None
+                v1, v2 = step.get("targetValueOne"), step.get("targetValueTwo")
+                target_key = (step.get("targetType") or {}).get("workoutTargetTypeKey") or ""
+                out.append({
+                    "stepType":     {"stepTypeKey": (step.get("stepType") or {}).get("stepTypeKey") or "other"},
+                    "duration_s":   dur_s,
+                    "distance_m":   dist_m,
+                    "target_key":   target_key,
+                    "target_low":   v1,
+                    "target_high":  v2,
+                    "description":  (step.get("description") or "")[:300] or None,
+                    "repeat_count": repeat_count,
+                })
+
+        for seg in segments:
+            _walk(seg.get("workoutSteps") or [], 1)
+        return out
+
     def _sync_planned_workouts(self, client, user_id: str, months_ahead: int = 2, ftp: int = 250) -> None:
         """
         Descarga del calendario Garmin los entrenamientos planificados
@@ -1383,11 +1427,20 @@ class GarminPullService:
               .filter(GarminPlannedWorkout.user_id == user_id,
                       GarminPlannedWorkout.workout_id.isnot(None),
                       GarminPlannedWorkout.dur_min.isnot(None),
-                      GarminPlannedWorkout.tss_planned.isnot(None))
+                      GarminPlannedWorkout.tss_planned.isnot(None),
+                      # requerir steps_json también resuelto — si no, rows
+                      # viejas (de antes de que este campo existiera) nunca
+                      # dispararían un nuevo get_workout_by_id() y se
+                      # quedarían sin detalle de series/ritmos para siempre.
+                      GarminPlannedWorkout.steps_json.isnot(None))
               .all()
         )
         for r in _existing_resolved:
-            _workout_cache[r.workout_id] = {"dur_min": r.dur_min, "dist_km": r.dist_km, "tss_est": r.tss_planned, "tss_precise": r.tss_planned_precise}
+            _workout_cache[r.workout_id] = {
+                "dur_min": r.dur_min, "dist_km": r.dist_km,
+                "tss_est": r.tss_planned, "tss_precise": r.tss_planned_precise,
+                "steps_json": r.steps_json, "description": r.description,
+            }
 
         months_to_fetch = []
         # Mes anterior (para semanas que cruzan fin de mes)
@@ -1519,7 +1572,16 @@ class GarminPullService:
 
                 workout_id = workout_id_raw
                 tss_p_precise = None
-                if workout_id and (not dur_secs or not dist_m or tss_p is None):
+                steps_json_val = None
+                description_val = None
+                # Antes solo se pedía get_workout_by_id() si faltaba duración/
+                # distancia/TSS — ahora también se pide si todavía no tenemos
+                # el detalle de pasos (series/ritmos) de esta plantilla, aunque
+                # el calendario ya traiga duración/distancia, porque esa info
+                # SOLO vive en get_workout_by_id(), nunca en el ítem de
+                # calendario.
+                if workout_id and (not dur_secs or not dist_m or tss_p is None
+                                    or workout_id not in _workout_cache):
                     if workout_id in _workout_cache:
                         cached = _workout_cache[workout_id]
                         dur_secs = dur_secs or (cached["dur_min"]*60 if cached["dur_min"] else 0)
@@ -1527,6 +1589,8 @@ class GarminPullService:
                         if tss_p is None:
                             tss_p = cached.get("tss_est")
                             tss_p_precise = cached.get("tss_precise")
+                        steps_json_val  = cached.get("steps_json")
+                        description_val = cached.get("description")
                     else:
                         try:
                             wk = _retry(lambda w=workout_id: client.get_workout_by_id(w),
@@ -1535,6 +1599,9 @@ class GarminPullService:
                             wk_dist = (wk or {}).get("estimatedDistanceInMeters") or 0
                             wk_tss, wk_tss_precise = self._estimate_planned_tss(
                                 wk or {}, sport, ftp, _fcmax, _run_pace_s_km, _css_s_100m)
+                            wk_steps = self._extract_workout_steps(wk or {})
+                            steps_json_val  = _json.dumps(wk_steps, ensure_ascii=False) if wk_steps else None
+                            description_val = ((wk or {}).get("description") or "")[:1000] or None
                             dur_secs = dur_secs or wk_dur
                             dist_m   = dist_m or wk_dist
                             if tss_p is None:
@@ -1545,10 +1612,12 @@ class GarminPullService:
                                 "dist_km": round(wk_dist/1000, 2) if wk_dist else None,
                                 "tss_est": wk_tss,
                                 "tss_precise": wk_tss_precise,
+                                "steps_json": steps_json_val,
+                                "description": description_val,
                             }
                         except Exception as exc:
                             logger.debug("get_workout_by_id %s user=%s: %s", workout_id, user_id, exc)
-                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None, "tss_est": None, "tss_precise": None}
+                            _workout_cache[workout_id] = {"dur_min": None, "dist_km": None, "tss_est": None, "tss_precise": None, "steps_json": None, "description": None}
 
                 dur_min = round(dur_secs / 60, 1) if dur_secs else None
                 dist_km = round(dist_m / 1000, 2) if dist_m else None
@@ -1570,6 +1639,8 @@ class GarminPullService:
                     existing_row.tss_planned_precise = tss_p_precise if tss_p is not None else existing_row.tss_planned_precise
                     existing_row.source      = source_lbl
                     existing_row.raw_json    = _json.dumps(item, ensure_ascii=False)[:4000]
+                    if steps_json_val is not None: existing_row.steps_json = steps_json_val
+                    if description_val is not None: existing_row.description = description_val
                     updated += 1
                 else:
                     import uuid as _uuid_mod2
@@ -1587,6 +1658,8 @@ class GarminPullService:
                         tss_planned_precise = tss_p_precise,
                         source              = source_lbl,
                         raw_json            = _json.dumps(item, ensure_ascii=False)[:4000],
+                        steps_json          = steps_json_val,
+                        description         = description_val,
                     ))
                     inserted += 1
 

@@ -1142,6 +1142,8 @@ def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) 
             # None = no se pudo estimar.
             "tss_precise": r.tss_planned_precise,
             "source":   r.source,
+            "steps_json":  r.steps_json,
+            "description": r.description,
         })
     return out
 

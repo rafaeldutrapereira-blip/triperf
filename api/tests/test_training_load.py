@@ -248,6 +248,75 @@ class TestEstimatePlannedTss:
         assert tss > 50, "El bloque principal (RepeatGroupDTO) no se está contando"
         assert abs(tss - 62.3) < 0.5
 
+
+class TestExtractWorkoutSteps:
+    """
+    _extract_workout_steps() aplana el mismo workoutSegments que
+    _estimate_planned_tss() ya recorría para calcular el TSS, pero esa info
+    (series/ritmos/potencia/descripción del coach) se descartaba después de
+    usarla — nunca se persistía. Reusa el mismo fixture real (ride 90min,
+    RepeatGroupDTO anidado) para probar que el aplanado también respeta las
+    repeticiones y no pierde ningún paso.
+    """
+
+    def test_repeat_group_se_aplana_y_multiplica_repeat_count(self):
+        from api.garmin_pull_service import GarminPullService
+        workout = {
+            "workoutSegments": [{"workoutSteps": [
+                {"type": "ExecutableStepDTO", "description": "Calentamiento",
+                 "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 1200.0,
+                 "targetType": {"workoutTargetTypeKey": "power.3s"},
+                 "targetValueOne": 94.0, "targetValueTwo": 141.0},
+                {"type": "RepeatGroupDTO", "numberOfIterations": 4, "workoutSteps": [
+                    {"type": "ExecutableStepDTO", "description": "z2 cadencia alta",
+                     "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 720.0,
+                     "targetType": {"workoutTargetTypeKey": "power.3s"},
+                     "targetValueOne": 164.0, "targetValueTwo": 176.0,
+                     "stepType": {"stepTypeKey": "interval"}},
+                    {"type": "ExecutableStepDTO", "description": "Fácil",
+                     "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 180.0,
+                     "targetType": {"workoutTargetTypeKey": "power.3s"},
+                     "targetValueOne": 118.0, "targetValueTwo": 141.0,
+                     "stepType": {"stepTypeKey": "recovery"}},
+                ]},
+                {"type": "ExecutableStepDTO", "description": "Enfriar",
+                 "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 600.0,
+                 "targetType": {"workoutTargetTypeKey": "power.3s"},
+                 "targetValueOne": 94.0, "targetValueTwo": 118.0},
+            ]}]
+        }
+        steps = GarminPullService._extract_workout_steps(workout)
+        assert len(steps) == 4
+        assert steps[0]["description"] == "Calentamiento"
+        assert steps[0]["repeat_count"] == 1
+        interval_step = steps[1]
+        assert interval_step["repeat_count"] == 4
+        assert interval_step["stepType"]["stepTypeKey"] == "interval"
+        assert interval_step["target_low"] == 164.0 and interval_step["target_high"] == 176.0
+        assert interval_step["duration_s"] == 720.0
+        recovery_step = steps[2]
+        assert recovery_step["repeat_count"] == 4
+        assert recovery_step["stepType"]["stepTypeKey"] == "recovery"
+        assert steps[3]["description"] == "Enfriar"
+
+    def test_sin_workout_segments_devuelve_lista_vacia(self):
+        from api.garmin_pull_service import GarminPullService
+        assert GarminPullService._extract_workout_steps({}) == []
+        assert GarminPullService._extract_workout_steps({"workoutSegments": []}) == []
+
+    def test_pasos_sin_end_condition_de_tiempo_ni_distancia(self):
+        """Ej. step 'lap.button' (terminado a mano) — no debe crashear, sólo queda sin duración/distancia."""
+        from api.garmin_pull_service import GarminPullService
+        workout = {"workoutSegments": [{"workoutSteps": [
+            {"type": "ExecutableStepDTO",
+             "endCondition": {"conditionTypeKey": "lap.button"},
+             "targetType": {"workoutTargetTypeKey": "no.target"}},
+        ]}]}
+        steps = GarminPullService._extract_workout_steps(workout)
+        assert len(steps) == 1
+        assert steps[0]["duration_s"] is None
+        assert steps[0]["distance_m"] is None
+
     def test_repeat_group_dto_anidado_dentro_de_otro(self):
         """Un RepeatGroupDTO dentro de otro (raro pero válido) debe multiplicar iteraciones en cadena."""
         from api.garmin_pull_service import GarminPullService

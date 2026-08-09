@@ -1026,7 +1026,9 @@ function _realActivityCard(act){
 
 /* Normaliza una fila de /athlete/planned-workouts (shape distinto, sin
    template/logs/notas/blocks — ver _get_planned_range en athlete_routes.py)
-   a la misma forma que espera renderTodayWorkout() para una AssignedWorkout. */
+   a la misma forma que espera renderTodayWorkout() para una AssignedWorkout.
+   steps_json (si Garmin trajo el detalle real por paso — ver garmin_pull_
+   service.py) viaja tal cual para que _renderBlocksHtml() lo formatee. */
 function _tpRowToAssignShape(p){
   return {
     date_iso: p.date_iso,
@@ -1035,9 +1037,120 @@ function _tpRowToAssignShape(p){
     template: {
       sport: p.sport, nombre: p.title || 'Entrenamiento',
       dur_min: p.dur_min, dist_km: p.dist_km, tss: p.tss,
-      tipo: null, blocks_json: null,
+      tipo: null, blocks_json: null, steps_json: p.steps_json || null,
+      garmin_description: p.description || null,
     }
   };
+}
+
+/* Formatea un bloque de coach (blocks_json, formato propio LabX) a
+   {bType, bMain, bSub} legible por deporte. Compartido entre "Hoy" y
+   "Semana" — antes "Semana" solo hacía JSON.stringify(b) crudo. */
+function _coachBlockLabel(sp, b){
+  var bType = (b.type||b.zone||'bloque').toUpperCase();
+  var bMain = '', bSub = '';
+  if(sp==='bike'){
+    bMain = (b.repeat&&b.repeat>1?b.repeat+'×':'')+' '+(b.on_duration?Math.round(b.on_duration/60)+'min':'')+' @ '+(b.on_power?Math.round(b.on_power*100)+'% FTP':'');
+    if(b.off_duration) bSub = 'Rec: '+Math.round(b.off_duration/60)+'min @ '+Math.round((b.off_power||0.5)*100)+'%';
+  } else if(sp==='run'){
+    if(b.type==='intervals'){
+      bMain = b.repeat+'× '+b.dist_m+'m @ '+(b.pace_min+':'+String(b.pace_sec||0).padStart(2,'0'))+'/km';
+      bSub = 'Rec: '+b.rec_sec+'s';
+    } else {
+      bMain = (b.dur_min||'?')+'min '+(b.zone?'Zona '+(b.zone||1):'');
+      bType = (b.type||'steady').toUpperCase();
+    }
+  } else if(sp==='swim'){
+    if(b.type==='main'){
+      bMain = b.repeat+'× '+b.dist_m+'m @ '+b.css_pct+'% CSS';
+      bSub = 'Descanso: '+b.rest_sec+'s';
+    } else {
+      bMain = b.dist_m+'m @ '+b.css_pct+'% CSS';
+      bType = (b.type||'swim').toUpperCase();
+    }
+  }
+  if(!bMain.trim()) bMain = JSON.stringify(b).slice(0,60);
+  return {bType: bType, bMain: bMain, bSub: bSub};
+}
+
+/* Formatea un paso real de Garmin (workoutSegments[].workoutSteps[],
+   guardado en steps_json por garmin_pull_service.py — series/repeticiones/
+   ritmo/potencia/FC objetivo, tal como el coach los cargó en TrainingPeaks/
+   Garmin Coach) a {bType, bMain, bSub}. Antes esta info se pedía a Garmin
+   para estimar el TSS y se descartaba — nunca se le mostraba al atleta. */
+var _GARMIN_STEP_LBL = {
+  warmup:'Calentamiento', cooldown:'Enfriamiento', recovery:'Recuperación',
+  rest:'Descanso', interval:'Serie', repeat:'Repetición', main:'Principal',
+  other:'Bloque'
+};
+function _garminStepLabel(sp, step){
+  var stepKey = ((step.stepType||{}).stepTypeKey || 'other');
+  var bType = _GARMIN_STEP_LBL[stepKey] || stepKey.toUpperCase();
+  var durS = step.duration_s;
+  var durTxt = durS ? Math.round(durS/60)+'min' : (step.distance_m ? Math.round(step.distance_m)+'m' : '');
+  var targetKey = step.target_key || '';
+  var v1 = step.target_low, v2 = step.target_high;
+  var targetTxt = '';
+  if(v1!=null || v2!=null){
+    if(targetKey.indexOf('power')>-1){
+      targetTxt = '@ '+(v1&&v2&&v1!==v2 ? Math.round(v1)+'-'+Math.round(v2)+'W' : Math.round(v1||v2)+'W');
+    } else if(targetKey.indexOf('heart.rate')>-1){
+      targetTxt = '@ '+(v1&&v2&&v1!==v2 ? Math.round(v1)+'-'+Math.round(v2) : Math.round(v1||v2))+' ppm';
+    } else if(targetKey.indexOf('pace')>-1){
+      // v1/v2 vienen en m/s (Garmin) → min:seg/km para correr, min:seg/100m para nado
+      var fmtPace = function(ms, per){
+        if(!ms) return '';
+        var secs = per/ms;
+        var m = Math.floor(secs/60), s = Math.round(secs%60);
+        return m+':'+String(s).padStart(2,'0');
+      };
+      if(sp==='swim'){
+        targetTxt = '@ '+fmtPace(v2||v1,100)+(v1&&v2&&v1!==v2?'-'+fmtPace(v1,100):'')+'/100m';
+      } else {
+        targetTxt = '@ '+fmtPace(v2||v1,1000)+(v1&&v2&&v1!==v2?'-'+fmtPace(v1,1000):'')+'/km';
+      }
+    } else if(targetKey.indexOf('zone')>-1){
+      targetTxt = 'Zona '+Math.round(v1||v2);
+    }
+  }
+  var bMain = [durTxt, targetTxt].filter(Boolean).join(' ');
+  if(!bMain) bMain = step.description || bType;
+  // Sólo mostrar la descripción como subtítulo si aporta algo más que
+  // repetir el tipo de bloque (ej. "z2 cadencia alta" sí suma; que
+  // "Calentamiento" describa un paso ya etiquetado "Calentamiento" no).
+  var descNorm = (step.description||'').trim().toLowerCase();
+  var bTypeNorm = bType.trim().toLowerCase();
+  var bSub = (step.description && descNorm !== bTypeNorm && step.description !== bMain) ? step.description : '';
+  return {bType: bType, bMain: bMain, bSub: bSub};
+}
+
+/* Renderiza la lista completa de bloques — coach (blocks_json) o pasos
+   reales de Garmin (steps_json), lo que haya disponible. Devuelve '' si
+   no hay nada estructurado (el caller cae a la descripción libre). */
+function _renderBlocksHtml(sp, col, blocks, steps, repeats){
+  var items = [];
+  if(blocks && blocks.length){
+    blocks.forEach(function(b){ items.push(_coachBlockLabel(sp, b)); });
+  } else if(steps && steps.length){
+    steps.forEach(function(st){
+      var mult = (st.repeat_count||1);
+      var lbl = _garminStepLabel(sp, st);
+      if(mult>1) lbl.bType = mult+'× '+lbl.bType;
+      items.push(lbl);
+    });
+  }
+  if(!items.length) return '';
+  var html = '<div class="block-list" style="padding-top:0">';
+  items.forEach(function(it){
+    html += '<div class="workout-block"><div class="wb-bar" style="background:'+col+'"></div>'
+      +'<div class="wb-body">'
+      +'<div class="wb-type">'+it.bType+'</div>'
+      +'<div class="wb-main">'+it.bMain+'</div>'
+      +(it.bSub?'<div class="wb-sub">'+it.bSub+'</div>':'')
+      +'</div></div>';
+  });
+  html += '</div>';
+  return html;
 }
 
 function renderNoWorkout(msg){
@@ -1061,6 +1174,8 @@ function renderTodayWorkout(a, realActivities){
   var done = (a.logs && a.logs.length > 0) || matchedReal.length > 0;
   var blocks = [];
   try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
+  var steps = [];
+  try{ if(t.steps_json) steps = JSON.parse(t.steps_json); }catch(e){}
 
   var html = '';
 
@@ -1083,46 +1198,13 @@ function renderTodayWorkout(a, realActivities){
     html += '<div class="coach-notes"><div class="cn-label">📋 Notas del Coach</div><div class="cn-text">'+a.notas+'</div></div>';
   }
 
-  // Blocks
-  if(blocks.length){
+  // Blocks — coach (blocks_json) o pasos reales de Garmin/TrainingPeaks (steps_json)
+  var blocksHtml = _renderBlocksHtml(sp, col, blocks, steps);
+  if(blocksHtml){
     html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Bloques</div>';
-    html += '<div class="block-list" style="padding-top:0">';
-    blocks.forEach(function(b){
-      var bCol = col;
-      var bType = (b.type||b.zone||'bloque').toUpperCase();
-      var bMain = '', bSub = '';
-      if(sp==='bike'){
-        bMain = (b.repeat&&b.repeat>1?b.repeat+'×':'')+' '+(b.on_duration?Math.round(b.on_duration/60)+'min':'')+' @ '+(b.on_power?Math.round(b.on_power*100)+'% FTP':'');
-        if(b.off_duration) bSub = 'Rec: '+Math.round(b.off_duration/60)+'min @ '+Math.round((b.off_power||0.5)*100)+'%';
-      } else if(sp==='run'){
-        if(b.type==='intervals'){
-          bMain = b.repeat+'× '+b.dist_m+'m @ '+(b.pace_min+':'+String(b.pace_sec||0).padStart(2,'0'))+'/km';
-          bSub = 'Rec: '+b.rec_sec+'s';
-        } else {
-          bMain = (b.dur_min||'?')+'min '+(b.zone?'Zona '+(b.zone||1):'');
-          bType = (b.type||'steady').toUpperCase();
-        }
-      } else if(sp==='swim'){
-        if(b.type==='main'){
-          bMain = b.repeat+'× '+b.dist_m+'m @ '+b.css_pct+'% CSS';
-          bSub = 'Descanso: '+b.rest_sec+'s';
-        } else {
-          bMain = b.dist_m+'m @ '+b.css_pct+'% CSS';
-          bType = (b.type||'swim').toUpperCase();
-        }
-      }
-      if(!bMain) bMain = JSON.stringify(b).slice(0,60);
-
-      html += '<div class="workout-block"><div class="wb-bar" style="background:'+bCol+'"></div>'
-        +'<div class="wb-body">'
-        +'<div class="wb-type">'+bType+'</div>'
-        +'<div class="wb-main">'+bMain+'</div>'
-        +(bSub?'<div class="wb-sub">'+bSub+'</div>':'')
-        +'</div></div>';
-    });
-    html += '</div>';
-  } else if(t.notas){
-    html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Descripción</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+t.notas+'</div></div>';
+    html += blocksHtml;
+  } else if(t.notas || t.garmin_description){
+    html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Descripción</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+(t.notas||t.garmin_description)+'</div></div>';
   }
 
   // Planificado vs Real — solo si Garmin ya trajo una actividad de hoy
@@ -1263,6 +1345,8 @@ function showWeekWorkoutDetail(idx){
 
   var blocks = [];
   try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
+  var steps = [];
+  try{ if(t.steps_json) steps = JSON.parse(t.steps_json); }catch(e){}
 
   var metaHtml = '<div class="th-meta-grid" style="margin-top:.6rem">'
     +(t.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+t.dur_min+'</div><div class="th-meta-lbl">min</div></div>':'')
@@ -1270,19 +1354,22 @@ function showWeekWorkoutDetail(idx){
     +(t.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+t.tss+'</div><div class="th-meta-lbl">TSS</div></div>':'')
     +'</div>';
 
-  var bodyHtml = '';
-  if(blocks.length){
-    bodyHtml += '<div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin:.9rem 0 .4rem">Bloques</div>';
-    blocks.forEach(function(b){
-      var bType = (b.type||b.zone||'bloque').toUpperCase();
-      var bMain = JSON.stringify(b).replace(/[{}"]/g,'').slice(0,90);
-      bodyHtml += '<div class="workout-block" style="margin:0 0 .4rem"><div class="wb-bar" style="background:'+col+'"></div>'
-        +'<div class="wb-body"><div class="wb-type">'+bType+'</div><div class="wb-main">'+bMain+'</div></div></div>';
-    });
-  } else if(t.notas){
-    bodyHtml += '<div style="font-size:.8rem;color:#D1D5DB;line-height:1.6;margin-top:.9rem">'+t.notas+'</div>';
-  } else {
-    bodyHtml += '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.</div>';
+  // Nota del coach para esta fecha puntual — antes se perdía acá, sólo
+  // se mostraba en "Hoy" (a.notas, distinto de t.notas de la plantilla).
+  var noteHtml = '';
+  if(a.notas){
+    noteHtml += '<div style="margin-top:.9rem;padding:.65rem .8rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px">'
+      +'<div style="font-size:.6rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem">📋 Notas del Coach</div>'
+      +'<div style="font-size:.82rem;color:#D1D5DB;line-height:1.5">'+a.notas+'</div></div>';
+  }
+
+  var bodyHtml = _renderBlocksHtml(sp, col, blocks, steps);
+  if(bodyHtml){
+    bodyHtml = '<div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin:.9rem 0 .4rem">Bloques</div>' + bodyHtml;
+  } else if(t.notas || t.garmin_description){
+    bodyHtml = '<div style="font-size:.8rem;color:#D1D5DB;line-height:1.6;margin-top:.9rem">'+(t.notas||t.garmin_description)+'</div>';
+  } else if(!noteHtml){
+    bodyHtml = '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.</div>';
   }
 
   var modal = document.getElementById('wo-detail-modal');
@@ -1291,7 +1378,7 @@ function showWeekWorkoutDetail(idx){
       +'<span>'+(SPORT_EMOJI[sp]||'🏋')+'</span><span>'+(t.nombre||sp)+'</span>'
     +'</div>'
     +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+fmtDate(a.date_iso)+'</div>'
-    + metaHtml + bodyHtml;
+    + metaHtml + noteHtml + bodyHtml;
   modal.style.display = 'flex';
 }
 function closeWeekWorkoutDetail(e){
