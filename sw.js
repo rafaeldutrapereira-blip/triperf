@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '61';  // 2026-08-09: trampa de navegacion - el gesto/boton atras ya no saca de la app
+var BUILD_VERSION = '62';  // 2026-08-09: login.html redirige a athlete-app.html en movil (una sola pantalla de login para celular)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

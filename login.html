@@ -374,6 +374,22 @@ function _postLoginDest(role){
   if(s){ window.location.replace(_postLoginDest(s.api_rol)); return; }
   var p = new URLSearchParams(window.location.search);
   if(p.get('denied')) document.getElementById('denied-box').classList.add('show');
+
+  /* Ajuste pedido: en celular, la pantalla de login que ve el usuario
+     tiene que ser SIEMPRE la de la app instalada (athlete-app.html —
+     tiene su propio login con el indicador de versión, ver Gap #13/#15
+     de la sesión de PWA), nunca el formulario de login de la web. Antes
+     esto solo pasaba DESPUÉS de loguearse (_postLoginDest); un atleta
+     que llegaba a login.html SIN sesión (ej. pestaña de Safari vieja
+     abierta desde antes de instalar la app, o un link/bookmark) veía
+     el formulario de la web y se generaba confusión sobre "cuál es la
+     pantalla de login real". Escape hatch ?web=1 para coach/admin que sí
+     necesiten entrar por la web desde el celular (caso raro, pero real:
+     athlete-app.html es una experiencia solo para atletas). */
+  if(_isMobileDevice() && !p.get('web')){
+    window.location.replace('athlete-app.html');
+    return;
+  }
 })();
 
 var API = (function(){
