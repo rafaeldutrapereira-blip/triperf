@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '49';  // 2026-08-09: fix "Sin conexión" — login sin remember_me daba token de solo 8hs
+var BUILD_VERSION = '50';  // 2026-08-09: fix botón login trabado en "Verificando..." tras Salir + volver a loguear
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

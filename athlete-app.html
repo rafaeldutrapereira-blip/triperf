@@ -646,6 +646,18 @@ function doLogout(){
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
+  /* BUG: doLogin() sólo resetea el botón en la rama de error — un login
+     exitoso lo deja disabled+"Verificando..." para siempre. Sin este
+     reset acá, tras Salir y volver a intentar loguear el botón queda
+     inerte (el clic no hace nada porque sigue disabled), y a simple
+     vista parece que el login "no funciona, queda en Verificando".
+     Encontrado en vivo por el usuario en su iPhone, reproducido con
+     Playwright: tras un primer login OK, el DOM mostraba
+     <button disabled id="login-btn">Verificando...</button> ANTES
+     de tocar nada la segunda vez. */
+  var btn = document.getElementById('login-btn');
+  btn.disabled = false;
+  btn.textContent = 'Entrar →';
 }
 
 /* ── Navigation ──────────────────────────────────────────── */
