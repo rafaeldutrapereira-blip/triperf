@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '55';  // 2026-08-09: indicador de version visible en pantalla de login (para no adivinar si un fix ya llego al telefono)
+var BUILD_VERSION = '56';  // 2026-08-09: fix raiz de actualizaciones - sw.js ahora se sirve sin cache HTTP (era la causa real de que las actualizaciones nunca llegaran)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

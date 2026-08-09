@@ -302,6 +302,23 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         elif request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store, must-revalidate"
             response.headers["Pragma"]        = "no-cache"
+        # No-cache para sw.js: es el ÚNICO archivo sin el que las
+        # actualizaciones de la PWA no llegan NUNCA, sin importar qué tan
+        # agresivo sea el código de auto-reload en athlete-app.html. Sin este
+        # header, sw.js cae en el caching heurístico por defecto del browser
+        # (basado en Last-Modified) — el propio algoritmo de actualización
+        # de Service Worker respeta la caché HTTP normal del script principal
+        # salvo que el servidor diga explícitamente que no debe cachearse.
+        # Bug real: reg.update() se estaba llamando correctamente pero
+        # comparaba contra una copia de sw.js servida desde caché del
+        # navegador, nunca contra la versión nueva real — ninguna
+        # actualización llegaba a un teléfono ya instalado, sin importar
+        # cuántas veces se llamara a reg.update() ni qué tan bueno fuera el
+        # listener de controllerchange, porque el navegador nunca detectaba
+        # que había un sw.js distinto para empezar.
+        elif request.url.path == "/sw.js":
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"]        = "no-cache"
         if os.getenv("APP_ENV", "development") == "production":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             response.headers["Content-Security-Policy"] = (
