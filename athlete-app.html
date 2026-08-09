@@ -1711,6 +1711,33 @@ function loadCommunityLeaderboard(){
     .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
 }
 
+/* Trampa de navegación — pedido explícito: el gesto/botón "atrás" del
+   celular (deslizar desde el borde en iOS, botón de sistema en Android)
+   navegaba el historial del navegador y sacaba de la app hacia atrás
+   (a login.html/dashboard.html/lo que haya en el historial de Safari
+   antes de instalarla) — nada de eso debería pasar en una PWA instalada,
+   la navegación tiene que quedar 100% dentro de la app (bottom nav).
+   Técnica estándar para "atrapar" el back: empujar un estado dummy al
+   historial y, cada vez que el navegador dispara 'popstate' (o sea,
+   cada vez que el usuario intenta ir atrás), volver a empujar OTRO
+   estado dummy en vez de dejar que la navegación real ocurra — así
+   nunca hay a dónde "retroceder" fuera de la página ya cargada. Si hay
+   un modal de detalle abierto, el gesto de atrás lo cierra primero (más
+   natural que no hacer nada) y igual se queda atrapado en la app. */
+(function(){
+  function _trapBack(){
+    history.pushState({lxapp:true}, '', location.href);
+  }
+  _trapBack();
+  window.addEventListener('popstate', function(){
+    var detailOpen = document.getElementById('wo-detail-modal').style.display === 'flex';
+    var iosGuideOpen = document.getElementById('ios-guide').style.display === 'flex';
+    if(detailOpen) closeWeekWorkoutDetail();
+    else if(iosGuideOpen && window.closeIosGuide) window.closeIosGuide();
+    _trapBack();
+  });
+})();
+
 /* ── Boot ────────────────────────────────────────────────── */
 (function(){
   var tok = getToken();

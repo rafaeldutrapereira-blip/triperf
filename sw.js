@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '60';  // 2026-08-09: tarjetas compactas en Hoy, detalle completo al tocar (mismo modal que Semana)
+var BUILD_VERSION = '61';  // 2026-08-09: trampa de navegacion - el gesto/boton atras ya no saca de la app
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
