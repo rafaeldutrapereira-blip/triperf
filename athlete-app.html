@@ -73,9 +73,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   padding: 1.4rem 1.2rem calc(env(safe-area-inset-bottom,0px) + 1.4rem);
   position: relative;
   box-shadow: 0 -4px 30px rgba(0,0,0,.4);
+  /* Bug real: sin tope de alto ni scroll, un contenido largo (ej. un
+     entrenamiento con muchos bloques en el detalle de Semana) hacía que
+     la tarjeta creciera más alta que la pantalla y empujara el botón de
+     cerrar (que crece HACIA ARRIBA porque el modal está anclado abajo)
+     fuera de la vista — quedaba "pegado", sin ninguna forma visible de
+     volver. max-height + scroll interno; el botón de cerrar queda FUERA
+     del área que scrollea (ver .ios-guide-scroll) para que siempre esté
+     visible sin importar cuánto contenido haya. */
+  max-height: 85vh;
+  display: flex; flex-direction: column;
 }
+.ios-guide-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 1.5rem; margin-right: -1.5rem; }
 .ios-guide-close {
-  position: absolute; top: .9rem; right: 1rem;
+  position: absolute; top: .9rem; right: 1rem; z-index: 1;
   background: none; border: none; color: var(--dim); font-size: 1.1rem; cursor: pointer;
 }
 .ios-guide-title {
@@ -392,7 +403,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <div id="wo-detail-modal" class="ios-guide" style="display:none" onclick="closeWeekWorkoutDetail(event)">
   <div class="ios-guide-card" onclick="event.stopPropagation()">
     <button class="ios-guide-close" onclick="closeWeekWorkoutDetail()" aria-label="Cerrar">✕</button>
-    <div id="wo-detail-body"></div>
+    <div class="ios-guide-scroll"><div id="wo-detail-body"></div></div>
   </div>
 </div>
 
