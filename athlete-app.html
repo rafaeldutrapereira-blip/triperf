@@ -99,7 +99,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   width: 100%; max-width: 430px;
   background: rgba(17,24,39,.97); backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 100;
 }
@@ -386,6 +386,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
 </div>
 
+<!-- Detalle de una actividad de la semana (pedido explícito: ver qué
+     hay que hacer antes de entrenar, no solo nombre+TSS en la tarjeta
+     chica). Mismo patrón visual que #ios-guide (bottom sheet). -->
+<div id="wo-detail-modal" class="ios-guide" style="display:none" onclick="closeWeekWorkoutDetail(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeWeekWorkoutDetail()" aria-label="Cerrar">✕</button>
+    <div id="wo-detail-body"></div>
+  </div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div>
@@ -536,6 +546,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       Bienestar
     </button>
+    <button class="nav-btn" onclick="doLogout()" id="nav-logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Salir
+    </button>
   </nav>
 </div><!-- /app -->
 
@@ -604,6 +618,25 @@ function initApp(tok){
   loadToday();
   loadWeek();
   loadStatusHealth();
+}
+
+/* Cierra sesión — mismo criterio que KL.logout() en auth.js (llama al
+   endpoint para revocar el token/cookie, y limpia igual aunque la
+   llamada falle por estar offline). Vuelve a la pantalla de login DENTRO
+   de la app en vez de mandar a landing.html — el usuario ya la instaló
+   como app, no tiene sentido devolverlo al sitio de marketing. */
+function doLogout(){
+  fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(function(){});
+  localStorage.removeItem('lxapp_token');
+  localStorage.removeItem('lx_co_token');
+  localStorage.removeItem('lx_co_rol');
+  localStorage.removeItem('lx_co_nombre');
+  _token = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
 }
 
 /* ── Navigation ──────────────────────────────────────────── */
@@ -1074,10 +1107,16 @@ function renderTodayWorkout(a, realActivities){
   // camino para cualquier entrenamiento).
   if(!done){
     html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;font-size:.8rem;color:var(--dim);text-align:center">⏳ Pendiente — se completa solo al sincronizar tu actividad desde Garmin</div>';
-  } else if(matchedReal.length && !(a.logs && a.logs.length)){
-    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — sincronizado desde Garmin</div>';
-  } else {
-    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — reportado al coach</div>';
+  } else if(!matchedReal.length){
+    // Único caso posible acá: un log manual histórico de ANTES de sacar
+    // la pantalla "Registrar" — no hay actividad real de Garmin que lo
+    // respalde. Se deja un mensaje simple, sin duplicar la card
+    // Planificado→Real (que ya deja clara la finalización cuando SÍ hay
+    // actividad real — mostrar además este badge ahí era redundante,
+    // razón por la que "Natación" y "Carrera" se veían distintas: la
+    // card de comparación ya es la única señal de "completado" que hace
+    // falta cuando hay dato real).
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado</div>';
   }
 
   // Actividades de hoy que NO corresponden al deporte planificado — antes
@@ -1126,11 +1165,14 @@ function loadWeek(){
   });
 }
 
+var _weekAssignsFlat = [];  // para poder abrir el detalle al tocar una actividad de la semana
+
 function renderWeekGrid(assigns, monIso){
   var today = todayIso();
   var assignByDay = {};
   (assigns||[]).forEach(function(a){ assignByDay[a.date_iso] = assignByDay[a.date_iso]||[]; assignByDay[a.date_iso].push(a); });
 
+  _weekAssignsFlat = [];
   var totalTss=0, totalDist=0, totalSessions=0;
   var DAYS_ABR=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   var html='';
@@ -1155,7 +1197,9 @@ function renderWeekGrid(assigns, monIso){
         if(t.tss) totalTss+=t.tss;
         if(t.dist_km) totalDist+=t.dist_km;
         totalSessions++;
-        html+='<div class="wk-wo'+(done?' wk-wo-done':'')+'">'
+        var idx = _weekAssignsFlat.length;
+        _weekAssignsFlat.push(a);
+        html+='<div class="wk-wo'+(done?' wk-wo-done':'')+'" onclick="showWeekWorkoutDetail('+idx+')" style="cursor:pointer">'
           +'<div class="wk-wo-dot" style="background:'+(SPORT_COL[sp]||'#9CA3AF')+'"></div>'
           +'<div class="wk-wo-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||sp)+'</div>'
           +(t.tss?'<div class="wk-wo-tss">'+t.tss+' TSS</div>':'')
@@ -1172,6 +1216,56 @@ function renderWeekGrid(assigns, monIso){
   document.getElementById('wk-tss').textContent = Math.round(totalTss)||'—';
   document.getElementById('wk-dist').textContent = Math.round(totalDist*10)/10||'—';
   document.getElementById('wk-sessions').textContent = totalSessions||'—';
+}
+
+/* Detalle de una actividad de la semana al tocarla — pedido explícito
+   del usuario, para que el atleta pueda ver QUÉ tiene que hacer antes
+   de entrenar (no solo el nombre + TSS que ya se veía en la tarjeta
+   chica). Reusa el mismo patrón visual del modal de guía iOS
+   (#ios-guide) — un bottom sheet, no una pantalla nueva. */
+function showWeekWorkoutDetail(idx){
+  var a = _weekAssignsFlat[idx];
+  if(!a) return;
+  var t = a.template || {};
+  var sp = t.sport || 'run';
+  var col = SPORT_COL[sp] || '#9CA3AF';
+
+  var blocks = [];
+  try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
+
+  var metaHtml = '<div class="th-meta-grid" style="margin-top:.6rem">'
+    +(t.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+t.dur_min+'</div><div class="th-meta-lbl">min</div></div>':'')
+    +(t.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+t.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
+    +(t.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+t.tss+'</div><div class="th-meta-lbl">TSS</div></div>':'')
+    +'</div>';
+
+  var bodyHtml = '';
+  if(blocks.length){
+    bodyHtml += '<div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin:.9rem 0 .4rem">Bloques</div>';
+    blocks.forEach(function(b){
+      var bType = (b.type||b.zone||'bloque').toUpperCase();
+      var bMain = JSON.stringify(b).replace(/[{}"]/g,'').slice(0,90);
+      bodyHtml += '<div class="workout-block" style="margin:0 0 .4rem"><div class="wb-bar" style="background:'+col+'"></div>'
+        +'<div class="wb-body"><div class="wb-type">'+bType+'</div><div class="wb-main">'+bMain+'</div></div></div>';
+    });
+  } else if(t.notas){
+    bodyHtml += '<div style="font-size:.8rem;color:#D1D5DB;line-height:1.6;margin-top:.9rem">'+t.notas+'</div>';
+  } else {
+    bodyHtml += '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.</div>';
+  }
+
+  var modal = document.getElementById('wo-detail-modal');
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="display:flex;align-items:center;gap:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'
+      +'<span>'+(SPORT_EMOJI[sp]||'🏋')+'</span><span>'+(t.nombre||sp)+'</span>'
+    +'</div>'
+    +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+fmtDate(a.date_iso)+'</div>'
+    + metaHtml + bodyHtml;
+  modal.style.display = 'flex';
+}
+function closeWeekWorkoutDetail(e){
+  if(e) e.stopPropagation();
+  document.getElementById('wo-detail-modal').style.display = 'none';
 }
 
 /* ── Screen 5: Bienestar ─────────────────────────────────── */
