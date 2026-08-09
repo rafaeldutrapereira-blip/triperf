@@ -1483,7 +1483,32 @@ function submitWellness(){
 <!-- PWA manifest inline check -->
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(function(){});
+  /* Por qué las actualizaciones se sentían "lentas": sw.js ya hacía
+     skipWaiting()+clients.claim() (activa la versión nueva altiro), pero
+     eso NO recarga la página que ya está abierta — el navegador activa
+     el SW nuevo por debajo, pero el HTML/JS ya cargado en memoria sigue
+     siendo el viejo hasta que hay una recarga real. Sin este listener,
+     el único jeito de ver la versión nueva era cerrar la app del todo
+     (a veces ni el force-close alcanzaba si la recarga volvía a servir
+     el cache viejo antes de que el SW nuevo terminara de activarse) y
+     reabrir, cruzando los dedos. Ahora: cuando el SW nuevo toma control
+     (evento controllerchange, dispara automático después de clients.
+     claim()), se recarga la página una sola vez sola — el usuario nunca
+     tiene que hacer nada. reg.update() fuerza el chequeo de versión
+     nueva apenas se abre la app, en vez de esperar el chequeo periódico
+     por default del navegador (hasta 24hs). */
+  var _swReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(_swReloading) return;
+    _swReloading = true;
+    window.location.reload();
+  });
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    reg.update();
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'visible') reg.update();
+    });
+  }).catch(function(){});
 }
 
 /* ── Banner "Instalar app" ──────────────────────────────────
