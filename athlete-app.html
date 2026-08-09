@@ -1688,9 +1688,24 @@ if('serviceWorker' in navigator){
   });
   navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'}).then(function(reg){
     reg.update();
+    /* visibilitychange solo no alcanza: probado que la lógica de
+       controllerchange+reload funciona perfecto en aislado (Chrome de
+       escritorio), pero un usuario real en iPhone quedó pegado en una
+       versión vieja pese a este listener — iOS es conocido por no
+       disparar visibilitychange de forma confiable para PWAs instaladas
+       en pantalla de inicio al cambiar rápido entre apps (a veces ni
+       "se oculta" del todo para el sistema). Reforzado con: (1) el mismo
+       chequeo también en window.onfocus (evento más amplio, distinto de
+       visibilitychange), y (2) un chequeo periódico cada 60s mientras la
+       app esté abierta, que no depende de NINGÚN evento del sistema
+       operativo — la garantía más simple de que tarde o temprano se
+       detecta la versión nueva sin importar qué tan rara sea la
+       app-switching del usuario. */
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible') reg.update();
     });
+    window.addEventListener('focus', function(){ reg.update(); });
+    setInterval(function(){ reg.update(); }, 60000);
   }).catch(function(){});
 
   /* Indicador de versión visible en la pantalla de login — nace de tener

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '58';  // 2026-08-09: nueva pantalla Comunidad en la app movil (feed + ranking + kudos)
+var BUILD_VERSION = '59';  // 2026-08-09: chequeo de actualizacion reforzado (focus + polling cada 60s, visibilitychange solo no alcanzaba en iOS)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
