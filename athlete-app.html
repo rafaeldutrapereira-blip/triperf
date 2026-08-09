@@ -99,7 +99,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   width: 100%; max-width: 430px;
   background: rgba(17,24,39,.97); backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 100;
 }
@@ -431,90 +431,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
     </div>
 
-    <!-- SCREEN 2: DURANTE -->
-    <div class="screen" id="screen-during">
-      <div class="topbar">
-        <div style="min-width:0">
-          <div class="topbar-eye" id="s2-eye">Cargando...</div>
-          <div class="topbar-greet"><span id="s2-greet-txt">Buenos días</span>, <em id="s2-greet-name">Atleta</em></div>
-          <div class="topbar-extra" id="s2-sport-lbl">Entrenamiento activo</div>
-        </div>
-        <div style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);text-align:right;letter-spacing:.06em">
-          <div id="s2-workout-name" style="color:var(--text)">—</div>
-          <div>Actividad</div>
-        </div>
-      </div>
-
-      <div class="timer-display">
-        <div class="timer-val" id="timer-val">0:00:00</div>
-        <div class="timer-label">Tiempo transcurrido</div>
-      </div>
-      <div class="timer-controls">
-        <button class="timer-btn primary" id="timer-toggle-btn" onclick="timerToggle()">▶ Iniciar</button>
-        <button class="timer-btn danger" onclick="timerReset()">↺ Reset</button>
-      </div>
-
-      <div style="padding:.5rem 1rem .25rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Zonas de entrenamiento</div>
-      <div class="zone-grid" id="zone-grid">
-        <!-- Filled by JS -->
-      </div>
-
-      <div style="padding:.5rem 1rem .25rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Plan de bloques</div>
-      <div id="s2-blocks" class="block-list" style="padding-top:.25rem">
-        <!-- Filled by JS -->
-      </div>
-
-      <button class="start-btn secondary" onclick="goScreen('screen-log')">Registrar resultado →</button>
-    </div>
-
-    <!-- SCREEN 3: POST-WORKOUT LOG -->
-    <div class="screen" id="screen-log">
-      <div class="topbar">
-        <div style="min-width:0">
-          <div class="topbar-eye" id="s3-eye">Cargando...</div>
-          <div class="topbar-greet"><span id="s3-greet-txt">Buenos días</span>, <em id="s3-greet-name">Atleta</em></div>
-        </div>
-      </div>
-
-      <div id="pw-form">
-        <div class="rpe-container">
-          <div class="rpe-title">¿Cómo fue el esfuerzo? (RPE 1–10)</div>
-          <div class="rpe-track" id="rpe-track">
-            <!-- Filled by JS -->
-          </div>
-          <div class="rpe-desc" id="rpe-desc">Selecciona tu esfuerzo percibido</div>
-        </div>
-
-        <div class="pw-fields">
-          <div class="pw-field">
-            <div class="pw-label">TSS Real (opcional)</div>
-            <input type="number" class="pw-input" id="pw-tss" placeholder="Calculado automáticamente si vacío" min="0" max="500">
-          </div>
-          <div class="pw-field">
-            <div class="pw-label">Distancia real (km, opcional)</div>
-            <input type="number" class="pw-input" id="pw-dist" placeholder="ej: 42.2" step="0.1" min="0">
-          </div>
-          <div class="pw-field">
-            <div class="pw-label">Duración real (min, opcional)</div>
-            <input type="number" class="pw-input" id="pw-dur" placeholder="ej: 180" min="0">
-          </div>
-          <div class="pw-field">
-            <div class="pw-label">Notas para el coach</div>
-            <textarea class="pw-input" id="pw-notes" rows="3" placeholder="¿Cómo te sentiste? ¿Algo que el coach deba saber?..." style="resize:none"></textarea>
-          </div>
-        </div>
-
-        <button class="pw-submit" onclick="submitLog()">Enviar al Coach →</button>
-      </div>
-
-      <div class="pw-success" id="pw-success">
-        <div class="pw-success-ico">✅</div>
-        <div class="pw-success-title">¡Registrado!</div>
-        <div class="pw-success-sub">Tu coach puede ver el resultado ahora.<br>¡Buen entrenamiento!</div>
-        <button class="start-btn" onclick="goScreen('screen-today');resetLog()" style="margin:0;width:100%;max-width:200px">Ver plan →</button>
-      </div>
-    </div>
-
     <!-- SCREEN 4: MI SEMANA -->
     <div class="screen" id="screen-week">
       <div class="topbar">
@@ -612,14 +528,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Hoy
     </button>
-    <button class="nav-btn" onclick="goScreen('screen-during')" id="nav-during">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Durante
-    </button>
-    <button class="nav-btn" onclick="goScreen('screen-log')" id="nav-log">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Registrar
-    </button>
     <button class="nav-btn" onclick="goScreen('screen-week')" id="nav-week">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Semana
@@ -641,7 +549,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 var API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
 var _token = null;
 var _todayAssign = null;  // assignment loaded for today
-var _selectedRpe = null;
 var _wlData = { status: null, fatigue: null, soreness: null, sleep: 7 };
 
 /* ── Auth ────────────────────────────────────────────────── */
@@ -697,8 +604,6 @@ function initApp(tok){
   loadToday();
   loadWeek();
   loadStatusHealth();
-  renderZones();
-  renderRpe();
 }
 
 /* ── Navigation ──────────────────────────────────────────── */
@@ -708,8 +613,7 @@ function goScreen(id){
   var el = document.getElementById(id);
   if(el) el.classList.add('active');
   var navMap = {
-    'screen-today':'nav-today','screen-during':'nav-during',
-    'screen-log':'nav-log','screen-week':'nav-week','screen-wellness':'nav-wellness'
+    'screen-today':'nav-today','screen-week':'nav-week','screen-wellness':'nav-wellness'
   };
   var nb = document.getElementById(navMap[id]);
   if(nb) nb.classList.add('active');
@@ -732,11 +636,19 @@ function toast(msg, cls){
    backend el plan de MAÑANA, no el de hoy. Mismo patrón de bug ya
    corregido antes en dashboard.html (_isoLocal) — se usa el mismo
    criterio acá: año/mes/día del reloj LOCAL del dispositivo. */
-function todayIso(){
-  var d = new Date();
+/* Fuente única de "fecha de hoy en el reloj del dispositivo" — NUNCA
+   usar toISOString() para esto en ningún lado de este archivo (ver
+   comentario arriba). weekRange() y renderWeekGrid() tenían el MISMO
+   bug sin corregir (encontrado en vivo: la semana se mostraba corrida
+   un día completo, "Mar 4 Ago – Lun 10 Ago" en vez de "Lun 3 – Dom 9",
+   y todos los días marcados "Descanso" aunque hubiera plan real ese
+   día) — grep de toISOString() en todo el archivo tras el primer
+   hallazgo, tal como quedó anotado que había que hacer. */
+function _isoLocal(d){
   var y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
   return y+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day;
 }
+function todayIso(){ return _isoLocal(new Date()); }
 function fmtDate(iso){
   var d = new Date(iso+'T12:00:00');
   var DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -749,7 +661,7 @@ function weekRange(){
   var diff = (dow===0)?-6:1-dow;
   var mon = new Date(today); mon.setDate(today.getDate()+diff);
   var sun = new Date(mon);   sun.setDate(mon.getDate()+6);
-  return { mon: mon.toISOString().slice(0,10), sun: sun.toISOString().slice(0,10) };
+  return { mon: _isoLocal(mon), sun: _isoLocal(sun) };
 }
 
 /* ── API fetch wrapper ───────────────────────────────────── */
@@ -1050,15 +962,12 @@ function _realActivityCard(act){
 
 /* Normaliza una fila de /athlete/planned-workouts (shape distinto, sin
    template/logs/notas/blocks — ver _get_planned_range en athlete_routes.py)
-   a la misma forma que espera renderTodayWorkout() para una AssignedWorkout,
-   marcada con source:'tp' para que submitLog() sepa que no tiene un
-   assignment_id real contra el que loguear RPE (ver ese comentario). */
+   a la misma forma que espera renderTodayWorkout() para una AssignedWorkout. */
 function _tpRowToAssignShape(p){
   return {
     date_iso: p.date_iso,
     notas: null,
     logs: [],
-    source: 'tp',
     template: {
       sport: p.sport, nombre: p.title || 'Entrenamiento',
       dur_min: p.dur_min, dist_km: p.dist_km, tss: p.tss,
@@ -1158,12 +1067,13 @@ function renderTodayWorkout(a, realActivities){
     html += _planVsRealCard(t, matchedReal[0]);
   }
 
-  // Action buttons
+  // Estado — ya no hay pantalla "Durante"/"Registrar" con timer y log
+  // manual de RPE (se sacaron a pedido del usuario); la finalización se
+  // detecta 100% por sincronización real de Garmin (mismo mecanismo que
+  // ya se usaba para los planes de TrainingPeaks, ahora es el único
+  // camino para cualquier entrenamiento).
   if(!done){
-    html += '<button class="start-btn" onclick="startWorkout()">'
-      +'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
-      +' Iniciar entrenamiento'
-      +'</button>';
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;font-size:.8rem;color:var(--dim);text-align:center">⏳ Pendiente — se completa solo al sincronizar tu actividad desde Garmin</div>';
   } else if(matchedReal.length && !(a.logs && a.logs.length)){
     html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado — sincronizado desde Garmin</div>';
   } else {
@@ -1181,168 +1091,6 @@ function renderTodayWorkout(a, realActivities){
   document.getElementById('today-content').innerHTML = html;
 }
 
-function startWorkout(){
-  var t = _todayAssign ? (_todayAssign.template||{}) : {};
-  document.getElementById('s2-workout-name').textContent = t.nombre || 'Entrenamiento';
-  document.getElementById('s2-sport-lbl').textContent = (t.sport||'').toUpperCase();
-
-  // populate blocks in during screen
-  var blocks = [];
-  try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
-  var bHtml = '';
-  if(blocks.length){
-    blocks.forEach(function(b,i){
-      var col = SPORT_COL[t.sport||'run'] || '#9CA3AF';
-      bHtml += '<div class="workout-block"><div class="wb-bar" style="background:'+col+'"></div>'
-        +'<div class="wb-body"><div class="wb-type">'+(b.type||'Bloque '+(i+1)).toUpperCase()+'</div>'
-        +'<div class="wb-main">'+JSON.stringify(b).replace(/[{}"]/g,'').slice(0,80)+'</div>'
-        +'</div></div>';
-    });
-  } else {
-    bHtml = '<div style="padding:.5rem;color:var(--dim);font-size:.82rem">Sigue el plan y registra al finalizar.</div>';
-  }
-  document.getElementById('s2-blocks').innerHTML = bHtml;
-
-  goScreen('screen-during');
-}
-
-/* ── Screen 2: Timer ─────────────────────────────────────── */
-var _timerRunning = false;
-var _timerSecs = 0;
-var _timerInterval = null;
-
-function timerToggle(){
-  _timerRunning = !_timerRunning;
-  var btn = document.getElementById('timer-toggle-btn');
-  if(_timerRunning){
-    btn.textContent = '⏸ Pausar';
-    btn.style.background = 'var(--gold)';
-    _timerInterval = setInterval(function(){
-      _timerSecs++;
-      var h = Math.floor(_timerSecs/3600);
-      var m = Math.floor((_timerSecs%3600)/60);
-      var s = _timerSecs%60;
-      document.getElementById('timer-val').textContent = h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-    }, 1000);
-  } else {
-    btn.textContent = '▶ Continuar';
-    btn.style.background = 'var(--green)';
-    clearInterval(_timerInterval);
-  }
-}
-
-function timerReset(){
-  clearInterval(_timerInterval);
-  _timerRunning = false;
-  _timerSecs = 0;
-  document.getElementById('timer-val').textContent = '0:00:00';
-  var btn = document.getElementById('timer-toggle-btn');
-  btn.textContent = '▶ Iniciar';
-  btn.style.background = 'var(--green)';
-}
-
-function renderZones(){
-  var zones = [
-    {n:'Z1',l:'Recuperación',r:'<68% FTP',col:'#6B7280'},
-    {n:'Z2',l:'Aeróbico',   r:'68–79%',  col:'#22D3EE'},
-    {n:'Z3',l:'Tempo',      r:'80–87%',  col:'#10B981'},
-    {n:'Z4',l:'Umbral',     r:'88–94%',  col:'#F59E0B'},
-    {n:'Z5',l:'VO2max',     r:'>105%',   col:'#EF4444'},
-  ];
-  document.getElementById('zone-grid').innerHTML = zones.map(function(z){
-    return '<div class="zone-card" style="border-color:'+z.col+'33">'
-      +'<div class="zc-n" style="color:'+z.col+'">'+z.n+'</div>'
-      +'<div class="zc-l" style="color:'+z.col+'">'+z.l+'</div>'
-      +'<div class="zc-r" style="color:'+z.col+'88">'+z.r+'</div>'
-      +'</div>';
-  }).join('');
-}
-
-/* ── Screen 3: Log ───────────────────────────────────────── */
-var RPE_LABELS = ['','Muy fácil','Fácil','Moderado','Moderado','Moderado-duro','Duro','Muy duro','Muy duro','Extremo','Máximo'];
-var RPE_COLORS = ['','#10B981','#10B981','#22D3EE','#0EA5E9','#F0A500','#F0A500','#FF6535','#EF4444','#EF4444','#7C3AED'];
-
-function renderRpe(){
-  var html = '';
-  for(var i=1;i<=10;i++){
-    html += '<button class="rpe-btn" data-rpe="'+i+'" onclick="selRpe('+i+')" style="border-color:'+(RPE_COLORS[i]||'#6B7280')+'44">'+i+'</button>';
-  }
-  document.getElementById('rpe-track').innerHTML = html;
-}
-
-function selRpe(v){
-  _selectedRpe = v;
-  document.querySelectorAll('.rpe-btn').forEach(function(b){
-    var bv = parseInt(b.dataset.rpe);
-    var col = RPE_COLORS[bv] || '#6B7280';
-    b.classList.toggle('sel', bv===v);
-    if(bv===v){ b.style.background=col; b.style.borderColor=col; }
-    else { b.style.background=''; b.style.borderColor=col+'44'; }
-  });
-  var desc = document.getElementById('rpe-desc');
-  desc.textContent = v+' — '+(RPE_LABELS[v]||'');
-  desc.style.color = RPE_COLORS[v]||'var(--dim)';
-
-  // auto-fill duration from timer if running
-  if(_timerSecs > 0 && !document.getElementById('pw-dur').value){
-    document.getElementById('pw-dur').value = Math.round(_timerSecs/60);
-  }
-}
-
-function submitLog(){
-  if(!_selectedRpe){ toast('Selecciona un RPE primero',''); return; }
-  if(!_todayAssign){ toast('No hay entrenamiento para registrar',''); return; }
-
-  if(_todayAssign.source === 'tp'){
-    /* Entrenamiento sincronizado desde Garmin/TrainingPeaks, no asignado
-       por un coach acá — no existe un assignment_id real contra el cual
-       loguear RPE (POST /athlete/log lo requiere). Se completa solo
-       cuando el atleta sincroniza la actividad real desde su reloj. */
-    document.getElementById('pw-form').style.display='none';
-    document.getElementById('pw-success').style.display='flex';
-    document.querySelector('#pw-success .pw-success-ico').textContent = '⌚';
-    document.querySelector('#pw-success .pw-success-title').textContent = 'Se completa solo';
-    document.querySelector('#pw-success .pw-success-sub').innerHTML = 'Este entrenamiento viene de tu plan sincronizado — se marca como hecho automáticamente cuando subís tu actividad real desde Garmin.';
-    return;
-  }
-
-  var body = {
-    assignment_id: _todayAssign.id,
-    rpe:          _selectedRpe,
-    completado:   true,
-    tss_real:     parseInt(document.getElementById('pw-tss').value)||null,
-    dist_real:    parseFloat(document.getElementById('pw-dist').value)||null,
-    dur_real:     parseInt(document.getElementById('pw-dur').value)||null,
-    notas:        document.getElementById('pw-notes').value.trim()||null,
-  };
-
-  apiFetch('/athlete/log', { method:'POST', body: JSON.stringify(body) })
-    .then(function(r){
-      if(r.ok){
-        document.getElementById('pw-form').style.display='none';
-        document.getElementById('pw-success').style.display='flex';
-        toast('¡Entrenamiento registrado!','ok');
-        loadToday(); // refresh
-      } else {
-        return r.json().then(function(e){ toast('Error: '+(e.detail||'intenta de nuevo'),''); });
-      }
-    }).catch(function(){ toast('Sin conexión',''); });
-}
-
-function resetLog(){
-  _selectedRpe = null;
-  document.getElementById('pw-tss').value='';
-  document.getElementById('pw-dist').value='';
-  document.getElementById('pw-dur').value='';
-  document.getElementById('pw-notes').value='';
-  document.getElementById('pw-form').style.display='';
-  document.getElementById('pw-success').style.display='none';
-  document.querySelector('#pw-success .pw-success-ico').textContent = '✅';
-  document.querySelector('#pw-success .pw-success-title').textContent = '¡Registrado!';
-  document.querySelector('#pw-success .pw-success-sub').innerHTML = 'Tu coach puede ver el resultado ahora.<br>¡Buen entrenamiento!';
-  renderRpe();
-}
-
 /* ── Screen 4: Semana ────────────────────────────────────── */
 function loadWeek(){
   var wr = weekRange();
@@ -1350,11 +1098,32 @@ function loadWeek(){
 
   if(!_token) return;
 
-  apiFetch('/athlete/plan?start='+wr.mon+'&end='+wr.sun)
-    .then(function(r){ return r.ok?r.json():[]; })
-    .then(function(assigns){
-      renderWeekGrid(assigns, wr.mon);
-    }).catch(function(){});
+  /* Mismo bug que loadToday() (Gap #5): esta pantalla solo miraba
+     /athlete/plan (AssignedWorkout) — un atleta con su plan sincronizado
+     desde TrainingPeaks/Garmin (/athlete/planned-workouts) veía "Descanso"
+     todos los días aunque tuviera entrenamientos reales esa semana.
+     Misma precedencia día+deporte que ya usa training_plan.html en la
+     web: coach gana sobre TP para ese día+deporte puntual, el resto del
+     plan de TP se conserva. */
+  var pCoach = apiFetch('/athlete/plan?start='+wr.mon+'&end='+wr.sun)
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .catch(function(){ return []; });
+  var pTP = apiFetch('/athlete/planned-workouts?start='+wr.mon+'&end='+wr.sun)
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .catch(function(){ return []; });
+
+  Promise.all([pCoach, pTP]).then(function(results){
+    var coachAssigns = results[0], tpRows = results[1];
+    var covered = {};
+    coachAssigns.forEach(function(a){
+      var sp = (a.template && a.template.sport) || 'run';
+      covered[a.date_iso+'|'+sp] = true;
+    });
+    var tpAsAssigns = (tpRows||[])
+      .filter(function(p){ return !covered[p.date_iso+'|'+p.sport]; })
+      .map(_tpRowToAssignShape);
+    renderWeekGrid(coachAssigns.concat(tpAsAssigns), wr.mon);
+  });
 }
 
 function renderWeekGrid(assigns, monIso){
@@ -1368,7 +1137,7 @@ function renderWeekGrid(assigns, monIso){
 
   for(var i=0;i<7;i++){
     var d = new Date(monIso+'T12:00:00'); d.setDate(d.getDate()+i);
-    var iso = d.toISOString().slice(0,10);
+    var iso = _isoLocal(d);
     var isToday = iso===today;
     var dayAssigns = assignByDay[iso]||[];
 
