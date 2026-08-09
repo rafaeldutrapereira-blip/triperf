@@ -110,7 +110,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   width: 100%; max-width: 430px;
   background: rgba(17,24,39,.97); backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 100;
 }
@@ -333,6 +333,31 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wl-submit { margin: 0 1rem .75rem; padding: .9rem; background: var(--cyan); border: none; border-radius: 12px; color: var(--bg); font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; width: calc(100% - 2rem); transition: opacity .15s; }
 .wl-submit:active { opacity: .8; }
 
+/* ── Comunidad ── */
+.cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
+.cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
+.cm-tab.active { background: rgba(255,101,53,.12); border-color: rgba(255,101,53,.4); color: var(--orange); }
+.cm-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--dim); font-size: .85rem; }
+.cm-card { margin: 0 1rem .75rem; padding: .9rem 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; }
+.cm-card-head { display: flex; align-items: center; gap: .6rem; }
+.cm-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .8rem; color: var(--orange); }
+.cm-card-name { font-size: .86rem; font-weight: 700; }
+.cm-card-meta { font-size: .68rem; color: var(--dim); margin-top: .1rem; }
+.cm-card-body { margin-top: .6rem; }
+.cm-card-title { font-size: .92rem; font-weight: 700; display: flex; align-items: center; gap: .4rem; }
+.cm-card-stats { display: flex; gap: 1.1rem; margin-top: .45rem; }
+.cm-card-stat-val { font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cm-card-stat-lbl { font-size: .62rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.cm-card-foot { display: flex; align-items: center; gap: 1rem; margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--border); }
+.cm-kudo-btn { display: flex; align-items: center; gap: .35rem; background: none; border: none; color: var(--dim); font-size: .82rem; cursor: pointer; padding: .2rem 0; }
+.cm-kudo-btn.active { color: var(--orange); }
+.cm-comment-count { font-size: .82rem; color: var(--dim); }
+.cm-lb-row { display: flex; align-items: center; gap: .7rem; margin: 0 1rem .5rem; padding: .65rem .8rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; }
+.cm-lb-row.me { border-color: rgba(255,101,53,.4); background: rgba(255,101,53,.08); }
+.cm-lb-rank { width: 22px; text-align: center; font-family: 'Oswald', sans-serif; font-weight: 700; color: var(--dim); font-size: .85rem; }
+.cm-lb-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-lb-val { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
+
 /* ── Toast ── */
 #toast { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); background: #1F2937; border: 1px solid var(--border); border-radius: 8px; padding: .55rem 1rem; font-size: .82rem; color: var(--text); white-space: nowrap; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .25s; }
 #toast.show { opacity: 1; }
@@ -542,6 +567,23 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <button class="wl-submit" onclick="submitWellness()">Guardar check-in</button>
     </div>
 
+    <!-- SCREEN 6: COMUNIDAD -->
+    <div class="screen" id="screen-community">
+      <div class="topbar">
+        <div style="min-width:0">
+          <div class="topbar-eye" id="s6-eye">Cargando...</div>
+          <div class="topbar-greet"><span id="s6-greet-txt">Buenos días</span>, <em id="s6-greet-name">Atleta</em></div>
+        </div>
+      </div>
+
+      <div class="cm-tabs">
+        <div class="cm-tab active" id="cm-tab-feed" onclick="communityTab('feed')">Feed</div>
+        <div class="cm-tab" id="cm-tab-rank" onclick="communityTab('rank')">Ranking</div>
+      </div>
+
+      <div id="community-content"><div class="cm-empty">Cargando...</div></div>
+    </div>
+
   </div><!-- /screens -->
 
   <!-- BOTTOM NAV -->
@@ -557,6 +599,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <button class="nav-btn" onclick="goScreen('screen-wellness')" id="nav-wellness">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       Bienestar
+    </button>
+    <button class="nav-btn" onclick="goScreen('screen-community')" id="nav-community">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Comunidad
     </button>
     <button class="nav-btn" onclick="doLogout()" id="nav-logout">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -672,6 +718,7 @@ function doLogout(){
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
+  _communityLoaded = false;
   /* BUG: doLogin() sólo resetea el botón en la rama de error — un login
      exitoso lo deja disabled+"Verificando..." para siempre. Sin este
      reset acá, tras Salir y volver a intentar loguear el botón queda
@@ -693,10 +740,20 @@ function goScreen(id){
   var el = document.getElementById(id);
   if(el) el.classList.add('active');
   var navMap = {
-    'screen-today':'nav-today','screen-week':'nav-week','screen-wellness':'nav-wellness'
+    'screen-today':'nav-today','screen-week':'nav-week','screen-wellness':'nav-wellness',
+    'screen-community':'nav-community'
   };
   var nb = document.getElementById(navMap[id]);
   if(nb) nb.classList.add('active');
+
+  /* Comunidad se carga recién al abrirla por primera vez (no en
+     initApp()) — es la pantalla con más llamadas de red de toda la app
+     (feed + ranking), no tiene sentido pagarlas si el atleta nunca la
+     abre en esa sesión. */
+  if(id === 'screen-community' && !_communityLoaded){
+    _communityLoaded = true;
+    loadCommunityFeed();
+  }
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -940,8 +997,9 @@ var MONTH_ES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ago
    vez desde initApp() — las 5 pantallas comparten el mismo día/hora/
    nombre, solo cambia el nombre del módulo en el eyebrow. */
 var _SCREEN_MODULE_LABEL = {
-  's1': 'Hoy', 's2': 'Durante', 's3': 'Registrar', 's4': 'Semana', 's5': 'Bienestar'
+  's1': 'Hoy', 's2': 'Durante', 's3': 'Registrar', 's4': 'Semana', 's5': 'Bienestar', 's6': 'Comunidad'
 };
+var _communityLoaded = false;
 function updateGreetingHeaders(){
   var n = new Date();
   var lbl = n.getDate()+' '+MONTH_ES[n.getMonth()].toLowerCase()+' '+n.getFullYear();
@@ -1478,6 +1536,119 @@ function submitWellness(){
       if(r.ok || r.status===201){ toast('Check-in guardado ✓','ok'); }
       else { toast('Error al guardar',''); }
     }).catch(function(){ toast('Guardado localmente (sin conexión)',''); });
+}
+
+/* ── Screen 6: Comunidad ─────────────────────────────────── */
+var KUDO_EMOJI = {power:'💪', fire:'🔥', trophy:'🏆', epic:'😎', love:'❤️'};
+
+function communityTab(tab){
+  document.getElementById('cm-tab-feed').classList.toggle('active', tab==='feed');
+  document.getElementById('cm-tab-rank').classList.toggle('active', tab==='rank');
+  if(tab === 'feed') loadCommunityFeed();
+  else loadCommunityLeaderboard();
+}
+
+function _cmAvatarHtml(u){
+  if(u.avatar_url) return '<img class="cm-avatar" src="'+u.avatar_url+'" alt="">';
+  return '<div class="cm-avatar">'+(u.avatar_initial||'?')+'</div>';
+}
+
+function loadCommunityFeed(){
+  if(!_token) return;
+  var el = document.getElementById('community-content');
+  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/community/activity-feed?limit=20')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(!data){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el feed</div>'; return; }
+      if(!data.feed.length){
+        el.innerHTML = '<div class="cm-empty">Todavía no hay actividad de la gente que seguís.<br>Seguí a otros atletas desde la web para ver su feed acá.</div>';
+        return;
+      }
+      el.innerHTML = data.feed.map(_communityCardHtml).join('');
+    })
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el feed</div>'; });
+}
+
+function _communityCardHtml(c){
+  var stats = [];
+  if(c.duration_min) stats.push({v: Math.round(c.duration_min), l:'min'});
+  if(c.distance_km)  stats.push({v: c.distance_km, l:'km'});
+  if(c.tss)          stats.push({v: c.tss, l:'TSS'});
+  var statsHtml = stats.map(function(s){
+    return '<div><div class="cm-card-stat-val">'+s.v+'</div><div class="cm-card-stat-lbl">'+s.l+'</div></div>';
+  }).join('');
+
+  var myKudoActive = !!c.my_kudo;
+  var kudoEmoji = KUDO_EMOJI[c.my_kudo || 'fire'];
+
+  return '<div class="cm-card" data-post-id="'+c.id+'">'
+    +'<div class="cm-card-head">'
+      + _cmAvatarHtml(c.user)
+      +'<div style="min-width:0"><div class="cm-card-name">'+(c.user.name||'—')+' '+(c.user.country_flag||'')+'</div>'
+      +'<div class="cm-card-meta">'+fmtDate(c.date_iso)+'</div></div>'
+    +'</div>'
+    +'<div class="cm-card-body">'
+      +'<div class="cm-card-title"><span>'+(c.sport_emoji||'⚡')+'</span><span>'+(c.name||'')+'</span></div>'
+      +(stats.length?'<div class="cm-card-stats">'+statsHtml+'</div>':'')
+    +'</div>'
+    +'<div class="cm-card-foot">'
+      +'<button class="cm-kudo-btn'+(myKudoActive?' active':'')+'" onclick="toggleKudo(this)">'
+        +'<span class="cm-kudo-emoji">'+kudoEmoji+'</span><span class="cm-kudo-count">'+(c.kudo_count||0)+'</span>'
+      +'</button>'
+    +'</div>'
+  +'</div>';
+}
+
+/* Kudo de un solo toque (tipo "me gusta" de Strava) — usa "fire" 🔥 como
+   reacción default; la web permite elegir entre 5 tipos, pero para el
+   celular un solo toque rápido alcanza y es más natural que abrir un
+   selector. Toggle: si ya diste kudo, tocar de nuevo lo saca. */
+function toggleKudo(btn){
+  var card = btn.closest('.cm-card');
+  var postId = card.getAttribute('data-post-id');
+  var wasActive = btn.classList.contains('active');
+  var countEl = btn.querySelector('.cm-kudo-count');
+  var kudoType = 'fire';
+
+  btn.disabled = true;
+  var req = wasActive
+    ? apiFetch('/community/posts/'+postId+'/kudo?kudo_type='+kudoType, { method:'DELETE' })
+    : apiFetch('/community/posts/'+postId+'/kudo', { method:'POST', body: JSON.stringify({kudo_type: kudoType}) });
+
+  req.then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      btn.disabled = false;
+      if(!data) return;
+      btn.classList.toggle('active', !wasActive);
+      countEl.textContent = data.kudo_count;
+    })
+    .catch(function(){ btn.disabled = false; });
+}
+
+function loadCommunityLeaderboard(){
+  if(!_token) return;
+  var el = document.getElementById('community-content');
+  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/community/leaderboard?scope=social&metric=tss&period=week')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(!data){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; return; }
+      if(!data.leaderboard.length){
+        el.innerHTML = '<div class="cm-empty">Todavía no hay datos de ranking esta semana.</div>';
+        return;
+      }
+      el.innerHTML = '<div style="padding:0 1rem .5rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">'+(data.metric_label||'TSS Total')+' — esta semana</div>'
+        + data.leaderboard.map(function(r){
+          return '<div class="cm-lb-row'+(r.is_me?' me':'')+'">'
+            +'<div class="cm-lb-rank">'+r.rank+'</div>'
+            + _cmAvatarHtml(r.user)
+            +'<div class="cm-lb-name">'+(r.user.name||'—')+' '+(r.user.country_flag||'')+'</div>'
+            +'<div class="cm-lb-val">'+r.value+'</div>'
+          +'</div>';
+        }).join('');
+    })
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
 }
 
 /* ── Boot ────────────────────────────────────────────────── */
