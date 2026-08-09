@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '51';  // 2026-08-09: detalle real de series/ritmos/potencia de Garmin en Hoy/Semana + notas del coach en Semana
+var BUILD_VERSION = '52';  // 2026-08-09: fix "Sin conexion" real - ngrok mostraba su interstitial en vez de la API
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -50,6 +50,24 @@ self.addEventListener('activate', function(e){
   );
 });
 
+/*
+ * Mientras el backend se sirve por un tunel ngrok gratuito (fase de
+ * pruebas, no produccion): ngrok le muestra a cualquier request con cara
+ * de navegador (sin este header) una pagina HTML de advertencia en vez
+ * de proxyear al servidor real, con status 200 -- fetch() no lo detecta
+ * como error, solo devuelve HTML donde se esperaba JSON. Un telefono
+ * real nunca manda este header por su cuenta, asi que el Service Worker
+ * se lo agrega a todo lo que reenvia a la red. Bug real encontrado en
+ * vivo: "Sin conexion -- plan no disponible" apareciendo siempre, desde
+ * que ngrok empezo a mostrar esta interstitial. Inofensivo contra un
+ * dominio real (el header se ignora), no hace falta sacarlo despues.
+ */
+function _withNgrokBypass(req){
+  var headers = new Headers(req.headers);
+  headers.set('ngrok-skip-browser-warning', 'true');
+  return new Request(req, {headers: headers});
+}
+
 /* â”€â”€ Fetch: cache-first para estÃ¡ticos, network-first para API â”€â”€ */
 self.addEventListener('fetch', function(e){
   var url = new URL(e.request.url);
@@ -57,7 +75,7 @@ self.addEventListener('fetch', function(e){
   // API calls: siempre red, sin cache
   if(url.pathname.startsWith('/api')){
     e.respondWith(
-      fetch(e.request).catch(function(){
+      fetch(_withNgrokBypass(e.request)).catch(function(){
         return new Response(JSON.stringify({error:'offline'}),
           {status:503, headers:{'Content-Type':'application/json'}});
       })
@@ -69,7 +87,7 @@ self.addEventListener('fetch', function(e){
   e.respondWith(
     caches.match(e.request).then(function(cached){
       if(cached) return cached;
-      return fetch(e.request).then(function(response){
+      return fetch(_withNgrokBypass(e.request)).then(function(response){
         if(!response || response.status !== 200 || response.type !== 'basic') return response;
         var clone = response.clone();
         caches.open(CACHE_NAME).then(function(cache){ cache.put(e.request, clone); });
