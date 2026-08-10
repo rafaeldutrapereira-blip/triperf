@@ -791,6 +791,11 @@ function goScreen(id){
     _communityLoaded = true;
     loadCommunityFeed();
   }
+
+  /* Recargar cada vez que se abre (no solo la primera) — es una sola
+     llamada liviana y evita mostrar datos de un check-in que haya
+     cambiado por otro medio (ej. la web) durante la misma sesión. */
+  if(id === 'screen-wellness') loadWellnessToday();
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -1631,17 +1636,40 @@ function wlSleep(delta){
   _wlData.sleep = _wlSleep;
 }
 
+/* Convierte horas de sueño (lo que el slider de la UI realmente pide,
+   3-12h) a la escala 1-5 que espera el backend (WellnessLog.sleep_q,
+   "calidad de sueño", consumida por wellness_service.py y
+   context_engine.py como si fuera un puntaje, no horas). Aproximado,
+   pero necesario: mandar las horas crudas ahí multiplicaría mal
+   cualquier cálculo que asuma 1-5 (ej. sleep_q*5 en wellness_service). */
+function _sleepHoursToQuality(h){
+  if(h >= 7 && h <= 9) return 5;
+  if(h > 9) return 4;
+  if(h >= 6) return 3;
+  if(h >= 5) return 2;
+  return 1;
+}
+function _sleepQualityToHours(q){
+  return {1:4, 2:5.5, 3:6.5, 4:9.5, 5:8}[q] || 7;
+}
+
 function submitWellness(){
   var notes = (document.getElementById('wl-notes').value||'').trim();
-  var body = {
-    tipo: 'daily',
-    estado: _wlData.status||3,
-    fatiga: _wlData.fatigue||3,
-    dolor:  _wlData.soreness||1,
-    sueno:  _wlData.sleep||7,
-    notas:  notes||null,
-    fecha:  todayIso(),
-  };
+  /* Bug real encontrado en vivo: los nombres de campo de acá NUNCA
+     coincidieron con WellnessCreate del backend (mood/fatigue/soreness/
+     sleep_q/date_iso) — se mandaba estado/fatiga/dolor/sueno/fecha, que
+     FastAPI ignora en silencio (no son parte del modelo), guardando la
+     fila con TODO en null. La respuesta seguía siendo 200/201 así que
+     la app mostraba "Guardado ✓" sin haber guardado nada real — "parece
+     que no está guardando" reportado después de salir y volver a
+     entrar. Solo se mandan los campos que el atleta realmente tocó (no
+     se inventa un valor "neutro" para lo que no contestó). */
+  var body = { date_iso: todayIso() };
+  if(_wlData.status   != null) body.mood     = _wlData.status;
+  if(_wlData.fatigue  != null) body.fatigue  = _wlData.fatigue;
+  if(_wlData.soreness != null) body.soreness = _wlData.soreness;
+  body.sleep_q = _sleepHoursToQuality(_wlData.sleep || 7);
+  if(notes) body.notes = notes;
 
   if(!_token){ toast('Inicia sesión para guardar',''); return; }
 
@@ -1650,6 +1678,40 @@ function submitWellness(){
       if(r.ok || r.status===201){ toast('Check-in guardado ✓','ok'); }
       else { toast('Error al guardar',''); }
     }).catch(function(){ toast('Guardado localmente (sin conexión)',''); });
+}
+
+/* Antes la pantalla de Bienestar siempre arrancaba en blanco, sin
+   importar si el atleta YA había hecho el check-in de hoy — sumado al
+   bug de nombres de campo de arriba, esto reforzaba la sensación de
+   "no está guardando" (aunque se hubiera guardado bien, no había forma
+   de verlo al volver a entrar). Se llama al abrir la pantalla Bienestar. */
+function loadWellnessToday(){
+  if(!_token) return;
+  apiFetch('/athlete/wellness?days=1')
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows){
+      var today = todayIso();
+      var row = (rows||[]).find(function(r){ return r.date_iso === today; });
+      if(!row) return;
+      _wlPreSelect('wl-status',   row.mood);
+      _wlPreSelect('wl-fatigue',  row.fatigue);
+      _wlPreSelect('wl-soreness', row.soreness);
+      if(row.sleep_q != null){
+        _wlSleep = _sleepQualityToHours(row.sleep_q);
+        _wlData.sleep = _wlSleep;
+        document.getElementById('wl-sleep-val').innerHTML = _wlSleep+'<span style="font-size:1rem;font-weight:400">h</span>';
+      }
+      if(row.notes) document.getElementById('wl-notes').value = row.notes;
+    })
+    .catch(function(){});
+}
+
+function _wlPreSelect(groupId, val){
+  if(val == null) return;
+  var grp = document.getElementById(groupId);
+  if(!grp) return;
+  var btn = grp.querySelector('.wl-emoji-btn[data-val="'+val+'"]');
+  if(btn) wlSel(btn, groupId);
 }
 
 /* ── Screen 6: Comunidad ─────────────────────────────────── */
