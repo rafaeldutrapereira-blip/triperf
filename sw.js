@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '67';  // 2026-08-09: fix check-in de Bienestar no guardaba de verdad (nombres de campo no coincidian con el backend)
+var BUILD_VERSION = '68';  // 2026-08-09: agregar card Insight del dia como primera card en Hoy (ya existia en el dashboard)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
