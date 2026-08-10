@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '63';  // 2026-08-09: boton "Actualizar desde Garmin" en Hoy - forzar sync manual sin esperar el throttle de 1h
+var BUILD_VERSION = '64';  // 2026-08-09: fix emparejamiento planificado-real por deporte marcaba 2 sesiones como completadas con solo 1 real
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

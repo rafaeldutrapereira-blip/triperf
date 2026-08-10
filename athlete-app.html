@@ -1306,24 +1306,57 @@ function renderNoWorkout(msg){
 var _todayAssignsFlat = [];
 var _todayMatchedRealFlat = [];
 
+/* Bug real encontrado en vivo: "había 2 entrenamientos de ciclismo
+   (outdoor/indoor), hice solo 1, mostró los 2 como completados" — el
+   match anterior era por DEPORTE nomás (matchedReal = todas las
+   actividades reales de ese deporte), así que con 2 planificados del
+   MISMO deporte, ambos "matcheaban" contra la única actividad real
+   existente. Fix: emparejamiento 1-a-1 por deporte, asignando cada
+   actividad real a su planificado MÁS CERCANO en duración (greedy
+   nearest-match) — con 2 planificados y solo 1 real, únicamente el más
+   parecido en duración queda marcado como hecho; el otro sigue
+   pendiente. Si sobra una actividad real sin planificado que la
+   reclame (más reales que planificados de ese deporte), esa va a
+   "Otra actividad de hoy" en vez de inflar el conteo de completados. */
+function _matchPlannedToReal(plannedList, realActivities){
+  var matched = plannedList.map(function(){ return null; });
+  var usedReal = realActivities.map(function(){ return false; });
+
+  var pairs = [];
+  plannedList.forEach(function(a, pIdx){
+    var sp = (a.template && a.template.sport) || 'run';
+    var plannedDur = (a.template && a.template.dur_min) || 0;
+    realActivities.forEach(function(r, rIdx){
+      if(r.sport !== sp) return;
+      var diff = Math.abs((r.dur_min || r.duration_min || 0) - plannedDur);
+      pairs.push({pIdx: pIdx, rIdx: rIdx, diff: diff});
+    });
+  });
+  pairs.sort(function(x, y){ return x.diff - y.diff; });
+  pairs.forEach(function(pair){
+    if(matched[pair.pIdx] || usedReal[pair.rIdx]) return;
+    matched[pair.pIdx] = realActivities[pair.rIdx];
+    usedReal[pair.rIdx] = true;
+  });
+
+  var extraReal = realActivities.filter(function(r, idx){ return !usedReal[idx]; });
+  return {matched: matched, extraReal: extraReal};
+}
+
 function renderTodayWorkout(plannedList, realActivities){
   realActivities = realActivities || [];
-  var sportsPlanned = {};
-  plannedList.forEach(function(a){ sportsPlanned[(a.template&&a.template.sport)||'run'] = true; });
-  var extraReal = realActivities.filter(function(r){ return !sportsPlanned[r.sport]; });
+  var m = _matchPlannedToReal(plannedList, realActivities);
 
   _todayAssignsFlat = plannedList;
-  _todayMatchedRealFlat = plannedList.map(function(a){
-    return realActivities.filter(function(r){ return r.sport === ((a.template&&a.template.sport)||'run'); });
-  });
+  _todayMatchedRealFlat = m.matched.map(function(r){ return r ? [r] : []; });
 
   var html = plannedList.map(function(a, idx){
     return _todayCardCompactHtml(a, idx, _todayMatchedRealFlat[idx]);
   }).join('');
 
-  if(extraReal.length){
+  if(m.extraReal.length){
     html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Otra actividad de hoy</div>';
-    extraReal.forEach(function(act){ html += _realActivityCard(act); });
+    m.extraReal.forEach(function(act){ html += _realActivityCard(act); });
   }
 
   document.getElementById('today-content').innerHTML = html;
