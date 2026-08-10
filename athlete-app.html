@@ -373,16 +373,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wellness-grid { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .wl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem 1rem; }
 .wl-title { font-size: .7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .65rem; }
-.wl-emoji-row { display: flex; justify-content: space-between; gap: .3rem; }
-.wl-emoji-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .2rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .2rem; cursor: pointer; transition: all .15s; }
-.wl-emoji-btn.sel { border-width: 2px; }
-.wl-emoji-btn span { font-size: 1.25rem; }
-.wl-emoji-btn small { font-size: .55rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
-.wl-sleep-row { display: flex; align-items: center; gap: .75rem; }
-.wl-sleep-val { font-family: 'Oswald', sans-serif; font-size: 1.8rem; font-weight: 700; min-width: 3rem; text-align: center; }
-.wl-sleep-btns { display: flex; flex-direction: column; gap: .25rem; }
-.wl-sleep-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; width: 36px; height: 28px; font-size: 1rem; cursor: pointer; color: var(--text); transition: background .15s; }
-.wl-sleep-btn:active { background: var(--bg2); }
+/* Fila con estrellas 1-5 — mismo esquema de 6 factores que recovery.html
+   (energy/mood/soreness/motivation/stress/sleep_quality), estrellas en
+   vez del widget "grid" de .well-stars de la web porque acá el resto de
+   la app ya usa listas de filas (.mkc-row) para todo, no un widget nuevo. */
+.wl-star-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .7rem 0; border-bottom: 1px solid var(--border); }
+.wl-star-row:first-child { padding-top: 0; }
+.wl-star-lbl { font-size: .8rem; color: var(--text); flex: 1; min-width: 0; }
+.wl-stars { display: flex; gap: .1rem; flex-shrink: 0; }
+.wl-star-btn { background: none; border: none; font-size: 1.35rem; line-height: 1; cursor: pointer; color: #374151; padding: .1rem; }
+.wl-star-btn.active { color: #F0A500; }
 .wl-submit { margin: 0 1rem .75rem; padding: .9rem; background: var(--cyan); border: none; border-radius: 12px; color: var(--bg); font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; width: calc(100% - 2rem); transition: opacity .15s; }
 .wl-submit:active { opacity: .8; }
 
@@ -572,50 +572,39 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div class="wellness-grid">
 
+        <!-- Mismo esquema de 6 factores que recovery.html (¿Cómo te sentís
+             hoy?) — pedido explícito del usuario: "debería ser igual [...]
+             y debería guardar como siendo única". Antes esta pantalla tenía
+             su PROPIO esquema (estado/fatiga/dolor/sueño en horas) que
+             escribía en columnas DISTINTAS de la misma fila de la base de
+             datos (wellness_logs) — dos check-ins "distintos" para el mismo
+             día según por dónde se entrara. Ahora comparten exactamente los
+             mismos 6 campos (energy/mood/soreness/motivation/stress/
+             sleep_quality) contra el mismo endpoint /api/recovery/wellness. -->
         <div class="wl-card">
-          <div class="wl-title">Estado General</div>
-          <div class="wl-emoji-row" id="wl-status">
-            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-status')" style="--c:#EF4444"><span>😫</span><small>Mal</small></button>
-            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-status')" style="--c:#F59E0B"><span>😟</span><small>Regular</small></button>
-            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-status')" style="--c:#F0A500"><span>😐</span><small>OK</small></button>
-            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-status')" style="--c:#10B981"><span>😊</span><small>Bien</small></button>
-            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-status')" style="--c:#22D3EE"><span>🤩</span><small>Excelente</small></button>
+          <div class="wl-star-row" data-field="energy">
+            <span class="wl-star-lbl">⚡ Energía general</span>
+            <div class="wl-stars" id="ws-energy"></div>
           </div>
-        </div>
-
-        <div class="wl-card">
-          <div class="wl-title">Fatiga muscular</div>
-          <div class="wl-emoji-row" id="wl-fatigue">
-            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-fatigue')" style="--c:#EF4444"><span>🦵💥</span><small>Muy alta</small></button>
-            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-fatigue')" style="--c:#F59E0B"><span>😓</span><small>Alta</small></button>
-            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-fatigue')" style="--c:#F0A500"><span>😌</span><small>Moderada</small></button>
-            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-fatigue')" style="--c:#10B981"><span>😎</span><small>Baja</small></button>
-            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-fatigue')" style="--c:#22D3EE"><span>⚡</span><small>Fresco</small></button>
+          <div class="wl-star-row" data-field="mood">
+            <span class="wl-star-lbl">😊 Estado de ánimo</span>
+            <div class="wl-stars" id="ws-mood"></div>
           </div>
-        </div>
-
-        <div class="wl-card">
-          <div class="wl-title">Dolor / Molestias</div>
-          <div class="wl-emoji-row" id="wl-soreness">
-            <button class="wl-emoji-btn" data-val="5" onclick="wlSel(this,'wl-soreness')" style="--c:#EF4444"><span>🤕</span><small>Fuerte</small></button>
-            <button class="wl-emoji-btn" data-val="4" onclick="wlSel(this,'wl-soreness')" style="--c:#F59E0B"><span>😣</span><small>Moderado</small></button>
-            <button class="wl-emoji-btn" data-val="3" onclick="wlSel(this,'wl-soreness')" style="--c:#F0A500"><span>😑</span><small>Leve</small></button>
-            <button class="wl-emoji-btn" data-val="2" onclick="wlSel(this,'wl-soreness')" style="--c:#10B981"><span>🙂</span><small>Mínimo</small></button>
-            <button class="wl-emoji-btn" data-val="1" onclick="wlSel(this,'wl-soreness')" style="--c:#22D3EE"><span>✅</span><small>Ninguno</small></button>
+          <div class="wl-star-row" data-field="soreness">
+            <span class="wl-star-lbl">💪 Piernas/Músculos (5=sin dolor)</span>
+            <div class="wl-stars" id="ws-soreness"></div>
           </div>
-        </div>
-
-        <div class="wl-card">
-          <div class="wl-title">Sueño anoche</div>
-          <div class="wl-sleep-row">
-            <div class="wl-sleep-val" id="wl-sleep-val">7<span style="font-size:1rem;font-weight:400">h</span></div>
-            <div class="wl-sleep-btns">
-              <button class="wl-sleep-btn" onclick="wlSleep(1)">▲</button>
-              <button class="wl-sleep-btn" onclick="wlSleep(-1)">▼</button>
-            </div>
-            <div style="font-size:.8rem;color:var(--dim);line-height:1.5">
-              Recomendado: 7–9h<br>para atletas en carga
-            </div>
+          <div class="wl-star-row" data-field="motivation">
+            <span class="wl-star-lbl">🎯 Motivación para entrenar</span>
+            <div class="wl-stars" id="ws-motivation"></div>
+          </div>
+          <div class="wl-star-row" data-field="stress">
+            <span class="wl-star-lbl">🌡️ Estrés externo (5=sin estrés)</span>
+            <div class="wl-stars" id="ws-stress"></div>
+          </div>
+          <div class="wl-star-row" data-field="sleep_quality" style="border-bottom:none">
+            <span class="wl-star-lbl">🌙 Calidad del sueño subjetiva</span>
+            <div class="wl-stars" id="ws-sleep_quality"></div>
           </div>
         </div>
 
@@ -758,6 +747,7 @@ function initApp(tok){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   updateGreetingHeaders();
+  _wlInitStars();
   loadToday();
   loadWeek();
   loadStatusHealth();
@@ -1691,101 +1681,81 @@ function closeWeekWorkoutDetail(e){
 }
 
 /* ── Screen 5: Bienestar ─────────────────────────────────── */
-var _wlSleep = 7;
+/* Unificado con recovery.html (web) — pedido explícito del usuario: "la
+   encuesta debería ser igual [...] y debería guardar como siendo única,
+   no?". Antes esta pantalla tenía su PROPIO esquema (estado/fatiga/
+   dolor/horas de sueño) que además nunca coincidía con los nombres de
+   campo reales del backend (ver Gap #17) — y aunque se hubiera arreglado
+   esa vez, seguía siendo un esquema DISTINTO al de recovery.html
+   (energy/mood/soreness/motivation/stress/sleep_quality), escribiendo en
+   columnas diferentes de la MISMA fila de wellness_logs. Ahora usa
+   exactamente los mismos 6 campos, mismo endpoint (/api/recovery/
+   wellness) y mismo GET de prefill que la web — completar el check-in
+   desde la app o desde recovery.html es, a partir de ahora, la MISMA
+   acción sobre el MISMO dato. */
+var _WL_FIELDS = ['energy','mood','soreness','motivation','stress','sleep_quality'];
+var _wlValues = {};
 
-function wlSel(btn, groupId){
-  var grp = document.getElementById(groupId);
-  if(!grp) return;
-  grp.querySelectorAll('.wl-emoji-btn').forEach(function(b){ b.classList.remove('sel'); b.style.borderColor=''; b.style.background=''; });
-  btn.classList.add('sel');
-  var col = getComputedStyle(btn).getPropertyValue('--c').trim() || '#F0A500';
-  btn.style.borderColor = col;
-  btn.style.background  = col+'22';
-  _wlData[groupId.replace('wl-','')] = parseInt(btn.dataset.val);
+function _wlInitStars(){
+  _WL_FIELDS.forEach(function(f){
+    var container = document.getElementById('ws-'+f);
+    if(!container) return;
+    container.innerHTML = '';
+    for(var i=1;i<=5;i++){
+      var btn = document.createElement('button');
+      btn.className = 'wl-star-btn';
+      btn.type = 'button';
+      btn.textContent = '★';
+      btn.dataset.val = i;
+      btn.onclick = (function(field, val){ return function(){ _wlValues[field]=val; _wlUpdateStars(field); }; })(f, i);
+      container.appendChild(btn);
+    }
+  });
 }
-
-function wlSleep(delta){
-  _wlSleep = Math.max(3, Math.min(12, _wlSleep+delta));
-  document.getElementById('wl-sleep-val').innerHTML = _wlSleep+'<span style="font-size:1rem;font-weight:400">h</span>';
-  _wlData.sleep = _wlSleep;
-}
-
-/* Convierte horas de sueño (lo que el slider de la UI realmente pide,
-   3-12h) a la escala 1-5 que espera el backend (WellnessLog.sleep_q,
-   "calidad de sueño", consumida por wellness_service.py y
-   context_engine.py como si fuera un puntaje, no horas). Aproximado,
-   pero necesario: mandar las horas crudas ahí multiplicaría mal
-   cualquier cálculo que asuma 1-5 (ej. sleep_q*5 en wellness_service). */
-function _sleepHoursToQuality(h){
-  if(h >= 7 && h <= 9) return 5;
-  if(h > 9) return 4;
-  if(h >= 6) return 3;
-  if(h >= 5) return 2;
-  return 1;
-}
-function _sleepQualityToHours(q){
-  return {1:4, 2:5.5, 3:6.5, 4:9.5, 5:8}[q] || 7;
+function _wlUpdateStars(field){
+  var val = _wlValues[field] || 0;
+  var container = document.getElementById('ws-'+field);
+  if(!container) return;
+  container.querySelectorAll('.wl-star-btn').forEach(function(s){
+    s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+  });
 }
 
 function submitWellness(){
   var notes = (document.getElementById('wl-notes').value||'').trim();
-  /* Bug real encontrado en vivo: los nombres de campo de acá NUNCA
-     coincidieron con WellnessCreate del backend (mood/fatigue/soreness/
-     sleep_q/date_iso) — se mandaba estado/fatiga/dolor/sueno/fecha, que
-     FastAPI ignora en silencio (no son parte del modelo), guardando la
-     fila con TODO en null. La respuesta seguía siendo 200/201 así que
-     la app mostraba "Guardado ✓" sin haber guardado nada real — "parece
-     que no está guardando" reportado después de salir y volver a
-     entrar. Solo se mandan los campos que el atleta realmente tocó (no
-     se inventa un valor "neutro" para lo que no contestó). */
   var body = { date_iso: todayIso() };
-  if(_wlData.status   != null) body.mood     = _wlData.status;
-  if(_wlData.fatigue  != null) body.fatigue  = _wlData.fatigue;
-  if(_wlData.soreness != null) body.soreness = _wlData.soreness;
-  body.sleep_q = _sleepHoursToQuality(_wlData.sleep || 7);
+  _WL_FIELDS.forEach(function(f){ if(_wlValues[f]) body[f] = _wlValues[f]; });
   if(notes) body.notes = notes;
 
   if(!_token){ toast('Inicia sesión para guardar',''); return; }
 
-  apiFetch('/athlete/wellness', { method:'POST', body: JSON.stringify(body) })
+  apiFetch('/recovery/wellness', { method:'POST', body: JSON.stringify(body) })
     .then(function(r){
-      if(r.ok || r.status===201){ toast('Check-in guardado ✓','ok'); }
+      /* /recovery/wellness está gateado por plan (require_feature
+         "recovery" — básico no lo incluye, ver plan_features.py). El
+         endpoint viejo /athlete/wellness NO tenía ningún gate, así que
+         sin este manejo un atleta básico vería "Error al guardar" sin
+         entender por qué, cuando antes sí podía guardar su check-in. */
+      if(r.status === 403){ toast('Tu plan no incluye el check-in de bienestar — actualizalo en Mi Perfil',''); return; }
+      if(r.ok || r.status===201){ toast('Check-in guardado ✓ — score recalculado','ok'); }
       else { toast('Error al guardar',''); }
-    }).catch(function(){ toast('Guardado localmente (sin conexión)',''); });
+    }).catch(function(){ toast('Sin conexión — no se pudo guardar',''); });
 }
 
-/* Antes la pantalla de Bienestar siempre arrancaba en blanco, sin
-   importar si el atleta YA había hecho el check-in de hoy — sumado al
-   bug de nombres de campo de arriba, esto reforzaba la sensación de
-   "no está guardando" (aunque se hubiera guardado bien, no había forma
-   de verlo al volver a entrar). Se llama al abrir la pantalla Bienestar. */
+/* Precarga el check-in de hoy si ya se hizo (desde la app o desde
+   recovery.html — es el mismo dato) al abrir "Bienestar". */
 function loadWellnessToday(){
   if(!_token) return;
-  apiFetch('/athlete/wellness?days=1')
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows){
-      var today = todayIso();
-      var row = (rows||[]).find(function(r){ return r.date_iso === today; });
-      if(!row) return;
-      _wlPreSelect('wl-status',   row.mood);
-      _wlPreSelect('wl-fatigue',  row.fatigue);
-      _wlPreSelect('wl-soreness', row.soreness);
-      if(row.sleep_q != null){
-        _wlSleep = _sleepQualityToHours(row.sleep_q);
-        _wlData.sleep = _wlSleep;
-        document.getElementById('wl-sleep-val').innerHTML = _wlSleep+'<span style="font-size:1rem;font-weight:400">h</span>';
-      }
+  apiFetch('/recovery/wellness/'+todayIso())
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(row){
+      if(!row || !row.logged) return;
+      _WL_FIELDS.forEach(function(f){
+        if(row[f] != null){ _wlValues[f] = row[f]; _wlUpdateStars(f); }
+      });
       if(row.notes) document.getElementById('wl-notes').value = row.notes;
     })
     .catch(function(){});
-}
-
-function _wlPreSelect(groupId, val){
-  if(val == null) return;
-  var grp = document.getElementById(groupId);
-  if(!grp) return;
-  var btn = grp.querySelector('.wl-emoji-btn[data-val="'+val+'"]');
-  if(btn) wlSel(btn, groupId);
 }
 
 /* ── Screen 6: Comunidad ─────────────────────────────────── */
