@@ -1346,7 +1346,7 @@ function fetchPlanTSSRange(startIso, endIso){
         var sport = p.sport;
         if(sport==='strength') sport='str';
         if(sport==='other' && swimWords.test(p.title||'')) sport='swim';
-        return {date_iso:p.date_iso, sport:sport, tss:p.tss||0, precise:p.tss_precise};
+        return {date_iso:p.date_iso, sport:sport, tss:p.tss||0, dur_min:p.dur_min||0, precise:p.tss_precise};
       }).filter(function(p){ return {swim:1,bike:1,run:1,str:1}[p.sport]; });
     }).catch(function(){ return []; });
 
@@ -1367,7 +1367,7 @@ function fetchPlanTSSRange(startIso, endIso){
       var sportMap = {swim:'swim',bike:'bike',run:'run',strength:'str'};
       return (assignments||[]).map(function(a){
         var sp = sportMap[a.template.sport];
-        return sp ? {date_iso:a.date_iso, sport:sp, tss:a.template.tss||0} : null;
+        return sp ? {date_iso:a.date_iso, sport:sp, tss:a.template.tss||0, dur_min:a.template.dur_min||0} : null;
       }).filter(Boolean);
     }).catch(function(){ return []; });
 
@@ -1388,18 +1388,20 @@ function fetchPlanTSSRange(startIso, endIso){
     var coachCoveredDaySport = {};
     coachRows.forEach(function(c){ coachCoveredDaySport[c.date_iso+'|'+c.sport] = true; });
 
-    var merged = {swim:0,bike:0,run:0,str:0,_approx:{},_count:{}};
+    var merged = {swim:0,bike:0,run:0,str:0,_approx:{},_count:{},_dur:{swim:0,bike:0,run:0,str:0}};
     var approx = {swim:false,bike:false,run:false,str:false};
 
     coachRows.forEach(function(c){
       merged[c.sport] += c.tss;
       merged._count[c.sport] = (merged._count[c.sport]||0) + 1;
+      merged._dur[c.sport] += c.dur_min;
       // El plan de coach usa el TSS objetivo que el propio coach definió — no es una aproximación.
     });
     tpRows.forEach(function(p){
       if(coachCoveredDaySport[p.date_iso+'|'+p.sport]) return; // ese día+deporte ya lo cubrió el coach
       merged[p.sport] += p.tss;
       merged._count[p.sport] = (merged._count[p.sport]||0) + 1;
+      merged._dur[p.sport] += p.dur_min;
       if(p.precise === false) approx[p.sport] = true;
     });
     merged._approx = approx;
@@ -1450,7 +1452,13 @@ function renderWeeklyCompliance(){
     else { pct = Math.round(tDone/tPlan*100); ringPct = Math.min(pct,100); }
     var approx = !loading && !!(planTSS._approx && planTSS._approx[sport]);
     var planCount = loading ? null : ((planTSS._count && planTSS._count[sport]) || 0);
-    return {sport:sport, sp:sp, pct:pct, ringPct:ringPct, tDone:Math.round(tDone), tPlan:Math.round(tPlan), approx:approx, doneCount:done.length, planCount:planCount};
+    // Horas planificadas vs reales — pedido explícito, debajo de TSS y
+    // sesiones. dPlan sale de la misma fuente que el TSS planificado
+    // (coach + Training Peaks, misma precedencia día+deporte); dDone suma
+    // dur_min de las mismas actividades reales ya usadas para el TSS real.
+    var dPlan = loading ? 0 : ((planTSS._dur && planTSS._dur[sport]) || 0);
+    var dDone = done.reduce(function(t,a){ return t+(a.dur_min||0); }, 0);
+    return {sport:sport, sp:sp, pct:pct, ringPct:ringPct, tDone:Math.round(tDone), tPlan:Math.round(tPlan), approx:approx, doneCount:done.length, planCount:planCount, dDone:dDone, dPlan:dPlan};
   });
 
   row.innerHTML = data.map(function(d, idx){
@@ -1479,6 +1487,7 @@ function renderWeeklyCompliance(){
         +(d.approx ? ' <span title="El plan no trajo el detalle de cada intervalo — el TSS planificado es una aproximación por promedio de sesión, puede sobreestimar series con descanso." style="color:var(--dim);cursor:help">≈ estimado</span>' : '')
       +'</span>'
       +(d.planCount!==null && (d.doneCount>0 || d.planCount>0) ? '<span class="compl-sessions">'+d.doneCount+' / '+d.planCount+' sesiones</span>' : '')
+      +((d.dDone>0 || d.dPlan>0) ? '<span class="compl-sessions">'+fmtDur(d.dDone)+' / '+fmtDur(d.dPlan)+'</span>' : '')
       +'</div>';
   }).join('');
 
