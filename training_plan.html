@@ -829,25 +829,32 @@ function isExtPlan(s){
   return false;
 }
 
-function sessAdherence(s, allDay) {
+function sessAdherence(s, allDay, pair) {
   var today  = todayIso();
   var future = s.date_iso > today;
 
+  /* Bug real (mismo que se encontró y arregló en la app móvil, ver
+     _matchPlannedToReal en athlete-app.html): antes esta función
+     buscaba el PRIMER real/plan del mismo deporte en allDay, sin
+     importar si ya estaba emparejado con OTRA sesión — con 2
+     planificados del mismo deporte (ej. bici outdoor+indoor) y 1 solo
+     real, ambos planificados terminaban matcheando contra la MISMA
+     actividad real y los dos se mostraban "cumplidos". Ahora usa el
+     emparejamiento 1-a-1 por duración más cercana que ya calcula
+     pairPlanAndReal() (compartido con el resto del render, para no
+     tener dos lógicas de matching distintas y desincronizadas). */
+  var actByPlanId  = pair ? pair.actByPlanId  : {};
+  var planByActId  = pair ? pair.planByActId  : {};
+
   if(s.source === 'local') {
-    var match = null;
-    for(var i=0;i<allDay.length;i++){
-      if(allDay[i].source==='garmin' && allDay[i].sport===s.sport){ match=allDay[i]; break; }
-    }
+    var match = actByPlanId[s.id] || null;
     var pct = match ? Math.min(computePct(s, match), 150) : null;
     var key = adherenceLevel(pct, future);
     return {key:key, pct:pct, style:ADH[key]};
   }
 
   if(s.source === 'garmin') {
-    var plan = null;
-    for(var j=0;j<allDay.length;j++){
-      if(allDay[j].source==='local' && allDay[j].sport===s.sport){ plan=allDay[j]; break; }
-    }
+    var plan = planByActId[s.activity_id] || null;
     if(!plan){
       // No LabX plan — check if it was planned externally (Garmin / Training Peaks)
       if(isExtPlan(s)) return {key:'ext_plan', pct:null, style:ADH.ext_plan};
@@ -871,18 +878,36 @@ window._planMatchByActId = window._planMatchByActId || {};
 function pairPlanAndReal(allDay){
   var hiddenPlanned = {};
   var planByActId = {};
-  allDay.filter(function(s){ return s.source==='garmin'; }).forEach(function(g){
-    for(var i=0;i<allDay.length;i++){
-      var p = allDay[i];
-      if(p.source==='local' && p.sport===g.sport && !hiddenPlanned[p.id]){
-        hiddenPlanned[p.id] = true;
-        planByActId[g.activity_id] = p;
-        window._planMatchByActId[g.activity_id] = p;
-        break;
-      }
-    }
+  var actByPlanId = {};
+
+  /* Emparejamiento 1-a-1 por duración más cercana, no "el primero que
+     aparezca en el array" — con 2+ planes del mismo deporte el mismo
+     día (ej. bici outdoor+indoor), el orden de aparición no dice nada
+     sobre cuál corresponde a cuál actividad real. Mismo algoritmo
+     (greedy nearest-match) que _matchPlannedToReal() en athlete-app.
+     html, para que la web y la app muevan la misma lógica. */
+  var reals   = allDay.filter(function(s){ return s.source==='garmin'; });
+  var planned = allDay.filter(function(s){ return s.source==='local'; });
+  var pairs = [];
+  reals.forEach(function(g, gIdx){
+    planned.forEach(function(p, pIdx){
+      if(p.sport !== g.sport) return;
+      pairs.push({gIdx:gIdx, pIdx:pIdx, diff: Math.abs((g.dur_min||0) - (p.dur_min||0))});
+    });
   });
-  return {hiddenPlanned:hiddenPlanned, planByActId:planByActId};
+  pairs.sort(function(a,b){ return a.diff-b.diff; });
+  var usedG = {}, usedP = {};
+  pairs.forEach(function(pr){
+    if(usedG[pr.gIdx] || usedP[pr.pIdx]) return;
+    usedG[pr.gIdx] = true;
+    usedP[pr.pIdx] = true;
+    var g = reals[pr.gIdx], p = planned[pr.pIdx];
+    hiddenPlanned[p.id] = true;
+    planByActId[g.activity_id] = p;
+    actByPlanId[p.id] = g;
+    window._planMatchByActId[g.activity_id] = p;
+  });
+  return {hiddenPlanned:hiddenPlanned, planByActId:planByActId, actByPlanId:actByPlanId};
 }
 
 function adhBadgeHtml(adh, isDone) {
@@ -919,7 +944,7 @@ function renderWeekCal(){
 
     daySess.forEach(function(s){
       var m   = SPORT[s.sport]||{icon:'🏅',label:'Sesión',color:'var(--muted)'};
-      var adh = sessAdherence(s, allDaySess);
+      var adh = sessAdherence(s, allDaySess, pair);
       var ast = adh.style;
       var sc  = 'sess';
       var oc  = s.source==='garmin'
@@ -985,7 +1010,7 @@ function renderMonthCal(){
       html += '<div class="cal-month-date">'+d.getDate()+'</div>';
       visible.forEach(function(s){
         var sp  = SPORT[s.sport]||{icon:'🏅',color:'var(--muted)'};
-        var adh = sessAdherence(s, allDaySess);
+        var adh = sessAdherence(s, allDaySess, pair);
         var ast = adh.style;
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
@@ -1073,7 +1098,7 @@ function renderPeriodCal(){
 
       daySess.slice(0,2).forEach(function(s){
         var sp  = SPORT[s.sport]||{icon:'🏅',color:'var(--muted)'};
-        var adh = sessAdherence(s, allDaySess);
+        var adh = sessAdherence(s, allDaySess, pair);
         var ast = adh.style;
         var sc  = 'sess-sm';
         var oc  = s.source==='garmin'
@@ -1132,7 +1157,7 @@ function renderList(){
       ? (planByActId[s.activity_id] ? 'showCompareDetail('+s.activity_id+')' : 'goDetail('+s.activity_id+')')
       : 'showDetail('+jsArg(s.id)+')';
     var allDay = byDay[s.date_iso] || [s];
-    var adh    = sessAdherence(s, allDay);
+    var adh    = sessAdherence(s, allDay, pairPlanAndReal(allDay));
     var ast    = adh.style;
     var pctTxt = adh.pct!==null
       ? ast.icon+' '+Math.round(adh.pct)+'%'
