@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '65';  // 2026-08-09: mismo fix de emparejamiento planificado-real portado a training_plan.html (web)
+var BUILD_VERSION = '66';  // 2026-08-09: logo animado LabX (flor+orbitas) en la pantalla de login de la app
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
