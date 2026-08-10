@@ -2039,12 +2039,16 @@ function renderWeeklyProgress(sport){
   var acts = (window.KL_DATA && window.KL_DATA.activities) || [];
   var color = _sportColor(_wpSport);
 
-  // Build 12 weeks ending this week (local dates — avoid UTC midnight timezone shift)
+  // Ventana móvil de 5 semanas: la actual + las 4 anteriores — pedido
+  // explícito del usuario (antes eran 12 semanas fijas). today se evalúa
+  // en cada render, así que esto ya "se mueve" solo con el paso del
+  // tiempo sin ningún cambio adicional (local dates — evita el corrimiento
+  // de zona horaria de la medianoche UTC).
   var today = new Date();
   var MO = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
   function _isoLocal(d){ var y=d.getFullYear(),m=d.getMonth()+1,dd=d.getDate(); return y+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd; }
   var weeks = [];
-  for(var w = 11; w >= 0; w--){
+  for(var w = 4; w >= 0; w--){
     var d = new Date(today);
     d.setDate(today.getDate() - (today.getDay()||7) + 1 - w * 7); // Monday of week (local)
     weeks.push({
@@ -2155,7 +2159,7 @@ function renderWeeklyProgress(sport){
     lines.push('<text class="wp-lbl" data-wk-idx="'+i+'" data-label="'+wk.label+'" x="'+lx+'" y="'+ly+'" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.42)">'+wk.label+'</text>');
   });
 
-  // Línea de referencia: promedio de las 12 semanas (incluye semanas en 0,
+  // Línea de referencia: promedio de las 5 semanas (incluye semanas en 0,
   // es el promedio real de carga, no solo de las semanas activas) — punteada,
   // para poder leer de un vistazo si la semana actual está arriba o abajo
   // de lo habitual sin tener que comparar mentalmente las 12 barras.
