@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '69';  // 2026-08-09: unificar encuesta de Bienestar con recovery.html - mismo esquema de 6 factores, mismo endpoint
+var BUILD_VERSION = '70';  // 2026-08-10: card Progreso Semanal (5 semanas moviles) agregada a la guia Semana, despues del card TSS
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

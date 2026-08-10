@@ -369,6 +369,18 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wk-sum-val { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; }
 .wk-sum-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
 
+/* ── Progreso Semanal (5 semanas móviles, mismo dato/agregación que
+   dashboard.html) ── */
+.wp-mob-card { margin: 0 1rem .75rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem .9rem; }
+.wp-mob-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .65rem; }
+.wp-mob-title { font-family: 'Oswald', sans-serif; font-size: .82rem; font-weight: 700; }
+.wp-mob-sport-btns { display: flex; gap: .25rem; }
+.wp-mob-sport-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .25rem .45rem; font-size: .68rem; color: var(--dim); cursor: pointer; }
+.wp-mob-sport-btn.on { background: rgba(255,101,53,.15); border-color: rgba(255,101,53,.4); color: var(--orange); }
+.wp-mob-stats { display: flex; gap: 1.3rem; margin-bottom: .5rem; }
+.wp-mob-stat-lbl { font-size: .58rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.wp-mob-stat-val { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; margin-top: .1rem; }
+
 /* ── Screen 5: Bienestar ── */
 .wellness-grid { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .wl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem 1rem; }
@@ -554,6 +566,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div><div class="wk-sum-val" id="wk-tss">—</div><div class="wk-sum-lbl">TSS</div></div>
         <div><div class="wk-sum-val" id="wk-dist">—</div><div class="wk-sum-lbl">km</div></div>
         <div><div class="wk-sum-val" id="wk-sessions">—</div><div class="wk-sum-lbl">Sesiones</div></div>
+      </div>
+
+      <!-- Progreso Semanal — misma ventana móvil de 5 semanas que
+           dashboard.html (pedido explícito: incluir esta card acá, después
+           de la de TSS). Mismos datos (/athlete/dashboard activities),
+           misma agregación, adaptada a un chart angosto de celular. -->
+      <div class="wp-mob-card" id="wp-mob-card" style="display:none">
+        <div class="wp-mob-head">
+          <span class="wp-mob-title">Progreso Semanal</span>
+          <div class="wp-mob-sport-btns" id="wp-mob-sport-btns">
+            <button class="wp-mob-sport-btn on" data-sport="all" onclick="wpMobSport('all')">Todo</button>
+            <button class="wp-mob-sport-btn" data-sport="swim" onclick="wpMobSport('swim')">🏊</button>
+            <button class="wp-mob-sport-btn" data-sport="bike" onclick="wpMobSport('bike')">🚴</button>
+            <button class="wp-mob-sport-btn" data-sport="run" onclick="wpMobSport('run')">🏃</button>
+            <button class="wp-mob-sport-btn" data-sport="gym" onclick="wpMobSport('gym')">💪</button>
+          </div>
+        </div>
+        <div class="wp-mob-stats">
+          <div><div class="wp-mob-stat-lbl">Esta semana</div><div class="wp-mob-stat-val" id="wp-mob-dist">—</div></div>
+          <div><div class="wp-mob-stat-lbl">Tiempo</div><div class="wp-mob-stat-val" id="wp-mob-time">—</div></div>
+          <div><div class="wp-mob-stat-lbl">Acts</div><div class="wp-mob-stat-val" id="wp-mob-acts">—</div></div>
+        </div>
+        <svg id="wp-mob-chart" viewBox="0 0 340 100" preserveAspectRatio="none" style="width:100%;height:100px;display:block"></svg>
       </div>
 
       <div class="week-grid" id="week-grid">
@@ -1544,6 +1579,8 @@ function loadWeek(){
 
   if(!_token) return;
 
+  loadWeeklyProgressMobile();
+
   /* Mismo bug que loadToday() (Gap #5): esta pantalla solo miraba
      /athlete/plan (AssignedWorkout) — un atleta con su plan sincronizado
      desde TrainingPeaks/Garmin (/athlete/planned-workouts) veía "Descanso"
@@ -1678,6 +1715,115 @@ function showWeekWorkoutDetail(idx){
 function closeWeekWorkoutDetail(e){
   if(e) e.stopPropagation();
   document.getElementById('wo-detail-modal').style.display = 'none';
+}
+
+/* ── Progreso Semanal (ventana móvil de 5 semanas) ──────────
+   Misma card/dato que dashboard.html (renderWeeklyProgress) — pedido
+   explícito: agregarla acá, en "Semana", después de la card de TSS.
+   Usa /athlete/dashboard.activities (mismo endpoint que ya llama
+   loadStatusHealth() en "Hoy") en vez de re-derivarlo de /athlete/plan,
+   porque necesita actividades REALES de Garmin, no lo planificado. */
+var _wpMobActs = [];
+var _wpMobSport = 'all';
+
+function loadWeeklyProgressMobile(){
+  if(!_token) return;
+  apiFetch('/athlete/dashboard')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d || !d.activities) return;
+      _wpMobActs = d.activities;
+      document.getElementById('wp-mob-card').style.display = 'block';
+      _renderWpMob(_wpMobSport);
+    })
+    .catch(function(){});
+}
+
+function wpMobSport(sport){
+  _wpMobSport = sport;
+  document.querySelectorAll('.wp-mob-sport-btn').forEach(function(b){
+    b.classList.toggle('on', b.dataset.sport === sport);
+  });
+  _renderWpMob(sport);
+}
+
+function _wpMobSportMatch(actSport, filter){
+  if(filter === 'all') return true;
+  return actSport === filter;
+}
+
+/* Misma lógica de agregación por semana (lunes local) que _weekKey() de
+   dashboard.html — 5 semanas terminando siempre en la actual. */
+function _wpMobWeekKey(dateIso){
+  var p = dateIso.split('-');
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  var day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  return _isoLocal(d);
+}
+
+function _renderWpMob(sport){
+  var MO = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  var today = new Date();
+  var weeks = [];
+  for(var w = 4; w >= 0; w--){
+    var d = new Date(today);
+    d.setDate(today.getDate() - (today.getDay()||7) + 1 - w*7);
+    weeks.push({ key: _isoLocal(d), dist:0, dur:0, count:0, label: d.getDate()+' '+MO[d.getMonth()] });
+  }
+
+  _wpMobActs.forEach(function(a){
+    if(!_wpMobSportMatch(a.sport, sport)) return;
+    var wk = _wpMobWeekKey(a.date_iso);
+    var w = weeks.find(function(x){ return x.key === wk; });
+    if(!w) return;
+    w.dist += (a.dist_km||0); w.dur += (a.dur_min||0); w.count += 1;
+  });
+
+  var cur = weeks[weeks.length-1];
+  document.getElementById('wp-mob-dist').textContent = (cur.dist>0?cur.dist.toFixed(1):'0')+' km';
+  var h = Math.floor(cur.dur/60), m = Math.round(cur.dur%60);
+  document.getElementById('wp-mob-time').textContent = h>0 ? h+'h '+m+'m' : m+'min';
+  document.getElementById('wp-mob-acts').textContent = cur.count;
+
+  var useDur = (sport === 'gym');
+  var metricOf = function(x){ return useDur ? x.dur : x.dist; };
+  var maxVal = Math.max.apply(null, weeks.map(metricOf));
+  if(maxVal < 1) maxVal = useDur ? 30 : 10;
+  var maxLine = Math.ceil(maxVal/10)*10;
+
+  var W=340, H=100, padL=8, padR=8, padT=8, padB=18;
+  var chartW = W-padL-padR, chartH = H-padT-padB;
+  var barW = chartW/weeks.length;
+  var col = SPORT_COL[sport] || '#FF6535';
+
+  var svgParts = [];
+  svgParts.push('<line x1="'+padL+'" y1="'+(padT+chartH)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH)+'" stroke="rgba(255,255,255,.08)" stroke-width="1"/>');
+
+  var dotPts = [];
+  weeks.forEach(function(wk, i){
+    var val = metricOf(wk);
+    var x = padL + i*barW;
+    var barH = val>0 ? (val/maxLine)*chartH : 0;
+    var y = padT+chartH-barH;
+    var isLast = (i === weeks.length-1);
+    if(val>0){
+      svgParts.push('<rect x="'+(x+barW*0.22)+'" y="'+y+'" width="'+(barW*0.56)+'" height="'+barH+'" rx="2" fill="'+col+'" fill-opacity="'+(isLast?'.9':'.35')+'"/>');
+    }
+    var cx = padL+(i+0.5)*barW;
+    var cy = val>0 ? padT+chartH-(val/maxLine)*chartH : null;
+    if(cy!==null) dotPts.push({x:cx,y:cy});
+    svgParts.push('<text x="'+cx+'" y="'+(padT+chartH+13)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.4)">'+wk.label+'</text>');
+  });
+
+  if(dotPts.length>1){
+    var path = 'M'+dotPts[0].x.toFixed(1)+' '+dotPts[0].y.toFixed(1);
+    for(var i2=1;i2<dotPts.length;i2++) path += ' L'+dotPts[i2].x.toFixed(1)+' '+dotPts[i2].y.toFixed(1);
+    svgParts.push('<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="1.3" stroke-opacity=".55" stroke-linejoin="round"/>');
+  }
+  dotPts.forEach(function(p){ svgParts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="2" fill="'+col+'"/>'); });
+
+  document.getElementById('wp-mob-chart').innerHTML = svgParts.join('');
 }
 
 /* ── Screen 5: Bienestar ─────────────────────────────────── */
