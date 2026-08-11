@@ -324,6 +324,134 @@ class TestPlanVsActual:
             headers=auth_headers(token))
         assert r.status_code == 403
 
+    def test_plan_vs_actual_matches_synced_garmin_activity(self, client, db, coach_user,
+                                                             athlete_user, group_with_athlete, template):
+        """Sprint C (consolidación Garmin, 2026-08-11): plan-vs-actual debe
+        matchear contra GarminActivity ya sincronizada, sin ningún login en
+        vivo a Garmin Connect — confirma que el reemplazo no cambió el
+        comportamiento observable (mismo status done_garmin, mismos datos)."""
+        from api.models import GarminActivity
+        aw = AssignedWorkout(
+            template_id=template.id,
+            athlete_id=athlete_user.id,
+            date_iso="2026-08-10",
+        )
+        db.add(aw)
+        act = GarminActivity(
+            user_id=athlete_user.id, activity_id="12345", name="Easy Run",
+            sport="run", date_iso="2026-08-10", dur_min=44, dist_km=8.1,
+            avg_hr=140, tss=48,
+        )
+        db.add(act)
+        db.commit()
+
+        token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/athletes/{athlete_user.id}/plan-vs-actual"
+            "?start=2026-08-01&end=2026-08-31",
+            headers=auth_headers(token))
+        assert r.status_code == 200
+        item = r.json()[0]
+        assert item["status"] == "done_garmin"
+        assert item["garmin_matched"] is True
+        assert item["garmin_activity_id"] == 12345
+        assert item["garmin_dist_km"] == 8.1
+        assert item["garmin_dur_secs"] == 44 * 60
+        assert item["garmin_avg_hr"] == 140
+        assert item["garmin_tss"] == 48
+
+
+class TestAthleteGarminActivitiesForCoach:
+    """Sprint C: /coach/athletes/{id}/garmin-activities pasó de un login
+    en vivo a Garmin Connect a una lectura de GarminActivity ya
+    sincronizada — mismo contrato de respuesta, otra fuente de datos."""
+
+    def test_no_garmin_configured_returns_400(self, client, db, coach_user,
+                                                athlete_user, group_with_athlete):
+        token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/athletes/{athlete_user.id}/garmin-activities",
+            headers=auth_headers(token))
+        assert r.status_code == 400
+
+    def test_returns_synced_activities(self, client, db, coach_user,
+                                        athlete_user, group_with_athlete):
+        from api.models import GarminActivity
+        athlete_user.garmin_email = "athlete@garmin.test"
+        athlete_user.garmin_password = "enc-fake"
+        db.add(athlete_user)
+        db.add(GarminActivity(
+            user_id=athlete_user.id, activity_id="999", name="Long Ride",
+            sport="bike", date_iso="2026-08-05", dur_min=120, dist_km=45.0,
+            avg_hr=132, tss=95,
+        ))
+        db.commit()
+
+        token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/athletes/{athlete_user.id}/garmin-activities",
+            headers=auth_headers(token))
+        assert r.status_code == 200
+        items = r.json()
+        assert len(items) == 1
+        assert items[0]["activity_id"] == "999"
+        assert items[0]["sport"] == "bike"
+        assert items[0]["distance_km"] == 45.0
+        assert items[0]["duration_secs"] == 120 * 60
+
+
+class TestAthleteReport:
+    """Sprint C: CTL/ATL/TSB/ACWR ahora se leen de GarminTrainingLoad
+    (calculado una sola vez por el pull) en vez de re-derivarse con una
+    réplica del EWA sobre un login en vivo a Garmin Connect."""
+
+    def test_report_without_garmin_load_has_null_ctl(self, client, db, coach_user,
+                                                       athlete_user, group_with_athlete, template):
+        aw = AssignedWorkout(template_id=template.id, athlete_id=athlete_user.id, date_iso="2026-08-10")
+        db.add(aw)
+        db.commit()
+
+        token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/report/athlete/{athlete_user.id}"
+            "?start=2026-08-01&end=2026-08-31",
+            headers=auth_headers(token))
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ctl"] is None
+        assert body["atl"] is None
+        assert body["sessions_total"] == 1
+
+    def test_report_reads_ctl_from_training_load_snapshot(self, client, db, coach_user,
+                                                            athlete_user, group_with_athlete, template):
+        from api.models import GarminTrainingLoad, GarminActivity
+        aw = AssignedWorkout(template_id=template.id, athlete_id=athlete_user.id, date_iso="2026-08-10")
+        db.add(aw)
+        db.add(GarminActivity(
+            user_id=athlete_user.id, activity_id="777", name="Easy Run",
+            sport="run", date_iso="2026-08-10", dur_min=45, dist_km=8.0, tss=50,
+        ))
+        db.add(GarminTrainingLoad(
+            user_id=athlete_user.id, date_iso="2026-08-10",
+            ctl=88.4, atl=95.1, tsb=-6.7, tss=50.0, acwr=1.12,
+        ))
+        db.commit()
+
+        token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/report/athlete/{athlete_user.id}"
+            "?start=2026-08-01&end=2026-08-10",
+            headers=auth_headers(token))
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ctl"] == 88.4
+        assert body["atl"] == 95.1
+        assert body["tsb"] == -6.7
+        assert body["acwr"] == 1.12
+        assert body["sessions_done"] == 1
+        assert len(body["pmc_history"]) == 1
+        assert body["pmc_history"][0]["ctl"] == 88.4
+
 
 # ── Adherencia ────────────────────────────────────────────────
 

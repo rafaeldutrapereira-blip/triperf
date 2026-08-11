@@ -168,3 +168,36 @@ class TestBloodLabs:
         r = client.get("/api/athlete/blood-labs", headers=auth_headers(token))
         assert r.status_code == 200
         assert isinstance(r.json(), list)
+
+
+class TestGarminActivities:
+    """Sprint C (consolidación Garmin, 2026-08-11): /athlete/garmin/activities
+    pasó de un login en vivo a Garmin Connect a una lectura de GarminActivity
+    ya sincronizada — sin datos, la respuesta es simplemente una lista vacía,
+    nunca se inventa una actividad ni se intenta un login en caliente."""
+
+    def test_no_activities_returns_empty_list(self, client, athlete_user):
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get("/api/athlete/garmin/activities", headers=auth_headers(token))
+        assert r.status_code == 200
+        assert r.json() == []
+
+    def test_returns_synced_activities_in_range(self, client, db, athlete_user):
+        from api.models import GarminActivity
+        db.add(GarminActivity(
+            user_id=athlete_user.id, activity_id="42", name="Tempo Run",
+            sport="run", date_iso="2026-07-15", dur_min=50, dist_km=10.0,
+            avg_hr=155, tss=62,
+        ))
+        db.commit()
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get(
+            "/api/athlete/garmin/activities?start=2026-07-01&end=2026-07-31",
+            headers=auth_headers(token))
+        assert r.status_code == 200
+        items = r.json()
+        assert len(items) == 1
+        assert items[0]["activity_id"] == 42
+        assert items[0]["distance_km"] == 10.0
+        assert items[0]["duration_secs"] == 50 * 60
+        assert items[0]["max_hr"] is None

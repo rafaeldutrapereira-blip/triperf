@@ -303,44 +303,48 @@ def garmin_activities(
     me: User = Depends(get_current_user)
 ):
     """
-    Pull activities from the athlete's own Garmin Connect account.
-    Requires garmin_email + garmin_password stored for this user.
+    Actividades reales del atleta, leídas de GarminActivity (sincronizada
+    por el pull periódico) — no un login en vivo a Garmin Connect por
+    request (Sprint C, consolidación de conectividad Garmin, 2026-08-11).
+    Sin sync previo corrido, simplemente no hay filas (nunca se inventa
+    nada acá tampoco).
     """
-    if not me.garmin_email or not me.garmin_password:
-        raise HTTPException(400, "Configura tus credenciales Garmin en Mi Perfil")
-
     from datetime import date, timedelta
     today = date.today().isoformat()
     _start = start or (date.today() - timedelta(days=30)).isoformat()
     _end   = end   or today
 
-    _pwd = _read_garmin_pwd(me, db)
-    try:
-        from garminconnect import Garmin
-        client = Garmin(me.garmin_email, _pwd)
-        client.login()
-        raw = client.get_activities_by_date(_start, _end) or []
-    except ImportError:
-        raise HTTPException(500, "garminconnect no instalado en el servidor")
-    except Exception as e:
-        raise HTTPException(502, f"Error conectando con Garmin: {e}")
+    rows = (
+        db.query(GarminActivity)
+        .filter(
+            GarminActivity.user_id == me.id,
+            GarminActivity.date_iso >= _start,
+            GarminActivity.date_iso <= _end,
+        )
+        .order_by(GarminActivity.date_iso.desc())
+        .limit(limit)
+        .all()
+    )
 
-    result = []
-    for a in raw[:limit]:
-        dist_m = a.get("distance") or 0
-        result.append(GarminActivityOut(
-            activity_id   = a.get("activityId"),
-            name          = a.get("activityName"),
-            sport         = a.get("activityType", {}).get("typeKey", ""),
-            start_time    = a.get("startTimeLocal"),
-            duration_secs = a.get("duration"),
-            distance_km   = round(dist_m / 1000, 2) if dist_m else None,
-            average_hr    = a.get("averageHR"),
-            max_hr        = a.get("maxHR"),
-            calories      = a.get("calories"),
-            tss           = a.get("trainingStressScore"),
-        ))
-    return result
+    return [
+        GarminActivityOut(
+            activity_id   = a.activity_id,
+            name          = a.name,
+            sport         = a.sport,
+            start_time    = a.date_iso,
+            duration_secs = (a.dur_min or 0) * 60,
+            distance_km   = a.dist_km,
+            average_hr    = a.avg_hr,
+            max_hr        = None,   # GarminActivity no guarda max_hr — nunca se inventa un valor
+            # round(): encontrado en vivo contra datos reales (Rafael) que
+            # algunas filas tienen calorías con parte fraccionaria pese a
+            # que la columna es Integer — SQLite no fuerza el tipo al
+            # insertar. GarminActivityOut.calories sí es int estricto.
+            calories      = round(a.calories) if a.calories is not None else None,
+            tss           = a.tss,
+        )
+        for a in rows
+    ]
 
 
 # ─────────────────────────────────────────────

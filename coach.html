@@ -2920,9 +2920,20 @@ window.loadAthleteGarmin = async function(){
       el.innerHTML = '<div class="empty" style="font-size:.78rem">Sin actividades Garmin recientes</div>';
       return;
     }
-    var sportMap = {running:'run',lap_swimming:'swim',swimming:'swim',cycling:'bike',road_biking:'bike',strength_training:'str'};
+    // Sprint C (consolidación Garmin, 2026-08-11): este endpoint ahora lee
+    // GarminActivity (ya normalizado por el pull) en vez de pegarle en vivo
+    // a Garmin Connect — a.sport puede venir ya normalizado (swim/bike/run/
+    // str/gym) o, para filas viejas sin normalizar, con el typeKey crudo de
+    // Garmin — se soportan ambos casos, sin asumir "run" por defecto salvo
+    // que de verdad no se reconozca nada.
+    var CANON_SPORTS = {swim:1, bike:1, run:1, str:1};
+    var sportMap = {running:'run',trail_running:'run',treadmill_running:'run',
+      lap_swimming:'swim',swimming:'swim',open_water_swimming:'swim',
+      cycling:'bike',road_biking:'bike',indoor_cycling:'bike',mountain_biking:'bike',virtual_ride:'bike',
+      strength_training:'str',fitness_equipment:'str',cross_training:'str',hiit:'str',gym:'str'};
     el.innerHTML = acts.map(function(a){
-      var sport = sportMap[(a.sport||'').toLowerCase()]||'run';
+      var raw = (a.sport||'').toLowerCase();
+      var sport = CANON_SPORTS[raw] ? raw : (sportMap[raw]||'run');
       var date  = (a.start_time||'').slice(0,10);
       var dist  = a.distance_km ? a.distance_km.toFixed(2)+' km' : '';
       var dur   = a.duration_secs ? Math.round(a.duration_secs/60)+' min' : '';

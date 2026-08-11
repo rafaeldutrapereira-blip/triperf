@@ -10,7 +10,7 @@ from ..database import get_db
 from ..models import (
     User, Group, GroupMember, WorkoutTemplate,
     AssignedWorkout, WorkoutLog, WeekTemplate, WeekTemplateDay,
-    WellnessLog, CoachAthlete,
+    WellnessLog, CoachAthlete, GarminActivity, GarminTrainingLoad,
 )
 from ..schemas import (
     GroupCreate, GroupOut, AddMemberRequest,
@@ -1012,8 +1012,11 @@ def athlete_garmin_activities(
     coach: User = Depends(_coach)
 ):
     """
-    Retorna las últimas actividades Garmin del atleta.
-    Solo accesible para coaches/admins con atletas en sus grupos.
+    Retorna las últimas actividades Garmin del atleta, leídas de
+    GarminActivity (sincronizada por el pull periódico) — no un login en
+    vivo a Garmin Connect por request (Sprint C, consolidación de
+    conectividad Garmin, 2026-08-11). Sin sync previo corrido, no hay
+    filas (se informa igual que antes, nunca se inventa una actividad).
     """
     athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
     if not athlete.garmin_email or not athlete.garmin_password:
@@ -1023,44 +1026,34 @@ def athlete_garmin_activities(
     end_date   = date.today().isoformat()
     start_date = (date.today() - timedelta(days=45)).isoformat()
 
-    try:
-        from garminconnect import Garmin
-        _pwd = _read_garmin_pwd(athlete, db)
-        client = Garmin(athlete.garmin_email, _pwd)
-        client.login()
-        raw = client.get_activities_by_date(start_date, end_date) or []
-    except ImportError:
-        raise HTTPException(500, "garminconnect no instalado")
-    except Exception as e:
-        raise HTTPException(502, f"Error Garmin: {e}")
+    rows = (
+        db.query(GarminActivity)
+        .filter(
+            GarminActivity.user_id == athlete_id,
+            GarminActivity.date_iso >= start_date,
+            GarminActivity.date_iso <= end_date,
+        )
+        .order_by(GarminActivity.date_iso.desc())
+        .limit(limit)
+        .all()
+    )
 
-    result = []
-    for a in raw[:limit]:
-        dist_m = a.get("distance") or 0
-        result.append({
-            "activity_id":   a.get("activityId"),
-            "name":          a.get("activityName"),
-            "sport":         a.get("activityType", {}).get("typeKey", ""),
-            "start_time":    a.get("startTimeLocal"),
-            "duration_secs": a.get("duration"),
-            "distance_km":   round(dist_m / 1000, 2) if dist_m else None,
-            "average_hr":    a.get("averageHR"),
-            "tss":           a.get("trainingStressScore"),
-        })
-    return result
+    return [
+        {
+            "activity_id":   a.activity_id,
+            "name":          a.name,
+            "sport":         a.sport,
+            "start_time":    a.date_iso,
+            "duration_secs": (a.dur_min or 0) * 60,
+            "distance_km":   a.dist_km,
+            "average_hr":    a.avg_hr,
+            "tss":           a.tss,
+        }
+        for a in rows
+    ]
 
 
 # ── Plan vs Real (Fase 4) ────────────────────────────────────
-_GARMIN_SPORT = {
-    "lap_swimming": "swim", "swimming": "swim", "open_water_swimming": "swim",
-    "cycling": "bike", "road_biking": "bike", "indoor_cycling": "bike",
-    "mountain_biking": "bike", "virtual_ride": "bike",
-    "running": "run", "trail_running": "run", "treadmill_running": "run",
-    "strength_training": "str", "fitness_equipment": "str",
-    "cross_training": "str", "hiit": "str",
-}
-
-
 @router.get("/athletes/{athlete_id}/plan-vs-actual", response_model=List[PlanVsActualItem])
 def plan_vs_actual(
     athlete_id: str,
@@ -1072,7 +1065,11 @@ def plan_vs_actual(
     """
     Para cada sesión asignada al atleta, cruza con:
     1. Log manual (WorkoutLog) — atleta marcó completado
-    2. Actividad Garmin del mismo día y deporte — si tiene credenciales
+    2. Actividad Garmin del mismo día y deporte — leída de GarminActivity
+       (sincronizada por el pull periódico), NO un login en vivo a Garmin
+       Connect por request (Sprint C, consolidación de conectividad
+       Garmin, 2026-08-11 — este era el único endpoint de lectura de la
+       plataforma que rompía ese patrón).
     Devuelve status: pending | done_manual | done_garmin | done_both | missed
     """
     athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
@@ -1100,22 +1097,19 @@ def plan_vs_actual(
         if log:
             log_map[a.id] = log
 
-    # Actividades Garmin indexadas por fecha → lista de actividades
+    # Actividades reales indexadas por fecha → lista de actividades
     garmin_by_date: dict = {}
-    has_garmin = bool(athlete.garmin_email and athlete.garmin_password)
-    if has_garmin:
-        try:
-            from garminconnect import Garmin
-            _pwd = _read_garmin_pwd(athlete, db)
-            client = Garmin(athlete.garmin_email, _pwd)
-            client.login()
-            raw_acts = client.get_activities_by_date(start, end) or []
-            for act in raw_acts:
-                act_date = (act.get("startTimeLocal") or "")[:10]
-                if act_date:
-                    garmin_by_date.setdefault(act_date, []).append(act)
-        except Exception:
-            pass  # Sin Garmin → solo logs manuales
+    garmin_rows = (
+        db.query(GarminActivity)
+        .filter(
+            GarminActivity.user_id == athlete_id,
+            GarminActivity.date_iso >= start,
+            GarminActivity.date_iso <= end,
+        )
+        .all()
+    )
+    for act in garmin_rows:
+        garmin_by_date.setdefault(act.date_iso, []).append(act)
 
     from datetime import date as _date
     today = _date.today().isoformat()
@@ -1126,12 +1120,11 @@ def plan_vs_actual(
         tpl     = a.template
         is_past = a.date_iso < today
 
-        # Buscar match Garmin: mismo día, mismo deporte
+        # Buscar match Garmin: mismo día, mismo deporte (sport ya normalizado)
         garmin_match = None
         day_acts = garmin_by_date.get(a.date_iso, [])
         for act in day_acts:
-            gtype = act.get("activityType", {}).get("typeKey", "")
-            if _GARMIN_SPORT.get(gtype) == tpl.sport:
+            if act.sport == tpl.sport:
                 garmin_match = act
                 break
         # Fallback: si hay solo 1 actividad ese día, aceptar sin importar deporte
@@ -1150,8 +1143,6 @@ def plan_vs_actual(
         else:
             status = "pending"
 
-        dist_m = (garmin_match.get("distance") or 0) if garmin_match else 0
-
         result.append(PlanVsActualItem(
             assignment_id   = a.id,
             date_iso        = a.date_iso,
@@ -1167,12 +1158,12 @@ def plan_vs_actual(
             log_tss_real    = log.tss_real  if log else None,
             log_rpe         = log.rpe       if log else None,
             garmin_matched     = bool(garmin_match),
-            garmin_activity_id = garmin_match.get("activityId")   if garmin_match else None,
-            garmin_name        = garmin_match.get("activityName")  if garmin_match else None,
-            garmin_dist_km     = round(dist_m / 1000, 2)          if dist_m else None,
-            garmin_dur_secs    = garmin_match.get("duration")      if garmin_match else None,
-            garmin_avg_hr      = garmin_match.get("averageHR")     if garmin_match else None,
-            garmin_tss         = garmin_match.get("trainingStressScore") if garmin_match else None,
+            garmin_activity_id = garmin_match.activity_id if garmin_match else None,
+            garmin_name        = garmin_match.name        if garmin_match else None,
+            garmin_dist_km     = garmin_match.dist_km      if garmin_match else None,
+            garmin_dur_secs    = (garmin_match.dur_min * 60) if garmin_match and garmin_match.dur_min else None,
+            garmin_avg_hr      = garmin_match.avg_hr       if garmin_match else None,
+            garmin_tss         = garmin_match.tss          if garmin_match else None,
             status             = status,
         ))
 
@@ -1193,7 +1184,13 @@ def athlete_report(
     - Totales planificado vs ejecutado
     - Desglose por deporte
     - Desglose por semana
-    - CTL / ATL / TSB (computed from Garmin TSS last 84 days)
+    - CTL / ATL / TSB / ACWR: leídos de GarminTrainingLoad (calculado una
+      sola vez por el pull periódico), no re-derivados acá con una nueva
+      réplica del algoritmo EWA sobre datos traídos en vivo — Sprint C,
+      consolidación de conectividad Garmin, 2026-08-11. Antes este
+      endpoint reimplementaba su propia versión de CTL/ATL/ACWR con un
+      login en vivo a Garmin Connect, duplicando (y pudiendo divergir de)
+      el cálculo canónico que ya usa el resto de la plataforma.
     """
     from datetime import date as _date, timedelta, datetime
 
@@ -1220,26 +1217,18 @@ def athlete_report(
         if log:
             log_map[a.id] = log
 
-    # ── Garmin activities del período ─────────────────────────
-    garmin_by_date: dict = {}
+    # ── Actividades reales del período (GarminActivity, ya sincronizada) ──
     has_garmin = bool(athlete.garmin_email and athlete.garmin_password)
-    garmin_all: list = []
-
-    if has_garmin:
-        # Para CTL/ATL necesitamos 84 días antes del start
-        ctl_start = (_date.fromisoformat(start) - timedelta(days=84)).isoformat()
-        try:
-            from garminconnect import Garmin
-            _pwd = _read_garmin_pwd(athlete, db)
-            client = Garmin(athlete.garmin_email, _pwd)
-            client.login()
-            garmin_all = client.get_activities_by_date(ctl_start, end) or []
-            for act in garmin_all:
-                act_date = (act.get("startTimeLocal") or "")[:10]
-                if act_date >= start:
-                    garmin_by_date.setdefault(act_date, []).append(act)
-        except Exception:
-            pass
+    garmin_by_date: dict = {}
+    garmin_rows = (
+        db.query(GarminActivity)
+        .filter(GarminActivity.user_id == athlete_id,
+                GarminActivity.date_iso >= start,
+                GarminActivity.date_iso <= end)
+        .all()
+    )
+    for act in garmin_rows:
+        garmin_by_date.setdefault(act.date_iso, []).append(act)
 
     # ── Desglose por deporte ──────────────────────────────────
     sport_map: dict = {}
@@ -1255,12 +1244,11 @@ def athlete_report(
         row.dur_planned_min  += tpl.dur_min or 0
         row.tss_planned      += tpl.tss     or 0
 
-        # Match Garmin por fecha+deporte
+        # Match Garmin por fecha+deporte (sport ya normalizado)
         day_acts = garmin_by_date.get(a.date_iso, [])
         garmin_m = None
         for act in day_acts:
-            gtype = act.get("activityType", {}).get("typeKey", "")
-            if _GARMIN_SPORT.get(gtype) == s:
+            if act.sport == s:
                 garmin_m = act; break
         if not garmin_m and len(day_acts) == 1:
             garmin_m = day_acts[0]
@@ -1272,11 +1260,9 @@ def athlete_report(
                 row.dur_actual_min  += log.dur_real   or 0
                 row.tss_actual      += log.tss_real   or 0
             elif garmin_m:
-                dist_m = garmin_m.get("distance") or 0
-                row.dist_actual_km += round(dist_m / 1000, 2)
-                dur_s  = garmin_m.get("duration") or 0
-                row.dur_actual_min += int(dur_s / 60)
-                row.tss_actual     += int(garmin_m.get("trainingStressScore") or 0)
+                row.dist_actual_km += garmin_m.dist_km or 0
+                row.dur_actual_min += garmin_m.dur_min or 0
+                row.tss_actual     += int(garmin_m.tss or 0)
 
     # ── Desglose por semana ISO ───────────────────────────────
     def _week_monday(iso: str) -> str:
@@ -1296,8 +1282,7 @@ def athlete_report(
         day_acts = garmin_by_date.get(a.date_iso, [])
         garmin_m = None
         for act in day_acts:
-            gtype = act.get("activityType", {}).get("typeKey", "")
-            if _GARMIN_SPORT.get(gtype) == a.template.sport:
+            if act.sport == a.template.sport:
                 garmin_m = act; break
         if not garmin_m and len(day_acts) == 1:
             garmin_m = day_acts[0]
@@ -1308,74 +1293,48 @@ def athlete_report(
                 w.tss_actual     += log.tss_real or 0
                 w.dist_actual_km += log.dist_real or 0
             elif garmin_m:
-                dist_m = garmin_m.get("distance") or 0
-                w.dist_actual_km += round(dist_m / 1000, 2)
-                w.tss_actual     += int(garmin_m.get("trainingStressScore") or 0)
+                w.dist_actual_km += garmin_m.dist_km or 0
+                w.tss_actual     += int(garmin_m.tss or 0)
 
-    # ── CTL / ATL / TSB desde Garmin histórico ────────────────
-    ctl = atl = tsb = None
-    if garmin_all:
-        # Construir serie diaria de TSS desde ctl_start hasta end
-        tss_by_day: dict = {}
-        for act in garmin_all:
-            d_str = (act.get("startTimeLocal") or "")[:10]
-            if d_str:
-                tss_by_day[d_str] = tss_by_day.get(d_str, 0) + (act.get("trainingStressScore") or 0)
-
-        # EWA: CTL τ=42, ATL τ=7
-        ctl_val = 0.0
-        atl_val = 0.0
-        alpha_ctl = 2 / (42 + 1)
-        alpha_atl = 2 / (7  + 1)
-
-        ctl_start_d = _date.fromisoformat(ctl_start)
-        end_d       = _date.fromisoformat(end)
-        cur = ctl_start_d
-        while cur <= end_d:
-            tss_today = tss_by_day.get(cur.isoformat(), 0)
-            ctl_val = ctl_val + alpha_ctl * (tss_today - ctl_val)
-            atl_val = atl_val + alpha_atl * (tss_today - atl_val)
-            cur += timedelta(days=1)
-
-            ctl = round(ctl_val, 1)
-        atl = round(atl_val, 1)
-        tsb = round(ctl_val - atl_val, 1)
+    # ── CTL / ATL / TSB / ACWR — snapshot canónico al final del período ──
+    ctl = atl = tsb = acwr = None
+    end_load = (
+        db.query(GarminTrainingLoad)
+        .filter(GarminTrainingLoad.user_id == athlete_id,
+                GarminTrainingLoad.date_iso <= end)
+        .order_by(GarminTrainingLoad.date_iso.desc())
+        .first()
+    )
+    if end_load:
+        ctl  = round(end_load.ctl, 1) if end_load.ctl is not None else None
+        atl  = round(end_load.atl, 1) if end_load.atl is not None else None
+        tsb  = round(end_load.tsb, 1) if end_load.tsb is not None else None
+        acwr = round(end_load.acwr, 2) if end_load.acwr is not None else None
 
     # ── PMC history para gráfico (por semana, 26 semanas) ─────
     pmc_history = []
-    if garmin_all:
-        pmc_start = (_date.fromisoformat(end) - timedelta(weeks=26)).isoformat()
-        tss_by_day2: dict = {}
-        for act in garmin_all:
-            d_str = (act.get("startTimeLocal") or "")[:10]
-            if d_str and d_str >= pmc_start:
-                tss_by_day2[d_str] = tss_by_day2.get(d_str, 0) + (act.get("trainingStressScore") or 0)
-        # Agrupar por semana
-        from collections import defaultdict
-        by_week: dict = defaultdict(lambda: {"tss": 0, "ctl": 0.0, "atl": 0.0})
-        # replay EWA desde ctl_start para tener valores correctos
-        c2, a2 = 0.0, 0.0
-        alpha_c, alpha_a = 2/(42+1), 2/(7+1)
-        cur = _date.fromisoformat(ctl_start)
-        end_d = _date.fromisoformat(end)
-        while cur <= end_d:
-            ts = tss_by_day.get(cur.isoformat(), 0)
-            c2 = c2 + alpha_c*(ts - c2)
-            a2 = a2 + alpha_a*(ts - a2)
-            if cur.isoformat() >= pmc_start:
-                dow = cur.weekday()
-                wmon = (cur - timedelta(days=dow)).isoformat()
-                by_week[wmon]["tss"] += ts
-                by_week[wmon]["ctl"] = round(c2, 1)
-                by_week[wmon]["atl"] = round(a2, 1)
-                by_week[wmon]["tsb"] = round(c2 - a2, 1)
-            cur += timedelta(days=1)
-        pmc_history = [{"dt": k, "ctl": v["ctl"], "atl": v["atl"], "tsb": v["tsb"]} for k, v in sorted(by_week.items())]
-
-    # ── ACWR ─────────────────────────────────────────────────
-    acwr = None
-    if garmin_all and ctl is not None and atl is not None:
-        acwr = round(atl / ctl, 2) if ctl else None
+    pmc_start = (_date.fromisoformat(end) - timedelta(weeks=26)).isoformat()
+    load_rows = (
+        db.query(GarminTrainingLoad)
+        .filter(GarminTrainingLoad.user_id == athlete_id,
+                GarminTrainingLoad.date_iso >= pmc_start,
+                GarminTrainingLoad.date_iso <= end)
+        .order_by(GarminTrainingLoad.date_iso)
+        .all()
+    )
+    if load_rows:
+        by_week: dict = {}
+        for row in load_rows:
+            d = _date.fromisoformat(row.date_iso)
+            wmon = (d - timedelta(days=d.weekday())).isoformat()
+            # Se queda con el último día disponible de cada semana — mismo
+            # criterio que el reemplazo directo dentro del loop anterior.
+            by_week[wmon] = {
+                "ctl": round(row.ctl, 1) if row.ctl is not None else 0.0,
+                "atl": round(row.atl, 1) if row.atl is not None else 0.0,
+                "tsb": round(row.tsb, 1) if row.tsb is not None else 0.0,
+            }
+        pmc_history = [{"dt": k, **v} for k, v in sorted(by_week.items())]
 
     # ── Totales ───────────────────────────────────────────────
     total_planned = len(assignments)
