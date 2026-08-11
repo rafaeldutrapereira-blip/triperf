@@ -548,6 +548,38 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
 </div>
 
+<!-- Registro manual de esfuerzo (RPE) — respaldo cuando Garmin no
+     sincronizó ese entreno. Mismo endpoint/comportamiento que ya usa
+     training_plan.html en la web (logToCoachAPI → POST /athlete/log),
+     el coach lo ve distinguido como "Log manual" en Plan vs Real —
+     nunca se inventa un entrenamiento, solo se registra la sensación de
+     uno que el atleta ya asegura haber hecho. Auditoría CPO 2026-08-11,
+     Gap #1. -->
+<div id="log-manual-modal" class="ios-guide" style="display:none" onclick="closeLogManualModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeLogManualModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title" id="lm-title">Registrar esfuerzo</div>
+    <div style="padding:0 1rem;font-size:.78rem;color:var(--dim);margin-bottom:1rem">Si no usaste reloj o Garmin todavía no sincronizó, contanos cómo fue — tu coach lo va a ver marcado como registro manual, distinto de un dato de Garmin.</div>
+    <div style="padding:0 1rem;margin-bottom:.9rem">
+      <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Esfuerzo percibido (RPE)</label>
+      <div style="display:flex;align-items:center;gap:.6rem;margin-top:.4rem">
+        <input id="lm-rpe" type="range" min="1" max="10" value="5" style="flex:1;accent-color:var(--orange)" oninput="_lmRpeInput()">
+        <span id="lm-rpe-val" style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--orange);min-width:1.6rem;text-align:center">5</span>
+      </div>
+      <div id="lm-rpe-label" style="font-size:.7rem;color:var(--muted);margin-top:.25rem;text-align:right">Moderado</div>
+    </div>
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem">
+      <div><label style="font-size:.72rem;color:var(--muted)">Duración real (min)</label><input id="lm-dur" type="number" min="0" class="pw-input" placeholder="opcional" style="margin-top:.3rem"></div>
+      <div><label style="font-size:.72rem;color:var(--muted)">Distancia (km)</label><input id="lm-dist" type="number" min="0" step="0.1" class="pw-input" placeholder="opcional" style="margin-top:.3rem"></div>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.5rem">
+      <label style="font-size:.72rem;color:var(--muted)">Notas (opcional)</label>
+      <textarea id="lm-notas" class="pw-input" rows="2" placeholder="Cómo te sentiste, condiciones, etc." style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea>
+    </div>
+    <button class="wl-submit" onclick="submitLogManual()">Guardar registro</button>
+  </div>
+</div>
+
 <!-- Privacidad de mis actividades en Comunidad — mismos 5 toggles y mismo
      endpoint que community.html (web): el atleta decide qué ve la gente
      que lo sigue en el detalle de sus actividades. -->
@@ -1629,13 +1661,19 @@ function _workoutCardHtml(a, matchedReal){
     html += _planVsRealCard(t, matchedReal[0]);
   }
 
-  // Estado — ya no hay pantalla "Durante"/"Registrar" con timer y log
-  // manual de RPE (se sacaron a pedido del usuario); la finalización se
-  // detecta 100% por sincronización real de Garmin (mismo mecanismo que
-  // ya se usaba para los planes de TrainingPeaks, ahora es el único
-  // camino para cualquier entrenamiento).
+  // Estado — la pantalla "Durante"/"Registrar" con timer se sacó a
+  // pedido del usuario, pero dejar la finalización 100% atada a la
+  // sincronización de Garmin es un gap real (auditoría CPO 2026-08-11,
+  // Gap #1): un atleta sin reloj ese día, o con un sync fallido, queda
+  // invisible para el coach. "Registrar esfuerzo" es el mismo respaldo
+  // manual que ya existe en training_plan.html (web) — solo aparece
+  // cuando hay un assignment_id real (a.id), nunca para filas
+  // sintetizadas de TrainingPeaks (_tpRowToAssignShape no trae id).
   if(!done){
     html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;font-size:.8rem;color:var(--dim);text-align:center">⏳ Pendiente — se completa solo al sincronizar tu actividad desde Garmin</div>';
+    if(a.id){
+      html += '<div style="margin:.6rem 1rem 0"><button onclick="openLogManualModal(\''+a.id+'\')" style="width:100%;padding:.65rem;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.8rem;font-family:\'Barlow Condensed\',sans-serif;cursor:pointer">¿Entrenaste sin reloj? Registrar esfuerzo</button></div>';
+    }
   } else if(!matchedReal.length){
     // Único caso posible acá: un log manual histórico de ANTES de sacar
     // la pantalla "Registrar" — no hay actividad real de Garmin que lo
@@ -1827,6 +1865,55 @@ function showWeekWorkoutDetail(idx){
 function closeWeekWorkoutDetail(e){
   if(e) e.stopPropagation();
   document.getElementById('wo-detail-modal').style.display = 'none';
+}
+
+/* ── Registro manual de esfuerzo (RPE) — respaldo sin Garmin ──────
+   Mismas etiquetas/colores de RPE que training_plan.html (web) para que
+   la escala signifique lo mismo en los 2 canales. POST a /athlete/log,
+   el mismo endpoint que ya usa logToCoachAPI() en la web — el coach ve
+   el resultado en Plan vs Real como "Log manual" sin código nuevo de
+   su lado. Auditoría CPO 2026-08-11, Gap #1. */
+var RPE_LABELS_LM = ['','Muy fácil','Fácil','Moderado-suave','Moderado','Moderado-duro','Duro','Muy duro','Extremo','Máximo','Límite absoluto'];
+var RPE_COLORS_LM = ['','#10B981','#10B981','#22D3EE','#0EA5E9','#F0A500','#F0A500','#FF6535','#EF4444','#EF4444','#7C3AED'];
+var _lmAssignmentId = null;
+
+function openLogManualModal(assignmentId){
+  _lmAssignmentId = assignmentId;
+  document.getElementById('lm-rpe').value = 5;
+  document.getElementById('lm-dur').value = '';
+  document.getElementById('lm-dist').value = '';
+  document.getElementById('lm-notas').value = '';
+  _lmRpeInput();
+  document.getElementById('log-manual-modal').style.display = 'flex';
+}
+function closeLogManualModal(e){
+  if(e) e.stopPropagation();
+  document.getElementById('log-manual-modal').style.display = 'none';
+}
+function _lmRpeInput(){
+  var v = parseInt(document.getElementById('lm-rpe').value, 10);
+  document.getElementById('lm-rpe-val').textContent = v;
+  document.getElementById('lm-rpe-val').style.color = RPE_COLORS_LM[v] || 'var(--orange)';
+  document.getElementById('lm-rpe-label').textContent = RPE_LABELS_LM[v] || '';
+}
+function submitLogManual(){
+  if(!_lmAssignmentId) return;
+  var rpe   = parseInt(document.getElementById('lm-rpe').value, 10) || null;
+  var dur   = parseInt(document.getElementById('lm-dur').value, 10) || null;
+  var dist  = parseFloat(document.getElementById('lm-dist').value) || null;
+  var notas = document.getElementById('lm-notas').value.trim() || null;
+  apiFetch('/athlete/log', {
+    method: 'POST',
+    body: JSON.stringify({assignment_id: _lmAssignmentId, rpe: rpe, dur_real: dur, dist_real: dist, notas: notas, completado: true})
+  }).then(function(r){
+    if(!r.ok) throw new Error('bad status');
+    closeLogManualModal();
+    toast('Esfuerzo registrado — tu coach lo va a ver', 'ok');
+    loadToday();
+    loadWeek();
+  }).catch(function(){
+    toast('No se pudo registrar — probá de nuevo', 'err');
+  });
 }
 
 /* ── Progreso Semanal (ventana móvil de 5 semanas) ──────────

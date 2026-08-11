@@ -270,6 +270,42 @@ class TestPlanVsActual:
         assert len(items) >= 1
         assert items[0]["date_iso"] == "2026-08-10"
 
+    def test_plan_vs_actual_shows_manual_log_from_athlete(self, client, db, coach_user,
+                                                            athlete_user, group_with_athlete, template):
+        """Fase 1 Sprint A (auditoria CPO 2026-08-11): un registro manual de
+        esfuerzo que el atleta manda vía POST /athlete/log (mismo endpoint
+        que ahora usan athlete-app.html y training_plan.html como respaldo
+        cuando Garmin no sincroniza) debe verse del lado del coach en
+        plan-vs-actual como done_manual, sin ningún cambio de código nuevo
+        del lado de coach — es la prueba de que la integración es real."""
+        aw = AssignedWorkout(
+            template_id=template.id,
+            athlete_id=athlete_user.id,
+            date_iso="2026-08-10",
+        )
+        db.add(aw)
+        db.commit()
+
+        athlete_token = login(client, "athlete@test.com", "AthlPass123")
+        r_log = client.post(
+            "/api/athlete/log",
+            json={"assignment_id": aw.id, "rpe": 7, "dur_real": 50,
+                  "dist_real": 10.2, "notas": "Sin reloj hoy", "completado": True},
+            headers=auth_headers(athlete_token))
+        assert r_log.status_code in (200, 201)
+
+        coach_token = login(client, "coach@test.com", "CoachPass123")
+        r = client.get(
+            f"/api/coach/athletes/{athlete_user.id}/plan-vs-actual"
+            "?start=2026-08-01&end=2026-08-31",
+            headers=auth_headers(coach_token))
+        assert r.status_code == 200
+        items = r.json()
+        assert len(items) == 1
+        assert items[0]["status"] == "done_manual"
+        assert items[0]["log_rpe"] == 7
+        assert items[0]["log_dur_real"] == 50
+
     def test_plan_vs_actual_denied_for_non_member(self, client, db, coach_user):
         from api.models import User
         from api.auth import hash_password

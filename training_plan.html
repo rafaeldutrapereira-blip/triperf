@@ -1706,15 +1706,19 @@ window.showDetail = function(id){
     +(s.coach_comment?'<div style="background:rgba(255,101,53,.06);border:1px solid rgba(255,101,53,.22);border-radius:8px;padding:.6rem .7rem;font-size:.81rem"><span style="font-family:\'Oswald\',sans-serif;font-size:.66rem;color:var(--orange);letter-spacing:.08em;text-transform:uppercase">Coach · </span>'+s.coach_comment+'</div>':'');
 
   // Los planes sincronizados (Training Peaks/Garmin o asignados por el
-  // coach, editable:false) no viven en localStorage: no se pueden editar,
-  // borrar ni "registrar resultado" manualmente a mano — su cumplimiento
-  // se detecta solo automáticamente al calzar con la actividad real.
-  // getPlanned() devuelve el objeto crudo (no el decorado de sessionsInRange),
-  // así que acá también hay que excluir por api_assignment_id: una sesión
-  // asignada por el coach y cacheada localmente para Cumplimiento Semanal
-  // nunca trae editable:false explícito en el objeto crudo.
+  // coach, editable:false) no viven en localStorage: no se pueden editar
+  // ni borrar a mano — eso sigue firme. Pero SÍ pueden registrar resultado
+  // manual (RPE/nota) como respaldo cuando Garmin no sincronizó: el
+  // backend (/athlete/log, ver logToCoachAPI) ya soporta esto con
+  // assignment_id real, y el coach lo ve distinguido como "Log manual"
+  // (🟡) vs "Detectado Garmin" (🔵) en Plan vs Real — nunca se confunden.
+  // Antes esta rama estaba bloqueada para CUALQUIER sesión con
+  // api_assignment_id, dejando sin ninguna forma de reportar esfuerzo a
+  // un atleta cuyo Garmin falló o no sincronizó ese día (auditoría CPO
+  // 2026-08-11, Gap #1).
   var editable = s.editable !== false && !s.api_assignment_id;
-  var logBtn = !editable ? ''
+  var canLogManual = editable || !!s.api_assignment_id;
+  var logBtn = !canLogManual ? ''
     : s.status !== 'done'
       ? '<button class="btn btn-p btn-sm" onclick="openLogModal('+jsArg(id)+')" data-i18n="btn_register_result">Registrar resultado</button>'
       : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>';

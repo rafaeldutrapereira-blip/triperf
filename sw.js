@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '73';  // 2026-08-10: detalle GPS+parciales en Comunidad + configuracion de privacidad, igual training_detail.html/community.html
+var BUILD_VERSION = '74';  // 2026-08-11: registro manual de esfuerzo (RPE) como respaldo cuando Garmin no sincroniza — Fase 1 Sprint A, auditoria CPO
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
