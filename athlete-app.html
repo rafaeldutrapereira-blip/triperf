@@ -11,6 +11,10 @@
 <title>LabX — App Atleta</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- Leaflet — mismo CDN/versión que training_detail.html, para el mapa de
+     GPS del detalle de actividad en Comunidad (pedido explícito: mismo
+     recorrido/parciales que training_detail.html, igual Strava). -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
   --bg:     #0B0F1A;
@@ -395,6 +399,35 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wp-mob-tooltip-row { font-size: .7rem; font-weight: 700; color: #F0F9FF; }
 .wp-mob-tooltip-row span { font-weight: 400; color: #7FB3CC; margin-right: .25rem; }
 
+/* ── Detalle de actividad de Comunidad (GPS + parciales) — pedido
+   explícito: mismo recorrido/parciales que training_detail.html, igual
+   Strava. Reusa #wo-detail-modal (mismo bottom-sheet con scroll seguro
+   del Gap #14), solo se agrega el contenido de mapa/parciales adentro. */
+.cm-detail-map { width: 100%; height: 200px; border-radius: 10px; background: var(--bg3); margin: .7rem 0; }
+.leaflet-control-zoom a { background: var(--bg3) !important; color: var(--dim) !important; border-color: var(--border) !important; }
+.leaflet-control-attribution { background: rgba(4,8,15,.65) !important; color: var(--dim) !important; font-size: .55rem !important; }
+.leaflet-control-attribution a { color: var(--dim) !important; }
+.cm-splits-title { padding: .1rem 0 .4rem; font-size: .65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.cm-splits-table { width: 100%; border-collapse: collapse; font-size: .74rem; }
+.cm-splits-table th { text-align: right; font-weight: 600; color: var(--dim); font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; padding: .3rem .2rem; border-bottom: 1px solid var(--border); }
+.cm-splits-table th:first-child, .cm-splits-table td:first-child { text-align: left; }
+.cm-splits-table td { text-align: right; padding: .3rem .2rem; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.cm-detail-empty { padding: .75rem; text-align: center; color: var(--dim); font-size: .78rem; background: var(--bg3); border-radius: 10px; margin: .7rem 0; }
+
+/* ── Privacidad de Comunidad — mismos 5 toggles que community.html
+   (web), mismo endpoint /athlete/community-privacy. */
+.cm-priv-btn { background: none; border: none; color: var(--dim); cursor: pointer; padding: .3rem; flex-shrink: 0; }
+.cm-priv-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--border); }
+.cm-priv-row:last-child { border-bottom: none; }
+.cm-priv-lbl { font-size: .82rem; flex: 1; }
+.cm-priv-sub .cm-priv-lbl { font-size: .78rem; color: var(--muted); padding-left: .5rem; }
+/* checkbox estilo toggle, sin depender de un componente aparte */
+.cm-priv-row input[type=checkbox] { width: 40px; height: 24px; appearance: none; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; position: relative; cursor: pointer; flex-shrink: 0; }
+.cm-priv-row input[type=checkbox]::before { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--dim); transition: transform .15s, background .15s; }
+.cm-priv-row input[type=checkbox]:checked { background: rgba(255,101,53,.25); border-color: rgba(255,101,53,.5); }
+.cm-priv-row input[type=checkbox]:checked::before { transform: translateX(16px); background: var(--orange); }
+#cm-priv-sub.off { opacity: .4; pointer-events: none; }
+
 /* ── Screen 5: Bienestar ── */
 .wellness-grid { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .wl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .85rem 1rem; }
@@ -456,6 +489,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <style>.topbar-brand.topbar-brand svg.sbl-svg{width:26px;height:26px;flex-shrink:0}<style>.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}</style></style></head>
 <body>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <div id="toast"></div>
 
 <div id="install-banner" class="install-banner" style="display:none">
@@ -510,6 +545,27 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   <div class="ios-guide-card" onclick="event.stopPropagation()">
     <button class="ios-guide-close" onclick="closeWeekWorkoutDetail()" aria-label="Cerrar">✕</button>
     <div class="ios-guide-scroll"><div id="wo-detail-body"></div></div>
+  </div>
+</div>
+
+<!-- Privacidad de mis actividades en Comunidad — mismos 5 toggles y mismo
+     endpoint que community.html (web): el atleta decide qué ve la gente
+     que lo sigue en el detalle de sus actividades. -->
+<div id="cm-priv-modal" class="ios-guide" style="display:none" onclick="closeCommunityPrivacy(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeCommunityPrivacy()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Privacidad de mis actividades</div>
+    <div class="cm-priv-row">
+      <span class="cm-priv-lbl">Permitir que mis seguidores vean el detalle</span>
+      <input type="checkbox" id="cm-priv-details" onchange="_cmPrivToggleMaster()">
+    </div>
+    <div id="cm-priv-sub">
+      <div class="cm-priv-row cm-priv-sub"><span class="cm-priv-lbl">Mapa / recorrido</span><input type="checkbox" id="cm-priv-route"></div>
+      <div class="cm-priv-row cm-priv-sub"><span class="cm-priv-lbl">Frecuencia cardíaca</span><input type="checkbox" id="cm-priv-hr"></div>
+      <div class="cm-priv-row cm-priv-sub"><span class="cm-priv-lbl">Potencia / cadencia</span><input type="checkbox" id="cm-priv-power"></div>
+      <div class="cm-priv-row cm-priv-sub" style="border-bottom:none"><span class="cm-priv-lbl">Ritmo / velocidad / parciales</span><input type="checkbox" id="cm-priv-pace"></div>
+    </div>
+    <button class="wl-submit" style="margin:1rem 0 0" onclick="saveCommunityPrivacy()">Guardar</button>
   </div>
 </div>
 
@@ -680,6 +736,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <div class="topbar-eye" id="s6-eye">Cargando...</div>
           <div class="topbar-greet"><span id="s6-greet-txt">Buenos días</span>, <em id="s6-greet-name">Atleta</em></div>
         </div>
+        <button class="cm-priv-btn" onclick="openCommunityPrivacy()" aria-label="Privacidad de mis actividades">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
       </div>
 
       <div class="cm-tabs">
@@ -2090,6 +2149,8 @@ function _cmAvatarHtml(u){
   return '<div class="cm-avatar">'+(u.avatar_initial||'?')+'</div>';
 }
 
+var _communityFeedFlat = [];  // para abrir el detalle GPS al tocar una card
+
 function loadCommunityFeed(){
   if(!_token) return;
   var el = document.getElementById('community-content');
@@ -2102,12 +2163,13 @@ function loadCommunityFeed(){
         el.innerHTML = '<div class="cm-empty">Todavía no hay actividad de la gente que seguís.<br>Seguí a otros atletas desde la web para ver su feed acá.</div>';
         return;
       }
+      _communityFeedFlat = data.feed;
       el.innerHTML = data.feed.map(_communityCardHtml).join('');
     })
     .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el feed</div>'; });
 }
 
-function _communityCardHtml(c){
+function _communityCardHtml(c, idx){
   var stats = [];
   if(c.duration_min) stats.push({v: Math.round(c.duration_min), l:'min'});
   if(c.distance_km)  stats.push({v: c.distance_km, l:'km'});
@@ -2119,7 +2181,10 @@ function _communityCardHtml(c){
   var myKudoActive = !!c.my_kudo;
   var kudoEmoji = KUDO_EMOJI[c.my_kudo || 'fire'];
 
-  return '<div class="cm-card" data-post-id="'+c.id+'">'
+  /* Tocar la card abre el detalle real (GPS + parciales, pedido
+     explícito, igual training_detail.html/Strava) — el botón de kudo
+     corta la propagación para no disparar el detalle sin querer. */
+  return '<div class="cm-card" data-post-id="'+c.id+'" onclick="showCommunityActivityDetail('+idx+')" style="cursor:pointer">'
     +'<div class="cm-card-head">'
       + _cmAvatarHtml(c.user)
       +'<div style="min-width:0"><div class="cm-card-name">'+(c.user.name||'—')+' '+(c.user.country_flag||'')+'</div>'
@@ -2130,7 +2195,7 @@ function _communityCardHtml(c){
       +(stats.length?'<div class="cm-card-stats">'+statsHtml+'</div>':'')
     +'</div>'
     +'<div class="cm-card-foot">'
-      +'<button class="cm-kudo-btn'+(myKudoActive?' active':'')+'" onclick="toggleKudo(this)">'
+      +'<button class="cm-kudo-btn'+(myKudoActive?' active':'')+'" onclick="event.stopPropagation();toggleKudo(this)">'
         +'<span class="cm-kudo-emoji">'+kudoEmoji+'</span><span class="cm-kudo-count">'+(c.kudo_count||0)+'</span>'
       +'</button>'
     +'</div>'
@@ -2186,6 +2251,139 @@ function loadCommunityLeaderboard(){
         }).join('');
     })
     .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
+}
+
+/* Detalle real de una actividad de Comunidad — GPS + parciales, igual
+   training_detail.html / Strava (pedido explícito del usuario). Reusa
+   el mismo modal bottom-sheet de "Semana" (#wo-detail-modal). Nunca
+   inventa datos: si no hay track/telemetría sincronizada para esa
+   actividad, se muestra un mensaje en vez de un mapa/tabla vacíos. */
+var _cmDetailMap = null;
+
+function _cmFmtPace(sPerKm, sport){
+  if(!sPerKm) return '—';
+  var perUnit = sport==='swim' ? 100 : 1000;
+  var secs = sPerKm * (perUnit/1000);
+  var m = Math.floor(secs/60), s = Math.round(secs%60);
+  return m+':'+String(s).padStart(2,'0')+(sport==='swim'?'/100m':'/km');
+}
+
+function showCommunityActivityDetail(idx){
+  var c = _communityFeedFlat[idx];
+  if(!c || !c.activity_id) return;
+
+  var stats = [];
+  if(c.duration_min) stats.push({v: Math.round(c.duration_min), l:'min'});
+  if(c.distance_km)  stats.push({v: c.distance_km, l:'km'});
+  if(c.tss)          stats.push({v: c.tss, l:'TSS'});
+  var metaHtml = '<div class="th-meta-grid" style="margin-top:.6rem">'
+    + stats.map(function(s){ return '<div class="th-meta-item"><div class="th-meta-val" style="color:'+(SPORT_COL[c.sport]||'#9CA3AF')+'">'+s.v+'</div><div class="th-meta-lbl">'+s.l+'</div></div>'; }).join('')
+    + '</div>';
+
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="display:flex;align-items:center;gap:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'
+      +'<span>'+(c.sport_emoji||'⚡')+'</span><span>'+(c.name||'')+'</span>'
+    +'</div>'
+    +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+(c.user.name||'')+' · '+fmtDate(c.date_iso)+'</div>'
+    + metaHtml
+    + '<div id="cm-detail-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>'
+    + '<div id="cm-detail-splits-wrap"></div>';
+  document.getElementById('wo-detail-modal').style.display = 'flex';
+
+  if(_cmDetailMap){ _cmDetailMap.remove(); _cmDetailMap = null; }
+
+  var pTrack = apiFetch('/athlete/activities/'+c.activity_id+'/track')
+    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  var pTel = apiFetch('/athlete/activities/'+c.activity_id+'/telemetry')
+    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+
+  Promise.all([pTrack, pTel]).then(function(results){
+    var track = results[0], tel = results[1];
+    var mapWrap = document.getElementById('cm-detail-map-wrap');
+    if(mapWrap){
+      if(track && track.points && track.points.length > 1){
+        mapWrap.innerHTML = '<div class="cm-detail-map" id="cm-detail-map"></div>';
+        requestAnimationFrame(function(){
+          var route = track.points.map(function(p){ return [p.lat, p.lon]; });
+          var col = c.sport==='run' ? '#EF4444' : c.sport==='bike' ? '#EC4899' : '#0EA5E9';
+          _cmDetailMap = L.map('cm-detail-map', {zoomControl:true, attributionControl:true, scrollWheelZoom:false});
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+            subdomains: 'abcd', maxZoom: 20,
+          }).addTo(_cmDetailMap);
+          L.polyline(route, {color:'#ffffff', weight:6, opacity:.9}).addTo(_cmDetailMap);
+          var poly = L.polyline(route, {color:col, weight:3, opacity:1}).addTo(_cmDetailMap);
+          _cmDetailMap.fitBounds(poly.getBounds(), {padding:[20,20]});
+        });
+      } else {
+        mapWrap.innerHTML = '<div class="cm-detail-empty">📡 Sin recorrido GPS disponible para esta actividad</div>';
+      }
+    }
+
+    var splitsWrap = document.getElementById('cm-detail-splits-wrap');
+    if(splitsWrap){
+      var splits = tel && tel.splits;
+      if(splits && splits.length){
+        var unit = c.sport==='bike' ? '5km' : c.sport==='run' ? 'km' : 'tramo';
+        var rows = splits.map(function(s){
+          return '<tr><td>'+s.idx+'</td>'
+            +'<td>'+_cmFmtPace(s.avg_pace_s_per_km, c.sport)+'</td>'
+            +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
+            +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
+          +'</tr>';
+        }).join('');
+        splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
+          +'<div style="overflow-x:auto"><table class="cm-splits-table">'
+          +'<tr><th>#</th><th>Ritmo</th><th>FC</th><th>Pot.</th></tr>'
+          + rows
+          +'</table></div>';
+      } else {
+        splitsWrap.innerHTML = '<div class="cm-detail-empty" style="margin-top:.7rem">Sin parciales disponibles para esta actividad</div>';
+      }
+    }
+  });
+}
+
+/* ── Privacidad de Comunidad — mismos 5 toggles y mismo endpoint que
+   community.html (web): qué ve la gente que te sigue en el detalle de
+   tus actividades. */
+function openCommunityPrivacy(){
+  document.getElementById('cm-priv-modal').style.display = 'flex';
+  apiFetch('/athlete/community-privacy')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var p = (d && d.prefs) || {};
+      document.getElementById('cm-priv-details').checked = p.share_details !== false;
+      document.getElementById('cm-priv-route').checked   = p.share_route  !== false;
+      document.getElementById('cm-priv-hr').checked      = p.share_hr    !== false;
+      document.getElementById('cm-priv-power').checked   = p.share_power !== false;
+      document.getElementById('cm-priv-pace').checked    = p.share_pace  !== false;
+      _cmPrivToggleMaster();
+    })
+    .catch(function(){});
+}
+function closeCommunityPrivacy(e){
+  if(e) e.stopPropagation();
+  document.getElementById('cm-priv-modal').style.display = 'none';
+}
+function _cmPrivToggleMaster(){
+  var on = document.getElementById('cm-priv-details').checked;
+  document.getElementById('cm-priv-sub').classList.toggle('off', !on);
+}
+function saveCommunityPrivacy(){
+  var body = {
+    share_details: document.getElementById('cm-priv-details').checked,
+    share_route:   document.getElementById('cm-priv-route').checked,
+    share_hr:      document.getElementById('cm-priv-hr').checked,
+    share_power:   document.getElementById('cm-priv-power').checked,
+    share_pace:    document.getElementById('cm-priv-pace').checked,
+  };
+  apiFetch('/athlete/community-privacy', { method:'PUT', body: JSON.stringify(body) })
+    .then(function(r){
+      if(r.ok){ toast('Privacidad guardada ✓','ok'); closeCommunityPrivacy(); }
+      else { toast('Error al guardar',''); }
+    })
+    .catch(function(){ toast('Sin conexión — no se pudo guardar',''); });
 }
 
 /* Trampa de navegación — pedido explícito: el gesto/botón "atrás" del
