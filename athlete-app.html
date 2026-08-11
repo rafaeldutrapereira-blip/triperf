@@ -417,6 +417,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* ── Privacidad de Comunidad — mismos 5 toggles que community.html
    (web), mismo endpoint /athlete/community-privacy. */
 .cm-priv-btn { background: none; border: none; color: var(--dim); cursor: pointer; padding: .3rem; flex-shrink: 0; }
+.cm-priv-btn.on { color: var(--cyan); }
 .cm-priv-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--border); }
 .cm-priv-row:last-child { border-bottom: none; }
 .cm-priv-lbl { font-size: .82rem; flex: 1; }
@@ -768,6 +769,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <div class="topbar-eye" id="s6-eye">Cargando...</div>
           <div class="topbar-greet"><span id="s6-greet-txt">Buenos días</span>, <em id="s6-greet-name">Atleta</em></div>
         </div>
+        <button class="cm-priv-btn" id="push-toggle-btn" onclick="togglePushSubscription()" aria-label="Activar notificaciones" title="Notificaciones push">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        </button>
         <button class="cm-priv-btn" onclick="openCommunityPrivacy()" aria-label="Privacidad de mis actividades">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         </button>
@@ -897,6 +901,7 @@ function initApp(tok){
   loadToday();
   loadWeek();
   loadStatusHealth();
+  _pushRefreshBtnState();
 }
 
 /* Cierra sesión — mismo criterio que KL.logout() en auth.js (llama al
@@ -2428,6 +2433,80 @@ function showCommunityActivityDetail(idx){
         splitsWrap.innerHTML = '<div class="cm-detail-empty" style="margin-top:.7rem">Sin parciales disponibles para esta actividad</div>';
       }
     }
+  });
+}
+
+/* ── Notificaciones push (Web Push / VAPID) ─────────────────────
+   Fase 1 Sprint B (auditoría CPO 2026-08-11, Gap #2): sin esto, kudos/
+   comentarios/mensajes del coach solo se veían si la app estaba
+   abierta en ese momento — el backend (notification_routes.py) ya
+   tenía TODO el mecanismo de envío listo (VAPID + PushSubscription +
+   send_push_to_user, usado hasta ahora solo para asignación de
+   entrenos y recordatorio de bienestar), lo único que faltaba era que
+   algún cliente pidiera permiso y se suscribiera — nunca existía en
+   athlete-app.html. sw.js ya tenía los listeners push/notificationclick
+   implementados de antes, sin nadie que los activara. */
+function _urlBase64ToUint8Array(base64String){
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var raw = atob(base64);
+  var out = new Uint8Array(raw.length);
+  for(var i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function _pushRefreshBtnState(){
+  var btn = document.getElementById('push-toggle-btn');
+  if(!btn || !('serviceWorker' in navigator) || !('PushManager' in window)){ if(btn) btn.style.display='none'; return; }
+  navigator.serviceWorker.ready.then(function(reg){
+    return reg.pushManager.getSubscription();
+  }).then(function(sub){
+    btn.classList.toggle('on', !!sub);
+  }).catch(function(){});
+}
+function togglePushSubscription(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    toast('Tu navegador no soporta notificaciones push', 'err'); return;
+  }
+  navigator.serviceWorker.ready.then(function(reg){
+    reg.pushManager.getSubscription().then(function(existing){
+      if(existing){
+        existing.unsubscribe().then(function(){
+          return apiFetch('/notifications/unsubscribe?endpoint='+encodeURIComponent(existing.endpoint), {method:'DELETE'});
+        }).then(function(){
+          toast('Notificaciones desactivadas', 'ok');
+          _pushRefreshBtnState();
+        }).catch(function(){ toast('No se pudo desactivar', 'err'); });
+        return;
+      }
+      if(Notification.permission === 'denied'){
+        toast('Bloqueaste las notificaciones en el navegador — activalas desde la configuración del sitio', 'err');
+        return;
+      }
+      Notification.requestPermission().then(function(perm){
+        if(perm !== 'granted'){ toast('Permiso de notificaciones no concedido', ''); return; }
+        apiFetch('/notifications/vapid-public-key').then(function(r){
+          if(!r.ok) throw new Error('vapid');
+          return r.json();
+        }).then(function(d){
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: _urlBase64ToUint8Array(d.vapid_public_key)
+          });
+        }).then(function(sub){
+          var j = sub.toJSON();
+          return apiFetch('/notifications/subscribe', {
+            method: 'POST',
+            body: JSON.stringify({endpoint: j.endpoint, p256dh: j.keys.p256dh, auth_key: j.keys.auth})
+          });
+        }).then(function(r){
+          if(!r.ok) throw new Error('subscribe');
+          toast('Notificaciones activadas ✓', 'ok');
+          _pushRefreshBtnState();
+        }).catch(function(){
+          toast('No se pudieron activar las notificaciones', 'err');
+        });
+      });
+    });
   });
 }
 

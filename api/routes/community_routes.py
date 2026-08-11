@@ -152,6 +152,35 @@ def _notif(
     except Exception:
         pass
 
+    # Fase 1 Sprint B (auditoría CPO 2026-08-11, Gap #2): push nativo para
+    # eventos sociales — antes solo existía para "workout_assigned" y el
+    # recordatorio de bienestar; kudos/comentarios/follows quedaban
+    # atrapados en la campanita in-app, invisibles si el usuario no tenía
+    # la app abierta. Mismo patrón de hilo en background que ya usa
+    # coach_routes.py para no bloquear el request.
+    _NOTIF_TITLES = {
+        "kudo":    "Nuevo kudo",
+        "comment": "Nuevo comentario",
+        "follow":  "Nuevo seguidor",
+    }
+    try:
+        import threading
+        from .notification_routes import send_push_to_user
+        push_payload = {
+            "type":  "community",
+            "title": _NOTIF_TITLES.get(notif_type, "LabX Comunidad"),
+            "body":  body,
+            "url":   "/community.html",
+            "icon":  "/icon-192.png",
+        }
+        threading.Thread(
+            target=send_push_to_user,
+            args=(user_id, push_payload, db),
+            daemon=True,
+        ).start()
+    except Exception:
+        pass
+
 
 def _serialize_post(p: CommunityPost, viewer_id: str) -> dict:
     kudos_grouped = {}
