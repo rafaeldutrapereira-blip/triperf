@@ -107,7 +107,7 @@ def _cleanup_old() -> None:
     for f in BACKUP_DIR.glob("labx_*.db"):
         try:
             ts_str = f.stem.replace("labx_", "")
-            fts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
+            fts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S").replace(tzinfo=timezone.utc)
             if fts < cutoff:
                 f.unlink()
                 print(f"[LIMPIEZA] Eliminado backup antiguo: {f.name}")
@@ -116,7 +116,7 @@ def _cleanup_old() -> None:
     for f in list(BACKUP_DIR.glob("labx_*.sql")) + list(BACKUP_DIR.glob("labx_*.sql.gz")):
         try:
             ts_str = f.stem.replace("labx_", "")
-            fts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
+            fts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S").replace(tzinfo=timezone.utc)
             if fts < cutoff:
                 f.unlink()
                 print(f"[LIMPIEZA] Eliminado backup antiguo: {f.name}")
