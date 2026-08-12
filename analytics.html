@@ -129,6 +129,11 @@
             <div class="lbl">Actividades</div>
           </div>
         </div>
+        <!-- Fase 2 Sprint E (2026-08-12): honestidad sobre la fuente del
+             dato — cuántas de esas actividades aportaron potencia REAL
+             (telemetría segundo-a-segundo) vs. una aproximación desde el
+             promedio de la actividad. -->
+        <div id="cp-telemetry-note" style="font-size:.74rem;color:var(--dim);margin-top:.4rem"></div>
         <div class="card" style="padding:1rem">
           <div class="cp-canvas-wrap">
             <canvas id="cp-canvas"></canvas>
@@ -309,6 +314,14 @@ function renderPowerCurve(d){
   document.getElementById('cp-ftp').textContent     = d.ftp_est ? d.ftp_est+'W' : '—';
   document.getElementById('cp-ftp-wkg').textContent = d.ftp_wkg ? d.ftp_wkg : '—';
   document.getElementById('cp-n-acts').textContent  = d.n_activities || '—';
+  var noteEl = document.getElementById('cp-telemetry-note');
+  if(noteEl){
+    if(d.n_with_telemetry){
+      noteEl.textContent = d.n_with_telemetry+' de '+d.n_activities+' actividades con potencia real segundo-a-segundo · el resto es una aproximación desde el promedio de la sesión.';
+    } else {
+      noteEl.textContent = 'Curva aproximada desde el promedio de cada sesión — ninguna actividad tiene telemetría segundo-a-segundo sincronizada todavía.';
+    }
+  }
   if(d.cp_model){
     document.getElementById('cp-model-cp').textContent = d.cp_model.cp_watts+'W';
     document.getElementById('cp-model-wp').textContent = Math.round(d.cp_model.w_prime_j/1000)+'kJ';

@@ -10,6 +10,7 @@ from ..services.performance_analytics_service import (
     _fit_cp2_model,
     _fmt_dur,
     _fmt_pace,
+    _mmp_from_telemetry,
     compute_power_curve,
     compute_vo2max_history,
     compute_personal_records,
@@ -191,6 +192,99 @@ class TestPowerCurveService:
         powers = [p["power_w"] for p in curve]
         for i in range(len(powers) - 1):
             assert powers[i] >= powers[i + 1], f"Curve not monotonic at index {i}"
+
+    def test_all_points_marked_estimated_without_telemetry(self):
+        """Sin archivo de telemetría (caso de siempre en estos tests
+        unitarios, activity_id='act-001' nunca existe en disco), todos
+        los puntos de la curva deben venir marcados is_estimated=True."""
+        act = _make_activity(sport="bike", dur_min=60, avg_power=250)
+        db  = self._db_with_activities([act])
+        result = compute_power_curve("u1", db, sport="bike")
+        for point in result["curve"]:
+            assert point["is_estimated"] is True
+
+
+class TestMmpFromTelemetry:
+    """Sprint E (Fase 2, 2026-08-12): Mean Maximal Power real desde el
+    stream segundo-a-segundo (data/telemetry/{id}.json), reemplaza la
+    aproximación exponencial cuando hay telemetría sincronizada."""
+
+    def test_constant_power_returns_that_power(self):
+        samples = [{"t": float(i), "power": 200.0} for i in range(120)]
+        assert _mmp_from_telemetry(samples, 60) == 200.0
+
+    def test_finds_best_window_not_average_of_whole_activity(self):
+        # 60s a 100W, luego 60s a 400W — el mejor MMP de 60s debe ser ~400,
+        # no el promedio de toda la actividad (~250).
+        samples = ([{"t": float(i), "power": 100.0} for i in range(60)]
+                   + [{"t": float(i), "power": 400.0} for i in range(60, 120)])
+        mmp_60s = _mmp_from_telemetry(samples, 60)
+        assert mmp_60s is not None
+        assert mmp_60s > 350
+
+    def test_irregular_sampling_uses_real_time_not_sample_count(self):
+        # Un hueco de 30s sin datos entre dos muestras no debe contarse
+        # como si esos 30s hubieran tenido la potencia de la muestra
+        # anterior "gratis" — el peso de cada tramo es su duración real.
+        samples = [{"t": 0.0, "power": 100.0}, {"t": 30.0, "power": 100.0},
+                   {"t": 31.0, "power": 500.0}, {"t": 32.0, "power": 500.0}]
+        mmp_1s = _mmp_from_telemetry(samples, 1)
+        assert mmp_1s is not None
+        assert mmp_1s >= 400  # la ventana de 1s real debe capturar el pico, no diluirlo
+
+    def test_duration_longer_than_activity_returns_none(self):
+        samples = [{"t": float(i), "power": 200.0} for i in range(30)]
+        assert _mmp_from_telemetry(samples, 3600) is None
+
+    def test_empty_or_single_sample_returns_none(self):
+        assert _mmp_from_telemetry([], 60) is None
+        assert _mmp_from_telemetry([{"t": 0.0, "power": 200.0}], 60) is None
+
+    def test_missing_power_field_ignored(self):
+        samples = [{"t": float(i), "hr": 140.0} for i in range(60)]  # sin 'power'
+        assert _mmp_from_telemetry(samples, 30) is None
+
+
+class TestPowerCurveRealTelemetry:
+    """compute_power_curve debe preferir telemetría real sobre la
+    aproximación cuando existe — y nunca mezclarlas para la misma
+    duración (un valor real nunca se pisa con uno estimado)."""
+
+    def _db_with_activities(self, activities, user=None):
+        db = MagicMock()
+        user = user or _make_user()
+        q = MagicMock()
+        q.filter.return_value = q
+        q.order_by.return_value = q
+        q.limit.return_value = q
+        q.all.return_value = activities
+        q.first.return_value = user
+        db.query.return_value = q
+        return db
+
+    def test_uses_real_telemetry_when_available(self):
+        act = _make_activity(sport="bike", dur_min=60, avg_power=200)
+        act.activity_id = "act-real-001"
+        samples = ([{"t": float(i), "power": 100.0} for i in range(3540)]
+                   + [{"t": float(i), "power": 350.0} for i in range(3540, 3600)])
+        db = self._db_with_activities([act])
+        with patch("api.services.performance_analytics_service._load_telemetry_samples",
+                   return_value=samples):
+            result = compute_power_curve("u1", db, sport="bike")
+        point_60s = next(p for p in result["curve"] if p["duration_sec"] == 60)
+        assert point_60s["is_estimated"] is False
+        assert point_60s["power_w"] > 300  # el pico real de 350W, no la aproximación desde avg_power=200
+        assert result["n_with_telemetry"] == 1
+
+    def test_falls_back_to_estimate_when_no_telemetry_file(self):
+        act = _make_activity(sport="bike", dur_min=60, avg_power=200)
+        db = self._db_with_activities([act])
+        with patch("api.services.performance_analytics_service._load_telemetry_samples",
+                   return_value=None):
+            result = compute_power_curve("u1", db, sport="bike")
+        assert result["n_with_telemetry"] == 0
+        for point in result["curve"]:
+            assert point["is_estimated"] is True
 
 
 class TestTrainingDistribution:

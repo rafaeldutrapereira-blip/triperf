@@ -78,6 +78,58 @@ PR_DISTANCES = {
 # 1. CRITICAL POWER CURVE
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _mmp_from_telemetry(samples: list, duration_s: int) -> Optional[float]:
+    """
+    Mean Maximal Power real para una duración, a partir del stream
+    segundo-a-segundo de la actividad (data/telemetry/{id}.json — el
+    mismo archivo que ya usa /athlete/activities/{id}/telemetry).
+    Ventana deslizante por TIEMPO REAL entre muestras (no por índice/
+    cantidad de puntos) — una actividad con muestreo irregular (pausas,
+    huecos de señal) no infla artificialmente el promedio.
+    """
+    pts = [(s.get("t"), s.get("power")) for s in samples
+           if s.get("t") is not None and s.get("power") is not None]
+    if len(pts) < 2:
+        return None
+    pts.sort(key=lambda p: p[0])
+
+    best = None
+    left = 0
+    weighted_sum = 0.0
+    elapsed = 0.0
+    for right in range(len(pts) - 1):
+        dt = pts[right + 1][0] - pts[right][0]
+        if dt <= 0:
+            continue
+        weighted_sum += pts[right][1] * dt
+        elapsed += dt
+        while elapsed > duration_s and left < right:
+            dt_left = pts[left + 1][0] - pts[left][0]
+            weighted_sum -= pts[left][1] * dt_left
+            elapsed -= dt_left
+            left += 1
+        # Tolerancia del 5% para aceptar ventanas levemente cortas por el
+        # muestreo real (rara vez cae justo en el segundo exacto).
+        if elapsed >= duration_s * 0.95:
+            avg = weighted_sum / elapsed
+            if best is None or avg > best:
+                best = avg
+    return round(best, 1) if best is not None else None
+
+
+def _load_telemetry_samples(activity_id: str) -> Optional[list]:
+    from pathlib import Path
+    import json as _json
+    tel_path = Path("data/telemetry") / f"{activity_id}.json"
+    if not tel_path.exists():
+        return None
+    try:
+        samples = _json.loads(tel_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return samples or None
+
+
 def compute_power_curve(
     user_id:   str,
     db:        Session,
@@ -89,9 +141,13 @@ def compute_power_curve(
     Para cada duración en CP_DURATIONS, encuentra la máxima potencia promedio
     sostenida por ese período en las actividades de los últimos N días.
 
-    Nota: GarminActivity almacena avg_power por actividad, no el stream de potencia.
-    Aproximamos la curva usando el avg_power de actividades cortas y estimación
-    de decaimiento exponencial para duraciones menores.
+    Fuente de dato por actividad, en orden de preferencia:
+    1. Telemetría real segundo-a-segundo (data/telemetry/{id}.json) si fue
+       sincronizada — Mean Maximal Power genuino, no una aproximación.
+    2. Si no hay telemetría para esa actividad: fallback al avg_power de
+       GarminActivity con el escalado exponencial de siempre (activamente
+       marcado como estimado en la respuesta — nunca se mezcla en
+       silencio con un valor real).
 
     Retorna curva con mejor estimado por duración + modelo CP2 (CP, W').
     """
@@ -122,30 +178,41 @@ def compute_power_curve(
             "message":    f"Sin actividades de {sport} con datos de potencia en los últimos {days_back} días.",
         }
 
-    # Índice por duración → mejor potencia encontrada
+    # Índice por duración → mejor potencia encontrada + si vino de telemetría real
     best_power: dict[int, float] = {}
+    best_is_real: dict[int, bool] = {}
+    n_with_telemetry = 0
 
     for act in activities:
         dur_sec  = (act.dur_min or 0) * 60
         avg_pwr  = act.avg_power or 0
-
         if dur_sec <= 0 or avg_pwr <= 0:
             continue
 
-        # Para cada duración del modelo que sea ≤ duración de la actividad:
-        # La potencia máxima sostenible por esa duración es mayor que avg_power
-        # de una actividad más larga. Usamos escalado exponencial: P(t) = P_avg * (dur/t)^0.07
+        samples = _load_telemetry_samples(act.activity_id)
+        if samples:
+            n_with_telemetry += 1
+
         for dur_target in CP_DURATIONS:
             if dur_target > dur_sec * 1.05:  # no extrapolar mucho más allá de la actividad
                 continue
-            # Si la actividad duró exactamente esta duración, su avg_power es válido.
-            # Si duró más, la potencia para ese sub-intervalo fue mayor.
-            # Aproximación: factor = (dur_sec / dur_target)^0.07
-            factor = (dur_sec / dur_target) ** 0.07 if dur_target < dur_sec else 1.0
-            estimated = avg_pwr * factor
 
+            real_val = _mmp_from_telemetry(samples, dur_target) if samples else None
+            if real_val is not None:
+                if dur_target not in best_power or real_val > best_power[dur_target]:
+                    best_power[dur_target] = real_val
+                    best_is_real[dur_target] = True
+                continue
+
+            # Sin telemetría para esta actividad — mismo fallback aproximado
+            # de siempre, pero NUNCA pisa un valor ya confirmado real.
+            if best_is_real.get(dur_target):
+                continue
+            factor = (dur_sec / dur_target) ** 0.07 if dur_target < dur_sec else 1.0
+            estimated = round(avg_pwr * factor, 1)
             if dur_target not in best_power or estimated > best_power[dur_target]:
-                best_power[dur_target] = round(estimated, 1)
+                best_power[dur_target] = estimated
+                best_is_real[dur_target] = False
 
     if not best_power:
         return {"sport": sport, "curve": [], "cp_model": None, "ftp_est": None, "days_back": days_back}
@@ -166,6 +233,7 @@ def compute_power_curve(
             "label":        CP_LABELS.get(dur, f"{dur}s"),
             "power_w":      round(pwr, 1),
             "watts_per_kg": None,  # se llenará si tenemos peso
+            "is_estimated": not best_is_real.get(dur, False),
         })
 
     # FTP estimado: potencia sostenible 60 min ≈ 95% del mejor esfuerzo de 20 min
@@ -194,15 +262,16 @@ def compute_power_curve(
         ftp_wkg = None
 
     return {
-        "sport":       sport,
-        "curve":       curve,
-        "cp_model":    cp_model,
-        "ftp_est":     ftp_est,
-        "ftp_wkg":     ftp_wkg,
-        "weight_kg":   weight,
-        "n_activities":len(activities),
-        "days_back":   days_back,
-        "generated_at":date.today().isoformat(),
+        "sport":            sport,
+        "curve":            curve,
+        "cp_model":         cp_model,
+        "ftp_est":          ftp_est,
+        "ftp_wkg":          ftp_wkg,
+        "weight_kg":        weight,
+        "n_activities":     len(activities),
+        "n_with_telemetry": n_with_telemetry,
+        "days_back":        days_back,
+        "generated_at":     date.today().isoformat(),
     }
 
 
