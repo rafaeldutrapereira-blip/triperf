@@ -1138,6 +1138,18 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="body_battery" data-lx-info-val="#kc-bb-val">Body Battery</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-bb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-bb-val">—</span><span id="badge-bb" class="badge">—</span></span>
         </div>
+        <!-- Panel de Salud 360° (Fase 2 Sprint D, 2026-08-11): Training
+             Readiness es el score PROPIO de Garmin — se sincroniza desde
+             hace tiempo pero nunca se mostraba en ningún lado. Distinto
+             del "Readiness" que ya calcula LabX (gauge de arriba). -->
+        <div class="kcr" id="kc-tr" style="display:none" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Training Readiness de Garmin">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="training_readiness_garmin">Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span></span></span>
+          <span class="kcr-right"><span class="kcr-val" id="kc-tr-val">—</span><span id="badge-tr" class="badge">—</span></span>
+        </div>
+        <div class="kcr" id="kc-mental" style="display:none" onclick="location.href='mental.html'" role="button" tabindex="0" aria-label="Ver estado mental">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="mental_fatigue">Fatiga Mental</span></span>
+          <span class="kcr-right"><span class="kcr-val" id="kc-mental-val">—</span><span id="badge-mental" class="badge">—</span></span>
+        </div>
       </div>
 
       <!-- CARD 3: ¿Hacia dónde voy? — TSS Semana, VO2 Max -->
@@ -2771,6 +2783,58 @@ function _pmcRedraw(){
 patchData();
 renderWeeklyProgress('all');
 
+/* ── Panel de Salud 360° (Fase 2 Sprint D, 2026-08-11) ──────────
+   Fetch separado a /athlete/health-360 — no se mezcla con
+   /athlete/dashboard porque son 2 endpoints con propósitos distintos
+   (dashboard = KPIs de entrenamiento, health-360 = agregador de salud
+   que reusa el mismo motor que ya usa el Panel 360° del coach). Solo
+   agrega 2 filas nuevas (Training Readiness de Garmin, Fatiga Mental)
+   que hoy no se mostraban en ningún lado — Body Battery/HRV/FC Reposo
+   ya se completan con /dashboard, esto no las toca. */
+function loadHealth360(tok, API){
+  fetch(API + '/athlete/health-360', { headers: {Authorization: 'Bearer ' + tok}, cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(h){
+      if(!h) return;
+
+      var tr = h.garmin_today && h.garmin_today.training_readiness;
+      var kcTr = document.getElementById('kc-tr');
+      if(kcTr && tr != null){
+        kcTr.style.display = '';
+        document.getElementById('kc-tr-val').textContent = Math.round(tr);
+        var trColor = tr >= 70 ? '#10B981' : tr >= 40 ? '#F0A500' : '#EF4444';
+        var trLabel = tr >= 70 ? 'Óptimo' : tr >= 40 ? 'Moderado' : 'Bajo';
+        var bTr = document.getElementById('badge-tr');
+        bTr.textContent = trLabel;
+        bTr.style.background = trColor + '2e';
+        bTr.style.color = trColor;
+      }
+
+      // MentalFatigueScore.level: peak/good (mejor estado) → moderate →
+      // low/critical (peor estado) — escala donde MÁS alto es MEJOR,
+      // mismos 5 niveles que ya define _mfs_level() en mental_routes.py.
+      var mental = h.mental;
+      var kcMental = document.getElementById('kc-mental');
+      if(kcMental && mental && mental.latest_score != null){
+        kcMental.style.display = '';
+        document.getElementById('kc-mental-val').textContent = Math.round(mental.latest_score);
+        var MFS_UI = {
+          peak:     {color:'#10B981', label:'Óptima'},
+          good:     {color:'#0EA5E9', label:'Buena'},
+          moderate: {color:'#F0A500', label:'Moderada'},
+          low:      {color:'#F97316', label:'Alta'},
+          critical: {color:'#EF4444', label:'Crítica'},
+        };
+        var mCfg = MFS_UI[mental.latest_level] || {color:'var(--dim)', label:'—'};
+        var bMental = document.getElementById('badge-mental');
+        bMental.textContent = mCfg.label;
+        bMental.style.background = mCfg.color + '2e';
+        bMental.style.color = mCfg.color;
+      }
+    })
+    .catch(function(){});
+}
+
 /* ── Banner de sync Garmin automático (definición antes del bridge) ── */
 function _showSyncBanner(secsTotal){
   if(document.getElementById('_sync-banner')) return;
@@ -2869,6 +2933,7 @@ function _showSyncBanner(secsTotal){
     patchData();
     renderWeeklyProgress(_wpSport);
     if(typeof drawPMC === 'function') drawPMC();
+    loadHealth360(tok, API);
     if(genEl){
       var syncLabel = fresh.last_sync ? ' · Garmin: ' + fresh.last_sync : '';
       genEl.textContent = 'Actualizado: ' + fresh.generated + syncLabel;

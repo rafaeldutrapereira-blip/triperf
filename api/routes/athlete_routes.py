@@ -1102,6 +1102,54 @@ def athlete_dashboard(
     return result
 
 
+@router.get("/health-360")
+def athlete_health_360(
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """
+    Panel de Salud 360° (Fase 2 Sprint D, 2026-08-11): un solo endpoint que
+    junta TODO lo que ya se calcula por separado — cero motor de cálculo
+    nuevo acá. Reusa literalmente el mismo agregador que ya usa el Panel
+    360° del coach (get_athlete_intelligence), llamado ahora para el
+    propio atleta en vez de un atleta elegido por el coach — así lo que
+    ve el atleta de sí mismo y lo que ve su coach de él son, por
+    construcción, el mismo dato, nunca dos cálculos que puedan divergir.
+
+    Se le suma únicamente lo que get_athlete_intelligence NO cubre: el
+    snapshot fisiológico crudo de Garmin del día (Body Battery, Training
+    Readiness, HRV, FC reposo, estrés, SpO2) y el Injury Risk Score
+    (mismo motor oficial que ya usa /dashboard).
+    """
+    from ..services.athlete_intelligence_service import get_athlete_intelligence
+    from ..models import GarminHealthDaily
+
+    intel = get_athlete_intelligence(me, db)
+
+    health_today = (
+        db.query(GarminHealthDaily)
+        .filter(GarminHealthDaily.user_id == me.id)
+        .order_by(GarminHealthDaily.date_iso.desc())
+        .first()
+    )
+    garmin_today = None
+    if health_today:
+        garmin_today = {
+            "date_iso":           health_today.date_iso,
+            "hrv_last_night":     health_today.hrv_last_night,
+            "resting_hr":         health_today.resting_hr,
+            "body_battery_end":   health_today.body_battery_end,
+            "training_readiness": health_today.training_readiness,
+            "recovery_time_h":    health_today.recovery_time_h,
+            "avg_stress":         health_today.avg_stress,
+            "avg_spo2":           health_today.avg_spo2,
+        }
+
+    intel["garmin_today"] = garmin_today
+    intel["injury_risk"]  = _dashboard_injury_risk(me.id, db)
+    return intel
+
+
 def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) -> list:
     """Devuelve los workouts planificados (Training Peaks/Garmin) entre start_iso y end_iso."""
     rows = (

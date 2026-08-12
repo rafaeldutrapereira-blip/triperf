@@ -249,3 +249,79 @@ def test_compliance_trend_is_integer_or_none(client, auth_headers):
     ct = resp.json()["trends"].get("compliance")
     if ct is not None:
         assert isinstance(ct, int)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fase 2 Sprint D (2026-08-11): Panel de Salud 360° — GET /athlete/health-360
+# Cero motor de cálculo nuevo: reusa get_athlete_intelligence() (el mismo
+# agregador que ya usa el Panel 360° del coach) + una lectura directa de
+# GarminHealthDaily para los campos crudos de Garmin que ese agregador no
+# cubre (Body Battery, Training Readiness, HRV, etc).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_health_360_requires_auth(client):
+    resp = client.get("/api/athlete/health-360")
+    assert resp.status_code == 401
+
+
+def test_health_360_without_any_data_returns_nulls_not_fake_values(client, auth_headers):
+    resp = client.get("/api/athlete/health-360", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["garmin_today"] is None
+    assert data["recovery"]["latest_score"] is None
+    assert data["mental"]["latest_score"] is None
+    assert data["blood_labs"]["has_labs"] is False
+
+def test_health_360_reuses_athlete_intelligence_shape(client, athlete_user, auth_headers):
+    """Confirma que /athlete/health-360 y el Panel 360° del coach
+    (get_athlete_intelligence) devuelven exactamente la misma estructura
+    para las mismas claves — es la prueba de que no hay 2 cálculos
+    paralelos que puedan divergir entre lo que ve el atleta y lo que ve
+    el coach de ese mismo atleta."""
+    from api.services.athlete_intelligence_service import get_athlete_intelligence
+    from api.tests.conftest import TestingSessionLocal
+    db = TestingSessionLocal()
+    try:
+        direct = get_athlete_intelligence(athlete_user, db)
+    finally:
+        db.close()
+
+    resp = client.get("/api/athlete/health-360", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["training"] == direct["training"]
+    assert data["recovery"] == direct["recovery"]
+    assert data["mental"] == direct["mental"]
+    assert data["blood_labs"] == direct["blood_labs"]
+
+
+def test_health_360_exposes_raw_garmin_snapshot(client, db, athlete_user, auth_headers):
+    from api.models import GarminHealthDaily
+    db.add(GarminHealthDaily(
+        user_id=athlete_user.id, date_iso="2026-08-11",
+        body_battery_end=68, training_readiness=54,
+        hrv_last_night=42.0, resting_hr=48, avg_stress=22.0, avg_spo2=97.0,
+        recovery_time_h=18,
+    ))
+    db.commit()
+
+    resp = client.get("/api/athlete/health-360", headers=auth_headers)
+    assert resp.status_code == 200
+    gt = resp.json()["garmin_today"]
+    assert gt is not None
+    assert gt["date_iso"] == "2026-08-11"
+    assert gt["body_battery_end"] == 68
+    assert gt["training_readiness"] == 54
+    assert gt["hrv_last_night"] == 42.0
+    assert gt["resting_hr"] == 48
+
+
+def test_health_360_includes_injury_risk_same_as_dashboard(client, auth_headers):
+    resp_dash = client.get("/api/athlete/dashboard", headers=auth_headers)
+    resp_360  = client.get("/api/athlete/health-360", headers=auth_headers)
+    assert resp_dash.status_code == 200 and resp_360.status_code == 200
+    dash_risk = resp_dash.json().get("injury_risk")
+    risk_360  = resp_360.json().get("injury_risk")
+    assert risk_360 is not None
+    assert risk_360 == dash_risk
