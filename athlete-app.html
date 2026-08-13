@@ -215,8 +215,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .insight-mob-why { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; font-size: .72rem; font-weight: 600; color: var(--dim); background: none; border: none; cursor: pointer; padding: 0; }
 .insight-mob-why svg { width: 9px; height: 9px; transition: transform .15s; }
 .insight-mob-why.open svg { transform: rotate(180deg); }
-.insight-mob-tech { font-size: .78rem; line-height: 1.5; color: var(--dim); margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); display: none; }
+.insight-mob-tech { font-size: .76rem; line-height: 1.45; color: var(--dim); margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); display: none; list-style: none; padding-left: 0; }
 .insight-mob-tech.open { display: block; }
+.insight-mob-tech li { position: relative; padding-left: 1.05rem; margin-bottom: .4rem; }
+.insight-mob-tech li:last-child { margin-bottom: 0; color: var(--text); font-weight: 600; }
+.insight-mob-tech li::before { content: '•'; position: absolute; left: 0; color: #F0A500; }
+.insight-mob-tech li:last-child::before { content: '→'; font-weight: 700; }
 .insight-mob-drivers { display: flex; gap: 1.1rem; margin-top: .75rem; flex-wrap: wrap; }
 .insight-mob-driver { display: flex; flex-direction: column; gap: .1rem; }
 .insight-mob-driver-lbl { font-family: 'Oswald', sans-serif; font-size: .58rem; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
@@ -1208,12 +1212,17 @@ function renderInsightMobile(ins){
       +'<span class="insight-mob-driver-val'+toneCls+'">'+dr.value+deltaHtml+'</span></div>';
   }).join('');
 
-  var techMsg = ins.message_technical || '';
-  var whyHtml = (techMsg && techMsg !== ins.message)
+  /* message_technical es una lista de bullets ejecutivos (mismo formato
+     que dashboard.html — pedido explícito del usuario 2026-08-13); se
+     acepta también un string suelto por robustez, sin romper el render. */
+  var techArr = Array.isArray(ins.message_technical) ? ins.message_technical
+              : (ins.message_technical ? [ins.message_technical] : []);
+  var isJustMessage = techArr.length === 1 && techArr[0] === ins.message;
+  var whyHtml = (techArr.length && !isJustMessage)
     ? '<button class="insight-mob-why" type="button" onclick="toggleInsightWhyMobile()">'
       +'<span id="insight-mob-why-label">Ver por qué</span>'
       +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></button>'
-      +'<div class="insight-mob-tech" id="insight-mob-tech">'+techMsg+'</div>'
+      +'<ul class="insight-mob-tech" id="insight-mob-tech">'+techArr.map(function(b){ return '<li>'+_escCm(b)+'</li>'; }).join('')+'</ul>'
     : '';
 
   var ctaHtml = ins.cta_label

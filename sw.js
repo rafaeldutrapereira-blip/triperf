@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '80';  // 2026-08-13: detalle de indicador (Fitness/Fatiga/Forma/ACWR/HRV/TSS/VO2) en Hoy, sincronizado con detalle.html
+var BUILD_VERSION = '81';  // 2026-08-13: "Ver por qué" del Insight del día en bullets ejecutivos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

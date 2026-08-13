@@ -328,31 +328,35 @@ def build_daily_insight(
             "tone": sleep_tone, "delta": None,
         })
 
-    def _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h):
-        """Frase corta para el 'ver por qué' de los casos good/neutral,
+    def _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h):
+        """Bullets extra para el 'ver por qué' de los casos good/neutral,
         confirmando explícitamente que HRV/sueño SÍ se revisaron y están
-        bien — sin esto, el texto técnico hablaba solo de TSB/ACWR aunque
+        bien — sin esto, el detalle técnico hablaba solo de TSB/ACWR aunque
         el insight combina también recuperación, dejando la impresión de
-        que esos datos no se habían tenido en cuenta."""
+        que esos datos no se habían tenido en cuenta. Lista vacía si no hay
+        dato real (nunca se inventa)."""
         bits = []
         if hrv_last_night is not None and not hrv_down:
-            bits.append(f"tu HRV de anoche ({round(hrv_last_night)}ms) se mantiene estable")
+            bits.append(f"HRV de anoche: {round(hrv_last_night)}ms — estable")
         if sleep_total_h is not None and not poor_sleep:
             h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
-            bits.append(f"dormiste {h}h {m:02d}m")
-        if not bits:
-            return ""
-        return " Además, " + " y ".join(bits) + "."
+            bits.append(f"Sueño anoche: {h}h {m:02d}m")
+        return bits
 
     def _base(severity, headline, message, message_technical=None, cta=None, cta_href=None):
         # message: lenguaje llano, sin jerga ni números — lo que ve todo el
-        # mundo por default. message_technical: la versión con TSB/ACWR/ATL
-        # exactos, detrás del toggle "ver por qué" para quien quiera el dato duro.
+        # mundo por default. message_technical: lista de bullets ejecutivos
+        # (dato → umbral/contexto) detrás del toggle "ver por qué", en vez de
+        # un párrafo que repetía el mensaje llano (pedido explícito del
+        # usuario 2026-08-13: "ordenar en bullets, más organizado y
+        # ejecutivo"). Se acepta lista o, por compatibilidad, un string
+        # suelto (se envuelve en una lista de 1 elemento).
         # cta_href: a dónde lleva el botón — explícito por caso, en vez de
         # inferirlo del severity en el frontend (eso mandaba todos los casos
         # "reduce" a recovery.html, aunque el CTA hablara de carga/ACWR).
+        bullets = message_technical if isinstance(message_technical, list) else ([message_technical] if message_technical else [message])
         return {"severity": severity, "headline": headline, "message": message,
-                "message_technical": message_technical or message,
+                "message_technical": bullets,
                 "drivers": drivers, "cta_label": cta, "cta_href": cta_href}
 
     # 1. Combinación crítica: mala recuperación (HRV/sueño) + carga ya alta
@@ -362,9 +366,12 @@ def build_daily_insight(
             "reduce", "Reducir carga hoy",
             "Tu cuerpo no se recuperó bien anoche y venís acumulando cansancio de varios días. "
             "Hoy conviene una sesión suave o descanso — evita los intervalos de alta intensidad.",
-            f"Tu HRV bajó{hrv_pct_txt} a {round(hrv_last_night)}ms y tu forma (TSB) está en {tsb:.0f} "
-            f"con fatiga acumulada (ATL {atl:.0f}). Sumado a que dormiste menos de lo habitual, hoy conviene "
-            f"una sesión aeróbica suave o descanso — evita intervalos de alta intensidad.",
+            [
+                f"HRV de anoche: {round(hrv_last_night)}ms — bajó{hrv_pct_txt}",
+                f"TSB (forma): {tsb:.0f} — con fatiga acumulada (ATL {atl:.0f})",
+                "Sueño anoche: por debajo de lo habitual",
+                "Recomendación: sesión aeróbica suave o descanso — evitá intervalos de alta intensidad",
+            ],
             "Ver protocolo de recuperación sugerido",
             "recovery.html",
         )
@@ -375,8 +382,11 @@ def build_daily_insight(
             "reduce", "Riesgo de lesión",
             "Subiste tu carga de entrenamiento muy rápido esta semana respecto a tus semanas previas. "
             "Bajale el volumen o la intensidad hoy para reducir el riesgo de lesión.",
-            f"Tu ACWR es {acwr:.2f}, muy por encima del rango seguro (0.8–1.3). Subiste la carga demasiado rápido "
-            f"esta semana respecto a tu promedio de 28 días — reduce volumen o intensidad hoy.",
+            [
+                f"ACWR actual: {acwr:.2f} (rango seguro: 0.8–1.3)",
+                "Carga semanal muy por encima de tu promedio de 28 días",
+                "Recomendación: reducí volumen o intensidad hoy",
+            ],
             "Ver histórico de carga",
             "detalle.html?metric=acwr",
         )
@@ -400,9 +410,12 @@ def build_daily_insight(
                 "reduce", f"Riesgo de lesión en {worst['label']}",
                 f"Tu carga general se ve bien, pero en {worst['label'].lower()} subiste el volumen mucho más rápido "
                 f"que en el resto de tu entrenamiento. Bajale el ritmo en esa disciplina esta semana.",
-                f"ACWR de {worst['label']} = {worst['acwr']:.2f} (zona de riesgo, >1.5) mientras el ACWR general es "
-                f"{acwr:.2f} ({acwr_zone}). Las lesiones por sobreuso son específicas de tejido — un pico aislado en "
-                f"una disciplina no se compensa con el resto.",
+                [
+                    f"ACWR {worst['label']}: {worst['acwr']:.2f} (zona de riesgo, >1.5)",
+                    f"ACWR general: {acwr:.2f} ({acwr_zone}) — en rango",
+                    "Las lesiones por sobreuso son específicas de tejido: un pico aislado no se compensa con el resto",
+                    f"Recomendación: bajale el ritmo en {worst['label'].lower()} esta semana",
+                ],
                 "Ver ACWR por disciplina",
                 "detalle.html?metric=acwr",
             )
@@ -426,9 +439,12 @@ def build_daily_insight(
             "Tu score de riesgo de lesión — que combina tu carga, HRV, monotonía de entrenamiento y tus "
             "últimos exámenes de sangre — está elevado, aunque tu carga de hoy por sí sola no lo muestre. "
             "Priorizá recuperación antes de sumar más intensidad.",
-            f"Injury Risk Score = {round(injury_risk['score'])}/100 ({injury_risk['level']}), motor que combina "
-            f"ACWR (35%), HRV (30%), monotonía de entrenamiento (20%) y marcadores de sangre (15%). Puede estar "
-            f"elevado por monotonía o labs aunque el ACWR aislado (hoy {acwr:.2f}) se vea en rango.",
+            [
+                f"Injury Risk Score: {round(injury_risk['score'])}/100 ({injury_risk['level']})",
+                "Compone: ACWR 35% · HRV 30% · Monotonía de entrenamiento 20% · Marcadores de sangre 15%",
+                f"ACWR aislado hoy: {acwr:.2f} — se ve en rango por sí solo",
+                "Recomendación: priorizá recuperación antes de sumar más intensidad",
+            ],
             "Ver detalle de riesgo de lesión",
             "ai_coach.html",
         )
@@ -439,8 +455,11 @@ def build_daily_insight(
             "caution", "Fatiga acumulada",
             "Venís acumulando cansancio por varios días seguidos de entrenamiento exigente. "
             "Mantené la intensidad baja y priorizá el descanso esta semana.",
-            f"Tu TSB está en {tsb:.0f} — nivel de fatiga alto tras varios días de carga sostenida (ATL {atl:.0f}). "
-            f"Mantén la intensidad baja y prioriza descanso esta semana para no entrar en sobreentrenamiento.",
+            [
+                f"TSB (forma): {tsb:.0f} — nivel de fatiga alto",
+                f"ATL (carga aguda): {atl:.0f} — varios días de carga sostenida",
+                "Recomendación: intensidad baja y priorizá descanso esta semana para no entrar en sobreentrenamiento",
+            ],
             "Ver histórico PMC",
             "detalle.html?metric=ctl",
         )
@@ -467,32 +486,36 @@ def build_daily_insight(
             "Tu carga y tu recuperación física se ven bien, pero tu check-in mental de hoy muestra fatiga "
             + mfs_label + ". Considerá acortar la sesión o priorizar descanso mental — el rendimiento no es "
             "solo físico.",
-            f"Mental Fatigue Score = {round(mental_score)}/100 (checkin de mental.html) mientras la carga física "
-            f"(TSB {tsb:.0f}, ACWR {acwr:.2f}) está en rango razonable — la fatiga viene del lado subjetivo, no "
-            f"del entrenamiento.",
+            [
+                f"Mental Fatigue Score: {round(mental_score)}/100 (check-in de mental.html)",
+                f"Carga física: TSB {tsb:.0f}, ACWR {acwr:.2f} — en rango razonable",
+                "La fatiga viene del lado subjetivo, no del entrenamiento físico",
+                "Recomendación: acortá la sesión o priorizá descanso mental",
+            ],
             "Ver protocolos de recuperación mental",
             "mental.html",
         )
 
     # 4. Señal única de alerta (HRV o sueño o FC reposo, sin combinarse con carga alta)
     if hrv_down or poor_sleep or rhr_up:
-        parts = []
+        bullets = []
         parts_plain = []
         if hrv_down:
-            parts.append(f"tu HRV bajó a {round(hrv_last_night)}ms")
+            bullets.append(f"HRV de anoche: {round(hrv_last_night)}ms — bajó")
             parts_plain.append("tu recuperación nocturna bajó")
         if poor_sleep:
-            parts.append("dormiste menos de lo habitual")
+            bullets.append("Sueño anoche: por debajo de lo habitual")
             parts_plain.append("dormiste menos de lo habitual")
         if rhr_up:
-            parts.append(f"tu FC en reposo subió {rhr_trend:+.0f}bpm")
+            bullets.append(f"FC en reposo: {rhr_trend:+.0f}bpm — subió")
             parts_plain.append("tu frecuencia cardíaca en reposo subió")
+        bullets.append(f"Carga de entrenamiento: TSB {tsb:.0f}, ACWR {acwr:.2f} — todavía en rango razonable")
+        bullets.append("Recomendación: monitoreá cómo te sentís antes de una sesión exigente")
         return _base(
             "caution", "Presta atención a tu recuperación",
             f"Hoy {', '.join(parts_plain)}. Tu entrenamiento sigue en un nivel razonable, pero prestá atención "
             f"a cómo te sentís antes de una sesión exigente.",
-            f"Hoy {', '.join(parts)}. Tu carga de entrenamiento (TSB {tsb:.0f}, ACWR {acwr:.2f}) todavía está en rango "
-            f"razonable, pero vale la pena monitorear cómo te sientes antes de una sesión exigente.",
+            bullets,
         )
 
     # 5. Forma óptima — momento de exigir. Pero un TSB alto puede venir de dos
@@ -513,40 +536,41 @@ def build_daily_insight(
                 "Tu forma se ve muy bien, pero es porque entrenaste menos de lo planificado esta semana — "
                 "no necesariamente por una mejora real. Retomá el plan gradualmente en vez de forzar una "
                 "sesión muy exigente hoy.",
-                f"TSB {tsb:.0f} y ACWR {acwr:.2f} en rango saludable, pero solo cumpliste {round(compliance_week)}% "
-                f"de las sesiones planificadas esta semana. El TSB alto puede reflejar menos carga acumulada en "
-                f"vez de una mejora real de forma — conviene retomar el plan gradualmente.",
+                [
+                    f"TSB {tsb:.0f} y ACWR {acwr:.2f} — ambos en rango saludable",
+                    f"Cumplimiento del plan esta semana: {round(compliance_week)}%",
+                    "El TSB alto puede reflejar menos carga acumulada, no necesariamente una mejora real de forma",
+                    "Recomendación: retomá el plan gradualmente",
+                ],
                 "Ver tu plan de la semana",
                 "training_plan.html",
             )
+        # "Ver por qué" real: bullets ejecutivos que explican CADA chequeo
+        # que se hizo, en vez de un párrafo casi idéntico al mensaje llano
+        # (reportado por el usuario 2026-08-13, y pedido explícito de
+        # formato en bullets el mismo día).
         return _base(
             "good", "Buen momento para exigir",
             "Estás en tu mejor momento de forma y tu recuperación se ve estable. "
             "Es un buen día para una sesión de calidad o un test.",
-            # "Ver por qué" real: no repite la frase de arriba con 2 números
-            # metidos adentro — explica CADA chequeo que se hizo y por qué
-            # pasó, igual de detallado que los casos "reduce"/"caution" de
-            # arriba. Antes este texto era casi idéntico al mensaje llano
-            # (reportado por el usuario 2026-08-13: "el mensaje y ver
-            # porqué son muy iguales").
-            f"TSB +{tsb:.0f}, por encima del umbral de forma óptima (+15) — tu fatiga acumulada bajó lo suficiente "
-            f"para que el cuerpo esté fresco. ACWR {acwr:.2f}, dentro del rango seguro (0.8–1.3), así que ese TSB alto "
-            f"no viene de haber entrenado de menos esta semana." + _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h)
-            + " Ningún indicador de fatiga o mala recuperación está activo — buen día para una sesión de calidad o un test.",
+            [
+                f"TSB +{tsb:.0f} — por encima del umbral de forma óptima (+15)",
+                f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3), no viene de entrenar de menos",
+            ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
+                "Ningún indicador de fatiga o mala recuperación está activo",
+            ],
         )
 
     # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
     return _base(
         "neutral", "Todo en rango normal",
         "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy. Seguí tu plan con normalidad.",
-        # Mismo criterio que el caso "good" de arriba: explicar los rangos
-        # chequeados en vez de repetir el mensaje llano con TSB/ACWR pegados.
-        f"TSB {tsb:+.0f}, dentro del rango normal (-8 a +15) — ni fatiga excesiva ni forma pico. "
-        f"ACWR {acwr:.2f}, dentro del rango seguro (0.8–1.3) — la carga de esta semana está bien calibrada respecto "
-        f"a tus últimas 4."
-        + _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h)
-        + " Ninguno de tus indicadores de carga o recuperación está fuera de rango — seguí tu plan de entrenamiento "
-          "con normalidad.",
+        [
+            f"TSB {tsb:+.0f} — dentro del rango normal (-8 a +15): ni fatiga excesiva ni forma pico",
+            f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3)",
+        ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
+            "Ninguno de tus indicadores de carga o recuperación está fuera de rango",
+        ],
     )
 
 

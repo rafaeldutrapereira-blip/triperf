@@ -162,10 +162,19 @@ ul { list-style: none; }
 .insight-why-toggle svg { width:9px; height:9px; transition:transform .15s; }
 .insight-why-toggle.open svg { transform:rotate(180deg); }
 .insight-technical {
-  font-size:.85rem; line-height:1.55; color:var(--dim); max-width:66ch; margin-top:.5rem;
+  font-size:.85rem; line-height:1.5; color:var(--dim); max-width:66ch; margin-top:.5rem;
   padding-top:.6rem; border-top:1px solid var(--border); display:none; position:relative;
+  list-style:none; padding-left:0;
 }
 .insight-technical.open { display:block; }
+.insight-technical li { position:relative; padding-left:1.15rem; margin-bottom:.45rem; }
+.insight-technical li:last-child { margin-bottom:0; }
+.insight-technical li::before { content:'•'; position:absolute; left:0; color:var(--gold); }
+/* Última línea de cada insight es siempre la recomendación accionable —
+   se destaca en color de texto normal (no dim) y con un marcador
+   distinto para que se lea como conclusión, no como un dato más. */
+.insight-technical li:last-child { color:var(--text); font-weight:600; }
+.insight-technical li:last-child::before { content:'→'; color:var(--gold); font-weight:700; }
 
 /* -- KPI CARDS: 3 cards ejecutivas agrupadas por pregunta ------------------
    (Carga / Hoy / Objetivo) en vez de 8 tiles sueltas al mismo nivel — cada
@@ -1028,7 +1037,7 @@ ul { list-style: none; }
             <span id="insight-why-label">Ver por qué</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
           </button>
-          <p class="insight-technical" id="insight-technical"></p>
+          <ul class="insight-technical" id="insight-technical"></ul>
         </div>
         <div>
           <div class="insight-drivers" id="insight-drivers"></div>
@@ -1641,6 +1650,15 @@ function toggleInsightWhy(){
   document.getElementById('insight-why-label').textContent = open ? 'Ocultar detalle' : 'Ver por qué';
 }
 
+/* escX (más abajo en el archivo) vive dentro de otra función, no en
+   scope global — no es alcanzable desde acá pese a compartir el mismo
+   <script>. Bug real encontrado en vivo con Playwright: ReferenceError
+   "escX is not defined" silenciado porque quedaba dentro del .then()
+   del fetch de /athlete/dashboard sin ningún try/catch, así que el
+   insight nunca terminaba de renderizar el toggle "Ver por qué" y
+   tampoco loggeaba nada visible en consola de un usuario real. */
+function _escInsight(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function renderInsight(ins){
   if(!ins) return;
   window._lastInsight = ins; // usado por lx-info.js para el detalle "i" con datos reales
@@ -1652,9 +1670,16 @@ function renderInsight(ins){
 
   var whyToggle = document.getElementById('insight-why-toggle');
   var techEl = document.getElementById('insight-technical');
-  var techMsg = ins.message_technical || '';
-  if (techMsg && techMsg !== ins.message) {
-    techEl.textContent = techMsg;
+  /* message_technical es una lista de bullets ejecutivos (pedido explícito
+     del usuario 2026-08-13: "ordenar en bullets, más organizado") — se
+     acepta también un string suelto por robustez ante un despliegue
+     parcial (frontend nuevo contra un backend todavía no reiniciado, o
+     viceversa), sin romper el render. */
+  var techArr = Array.isArray(ins.message_technical) ? ins.message_technical
+              : (ins.message_technical ? [ins.message_technical] : []);
+  var isJustMessage = techArr.length === 1 && techArr[0] === ins.message;
+  if (techArr.length && !isJustMessage) {
+    techEl.innerHTML = techArr.map(function(b){ return '<li>' + _escInsight(b) + '</li>'; }).join('');
     whyToggle.style.display = 'inline-flex';
     whyToggle.classList.remove('open');
     document.getElementById('insight-why-label').textContent = 'Ver por qué';
