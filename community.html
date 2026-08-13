@@ -931,7 +931,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     fetch(API + '/community/suggestions', { headers: hdrs })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        var users = d.suggestions || d.users || [];
+        var users = Array.isArray(d) ? d : (d.suggestions || d.users || []);
         var el = document.getElementById('suggestions-grid');
         if (!el) return;
         if (!users.length) { el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">Ya sigues a todos los atletas sugeridos.</div>'; return; }
@@ -956,15 +956,22 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   };
 
   function profileCardHtml(u) {
-    var ctlStr = u.ctl ? ' · CTL ' + u.ctl : '';
+    /* /community/search devuelve id/name/is_following; /community/suggestions
+       devuelve user_id/nombre/reason (sin is_following — ya vienen
+       pre-filtrados a "no seguidos"). Se normalizan acá porque esta
+       función renderiza resultados de ambos endpoints. */
+    var id = u.id || u.user_id;
+    var name = u.name || u.nombre || '—';
+    var meta = u.reason || (u.ctl ? 'CTL ' + u.ctl : (u.city || ''));
+    var following = !!u.is_following;
     return '<div class="profile-card">' +
       _avatarBall('prof-av', u) +
       '<div style="flex:1;min-width:0">' +
-        '<div class="prof-name">' + (u.country_flag ? u.country_flag + ' ' : '') + (u.name || '—') + '</div>' +
-        '<div class="prof-meta">' + (u.city || '') + ctlStr + '</div>' +
+        '<div class="prof-name">' + (u.country_flag ? u.country_flag + ' ' : '') + name + '</div>' +
+        '<div class="prof-meta">' + meta + '</div>' +
       '</div>' +
-      '<button class="follow-btn' + (u.is_following ? ' following' : '') + '" id="follow-' + u.id + '" onclick="toggleFollow(\'' + u.id + '\')">' +
-        (u.is_following ? 'Siguiendo' : '+ Seguir') +
+      '<button class="follow-btn' + (following ? ' following' : '') + '" id="follow-' + id + '" onclick="toggleFollow(\'' + id + '\')">' +
+        (following ? 'Siguiendo' : '+ Seguir') +
       '</button>' +
       '</div>';
   }

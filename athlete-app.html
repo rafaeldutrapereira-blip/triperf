@@ -497,6 +497,18 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-lb-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cm-lb-val { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
 
+/* Descubrir — buscar atletas + sugerencias, mismo dato/endpoints que
+   ya usa community.html (tab "Descubrir" en la web). */
+.cm-search-bar { display: flex; gap: .5rem; margin: 0 1rem .9rem; }
+.cm-search-input { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .8rem; color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: .88rem; }
+.cm-search-btn { background: var(--orange); border: none; border-radius: 10px; padding: 0 1rem; color: #fff; font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+.cm-discover-title { padding: 0 1rem .5rem; font-size: .65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+.cm-profile-row { display: flex; align-items: center; gap: .7rem; margin: 0 1rem .5rem; padding: .65rem .8rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; }
+.cm-profile-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-profile-meta { font-size: .68rem; color: var(--dim); margin-top: .1rem; }
+.cm-follow-btn { flex-shrink: 0; background: none; border: 1.5px solid var(--cyan); color: var(--cyan); border-radius: 8px; padding: .35rem .7rem; font-family: 'Oswald', sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+.cm-follow-btn.following { background: var(--cyan); color: var(--bg); }
+
 /* ── Toast ── */
 #toast { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); background: #1F2937; border: 1px solid var(--border); border-radius: 8px; padding: .55rem 1rem; font-size: .82rem; color: var(--text); white-space: nowrap; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .25s; }
 #toast.show { opacity: 1; }
@@ -811,6 +823,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="cm-tabs">
         <div class="cm-tab active" id="cm-tab-feed" onclick="communityTab('feed')">Feed</div>
         <div class="cm-tab" id="cm-tab-rank" onclick="communityTab('rank')">Ranking</div>
+        <div class="cm-tab" id="cm-tab-discover" onclick="communityTab('discover')">Descubrir</div>
       </div>
 
       <div id="community-content"><div class="cm-empty">Cargando...</div></div>
@@ -2288,7 +2301,9 @@ var KUDO_EMOJI = {power:'💪', fire:'🔥', trophy:'🏆', epic:'😎', love:'�
 function communityTab(tab){
   document.getElementById('cm-tab-feed').classList.toggle('active', tab==='feed');
   document.getElementById('cm-tab-rank').classList.toggle('active', tab==='rank');
+  document.getElementById('cm-tab-discover').classList.toggle('active', tab==='discover');
   if(tab === 'feed') loadCommunityFeed();
+  else if(tab === 'discover') loadCommunityDiscover();
   else loadCommunityLeaderboard();
 }
 
@@ -2555,6 +2570,82 @@ function loadCommunityLeaderboard(){
         }).join('');
     })
     .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
+}
+
+/* ── Descubrir: buscar atletas + sugerencias ──────────────────
+   Mismos endpoints que ya usa community.html en la web
+   (GET /community/search, GET /community/suggestions,
+   POST/DELETE /community/follow/{id}) — nunca conectados en la app.
+   OJO: los 2 endpoints devuelven formas de usuario distintas
+   (search: id/name/is_following · suggestions: user_id/nombre, sin
+   is_following porque ya vienen pre-filtrados a "no seguidos") —
+   _cmProfileRowHtml() normaliza ambas en vez de asumir una sola forma. */
+function loadCommunityDiscover(){
+  var el = document.getElementById('community-content');
+  el.innerHTML = '<div class="cm-search-bar">'
+    +'<input class="cm-search-input" id="cm-search-inp" placeholder="Buscar atletas por nombre o email…" onkeydown="if(event.key===\'Enter\')doCommunitySearch()">'
+    +'<button class="cm-search-btn" onclick="doCommunitySearch()">Buscar</button>'
+  +'</div>'
+  +'<div id="cm-search-results"></div>'
+  +'<div class="cm-discover-title">Atletas sugeridos</div>'
+  +'<div id="cm-suggestions-list"><div class="cm-empty">Cargando...</div></div>';
+  loadCommunitySuggestions();
+}
+
+function loadCommunitySuggestions(){
+  var el = document.getElementById('cm-suggestions-list');
+  apiFetch('/community/suggestions')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!el) return;
+      var users = Array.isArray(d) ? d : (d && (d.suggestions || d.users)) || [];
+      if(!users.length){ el.innerHTML = '<div class="cm-empty">No hay sugerencias por ahora — probá buscar atletas arriba.</div>'; return; }
+      el.innerHTML = users.map(_cmProfileRowHtml).join('');
+    })
+    .catch(function(){ if(el) el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudieron cargar sugerencias</div>'; });
+}
+
+function doCommunitySearch(){
+  var q = (document.getElementById('cm-search-inp').value || '').trim();
+  var el = document.getElementById('cm-search-results');
+  if(q.length < 2){ el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="cm-empty">Buscando...</div>';
+  apiFetch('/community/search?q='+encodeURIComponent(q))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var users = (d && d.results) || [];
+      if(!users.length){ el.innerHTML = '<div class="cm-empty">Sin resultados para "'+_escCm(q)+'".</div>'; return; }
+      el.innerHTML = users.map(_cmProfileRowHtml).join('');
+    })
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo buscar</div>'; });
+}
+
+function _cmProfileRowHtml(u){
+  var id = u.id || u.user_id;
+  var name = u.name || u.nombre || '—';
+  var meta = u.reason || (u.ctl ? 'CTL '+u.ctl : (u.country_flag ? '' : ''));
+  var following = !!u.is_following;
+  return '<div class="cm-profile-row">'
+    + _cmAvatarHtml(u)
+    +'<div style="flex:1;min-width:0">'
+      +'<div class="cm-profile-name">'+(u.country_flag?u.country_flag+' ':'')+_escCm(name)+'</div>'
+      +(meta?'<div class="cm-profile-meta">'+_escCm(meta)+'</div>':'')
+    +'</div>'
+    +'<button class="cm-follow-btn'+(following?' following':'')+'" id="cm-follow-'+id+'" onclick="toggleCommunityFollow(\''+id+'\')">'
+      +(following?'Siguiendo':'+ Seguir')
+    +'</button>'
+  +'</div>';
+}
+
+function toggleCommunityFollow(userId){
+  var btn = document.getElementById('cm-follow-'+userId);
+  var isFollowing = btn && btn.classList.contains('following');
+  apiFetch('/community/follow/'+userId, { method: isFollowing ? 'DELETE' : 'POST' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(){
+      if(btn){ btn.classList.toggle('following', !isFollowing); btn.textContent = isFollowing ? '+ Seguir' : 'Siguiendo'; }
+    })
+    .catch(function(){ toast('No se pudo actualizar — intentá de nuevo', 'err'); });
 }
 
 /* Detalle real de una actividad de Comunidad — GPS + parciales, igual
