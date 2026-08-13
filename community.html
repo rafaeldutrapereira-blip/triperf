@@ -151,7 +151,9 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .lb-av{width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:800;color:var(--cyan)}
 .lb-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .lb-flag{font-size:.85rem}
+.lb-value-wrap{display:flex;flex-direction:column;align-items:flex-end}
 .lb-value{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;text-align:right;color:var(--cyan)}
+.lb-hours{font-size:.6rem;color:var(--dim);margin-top:.1rem;white-space:nowrap}
 .lb-acts{font-size:.62rem;color:var(--dim);text-align:right}
 .lb-me{background:rgba(168,85,247,.06);border-left:3px solid var(--purple)}
 
@@ -303,11 +305,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     <div class="panel-head">
       <span class="panel-title">🏅 Leaderboard LATAM</span>
       <div class="lb-controls">
-        <select class="lb-sel" id="lb-scope" onchange="loadLeaderboard()">
+        <select class="lb-sel" id="lb-scope" onchange="onLbScopeChange()">
           <option value="social">Mis seguidos</option>
+          <option value="club">Mi club</option>
           <option value="country">Mi país</option>
           <option value="global">Global</option>
         </select>
+        <select class="lb-sel" id="lb-club" onchange="loadLeaderboard()" style="display:none"></select>
         <select class="lb-sel" id="lb-metric" onchange="loadLeaderboard()">
           <option value="tss">TSS</option>
           <option value="distance_km">Km</option>
@@ -890,11 +894,36 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   // LEADERBOARD
   // ═════════════════════════════════════════════════════════════════════════
 
+  window.onLbScopeChange = function () {
+    var scope = document.getElementById('lb-scope').value;
+    var clubSel = document.getElementById('lb-club');
+    if (scope !== 'club') { clubSel.style.display = 'none'; loadLeaderboard(); return; }
+    clubSel.style.display = '';
+    fetch(API + '/community/groups?mine=true&per_page=50', { headers: hdrs })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var groups = (d && d.items) || [];
+        if (!groups.length) {
+          clubSel.innerHTML = '<option value="">— No perteneces a ningún club —</option>';
+          document.getElementById('leaderboard-rows').innerHTML =
+            '<div class="empty-state" style="padding:1.5rem"><div class="empty-msg">No perteneces a ningún club todavía — unite a uno en la pestaña Clubs.</div></div>';
+          return;
+        }
+        clubSel.innerHTML = groups.map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
+        loadLeaderboard();
+      }).catch(function () {});
+  };
+
   window.loadLeaderboard = function () {
     var scope  = document.getElementById('lb-scope').value;
     var metric = document.getElementById('lb-metric').value;
     var period = document.getElementById('lb-period').value;
     var url = API + '/community/leaderboard?scope=' + scope + '&metric=' + metric + '&period=' + period + '&limit=25';
+    if (scope === 'club') {
+      var clubId = document.getElementById('lb-club').value;
+      if (!clubId) return;
+      url += '&group_id=' + encodeURIComponent(clubId);
+    }
     fetch(url, { headers: hdrs })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -916,7 +945,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
             '<div class="lb-rank" style="color:' + rankColor + '">' + (r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank-1] : r.rank) + '</div>' +
             _avatarBall('lb-av', r.user) +
             '<div class="lb-name">' + (r.user.country_flag ? r.user.country_flag + ' ' : '') + r.user.name + (r.is_me ? ' <span style="font-size:.6rem;color:var(--purple);font-family:\'Oswald\',sans-serif;letter-spacing:.06em">(TÚ)</span>' : '') + '</div>' +
-            '<div class="lb-value">' + val + suffix + '</div>' +
+            '<div class="lb-value-wrap"><div class="lb-value">' + val + suffix + '</div>' +
+              '<div class="lb-hours">' + (r.hours_week || 0).toFixed(1) + 'h/sem</div></div>' +
             '<div class="lb-acts">' + r.activity_count + ' acts</div>' +
             '</div>';
         }).join('');

@@ -7,8 +7,10 @@ comentarios) para no dejar sin probar el campo n_comments nuevo, ni la
 forma real de photos/can_add_photos que ya usaba community.html (web) y
 la app nunca leía.
 """
+from datetime import date, timedelta
+
 from .conftest import login, auth_headers
-from api.models import Follow, GarminActivity, ActivityPhoto
+from api.models import Follow, GarminActivity, ActivityPhoto, CommunityGroup, CommunityGroupMember
 
 
 def _make_activity(user_id, activity_id="act-feed-1", sport="run", date_iso="2026-08-10"):
@@ -94,3 +96,80 @@ class TestActivityFeedIntegration:
         assert len(photos) == 1
         assert photos[0]["deletable"] is True
         assert photos[0]["photo_id"] is not None
+
+
+class TestLeaderboardHoursWeek:
+    """hours_week: horas reales entrenadas en la semana calendario actual,
+    agregado al leaderboard (pedido del usuario 2026-08-13) para mostrar
+    debajo de los puntos sin importar qué métrica/período esté eligiendo
+    ranquear — por eso el test usa metric=distance_km (no duration_h) y
+    period=month, para probar que hours_week no depende de esos params."""
+
+    def test_hours_week_reflects_real_activity_this_week_regardless_of_metric(self, client, db, athlete_user):
+        monday_this_week = date.today() - timedelta(days=date.today().weekday())
+        db.add(GarminActivity(
+            user_id=athlete_user.id, activity_id="hw-act-1", name="Long Ride",
+            sport="bike", date_iso=monday_this_week.isoformat(),
+            dur_min=90, dist_km=40.0, tss=80,
+        ))
+        db.commit()
+
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get(
+            "/api/community/leaderboard?scope=social&metric=distance_km&period=month",
+            headers=auth_headers(token),
+        )
+        assert r.status_code == 200
+        row = next(x for x in r.json()["leaderboard"] if x["is_me"])
+        assert row["hours_week"] == 1.5
+
+    def test_hours_week_excludes_activity_from_last_week(self, client, db, athlete_user):
+        last_week = date.today() - timedelta(days=date.today().weekday() + 3)
+        db.add(GarminActivity(
+            user_id=athlete_user.id, activity_id="hw-act-2", name="Old Run",
+            sport="run", date_iso=last_week.isoformat(),
+            dur_min=60, dist_km=10.0, tss=50,
+        ))
+        db.commit()
+
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get("/api/community/leaderboard?scope=social&metric=tss&period=week",
+                        headers=auth_headers(token))
+        row = next(x for x in r.json()["leaderboard"] if x["is_me"])
+        assert row["hours_week"] == 0.0
+
+
+class TestLeaderboardClubScope:
+    """scope=club (pedido del usuario 2026-08-13: ranking no solo por
+    'mis seguidos' sino también por club/grupo) — reusa la misma forma
+    de respuesta (user completo, hours_week, avatar) que scope=social,
+    a propósito, para no tener 2 formatos de leaderboard distintos
+    entre app y web."""
+
+    def test_club_scope_requires_group_id(self, client, db, athlete_user):
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get("/api/community/leaderboard?scope=club", headers=auth_headers(token))
+        assert r.status_code == 400
+
+    def test_club_scope_unknown_group_404(self, client, db, athlete_user):
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get("/api/community/leaderboard?scope=club&group_id=does-not-exist",
+                        headers=auth_headers(token))
+        assert r.status_code == 404
+
+    def test_club_scope_only_includes_group_members(self, client, db, athlete_user, coach_user):
+        group = CommunityGroup(owner_id=athlete_user.id, name="Club Test Only Members")
+        db.add(group)
+        db.flush()
+        db.add(CommunityGroupMember(group_id=group.id, user_id=athlete_user.id))
+        db.add(_make_activity(athlete_user.id, activity_id="club-act-1"))
+        db.commit()
+
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.get(f"/api/community/leaderboard?scope=club&group_id={group.id}&metric=tss&period=week",
+                        headers=auth_headers(token))
+        assert r.status_code == 200
+        rows = r.json()["leaderboard"]
+        assert len(rows) == 1
+        assert rows[0]["user"]["id"] == athlete_user.id
+        assert rows[0]["is_me"] is True

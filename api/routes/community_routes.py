@@ -1709,6 +1709,7 @@ def latam_leaderboard(
     period:       str           = Query("week"),
     country_code: Optional[str] = None,
     scope:        str           = Query("social"),
+    group_id:     Optional[str] = None,
     limit:        int           = Query(25, le=50),
     db:    Session = Depends(get_db),
     me:    User    = Depends(get_current_user),
@@ -1724,6 +1725,11 @@ def latam_leaderboard(
     else:
         start = None
     start_iso = start.isoformat() if start else "2000-01-01"
+    # Horas reales entrenadas ESTA semana — siempre semana calendario
+    # actual, independiente del período/métrica que el usuario haya
+    # elegido para el ranking (pedido explícito: mostrar debajo de los
+    # puntos "cuánto entrenó de verdad" en la última semana).
+    week_start_iso = (today - timedelta(days=today.weekday())).isoformat()
 
     if scope == "social":
         followed_ids = [
@@ -1737,6 +1743,17 @@ def latam_leaderboard(
         if not cc:
             raise HTTPException(400, "country_code required for country scope")
         users = db.query(User).filter(User.country_code == cc).all()
+    elif scope == "club":
+        if not group_id:
+            raise HTTPException(400, "group_id required for club scope")
+        g = db.query(CommunityGroup).filter(CommunityGroup.id == group_id).first()
+        if not g:
+            raise HTTPException(404, "Club no encontrado")
+        member_ids = [
+            gm.user_id for gm in
+            db.query(CommunityGroupMember).filter(CommunityGroupMember.group_id == group_id).all()
+        ]
+        users = db.query(User).filter(User.id.in_(member_ids)).all()
     else:
         users = db.query(User).limit(500).all()
 
@@ -1761,6 +1778,11 @@ def latam_leaderboard(
                 total += a.elev_m or 0.0
             elif metric == "duration_h":
                 total += (a.dur_min or 0) / 60
+        week_dur_min = db.query(func.sum(GarminActivity.dur_min)).filter(
+            GarminActivity.user_id == u.id,
+            GarminActivity.date_iso >= week_start_iso,
+        ).scalar() or 0.0
+
         country = getattr(u, "country_code", None)
         rows.append({
             "user": {
@@ -1774,6 +1796,7 @@ def latam_leaderboard(
             "value":          round(total, 2),
             "is_me":          u.id == me.id,
             "activity_count": len(acts),
+            "hours_week":     round(week_dur_min / 60, 1),
         })
 
     rows.sort(key=lambda x: x["value"], reverse=True)

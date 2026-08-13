@@ -495,7 +495,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-lb-row.me { border-color: rgba(255,101,53,.4); background: rgba(255,101,53,.08); }
 .cm-lb-rank { width: 22px; text-align: center; font-family: 'Oswald', sans-serif; font-weight: 700; color: var(--dim); font-size: .85rem; }
 .cm-lb-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-lb-val-wrap { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
 .cm-lb-val { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.cm-lb-hours { font-size: .58rem; color: var(--dim); margin-top: .1rem; white-space: nowrap; }
 
 /* Descubrir — buscar atletas + sugerencias, mismo dato/endpoints que
    ya usa community.html (tab "Descubrir" en la web). */
@@ -508,6 +510,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-profile-meta { font-size: .68rem; color: var(--dim); margin-top: .1rem; }
 .cm-follow-btn { flex-shrink: 0; background: none; border: 1.5px solid var(--cyan); color: var(--cyan); border-radius: 8px; padding: .35rem .7rem; font-family: 'Oswald', sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
 .cm-follow-btn.following { background: var(--cyan); color: var(--bg); }
+
+/* Ranking: selector Amigos/Club + chips de club (mismo lenguaje visual
+   que .cm-tabs, escalado abajo porque va dentro del contenido, no en
+   la barra de tabs principal). */
+.cm-lb-scope-bar { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
+.cm-lb-scope-btn { flex: 1; padding: .45rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; text-align: center; }
+.cm-lb-scope-btn.active { background: rgba(0,209,255,.12); border-color: rgba(0,209,255,.4); color: var(--cyan); }
+.cm-lb-club-chips { display: flex; gap: .4rem; padding: 0 1rem .6rem; overflow-x: auto; }
+.cm-lb-club-chip { flex-shrink: 0; padding: .35rem .75rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-size: .74rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.cm-lb-club-chip.active { background: rgba(255,101,53,.15); border-color: rgba(255,101,53,.5); color: var(--orange); }
 
 /* ── Toast ── */
 #toast { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); background: #1F2937; border: 1px solid var(--border); border-radius: 8px; padding: .55rem 1rem; font-size: .82rem; color: var(--text); white-space: nowrap; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .25s; }
@@ -2547,29 +2559,81 @@ function toggleKudo(btn){
     .catch(function(){ btn.disabled = false; });
 }
 
+/* Ranking: amigos (seguidos) o club/grupo — mismo endpoint y misma
+   forma de datos que ya usa community.html (scope=social|club, con
+   group_id cuando es club), pedido explícito: que el ranking no sea
+   solo "mis seguidos" sino también por club. */
+var _cmLbScope = 'social';
+var _cmLbClubId = null;
+
+function _cmLbScopeBarHtml(clubs){
+  var bar = '<div class="cm-lb-scope-bar">'
+    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='social'?' active':'')+'" onclick="cmLbSetScope(\'social\')">👥 Amigos</button>'
+    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='club'?' active':'')+'" onclick="cmLbSetScope(\'club\')">🏆 Club</button>'
+  +'</div>';
+  if(_cmLbScope === 'club' && clubs && clubs.length){
+    bar += '<div class="cm-lb-club-chips">' + clubs.map(function(c){
+      return '<button class="cm-lb-club-chip'+(c.id===_cmLbClubId?' active':'')+'" onclick="cmLbSetClub(\''+c.id+'\')">'+_escCm(c.name)+'</button>';
+    }).join('') + '</div>';
+  }
+  return bar;
+}
+
+function cmLbSetScope(scope){ _cmLbScope = scope; loadCommunityLeaderboard(); }
+function cmLbSetClub(clubId){ _cmLbClubId = clubId; loadCommunityLeaderboard(); }
+
 function loadCommunityLeaderboard(){
   if(!_token) return;
+  if(_cmLbScope === 'club'){
+    var el0 = document.getElementById('community-content');
+    el0.innerHTML = '<div class="cm-empty">Cargando...</div>';
+    apiFetch('/community/groups?mine=true&per_page=50')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        var clubs = (d && d.items) || [];
+        if(!_cmLbClubId && clubs.length) _cmLbClubId = clubs[0].id;
+        _renderCommunityLeaderboard(clubs);
+      })
+      .catch(function(){ _renderCommunityLeaderboard([]); });
+  } else {
+    _renderCommunityLeaderboard(null);
+  }
+}
+
+function _renderCommunityLeaderboard(clubs){
   var el = document.getElementById('community-content');
-  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
-  apiFetch('/community/leaderboard?scope=social&metric=tss&period=week')
+  var scopeBar = _cmLbScopeBarHtml(clubs);
+
+  if(_cmLbScope === 'club' && (!clubs || !clubs.length)){
+    el.innerHTML = scopeBar + '<div class="cm-empty">No perteneces a ningún club todavía — unite a uno desde la web (Comunidad → Clubs).</div>';
+    return;
+  }
+
+  var url = '/community/leaderboard?scope='+_cmLbScope+'&metric=tss&period=week';
+  if(_cmLbScope === 'club') url += '&group_id='+encodeURIComponent(_cmLbClubId);
+
+  el.innerHTML = scopeBar + '<div class="cm-empty">Cargando...</div>';
+  apiFetch(url)
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
-      if(!data){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; return; }
+      if(!data){ el.innerHTML = scopeBar + '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; return; }
       if(!data.leaderboard.length){
-        el.innerHTML = '<div class="cm-empty">Todavía no hay datos de ranking esta semana.</div>';
+        el.innerHTML = scopeBar + '<div class="cm-empty">Todavía no hay datos de ranking esta semana.</div>';
         return;
       }
-      el.innerHTML = '<div style="padding:0 1rem .5rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">'+(data.metric_label||'TSS Total')+' — esta semana</div>'
+      el.innerHTML = scopeBar
+        + '<div style="padding:0 1rem .5rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">'+(data.metric_label||'TSS Total')+' — esta semana</div>'
         + data.leaderboard.map(function(r){
           return '<div class="cm-lb-row'+(r.is_me?' me':'')+'">'
             +'<div class="cm-lb-rank">'+r.rank+'</div>'
             + _cmAvatarHtml(r.user)
             +'<div class="cm-lb-name">'+(r.user.name||'—')+' '+(r.user.country_flag||'')+'</div>'
-            +'<div class="cm-lb-val">'+r.value+'</div>'
+            +'<div class="cm-lb-val-wrap"><div class="cm-lb-val">'+r.value+'</div>'
+              +'<div class="cm-lb-hours">'+(r.hours_week||0).toFixed(1)+'h/sem</div></div>'
           +'</div>';
         }).join('');
     })
-    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
+    .catch(function(){ el.innerHTML = scopeBar + '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
 }
 
 /* ── Descubrir: buscar atletas + sugerencias ──────────────────
