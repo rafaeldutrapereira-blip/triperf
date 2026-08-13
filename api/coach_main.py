@@ -319,6 +319,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         elif request.url.path == "/sw.js":
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"]        = "no-cache"
+        # No-cache para el resto de JS/CSS propios (lx-info.js, dash-header.js,
+        # auth.js, nav.js, etc.): mismo bug de fondo que sw.js (Cache-Control
+        # ausente = heurística por defecto del browser/CDN), encontrado en
+        # vivo el 2026-08-13 — Cloudflare cacheó lx-info.js por 4h (su
+        # default para .js) y siguió sirviendo una versión vieja después de
+        # un fix real ya deployado. "no-cache" (no "no-store") a propósito:
+        # permite cachear pero exige revalidar contra el origen en cada
+        # request (usa el ETag/Last-Modified que StaticFiles ya manda),
+        # así no se pierde el beneficio de caché para el caso común sin
+        # arriesgar servir código viejo cuando sí cambia.
+        elif request.url.path.endswith((".js", ".css")):
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
         if os.getenv("APP_ENV", "development") == "production":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             response.headers["Content-Security-Policy"] = (

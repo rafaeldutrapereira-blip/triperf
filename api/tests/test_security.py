@@ -24,6 +24,27 @@ class TestSecurityHeaders:
         r = client.get("/health")
         assert "strict-origin" in r.headers.get("referrer-policy", "")
 
+    def test_static_js_no_cache(self, client):
+        """2026-08-13: mismo bug de fondo que sw.js (Gap #13) encontrado
+        en vivo con lx-info.js — Cloudflare cacheó una versión vieja por
+        4h porque el archivo no mandaba Cache-Control, y siguió sirviendo
+        contenido desactualizado después de un fix real ya deployado.
+        Cualquier .js/.css propio debe forzar revalidación, no caer en
+        la heurística por defecto del browser/CDN."""
+        r = client.get("/lx-info.js")
+        assert r.status_code == 200
+        assert r.headers.get("cache-control") == "no-cache, must-revalidate"
+
+    def test_static_css_no_cache(self, client):
+        import os
+        # Cualquier .css real del repo sirve para probar la regla genérica
+        css_files = [f for f in os.listdir(".") if f.endswith(".css")]
+        if not css_files:
+            pytest.skip("sin archivos .css en la raíz del repo para probar")
+        r = client.get("/" + css_files[0])
+        assert r.status_code == 200
+        assert r.headers.get("cache-control") == "no-cache, must-revalidate"
+
 
 class TestRateLimit:
     def test_login_rate_limit_headers(self, client, athlete_user):
