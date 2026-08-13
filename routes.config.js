@@ -208,7 +208,7 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>',
       minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
-      sidebar: true,
+      sidebar: false,
       public:  false
     },
     /* ── Solo Coach / Admin ──────────────────────────── */
