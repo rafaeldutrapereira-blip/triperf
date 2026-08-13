@@ -137,6 +137,21 @@ var METRICS = {
     unidad: 'bpm (latidos por minuto)',
   },
 
+  mental_fatigue: {
+    nombre: 'MFS — Mental Fatigue Score (Fatiga Mental)',
+    emoji: '🧠',
+    definicion: '<strong>Escala donde MÁS ALTO es MEJOR</strong> (ojo, es al revés de lo que sugiere el nombre "fatiga") — 100 = mente fresca y lista, 0 = fatiga mental crítica. Combina tu encuesta de bienestar (motivación, ansiedad, foco, confianza, ánimo) con tu recuperación fisiológica reciente (HRV, sueño) cuando no respondiste la encuesta ese día.',
+    formula: 'MFS = función de checkin subjetivo + RecoveryScore reciente (HRV/sueño) como respaldo',
+    rangos: [
+      {min:0,  max:40,  label:'Crítica / Baja',  color:'#EF4444', advice:'Fatiga mental alta o crítica. Prioriza descanso mental — un día suave o de recuperación.'},
+      {min:40, max:55,  label:'Moderada',         color:'#F0A500', advice:'Considera reducir la intensidad o acortar la sesión de hoy.'},
+      {min:55, max:70,  label:'Buena',            color:'#0EA5E9', advice:'Buen estado mental. Entrená con confianza.'},
+      {min:70, max:100, label:'Óptima ✓',        color:'#10B981', advice:'Estado mental óptimo. Buen día para calidad o competencia.'},
+    ],
+    pro_tip: 'Si no completaste el check-in de Bienestar hoy, este número sale solo de tu HRV/sueño reciente — respondé la encuesta en la guía Bienestar para que sea más preciso.',
+    unidad: '0–100 puntos',
+  },
+
   training_readiness_garmin: {
     nombre: 'Training Readiness (Garmin)',
     emoji: '⌚',
