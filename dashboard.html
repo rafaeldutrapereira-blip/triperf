@@ -138,7 +138,14 @@ ul { list-style: none; }
 .sev-caution { background:rgba(240,165,0,.15);  color:var(--gold);   border:1px solid rgba(240,165,0,.32); }
 .sev-good    { background:rgba(16,185,129,.15); color:var(--green);  border:1px solid rgba(16,185,129,.32); }
 .sev-neutral { background:rgba(127,179,204,.12);color:var(--muted);  border:1px solid var(--border); }
-.insight-text { font-size:1.05rem; line-height:1.6; color:var(--text); max-width:66ch; position:relative; }
+.insight-text { font-size:1.05rem; line-height:1.6; color:var(--text); max-width:66ch; position:relative; list-style:none; padding-left:0; margin:0; }
+.insight-text li { position:relative; padding-left:1.3rem; margin-bottom:.5rem; }
+.insight-text li:last-child { margin-bottom:0; }
+.insight-text li::before { content:'•'; position:absolute; left:0; color:var(--gold); }
+/* Última línea = siempre la recomendación accionable (mismo criterio
+   que .insight-technical, ver más abajo) — se destaca con flecha en
+   vez de punto para que se lea como la conclusión, no como un dato más. */
+.insight-text li:last-child::before { content:'→'; font-weight:700; }
 .insight-drivers { display:flex; gap:1.7rem; margin-top:1.1rem; flex-wrap:wrap; position:relative; }
 .insight-driver { display:flex; flex-direction:column; gap:.15rem; }
 .insight-driver-lbl { font-family:'Oswald',sans-serif; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); }
@@ -981,7 +988,7 @@ ul { list-style: none; }
               <span id="insight-headline">Cargando…</span>
             </span>
           </div>
-          <p class="insight-text" id="insight-message">Analizando tu carga y recuperación…</p>
+          <ul class="insight-text" id="insight-message"><li>Analizando tu carga y recuperación…</li></ul>
           <button class="insight-why-toggle" id="insight-why-toggle" type="button" style="display:none" onclick="toggleInsightWhy()">
             <span id="insight-why-label">Ver por qué</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
@@ -1515,7 +1522,13 @@ function renderInsight(ins){
   var sevClass = {reduce:'sev-reduce', caution:'sev-caution', good:'sev-good', neutral:'sev-neutral'}[ins.severity] || 'sev-neutral';
   sevEl.className = 'insight-severity ' + sevClass;
   document.getElementById('insight-headline').textContent = ins.headline || '';
-  document.getElementById('insight-message').textContent = ins.message || '';
+  /* message_bullets: mensaje PRINCIPAL en bullets (pedido explícito del
+     usuario 2026-08-13, mismo día que el fix del "ver por qué") — se
+     acepta también ins.message suelto por robustez ante un despliegue
+     parcial. */
+  var msgEl = document.getElementById('insight-message');
+  var msgArr = Array.isArray(ins.message_bullets) ? ins.message_bullets : (ins.message ? [ins.message] : []);
+  msgEl.innerHTML = msgArr.map(function(b){ return '<li>' + _escInsight(b) + '</li>'; }).join('');
 
   var whyToggle = document.getElementById('insight-why-toggle');
   var techEl = document.getElementById('insight-technical');

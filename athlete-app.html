@@ -211,7 +211,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .insight-mob-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .55rem; padding-bottom: .55rem; border-bottom: 1px solid var(--border); }
 .insight-mob-title { font-family: 'Oswald', sans-serif; font-size: .84rem; font-weight: 700; }
 .insight-mob-sev { display: inline-flex; align-items: center; gap: .3rem; font-family: 'Oswald', sans-serif; font-size: .62rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .22rem .6rem; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-.insight-mob-msg { font-size: .86rem; line-height: 1.55; color: var(--text); }
+.insight-mob-msg { font-size: .86rem; line-height: 1.55; color: var(--text); list-style: none; padding-left: 0; margin: 0; }
+.insight-mob-msg li { position: relative; padding-left: 1.05rem; margin-bottom: .4rem; }
+.insight-mob-msg li:last-child { margin-bottom: 0; }
+.insight-mob-msg li::before { content: '•'; position: absolute; left: 0; color: #F0A500; }
+.insight-mob-msg li:last-child::before { content: '→'; font-weight: 700; }
 .insight-mob-why { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; font-size: .72rem; font-weight: 600; color: var(--dim); background: none; border: none; cursor: pointer; padding: 0; }
 .insight-mob-why svg { width: 9px; height: 9px; transition: transform .15s; }
 .insight-mob-why.open svg { transform: rotate(180deg); }
@@ -1230,10 +1234,13 @@ function renderInsightMobile(ins){
       +'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'
     : '';
 
+  var msgArr = Array.isArray(ins.message_bullets) ? ins.message_bullets : (ins.message ? [ins.message] : []);
+  var msgHtml = '<ul class="insight-mob-msg">'+msgArr.map(function(b){ return '<li>'+_escCm(b)+'</li>'; }).join('')+'</ul>';
+
   strip.innerHTML =
     '<div class="insight-mob-top"><span class="insight-mob-title">Insight del día</span>'
     +'<span class="insight-mob-sev" style="background:'+sevCol+'22;color:'+sevCol+';border:1px solid '+sevCol+'55">'+(ins.headline||'')+'</span></div>'
-    +'<div class="insight-mob-msg">'+(ins.message||'')+'</div>'
+    + msgHtml
     + whyHtml
     + (driversHtml?'<div class="insight-mob-drivers">'+driversHtml+'</div>':'')
     + ctaHtml;

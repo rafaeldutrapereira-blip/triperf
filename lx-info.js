@@ -526,9 +526,15 @@ function _render(metricId, currentValue){
       +'<div class="li-cb-label">Tu insight de hoy</div>'
       +'<div class="li-cb-interp"><strong style="color:'+icol+'">'+(inData.headline||'')+'</strong></div>'
       +'<div class="li-def" style="font-size:.8rem;margin-top:.4rem">'+(inData.message||'')+'</div>'
-      +(inData.message_technical && inData.message_technical !== inData.message
-        ? '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>Detalle técnico:</strong> '+inData.message_technical+'</div>'
-        : '')
+      +(function(){
+        // message_technical es una lista de bullets (antes era un string
+        // suelto) — se compacta acá con " · " porque este popup es chico,
+        // no vale la pena una lista <ul> completa como en el card grande.
+        var tech = inData.message_technical;
+        var techStr = Array.isArray(tech) ? tech.join(' · ') : (tech || '');
+        if(!techStr || techStr === inData.message) return '';
+        return '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>Detalle técnico:</strong> '+techStr+'</div>';
+      })()
       +'</div>';
 
     if(inData.drivers && inData.drivers.length){

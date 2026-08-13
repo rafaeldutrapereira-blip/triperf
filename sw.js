@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '81';  // 2026-08-13: "Ver por qué" del Insight del día en bullets ejecutivos
+var BUILD_VERSION = '82';  // 2026-08-13: mensaje principal del Insight del día también en bullets
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
