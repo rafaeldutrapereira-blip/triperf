@@ -137,6 +137,21 @@ var METRICS = {
     unidad: 'bpm (latidos por minuto)',
   },
 
+  training_readiness_garmin: {
+    nombre: 'Training Readiness (Garmin)',
+    emoji: '⌚',
+    definicion: '<strong>No es lo mismo que el "Readiness" de LabX</strong> (el de arriba, gauge grande) — son 2 scores distintos, calculados por 2 motores distintos, y por eso pueden mostrar números bien diferentes el mismo día. Este es el algoritmo <strong>propio y cerrado de Garmin</strong>, calculado en tu reloj a partir de HRV reciente, sueño, Body Battery, carga de entrenamiento acumulada y estrés — Garmin no publica la fórmula exacta ni los pesos que usa.',
+    formula: 'Algoritmo propietario de Garmin (no público) — corre en el reloj/app Garmin Connect',
+    rangos: [
+      {min:0,   max:25,  label:'Bajo',        color:'#EF4444', advice:'Garmin sugiere priorizar recuperación hoy.'},
+      {min:25,  max:50,  label:'Moderado',    color:'#F0A500', advice:'Apto para sesión suave a moderada según Garmin.'},
+      {min:50,  max:75,  label:'Bueno',       color:'#0EA5E9', advice:'Buenas condiciones para entrenar según Garmin.'},
+      {min:75,  max:100, label:'Óptimo ✓',   color:'#10B981', advice:'Garmin considera que estás listo para una sesión exigente.'},
+    ],
+    pro_tip: '¿Por qué puede diferir mucho del "Readiness" de LabX? El de LabX suma también tu estado mental (encuesta) y tus análisis de sangre si los cargaste — Garmin no tiene acceso a esos datos, solo a lo que mide el reloj. Si los 2 números coinciden, es una señal fuerte; si difieren mucho, mirá cuál dimensión del Readiness de LabX está más baja — ahí suele estar la explicación.',
+    unidad: '0–100 puntos',
+  },
+
   body_battery: {
     nombre: 'Body Battery — Energía Corporal',
     emoji: '🔋',
@@ -241,7 +256,7 @@ var METRICS = {
       {min:80, max:100,label:'Óptimo ✓',           color:'#22D3EE', advice:'Condiciones ideales. Aprovecha para sesión exigente o test.'},
     ],
     dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV+sueño) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:#a855f7">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:#f59e0b">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:#22d3ee">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
-    pro_tip: 'Fijate cuál es tu "limitante principal" (la dimensión con el score más bajo) — ahí es donde tenés más para ganar. Un DRS bajo con Recuperación en rojo pide más sueño; un DRS bajo con Forma en rojo pide simplemente unos días de descarga.',
+    pro_tip: 'Fijate cuál es tu "limitante principal" (la dimensión con el score más bajo) — ahí es donde tenés más para ganar. Un DRS bajo con Recuperación en rojo pide más sueño; un DRS bajo con Forma en rojo pide simplemente unos días de descarga. Si más abajo en esta página también ves "Training Readiness (Garmin)" con un número distinto, es normal: es el algoritmo propio de Garmin, no el mismo cálculo — tocá ese ícono "i" para ver por qué pueden diferir.',
     unidad: '0–100 puntos',
   },
 
