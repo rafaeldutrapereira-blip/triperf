@@ -98,6 +98,23 @@
       public:  false
     },
     {
+      /* Link directo al histórico PMC completo (CTL/ATL/TSB + Comparar
+         Ciclos) — antes vivía como card grande en dashboard.html, sacada
+         de ahí 2026-08-13 (pedido explícito del usuario) porque
+         detalle.html?metric=pmc ya es la versión completa/dedicada del
+         mismo gráfico, no hacía falta duplicarlo. */
+      group:   'health',
+      id:      'performance',
+      file:    'detalle.html?metric=pmc',
+      label:   'Performance',
+      labelI18n: 'nav_performance',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+      minPlan: 'basic',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
       group:   'health',
       id:      'blood_labs',
       file:    'blood_labs.html',

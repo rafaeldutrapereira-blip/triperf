@@ -74,6 +74,71 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .main{padding:1.5rem 0 4rem}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.4rem}
 #s-cal #cal-area{overflow-x:auto}
+
+/* -- PROGRESO SEMANAL (movido de dashboard.html 2026-08-13, pedido
+   explícito del usuario: primera card de esta página) -- */
+.kc {
+  background: linear-gradient(145deg,#08121E,#060E1C);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: .75rem 1rem;
+  display: flex; flex-direction: column; box-sizing: border-box;
+  transition: all var(--ease); position: relative; overflow: hidden;
+  margin-bottom: 1.4rem;
+}
+.wp-card {
+  display: flex; flex-direction: column;
+}
+.wp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .5rem; margin-bottom: .85rem;
+}
+.wp-title {
+  font-family: 'Oswald', sans-serif; font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--dim);
+}
+.wp-sport-btns {
+  display: flex; gap: .35rem; flex-wrap: wrap;
+}
+.wp-sport-btn {
+  font-size: .76rem; font-family: 'Oswald', sans-serif; font-weight: 600;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: .34rem .8rem; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); transition: all var(--ease);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.wp-sport-btn svg { width: 15px; height: 15px; display: block; }
+.wp-sport-btn.on {
+  background: rgba(255,101,53,.15); color: var(--orange);
+  border-color: rgba(255,101,53,.4);
+}
+.wp-sport-btn:hover:not(.on) { border-color: var(--orange); color: var(--text); }
+.wp-stats {
+  display: flex; gap: 1.5rem; margin-bottom: .85rem; flex-wrap: wrap;
+}
+.wp-stat-lbl {
+  font-size: .64rem; font-family: 'Oswald', sans-serif; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: .2rem;
+}
+.wp-stat-val {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.85rem;
+  font-weight: 800; color: var(--text); line-height: 1;
+}
+.wp-stat-unit { font-size: .82rem; font-weight: 500; color: var(--muted); margin-left: .15rem; }
+.wp-chart-wrap { width: 100%; overflow: visible; flex: 1; min-height: 60px; position: relative; }
+.wp-chart-wrap svg { width: 100%; height: 100%; min-height: 60px; display: block; overflow: visible; }
+.wp-tooltip {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+  background: #07111D; border: 1px solid rgba(61,104,128,.35);
+  border-radius: 6px; padding: .45rem .6rem; z-index: 30;
+  font-family: 'Oswald', sans-serif; white-space: nowrap;
+  opacity: 0; transition: opacity .12s ease; transform: translate(-50%, -110%);
+}
+.wp-tooltip.on { opacity: 1; }
+.wp-tooltip-wk { font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; color: #7FB3CC; margin-bottom: .25rem; }
+.wp-tooltip-row { font-size: .74rem; font-weight: 700; color: #F0F9FF; }
+.wp-tooltip-row span { font-weight: 400; color: #7FB3CC; margin-right: .3rem; }
+@media (max-width:480px) { .wp-stats { gap: 1rem; } .wp-stat-val { font-size: 1.2rem; } }
 .panel-head{padding:.9rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
 .panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.05em}
 
@@ -313,6 +378,65 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 <!-- MAIN CONTENT -->
 <div class="main">
   <div class="c">
+
+    <!-- PROGRESO SEMANAL (movido de dashboard.html 2026-08-13, pedido
+         explícito del usuario: primera card de esta página) -->
+    <div class="wp-card kc">
+      <div class="wp-header">
+        <div class="wp-title">Progreso Semanal</div>
+        <div class="wp-sport-btns" id="wp-sport-btns">
+          <button class="wp-sport-btn on" data-sport="all">Todo</button>
+          <button class="wp-sport-btn" data-sport="swim" aria-label="Natación">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M2 12c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/>
+              <path d="M2 17c1.5 2 3.5 2 5 0s3.5-2 5 0 3.5 2 5 0"/>
+              <circle cx="17.5" cy="5.5" r="2.5"/>
+            </svg>
+          </button>
+          <button class="wp-sport-btn" data-sport="bike" aria-label="Ciclismo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+              <path d="M15 6a1 1 0 0 0-1-1h-4"/><path d="M14.5 6L18 17.5"/>
+              <path d="M5.5 17.5l3-8 3 3 2-5.5"/>
+            </svg>
+          </button>
+          <button class="wp-sport-btn" data-sport="run" aria-label="Running">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+              <path d="M7.5 13.5S9 12 11 12s3.5 2 5.5 1l2-5.5-3.5-.5-1 3-2.5-1L9 12"/>
+              <path d="M11 12l-2 6"/><path d="M14 12.5l1.5 5.5"/>
+            </svg>
+          </button>
+          <button class="wp-sport-btn" data-sport="str" aria-label="Fuerza">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 8.5v7M18 8.5v7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="wp-stats">
+        <div>
+          <div class="wp-stat-lbl">Esta semana</div>
+          <div class="wp-stat-val" id="wp-dist">--<span class="wp-stat-unit">km</span></div>
+        </div>
+        <div>
+          <div class="wp-stat-lbl">Tiempo</div>
+          <div class="wp-stat-val" id="wp-time">--</div>
+        </div>
+        <div>
+          <div class="wp-stat-lbl">Acts</div>
+          <div class="wp-stat-val" id="wp-acts">--</div>
+        </div>
+        <div id="wp-streak-wrap" style="display:none">
+          <div class="wp-stat-lbl">Racha</div>
+          <div class="wp-stat-val" id="wp-streak">--<span class="wp-stat-unit">d</span></div>
+        </div>
+      </div>
+      <div class="wp-chart-wrap">
+        <svg id="wp-chart" viewBox="0 0 600 105" preserveAspectRatio="none"></svg>
+        <div class="wp-tooltip" id="wp-tooltip"></div>
+      </div>
+    </div>
 
     <!-- CUMPLIMIENTO SEMANAL -->
     <div class="panel sr" id="s-compl">
@@ -2320,9 +2444,302 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
       }
 
       if(typeof window._tpRender === 'function') window._tpRender();
+
+      // Progreso Semanal (movida de dashboard.html) — misma respuesta,
+      // sin fetch adicional.
+      if(typeof window.renderWeeklyProgress === 'function') window.renderWeeklyProgress(window._wpSport || 'all');
+      if(data.streak_days != null){
+        var streakWrap = document.getElementById('wp-streak-wrap');
+        var streakVal  = document.getElementById('wp-streak');
+        if(data.streak_days > 0){
+          if(streakVal) streakVal.innerHTML = data.streak_days+'<span class="wp-stat-unit">d</span>';
+          if(streakWrap) streakWrap.style.display = '';
+        } else if(streakWrap){
+          streakWrap.style.display = 'none';
+        }
+      }
     })
     .catch(function(){});
 })();
+</script>
+
+<!-- Progreso Semanal — movido de dashboard.html (2026-08-13, pedido
+     explícito del usuario). Mismo código, adaptado a la convención de
+     sport de ESTA página: dashboard.html usa 'gym' como clave de
+     filtro, training_plan.html usa 'str' (ver Bridge de arriba, que
+     remapea gym→str al cargar) — si se dejaba 'gym' acá el filtro
+     Fuerza nunca hubiera matcheado ninguna actividad real. -->
+<script>
+window._wpSport = 'all';
+
+function _weekKey(dateStr){
+  // Parse as LOCAL date to avoid UTC midnight shifting day in negative-offset timezones
+  var p = dateStr.split('-');
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  var day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  var y=d.getFullYear(), m=d.getMonth()+1, dd=d.getDate();
+  return y+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;
+}
+
+function _sportMatch(actSport, filter){
+  if(filter === 'all') return true;
+  if(filter === 'swim') return actSport === 'swim';
+  if(filter === 'bike') return actSport === 'bike';
+  if(filter === 'run')  return actSport === 'run';
+  if(filter === 'str')  return actSport === 'str';
+  return true;
+}
+
+function _sportColor(filter){
+  var c = {all:'#FF6535', swim:'#22D3EE', bike:'#F0A500', run:'#10B981', str:'#A855F7'};
+  return c[filter] || '#FF6535';
+}
+
+function renderWeeklyProgress(sport){
+  window._wpSport = sport || window._wpSport;
+  var _wpSport = window._wpSport;
+  var acts = (window.KL_DATA && window.KL_DATA.activities) || [];
+  var color = _sportColor(_wpSport);
+
+  // Ventana móvil de 5 semanas: la actual + las 4 anteriores.
+  var today = new Date();
+  var MO = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  function _isoLocal(d){ var y=d.getFullYear(),m=d.getMonth()+1,dd=d.getDate(); return y+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd; }
+  var weeks = [];
+  for(var w = 4; w >= 0; w--){
+    var d = new Date(today);
+    d.setDate(today.getDate() - (today.getDay()||7) + 1 - w * 7); // Monday of week (local)
+    weeks.push({
+      key: _isoLocal(d),
+      dist: 0, dur: 0, count: 0,
+      label: d.getDate() + ' ' + MO[d.getMonth()]
+    });
+  }
+
+  // Aggregate activities into weeks
+  acts.forEach(function(a){
+    if(!_sportMatch(a.sport, _wpSport)) return;
+    var wk = _weekKey(a.date_iso || a.date || '');
+    var w = weeks.find(function(x){ return x.key === wk; });
+    if(!w) return;
+    w.dist  += (a.dist_km  || 0);
+    w.dur   += (a.dur_min  || 0);
+    w.count += 1;
+  });
+
+  // Current week stats
+  var curWk = weeks[weeks.length - 1];
+  var distEl = document.getElementById('wp-dist');
+  var timeEl = document.getElementById('wp-time');
+  var actsEl = document.getElementById('wp-acts');
+  if(distEl) distEl.innerHTML = curWk.dist > 0 ? curWk.dist.toFixed(1)+'<span class="wp-stat-unit">km</span>' : '0<span class="wp-stat-unit">km</span>';
+  if(timeEl){
+    var h = Math.floor(curWk.dur / 60), m = Math.round(curWk.dur % 60);
+    timeEl.innerHTML = h > 0 ? h+'<span class="wp-stat-unit">h</span> '+m+'<span class="wp-stat-unit">min</span>' : m+'<span class="wp-stat-unit">min</span>';
+  }
+  if(actsEl) actsEl.textContent = curWk.count;
+
+  // Draw SVG chart
+  var svg = document.getElementById('wp-chart');
+  if(!svg) return;
+  var W = 600, H = 105, padL = 28, padR = 8, padT = 10, padB = 38;
+  var chartW = W - padL - padR;
+  var chartH = H - padT - padB;
+
+  // Gym/fuerza no tiene distancia (dist_km siempre 0) — se grafica
+  // duración (minutos) en vez de distancia para ese filtro.
+  var useDur  = (_wpSport === 'str');
+  var metricOf = function(w){ return useDur ? w.dur : w.dist; };
+  var metricUnit = useDur ? 'min' : 'km';
+
+  var maxDist = Math.max.apply(null, weeks.map(metricOf));
+  if(maxDist < 1) maxDist = useDur ? 30 : 10;
+  var maxLine = useDur ? Math.ceil(maxDist / 10) * 10 : Math.ceil(maxDist / 10) * 10;
+
+  var barW = chartW / weeks.length;
+  var barPad = barW * 0.2;
+
+  var lines = [];
+
+  // Gradientes — id único por color de deporte para que no choquen si en
+  // algún momento hubiera 2 instancias del chart en la misma página.
+  var gid = 'wp' + color.replace('#','');
+  lines.push(
+    '<defs>' +
+      '<linearGradient id="'+gid+'-bar-on" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="'+color+'" stop-opacity=".95"/>' +
+        '<stop offset="1" stop-color="'+color+'" stop-opacity=".55"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="'+gid+'-bar-off" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#fff" stop-opacity=".16"/>' +
+        '<stop offset="1" stop-color="#fff" stop-opacity=".05"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="'+gid+'-area" gradientUnits="userSpaceOnUse" x1="0" y1="'+padT+'" x2="0" y2="'+(padT+chartH)+'">' +
+        '<stop offset="0" stop-color="'+color+'" stop-opacity=".32"/>' +
+        '<stop offset="1" stop-color="'+color+'" stop-opacity="0"/>' +
+      '</linearGradient>' +
+    '</defs>'
+  );
+
+  // Background grid
+  lines.push('<line x1="'+padL+'" y1="'+padT+'" x2="'+(W-padR)+'" y2="'+padT+'" stroke="rgba(255,255,255,.04)" stroke-width="1"/>');
+  lines.push('<line x1="'+padL+'" y1="'+(padT+chartH/2)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH/2)+'" stroke="rgba(255,255,255,.04)" stroke-width="1"/>');
+  lines.push('<line x1="'+padL+'" y1="'+(padT+chartH)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH)+'" stroke="rgba(255,255,255,.07)" stroke-width="1"/>');
+  // Y labels
+  lines.push('<text x="'+(padL-4)+'" y="'+(padT+4)+'" text-anchor="end" font-size="9" fill="rgba(255,255,255,.4)">'+maxLine+metricUnit+'</text>');
+  lines.push('<text x="'+(padL-4)+'" y="'+(padT+chartH/2+4)+'" text-anchor="end" font-size="9" fill="rgba(255,255,255,.4)">'+(maxLine/2)+'</text>');
+
+  // Bars + labels
+  var dotPts = [];
+  weeks.forEach(function(wk, i){
+    var val = metricOf(wk);
+    var x = padL + i * barW;
+    var barH = val > 0 ? (val / maxLine) * chartH : 0;
+    var y = padT + chartH - barH;
+
+    if(val > 0){
+      lines.push('<rect class="wp-bar" data-wk-idx="'+i+'" x="'+(x+barPad)+'" y="'+y+'" width="'+(barW-barPad*2)+'" height="'+barH+'" rx="2" fill="url(#'+gid+'-bar-off)"/>');
+    }
+
+    var cx = padL + (i + 0.5) * barW;
+    var cy = val > 0 ? padT + chartH - (val / maxLine) * chartH : null;
+    if(cy !== null) dotPts.push({x:cx, y:cy, idx:i});
+
+    var lx = x + barW / 2;
+    var ly = padT + chartH + 12;
+    lines.push('<text class="wp-lbl" data-wk-idx="'+i+'" data-label="'+wk.label+'" x="'+lx+'" y="'+ly+'" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.42)">'+wk.label+'</text>');
+  });
+
+  // Línea de referencia: promedio de las 5 semanas.
+  var avgVal = weeks.reduce(function(s,w){ return s + metricOf(w); }, 0) / weeks.length;
+  if(avgVal > 0){
+    var avgY = padT + chartH - Math.min(avgVal / maxLine, 1) * chartH;
+    lines.push('<line x1="'+padL+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,.28)" stroke-width="1" stroke-dasharray="3,3"/>');
+    lines.push('<text x="'+(W-padR)+'" y="'+(avgY-3).toFixed(1)+'" text-anchor="end" font-size="7" fill="rgba(255,255,255,.4)">prom. '+avgVal.toFixed(useDur?0:1)+metricUnit+'</text>');
+  }
+
+  // Curva suavizada (Catmull-Rom → Bézier).
+  function _smoothPath(pts){
+    if(pts.length < 2) return '';
+    var d = 'M'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+    for(var i = 0; i < pts.length - 1; i++){
+      var p0 = pts[i-1] || pts[i];
+      var p1 = pts[i];
+      var p2 = pts[i+1];
+      var p3 = pts[i+2] || p2;
+      var c1x = p1.x + (p2.x - p0.x)/6, c1y = p1.y + (p2.y - p0.y)/6;
+      var c2x = p2.x - (p3.x - p1.x)/6, c2y = p2.y - (p3.y - p1.y)/6;
+      d += ' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+','+c2x.toFixed(1)+' '+c2y.toFixed(1)+','+p2.x.toFixed(1)+' '+p2.y.toFixed(1);
+    }
+    return d;
+  }
+
+  if(dotPts.length > 1){
+    var smooth = _smoothPath(dotPts);
+    var baseline = padT + chartH;
+    var areaPath = smooth +
+      ' L'+dotPts[dotPts.length-1].x.toFixed(1)+' '+baseline +
+      ' L'+dotPts[0].x.toFixed(1)+' '+baseline + ' Z';
+    lines.push('<path d="'+areaPath+'" fill="url(#'+gid+'-area)" stroke="none"/>');
+    lines.push('<path d="'+smooth+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-opacity=".6" stroke-linejoin="round" stroke-linecap="round"/>');
+  }
+  dotPts.forEach(function(p){
+    lines.push('<circle class="wp-dot" data-wk-idx="'+p.idx+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="2" fill="rgba(255,255,255,.4)" stroke="none" stroke-width="0"/>');
+  });
+
+  // Zonas invisibles de hover.
+  weeks.forEach(function(wk, i){
+    var x = padL + i * barW;
+    lines.push('<rect x="'+x+'" y="0" width="'+barW+'" height="'+H+'" fill="transparent" data-wk-idx="'+i+'" style="cursor:pointer"/>');
+  });
+
+  svg.innerHTML = lines.join('');
+  window._wpWeeksSnapshot = weeks;
+  window._wpActiveColor   = color;
+  window._wpDefaultIdx    = weeks.length - 1;
+  _wpHighlight(window._wpDefaultIdx);
+}
+window.renderWeeklyProgress = renderWeeklyProgress;
+
+function _wpHighlight(idx){
+  var svg = document.getElementById('wp-chart');
+  if(!svg) return;
+  var color = window._wpActiveColor || '#FF6535';
+  var gid = 'wp' + color.replace('#','');
+  svg.querySelectorAll('.wp-bar').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('fill', on ? 'url(#'+gid+'-bar-on)' : 'url(#'+gid+'-bar-off)');
+  });
+  svg.querySelectorAll('.wp-dot').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('r', on ? 3.5 : 2);
+    el.setAttribute('fill', on ? color : 'rgba(255,255,255,.4)');
+    el.setAttribute('stroke', on ? color : 'none');
+    el.setAttribute('stroke-width', on ? 1.5 : 0);
+  });
+  svg.querySelectorAll('.wp-lbl').forEach(function(el){
+    var on = (+el.getAttribute('data-wk-idx') === idx);
+    el.setAttribute('fill', 'rgba(255,255,255,'+(on?'.85':'.35')+')');
+    el.textContent = (on ? '▶ ' : '') + el.getAttribute('data-label');
+  });
+}
+
+// Tooltip — delegado sobre el SVG.
+window._wpWeeksSnapshot = [];
+window._wpActiveColor   = '#FF6535';
+window._wpDefaultIdx    = 0;
+(function(){
+  var svgEl = document.getElementById('wp-chart');
+  var ttEl  = document.getElementById('wp-tooltip');
+  var wrapEl = document.querySelector('.wp-chart-wrap');
+  if(!svgEl || !ttEl || !wrapEl) return;
+
+  function fmtDur(min){
+    var h = Math.floor(min/60), m = Math.round(min%60);
+    return h > 0 ? h+'h '+m+'min' : m+'min';
+  }
+
+  svgEl.addEventListener('mousemove', function(e){
+    var idx = e.target.getAttribute && e.target.getAttribute('data-wk-idx');
+    if(idx == null){ ttEl.classList.remove('on'); return; }
+    var wk = window._wpWeeksSnapshot[+idx];
+    if(!wk){ ttEl.classList.remove('on'); return; }
+
+    _wpHighlight(+idx);
+
+    ttEl.innerHTML =
+      '<div class="wp-tooltip-wk">Semana del ' + wk.label + '</div>' +
+      '<div class="wp-tooltip-row"><span>Distancia</span>' + wk.dist.toFixed(1) + ' km</div>' +
+      '<div class="wp-tooltip-row"><span>Tiempo</span>' + fmtDur(wk.dur) + '</div>' +
+      '<div class="wp-tooltip-row"><span>Sesiones</span>' + wk.count + '</div>';
+
+    var wrapRect = wrapEl.getBoundingClientRect();
+    var ttW = ttEl.offsetWidth || 120;
+    var x = e.clientX - wrapRect.left;
+    var y = e.clientY - wrapRect.top;
+    x = Math.max(ttW/2 + 4, Math.min(wrapRect.width - ttW/2 - 4, x));
+    ttEl.style.left = x + 'px';
+    ttEl.style.top  = y + 'px';
+    ttEl.classList.add('on');
+  });
+  svgEl.addEventListener('mouseleave', function(){
+    ttEl.classList.remove('on');
+    _wpHighlight(window._wpDefaultIdx);
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', function(){
+  var btns = document.getElementById('wp-sport-btns');
+  if(btns) btns.addEventListener('click', function(e){
+    var btn = e.target.closest('.wp-sport-btn');
+    if(!btn) return;
+    btns.querySelectorAll('.wp-sport-btn').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    renderWeeklyProgress(btn.dataset.sport);
+  });
+  renderWeeklyProgress('all');
+});
 </script>
 
 <script src="auth.js"></script>
