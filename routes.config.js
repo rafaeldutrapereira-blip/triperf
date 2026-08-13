@@ -87,35 +87,6 @@
     },
     {
       group:   'health',
-      id:      'analytics',
-      file:    'analytics.html',
-      label:   'Analytics',
-      labelI18n: 'nav_analytics',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-      minPlan: 'agegroup',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      /* Link directo al histórico PMC completo (CTL/ATL/TSB + Comparar
-         Ciclos) — antes vivía como card grande en dashboard.html, sacada
-         de ahí 2026-08-13 (pedido explícito del usuario) porque
-         detalle.html?metric=pmc ya es la versión completa/dedicada del
-         mismo gráfico, no hacía falta duplicarlo. */
-      group:   'health',
-      id:      'performance',
-      file:    'detalle.html?metric=pmc',
-      label:   'Performance',
-      labelI18n: 'nav_performance',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-      minPlan: 'basic',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      group:   'health',
       id:      'blood_labs',
       file:    'blood_labs.html',
       label:   'Labs',
@@ -174,6 +145,40 @@
       labelI18n: 'nav_community',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
       minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      /* Movido de 'health' a 'goal' 2026-08-14, pedido explícito del
+         usuario: Analytics/Performance encajan mejor junto a
+         Race Day/Mi Huella/Comunidad que junto a Recuperación/Mental/
+         Nutrición/Labs. */
+      group:   'goal',
+      id:      'analytics',
+      file:    'analytics.html',
+      label:   'Analytics',
+      labelI18n: 'nav_analytics',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      /* Link directo al histórico PMC completo (CTL/ATL/TSB + Comparar
+         Ciclos) — antes vivía como card grande en dashboard.html, sacada
+         de ahí 2026-08-13 (pedido explícito del usuario) porque
+         detalle.html?metric=pmc ya es la versión completa/dedicada del
+         mismo gráfico, no hacía falta duplicarlo. Movido de 'health' a
+         'goal' 2026-08-14, junto con Analytics. */
+      group:   'goal',
+      id:      'performance',
+      file:    'detalle.html?metric=pmc',
+      label:   'Performance',
+      labelI18n: 'nav_performance',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+      minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false

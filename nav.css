@@ -44,31 +44,43 @@
 .sb-nav {
   flex: 1;
   min-height: 0;
-  padding: .4rem 0 .3rem;
+  padding: .3rem 0 .3rem;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  scrollbar-width: none;
+  /* Antes: scrollbar-width:none + ::-webkit-scrollbar{display:none} —
+     con más ítems en el menú (Performance agregado 2026-08-13) la lista
+     empezó a necesitar scroll en pantallas más chicas, pero al no
+     mostrar NUNCA la barra, no había ninguna pista visual de que hacía
+     falta scrollear — el usuario reportó "Perfil" como si hubiera
+     desaparecido, cuando en realidad estaba ahí, solo scrolleado fuera
+     de vista. Se muestra una barra fina en vez de ocultarla del todo. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.16) transparent;
 }
-.sb-nav::-webkit-scrollbar { display: none; }
+.sb-nav::-webkit-scrollbar { width: 4px; }
+.sb-nav::-webkit-scrollbar-track { background: transparent; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 4px; }
+.sb-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.28); }
 .sb-sect {
   font-family: 'Oswald', sans-serif;
   font-size: .54rem; font-weight: 600;
   letter-spacing: .18em; text-transform: uppercase;
   color: var(--dim);
-  padding: .38rem 1.15rem .12rem;
-  margin-top: .1rem;
+  padding: .3rem 1.15rem .1rem;
+  margin-top: .05rem;
 }
 .sb-lnk {
   display: flex; align-items: center; gap: .55rem;
-  padding: .44rem 1.15rem;
+  padding: .36rem 1.15rem;
   font-family: 'Oswald', sans-serif;
-  font-size: .8rem; font-weight: 500;
-  letter-spacing: .06em; text-transform: uppercase;
+  font-size: .78rem; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase;
   color: var(--muted); text-decoration: none;
   border-left: 3px solid transparent;
   transition: color .17s, background .17s, border-color .17s;
-  margin: .02rem 0;
+  margin: 0;
+  white-space: nowrap;
 }
 .sb-lnk svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .65; transition: opacity .17s; }
 .sb-lnk:hover { color: var(--text); background: rgba(255,255,255,.042); }
