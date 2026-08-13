@@ -2994,12 +2994,30 @@ function toggleCommunityFollow(userId){
    actividad, se muestra un mensaje en vez de un mapa/tabla vacíos. */
 var _cmDetailMap = null;
 
-function _cmFmtPace(sPerKm, sport){
-  if(!sPerKm) return '—';
-  var perUnit = sport==='swim' ? 100 : 1000;
-  var secs = sPerKm * (perUnit/1000);
-  var m = Math.floor(secs/60), s = Math.round(secs%60);
-  return m+':'+String(s).padStart(2,'0')+(sport==='swim'?'/100m':'/km');
+/* Bug real reportado en vivo (2026-08-14): en bici se mostraba
+   "1:49/km" como si fuera ritmo de carrera — el dato (avg_pace_s_per_km,
+   segundos por km) es real, pero mostrarlo como ritmo min:seg no tiene
+   sentido para bici, tiene que ser velocidad km/h. Mismo criterio que
+   ya usa correctamente training_detail.html (la web) para sus
+   parciales: ritmo min:seg SOLO para run/swim, km/h para todo lo demás
+   (calculado de distance_m/duration_s del propio parcial, no del
+   pace_s_per_km). Recibe el split completo (no solo el pace) porque
+   necesita distance_m/duration_s para el caso bici. */
+function _cmFmtPace(s, sport){
+  if(sport === 'swim' && s.avg_pace_s_per_100m){
+    var secs100 = s.avg_pace_s_per_100m;
+    var m100 = Math.floor(secs100/60), s100 = Math.round(secs100%60);
+    return m100+':'+String(s100).padStart(2,'0')+'/100m';
+  }
+  if(sport === 'run' && s.avg_pace_s_per_km){
+    var secsKm = s.avg_pace_s_per_km;
+    var mKm = Math.floor(secsKm/60), sKm = Math.round(secsKm%60);
+    return mKm+':'+String(sKm).padStart(2,'0')+'/km';
+  }
+  if(sport !== 'run' && sport !== 'swim' && s.duration_s && s.distance_m){
+    return ((s.distance_m/1000)/(s.duration_s/3600)).toFixed(1)+' km/h';
+  }
+  return '—';
 }
 
 function showCommunityActivityDetail(idx){
@@ -3061,14 +3079,15 @@ function showCommunityActivityDetail(idx){
         var unit = c.sport==='bike' ? '5km' : c.sport==='run' ? 'km' : 'tramo';
         var rows = splits.map(function(s){
           return '<tr><td>'+s.idx+'</td>'
-            +'<td>'+_cmFmtPace(s.avg_pace_s_per_km, c.sport)+'</td>'
+            +'<td>'+_cmFmtPace(s, c.sport)+'</td>'
             +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
             +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
           +'</tr>';
         }).join('');
+        var paceLbl = c.sport==='swim' ? 'Ritmo /100m' : c.sport==='run' ? 'Ritmo' : 'Vel. Media';
         splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
           +'<div style="overflow-x:auto"><table class="cm-splits-table">'
-          +'<tr><th>#</th><th>Ritmo</th><th>FC</th><th>Pot.</th></tr>'
+          +'<tr><th>#</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
           + rows
           +'</table></div>';
       } else {
