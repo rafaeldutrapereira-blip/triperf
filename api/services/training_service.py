@@ -328,6 +328,22 @@ def build_daily_insight(
             "tone": sleep_tone, "delta": None,
         })
 
+    def _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h):
+        """Frase corta para el 'ver por qué' de los casos good/neutral,
+        confirmando explícitamente que HRV/sueño SÍ se revisaron y están
+        bien — sin esto, el texto técnico hablaba solo de TSB/ACWR aunque
+        el insight combina también recuperación, dejando la impresión de
+        que esos datos no se habían tenido en cuenta."""
+        bits = []
+        if hrv_last_night is not None and not hrv_down:
+            bits.append(f"tu HRV de anoche ({round(hrv_last_night)}ms) se mantiene estable")
+        if sleep_total_h is not None and not poor_sleep:
+            h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
+            bits.append(f"dormiste {h}h {m:02d}m")
+        if not bits:
+            return ""
+        return " Además, " + " y ".join(bits) + "."
+
     def _base(severity, headline, message, message_technical=None, cta=None, cta_href=None):
         # message: lenguaje llano, sin jerga ni números — lo que ve todo el
         # mundo por default. message_technical: la versión con TSB/ACWR/ATL
@@ -507,16 +523,30 @@ def build_daily_insight(
             "good", "Buen momento para exigir",
             "Estás en tu mejor momento de forma y tu recuperación se ve estable. "
             "Es un buen día para una sesión de calidad o un test.",
-            f"Tu forma está en su punto más alto (TSB {tsb:.0f}) con carga en rango saludable (ACWR {acwr:.2f}) "
-            f"y tu recuperación se ve estable. Es un buen día para una sesión de calidad o un test.",
+            # "Ver por qué" real: no repite la frase de arriba con 2 números
+            # metidos adentro — explica CADA chequeo que se hizo y por qué
+            # pasó, igual de detallado que los casos "reduce"/"caution" de
+            # arriba. Antes este texto era casi idéntico al mensaje llano
+            # (reportado por el usuario 2026-08-13: "el mensaje y ver
+            # porqué son muy iguales").
+            f"TSB +{tsb:.0f}, por encima del umbral de forma óptima (+15) — tu fatiga acumulada bajó lo suficiente "
+            f"para que el cuerpo esté fresco. ACWR {acwr:.2f}, dentro del rango seguro (0.8–1.3), así que ese TSB alto "
+            f"no viene de haber entrenado de menos esta semana." + _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h)
+            + " Ningún indicador de fatiga o mala recuperación está activo — buen día para una sesión de calidad o un test.",
         )
 
     # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
     return _base(
         "neutral", "Todo en rango normal",
         "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy. Seguí tu plan con normalidad.",
-        f"Tu carga (TSB {tsb:.0f}, ACWR {acwr:.2f}) y tu recuperación están dentro de lo esperado hoy. "
-        f"Sigue tu plan de entrenamiento con normalidad.",
+        # Mismo criterio que el caso "good" de arriba: explicar los rangos
+        # chequeados en vez de repetir el mensaje llano con TSB/ACWR pegados.
+        f"TSB {tsb:+.0f}, dentro del rango normal (-8 a +15) — ni fatiga excesiva ni forma pico. "
+        f"ACWR {acwr:.2f}, dentro del rango seguro (0.8–1.3) — la carga de esta semana está bien calibrada respecto "
+        f"a tus últimas 4."
+        + _insight_recovery_clause(hrv_down, hrv_last_night, poor_sleep, sleep_total_h)
+        + " Ninguno de tus indicadores de carga o recuperación está fuera de rango — seguí tu plan de entrenamiento "
+          "con normalidad.",
     )
 
 
