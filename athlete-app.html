@@ -240,6 +240,25 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mkc-val .u { font-size: .62rem; color: var(--dim); font-weight: 500; margin-left: .1rem; }
 .mkc-val svg { width: 9px; height: 9px; flex-shrink: 0; }
 .mkc-pill { font-size: .58rem; font-weight: 700; padding: .16rem .5rem; border-radius: 20px; white-space: nowrap; }
+.mkc-row.tap { cursor: pointer; }
+.mkc-row.tap:active { opacity: .65; }
+
+/* Detalle de indicador (modal #md-modal) — mismo lenguaje visual que
+   el resto de modales bottom-sheet de la app (.ios-guide). */
+.md-sub { font-size: .74rem; color: var(--dim); margin: -.7rem 1.5rem 1rem 0; line-height: 1.4; }
+.md-tabs { display: flex; gap: .35rem; overflow-x: auto; padding-bottom: .15rem; margin-bottom: 1.1rem; }
+.md-tab { flex-shrink: 0; padding: .4rem .7rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+.md-tab.on { background: rgba(255,101,53,.15); border-color: rgba(255,101,53,.5); color: var(--orange); }
+.md-hero { margin-bottom: 1rem; }
+.md-hero-val { font-family: 'Barlow Condensed', sans-serif; font-size: 2.3rem; font-weight: 900; line-height: 1; }
+.md-hero-sub { font-size: .72rem; color: var(--dim); margin-top: .3rem; line-height: 1.4; }
+.md-chart-wrap { height: 170px; margin-bottom: 1.1rem; position: relative; }
+.md-empty { padding: 1.5rem 0; text-align: center; color: var(--dim); font-size: .8rem; }
+.md-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.md-stat { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .65rem .8rem; }
+.md-stat-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.md-stat-val { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 700; margin-top: .2rem; }
+.md-stat-date { font-size: .6rem; color: var(--dim); margin-top: .15rem; }
 
 /* ── Próxima carrera — mismo diseño que .kc-race del dashboard de
    escritorio (countdown en vivo días:hrs:min:seg que se actualiza cada
@@ -541,6 +560,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <body>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js — misma versión que detalle.html (la web), para que el
+     detalle de indicador en Hoy dibuje el histórico con el mismo motor
+     de gráficos, no una reimplementación aparte. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <div id="toast"></div>
 
@@ -592,6 +615,48 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <!-- Detalle de una actividad de la semana (pedido explícito: ver qué
      hay que hacer antes de entrenar, no solo nombre+TSS en la tarjeta
      chica). Mismo patrón visual que #ios-guide (bottom sheet). -->
+<!-- Detalle de indicador (Fitness/Fatiga/Forma/ACWR/HRV/TSS/VO2) al tocar
+     una fila en Hoy — mismo dato/criterio que detalle.html (la web):
+     gráfico + tabs de período + máximo/mínimo/promedio/tendencia, todo
+     derivado del MISMO payload de /athlete/dashboard ya cacheado en
+     window._lxDashData, sin backend nuevo. Alcance v1 acordado con el
+     usuario: núcleo (gráfico+períodos), sin Comparar Ciclos, sin ACWR
+     por disciplina, sin tabla de actividades — esas quedan para una
+     fase futura si se pide. -->
+<div id="md-modal" class="ios-guide" style="display:none" onclick="closeMetricDetail(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeMetricDetail()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-scroll">
+      <div class="ios-guide-title" id="md-title">—</div>
+      <div class="md-sub" id="md-sub"></div>
+
+      <div class="md-tabs" id="md-tabs">
+        <button class="md-tab" data-p="7" onclick="mdSetPeriod(7)">Semana</button>
+        <button class="md-tab" data-p="30" onclick="mdSetPeriod(30)">Mes</button>
+        <button class="md-tab" data-p="90" onclick="mdSetPeriod(90)">3M</button>
+        <button class="md-tab" data-p="180" onclick="mdSetPeriod(180)">6M</button>
+        <button class="md-tab" data-p="365" onclick="mdSetPeriod(365)">Año</button>
+        <button class="md-tab on" data-p="0" onclick="mdSetPeriod(0)">Todo</button>
+      </div>
+
+      <div class="md-hero">
+        <div class="md-hero-val" id="md-hero-val">—</div>
+        <div class="md-hero-sub" id="md-hero-sub"></div>
+      </div>
+
+      <div class="md-chart-wrap" id="md-chart-wrap"><canvas id="md-chart"></canvas></div>
+      <div class="md-empty" id="md-empty" style="display:none">Sin datos históricos disponibles todavía. Sincronizá tu Garmin para ver esta evolución.</div>
+
+      <div class="md-stats" id="md-stats">
+        <div class="md-stat"><div class="md-stat-lbl">Máximo</div><div class="md-stat-val" id="md-s-max">—</div><div class="md-stat-date" id="md-s-max-date"></div></div>
+        <div class="md-stat"><div class="md-stat-lbl">Mínimo</div><div class="md-stat-val" id="md-s-min">—</div><div class="md-stat-date" id="md-s-min-date"></div></div>
+        <div class="md-stat"><div class="md-stat-lbl">Promedio</div><div class="md-stat-val" id="md-s-avg">—</div><div class="md-stat-date">período seleccionado</div></div>
+        <div class="md-stat"><div class="md-stat-lbl">Tendencia</div><div class="md-stat-val" id="md-s-trend">—</div><div class="md-stat-date" id="md-s-trend-date"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="wo-detail-modal" class="ios-guide" style="display:none" onclick="closeWeekWorkoutDetail(event)">
   <div class="ios-guide-card" onclick="event.stopPropagation()">
     <button class="ios-guide-close" onclick="closeWeekWorkoutDetail()" aria-label="Cerrar">✕</button>
@@ -1103,6 +1168,14 @@ function loadStatusHealth(){
       if(h360.garmin_today) d.training_readiness_garmin = h360.garmin_today.training_readiness;
       if(h360.mental) { d.mental_score = h360.mental.latest_score; d.mental_level = h360.mental.latest_level; }
     }
+    /* Se cachea el payload crudo de /athlete/dashboard para que el
+       detalle de indicador (openMetricDetail) reuse EXACTAMENTE la
+       misma respuesta/fuente de datos que ya trajo Hoy, en vez de
+       pedirla de nuevo — mismo dato, sincronizado por construcción con
+       detalle.html (la web), que también arma su histórico completo a
+       partir de este mismo endpoint (pmc/acwr_history/hrv_history/
+       vo2_history/tss_weekly). */
+    window._lxDashData = d;
     renderStatusHealth(d);
   }).catch(function(){});
 }
@@ -1195,16 +1268,16 @@ function renderStatusHealth(d){
     var az = acwrZones[d.acwr_zone];
 
     var rows =
-      '<div class="mkc-row"><span class="mkc-lbl">Fitness (CTL)</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</span></span></div>'
-      +'<div class="mkc-row"><span class="mkc-lbl">Fatiga (ATL)</span><span class="mkc-right"><span class="mkc-val" style="color:'+atlCol+'">'+Math.round(atl)+'</span><span class="mkc-pill" style="background:'+atlCol+'22;color:'+atlCol+'">'+atlLabel+'</span></span></div>'
-      +'<div class="mkc-row"><span class="mkc-lbl">Forma (TSB)</span><span class="mkc-right"><span class="mkc-val" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
+      '<div class="mkc-row tap" onclick="openMetricDetail(\'ctl\')"><span class="mkc-lbl">Fitness (CTL)</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</span></span></div>'
+      +'<div class="mkc-row tap" onclick="openMetricDetail(\'atl\')"><span class="mkc-lbl">Fatiga (ATL)</span><span class="mkc-right"><span class="mkc-val" style="color:'+atlCol+'">'+Math.round(atl)+'</span><span class="mkc-pill" style="background:'+atlCol+'22;color:'+atlCol+'">'+atlLabel+'</span></span></div>'
+      +'<div class="mkc-row tap" onclick="openMetricDetail(\'tsb\')"><span class="mkc-lbl">Forma (TSB)</span><span class="mkc-right"><span class="mkc-val" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
     if(az && d.acwr != null){
-      rows += '<div class="mkc-row"><span class="mkc-lbl">ACWR (Carga)</span><span class="mkc-right"><span class="mkc-val" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
+      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')"><span class="mkc-lbl">ACWR (Carga)</span><span class="mkc-right"><span class="mkc-val" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
     }
     if(d.injury_risk && d.injury_risk.score != null){
       var ir = d.injury_risk;
       var lvlLabel = {low:'Bajo', moderate:'Moderado', high:'Alto', critical:'Crítico'}[ir.level] || ir.level;
-      rows += '<div class="mkc-row"><span class="mkc-lbl">Riesgo de Lesión</span><span class="mkc-right"><span class="mkc-val" style="color:'+ir.color+'">'+Math.round(ir.score)+'<span class="u">/100</span></span><span class="mkc-pill" style="background:'+ir.color+'22;color:'+ir.color+'">'+lvlLabel+'</span></span></div>';
+      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')"><span class="mkc-lbl">Riesgo de Lesión</span><span class="mkc-right"><span class="mkc-val" style="color:'+ir.color+'">'+Math.round(ir.score)+'<span class="u">/100</span></span><span class="mkc-pill" style="background:'+ir.color+'22;color:'+ir.color+'">'+lvlLabel+'</span></span></div>';
     }
 
     var strip = document.getElementById('status-strip');
@@ -1217,7 +1290,7 @@ function renderStatusHealth(d){
   // ── Card "¿Cómo estoy hoy?" ──
   var hItems = '';
   if(d.hrv_last_night != null){
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">HRV Score</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'<span class="u">ms</span></span></span></div>';
+    hItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'hrv\')"><span class="mkc-lbl">HRV Score</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'<span class="u">ms</span></span></span></div>';
   }
   if(d.resting_hr != null){
     hItems += '<div class="mkc-row"><span class="mkc-lbl">FC Reposo</span><span class="mkc-right"><span class="mkc-val" style="color:#FB7185">'+Math.round(d.resting_hr)+'<span class="u">bpm</span></span></span></div>';
@@ -1255,13 +1328,13 @@ function renderStatusHealth(d){
   // (mismo criterio que la 3ª card del dashboard de escritorio). ──
   var gItems = '';
   if(d.tss_week != null){
-    gItems += '<div class="mkc-row"><span class="mkc-lbl">TSS Semana</span><span class="mkc-right"><span class="mkc-val" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')"><span class="mkc-lbl">TSS Semana</span><span class="mkc-right"><span class="mkc-val" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
   }
   if(d.vo2max_running_garmin != null){
-    gItems += '<div class="mkc-row"><span class="mkc-lbl">VO2 Max Running</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'running\')"><span class="mkc-lbl">VO2 Max Running</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
   }
   if(d.vo2max_cycling_garmin != null){
-    gItems += '<div class="mkc-row"><span class="mkc-lbl">VO2 Max Ciclismo</span><span class="mkc-right"><span class="mkc-val" style="color:#FF6535">'+d.vo2max_cycling_garmin+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'cycling\')"><span class="mkc-lbl">VO2 Max Ciclismo</span><span class="mkc-right"><span class="mkc-val" style="color:#FF6535">'+d.vo2max_cycling_garmin+'</span></span></div>';
   }
   if(gItems){
     var gstrip = document.getElementById('goal-strip');
@@ -1297,6 +1370,192 @@ function renderStatusHealth(d){
     _raceTick();
     if(!window._raceTickInterval){ window._raceTickInterval = setInterval(_raceTick, 1000); }
   }
+}
+
+/* ── Detalle de indicador (al tocar una fila en Hoy) ────────────────
+   Mismo catálogo/criterio que detalle.html (la web) para los 7
+   indicadores que ahí SÍ tienen gráfico individual propio (ctl/atl/
+   tsb/acwr/hrv/tss/vo2) — el resto (rhr/sueño/body battery/training
+   readiness) tampoco tiene detalle individual en la web (viven solo
+   dentro del composite "wellbeing"), así que no se ofrecen acá
+   tampoco: se mantiene 1:1 con lo que detalle.html realmente puede
+   mostrar, no se inventa nada nuevo. Alcance v1: gráfico + tabs de
+   período + máximo/mínimo/promedio/tendencia — sin Comparar Ciclos,
+   sin ACWR por disciplina, sin tabla de actividades (quedan
+   fuera a propósito, ver AskUserQuestion 2026-08-13). */
+var MD_MC = {
+  ctl:  { title:'CTL — Fitness',            sub:'Promedio ponderado 42 días · Acumulación aeróbica',            color:'#10B981', unit:'',           chartType:'line' },
+  atl:  { title:'ATL — Fatiga',             sub:'Promedio ponderado 7 días · Fatiga de corto plazo',            color:'#FF6535', unit:'',           chartType:'line' },
+  tsb:  { title:'TSB — Forma',              sub:'CTL − ATL · Balance de estrés atlético',                       color:'#F0A500', unit:'',           chartType:'line' },
+  acwr: { title:'ACWR — Carga Aguda:Crónica', sub:'Ratio 7:28 días · Zona óptima 0.8–1.3',                      color:'#F0A500', unit:'',           chartType:'line' },
+  hrv:  { title:'HRV — Variabilidad Cardíaca', sub:'Promedio ponderado 7 días · Medición matutina en reposo',   color:'#22D3EE', unit:'ms',         chartType:'line' },
+  tss:  { title:'TSS — Carga Semanal',      sub:'Suma semanal normalizada por zonas e intensidad',              color:'#A855F7', unit:'',           chartType:'bar'  },
+  vo2:  { title:'VO₂ Max Estimado',         sub:'ml/kg/min · Estimación Garmin FirstBeat Analytics',            color:'#0EA5E9', unit:'ml/kg/min',  chartType:'line' },
+};
+
+var _mdMetric = 'ctl', _mdSport = null, _mdPeriod = 0, _mdAll = {}, _mdChart = null;
+
+function openMetricDetail(metric, sport){
+  if(!MD_MC[metric] || !window._lxDashData) return;
+  _mdMetric = metric; _mdSport = sport || null; _mdPeriod = 0;
+  document.querySelectorAll('#md-tabs .md-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.p === '0'); });
+  _mdBuildSeries();
+  document.getElementById('md-modal').style.display = 'flex';
+  _mdRender();
+}
+
+function closeMetricDetail(e){
+  if(e && e.target !== e.currentTarget) return;
+  document.getElementById('md-modal').style.display = 'none';
+}
+
+function mdSetPeriod(p){
+  _mdPeriod = p;
+  document.querySelectorAll('#md-tabs .md-tab').forEach(function(b){ b.classList.toggle('on', parseInt(b.dataset.p, 10) === p); });
+  _mdRender();
+}
+
+/* Misma transformación que detalle.html hace con el payload crudo de
+   /athlete/dashboard (pmc, acwr_history, hrv_history, vo2_history y
+   tss_weekly) — mismo dato, mismo criterio, para que el número que ve
+   el atleta acá sea idéntico al de la web, no una aproximación aparte. */
+function _mdBuildSeries(){
+  var d = window._lxDashData || {};
+  var all = {};
+  var todayISO = todayIso();
+
+  if(d.pmc && d.pmc.length){
+    all.ctl = d.pmc.filter(function(p){ return p.ctl != null && p.ctl > 0; })
+                    .map(function(p){ return {date:p.dt, value:Math.round(p.ctl*10)/10}; });
+    all.atl = d.pmc.filter(function(p){ return p.atl != null; })
+                    .map(function(p){ return {date:p.dt, value:Math.round(p.atl*10)/10}; });
+    all.tsb = d.pmc.map(function(p){
+      var v = p.ctl != null && p.atl != null ? Math.round((p.ctl-p.atl)*10)/10 : null;
+      return {date:p.dt, value:v};
+    }).filter(function(p){ return p.value != null; });
+  } else { all.ctl = []; all.atl = []; all.tsb = []; }
+  if(d.ctl != null){
+    if(!all.ctl.length || all.ctl[all.ctl.length-1].date < todayISO) all.ctl.push({date:todayISO, value:Math.round(d.ctl*10)/10});
+    else if(all.ctl[all.ctl.length-1].date === todayISO) all.ctl[all.ctl.length-1].value = Math.round(d.ctl*10)/10;
+  }
+  if(d.atl != null && (!all.atl.length || all.atl[all.atl.length-1].date < todayISO)) all.atl.push({date:todayISO, value:Math.round(d.atl*10)/10});
+  if(d.tsb != null && (!all.tsb.length || all.tsb[all.tsb.length-1].date < todayISO)) all.tsb.push({date:todayISO, value:Math.round(d.tsb*10)/10});
+
+  all.acwr = (d.acwr_history||[]).map(function(p){ return {date:p.dt, value:p.acwr}; }).filter(function(p){ return p.value != null; });
+  if(d.acwr != null && (!all.acwr.length || all.acwr[all.acwr.length-1].date < todayISO)) all.acwr.push({date:todayISO, value:d.acwr});
+
+  all.hrv = (d.hrv_history||[]).map(function(p){ return {date:p.dt, value:p.hrv}; }).filter(function(p){ return p.value != null; });
+  if(d.hrv_last_night != null && all.hrv.length && all.hrv[all.hrv.length-1].date < todayISO) all.hrv.push({date:todayISO, value:d.hrv_last_night});
+
+  var vo2Src    = _mdSport === 'cycling' ? d.vo2_history_cycling : _mdSport === 'running' ? d.vo2_history_running : d.vo2_history;
+  var vo2Latest = _mdSport === 'cycling' ? d.vo2max_cycling_garmin : _mdSport === 'running' ? d.vo2max_running_garmin : d.vo2max_garmin;
+  all.vo2 = (vo2Src||[]).map(function(p){ return {date:p.dt, value:p.vo2}; }).filter(function(p){ return p.value != null; });
+  if(vo2Latest != null && all.vo2.length && all.vo2[all.vo2.length-1].date < todayISO) all.vo2.push({date:todayISO, value:vo2Latest});
+
+  all.tss = (d.tss_weekly||[]).map(function(p){ return {date:p.wk, value:Math.round(p.tss)}; });
+
+  _mdAll = all;
+}
+
+function _mdFilterPeriod(arr){
+  if(_mdPeriod === 0) return arr;
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - _mdPeriod);
+  var cStr = _isoLocal(cutoff);
+  return arr.filter(function(p){ return p.date >= cStr; });
+}
+
+function _mdShortDate(iso, showYear){
+  if(!iso) return '';
+  var d = new Date(iso+'T12:00:00');
+  var MO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getDate()+' '+MO[d.getMonth()] + (showYear ? ' \''+String(d.getFullYear()).slice(2) : '');
+}
+
+function _mdRender(){
+  var cfg = MD_MC[_mdMetric];
+  var titleSuffix = (_mdMetric === 'vo2' && _mdSport) ? (_mdSport === 'cycling' ? ' — Ciclismo' : ' — Running') : '';
+  document.getElementById('md-title').textContent = cfg.title + titleSuffix;
+  document.getElementById('md-sub').textContent = cfg.sub;
+  document.getElementById('md-hero-val').style.color = cfg.color;
+
+  var raw = _mdAll[_mdMetric] || [];
+  var d = _mdFilterPeriod(raw);
+  if(!d.length && _mdPeriod > 0){ _mdPeriod = 0; d = _mdFilterPeriod(raw); }
+
+  var chartWrap = document.getElementById('md-chart-wrap');
+  var emptyEl   = document.getElementById('md-empty');
+  var statsEl   = document.getElementById('md-stats');
+
+  if(!d.length){
+    document.getElementById('md-hero-val').textContent = '—';
+    document.getElementById('md-hero-sub').textContent = 'Sin datos disponibles';
+    chartWrap.style.display = 'none';
+    statsEl.style.display   = 'none';
+    emptyEl.style.display   = 'block';
+    if(_mdChart){ _mdChart.destroy(); _mdChart = null; }
+    return;
+  }
+  chartWrap.style.display = '';
+  statsEl.style.display   = '';
+  emptyEl.style.display   = 'none';
+
+  var values = d.map(function(p){ return p.value; });
+  var avg = Math.round((values.reduce(function(a,b){ return a+b; }, 0) / values.length) * 10) / 10;
+  var mx  = Math.max.apply(null, values), mn = Math.min.apply(null, values);
+  var mxI = values.indexOf(mx), mnI = values.indexOf(mn);
+  var trend = Math.round((d[d.length-1].value - d[0].value) * 10) / 10;
+  var u = cfg.unit ? ' '+cfg.unit : '';
+
+  document.getElementById('md-hero-val').textContent = avg + u;
+  document.getElementById('md-hero-sub').textContent = 'Promedio del período · '+fmtDate(d[0].date)+' – '+fmtDate(d[d.length-1].date);
+
+  document.getElementById('md-s-max').textContent = mx + u;
+  document.getElementById('md-s-max-date').textContent = fmtDate(d[mxI].date);
+  document.getElementById('md-s-min').textContent = mn + u;
+  document.getElementById('md-s-min-date').textContent = fmtDate(d[mnI].date);
+  document.getElementById('md-s-avg').textContent = avg + u;
+  var trendEl = document.getElementById('md-s-trend');
+  trendEl.textContent = (trend >= 0 ? '+' : '') + trend + u;
+  trendEl.style.color = trend >= 0 ? 'var(--green)' : '#EF4444';
+  document.getElementById('md-s-trend-date').textContent = 'vs '+fmtDate(d[0].date);
+
+  _mdDrawChart(d, cfg);
+}
+
+function _mdDrawChart(d, cfg){
+  var canvas = document.getElementById('md-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(_mdChart){ _mdChart.destroy(); _mdChart = null; }
+  /* Con "Todo" el histórico (multi-año) el mes+día solo se repite y
+     confunde sin el año — se agrega cuando el rango real supera un año. */
+  var spanDays = (new Date(d[d.length-1].date) - new Date(d[0].date)) / 86400000;
+  var showYear = spanDays > 366;
+  var labels = d.map(function(p){ return _mdShortDate(p.date, showYear); });
+  var values = d.map(function(p){ return p.value; });
+  _mdChart = new Chart(canvas.getContext('2d'), {
+    type: cfg.chartType === 'bar' ? 'bar' : 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        borderColor: cfg.color,
+        backgroundColor: cfg.chartType === 'bar' ? cfg.color+'99' : cfg.color+'22',
+        fill: cfg.chartType !== 'bar',
+        tension: .3,
+        pointRadius: 0,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { ticks: { color:'#6B7280', maxTicksLimit:6, font:{size:9} }, grid: { display:false } },
+        y: { ticks: { color:'#6B7280', font:{size:9} }, grid: { color:'rgba(255,255,255,.06)' } },
+      }
+    }
+  });
 }
 
 function _raceTick(){
