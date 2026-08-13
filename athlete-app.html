@@ -464,7 +464,33 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-card-foot { display: flex; align-items: center; gap: 1rem; margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--border); }
 .cm-kudo-btn { display: flex; align-items: center; gap: .35rem; background: none; border: none; color: var(--dim); font-size: .82rem; cursor: pointer; padding: .2rem 0; }
 .cm-kudo-btn.active { color: var(--orange); }
-.cm-comment-count { font-size: .82rem; color: var(--dim); }
+.cm-comment-btn { display: flex; align-items: center; gap: .35rem; background: none; border: none; color: var(--dim); font-size: .82rem; cursor: pointer; padding: .2rem 0; }
+.cm-card-caption { font-size: .82rem; color: var(--text); margin-top: .4rem; line-height: 1.4; }
+
+/* Fotos (Strava auto + subidas manuales) — mismo patrón visual que
+   community.html (.ac-photos), adaptado a la grilla angosta del celular. */
+.cm-photos { display: flex; gap: .4rem; margin-top: .65rem; overflow-x: auto; padding-bottom: .1rem; }
+.cm-photo-item { position: relative; flex-shrink: 0; width: 68px; height: 68px; border-radius: 8px; overflow: hidden; background: var(--bg3); }
+.cm-photo { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+.cm-photo-del { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: rgba(0,0,0,.65); color: #fff; font-size: .6rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.cm-photo-add { flex-shrink: 0; width: 68px; height: 68px; border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--dim); cursor: pointer; }
+.cm-photo-add svg { width: 18px; height: 18px; }
+
+/* Lightbox — foto a pantalla completa */
+#cm-lightbox { display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.9); align-items: center; justify-content: center; padding: 1.5rem; }
+#cm-lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+
+/* Comentarios — colapsado por default, se expande con .open */
+.cm-comments { display: none; margin: .6rem -1rem -.9rem; padding: .75rem 1rem; border-top: 1px solid var(--border); background: rgba(0,0,0,.12); }
+.cm-comments.open { display: block; }
+.cm-comment-item { display: flex; gap: .5rem; margin-bottom: .55rem; }
+.cm-comment-av { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); color: var(--orange); font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .68rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cm-comment-body { font-size: .78rem; color: var(--text); line-height: 1.4; }
+.cm-comment-author { font-weight: 700; font-size: .74rem; color: var(--dim); }
+.cm-comment-empty { font-size: .76rem; color: var(--dim); text-align: center; padding: .3rem 0 .6rem; }
+.cm-comment-row { display: flex; gap: .5rem; margin-top: .3rem; }
+.cm-comment-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .7rem; color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: .84rem; }
+.cm-comment-send { background: var(--orange); border: none; border-radius: 8px; width: 36px; color: #fff; font-size: 1rem; cursor: pointer; }
 .cm-lb-row { display: flex; align-items: center; gap: .7rem; margin: 0 1rem .5rem; padding: .65rem .8rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; }
 .cm-lb-row.me { border-color: rgba(255,101,53,.4); background: rgba(255,101,53,.08); }
 .cm-lb-rank { width: 22px; text-align: center; font-family: 'Oswald', sans-serif; font-weight: 700; color: var(--dim); font-size: .85rem; }
@@ -584,6 +610,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <!-- Privacidad de mis actividades en Comunidad — mismos 5 toggles y mismo
      endpoint que community.html (web): el atleta decide qué ve la gente
      que lo sigue en el detalle de sus actividades. -->
+<!-- Lightbox de fotos de Comunidad (Strava auto + subidas manuales) -->
+<div id="cm-lightbox" onclick="closeCmLightbox(event)">
+  <img id="cm-lightbox-img" src="" alt="">
+</div>
+
 <div id="cm-priv-modal" class="ios-guide" style="display:none" onclick="closeCommunityPrivacy(event)">
   <div class="ios-guide-card" onclick="event.stopPropagation()">
     <button class="ios-guide-close" onclick="closeCommunityPrivacy()" aria-label="Cerrar">✕</button>
@@ -2298,9 +2329,22 @@ function _communityCardHtml(c, idx){
   var myKudoActive = !!c.my_kudo;
   var kudoEmoji = KUDO_EMOJI[c.my_kudo || 'fire'];
 
+  /* Fotos: auto-importadas de Strava (photo_id null) + subidas a mano
+     por el dueño (photo_id real, deletable si es propia) — mismo dato
+     que ya trae /community/activity-feed para la web (community.html),
+     la app simplemente nunca lo leía. Se guardan las de Strava por
+     tarjeta para poder reconstruir la tira sin releer todo el feed
+     tras subir/borrar una manual (mismo patrón que community.html). */
+  window._cmStravaPhotos = window._cmStravaPhotos || {};
+  window._cmStravaPhotos[c.id] = (c.photos||[]).filter(function(ph){ return !ph.photo_id; });
+  var photosHtml = _cmPhotosStripHtml(c.id, c.activity_id, c.photos||[], c.can_add_photos);
+
+  var caption = c.caption ? '<div class="cm-card-caption">'+_escCm(c.caption)+'</div>' : '';
+
   /* Tocar la card abre el detalle real (GPS + parciales, pedido
      explícito, igual training_detail.html/Strava) — el botón de kudo
-     corta la propagación para no disparar el detalle sin querer. */
+     y la tira de fotos cortan la propagación para no disparar el
+     detalle sin querer. */
   return '<div class="cm-card" data-post-id="'+c.id+'" onclick="showCommunityActivityDetail('+idx+')" style="cursor:pointer">'
     +'<div class="cm-card-head">'
       + _cmAvatarHtml(c.user)
@@ -2309,14 +2353,157 @@ function _communityCardHtml(c, idx){
     +'</div>'
     +'<div class="cm-card-body">'
       +'<div class="cm-card-title"><span>'+(c.sport_emoji||'⚡')+'</span><span>'+(c.name||'')+'</span></div>'
+      + caption
       +(stats.length?'<div class="cm-card-stats">'+statsHtml+'</div>':'')
+      + photosHtml
     +'</div>'
     +'<div class="cm-card-foot">'
       +'<button class="cm-kudo-btn'+(myKudoActive?' active':'')+'" onclick="event.stopPropagation();toggleKudo(this)">'
         +'<span class="cm-kudo-emoji">'+kudoEmoji+'</span><span class="cm-kudo-count">'+(c.kudo_count||0)+'</span>'
       +'</button>'
+      +'<button class="cm-comment-btn" onclick="event.stopPropagation();toggleCommunityComments(\''+c.id+'\')">'
+        +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+        +'<span>'+(c.n_comments>0?c.n_comments:'Comentar')+'</span>'
+      +'</button>'
+    +'</div>'
+    +'<div class="cm-comments" id="cm-comments-'+c.id+'" onclick="event.stopPropagation()">'
+      +'<div id="cm-comments-list-'+c.id+'"></div>'
+      +'<div class="cm-comment-row">'
+        +'<input class="cm-comment-input" id="cm-comment-inp-'+c.id+'" placeholder="Escribí un comentario…" onkeydown="if(event.key===\'Enter\')submitCommunityComment(\''+c.id+'\')">'
+        +'<button class="cm-comment-send" onclick="submitCommunityComment(\''+c.id+'\')">→</button>'
+      +'</div>'
     +'</div>'
   +'</div>';
+}
+
+function _escCm(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── Fotos en el feed de Comunidad (Strava auto + subidas manuales) ──
+   Mismo backend que ya usa community.html en la web
+   (POST/GET/DELETE /athlete/activities/{id}/photos) — nunca se había
+   conectado del lado de la app pese a que el feed ya traía los datos. */
+function _cmPhotoAddBtnHtml(activityId, postId){
+  return '<label class="cm-photo-add" onclick="event.stopPropagation()">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
+    +'<input type="file" accept="image/*" multiple style="display:none" onchange="uploadCommunityPhotos(this,\''+activityId+'\',\''+postId+'\')" onclick="event.stopPropagation()">'
+    +'</label>';
+}
+function _cmPhotosStripHtml(postId, activityId, photos, canAdd){
+  var items = (photos||[]).map(function(ph){
+    var del = ph.deletable
+      ? '<div class="cm-photo-del" onclick="event.stopPropagation();deleteCommunityPhoto(\''+activityId+'\',\''+ph.photo_id+'\',\''+postId+'\')">✕</div>'
+      : '';
+    return '<div class="cm-photo-item"><img src="'+_escCm(ph.url)+'" loading="lazy" class="cm-photo" onclick="event.stopPropagation();openCmLightbox(\''+_escCm(ph.url)+'\')">'+del+'</div>';
+  }).join('');
+  var addBtn = canAdd ? _cmPhotoAddBtnHtml(activityId, postId) : '';
+  if(!items && !addBtn) return '';
+  return '<div class="cm-photos" id="cm-photos-'+postId+'">'+items+addBtn+'</div>';
+}
+function _cmRefreshPhotos(postId, activityId){
+  apiFetch('/athlete/activities/'+activityId+'/photos')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      var manual = (d.photos||[]).map(function(p){ return {url:p.url, photo_id:p.id, deletable:p.is_mine}; });
+      var strava = (window._cmStravaPhotos && window._cmStravaPhotos[postId]) || [];
+      var wrap = document.getElementById('cm-photos-'+postId);
+      if(!wrap) return;
+      var items = manual.concat(strava).map(function(ph){
+        var del = ph.deletable
+          ? '<div class="cm-photo-del" onclick="event.stopPropagation();deleteCommunityPhoto(\''+activityId+'\',\''+ph.photo_id+'\',\''+postId+'\')">✕</div>'
+          : '';
+        return '<div class="cm-photo-item"><img src="'+_escCm(ph.url)+'" loading="lazy" class="cm-photo" onclick="event.stopPropagation();openCmLightbox(\''+_escCm(ph.url)+'\')">'+del+'</div>';
+      }).join('');
+      wrap.innerHTML = items + _cmPhotoAddBtnHtml(activityId, postId);
+    })
+    .catch(function(){});
+}
+function uploadCommunityPhotos(inputEl, activityId, postId){
+  var files = inputEl.files;
+  if(!files || !files.length) return;
+  var fd = new FormData();
+  for(var i=0; i<files.length; i++) fd.append('files', files[i]);
+  // OJO: no usar apiFetch() acá — siempre agrega Content-Type:
+  // application/json por default (Object.assign superficial de
+  // headers), lo que rompe el multipart/form-data real de una subida
+  // de archivos (el navegador nunca llega a poner su propio boundary
+  // porque ya hay un Content-Type explícito). Bug real encontrado en
+  // vivo: 422 "Field required" pese a que el archivo sí viajaba en el
+  // body. Mismo patrón que ya usa community.html (fetch crudo, solo
+  // Authorization) — nunca seteando Content-Type a mano con FormData.
+  fetch(API+'/athlete/activities/'+activityId+'/photos', {
+    method: 'POST',
+    headers: Object.assign({Authorization: 'Bearer '+_token}, _NGROK_BYPASS),
+    body: fd
+  })
+    .then(function(r){ return r.ok ? r.json() : r.json().then(function(e){ return Promise.reject(e); }); })
+    .then(function(){ inputEl.value=''; _cmRefreshPhotos(postId, activityId); })
+    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo subir la foto', 'err'); });
+}
+function deleteCommunityPhoto(activityId, photoId, postId){
+  if(!confirm('¿Borrar esta foto?')) return;
+  apiFetch('/athlete/activities/'+activityId+'/photos/'+photoId, { method:'DELETE' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(){ _cmRefreshPhotos(postId, activityId); })
+    .catch(function(){ toast('No se pudo borrar la foto', 'err'); });
+}
+function openCmLightbox(url){
+  var box = document.getElementById('cm-lightbox');
+  document.getElementById('cm-lightbox-img').src = url;
+  box.style.display = 'flex';
+}
+function closeCmLightbox(e){
+  if(e) e.stopPropagation();
+  document.getElementById('cm-lightbox').style.display = 'none';
+}
+
+/* ── Comentarios en el feed de Comunidad ─────────────────────────
+   Mismo backend que community.html (GET/POST /community/posts/{id}/
+   comments) — antes solo existía el CSS muerto .cm-comment-count sin
+   ningún JS que lo usara. */
+function toggleCommunityComments(postId){
+  var sec = document.getElementById('cm-comments-'+postId);
+  if(!sec) return;
+  var isOpen = sec.classList.contains('open');
+  sec.classList.toggle('open', !isOpen);
+  if(!isOpen) _cmLoadComments(postId);
+}
+function _cmLoadComments(postId){
+  apiFetch('/community/posts/'+postId+'/comments')
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(items){
+      var list = document.getElementById('cm-comments-list-'+postId);
+      if(!list) return;
+      if(!items.length){ list.innerHTML = '<div class="cm-comment-empty">Sé el primero en comentar</div>'; return; }
+      list.innerHTML = items.map(function(cm){
+        return '<div class="cm-comment-item">'
+          +'<div class="cm-comment-av">'+((cm.author||'?')[0]).toUpperCase()+'</div>'
+          +'<div class="cm-comment-body"><div class="cm-comment-author">'+_escCm(cm.author||'—')+'</div>'+_escCm(cm.body||'')+'</div>'
+          +'</div>';
+      }).join('');
+    })
+    .catch(function(){});
+}
+function submitCommunityComment(postId){
+  var inp = document.getElementById('cm-comment-inp-'+postId);
+  if(!inp || !inp.value.trim()) return;
+  apiFetch('/community/posts/'+postId+'/comments', {
+    method: 'POST',
+    body: JSON.stringify({body: inp.value.trim()})
+  })
+    .then(function(r){ return r.ok ? r.json() : r.json().then(function(e){ return Promise.reject(e); }); })
+    .then(function(){
+      inp.value = '';
+      // Recargar SOLO la lista de comentarios (nunca todo el feed —
+      // bug real encontrado en vivo: llamar loadCommunityFeed() acá
+      // reconstruye todas las cards desde cero y colapsa/borra la
+      // sección de comentarios que el usuario tenía abierta, justo
+      // después de escribir en ella).
+      _cmLoadComments(postId);
+      var btn = document.querySelector('[onclick*="toggleCommunityComments(\''+postId+'\')"] span:last-child');
+      if(btn){ var n = parseInt(btn.textContent, 10); btn.textContent = isNaN(n) ? 1 : n+1; }
+    })
+    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo publicar el comentario', 'err'); });
 }
 
 /* Kudo de un solo toque (tipo "me gusta" de Strava) — usa "fire" 🔥 como

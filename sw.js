@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '76';  // 2026-08-11: Panel de Salud 360 (Training Readiness Garmin + Fatiga Mental) en Hoy — Fase 2 Sprint D
+var BUILD_VERSION = '77';  // 2026-08-13: fotos (Strava+manuales) y comentarios en Comunidad — paridad con community.html
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

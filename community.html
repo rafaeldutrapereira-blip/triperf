@@ -840,11 +840,14 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         if (!list) return;
         var items = d.comments || d || [];
         list.innerHTML = items.map(function (c) {
+          // Bug real encontrado el 2026-08-13 auditando paridad con la app:
+          // el backend (_serialize_comment) devuelve "author", nunca
+          // "author_name"/"user_name" — este fallback siempre caía en "—".
           return '<div class="comment-item">' +
-            '<div class="comment-av">' + ((c.author_name || c.user_name || '?')[0]).toUpperCase() + '</div>' +
+            '<div class="comment-av">' + ((c.author || '?')[0]).toUpperCase() + '</div>' +
             '<div class="comment-body">' +
-              '<div class="comment-author">' + (c.author_name || c.user_name || '—') + '</div>' +
-              (c.body || c.content || '') +
+              '<div class="comment-author">' + (c.author || '—') + '</div>' +
+              (c.body || '') +
             '</div>' +
             '</div>';
         }).join('');

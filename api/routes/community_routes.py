@@ -1580,6 +1580,7 @@ def _build_activity_card_s17(act, viewer_id, db):
     post     = _get_or_create_post_for_activity(act, db)
     kudo_count = db.query(Kudo).filter(Kudo.post_id == post.id).count()
     my_kudo    = db.query(Kudo).filter(Kudo.post_id == post.id, Kudo.user_id == viewer_id).first()
+    n_comments = db.query(Comment).filter(Comment.post_id == post.id, Comment.deleted_at.is_(None)).count()
 
     rec = None
     if act_date:
@@ -1605,6 +1606,7 @@ def _build_activity_card_s17(act, viewer_id, db):
         "type":        "garmin_activity",
         "kudo_count":  kudo_count,
         "my_kudo":     my_kudo.kudo_type if my_kudo else None,
+        "n_comments":  n_comments,
         "caption":     post.body,
         "user": {
             "id":             owner.id if owner else None,
