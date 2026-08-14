@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '88';  // 2026-08-14: guía Hoy alineada al estándar de dashboard.html — orden, sparklines e "i" info en las 3 KPI cards
+var BUILD_VERSION = '89';  // 2026-08-14: guía Recovery (ex-Bienestar) completa — Sueño/Timeline/Correlaciones/Protocolos, renombrada a Recovery igual que la web
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
