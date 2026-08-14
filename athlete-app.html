@@ -475,6 +475,44 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wl-submit { margin: 0 1rem .75rem; padding: .9rem; background: var(--cyan); border: none; border-radius: 12px; color: var(--bg); font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; width: calc(100% - 2rem); transition: opacity .15s; }
 .wl-submit:active { opacity: .8; }
 
+/* Bienestar → Resumen: Recovery Score (motor de recovery_routes.py,
+   6 factores HRV/Sueño/Carga/Estrés/Batería/Bienestar) + recomendación
+   diaria — porteado de recovery.html (la web), mismos campos/umbrales
+   exactos del backend, Sprint 1 de varios. A propósito rotulado
+   "Recovery Score" (no "Readiness") — es un motor de cálculo DISTINTO
+   al Readiness Score (pill del Insight del día): mismo cuidado que ya
+   se tuvo con training_readiness_garmin para no repetir la confusión
+   "¿por qué hay 2 números?" que ya reportó el usuario una vez. */
+.rc-mob-card { margin: 1rem 1rem 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; }
+.rc-mob-head { margin-bottom: .7rem; }
+.rc-mob-title { font-family: 'Oswald', sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.rc-mob-body { display: flex; align-items: center; gap: 1rem; }
+.rc-mob-num { font-family: 'Barlow Condensed', sans-serif; font-size: 3rem; font-weight: 900; line-height: 1; flex-shrink: 0; }
+.rc-mob-info { min-width: 0; flex: 1; }
+.rc-mob-label { display: inline-block; font-size: .72rem; font-weight: 700; padding: .22rem .6rem; border-radius: 20px; margin-bottom: .35rem; }
+.rc-mob-rec { font-size: .76rem; color: var(--dim); line-height: 1.4; }
+.rc-mob-factors { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: .55rem; }
+.rc-mob-factor-row { display: grid; grid-template-columns: 82px 1fr 28px; align-items: center; gap: .55rem; }
+.rc-mob-factor-lbl { font-size: .68rem; color: var(--muted); font-family: 'Oswald', sans-serif; }
+.rc-mob-factor-bar { height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.rc-mob-factor-fill { height: 100%; border-radius: 3px; }
+.rc-mob-factor-val { font-size: .74rem; font-weight: 700; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+
+.rec-mob-box { margin: .8rem 1rem 0; padding: .9rem 1rem; border-radius: 12px; border: 1px solid var(--border); background: var(--bg2); }
+.rec-mob-box.rec-mob-full     { background: rgba(16,185,129,.07); border-color: rgba(16,185,129,.28); }
+.rec-mob-box.rec-mob-moderate { background: rgba(240,165,0,.07);  border-color: rgba(240,165,0,.28); }
+.rec-mob-box.rec-mob-easy     { background: rgba(249,115,22,.07); border-color: rgba(249,115,22,.28); }
+.rec-mob-box.rec-mob-rest     { background: rgba(239,68,68,.07);  border-color: rgba(239,68,68,.28); }
+.rec-mob-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 800; margin-bottom: .35rem; }
+.rec-mob-text { font-size: .8rem; color: var(--muted); line-height: 1.45; }
+.rec-mob-tss { font-size: .74rem; color: var(--dim); margin-top: .55rem; }
+.rec-mob-tss strong { color: var(--text); }
+.rec-mob-alert { font-size: .74rem; padding: .5rem .65rem; border-radius: 8px; margin-top: .55rem; line-height: 1.4; }
+.rec-mob-alert-high   { background: rgba(239,68,68,.1);  color: #FCA5A5; }
+.rec-mob-alert-medium { background: rgba(240,165,0,.1);  color: #FCD34D; }
+.rec-mob-pri-title { font-size: .64rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; font-family: 'Oswald', sans-serif; margin-top: .7rem; margin-bottom: .3rem; }
+.rec-mob-pri-item { font-size: .76rem; color: var(--muted); padding: .2rem 0; }
+
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
 .cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
@@ -844,52 +882,71 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
       </div>
 
-      <div class="wellness-grid">
-
-        <!-- Mismo esquema de 6 factores que recovery.html (¿Cómo te sentís
-             hoy?) — pedido explícito del usuario: "debería ser igual [...]
-             y debería guardar como siendo única". Antes esta pantalla tenía
-             su PROPIO esquema (estado/fatiga/dolor/sueño en horas) que
-             escribía en columnas DISTINTAS de la misma fila de la base de
-             datos (wellness_logs) — dos check-ins "distintos" para el mismo
-             día según por dónde se entrara. Ahora comparten exactamente los
-             mismos 6 campos (energy/mood/soreness/motivation/stress/
-             sleep_quality) contra el mismo endpoint /api/recovery/wellness. -->
-        <div class="wl-card">
-          <div class="wl-star-row" data-field="energy">
-            <span class="wl-star-lbl">⚡ Energía general</span>
-            <div class="wl-stars" id="ws-energy"></div>
-          </div>
-          <div class="wl-star-row" data-field="mood">
-            <span class="wl-star-lbl">😊 Estado de ánimo</span>
-            <div class="wl-stars" id="ws-mood"></div>
-          </div>
-          <div class="wl-star-row" data-field="soreness">
-            <span class="wl-star-lbl">💪 Piernas/Músculos (5=sin dolor)</span>
-            <div class="wl-stars" id="ws-soreness"></div>
-          </div>
-          <div class="wl-star-row" data-field="motivation">
-            <span class="wl-star-lbl">🎯 Motivación para entrenar</span>
-            <div class="wl-stars" id="ws-motivation"></div>
-          </div>
-          <div class="wl-star-row" data-field="stress">
-            <span class="wl-star-lbl">🌡️ Estrés externo (5=sin estrés)</span>
-            <div class="wl-stars" id="ws-stress"></div>
-          </div>
-          <div class="wl-star-row" data-field="sleep_quality" style="border-bottom:none">
-            <span class="wl-star-lbl">🌙 Calidad del sueño subjetiva</span>
-            <div class="wl-stars" id="ws-sleep_quality"></div>
-          </div>
-        </div>
-
-        <div class="wl-card">
-          <div class="wl-title">Notas (opcional)</div>
-          <textarea class="pw-input" id="wl-notes" rows="2" placeholder="Dolor específico, viaje, estrés laboral..." style="resize:none;background:var(--bg3)"></textarea>
-        </div>
-
+      <!-- Bienestar pasó a tener pestañas 2026-08-14 (pedido explícito del
+           usuario: "debería ser igual, con todas las funciones... de
+           recovery.html") — Resumen porta el Recovery Score + recomendación
+           diaria de la web (Sprint 1 de un plan de varios sprints; HRV con
+           contexto/Sueño detallado/Timeline/Correlaciones/Protocolos quedan
+           para sprints siguientes). Mismo patrón visual .cm-tabs que ya usa
+           Comunidad. -->
+      <div class="cm-tabs">
+        <div class="cm-tab active" id="wl-tab-resumen" onclick="wellnessTab('resumen')">Resumen</div>
+        <div class="cm-tab" id="wl-tab-checkin" onclick="wellnessTab('checkin')">Check-in</div>
       </div>
 
-      <button class="wl-submit" onclick="submitWellness()">Guardar check-in</button>
+      <div id="wl-resumen-content">
+        <div class="rc-mob-card" id="rc-mob-card"><div class="cm-empty">Cargando...</div></div>
+        <div class="rec-mob-box" id="rec-mob-box" style="display:none"></div>
+      </div>
+
+      <div id="wl-checkin-content" style="display:none">
+        <div class="wellness-grid">
+
+          <!-- Mismo esquema de 6 factores que recovery.html (¿Cómo te sentís
+               hoy?) — pedido explícito del usuario: "debería ser igual [...]
+               y debería guardar como siendo única". Antes esta pantalla tenía
+               su PROPIO esquema (estado/fatiga/dolor/sueño en horas) que
+               escribía en columnas DISTINTAS de la misma fila de la base de
+               datos (wellness_logs) — dos check-ins "distintos" para el mismo
+               día según por dónde se entrara. Ahora comparten exactamente los
+               mismos 6 campos (energy/mood/soreness/motivation/stress/
+               sleep_quality) contra el mismo endpoint /api/recovery/wellness. -->
+          <div class="wl-card">
+            <div class="wl-star-row" data-field="energy">
+              <span class="wl-star-lbl">⚡ Energía general</span>
+              <div class="wl-stars" id="ws-energy"></div>
+            </div>
+            <div class="wl-star-row" data-field="mood">
+              <span class="wl-star-lbl">😊 Estado de ánimo</span>
+              <div class="wl-stars" id="ws-mood"></div>
+            </div>
+            <div class="wl-star-row" data-field="soreness">
+              <span class="wl-star-lbl">💪 Piernas/Músculos (5=sin dolor)</span>
+              <div class="wl-stars" id="ws-soreness"></div>
+            </div>
+            <div class="wl-star-row" data-field="motivation">
+              <span class="wl-star-lbl">🎯 Motivación para entrenar</span>
+              <div class="wl-stars" id="ws-motivation"></div>
+            </div>
+            <div class="wl-star-row" data-field="stress">
+              <span class="wl-star-lbl">🌡️ Estrés externo (5=sin estrés)</span>
+              <div class="wl-stars" id="ws-stress"></div>
+            </div>
+            <div class="wl-star-row" data-field="sleep_quality" style="border-bottom:none">
+              <span class="wl-star-lbl">🌙 Calidad del sueño subjetiva</span>
+              <div class="wl-stars" id="ws-sleep_quality"></div>
+            </div>
+          </div>
+
+          <div class="wl-card">
+            <div class="wl-title">Notas (opcional)</div>
+            <textarea class="pw-input" id="wl-notes" rows="2" placeholder="Dolor específico, viaje, estrés laboral..." style="resize:none;background:var(--bg3)"></textarea>
+          </div>
+
+        </div>
+
+        <button class="wl-submit" onclick="submitWellness()">Guardar check-in</button>
+      </div>
     </div>
 
     <!-- SCREEN 6: COMUNIDAD -->
@@ -1092,7 +1149,7 @@ function goScreen(id){
   /* Recargar cada vez que se abre (no solo la primera) — es una sola
      llamada liviana y evita mostrar datos de un check-in que haya
      cambiado por otro medio (ej. la web) durante la misma sesión. */
-  if(id === 'screen-wellness') loadWellnessToday();
+  if(id === 'screen-wellness'){ loadWellnessToday(); wellnessTab('resumen'); }
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -2607,6 +2664,118 @@ function loadWellnessToday(){
       if(row.notes) document.getElementById('wl-notes').value = row.notes;
     })
     .catch(function(){});
+}
+
+/* ── Bienestar: pestaña Resumen (Sprint 1 del port de recovery.html) ──
+   Recovery Score (6 factores) + recomendación diaria del día. Mismos
+   endpoints/campos exactos que ya usa recovery.html (la web):
+   GET /recovery/dashboard?date_iso= (recovery.score/level/color/label/
+   recommendation/factors) y GET /recovery/recommendation?date_iso=
+   (training_suggestion/main_recommendation/alerts/recovery_priorities/
+   recommended_tss). Ambos gateados por plan (require_feature
+   "recovery") — mismo 403 que ya maneja submitWellness(). */
+function wellnessTab(tab){
+  document.getElementById('wl-tab-resumen').classList.toggle('active', tab==='resumen');
+  document.getElementById('wl-tab-checkin').classList.toggle('active', tab==='checkin');
+  document.getElementById('wl-resumen-content').style.display = tab==='resumen' ? '' : 'none';
+  document.getElementById('wl-checkin-content').style.display = tab==='checkin' ? '' : 'none';
+  if(tab === 'resumen') loadWellnessResumen();
+}
+
+var RC_MOB_FACTOR_DEFS = [
+  { key:'hrv',          label:'HRV',       icon:'🫀', color:'#7C3AED' },
+  { key:'sleep',        label:'Sueño',     icon:'🌙', color:'#1D4ED8' },
+  { key:'tsb',          label:'Carga',     icon:'⚡', color:'#0EA5E9' },
+  { key:'stress',       label:'Estrés',    icon:'🧘', color:'#10B981' },
+  { key:'body_battery', label:'Batería',   icon:'🔋', color:'#F59E0B' },
+  { key:'wellness',     label:'Bienestar', icon:'❤️', color:'#F43F5E' },
+];
+
+function loadWellnessResumen(){
+  if(!_token) return;
+  var card = document.getElementById('rc-mob-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  document.getElementById('rec-mob-box').style.display = 'none';
+  var today = todayIso();
+  Promise.all([
+    apiFetch('/recovery/dashboard?date_iso='+today),
+    apiFetch('/recovery/recommendation?date_iso='+today),
+  ]).then(function(resArr){
+    var rDash = resArr[0], rRec = resArr[1];
+    if(rDash.status === 403 || rRec.status === 403){
+      card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>';
+      return Promise.reject('gated');
+    }
+    return Promise.all([
+      rDash.ok ? rDash.json() : null,
+      rRec.ok ? rRec.json() : null,
+    ]);
+  }).then(function(data){
+    if(!data) return;
+    renderRecoveryScoreMobile(data[0] && data[0].recovery);
+    renderRecommendationMobile(data[1]);
+  }).catch(function(e){
+    if(e === 'gated') return;
+    card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>';
+  });
+}
+
+function renderRecoveryScoreMobile(rec){
+  var card = document.getElementById('rc-mob-card');
+  if(!rec){
+    card.innerHTML = '<div class="cm-empty">Sin datos de recuperación para hoy — sincronizá tu Garmin.</div>';
+    return;
+  }
+  var score = rec.score != null ? rec.score : 0;
+  var color = rec.color || '#9CA3AF';
+  var label = rec.label || '';
+  var factors = rec.factors || {};
+  var factorsHtml = RC_MOB_FACTOR_DEFS.map(function(f){
+    var val = factors[f.key];
+    if(val == null) return '';
+    var pct = Math.round(val);
+    return '<div class="rc-mob-factor-row">'
+      +'<span class="rc-mob-factor-lbl">'+f.icon+' '+f.label+'</span>'
+      +'<div class="rc-mob-factor-bar"><div class="rc-mob-factor-fill" style="width:'+pct+'%;background:'+f.color+'"></div></div>'
+      +'<span class="rc-mob-factor-val">'+pct+'</span>'
+    +'</div>';
+  }).join('');
+  card.innerHTML =
+    '<div class="rc-mob-head"><span class="rc-mob-title">Recovery Score</span></div>'
+    +'<div class="rc-mob-body">'
+      +'<div class="rc-mob-num" style="color:'+color+'">'+score+'</div>'
+      +'<div class="rc-mob-info">'
+        +'<div class="rc-mob-label" style="color:'+color+';background:'+color+'22">'+_escCm(label)+'</div>'
+        +(rec.recommendation ? '<div class="rc-mob-rec">'+_escCm(rec.recommendation.substring(0,200))+'</div>' : '')
+      +'</div>'
+    +'</div>'
+    +(factorsHtml ? '<div class="rc-mob-factors">'+factorsHtml+'</div>' : '');
+}
+
+function renderRecommendationMobile(d){
+  var box = document.getElementById('rec-mob-box');
+  if(!d){ box.style.display = 'none'; return; }
+  var level = d.training_suggestion || 'moderate';
+  var sessionLabels = { full:'Sesión completa', moderate:'Sesión moderada', easy:'Sesión suave / Z1-Z2', rest:'Descanso' };
+  var icons = { full:'🟢', moderate:'🟡', easy:'🟠', rest:'🔴' };
+  box.className = 'rec-mob-box rec-mob-'+level;
+
+  var html = '<div class="rec-mob-title">'+(icons[level]||'')+' '+(sessionLabels[level]||level)+'</div>'
+    +'<div class="rec-mob-text">'+_escCm(d.main_recommendation || d.session_type || '')+'</div>';
+  if(d.recommended_tss){
+    html += '<div class="rec-mob-tss">TSS sugerido: <strong>'+d.recommended_tss+'</strong>'+(d.planned_tss?' (plan: '+d.planned_tss+')':'')+'</div>';
+  }
+  if(d.alerts && d.alerts.length){
+    html += d.alerts.map(function(a){
+      return '<div class="rec-mob-alert rec-mob-alert-'+(a.level||'medium')+'">⚠️ '+_escCm(a.message)+'</div>';
+    }).join('');
+  }
+  if(d.recovery_priorities && d.recovery_priorities.length){
+    html += '<div class="rec-mob-pri-title">Para esta noche</div>'
+      + d.recovery_priorities.map(function(p){ return '<div class="rec-mob-pri-item">'+_escCm(p)+'</div>'; }).join('');
+  }
+  box.innerHTML = html;
+  box.style.display = '';
 }
 
 /* ── Screen 6: Comunidad ─────────────────────────────────── */
