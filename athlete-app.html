@@ -691,6 +691,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .aic-sessions-list { display: none; padding: 0 1rem .6rem; max-height: 160px; overflow-y: auto; }
 .aic-sessions-list.open { display: block; }
 .aic-session-item { padding: .5rem .7rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: .4rem; font-size: .76rem; color: var(--muted); cursor: pointer; }
+.aic-chat-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* ── AI Coach: Workout/Informe/Lesiones (cierre de gap 2026-08-14) ── */
+.aic-picker-title { font-size: .68rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 1rem 0 .5rem; }
+.aic-picker-title:first-child { margin-top: 0; }
+.aic-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.aic-picker-btn { padding: .65rem .3rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--muted); font-size: .76rem; text-align: center; cursor: pointer; }
+.aic-picker-btn.on { border-color: var(--orange); color: var(--orange); background: rgba(255,101,53,.1); }
+.aic-dur-row { display: flex; align-items: center; gap: .7rem; margin-top: .3rem; }
+.aic-dur-val { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text); min-width: 52px; text-align: right; }
+.aic-phase { padding: .65rem 0; border-top: 1px solid var(--border); }
+.aic-phase:first-child { border-top: none; }
+.aic-phase-head { display: flex; justify-content: space-between; align-items: baseline; }
+.aic-phase-name { font-family: 'Barlow Condensed', sans-serif; font-size: .92rem; font-weight: 800; }
+.aic-phase-zone { font-size: .62rem; font-weight: 700; padding: .15rem .5rem; border-radius: 4px; background: var(--bg3); color: var(--muted); }
+.aic-phase-meta { font-size: .68rem; color: var(--dim); margin-top: .2rem; }
+.aic-phase-desc { font-size: .78rem; color: var(--muted); margin-top: .35rem; line-height: 1.4; }
+.aic-action-item { display: flex; gap: .6rem; padding: .5rem 0; align-items: flex-start; }
+.aic-action-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,101,53,.15); color: var(--orange); font-size: .68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.aic-risk-num { font-family: 'Barlow Condensed', sans-serif; font-size: 2.6rem; font-weight: 900; line-height: 1; }
 
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
@@ -1468,18 +1488,65 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </button>
       </div>
 
-      <div class="aic-sessions-toggle" onclick="aicToggleSessions()">Conversaciones anteriores ▾</div>
-      <div class="aic-sessions-list" id="aic-sessions-list"></div>
-
-      <div class="aic-messages" id="aic-messages">
-        <div class="aic-msg aic-msg-ai">Hola, soy tu AI Coach. Preguntame sobre tu entrenamiento, recuperación o cómo prepararte para tu carrera.</div>
+      <div class="cm-tabs">
+        <div class="cm-tab active" id="aic-tab-chat" onclick="aicTab('chat')">Chat</div>
+        <div class="cm-tab" id="aic-tab-workout" onclick="aicTab('workout')">Workout</div>
+        <div class="cm-tab" id="aic-tab-report" onclick="aicTab('report')">Informe</div>
+        <div class="cm-tab" id="aic-tab-injury" onclick="aicTab('injury')">Lesiones</div>
       </div>
 
-      <div class="aic-input-row">
-        <input class="aic-input" id="aic-input" type="text" placeholder="Escribí tu pregunta…" onkeydown="if(event.key==='Enter')aicSend()">
-        <button class="aic-send-btn" id="aic-send-btn" onclick="aicSend()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
+      <div id="aic-chat-content" class="aic-chat-wrap">
+        <div class="aic-sessions-toggle" onclick="aicToggleSessions()">Conversaciones anteriores ▾</div>
+        <div class="aic-sessions-list" id="aic-sessions-list"></div>
+
+        <div class="aic-messages" id="aic-messages">
+          <div class="aic-msg aic-msg-ai">Hola, soy tu AI Coach. Preguntame sobre tu entrenamiento, recuperación o cómo prepararte para tu carrera.</div>
+        </div>
+
+        <div class="aic-input-row">
+          <input class="aic-input" id="aic-input" type="text" placeholder="Escribí tu pregunta…" onkeydown="if(event.key==='Enter')aicSend()">
+          <button class="aic-send-btn" id="aic-send-btn" onclick="aicSend()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Workout: mismo endpoint /ai/generate-workout que ai_coach.html,
+           mismos 5 deportes/5 focos exactos. -->
+      <div id="aic-workout-content" style="display:none;padding:0 1rem 1rem">
+        <div class="aic-picker-title">Deporte</div>
+        <div class="aic-picker-grid" id="aic-sport-picker">
+          <button class="aic-picker-btn on" data-sport="run" onclick="aicPick('sport',this)">🏃 Carrera</button>
+          <button class="aic-picker-btn" data-sport="bike" onclick="aicPick('sport',this)">🚴 Ciclismo</button>
+          <button class="aic-picker-btn" data-sport="swim" onclick="aicPick('sport',this)">🏊 Natación</button>
+          <button class="aic-picker-btn" data-sport="gym" onclick="aicPick('sport',this)">🏋 Gym</button>
+          <button class="aic-picker-btn" data-sport="brick" onclick="aicPick('sport',this)">⚡ Brick</button>
+        </div>
+        <div class="aic-picker-title">Foco</div>
+        <div class="aic-picker-grid" id="aic-focus-picker">
+          <button class="aic-picker-btn on" data-focus="endurance" onclick="aicPick('focus',this)">Resistencia</button>
+          <button class="aic-picker-btn" data-focus="threshold" onclick="aicPick('focus',this)">Umbral</button>
+          <button class="aic-picker-btn" data-focus="vo2" onclick="aicPick('focus',this)">VO₂max</button>
+          <button class="aic-picker-btn" data-focus="recovery" onclick="aicPick('focus',this)">Recuperación</button>
+          <button class="aic-picker-btn" data-focus="strength" onclick="aicPick('focus',this)">Fuerza</button>
+        </div>
+        <div class="aic-picker-title">Duración</div>
+        <div class="aic-dur-row">
+          <input type="range" min="20" max="240" step="5" value="60" id="aic-duration" style="flex:1" oninput="document.getElementById('aic-dur-val').textContent=this.value+' min'">
+          <span class="aic-dur-val" id="aic-dur-val">60 min</span>
+        </div>
+        <button class="wl-submit" style="margin:1.2rem 0 0" onclick="aicGenerateWorkout()">Generar entrenamiento</button>
+        <div class="rc-mob-card" id="aic-workout-result" style="margin-top:1rem;display:none"></div>
+      </div>
+
+      <!-- Informe semanal: /ai/weekly-report -->
+      <div id="aic-report-content" style="display:none">
+        <div class="rc-mob-card" id="aic-report-card" style="margin:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Pronóstico de lesiones: /ai/injury-forecast -->
+      <div id="aic-injury-content" style="display:none">
+        <div class="rc-mob-card" id="aic-injury-card" style="margin:1rem"><div class="cm-empty">Cargando...</div></div>
       </div>
     </div>
 
@@ -4199,6 +4266,162 @@ function aicSend(){
       else { aicAppendMsg('ai', 'Sin conexión — no se pudo enviar el mensaje.'); }
     })
     .finally(function(){ btn.disabled = false; });
+}
+
+/* ── AI Coach: Workout/Informe/Lesiones (cierre de gap 2026-08-14) ──
+   Mismos 3 endpoints que ai_coach.html: /ai/generate-workout (POST),
+   /ai/weekly-report, /ai/injury-forecast. Se dejó fuera "Forecast"
+   (multi-semana CTL/TSB con canvas) — mismo dato base que ya cubre
+   la pestaña Proyección de Progreso, motor distinto (IA vs. Banister
+   determinista) pero redundante en valor para el usuario. */
+var AIC_TABS = ['chat','workout','report','injury'];
+var _aicSport = 'run', _aicFocus = 'endurance';
+var _aicReportLoaded = false, _aicInjuryLoaded = false;
+
+function aicTab(tab){
+  AIC_TABS.forEach(function(t){
+    var tabEl = document.getElementById('aic-tab-'+t), contEl = document.getElementById('aic-'+t+'-content');
+    if(tabEl) tabEl.classList.toggle('active', t===tab);
+    if(contEl) contEl.style.display = t===tab ? (t==='chat'?'flex':'') : 'none';
+  });
+  if(tab === 'report' && !_aicReportLoaded) loadAicReport();
+  else if(tab === 'injury' && !_aicInjuryLoaded) loadAicInjury();
+}
+
+function aicPick(kind, btn){
+  var groupId = kind === 'sport' ? 'aic-sport-picker' : 'aic-focus-picker';
+  document.querySelectorAll('#'+groupId+' .aic-picker-btn').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  if(kind === 'sport') _aicSport = btn.dataset.sport;
+  else _aicFocus = btn.dataset.focus;
+}
+
+function aicGenerateWorkout(){
+  var dur = parseInt(document.getElementById('aic-duration').value, 10);
+  var box = document.getElementById('aic-workout-result');
+  box.style.display = '';
+  box.innerHTML = '<div class="cm-empty">Generando...</div>';
+  apiFetch('/ai/generate-workout', {
+    method: 'POST',
+    body: JSON.stringify({ sport: _aicSport, focus: _aicFocus, duration_min: dur }),
+  })
+    .then(function(r){
+      if(r.status === 403){ box.innerHTML = '<div class="cm-empty">Tu plan no incluye AI Coach — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderAicWorkout(d); })
+    .catch(function(e){ if(e !== 'gated') box.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo generar</div>'; });
+}
+
+function renderAicWorkout(d){
+  var box = document.getElementById('aic-workout-result');
+  var html = '<div class="rc-mob-title">'+_escCm(d.title||'')+'</div>'
+    +'<div class="rc-mob-rec">'+d.total_duration+' min · Estado: '+_escCm(d.form_state||'')+' · ~'+d.estimated_tss+' TSS</div>';
+  if(d.override_reason) html += '<div class="rec-mob-alert rec-mob-alert-info">⚡ Ajuste automático: '+_escCm(d.override_reason)+'</div>';
+
+  html += (d.phases||[]).map(function(p){
+    return '<div class="aic-phase">'
+      +'<div class="aic-phase-head"><span class="aic-phase-name">'+_escCm(p.name)+'</span><span class="aic-phase-zone">'+_escCm(p.zone)+' — '+_escCm(p.zone_range)+'</span></div>'
+      +'<div class="aic-phase-meta">'+p.duration_min+' min · RPE '+p.rpe+'/10</div>'
+      +'<div class="aic-phase-desc">'+_escCm(p.description)+'</div>'
+    +'</div>';
+  }).join('');
+
+  if(d.key_points && d.key_points.length){
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Puntos clave</div>'
+      + d.key_points.map(function(t){ return '<div class="rec-mob-pri-item">• '+_escCm(t)+'</div>'; }).join('');
+  }
+  if(d.warnings && d.warnings.length){
+    html += d.warnings.map(function(w){ return '<div class="rec-mob-alert rec-mob-alert-medium">⚠️ '+_escCm(w)+'</div>'; }).join('');
+  }
+  box.innerHTML = html;
+}
+
+function loadAicReport(){
+  if(!_token) return;
+  var card = document.getElementById('aic-report-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/ai/weekly-report')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye AI Coach — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ _aicReportLoaded = true; renderAicReport(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderAicReport(d){
+  var card = document.getElementById('aic-report-card');
+  var raw = d.raw || {};
+  var kpis = [
+    { l:'Score semanal', v: d.week_score!=null?d.week_score:'—', c:'var(--orange)' },
+    { l:'TSS', v: raw.week_tss!=null?raw.week_tss:'—', c:'var(--purple)' },
+    { l:'Horas', v: raw.week_hours!=null?raw.week_hours:'—', c:'#22D3EE' },
+    { l:'Actividades', v: raw.activities!=null?raw.activities:'—', c:'#10B981' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  var html = '<div class="rc-mob-title">'+_escCm(d.week_label||'Esta semana')+'</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="rc-mob-rec" style="margin-top:.8rem">'+_escCm(d.load_summary||'')+'</div>'
+    +'<div class="rc-mob-rec" style="margin-top:.3rem">'+_escCm(d.form_assessment||'')+'</div>';
+
+  if(d.key_achievements && d.key_achievements.length){
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Logros de la semana</div>'
+      + d.key_achievements.map(function(a){ return '<div class="rec-mob-pri-item">✅ '+_escCm(a)+'</div>'; }).join('');
+  }
+  if(d.concerns && d.concerns.length){
+    html += d.concerns.map(function(c){ return '<div class="rec-mob-alert rec-mob-alert-medium">⚠️ '+_escCm(c)+'</div>'; }).join('');
+  }
+  var nw = d.next_week || {};
+  if(nw.recommendations && nw.recommendations.length){
+    var tssRange = nw.tss_range || {};
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Próxima semana</div>'
+      +'<div class="rc-mob-rec">TSS objetivo: '+(tssRange.min!=null?tssRange.min:'—')+'–'+(tssRange.max!=null?tssRange.max:'—')+' · Foco: '+_escCm(nw.focus||'—')+'</div>'
+      + nw.recommendations.map(function(r){ return '<div class="rec-mob-pri-item">• '+_escCm(r)+'</div>'; }).join('');
+  }
+  card.innerHTML = html;
+}
+
+function loadAicInjury(){
+  if(!_token) return;
+  var card = document.getElementById('aic-injury-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/ai/injury-forecast')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye AI Coach — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ _aicInjuryLoaded = true; renderAicInjury(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+var AIC_RISK_COLOR = { low:'#10B981', caution:'#F0A500', high:'#EF4444', critical:'#EF4444' };
+function renderAicInjury(d){
+  var card = document.getElementById('aic-injury-card');
+  var pct = Math.round((d.risk_score||0)*100);
+  var color = AIC_RISK_COLOR[d.risk_level] || '#9CA3AF';
+
+  var html = '<div class="rc-mob-title">Pronóstico de riesgo de lesión</div>'
+    +'<div class="aic-risk-num" style="color:'+color+'">'+pct+'%</div>'
+    +'<div class="rc-mob-label" style="color:'+color+';background:'+color+'22;display:inline-block">'+_escCm(d.risk_level||'—')+'</div>'
+    +(d.primary_driver ? '<div class="rc-mob-rec" style="margin-top:.6rem">Factor principal: '+_escCm(d.primary_driver)+'</div>' : '');
+
+  var kpis = [];
+  if(d.time_at_risk_days) kpis.push({ l:'Días en riesgo', v: d.time_at_risk_days, c:'#EF4444' });
+  if(d.recovery_days_needed) kpis.push({ l:'Días de recuperación', v: d.recovery_days_needed, c:'#0EA5E9' });
+  if(kpis.length){
+    html += '<div class="hrv-mob-kpis rd-mob-kpis" style="margin-top:1rem">'+kpis.map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('')+'</div>';
+  }
+
+  if(d.warning_signs && d.warning_signs.length){
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Señales de alerta</div>'
+      + d.warning_signs.map(function(w){ return '<div class="rec-mob-alert rec-mob-alert-medium">⚠️ '+_escCm(w)+'</div>'; }).join('');
+  }
+  if(d.action_plan && d.action_plan.length){
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Plan de acción</div>'
+      + d.action_plan.map(function(step, i){ return '<div class="aic-action-item"><div class="aic-action-num">'+(i+1)+'</div><div>'+_escCm(step)+'</div></div>'; }).join('');
+  }
+  card.innerHTML = html;
 }
 
 /* ── Bienestar: pestaña Resumen (Sprint 1 del port de recovery.html) ──

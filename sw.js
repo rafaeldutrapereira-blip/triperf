@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '97';  // 2026-08-14: cierre de gap 1/5 — Plan Hora a Hora real en Race Day (física real vía /nutrition/precise-splits, checkpoints CHO/fluidos/sodio idénticos a nutrition.html)
+var BUILD_VERSION = '98';  // 2026-08-14: cierre de gap 2/5 — AI Coach con Workout/Informe/Lesiones (antes solo Chat)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
