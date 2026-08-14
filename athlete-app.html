@@ -565,6 +565,25 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .proto-mob-actions { font-size: .74rem; color: var(--muted); line-height: 1.5; margin-top: .4rem; padding-left: 1.1rem; }
 .proto-mob-actions li { margin-bottom: .15rem; }
 
+/* ── Pantalla Mental (Sprint 2 del roadmap app↔web, port de mental.html) ── */
+.mtl-filters { display: flex; gap: .4rem; overflow-x: auto; padding: 1rem 1rem 0; }
+.mtl-filter-chip { flex-shrink: 0; padding: .35rem .7rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-size: .68rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.mtl-filter-chip.on { background: rgba(255,101,53,.15); color: var(--orange); border-color: rgba(255,101,53,.4); }
+.mtl-proto-list { display: flex; flex-direction: column; gap: .6rem; margin: 1rem; }
+.mtl-proto-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .8rem .9rem; }
+.mtl-proto-card.done { border-color: rgba(16,185,129,.35); }
+.mtl-proto-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+.mtl-proto-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800; }
+.mtl-proto-dur { font-size: .68rem; color: var(--dim); white-space: nowrap; flex-shrink: 0; }
+.mtl-proto-cat { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg3); padding: .15rem .5rem; border-radius: 4px; margin-top: .35rem; }
+.mtl-proto-desc { font-size: .78rem; color: var(--muted); line-height: 1.4; margin-top: .5rem; }
+.mtl-proto-steps { display: none; margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--border); font-size: .78rem; color: var(--text); line-height: 1.6; padding-left: 1.1rem; }
+.mtl-proto-steps.open { display: block; }
+.mtl-proto-foot { display: flex; align-items: center; justify-content: space-between; margin-top: .6rem; }
+.mtl-proto-complete { padding: .4rem .8rem; background: rgba(16,185,129,.15); color: #10B981; border: 1px solid rgba(16,185,129,.35); border-radius: 8px; font-size: .7rem; font-weight: 700; cursor: pointer; }
+.mtl-proto-complete[disabled] { opacity: .5; }
+.mtl-proto-done-badge { font-size: .68rem; color: #10B981; font-weight: 700; }
+
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
 .cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
@@ -1161,6 +1180,67 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
     </div>
 
+    <!-- SCREEN 8: MENTAL (Sprint 2 del roadmap app↔web) — no entra al
+         bottom nav (ya tiene 5 slots, el máximo cómodo); se abre desde
+         la fila "Fatiga Mental" de la card ¿Cómo estoy hoy? en Hoy, con
+         botón "Volver" propio en el topbar en vez del patrón de 5
+         pantallas fijas. Mismos 4 endpoints que mental.html (Score/
+         Protocolos/Correlaciones/Pre-Carrera) — se dejó fuera el timer
+         de respiración animado (Score+Protocolos ya cubren completar
+         protocolos de respiración, el timer con círculo animado es
+         polish visual, no dato nuevo). -->
+    <div class="screen" id="screen-mental">
+      <div class="topbar">
+        <button class="cm-priv-btn" onclick="goScreen('screen-today')" aria-label="Volver">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="min-width:0">
+          <div class="topbar-eye">RENDIMIENTO MENTAL</div>
+          <div class="topbar-greet">Score, protocolos y pre-carrera</div>
+        </div>
+      </div>
+
+      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
+        <div class="cm-tab active" id="mtl-tab-score" onclick="mentalTab('score')">Score</div>
+        <div class="cm-tab" id="mtl-tab-protocols" onclick="mentalTab('protocols')">Protocolos</div>
+        <div class="cm-tab" id="mtl-tab-correlations" onclick="mentalTab('correlations')">Correlaciones</div>
+        <div class="cm-tab" id="mtl-tab-prerace" onclick="mentalTab('prerace')">Pre-Carrera</div>
+      </div>
+
+      <div id="mtl-score-content">
+        <div class="rc-mob-card" id="mtl-score-card"><div class="cm-empty">Cargando...</div></div>
+        <div class="wl-card" style="margin:1rem">
+          <div class="wl-title">Check-in mental de hoy</div>
+          <div class="wl-star-row" data-field="anxiety"><span class="wl-star-lbl">😰 Ansiedad (5=calmo)</span><div class="wl-stars" id="mtl-ws-anxiety"></div></div>
+          <div class="wl-star-row" data-field="motivation"><span class="wl-star-lbl">🎯 Motivación</span><div class="wl-stars" id="mtl-ws-motivation"></div></div>
+          <div class="wl-star-row" data-field="focus"><span class="wl-star-lbl">🧠 Foco/Concentración</span><div class="wl-stars" id="mtl-ws-focus"></div></div>
+          <div class="wl-star-row" data-field="confidence"><span class="wl-star-lbl">💪 Confianza</span><div class="wl-stars" id="mtl-ws-confidence"></div></div>
+          <div class="wl-star-row" data-field="mood" style="border-bottom:none"><span class="wl-star-lbl">😊 Ánimo</span><div class="wl-stars" id="mtl-ws-mood"></div></div>
+        </div>
+        <button class="wl-submit" onclick="saveMentalCheckin()">Guardar check-in mental</button>
+      </div>
+
+      <div id="mtl-protocols-content" style="display:none">
+        <div class="mtl-filters" id="mtl-cat-filters">
+          <button class="mtl-filter-chip on" data-cat="" onclick="mentalFilterCat('')">Todos</button>
+          <button class="mtl-filter-chip" data-cat="breathing" onclick="mentalFilterCat('breathing')">Respiración</button>
+          <button class="mtl-filter-chip" data-cat="visualization" onclick="mentalFilterCat('visualization')">Visualización</button>
+          <button class="mtl-filter-chip" data-cat="mindfulness" onclick="mentalFilterCat('mindfulness')">Mindfulness</button>
+          <button class="mtl-filter-chip" data-cat="cognitive" onclick="mentalFilterCat('cognitive')">Cognitivo</button>
+          <button class="mtl-filter-chip" data-cat="activation" onclick="mentalFilterCat('activation')">Activación</button>
+        </div>
+        <div class="mtl-proto-list" id="mtl-proto-list"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="mtl-correlations-content" style="display:none">
+        <div class="rc-mob-card" id="mtl-corr-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="mtl-prerace-content" style="display:none">
+        <div class="rc-mob-card" id="mtl-prerace-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+    </div>
+
   </div><!-- /screens -->
 
   <!-- BOTTOM NAV -->
@@ -1274,6 +1354,7 @@ function initApp(tok){
   document.getElementById('app').style.display='flex';
   updateGreetingHeaders();
   _wlInitStars();
+  _mtlInitStars();
   loadToday();
   loadWeek();
   loadStatusHealth();
@@ -1387,6 +1468,7 @@ function goScreen(id){
      cambiado por otro medio (ej. la web) durante la misma sesión. */
   if(id === 'screen-wellness'){ loadWellnessToday(); wellnessTab('resumen'); }
   if(id === 'screen-profile'){ loadProfileMobile(); }
+  if(id === 'screen-mental'){ mentalTab('score'); }
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -1714,7 +1796,7 @@ function renderStatusHealth(d){
     // (peor) — mismos 5 niveles de mental_routes.py::_mfs_level().
     var MFS_UI_MOB = {peak:'#10B981', good:'#0EA5E9', moderate:'#F0A500', low:'#F97316', critical:'#EF4444'};
     var mCol = MFS_UI_MOB[d.mental_level] || '#9CA3AF';
-    hItems += '<div class="mkc-row" onclick="location.href=\'mental.html\'">'+_mkcLbl('Fatiga Mental','mental_fatigue')+'<span class="mkc-right"><span class="mkc-val" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
+    hItems += '<div class="mkc-row tap" onclick="goScreen(\'screen-mental\')">'+_mkcLbl('Fatiga Mental','mental_fatigue')+'<span class="mkc-right"><span class="mkc-val" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
   }
   if(d.sleep_total_h != null){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
@@ -2989,6 +3071,239 @@ function loadWellnessToday(){
       if(row.notes) document.getElementById('wl-notes').value = row.notes;
     })
     .catch(function(){});
+}
+
+/* ── Pantalla Mental (Sprint 2 del roadmap app↔web) — mismos 4
+   endpoints/campos exactos que mental.html: /mental/dashboard (score+
+   check-in+trend_7d+protocolo sugerido+carrera), /mental/checkin (POST),
+   /mental/protocols (filtro por category), /mental/protocols/{id}/
+   complete (POST), /mental/correlations, /mental/pre-race. */
+var _MTL_FIELDS = ['anxiety','motivation','focus','confidence','mood'];
+var _mtlValues = {};
+var _mtlCat = '';
+var _mtlProtocols = [];
+
+function _mtlInitStars(){
+  _MTL_FIELDS.forEach(function(f){
+    var container = document.getElementById('mtl-ws-'+f);
+    if(!container) return;
+    container.innerHTML = '';
+    for(var i=1;i<=5;i++){
+      var btn = document.createElement('button');
+      btn.className = 'wl-star-btn';
+      btn.type = 'button';
+      btn.textContent = '★';
+      btn.dataset.val = i;
+      btn.onclick = (function(field, val){ return function(){ _mtlValues[field]=val; _mtlUpdateStars(field); }; })(f, i);
+      container.appendChild(btn);
+    }
+  });
+}
+function _mtlUpdateStars(field){
+  var val = _mtlValues[field] || 0;
+  var container = document.getElementById('mtl-ws-'+field);
+  if(!container) return;
+  container.querySelectorAll('.wl-star-btn').forEach(function(s){
+    s.classList.toggle('active', parseInt(s.dataset.val,10) <= val);
+  });
+}
+
+var MTL_TABS = ['score','protocols','correlations','prerace'];
+function mentalTab(tab){
+  MTL_TABS.forEach(function(t){
+    var tabEl = document.getElementById('mtl-tab-'+t), contEl = document.getElementById('mtl-'+t+'-content');
+    if(tabEl) tabEl.classList.toggle('active', t===tab);
+    if(contEl) contEl.style.display = t===tab ? '' : 'none';
+  });
+  if(tab === 'score') loadMentalScore();
+  else if(tab === 'protocols') loadMentalProtocols();
+  else if(tab === 'correlations') loadMentalCorrelations();
+  else if(tab === 'prerace') loadMentalPreRace();
+}
+
+function loadMentalScore(){
+  if(!_token) return;
+  var card = document.getElementById('mtl-score-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/mental/dashboard?date_iso='+todayIso())
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderMentalScore(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderMentalScore(d){
+  var card = document.getElementById('mtl-score-card');
+  var t = d.today || {};
+  var score = t.score != null ? t.score : 0;
+  var color = t.color || '#9CA3AF';
+  var html = '<div class="rc-mob-head"><span class="rc-mob-title">Mental Fatigue Score</span></div>'
+    +'<div class="rc-mob-body">'
+      +'<div class="rc-mob-num" style="color:'+color+'">'+score+'</div>'
+      +'<div class="rc-mob-info">'
+        +'<div class="rc-mob-label" style="color:'+color+';background:'+color+'22">'+_escCm(t.level||'')+'</div>'
+        +(t.recommendation ? '<div class="rc-mob-rec">'+_escCm(t.recommendation)+'</div>' : '')
+      +'</div>'
+    +'</div>';
+
+  var trend = (d.trend_7d || []).filter(function(p){ return p.score != null; });
+  if(trend.length > 1){
+    var mx = 100;
+    var bars = trend.map(function(p){
+      var h = Math.round((p.score/mx)*72);
+      return '<div class="hrv-mob-bar" style="height:'+h+'px;background:#A855F7" title="'+p.date_iso+': '+p.score+'"></div>';
+    }).join('');
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Últimos 7 días</div><div class="hrv-mob-chart">'+bars+'</div>';
+  }
+
+  if(d.suggested_protocol){
+    var sp = d.suggested_protocol;
+    html += '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.9rem">💡 Sugerido: <strong>'+_escCm(sp.name)+'</strong> ('+sp.duration_min+' min) — '+_escCm(sp.description)+'</div>';
+  }
+  if(d.race && d.race.days_to_race != null){
+    html += '<div class="rc-mob-rec" style="margin-top:.6rem">🏁 '+d.race.days_to_race+' días para '+_escCm(d.race.race_name||'tu carrera')+'</div>';
+  }
+  card.innerHTML = html;
+
+  if(d.checkin){
+    _MTL_FIELDS.forEach(function(f){
+      if(d.checkin[f] != null){ _mtlValues[f] = d.checkin[f]; _mtlUpdateStars(f); }
+    });
+  }
+}
+
+function saveMentalCheckin(){
+  if(!_token){ toast('Inicia sesión para guardar',''); return; }
+  var body = { date_iso: todayIso() };
+  _MTL_FIELDS.forEach(function(f){ if(_mtlValues[f]) body[f] = _mtlValues[f]; });
+  apiFetch('/mental/checkin', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){
+      if(r.status === 403){ toast('Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil',''); return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(){ toast('Check-in mental guardado ✓','ok'); loadMentalScore(); })
+    .catch(function(e){ if(e !== 'gated') toast('Sin conexión — no se pudo guardar',''); });
+}
+
+var MTL_CAT_LABELS = { breathing:'Respiración', visualization:'Visualización', mindfulness:'Mindfulness', cognitive:'Cognitivo', activation:'Activación', pre_race:'Pre-Carrera', recovery_mental:'Recuperación Mental' };
+var MTL_DIFF_LABELS = { beginner:'Principiante', intermediate:'Intermedio', advanced:'Avanzado' };
+
+function mentalFilterCat(cat){
+  _mtlCat = cat;
+  document.querySelectorAll('#mtl-cat-filters .mtl-filter-chip').forEach(function(b){
+    b.classList.toggle('on', b.dataset.cat === cat);
+  });
+  loadMentalProtocols();
+}
+
+function loadMentalProtocols(){
+  if(!_token) return;
+  var list = document.getElementById('mtl-proto-list');
+  list.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  var qs = _mtlCat ? '?category='+_mtlCat : '';
+  apiFetch('/mental/protocols'+qs)
+    .then(function(r){
+      if(r.status === 403){ list.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ _mtlProtocols = d.protocols || []; renderMentalProtocols(); })
+    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderMentalProtocols(){
+  var list = document.getElementById('mtl-proto-list');
+  if(!_mtlProtocols.length){ list.innerHTML = '<div class="cm-empty">Sin protocolos con este filtro.</div>'; return; }
+  list.innerHTML = _mtlProtocols.map(function(p, idx){
+    var done = p.completed_this_week;
+    return '<div class="mtl-proto-card'+(done?' done':'')+'">'
+      +'<div class="mtl-proto-head" onclick="mentalToggleProto('+idx+')" style="cursor:pointer">'
+        +'<div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(MTL_CAT_LABELS[p.category]||p.category)+'</span></div>'
+        +'<span class="mtl-proto-dur">'+p.duration_min+' min</span>'
+      +'</div>'
+      +'<div class="mtl-proto-desc">'+_escCm(p.description)+'</div>'
+      +'<ol class="mtl-proto-steps" id="mtl-proto-steps-'+idx+'">'+(p.steps||[]).map(function(s){ return '<li>'+_escCm(s)+'</li>'; }).join('')+'</ol>'
+      +'<div class="mtl-proto-foot">'
+        +'<span style="font-size:.62rem;color:var(--dim)">'+(MTL_DIFF_LABELS[p.difficulty]||p.difficulty)+'</span>'
+        +(done ? '<span class="mtl-proto-done-badge">✓ Completado esta semana</span>' : '<button class="mtl-proto-complete" onclick="event.stopPropagation();mentalCompleteProto(\''+p.id+'\')">Marcar completado</button>')
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+
+function mentalToggleProto(idx){
+  var el = document.getElementById('mtl-proto-steps-'+idx);
+  if(el) el.classList.toggle('open');
+}
+
+function mentalCompleteProto(id){
+  apiFetch('/mental/protocols/'+id+'/complete', { method:'POST', body: JSON.stringify({protocol_id:id, rating:null}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('err'); })
+    .then(function(){ toast('Protocolo completado ✓','ok'); loadMentalProtocols(); })
+    .catch(function(){ toast('No se pudo registrar','err'); });
+}
+
+function loadMentalCorrelations(){
+  if(!_token) return;
+  var card = document.getElementById('mtl-corr-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/mental/correlations?days=30')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderMentalCorrelations(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderMentalCorrelations(d){
+  var card = document.getElementById('mtl-corr-card');
+  var pts = (d.data_points || []).slice(-20).reverse();
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin suficientes datos para correlación.</div>'; return; }
+  var maxTss = Math.max.apply(null, pts.map(function(p){ return p.tss||0; })) || 1;
+  card.innerHTML = '<div class="rc-mob-title">Score mental vs. carga de entrenamiento</div>'
+    + pts.map(function(p){
+      var barW = p.tss ? Math.round(p.tss/maxTss*100) : 0;
+      return '<div class="corr-mob-row">'
+        +'<div><span class="corr-mob-date">'+_escCm(p.date_iso)+'</span><span class="corr-mob-sport">'+_escCm(p.activity_type||'—')+' · MFS '+(p.mfs_score||'—')+'</span></div>'
+        +'<div class="corr-mob-bar-wrap"><div class="corr-mob-fill" style="width:'+barW+'%;background:#A855F7"></div></div>'
+        +'<div class="corr-mob-val">'+(p.tss?Math.round(p.tss):'—')+'</div>'
+      +'</div>';
+    }).join('');
+}
+
+function loadMentalPreRace(){
+  if(!_token) return;
+  var card = document.getElementById('mtl-prerace-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/mental/pre-race')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderMentalPreRace(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderMentalPreRace(d){
+  var card = document.getElementById('mtl-prerace-card');
+  var race = d.race || {};
+  if(!race.name){ card.innerHTML = '<div class="cm-empty">Configurá tu meta de carrera en Perfil para ver protocolos pre-carrera.</div>'; return; }
+  var html = '<div class="rc-mob-title">'+_escCm(race.name)+'</div>'
+    +'<div class="rc-mob-rec">'+(race.days_to_race!=null?race.days_to_race+' días para la carrera':'')+(race.distance?' · '+_escCm(race.distance):'')+'</div>';
+  var protos = d.protocols_today || [];
+  if(protos.length){
+    html += '<div class="rc-mob-title" style="margin-top:1rem">Protocolos recomendados para hoy</div>';
+    html += protos.map(function(p){
+      return '<div class="mtl-proto-card" style="margin-top:.6rem">'
+        +'<div class="mtl-proto-head"><div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(MTL_CAT_LABELS[p.category]||p.category)+'</span></div><span class="mtl-proto-dur">'+p.duration_min+' min</span></div>'
+        +'<div class="mtl-proto-desc">'+_escCm(p.description)+'</div>'
+        +'<ol class="mtl-proto-steps open">'+(p.steps||[]).map(function(s){ return '<li>'+_escCm(s)+'</li>'; }).join('')+'</ol>'
+      +'</div>';
+    }).join('');
+  }
+  card.innerHTML = html;
 }
 
 /* ── Bienestar: pestaña Resumen (Sprint 1 del port de recovery.html) ──
