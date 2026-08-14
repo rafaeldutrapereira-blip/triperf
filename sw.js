@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '100';  // 2026-08-14: cierre de gap 4/5 — timer de Respiración animado en Mental (aro SVG, 4 protocolos, guarda sesión)
+var BUILD_VERSION = '101';  // 2026-08-14: cierre de gap 5/5 — pestaña Conexiones (Garmin/Strava, solo lectura) en Perfil; los 5 gaps del cierre de paridad app↔web completos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

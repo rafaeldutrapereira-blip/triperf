@@ -648,6 +648,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mtl-breath-phase { font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .mtl-breath-count { font-family: 'Barlow Condensed', sans-serif; font-size: 2.6rem; font-weight: 900; color: var(--text); line-height: 1; margin: .2rem 0; }
 .mtl-breath-cycles { font-size: .72rem; color: var(--dim); }
+.pf-conn-row { display: flex; align-items: center; justify-content: space-between; padding: .7rem 0; border-top: 1px solid var(--border); gap: .6rem; }
+.pf-conn-row:first-child { border-top: none; }
+.pf-conn-name { font-size: .85rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+.pf-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pf-conn-dot.on { background: #10B981; }
+.pf-conn-dot.off { background: #EF4444; }
+.pf-conn-meta { font-size: .68rem; color: var(--dim); margin-top: .15rem; }
+.pf-conn-sync-btn { padding: .4rem .8rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: .68rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
 /* ── Pantalla Race Day + Nutrición (Sprints 3+4 del roadmap app↔web,
    fusionadas en una sola pantalla porque en la web race_day.html ya
@@ -1317,6 +1325,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <button class="wl-submit" onclick="saveProfileMobile()">Guardar cambios</button>
 
+      <!-- Conexiones (cierre de gap 2026-08-14) — solo lectura: estado
+           real de Garmin/Strava + sincronizar ahora. athlete_profile.html
+           permite conectar/desconectar credenciales y resolver MFA —
+           eso queda intencionalmente web-only (flujo de autenticación
+           sensible, mejor en desktop), acá solo se muestra el estado. -->
+      <div class="wl-card" style="margin:1.3rem 1rem 0">
+        <div class="wl-title">Conexiones</div>
+        <div id="pf-connections"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
       <div style="margin:1.4rem 1rem 0;padding-top:1.1rem;border-top:1px solid var(--border)">
         <button class="wl-submit" style="background:transparent;border:1px solid var(--border);color:var(--dim)" onclick="doLogout()">Salir</button>
       </div>
@@ -1923,6 +1941,40 @@ function loadProfileMobile(){
       document.getElementById('pf-run').value       = p.run_pace || '';
     })
     .catch(function(){});
+  loadProfileConnections();
+}
+
+/* Conexiones (cierre de gap 2026-08-14) — solo lectura: mismos 2
+   endpoints exactos que la pestaña Conexiones de athlete_profile.html
+   (/athlete/garmin/sync-status, /strava/status). Conectar/desconectar
+   y resolver MFA quedan web-only a propósito. */
+function loadProfileConnections(){
+  var box = document.getElementById('pf-connections');
+  box.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  Promise.all([
+    apiFetch('/athlete/garmin/sync-status').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    apiFetch('/strava/status').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+  ]).then(function(res){ renderProfileConnections(res[0], res[1]); });
+}
+
+function renderProfileConnections(garmin, strava){
+  var box = document.getElementById('pf-connections');
+  var gOn = !!(garmin && garmin.has_credentials && garmin.status === 'ok');
+  var sOn = !!(strava && strava.connected);
+
+  var html = '<div class="pf-conn-row">'
+    +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(gOn?'on':'off')+'"></span>Garmin Connect</div>'
+    +'<div class="pf-conn-meta">'+(gOn ? 'Última sync: '+_escCm(garmin.last_sync||'—')+' · '+(garmin.activities_total||0)+' actividades' : (garmin && garmin.has_credentials ? 'Error de sincronización' : 'No conectado'))+'</div></div>'
+    +(gOn ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">Sincronizar</button>' : '')
+  +'</div>';
+
+  html += '<div class="pf-conn-row">'
+    +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(sOn?'on':'off')+'"></span>Strava</div>'
+    +'<div class="pf-conn-meta">'+(sOn ? 'Conectado'+(strava.token_expires?' · vence '+_escCm(strava.token_expires.slice(0,10)):'') : 'No conectado')+'</div></div>'
+  +'</div>';
+
+  html += '<div class="rc-mob-rec" style="margin-top:.7rem">Para conectar, desconectar o resolver problemas de autenticación, hacelo desde la web en Mi Perfil → Conexiones.</div>';
+  box.innerHTML = html;
 }
 
 function saveProfileMobile(){
