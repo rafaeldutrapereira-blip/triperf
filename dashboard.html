@@ -134,6 +134,14 @@ ul { list-style: none; }
   white-space:nowrap; flex-shrink:0;
 }
 .insight-severity svg { width:12px; height:12px; }
+.insight-readiness-pill {
+  display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; color:var(--muted);
+  background:var(--surface); border:1px solid var(--border); padding:.34rem .7rem; border-radius:20px;
+  white-space:nowrap; flex-shrink:0; cursor:default;
+}
+.insight-readiness-pill strong { color:var(--text); font-weight:700; font-family:'Oswald',sans-serif; }
+.insight-readiness-pill .irp-label { text-transform:uppercase; letter-spacing:.04em; font-size:.66rem; }
+.insight-readiness-pill .irp-max { color:var(--dim); font-size:.66rem; }
 .sev-reduce  { background:rgba(239,68,68,.15);  color:var(--red);    border:1px solid rgba(239,68,68,.32); }
 .sev-caution { background:rgba(240,165,0,.15);  color:var(--gold);   border:1px solid rgba(240,165,0,.32); }
 .sev-good    { background:rgba(16,185,129,.15); color:var(--green);  border:1px solid rgba(16,185,129,.32); }
@@ -216,6 +224,12 @@ ul { list-style: none; }
 .kcr-val .u { font-family:'Inter',sans-serif; font-size:.7rem; font-weight:600; color:var(--dim); margin-left:.15rem; }
 .kcr .badge { flex-shrink:0; }
 .kcr-spark { flex-shrink:0; display:block; }
+.kcr-more-link {
+  display:block; text-align:right; margin-top:.6rem; padding-top:.7rem; border-top:1px solid var(--border2);
+  font-family:'Oswald',sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.05em;
+  color:var(--accent,var(--orange)); text-decoration:none;
+}
+.kcr-more-link:hover { text-decoration:underline; }
 
 /* Badges que son un DELTA numérico (CTL/HRV/TSS/RHR) se muestran como texto
    chico junto al valor grande, en vez de pill con fondo — mismo patrón que
@@ -279,19 +293,6 @@ ul { list-style: none; }
 
 /* -- MAIN GRID ------------------------------------------------------------- */
 .ms { padding: 0 0 1.5rem; }
-.mg {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 1.25rem;
-  align-items: stretch;   /* PMC y Gauge misma altura */
-  margin-bottom: 1.25rem;
-}
-@media (max-width:1060px){ .mg { grid-template-columns: 1fr; } }
-/* Sin PMC (movido a detalle.html?metric=pmc), la fila queda con una
-   sola card (Estado del Atleta) — columna fija en vez de estirarla a
-   todo el ancho, para no dejarla desproporcionadamente ancha y vacía. */
-.mg.mg-single { grid-template-columns: 360px; }
-@media (max-width:1060px){ .mg.mg-single { grid-template-columns: 1fr; max-width: 360px; } }
 
 /* -- PANEL ----------------------------------------------------------------- */
 .panel {
@@ -409,119 +410,6 @@ ul { list-style: none; }
 .wkl-mets-col .adh-mets { margin-top:auto; margin-bottom:auto; }
 .wkl-chart-col { min-width:0; display:flex; flex-direction:column; justify-content:space-between; }
 @media(max-width:680px){ .wkl-2col { grid-template-columns:1fr; } }
-
-/* -- RIGHT COL (Readiness Gauge — misma altura que PMC) ------------------- */
-.rc {
-  display: flex; flex-direction: column;
-  min-height: 0;  /* permite shrink dentro del grid */
-}
-.rc > .panel {
-  flex: 1;           /* el panel llena toda la altura del grid row  */
-  display: flex;
-  flex-direction: column;
-}
-
-/* Gauge body — rellena el panel verticalmente */
-.gb {
-  flex: 1;
-  padding: 1.5rem 1.6rem 1.6rem;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Halo de energía detrás del gauge */
-.gb::before {
-  content: '';
-  position: absolute;
-  width: 260px; height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center,
-    rgba(16,185,129,.07) 0%,
-    rgba(34,211,238,.04) 45%,
-    transparent 70%);
-  pointer-events: none;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -54%);
-}
-
-/* Status badge */
-.g-status {
-  display: inline-flex; align-items: center; gap: .4rem;
-  font-family:'Oswald',sans-serif; font-size:.65rem; font-weight:700;
-  letter-spacing:.18em; text-transform:uppercase;
-  color: var(--green);
-  background: rgba(16,185,129,.1);
-  border: 1px solid rgba(16,185,129,.25);
-  border-radius: 20px; padding: .28rem .85rem;
-  margin-bottom: 0;
-}
-.g-status::before {
-  content: '';
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-  animation: dot-pulse 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-
-/* Gauge SVG — más grande para llenar el espacio */
-.g-svg {
-  position: relative;
-  width: 210px; height: 210px;
-  margin: 0 auto;
-  flex-shrink: 0;
-}
-.g-svg svg { width:100%; height:100%; }
-.g-ctr {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-}
-.g-num {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size: 3.8rem; font-weight: 900; line-height: 1;
-  background: linear-gradient(135deg,var(--green),var(--aqua));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  filter: drop-shadow(0 0 8px rgba(16,185,129,.3));
-}
-.g-lbl {
-  font-family:'Oswald',sans-serif; font-size:.58rem; font-weight:600;
-  letter-spacing:.2em; text-transform:uppercase; color:var(--dim); margin-top:.15rem;
-}
-
-/* Metric rows */
-.g-rows { width:100%; display:flex; flex-direction:column; gap:.65rem; }
-.g-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 3rem;
-  align-items: center; gap: .6rem;
-  padding: .45rem .55rem;
-  background: rgba(8,116,174,.04);
-  border-radius: 6px;
-  border: 1px solid rgba(8,116,174,.06);
-}
-.g-rn {
-  font-family: 'Oswald', sans-serif;
-  font-size: .7rem; font-weight: 600;
-  letter-spacing: .04em; color: var(--muted);
-}
-.g-rb { height: 5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
-.g-rf {
-  height: 100%; border-radius: 3px;
-  background: var(--gc,var(--green));
-  width: 0;
-  transition: width 1.4s cubic-bezier(.4,0,.2,1);
-  box-shadow: 0 0 6px var(--gc,var(--green));
-}
-.g-rv {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size: .9rem; font-weight: 800;
-  color: var(--text); text-align: right;
-}
 
 /* Next race */
 .nr-body { padding:1.2rem 1.4rem 1.3rem; }
@@ -982,10 +870,25 @@ ul { list-style: none; }
         <div>
           <div class="insight-top">
             <h3 class="kpi-card-q">Insight del día</h3>
-            <span class="insight-severity sev-neutral" id="insight-severity">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-              <span id="insight-headline">Cargando…</span>
-            </span>
+            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+              <!-- Readiness Score (motor propio de LabX) — antes vivía en
+                   su propio gauge circular grande ("Estado del Atleta"),
+                   movido acá 2026-08-14 (pedido explícito del usuario)
+                   como pill chica. A propósito NO se fusiona con el
+                   severity badge de al lado: son 2 sistemas de cálculo
+                   DISTINTOS (Readiness Score 0-100 vs. severidad
+                   reduce/caution/good/neutral del Insight) — mismo
+                   cuidado que ya tuvo training_readiness_garmin en
+                   lx-info.js para no repetir la confusión "¿por qué hay
+                   2 números?" que ya reportó el usuario una vez. -->
+              <span class="insight-readiness-pill" id="insight-readiness-pill" title="Readiness Score — motor propio de LabX, distinto de la severidad de este insight">
+                <span class="irp-label">Readiness</span><strong id="insight-readiness-val">—</strong><span class="irp-max">/100</span>
+              </span>
+              <span class="insight-severity sev-neutral" id="insight-severity">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+                <span id="insight-headline">Cargando…</span>
+              </span>
+            </div>
           </div>
           <ul class="insight-text" id="insight-message"><li>Analizando tu carga y recuperación…</li></ul>
           <button class="insight-why-toggle" id="insight-why-toggle" type="button" style="display:none" onclick="toggleInsightWhy()">
@@ -1114,6 +1017,23 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="mental_fatigue">Fatiga Mental</span></span>
           <span class="kcr-right"><span class="kcr-val" id="kc-mental-val">—</span><span id="badge-mental" class="badge">—</span></span>
         </div>
+        <!-- Sueño y Fatiga muscular — movidas acá 2026-08-14 desde la
+             card "Estado del Atleta" (eliminada, pedido explícito del
+             usuario): esta card ya es el hub de "todo lo de hoy", tiene
+             más sentido acá que en un gauge aparte. Sin ícono "i" (igual
+             que antes en el gauge) porque no hay entrada en lx-info.js
+             para "sleep" — agregar data-lx-info acá sin esa entrada
+             repetiría el bug real "Métrica no encontrada" ya corregido
+             antes esta misma sesión para otras métricas. -->
+        <div class="kcr" style="cursor:default" aria-label="Sueño">
+          <span class="kcr-label"><span class="kcr-label-main">Sueño</span></span>
+          <span class="kcr-right"><span class="kcr-val" id="w-sleep-val">—</span></span>
+        </div>
+        <div class="kcr" style="cursor:default" aria-label="Fatiga muscular">
+          <span class="kcr-label"><span class="kcr-label-main">Fatiga muscular</span></span>
+          <span class="kcr-right"><span class="kcr-val" id="w-fat-val" style="font-size:.85rem">—</span></span>
+        </div>
+        <a href="detalle.html?metric=wellbeing" class="kcr-more-link">Ver histórico de bienestar completo →</a>
       </div>
 
       <!-- CARD 3: ¿Hacia dónde voy? — TSS Semana, VO2 Max -->
@@ -1157,91 +1077,6 @@ ul { list-style: none; }
       </div>
     </div>
   </div>
-</section>
-
-<!-- -------------------- MAIN: GAUGE ------------------ -->
-<!-- El panel de Performance Management (PMC) se sacó del dashboard
-     2026-08-13 (pedido explícito del usuario) — el histórico completo
-     ya vive en detalle.html?metric=pmc (incluye Comparar Ciclos), ahora
-     con link directo desde el menú lateral en vez de duplicarlo acá.
-     Las funciones de dibujo (drawPMC/setPmcPeriod/etc.) quedaron
-     definidas pero sin ningún elemento al que apuntar — cada una tiene
-     su propio guard temprano (`if(!el) return`) así que quedan como
-     no-ops seguros, no se tocaron para no arriesgar romper PMC_ALL
-     (SÍ se sigue usando: alimenta las sparklines de las KPI cards de
-     arriba, ver updateLoadSparklines). -->
-<section class="ms">
-  <div class="c">
-
-    <div class="mg mg-single">
-
-      <!-- Estado del Atleta — Readiness Gauge -->
-      <div class="rc">
-        <div class="panel sr lx-card" onclick="location.href='detalle.html?metric=wellbeing'" style="cursor:pointer" title="Clic para ver histórico de bienestar">
-          <div class="ph">
-            <div class="pt" data-lx-info="readiness">Estado del <strong>Atleta</strong></div>
-            <span style="font-size:.62rem;color:var(--accent);letter-spacing:.08em;font-family:'Oswald',sans-serif" data-i18n="btn_view_history">VER HISTÓRICO ›</span>
-          </div>
-          <div class="gb">
-            <div class="g-status" id="g-status-txt">? BUENO — Apto para entrenar</div>
-            <div class="g-svg" aria-label="Readiness 78 de 100">
-              <svg viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gG" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stop-color="#10B981"/>
-                    <stop offset="100%" stop-color="#22D3EE"/>
-                  </linearGradient>
-                  <filter id="gGlow">
-                    <feGaussianBlur stdDeviation="3" result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                </defs>
-                <!-- Track -->
-                <circle cx="105" cy="105" r="88" stroke="rgba(8,145,178,.07)" stroke-width="13"/>
-                <!-- Glow ring (decorativo) -->
-                <circle cx="105" cy="105" r="88" stroke="rgba(16,185,129,.04)" stroke-width="22"
-                  stroke-dasharray="552.92 552.92" stroke-dashoffset="0"
-                  transform="rotate(-90 105 105)"/>
-                <!-- Progress arc -->
-                <circle cx="105" cy="105" r="88"
-                  stroke="url(#gG)" stroke-width="13" stroke-linecap="round"
-                  stroke-dasharray="552.92 552.92"
-                  stroke-dashoffset="552.92"
-                  transform="rotate(-90 105 105)"
-                  id="g-arc"
-                  filter="url(#gGlow)"
-                  style="transition:stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)"/>
-              </svg>
-              <div class="g-ctr">
-                <div class="g-num" id="g-num">0</div>
-                <div class="g-lbl">/ 100</div>
-              </div>
-            </div>
-            <div class="g-rows">
-              <div class="g-row">
-                <span class="g-rn" data-i18n="kpi_sleep">Sueño</span>
-                <div class="g-rb"><div class="g-rf" id="w-sleep-bar" data-w="0" style="--gc:#10B981"></div></div>
-                <span class="g-rv" id="w-sleep-val">—</span>
-              </div>
-              <!-- HRV y FC Reposo sacados de acá 2026-08-14 (pedido explícito
-                   del usuario): eran el mismo dato crudo que ya se muestra
-                   arriba en la card "¿Cómo estoy hoy?" con más contexto
-                   (badge/sparkline/promedio 7d/histórico) — a diferencia de
-                   Sueño (único acá) y Fatiga musc. (vista distinta de TSB,
-                   no el mismo número), esas 2 eran duplicado puro. -->
-              <div class="g-row">
-                <span class="g-rn">Fatiga musc.</span>
-                <div class="g-rb"><div class="g-rf" id="w-fat-bar" data-w="55" style="--gc:#F0A500"></div></div>
-                <span class="g-rv" id="w-fat-val">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div><!-- /rc -->
-
-    </div><!-- /mg -->
-
-  </div><!-- /.c -->
 </section>
 
 <!-- -------------------- RECENT ACTIVITIES --------------------------------- -->
@@ -1566,15 +1401,20 @@ function renderInsight(ins){
   }
 }
 
-function animGauge(score){
-  var arc=document.getElementById('g-arc'), numEl=document.getElementById('g-num');
-  var C=2*Math.PI*68, end=C-(score/100)*C, st=null, dur=1550;
+/* Reemplaza al viejo animGauge() (círculo SVG grande, sacado 2026-08-14
+   junto con la card "Estado del Atleta" — pedido explícito del
+   usuario). El Readiness Score ahora es una pill chica en el header
+   de "Insight del día"; sigue animándose con count-up para no perder
+   el efecto, solo que sobre un número simple, no un arco SVG. */
+function setInsightReadinessPill(score){
+  var el = document.getElementById('insight-readiness-val');
+  if(!el || score == null) return;
+  var st = null, dur = 900;
   requestAnimationFrame(function step(ts){
-    if(!st) st=ts;
-    var p=Math.min((ts-st)/dur,1), e=1-Math.pow(1-p,3);
-    arc.style.strokeDashoffset=C-(C-end)*e;
-    numEl.textContent=Math.round(e*score);
-    if(p<1) requestAnimationFrame(step);
+    if(!st) st = ts;
+    var p = Math.min((ts-st)/dur, 1), e = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(e*score);
+    if(p < 1) requestAnimationFrame(step);
   });
 }
 
@@ -2102,17 +1942,6 @@ function patchData(){
     bBb.style.color = bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
   }
 
-  // Status text del gauge (g-status-txt)
-  var gStatus = document.getElementById('g-status-txt');
-  if(gStatus && d.readiness != null){
-    var stLabel = d.readiness >= 80 ? 'ÓPTIMO — Apto para entrenar fuerte'
-                : d.readiness >= 60 ? 'BUENO — Apto para entrenar'
-                : d.readiness >= 40 ? 'MODERADO — Entrena con cuidado'
-                : 'BAJO — Prioriza recuperación';
-    var stColor = d.readiness >= 80 ? '#10B981' : d.readiness >= 60 ? '#F0A500' : d.readiness >= 40 ? '#FF6535' : '#EF4444';
-    gStatus.textContent = stLabel;
-    gStatus.style.color = stColor;
-  }
 
   // tss-week-meta (subtítulo semana)
   var tssMetaEl = document.getElementById('tss-week-meta');
@@ -2123,22 +1952,16 @@ function patchData(){
     tssMetaEl.textContent = 'Semana actual desde ' + monStr;
   }
 
-  // Wellness panel bars (sleep, HRV, resting HR, fatigue)
-  var sleepBar = document.getElementById('w-sleep-bar');
+  // Sueño y Fatiga muscular — filas de la card "¿Cómo estoy hoy?"
+  // (movidas 2026-08-14 desde la ex-card "Estado del Atleta").
   var sleepVal = document.getElementById('w-sleep-val');
-  if(d.sleep_total_h != null){
-    var sw = Math.min(100, Math.round(d.sleep_total_h / 10 * 100));
-    if(sleepVal) sleepVal.textContent = d.sleep_total_h + 'h';
-    if(sleepBar){ sleepBar.setAttribute('data-w', sw); sleepBar.style.width = sw+'%'; }
-  } else if(sleepBar){ sleepBar.setAttribute('data-w', 0); sleepBar.style.width = '0%'; if(sleepVal) sleepVal.textContent = '—'; }
+  if(sleepVal) sleepVal.textContent = d.sleep_total_h != null ? d.sleep_total_h + 'h' : '—';
 
   if(d.tsb != null){
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
     var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
-    var fatBar = document.getElementById('w-fat-bar');
     var fatVal = document.getElementById('w-fat-val');
     if(fatVal) fatVal.textContent = fatLabel;
-    if(fatBar){ fatBar.setAttribute('data-w', fatPct); fatBar.style.width = fatPct+'%'; }
   }
 
   // ACWR card
@@ -2194,8 +2017,8 @@ function patchData(){
     setPmcPeriod(PMC_PERIOD);
   }
 
-  // Gauge — animate with real value regardless of when observer fired
-  if(d.readiness != null){ window._gaugeScore = d.readiness; animGauge(d.readiness); }
+  // Readiness Score — pill chica en el header de Insight del día
+  if(d.readiness != null){ window._gaugeScore = d.readiness; setInsightReadinessPill(d.readiness); }
 
   // Insight del día
   renderInsight(d.insight);
@@ -2889,7 +2712,7 @@ function drawPMC(){
 }
 
 /* -- Intersection Observer -- */
-var gaugeDone=false, pmcDone=false;
+var pmcDone=false;
 var io=new IntersectionObserver(function(entries){
   entries.forEach(function(entry){
     if(!entry.isIntersecting) return;
@@ -2906,12 +2729,7 @@ var io=new IntersectionObserver(function(entries){
       });
     });
     el.querySelectorAll('.bar-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},200); });
-    el.querySelectorAll('.g-rf').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},300); });
     el.querySelectorAll('.tb-f,.tm-f').forEach(function(b){ setTimeout(function(){b.style.width=b.dataset.w+'%';},250); });
-    if(!gaugeDone && el.querySelector('#g-arc')){
-      gaugeDone=true;
-      if(!window._apiFetching) setTimeout(function(){animGauge(window._gaugeScore != null ? window._gaugeScore : 0);},150);
-    }
     if(!pmcDone && el.querySelector('#pmc')){
       pmcDone=true;
       // Evita dibujar la curva PMC de respaldo (52 semanas de valores fijos,

@@ -208,9 +208,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
    dashboard sin usarse acá), pedido explícito: agregarla como la
    PRIMERA card de "Hoy", igual que en el dashboard de escritorio. */
 .insight-mob { margin: .75rem 1rem 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; }
-.insight-mob-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .55rem; padding-bottom: .55rem; border-bottom: 1px solid var(--border); }
-.insight-mob-title { font-family: 'Oswald', sans-serif; font-size: .84rem; font-weight: 700; }
+.insight-mob-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem .6rem; margin-bottom: .55rem; padding-bottom: .55rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.insight-mob-title { font-family: 'Oswald', sans-serif; font-size: .84rem; font-weight: 700; white-space: nowrap; }
 .insight-mob-sev { display: inline-flex; align-items: center; gap: .3rem; font-family: 'Oswald', sans-serif; font-size: .62rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .22rem .6rem; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.insight-mob-readiness { display: inline-flex; align-items: center; gap: .25rem; font-size: .62rem; color: var(--dim); background: var(--bg3); border: 1px solid var(--border); padding: .22rem .55rem; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.insight-mob-readiness strong { color: var(--text); font-weight: 700; font-family: 'Oswald', sans-serif; }
 .insight-mob-msg { font-size: .86rem; line-height: 1.55; color: var(--text); list-style: none; padding-left: 0; margin: 0; }
 .insight-mob-msg li { position: relative; padding-left: 1.05rem; margin-bottom: .4rem; }
 .insight-mob-msg li:last-child { margin-bottom: 0; }
@@ -1204,10 +1206,21 @@ function _sevLabel(sev){ return {reduce:'Riesgo alto', caution:'Precaución', go
    dashboard.html, adaptada a una card angosta de celular. d.insight ya
    viene en la respuesta de /athlete/dashboard (build_daily_insight en
    el backend); simplemente nunca se había renderizado en la app móvil. */
-function renderInsightMobile(ins){
+function renderInsightMobile(ins, readiness){
   var strip = document.getElementById('insight-strip');
   if(!ins || !ins.headline){ strip.style.display = 'none'; return; }
   var sevCol = _sevColorInsight(ins.severity);
+
+  /* Readiness Score (motor propio de LabX) — la web lo movió acá desde
+     su gauge circular grande (sacado 2026-08-14, pedido explícito del
+     usuario); la app nunca lo mostraba en ningún lado, se agrega ahora
+     para mantener la misma integración app+página. A propósito NO se
+     fusiona con el severity badge: son 2 sistemas de cálculo distintos
+     (mismo cuidado que ya tuvo training_readiness_garmin para no repetir
+     la confusión "¿por qué hay 2 números?" que ya reportó el usuario). */
+  var readinessHtml = readiness != null
+    ? '<span class="insight-mob-readiness" title="Readiness Score — motor propio de LabX, distinto de la severidad de este insight">Readiness <strong>'+Math.round(readiness)+'</strong>/100</span>'
+    : '';
 
   var driversHtml = (ins.drivers||[]).map(function(dr){
     var toneCls = dr.tone && dr.tone !== 'neutral' ? ' dr-'+dr.tone : '';
@@ -1239,7 +1252,10 @@ function renderInsightMobile(ins){
 
   strip.innerHTML =
     '<div class="insight-mob-top"><span class="insight-mob-title">Insight del día</span>'
-    +'<span class="insight-mob-sev" style="background:'+sevCol+'22;color:'+sevCol+';border:1px solid '+sevCol+'55">'+(ins.headline||'')+'</span></div>'
+    +'<div style="display:flex;align-items:center;gap:.4rem">'
+      + readinessHtml
+      +'<span class="insight-mob-sev" style="background:'+sevCol+'22;color:'+sevCol+';border:1px solid '+sevCol+'55">'+(ins.headline||'')+'</span>'
+    +'</div></div>'
     + msgHtml
     + whyHtml
     + (driversHtml?'<div class="insight-mob-drivers">'+driversHtml+'</div>':'')
@@ -1257,7 +1273,7 @@ function toggleInsightWhyMobile(){
 }
 
 function renderStatusHealth(d){
-  renderInsightMobile(d.insight);
+  renderInsightMobile(d.insight, d.readiness);
   // ── Card "¿Cómo va mi carga?" — mismas 3 tarjetas del dashboard de
   // escritorio, adaptadas a una columna (en mobile no entran 3 lado a
   // lado) y con las tarjetas de título/badge que pidió el usuario en vez
@@ -1314,6 +1330,17 @@ function renderStatusHealth(d){
   if(d.sleep_total_h != null){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
     hItems += '<div class="mkc-row"><span class="mkc-lbl">Sueño</span><span class="mkc-right"><span class="mkc-val" style="color:#A855F7">'+h+'h'+(m?' '+m+'m':'')+'</span></span></div>';
+  }
+  if(d.tsb != null){
+    /* Misma fórmula que dashboard.html (la web): traducción cualitativa
+       de TSB, no el mismo número que "Forma (TSB)" de la otra card —
+       agregada acá 2026-08-14 para mantener la app igual a la web tras
+       sacar el gauge "Estado del Atleta" (que ya no existe en ninguna
+       de las 2 plataformas). */
+    var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
+    var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
+    var fatCol = fatPct < 25 ? '#10B981' : fatPct < 50 ? '#0EA5E9' : fatPct < 75 ? '#F0A500' : '#EF4444';
+    hItems += '<div class="mkc-row"><span class="mkc-lbl">Fatiga muscular</span><span class="mkc-right"><span class="mkc-val" style="color:'+fatCol+'">'+fatLabel+'</span></span></div>';
   }
   if(d.body_battery != null){
     hItems += '<div class="mkc-row"><span class="mkc-lbl">Body Battery</span><span class="mkc-right"><span class="mkc-val" style="color:#F0A500">'+Math.round(d.body_battery)+'<span class="u">%</span></span></span></div>';
