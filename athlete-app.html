@@ -647,6 +647,15 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .rd-score-pill { font-size: .62rem; font-weight: 700; padding: .15rem .5rem; border-radius: 20px; background: rgba(16,185,129,.15); color: #10B981; }
 .nut-mob-guide p { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-bottom: .5rem; }
 .nut-mob-guide strong { color: var(--text); }
+.nut-mob-cp { padding: .75rem 0; border-top: 1px solid var(--border); }
+.nut-mob-cp:first-child { border-top: none; }
+.nut-mob-cp-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.nut-mob-cp-lbl { font-family: 'Barlow Condensed', sans-serif; font-size: .95rem; font-weight: 800; color: #FF8C61; }
+.nut-mob-cp-time { font-size: .66rem; color: var(--dim); white-space: nowrap; }
+.nut-mob-cp-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin: .45rem 0; }
+.nut-mob-cp-chip { font-size: .64rem; font-weight: 700; padding: .18rem .55rem; border-radius: 4px; background: var(--bg3); color: var(--muted); }
+.nut-mob-cp-action { font-size: .8rem; color: var(--text); line-height: 1.45; }
+.nut-mob-cp-ex { font-size: .72rem; color: var(--dim); margin-top: .25rem; font-style: italic; }
 
 /* ── Pantalla Progreso — Analytics + Mi Huella (Sprint 5 del roadmap
    app↔web) ── */
@@ -1363,6 +1372,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="cm-tabs">
         <div class="cm-tab active" id="rd-tab-dashboard" onclick="racedayTab('dashboard')">Dashboard</div>
         <div class="cm-tab" id="rd-tab-nutrition" onclick="racedayTab('nutrition')">Nutrición</div>
+        <div class="cm-tab" id="rd-tab-plan" onclick="racedayTab('plan')">Plan Hora a Hora</div>
       </div>
 
       <div id="rd-dashboard-content">
@@ -1371,6 +1381,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div id="rd-nutrition-content" style="display:none">
         <div class="rc-mob-card nut-mob-guide" id="rd-nut-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Plan Hora a Hora (cierre de gap 2026-08-14: "la página es más
+           completa" — nutrition.html tiene un motor completo de
+           checkpoints CHO/fluidos/sodio por franja horaria, acá solo
+           había texto estático). Mismo endpoint /nutrition/precise-
+           splits (predicción de tiempos con física real) + mismas
+           tablas de checkpoints exactas que nutrition.html
+           (buildPlan/DIST/REC_IF), con condiciones neutras por defecto
+           (llano, sin viento, 22°C, asfalto) en vez del panel de
+           overrides interactivo — ese panel queda web-only. -->
+      <div id="rd-plan-content" style="display:none">
+        <div class="rc-mob-card" id="rd-plan-summary" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+        <div class="rc-mob-card" id="rd-plan-checkpoints" style="margin-top:.7rem"><div class="cm-empty">Cargando...</div></div>
       </div>
     </div>
 
@@ -3642,7 +3666,7 @@ function renderMentalPreRace(d){
    perfil (Sprint 1) — '70.3' del perfil se mapea a la clave '703' del
    diccionario de nutrition.html (distinta convención de nombres entre
    ambos archivos, ya existía en la web). */
-var RD_TABS = ['dashboard','nutrition'];
+var RD_TABS = ['dashboard','nutrition','plan'];
 function racedayTab(tab){
   RD_TABS.forEach(function(t){
     var tabEl = document.getElementById('rd-tab-'+t), contEl = document.getElementById('rd-'+t+'-content');
@@ -3651,6 +3675,7 @@ function racedayTab(tab){
   });
   if(tab === 'dashboard') loadRaceDayDashboard();
   else if(tab === 'nutrition') loadRaceDayNutrition();
+  else if(tab === 'plan') loadRaceDayPlan();
 }
 
 function loadRaceDayDashboard(){
@@ -3734,6 +3759,183 @@ function renderRaceDayNutrition(p){
   card.innerHTML = '<div class="rc-mob-title">'+_escCm(p.race_goal_name||'Tu carrera')+'</div>'
     +'<div class="rc-mob-rec" style="margin-bottom:.7rem">Guía general por distancia — ajustá según tolerancia digestiva probada en entrenos</div>'
     +guide;
+}
+
+/* ── Race Day: Plan Hora a Hora (cierre de gap 2026-08-14) ──
+   Mismo motor exacto que nutrition.html: predicción de tiempos vía
+   /nutrition/precise-splits (física real: aero/rodadura/Minetti) +
+   buildPlan() con las mismas tablas de checkpoints CHO/fluidos/sodio
+   por franja horaria, portadas verbatim. Condiciones neutras por
+   defecto (llano, sin viento, 22°C, asfalto) — el panel de overrides
+   de curso/intensidad de la web no se portó (interactivo, mejor con
+   más pantalla), pero el resultado base es el mismo cálculo real. */
+var RD_DIST = {
+  sprint:  {swim:750,   bike:20000,  run:5000,  t1:150, t2:60},
+  olympic: {swim:1500,  bike:40000,  run:10000, t1:180, t2:90},
+  '703':   {swim:1900,  bike:90000,  run:21097, t1:240, t2:120},
+  ironman: {swim:3800,  bike:180000, run:42195, t1:300, t2:180}
+};
+var RD_REC_IF = {
+  sprint:  {bike:0.88, run_pct:1.10},
+  olympic: {bike:0.85, run_pct:1.05},
+  '703':   {bike:0.80, run_pct:0.97},
+  ironman: {bike:0.73, run_pct:0.88}
+};
+var RD_T1_MIN = {sprint:1.5, olympic:2.0, '703':3.5, ironman:5.0};
+var RD_T2_MIN = {sprint:1.0, olympic:1.5, '703':2.5, ironman:4.0};
+
+function rdParsePaceSec(s){
+  if(!s) return null;
+  var p = String(s).split(':');
+  if(p.length === 2) return parseInt(p[0],10)*60 + parseFloat(p[1]);
+  return parseFloat(s) || null;
+}
+
+function rdBuildPlan(raceKey, pred, sweatMl, heatF){
+  var sw = pred.swim/60, bk = pred.bike/60, rn = pred.run/60;
+  var t1 = RD_T1_MIN[raceKey], t2 = RD_T2_MIN[raceKey];
+  var ss = {swim:0, t1:sw, bike:sw+t1, t2:sw+t1+bk, run:sw+t1+bk+t2};
+  var tot = sw+t1+bk+t2+rn;
+  var hf = function(v){ return Math.round(v*heatF); };
+  var rows = [];
+  var d = RD_DIST[raceKey];
+
+  function cp(tMin,seg,lbl,cho,fluid,sodium,action,ex){
+    return {tMin:Math.round(tMin*10)/10, seg:seg, lbl:lbl, cho:cho, fluid:fluid, sodium:sodium, action:action, ex:ex};
+  }
+
+  if(raceKey==='sprint'){
+    rows=[
+      cp(ss.swim,'swim','Natación',0,0,0,'Sin ingesta. Hidrata bien en los 10min previos.','200ml agua T-10min'),
+      cp(ss.t1,'t1','T1',0,0,0,'Transición rápida. No comas en T1.','—'),
+      cp(ss.bike+bk*0.5,'bike','Bici ~'+Math.round(ss.bike+bk*0.5)+'min',22,300,100,'Único gel en bici + botella isotónica. No esperes a tener sed.','1 gel GU/Maurten · 300ml Gatorade'),
+      cp(ss.t2,'t2','T2',0,100,0,'Pequeño sorbo. No gel en T2.','100ml agua'),
+      cp(ss.run+rn*0.5,'run','Run ~'+Math.round(ss.run+rn*0.5)+'min',0,200,50,'Agua en los puestos de avituallamiento cada 1km.','200ml agua'),
+      cp(tot,'run','META 🏁',0,200,100,'Hidratación y CHO de recuperación inmediata.','Plátano + 500ml isotónico')
+    ];
+  } else if(raceKey==='olympic'){
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'No es posible consumir nada. Nadar relajado los primeros 200m.','—'),
+      cp(ss.t1,'t1','T1',22,150,100,'Gel al salir del agua + pequeño sorbo de isotónico mientras te cambias.','1 gel · 150ml Maurten/Gatorade'),
+      cp(ss.bike+bk*0.33,'bike','Bici km~'+Math.floor(d.bike*0.33/1000),35,400,200,'Primer bloque bici. Gel + botella isotónica completa.','1 gel + 400ml isotónico'),
+      cp(ss.bike+bk*0.66,'bike','Bici km~'+Math.floor(d.bike*0.66/1000),30,350,200,'Segunda botella o recarga de hidratación. ½ barra energética.','½ barra Clif/Powerbar + 350ml agua'),
+      cp(ss.t2,'t2','T2',22,100,0,'Gel rápido al bajar de la bici.','1 gel'),
+      cp(ss.run+rn*0.35,'run','Run km~'+Math.floor(d.run*0.35/1000),22,250,150,'Gel en el primer avituallamiento (~km 3.5).','1 gel + 250ml agua'),
+      cp(ss.run+rn*0.70,'run','Run km~'+Math.floor(d.run*0.7/1000),0,200,100,'Solo agua. El gel anterior sigue activo.','200ml agua'),
+      cp(tot,'run','META 🏁',0,300,200,'Recuperación inmediata. CHO + proteína en 30min.','Plátano + isotónico + barrita proteína')
+    ];
+  } else if(raceKey==='703'){
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'Sin ingesta. Usa traje adecuado y nada en calma los 400m iniciales.','—'),
+      cp(ss.t1,'t1','T1',22,200,150,'Gel + sorbo de isotónico. Bolsillo especial bike ya cargado.','1 gel · 200ml isotónico'),
+      cp(ss.bike+bk*0.20,'bike','Bici km~'+Math.floor(d.bike*0.2/1000),hf(70),hf(700),hf(700),'Primer bloque. Ritmo moderado, activa la ingesta temprano.','2 geles + 700ml isotónico'),
+      cp(ss.bike+bk*0.40,'bike','Bici km~'+Math.floor(d.bike*0.4/1000),hf(70),hf(700),hf(700),'Barra sólida si toleras bien. Mantén cadencia de ingesta.','1 barra Clif + 1 gel + 700ml isotónico'),
+      cp(ss.bike+bk*0.60,'bike','Bici km~'+Math.floor(d.bike*0.6/1000),hf(70),hf(700),hf(700),'Mitad de la bici. Mantén el plan aunque no tengas apetito.','2 geles + 700ml isotónico'),
+      cp(ss.bike+bk*0.80,'bike','Bici km~'+Math.floor(d.bike*0.8/1000),hf(60),hf(600),hf(600),'Último bloque bici. Reduce sólidos, prioriza geles fluidos.','2 geles + 600ml agua+electrolitos'),
+      cp(ss.t2,'t2','T2',22,200,200,'Gel + cola si la hubiera. Prepárate para el run.','1 gel · 200ml cola'),
+      cp(ss.run+rn*0.25,'run','Run km~'+Math.floor(d.run*0.25/1000),hf(50),hf(500),hf(600),'Inicia run con suavidad. 2 geles primeros 30min + agua cada puesto.','2 geles + 500ml agua'),
+      cp(ss.run+rn*0.55,'run','Run km~'+Math.floor(d.run*0.55/1000),hf(40),hf(450),hf(600),'Cola en puestos de avituallamiento + gel. Gestiona el calor.','1 gel + cola + 450ml agua'),
+      cp(ss.run+rn*0.80,'run','Run km~'+Math.floor(d.run*0.8/1000),hf(25),hf(350),hf(400),'Últimos km. Solo lo que toleras: gel, agua, cola.','1 gel o cola + agua'),
+      cp(tot,'run','META 🏁',0,400,500,'Recuperación: CHO + proteína + sal en <30min post-meta.','Isotónico + plátano + proteína')
+    ];
+  } else {
+    rows=[
+      cp(ss.swim,'swim','Natación ('+Math.round(sw)+'min)',0,0,0,'Sin ingesta. Arranca suave los primeros 500m. Ahorra glucógeno.','—'),
+      cp(ss.t1,'t1','T1',25,300,200,'Gel + banana en T1. Empieza isotónico. Bolsos especiales ya preparados.','1 gel + ½ banana · 300ml isotónico'),
+      cp(ss.bike+bk*0.12,'bike','Bici km~'+Math.floor(d.bike*0.12/1000),hf(65),hf(700),hf(800),'Inicio bici: ritmo conservador, activa ingesta temprano.','2 geles + 700ml isotónico Maurten 320'),
+      cp(ss.bike+bk*0.25,'bike','Bici km~'+Math.floor(d.bike*0.25/1000),hf(80),hf(800),hf(900),'Hora 2 de bici. Alterna geles y sólidos según tolerancia.','1 barra + 1 gel + 800ml isotónico'),
+      cp(ss.bike+bk*0.38,'bike','Bici km~'+Math.floor(d.bike*0.38/1000),hf(80),hf(800),hf(900),'Mantén ritmo de ingesta. Puesto especial de avituallamiento.','2 geles + 800ml isotónico · bolso especial'),
+      cp(ss.bike+bk*0.50,'bike','Bici km~'+Math.floor(d.bike*0.5/1000),hf(80),hf(800),hf(900),'Mitad del Ironman. Come aunque no tengas hambre.','Rice balls / banana + geles + 800ml agua+electrolitos'),
+      cp(ss.bike+bk*0.63,'bike','Bici km~'+Math.floor(d.bike*0.63/1000),hf(80),hf(800),hf(900),'Hora 5. Máxima ingesta antes de transición a run.','2 geles + 800ml isotónico'),
+      cp(ss.bike+bk*0.80,'bike','Bici km~'+Math.floor(d.bike*0.8/1000),hf(70),hf(700),hf(800),'Reduce sólidos. Solo geles fluidos y bebida.','2 geles + 700ml isotónico'),
+      cp(ss.t2,'t2','T2',30,300,300,'Gel + cola en T2. Ajusta medias si hay ampollas.','1 gel · 300ml cola'),
+      cp(ss.run+rn*0.14,'run','Run km~'+Math.floor(d.run*0.14/1000),hf(45),hf(500),hf(700),'Inicio run muy conservador. Geles + cola en cada puesto.','2 geles + 500ml agua + cola'),
+      cp(ss.run+rn*0.30,'run','Run km~'+Math.floor(d.run*0.3/1000),hf(40),hf(500),hf(700),'Cola es tu mejor aliada a esta altura. Mezcla agua.','1 gel + 300ml cola + 200ml agua'),
+      cp(ss.run+rn*0.50,'run','Run km~'+Math.floor(d.run*0.5/1000),hf(35),hf(450),hf(700),'Mitad del run. Alterna cola, agua y sal. Electrolitos si tienes calambres.','Cola + sal + agua · pretzels si los tolerás'),
+      cp(ss.run+rn*0.70,'run','Run km~'+Math.floor(d.run*0.7/1000),hf(30),hf(400),hf(700),'Modo supervivencia. Caldo de pollo si disponible. Cola + agua.','Caldo pollo + cola + 400ml agua'),
+      cp(ss.run+rn*0.88,'run','Run km~'+Math.floor(d.run*0.88/1000),hf(20),hf(300),hf(400),'Últimos km. Cola para el sprint final. Cero sólidos.','300ml cola'),
+      cp(tot,'run','META 🏁',0,500,500,'FINISH LINE. Recuperación: isotónico + proteína + sal inmediato.','Isotónico + plátano + batido proteína')
+    ];
+  }
+
+  var cumCho=0, cumFluid=0, cumNa=0;
+  rows.forEach(function(r){
+    cumCho   += r.cho;    r.cumCho   = cumCho;
+    cumFluid += r.fluid;  r.cumFluid = cumFluid;
+    cumNa    += r.sodium; r.cumNa    = cumNa;
+  });
+  return rows;
+}
+
+function loadRaceDayPlan(){
+  if(!_token) return;
+  var sumCard = document.getElementById('rd-plan-summary');
+  var cpCard  = document.getElementById('rd-plan-checkpoints');
+  sumCard.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  cpCard.innerHTML = '';
+  apiFetch('/athlete/profile')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(p){
+      if(!p || !p.race_goal_dist){ sumCard.innerHTML = '<div class="cm-empty">Configurá la distancia de tu meta de carrera en Perfil para ver el plan hora a hora.</div>'; return; }
+      var rk = p.race_goal_dist === '70.3' ? '703' : p.race_goal_dist;
+      if(!RD_DIST[rk]){ sumCard.innerHTML = '<div class="cm-empty">El plan hora a hora está disponible solo para triatlón (Sprint/Olímpico/70.3/Ironman).</div>'; return; }
+      var css = rdParsePaceSec(p.css), runPace = rdParsePaceSec(p.run_pace);
+      if(!p.ftp || !css || !runPace || !p.weight_kg){
+        sumCard.innerHTML = '<div class="cm-empty">Completá FTP, CSS, ritmo umbral y peso en Perfil → Benchmarks para calcular tu plan de nutrición.</div>';
+        return;
+      }
+      var rf = RD_REC_IF[rk];
+      apiFetch('/nutrition/precise-splits', {
+        method: 'POST',
+        body: JSON.stringify({
+          race_key: rk, ftp_w: p.ftp, css_sec_100m: css, weight_kg: p.weight_kg,
+          run_threshold_s_km: runPace, bike_if: rf.bike, run_fraction: rf.run_pct,
+        }),
+      })
+        .then(function(r){
+          if(r.status === 403){ sumCard.innerHTML = '<div class="cm-empty">Tu plan no incluye Nutrición — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+          return r.ok ? r.json() : Promise.reject('err');
+        })
+        .then(function(d){ renderRaceDayPlan(rk, p, d); })
+        .catch(function(e){ if(e !== 'gated') sumCard.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo calcular el plan</div>'; });
+    })
+    .catch(function(){ sumCard.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderRaceDayPlan(rk, profile, d){
+  var sumCard = document.getElementById('rd-plan-summary');
+  var cpCard  = document.getElementById('rd-plan-checkpoints');
+  var pred = { swim: d.swim.time_s, t1: d.t1_s, bike: d.bike.time_s, t2: d.t2_s, run: d.run.time_s, total: d.total_time_s };
+  var sweatMl = 600, heatF = 1.0;
+  var rows = rdBuildPlan(rk, pred, sweatMl, heatF);
+  var last = rows[rows.length-1];
+
+  var totalH = pred.total/3600;
+  var totalHfmt = Math.floor(pred.total/3600)+':'+String(Math.floor((pred.total%3600)/60)).padStart(2,'0')+':'+String(Math.round(pred.total%60)).padStart(2,'0');
+
+  var kpis = [
+    { l:'Tiempo previsto', v: totalHfmt, c:'var(--orange)' },
+    { l:'CHO total', v: last.cumCho+'g', c:'var(--gold)' },
+    { l:'Fluidos total', v: (last.cumFluid/1000).toFixed(1)+'L', c:'#0EA5E9' },
+    { l:'Sodio total', v: last.cumNa+'mg', c:'#EF4444' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  sumCard.innerHTML = '<div class="rc-mob-title">'+_escCm(profile.race_goal_name||'Tu carrera')+' · Plan calculado con tus datos reales</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="rc-mob-rec" style="margin-top:.7rem">Calculado con física real (aero/rodadura/Minetti) sobre condiciones neutras (llano, sin viento, 22°C). Kcal totales estimadas: '+Math.round(d.total_kcal)+'.</div>';
+
+  cpCard.innerHTML = '<div class="rc-mob-title">Checkpoints</div>' + rows.map(function(r){
+    var chips = [];
+    if(r.cho)    chips.push('<span class="nut-mob-cp-chip">🍌 '+r.cho+'g CHO</span>');
+    if(r.fluid)  chips.push('<span class="nut-mob-cp-chip">💧 '+r.fluid+'ml</span>');
+    if(r.sodium) chips.push('<span class="nut-mob-cp-chip">🧂 '+r.sodium+'mg Na</span>');
+    return '<div class="nut-mob-cp">'
+      +'<div class="nut-mob-cp-head"><span class="nut-mob-cp-lbl">'+_escCm(r.lbl)+'</span><span class="nut-mob-cp-time">min '+r.tMin+'</span></div>'
+      +(chips.length ? '<div class="nut-mob-cp-chips">'+chips.join('')+'</div>' : '')
+      +'<div class="nut-mob-cp-action">'+_escCm(r.action)+'</div>'
+      +'<div class="nut-mob-cp-ex">'+_escCm(r.ex)+'</div>'
+    +'</div>';
+  }).join('');
 }
 
 /* ── Progreso — Analytics + Mi Huella (Sprint 5 del roadmap app↔web) ── */
