@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '86';  // 2026-08-14: Bienestar Sprint 1 — Recovery Score + recomendación diaria (paridad con recovery.html)
+var BUILD_VERSION = '87';  // 2026-08-14: Bienestar Sprint 2 — HRV con baseline y zonas (paridad con recovery.html)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

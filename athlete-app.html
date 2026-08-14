@@ -513,6 +513,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .rec-mob-pri-title { font-size: .64rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; font-family: 'Oswald', sans-serif; margin-top: .7rem; margin-bottom: .3rem; }
 .rec-mob-pri-item { font-size: .76rem; color: var(--muted); padding: .2rem 0; }
 
+/* Bienestar → HRV (Sprint 2) */
+.hrv-mob-kpis { display: flex; gap: .5rem; flex-wrap: wrap; }
+.hrv-mob-kpi { flex: 1; min-width: 78px; background: var(--bg3); border-radius: 8px; padding: .5rem .4rem; text-align: center; }
+.hrv-mob-kpi-n { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 800; }
+.hrv-mob-kpi-l { font-size: .6rem; color: var(--dim); margin-top: .1rem; }
+.hrv-mob-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; overflow-x: auto; margin-top: 1rem; }
+.hrv-mob-bar { flex: 1; min-width: 8px; border-radius: 2px 2px 0 0; opacity: .85; }
+.hrv-mob-baseline-note { font-size: .64rem; color: #A855F7; margin-top: .4rem; }
+.hrv-mob-insight { font-size: .78rem; color: var(--muted); background: var(--bg3); border-radius: 8px; padding: .6rem .75rem; margin-top: .9rem; line-height: 1.4; }
+
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
 .cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
@@ -891,12 +901,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
            Comunidad. -->
       <div class="cm-tabs">
         <div class="cm-tab active" id="wl-tab-resumen" onclick="wellnessTab('resumen')">Resumen</div>
+        <div class="cm-tab" id="wl-tab-hrv" onclick="wellnessTab('hrv')">HRV</div>
         <div class="cm-tab" id="wl-tab-checkin" onclick="wellnessTab('checkin')">Check-in</div>
       </div>
 
       <div id="wl-resumen-content">
         <div class="rc-mob-card" id="rc-mob-card"><div class="cm-empty">Cargando...</div></div>
         <div class="rec-mob-box" id="rec-mob-box" style="display:none"></div>
+      </div>
+
+      <!-- HRV con contexto (Sprint 2 del port de recovery.html) — baseline,
+           tendencia, gráfico de barras coloreado vs. baseline, distribución
+           de zonas. Mismos umbrales/colores exactos que la web (≥baseline*1.05
+           verde, ≥baseline*0.90 violeta, si no rojo). -->
+      <div id="wl-hrv-content" style="display:none">
+        <div class="md-tabs" style="padding:1rem 1rem 0" id="hrv-days-tabs">
+          <button class="md-tab" data-d="7" onclick="loadHrvHistoryMobile(7)">7d</button>
+          <button class="md-tab on" data-d="14" onclick="loadHrvHistoryMobile(14)">14d</button>
+          <button class="md-tab" data-d="30" onclick="loadHrvHistoryMobile(30)">30d</button>
+        </div>
+        <div class="rc-mob-card" id="hrv-mob-card" style="margin-top:.7rem"><div class="cm-empty">Cargando...</div></div>
       </div>
 
       <div id="wl-checkin-content" style="display:none">
@@ -2674,12 +2698,17 @@ function loadWellnessToday(){
    (training_suggestion/main_recommendation/alerts/recovery_priorities/
    recommended_tss). Ambos gateados por plan (require_feature
    "recovery") — mismo 403 que ya maneja submitWellness(). */
+var _wlHrvDays = 14;
+
 function wellnessTab(tab){
   document.getElementById('wl-tab-resumen').classList.toggle('active', tab==='resumen');
+  document.getElementById('wl-tab-hrv').classList.toggle('active', tab==='hrv');
   document.getElementById('wl-tab-checkin').classList.toggle('active', tab==='checkin');
   document.getElementById('wl-resumen-content').style.display = tab==='resumen' ? '' : 'none';
+  document.getElementById('wl-hrv-content').style.display = tab==='hrv' ? '' : 'none';
   document.getElementById('wl-checkin-content').style.display = tab==='checkin' ? '' : 'none';
   if(tab === 'resumen') loadWellnessResumen();
+  else if(tab === 'hrv') loadHrvHistoryMobile(_wlHrvDays);
 }
 
 var RC_MOB_FACTOR_DEFS = [
@@ -2776,6 +2805,79 @@ function renderRecommendationMobile(d){
   }
   box.innerHTML = html;
   box.style.display = '';
+}
+
+/* ── Bienestar: pestaña HRV (Sprint 2 del port de recovery.html) ──
+   Mismos umbrales/colores/campos exactos que la web (GET
+   /recovery/hrv/history?days=): KPIs avg/baseline/tendencia, barras
+   coloreadas vs. baseline (verde ≥105% baseline, violeta ≥90%, si no
+   rojo), distribución de zonas (zones_pct ya viene calculado del
+   backend, no se recalcula acá). */
+function loadHrvHistoryMobile(days){
+  _wlHrvDays = days;
+  document.querySelectorAll('#hrv-days-tabs .md-tab').forEach(function(b){
+    b.classList.toggle('on', parseInt(b.dataset.d, 10) === days);
+  });
+  var card = document.getElementById('hrv-mob-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/recovery/hrv/history?days='+days)
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderHrvHistoryMobile(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderHrvHistoryMobile(d){
+  var card = document.getElementById('hrv-mob-card');
+  var pts = (d.points || []).filter(function(p){ return p.hrv_ms != null; });
+  if(!pts.length){
+    card.innerHTML = '<div class="cm-empty">Sin datos de HRV en este período — sincronizá tu Garmin.</div>';
+    return;
+  }
+
+  var trendColor = d.trend_direction === 'up' ? '#10B981' : d.trend_direction === 'down' ? '#EF4444' : '#7FB3CC';
+  var trendVal = d.trend_ms_week != null ? (d.trend_ms_week > 0 ? '+' : '') + d.trend_ms_week + 'ms/sem' : '—';
+  var kpisHtml = [
+    { l:'Promedio', v: d.avg_ms != null ? d.avg_ms+'ms' : '—', c:'#7C3AED' },
+    { l:'Baseline', v: d.baseline_ms != null ? d.baseline_ms+'ms' : '—', c:'#A855F7' },
+    { l:'Tendencia', v: trendVal, c: trendColor },
+  ].map(function(k){
+    return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>';
+  }).join('');
+
+  var base = d.baseline_ms || 0;
+  var mx = Math.max.apply(null, pts.map(function(p){ return p.hrv_ms; })) * 1.1;
+  var barsHtml = pts.map(function(p){
+    var h = Math.round((p.hrv_ms / mx) * 72);
+    var col = base > 0 ? (p.hrv_ms >= base*1.05 ? '#10B981' : p.hrv_ms >= base*0.90 ? '#7C3AED' : '#EF4444') : '#7C3AED';
+    return '<div class="hrv-mob-bar" style="height:'+h+'px;background:'+col+'" title="'+p.date_iso+': '+p.hrv_ms+'ms"></div>';
+  }).join('');
+
+  var zp = d.zones_pct || {};
+  var zonesHtml = [
+    ['optimal','🟢 Óptimo','#10B981'], ['normal','🟣 Normal','#7C3AED'],
+    ['low','🟡 Bajo','#F59E0B'], ['critical','🔴 Crítico','#EF4444'],
+  ].map(function(z){
+    return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+z[2]+'">'+(zp[z[0]]||0)+'%</div><div class="hrv-mob-kpi-l">'+z[1]+'</div></div>';
+  }).join('');
+
+  var trendMsg = {
+    up:     '📈 Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.',
+    down:   '📉 Tendencia bajista — HRV en descenso. Considerá reducir carga o revisar recuperación.',
+    stable: '→ HRV estable. Respuesta normal de mantenimiento.',
+  };
+
+  card.innerHTML =
+    '<div class="hrv-mob-kpis">'+kpisHtml+'</div>'
+    +'<div class="hrv-mob-chart">'+barsHtml+'</div>'
+    +(base ? '<div class="hrv-mob-baseline-note">Baseline: '+base+'ms · 🟢 ≥baseline 🟣 normal 🔴 bajo</div>' : '')
+    +'<div class="rc-mob-factors">'
+      +'<div class="rc-mob-title" style="margin-bottom:.5rem">Distribución de zonas</div>'
+      +'<div class="hrv-mob-kpis">'+zonesHtml+'</div>'
+    +'</div>'
+    +(d.trend_direction ? '<div class="hrv-mob-insight">'+(trendMsg[d.trend_direction]||'')+'</div>' : '');
 }
 
 /* ── Screen 6: Comunidad ─────────────────────────────────── */
