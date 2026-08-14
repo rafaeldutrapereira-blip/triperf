@@ -953,7 +953,6 @@ ul { list-style: none; }
       </div>
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div class="chip-row" role="status" aria-live="polite">
-          <div class="chip"><span class="dot dot-g"></span>Readiness <strong id="readiness-chip-val">— / 100</strong></div>
           <div class="chip" style="border-color:rgba(34,211,238,.22)">
             <span class="dot dot-c"></span>
             <span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span>
@@ -1224,16 +1223,12 @@ ul { list-style: none; }
                 <div class="g-rb"><div class="g-rf" id="w-sleep-bar" data-w="0" style="--gc:#10B981"></div></div>
                 <span class="g-rv" id="w-sleep-val">—</span>
               </div>
-              <div class="g-row">
-                <span class="g-rn">HRV</span>
-                <div class="g-rb"><div class="g-rf" id="w-hrv-bar" data-w="0" style="--gc:#22D3EE"></div></div>
-                <span class="g-rv" id="w-hrv-val">—</span>
-              </div>
-              <div class="g-row">
-                <span class="g-rn" data-i18n="kpi_hr_rest">FC Reposo</span>
-                <div class="g-rb"><div class="g-rf" id="w-hr-bar" data-w="0" style="--gc:#0EA5E9"></div></div>
-                <span class="g-rv" id="w-hr-val">—</span>
-              </div>
+              <!-- HRV y FC Reposo sacados de acá 2026-08-14 (pedido explícito
+                   del usuario): eran el mismo dato crudo que ya se muestra
+                   arriba en la card "¿Cómo estoy hoy?" con más contexto
+                   (badge/sparkline/promedio 7d/histórico) — a diferencia de
+                   Sueño (único acá) y Fatiga musc. (vista distinta de TSB,
+                   no el mismo número), esas 2 eran duplicado puro. -->
               <div class="g-row">
                 <span class="g-rn">Fatiga musc.</span>
                 <div class="g-rb"><div class="g-rf" id="w-fat-bar" data-w="55" style="--gc:#F0A500"></div></div>
@@ -1934,8 +1929,6 @@ function showDashboardLoadError(){
     if(valEl) valEl.textContent = '—';
     if(tgtEl) tgtEl.textContent = 'Sin datos de Garmin';
   });
-  var rChip = document.getElementById('readiness-chip-val');
-  if(rChip) rChip.textContent = '— / 100';
 }
 
 function patchData(){
@@ -2109,10 +2102,6 @@ function patchData(){
     bBb.style.color = bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
   }
 
-  // Readiness chip
-  var rChip = document.getElementById('readiness-chip-val');
-  if(rChip && d.readiness != null) rChip.textContent = d.readiness + ' / 100';
-
   // Status text del gauge (g-status-txt)
   var gStatus = document.getElementById('g-status-txt');
   if(gStatus && d.readiness != null){
@@ -2143,21 +2132,6 @@ function patchData(){
     if(sleepBar){ sleepBar.setAttribute('data-w', sw); sleepBar.style.width = sw+'%'; }
   } else if(sleepBar){ sleepBar.setAttribute('data-w', 0); sleepBar.style.width = '0%'; if(sleepVal) sleepVal.textContent = '—'; }
 
-  var hrvBar = document.getElementById('w-hrv-bar');
-  var hrvVal = document.getElementById('w-hrv-val');
-  if(d.hrv_last_night != null){
-    var hw = Math.min(100, Math.round(d.hrv_last_night));
-    if(hrvVal) hrvVal.textContent = Math.round(d.hrv_last_night) + 'ms';
-    if(hrvBar){ hrvBar.setAttribute('data-w', hw); hrvBar.style.width = hw+'%'; }
-  } else if(hrvBar){ hrvBar.setAttribute('data-w', 0); hrvBar.style.width = '0%'; if(hrvVal) hrvVal.textContent = '—'; }
-
-  var hrBar = document.getElementById('w-hr-bar');
-  var hrVal = document.getElementById('w-hr-val');
-  if(d.resting_hr != null){
-    var hrw = Math.min(100, Math.max(0, Math.round((75 - d.resting_hr) / 40 * 100)));
-    if(hrVal) hrVal.textContent = d.resting_hr + 'bpm';
-    if(hrBar){ hrBar.setAttribute('data-w', hrw); hrBar.style.width = hrw+'%'; }
-  } else if(hrBar){ hrBar.setAttribute('data-w', 0); hrBar.style.width = '0%'; if(hrVal) hrVal.textContent = '—'; }
   if(d.tsb != null){
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
     var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
