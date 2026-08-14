@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '94';  // 2026-08-14: Sprint 6 roadmap app↔web — chat AI Coach con FAB flotante, roadmap de paridad app↔web COMPLETO (6/6 sprints)
+var BUILD_VERSION = '95';  // 2026-08-14: fix descubribilidad — grid "Más módulos" en Perfil (Mental/Race Day/Progreso/AI Coach), antes solo accesibles por puntos de entrada dispersos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
