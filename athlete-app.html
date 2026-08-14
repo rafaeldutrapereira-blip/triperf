@@ -118,6 +118,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 100;
 }
+/* FAB de AI Coach (Sprint 6 del roadmap app↔web) — flotante sobre el
+   bottom nav, visible en todas las pantallas salvo dentro del propio
+   chat (evita el botón flotando sobre sí mismo). Es un chat, el caso
+   de uso más naturalmente mobile-first de todos los módulos que
+   faltaban en la app. */
+#aicoach-fab {
+  position: fixed; right: calc(50% - 195px); bottom: calc(72px + env(safe-area-inset-bottom, 8px));
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), #E8490A);
+  border: none; color: #fff; cursor: pointer; z-index: 99;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(255,101,53,.4);
+}
+@media (max-width: 430px) { #aicoach-fab { right: 14px; } }
 .nav-btn {
   display: flex; flex-direction: column; align-items: center;
   padding: .55rem .2rem .3rem;
@@ -617,6 +631,21 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .yir-mob-sport-row:first-of-type { border-top: none; }
 .yir-mob-sport-name { color: var(--muted); text-transform: capitalize; }
 .yir-mob-sport-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; color: var(--text); }
+
+/* ── Pantalla AI Coach — chat (Sprint 6 del roadmap app↔web) ── */
+.aic-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .7rem; }
+.aic-msg { max-width: 82%; padding: .65rem .85rem; border-radius: 14px; font-size: .85rem; line-height: 1.5; white-space: pre-wrap; }
+.aic-msg-user { align-self: flex-end; background: var(--orange); color: #1a0800; border-bottom-right-radius: 4px; }
+.aic-msg-ai { align-self: flex-start; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+.aic-typing { align-self: flex-start; font-size: .76rem; color: var(--dim); font-style: italic; padding: 0 .85rem; }
+.aic-input-row { display: flex; gap: .5rem; padding: .7rem .85rem; border-top: 1px solid var(--border); background: var(--bg); }
+.aic-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: .6rem 1rem; color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: .95rem; }
+.aic-send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--orange); border: none; color: #1a0800; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.aic-send-btn[disabled] { opacity: .5; }
+.aic-sessions-toggle { font-size: .68rem; color: var(--dim); padding: .5rem 1rem; text-align: right; cursor: pointer; }
+.aic-sessions-list { display: none; padding: 0 1rem .6rem; max-height: 160px; overflow-y: auto; }
+.aic-sessions-list.open { display: block; }
+.aic-session-item { padding: .5rem .7rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: .4rem; font-size: .76rem; color: var(--muted); cursor: pointer; }
 
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
@@ -1360,7 +1389,49 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
     </div>
 
+    <!-- SCREEN 11: AI COACH (Sprint 6 del roadmap app↔web) — chat con
+         el mismo motor que ai_coach.html. Se abre desde el FAB naranja
+         flotante (visible en toda la app salvo dentro del propio chat).
+         Mismos 3 endpoints: /ai/sessions (historial), /ai/sessions/{id}/
+         messages, /ai/coach-suggest (POST mensaje→respuesta). Se dejó
+         fuera "Generar Entrenamiento"/"Reporte Semanal"/"Pronóstico de
+         Lesión" (herramientas de análisis más pesadas, mejor con más
+         pantalla) — el chat conversacional ya cubre el caso de uso
+         diario ("¿qué hago hoy?", "¿por qué estoy cansado?"). -->
+    <div class="screen" id="screen-aicoach">
+      <div class="topbar">
+        <button class="cm-priv-btn" onclick="goScreen('screen-today')" aria-label="Volver">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="min-width:0">
+          <div class="topbar-eye">AI COACH</div>
+          <div class="topbar-greet">Tu asistente de entrenamiento</div>
+        </div>
+        <button class="cm-priv-btn" onclick="aicNewChat()" aria-label="Nueva conversación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <div class="aic-sessions-toggle" onclick="aicToggleSessions()">Conversaciones anteriores ▾</div>
+      <div class="aic-sessions-list" id="aic-sessions-list"></div>
+
+      <div class="aic-messages" id="aic-messages">
+        <div class="aic-msg aic-msg-ai">Hola, soy tu AI Coach. Preguntame sobre tu entrenamiento, recuperación o cómo prepararte para tu carrera.</div>
+      </div>
+
+      <div class="aic-input-row">
+        <input class="aic-input" id="aic-input" type="text" placeholder="Escribí tu pregunta…" onkeydown="if(event.key==='Enter')aicSend()">
+        <button class="aic-send-btn" id="aic-send-btn" onclick="aicSend()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
   </div><!-- /screens -->
+
+  <button id="aicoach-fab" onclick="goScreen('screen-aicoach')" aria-label="AI Coach">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
 
   <!-- BOTTOM NAV -->
   <nav id="bottom-nav">
@@ -1572,6 +1643,9 @@ function goScreen(id){
   };
   var nb = document.getElementById(navMap[id]);
   if(nb) nb.classList.add('active');
+
+  var fab = document.getElementById('aicoach-fab');
+  if(fab) fab.style.display = (id === 'screen-aicoach') ? 'none' : 'flex';
 
   /* Comunidad se carga recién al abrirla por primera vez (no en
      initApp()) — es la pantalla con más llamadas de red de toda la app
@@ -3683,6 +3757,115 @@ function renderProgressHuella(d){
     + sportRows
     +'<div class="rc-mob-rec" style="margin-top:.9rem">Semana pico: <strong style="color:var(--text)">'+_escCm(d.peak_week_iso||'—')+'</strong> (TSS '+Math.round(d.peak_week_tss||0)+') · CTL '+(d.ctl_improvement>=0?'+':'')+d.ctl_improvement+' en el año</div>'
     +(longestHtml ? '<div style="margin-top:.8rem">'+longestHtml+'</div>' : '');
+}
+
+/* ── AI Coach — chat (Sprint 6 del roadmap app↔web) ── Mismos 3
+   endpoints que ai_coach.html: /ai/sessions, /ai/sessions/{id}/messages,
+   /ai/coach-suggest (POST). El backend envuelve errores como
+   {ok:false,errors:[{message}]}, no {detail} — mismo cuidado que ya
+   documenta ai_coach.html. */
+var _aicSessionId = null;
+var _aicHistory = [];
+var _aicSessionsLoaded = false;
+
+function aicAppendMsg(role, text){
+  var box = document.getElementById('aic-messages');
+  var div = document.createElement('div');
+  div.className = 'aic-msg ' + (role === 'user' ? 'aic-msg-user' : 'aic-msg-ai');
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function aicNewChat(){
+  _aicSessionId = null;
+  _aicHistory = [];
+  document.getElementById('aic-messages').innerHTML = '<div class="aic-msg aic-msg-ai">Nueva conversación. ¿En qué te ayudo?</div>';
+}
+
+function aicToggleSessions(){
+  var el = document.getElementById('aic-sessions-list');
+  var open = el.classList.toggle('open');
+  if(open && !_aicSessionsLoaded) loadAicSessions();
+}
+
+function loadAicSessions(){
+  var el = document.getElementById('aic-sessions-list');
+  apiFetch('/ai/sessions')
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(d){
+      _aicSessionsLoaded = true;
+      if(!d.length){ el.innerHTML = '<div class="cm-empty">Sin conversaciones previas.</div>'; return; }
+      el.innerHTML = d.map(function(s){
+        return '<div class="aic-session-item" onclick="loadAicSession(\''+s.id+'\')">'+_escCm(s.title||'Conversación')+(s.last_message_at?' · '+_escCm(s.last_message_at.slice(0,16)):'')+'</div>';
+      }).join('');
+    })
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">No se pudo cargar el historial</div>'; });
+}
+
+function loadAicSession(id){
+  apiFetch('/ai/sessions/'+id+'/messages')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d) return;
+      _aicSessionId = id;
+      _aicHistory = [];
+      var box = document.getElementById('aic-messages');
+      box.innerHTML = '';
+      (d.messages||[]).forEach(function(m){
+        _aicHistory.push({role:m.role, content:m.content});
+        aicAppendMsg(m.role === 'user' ? 'user' : 'ai', m.content);
+      });
+      document.getElementById('aic-sessions-list').classList.remove('open');
+    })
+    .catch(function(){});
+}
+
+function aicSend(){
+  var input = document.getElementById('aic-input');
+  var msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  aicAppendMsg('user', msg);
+  _aicHistory.push({role:'user', content:msg});
+
+  var box = document.getElementById('aic-messages');
+  var typing = document.createElement('div');
+  typing.className = 'aic-typing';
+  typing.id = 'aic-typing';
+  typing.textContent = 'AI Coach está escribiendo…';
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+
+  var btn = document.getElementById('aic-send-btn');
+  btn.disabled = true;
+
+  apiFetch('/ai/coach-suggest', {
+    method: 'POST',
+    body: JSON.stringify({ message: msg, session_id: _aicSessionId, history: _aicHistory.slice(-10) }),
+  })
+    .then(function(r){
+      if(r.status === 403){ return r.json().then(function(){ return Promise.reject('gated'); }); }
+      return r.json();
+    })
+    .then(function(d){
+      var t = document.getElementById('aic-typing'); if(t) t.remove();
+      if(d.answer){
+        aicAppendMsg('ai', d.answer);
+        _aicHistory.push({role:'assistant', content:d.answer});
+        _aicSessionId = d.session_id || _aicSessionId;
+        _aicSessionsLoaded = false;
+      } else {
+        var errMsg = (d.errors && d.errors[0] && d.errors[0].message) || d.detail || 'Respuesta vacía';
+        aicAppendMsg('ai', 'Error: '+errMsg);
+      }
+    })
+    .catch(function(e){
+      var t = document.getElementById('aic-typing'); if(t) t.remove();
+      if(e === 'gated'){ aicAppendMsg('ai', 'Tu plan no incluye AI Coach — actualizalo en Mi Perfil'); }
+      else { aicAppendMsg('ai', 'Sin conexión — no se pudo enviar el mensaje.'); }
+    })
+    .finally(function(){ btn.disabled = false; });
 }
 
 /* ── Bienestar: pestaña Resumen (Sprint 1 del port de recovery.html) ──
