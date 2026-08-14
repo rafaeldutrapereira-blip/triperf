@@ -244,8 +244,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mkc-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0; border-top: 1px solid var(--border); gap: .5rem; }
 .mkc-row:first-of-type { border-top: none; }
 .mkc-lbl { font-size: .76rem; font-weight: 600; color: var(--text); }
+/* Envuelve el texto + botón "i" (inyectado por lx-info.js) en la misma
+   línea — mismo patrón que .kcr-label-main en dashboard.html. */
+.mkc-lbl-main { display: inline-flex; align-items: center; gap: .3rem; }
 .mkc-sub { font-size: .58rem; color: var(--dim); margin-top: .1rem; }
 .mkc-right { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.mkc-spark { flex-shrink: 0; display: block; }
 .mkc-val { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: .2rem; }
 .mkc-val .u { font-size: .62rem; color: var(--dim); font-weight: 500; margin-left: .1rem; }
 .mkc-val svg { width: 9px; height: 9px; flex-shrink: 0; }
@@ -1353,6 +1357,81 @@ function toggleInsightWhyMobile(){
   lbl.textContent = open ? 'Ocultar' : 'Ver por qué';
 }
 
+/* Envuelve un label de fila mkc con el botón "i" de lx-info.js —
+   mismo mecanismo que .kcr-label-main en dashboard.html: data-lx-info
+   fija QUÉ métrica mostrar, data-lx-info-val="#id" apunta al span con
+   el valor actual ya renderizado (lx-info.js lo lee con querySelector
+   al momento del click, no hace falta pasarlo ahora). Sin infoId, cae
+   a un <span> plano sin ícono — mismo criterio que la web para
+   Sueño/Fatiga muscular (sin entrada en lx-info.js todavía). */
+function _mkcLbl(text, infoId, valId){
+  if(!infoId) return '<span class="mkc-lbl">'+text+'</span>';
+  return '<span class="mkc-lbl"><span class="mkc-lbl-main" data-lx-info="'+infoId+'"'+(valId?' data-lx-info-val="#'+valId+'"':'')+'>'+text+'</span></span>';
+}
+
+/* Sparklines de las filas de Hoy — mismo estándar que dashboard.html
+   (updateLoadSparklines/drawSparkline/_sparkPoints), portado literal:
+   mismas fuentes de datos (pmc/acwr_history/hrv_history/rhr_history/
+   bb_history/vo2_history_running/vo2_history_cycling, todas ya vienen
+   en el payload de /athlete/dashboard), mismos colores, misma ventana
+   de puntos (10 para PMC-derivadas, 14 para el resto). */
+function _sparkPoints(vals){
+  if(!vals || vals.length < 2) return null;
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  var range = (max - min) || 1;
+  var w = 46, h = 20, pad = 2.5, n = vals.length;
+  return vals.map(function(v,i){
+    return [ (i/(n-1)) * w, h - pad - ((v - min) / range) * (h - pad*2) ];
+  });
+}
+function drawMobileSparkline(id, vals, color){
+  var svg = document.getElementById(id);
+  if(!svg) return;
+  var pts = _sparkPoints(vals);
+  if(!pts){ svg.innerHTML = ''; return; }
+  var poly = pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ');
+  var last = pts[pts.length-1];
+  svg.innerHTML =
+    '<polyline points="'+poly+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.3" fill="'+color+'"/>';
+}
+function updateMobileSparklines(d){
+  var pmc = d.pmc || [];
+  if(pmc.length > 1){
+    var recent = pmc.slice(-10);
+    drawMobileSparkline('mspark-ctl', recent.map(function(p){ return p.ctl; }), '#10B981');
+    drawMobileSparkline('mspark-atl', recent.map(function(p){ return p.atl; }), '#FF6535');
+    drawMobileSparkline('mspark-tsb', recent.map(function(p){ return p.ctl - p.atl; }), '#F0A500');
+    drawMobileSparkline('mspark-tss', recent.map(function(p){ return p.tss; }), '#A855F7');
+  }
+  if(d.acwr_history && d.acwr_history.length > 1){
+    var acwrValEl = document.getElementById('mv-acwr');
+    var acwrColor = (acwrValEl && acwrValEl.style.color) || '#10B981';
+    drawMobileSparkline('mspark-acwr', d.acwr_history.slice(-14).map(function(p){ return p.acwr; }), acwrColor);
+  }
+  if(d.hrv_history && d.hrv_history.length > 1){
+    var hrvPts = d.hrv_history.filter(function(p){ return p.hrv != null; }).slice(-14);
+    if(hrvPts.length > 1) drawMobileSparkline('mspark-hrv', hrvPts.map(function(p){ return p.hrv; }), '#22D3EE');
+  }
+  if(d.rhr_history && d.rhr_history.length > 1){
+    var rhrPts = d.rhr_history.filter(function(p){ return p.rhr != null; }).slice(-14);
+    var rhrColor = (document.getElementById('mv-rhr') || {}).style.color || '#FB7185';
+    if(rhrPts.length > 1) drawMobileSparkline('mspark-rhr', rhrPts.map(function(p){ return p.rhr; }), rhrColor);
+  }
+  if(d.bb_history && d.bb_history.length > 1){
+    var bbPts = d.bb_history.filter(function(p){ return p.bb != null; }).slice(-14);
+    if(bbPts.length > 1) drawMobileSparkline('mspark-bb', bbPts.map(function(p){ return p.bb; }), '#8B5CF6');
+  }
+  if(d.vo2_history_running && d.vo2_history_running.length > 1){
+    var vrun = d.vo2_history_running.filter(function(p){ return p.vo2 != null; }).slice(-14);
+    if(vrun.length > 1) drawMobileSparkline('mspark-vo2-run', vrun.map(function(p){ return p.vo2; }), '#22D3EE');
+  }
+  if(d.vo2_history_cycling && d.vo2_history_cycling.length > 1){
+    var vbike = d.vo2_history_cycling.filter(function(p){ return p.vo2 != null; }).slice(-14);
+    if(vbike.length > 1) drawMobileSparkline('mspark-vo2-bike', vbike.map(function(p){ return p.vo2; }), '#FF6535');
+  }
+}
+
 function renderStatusHealth(d){
   renderInsightMobile(d.insight, d.readiness);
   // ── Card "¿Cómo va mi carga?" — mismas 3 tarjetas del dashboard de
@@ -1381,16 +1460,16 @@ function renderStatusHealth(d){
     var az = acwrZones[d.acwr_zone];
 
     var rows =
-      '<div class="mkc-row tap" onclick="openMetricDetail(\'ctl\')"><span class="mkc-lbl">Fitness (CTL)</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</span></span></div>'
-      +'<div class="mkc-row tap" onclick="openMetricDetail(\'atl\')"><span class="mkc-lbl">Fatiga (ATL)</span><span class="mkc-right"><span class="mkc-val" style="color:'+atlCol+'">'+Math.round(atl)+'</span><span class="mkc-pill" style="background:'+atlCol+'22;color:'+atlCol+'">'+atlLabel+'</span></span></div>'
-      +'<div class="mkc-row tap" onclick="openMetricDetail(\'tsb\')"><span class="mkc-lbl">Forma (TSB)</span><span class="mkc-right"><span class="mkc-val" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
+      '<div class="mkc-row tap" onclick="openMetricDetail(\'ctl\')">'+_mkcLbl('Fitness (CTL)','ctl','mv-ctl')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-ctl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-ctl" style="color:#22D3EE">'+Math.round(d.ctl)+(d.trends?_trendArrow(d.trends.ctl):'')+'</span></span></div>'
+      +'<div class="mkc-row tap" onclick="openMetricDetail(\'atl\')">'+_mkcLbl('Fatiga (ATL)','atl','mv-atl')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-atl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-atl" style="color:'+atlCol+'">'+Math.round(atl)+'</span><span class="mkc-pill" style="background:'+atlCol+'22;color:'+atlCol+'">'+atlLabel+'</span></span></div>'
+      +'<div class="mkc-row tap" onclick="openMetricDetail(\'tsb\')">'+_mkcLbl('Forma (TSB)','tsb','mv-tsb')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tsb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tsb" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
     if(az && d.acwr != null){
-      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')"><span class="mkc-lbl">ACWR (Carga)</span><span class="mkc-right"><span class="mkc-val" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
+      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')">'+_mkcLbl('ACWR (Carga)','acwr','mv-acwr')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
     }
     if(d.injury_risk && d.injury_risk.score != null){
       var ir = d.injury_risk;
       var lvlLabel = {low:'Bajo', moderate:'Moderado', high:'Alto', critical:'Crítico'}[ir.level] || ir.level;
-      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')"><span class="mkc-lbl">Riesgo de Lesión</span><span class="mkc-right"><span class="mkc-val" style="color:'+ir.color+'">'+Math.round(ir.score)+'<span class="u">/100</span></span><span class="mkc-pill" style="background:'+ir.color+'22;color:'+ir.color+'">'+lvlLabel+'</span></span></div>';
+      rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')">'+_mkcLbl('Riesgo de Lesión','injury_risk','mv-injury')+'<span class="mkc-right"><span class="mkc-val" id="mv-injury" style="color:'+ir.color+'">'+Math.round(ir.score)+'<span class="u">/100</span></span><span class="mkc-pill" style="background:'+ir.color+'22;color:'+ir.color+'">'+lvlLabel+'</span></span></div>';
     }
 
     var strip = document.getElementById('status-strip');
@@ -1400,13 +1479,33 @@ function renderStatusHealth(d){
     strip.style.display = 'block';
   }
 
-  // ── Card "¿Cómo estoy hoy?" ──
+  // ── Card "¿Cómo estoy hoy?" — mismo orden EXACTO que dashboard.html
+  // (pedido explícito del usuario 2026-08-14: "asegura que el estándar
+  // definido en la página dashboard.html sea el mismo para la app").
+  // HRV/FC Reposo/Body Battery/Training Readiness/Fatiga Mental/Sueño/
+  // Fatiga muscular — Sueño y Fatiga muscular quedan AL FINAL, como en
+  // la web (antes en la app estaban en 3er/4to lugar, fuera de orden). ──
   var hItems = '';
   if(d.hrv_last_night != null){
-    hItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'hrv\')"><span class="mkc-lbl">HRV Score</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'<span class="u">ms</span></span></span></div>';
+    hItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'hrv\')">'+_mkcLbl('HRV Score','hrv','mv-hrv')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-hrv" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-hrv" style="color:#22D3EE">'+Math.round(d.hrv_last_night)+(d.trends?_trendArrow(d.trends.hrv):'')+'<span class="u">ms</span></span></span></div>';
   }
   if(d.resting_hr != null){
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">FC Reposo</span><span class="mkc-right"><span class="mkc-val" style="color:#FB7185">'+Math.round(d.resting_hr)+'<span class="u">bpm</span></span></span></div>';
+    hItems += '<div class="mkc-row">'+_mkcLbl('FC Reposo','resting_hr','mv-rhr')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-rhr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-rhr" style="color:#FB7185">'+Math.round(d.resting_hr)+'<span class="u">bpm</span></span></span></div>';
+  }
+  if(d.body_battery != null){
+    hItems += '<div class="mkc-row">'+_mkcLbl('Body Battery','body_battery','mv-bb')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-bb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-bb" style="color:#F0A500">'+Math.round(d.body_battery)+'<span class="u">%</span></span></span></div>';
+  }
+  if(d.training_readiness_garmin != null){
+    var trg = d.training_readiness_garmin;
+    var trgCol = trg >= 70 ? '#10B981' : trg >= 40 ? '#F0A500' : '#EF4444';
+    hItems += '<div class="mkc-row">'+_mkcLbl('Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span>','training_readiness_garmin')+'<span class="mkc-right"><span class="mkc-val" style="color:'+trgCol+'">'+Math.round(trg)+'</span></span></div>';
+  }
+  if(d.mental_score != null){
+    // MentalFatigueScore.level: peak/good (mejor) → moderate → low/critical
+    // (peor) — mismos 5 niveles de mental_routes.py::_mfs_level().
+    var MFS_UI_MOB = {peak:'#10B981', good:'#0EA5E9', moderate:'#F0A500', low:'#F97316', critical:'#EF4444'};
+    var mCol = MFS_UI_MOB[d.mental_level] || '#9CA3AF';
+    hItems += '<div class="mkc-row" onclick="location.href=\'mental.html\'">'+_mkcLbl('Fatiga Mental','mental_fatigue')+'<span class="mkc-right"><span class="mkc-val" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
   }
   if(d.sleep_total_h != null){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
@@ -1417,26 +1516,13 @@ function renderStatusHealth(d){
        de TSB, no el mismo número que "Forma (TSB)" de la otra card —
        agregada acá 2026-08-14 para mantener la app igual a la web tras
        sacar el gauge "Estado del Atleta" (que ya no existe en ninguna
-       de las 2 plataformas). */
+       de las 2 plataformas). Sin sparkline/i-info — igual que en la
+       web, no hay entrada de "sleep"/"fatiga muscular" en lx-info.js
+       ni historial propio para estos 2 (derivados, no series Garmin). */
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
     var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
     var fatCol = fatPct < 25 ? '#10B981' : fatPct < 50 ? '#0EA5E9' : fatPct < 75 ? '#F0A500' : '#EF4444';
     hItems += '<div class="mkc-row"><span class="mkc-lbl">Fatiga muscular</span><span class="mkc-right"><span class="mkc-val" style="color:'+fatCol+'">'+fatLabel+'</span></span></div>';
-  }
-  if(d.body_battery != null){
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">Body Battery</span><span class="mkc-right"><span class="mkc-val" style="color:#F0A500">'+Math.round(d.body_battery)+'<span class="u">%</span></span></span></div>';
-  }
-  if(d.training_readiness_garmin != null){
-    var trg = d.training_readiness_garmin;
-    var trgCol = trg >= 70 ? '#10B981' : trg >= 40 ? '#F0A500' : '#EF4444';
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span></span><span class="mkc-right"><span class="mkc-val" style="color:'+trgCol+'">'+Math.round(trg)+'</span></span></div>';
-  }
-  if(d.mental_score != null){
-    // MentalFatigueScore.level: peak/good (mejor) → moderate → low/critical
-    // (peor) — mismos 5 niveles de mental_routes.py::_mfs_level().
-    var MFS_UI_MOB = {peak:'#10B981', good:'#0EA5E9', moderate:'#F0A500', low:'#F97316', critical:'#EF4444'};
-    var mCol = MFS_UI_MOB[d.mental_level] || '#9CA3AF';
-    hItems += '<div class="mkc-row" onclick="location.href=\'mental.html\'"><span class="mkc-lbl">Fatiga Mental</span><span class="mkc-right"><span class="mkc-val" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
   }
   if(hItems){
     var hoySev = (d.insight && d.insight.severity) || 'neutral';
@@ -1452,13 +1538,13 @@ function renderStatusHealth(d){
   // (mismo criterio que la 3ª card del dashboard de escritorio). ──
   var gItems = '';
   if(d.tss_week != null){
-    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')"><span class="mkc-lbl">TSS Semana</span><span class="mkc-right"><span class="mkc-val" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')">'+_mkcLbl('TSS Semana','tss','mv-tss')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tss" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
   }
   if(d.vo2max_running_garmin != null){
-    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'running\')"><span class="mkc-lbl">VO2 Max Running</span><span class="mkc-right"><span class="mkc-val" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'running\')">'+_mkcLbl('VO2 Max Running','vo2max','mv-vo2run')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-vo2-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-vo2run" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
   }
   if(d.vo2max_cycling_garmin != null){
-    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'cycling\')"><span class="mkc-lbl">VO2 Max Ciclismo</span><span class="mkc-right"><span class="mkc-val" style="color:#FF6535">'+d.vo2max_cycling_garmin+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'cycling\')">'+_mkcLbl('VO2 Max Ciclismo','vo2max','mv-vo2bike')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-vo2-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-vo2bike" style="color:#FF6535">'+d.vo2max_cycling_garmin+'</span></span></div>';
   }
   if(gItems){
     var gstrip = document.getElementById('goal-strip');
@@ -1494,6 +1580,12 @@ function renderStatusHealth(d){
     _raceTick();
     if(!window._raceTickInterval){ window._raceTickInterval = setInterval(_raceTick, 1000); }
   }
+
+  // Sparklines + botones "i" — se llaman al final, después de que las
+  // 3 cards ya escribieron su innerHTML (los elementos #mspark-*/
+  // [data-lx-info] recién existen en el DOM en este punto).
+  updateMobileSparklines(d);
+  if(window.lxInfo) lxInfo.autoInit();
 }
 
 /* ── Detalle de indicador (al tocar una fila en Hoy) ────────────────
@@ -3741,6 +3833,17 @@ if('serviceWorker' in navigator){
 })();
 </script>
 
+<!-- Tooltips "i" (mismo sistema que dashboard.html) — agregado 2026-08-14
+     para que la guía Hoy siga el mismo estándar de la web (pedido
+     explícito del usuario: "asegura que el estándar... sea el mismo
+     para la app, incluida la inclusión de la i-information"). El panel
+     ya es responsive de por sí (width:min(420px,96vw)), no requirió
+     ningún ajuste para mobile. autoInit() escanea [data-lx-info] en
+     DOMContentLoaded, pero las filas de Hoy se arman async después del
+     fetch — se llama lxInfo.autoInit() de nuevo al final de
+     renderStatusHealth() cada vez (es idempotente, ver mount.querySelector
+     guard adentro de lx-info.js). -->
+<script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
 </body>
 </html>
