@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '91';  // 2026-08-14: Sprint 2 roadmap app↔web — nueva pantalla Mental (Score/Protocolos/Correlaciones/Pre-Carrera), abierta desde la fila Fatiga Mental de Hoy
+var BUILD_VERSION = '92';  // 2026-08-14: Sprints 3+4 roadmap app↔web — nueva pantalla Race Day + Nutrición (dashboard/fitness/plan/historial + guía CHO/fluidos/sodio por distancia), abierta desde race-card-mini
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
