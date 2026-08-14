@@ -598,6 +598,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .nut-mob-guide p { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-bottom: .5rem; }
 .nut-mob-guide strong { color: var(--text); }
 
+/* ── Pantalla Progreso — Analytics + Mi Huella (Sprint 5 del roadmap
+   app↔web) ── */
+.pgr-insight-card { border-radius: 10px; padding: .7rem .85rem; margin-bottom: .6rem; font-size: .78rem; line-height: 1.45; }
+.pgr-insight-card.critical { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); }
+.pgr-insight-card.warning  { background: rgba(240,165,0,.07);  border: 1px solid rgba(240,165,0,.25); }
+.pgr-insight-card.info     { background: rgba(14,165,233,.06); border: 1px solid rgba(14,165,233,.2); }
+.pgr-insight-title { font-weight: 800; color: var(--text); margin-bottom: .25rem; }
+.pgr-insight-action { color: var(--muted); margin-top: .3rem; font-style: italic; }
+.pr-mob-sport-title { font-size: .68rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 1rem 0 .3rem; }
+.pr-mob-sport-title:first-child { margin-top: 0; }
+.pr-mob-row { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-top: 1px solid var(--border); }
+.pr-mob-row:first-of-type { border-top: none; }
+.pr-mob-dist { font-size: .8rem; color: var(--text); font-weight: 600; }
+.pr-mob-meta { font-size: .62rem; color: var(--dim); margin-top: .1rem; }
+.pr-mob-val { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800; color: var(--gold); text-align: right; }
+.yir-mob-sport-row { display: flex; justify-content: space-between; padding: .45rem 0; border-top: 1px solid var(--border); font-size: .78rem; }
+.yir-mob-sport-row:first-of-type { border-top: none; }
+.yir-mob-sport-name { color: var(--muted); text-transform: capitalize; }
+.yir-mob-sport-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; color: var(--text); }
+
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
 .cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
@@ -1189,6 +1209,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <button class="wl-submit" onclick="saveProfileMobile()">Guardar cambios</button>
 
+      <div style="margin:1rem 1rem 0">
+        <button class="wl-submit" style="background:transparent;border:1px solid var(--border);color:var(--muted)" onclick="goScreen('screen-progress')">📊 Ver mi progreso y récords</button>
+      </div>
+
       <div style="margin:1.4rem 1rem 0;padding-top:1.1rem;border-top:1px solid var(--border)">
         <button class="wl-submit" style="background:transparent;border:1px solid var(--border);color:var(--dim)" onclick="doLogout()">Salir</button>
       </div>
@@ -1286,6 +1310,53 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div id="rd-nutrition-content" style="display:none">
         <div class="rc-mob-card nut-mob-guide" id="rd-nut-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 10: PROGRESO — Analytics + Mi Huella (Sprint 5 del
+         roadmap app↔web). Se abre desde el botón "Ver mi progreso y
+         récords" en Perfil. Insights: mismo endpoint /analytics/insights
+         que la nueva pestaña de analytics.html. Récords: /analytics/
+         personal-records (run/bike/swim). Proyección: /analytics/
+         ctl-projection con TSS planificado por defecto (sin slider
+         interactivo — polish, no dato). Mi Huella: /athlete/year-in-review,
+         mismo resumen anual que huella.html. Se dejaron fuera Power Curve/
+         VO2max timeline/Distribución/Zonas de analytics.html (charts más
+         densos, mejor en desktop) y season-summary (endpoint roto en el
+         backend ahora mismo — 500, no se construyó UI para no mostrar un
+         error permanente). -->
+    <div class="screen" id="screen-progress">
+      <div class="topbar">
+        <button class="cm-priv-btn" onclick="goScreen('screen-profile')" aria-label="Volver">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="min-width:0">
+          <div class="topbar-eye">PROGRESO</div>
+          <div class="topbar-greet">Insights, récords y tu año</div>
+        </div>
+      </div>
+
+      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
+        <div class="cm-tab active" id="pgr-tab-insights" onclick="progressTab('insights')">Insights</div>
+        <div class="cm-tab" id="pgr-tab-records" onclick="progressTab('records')">Récords</div>
+        <div class="cm-tab" id="pgr-tab-projection" onclick="progressTab('projection')">Proyección</div>
+        <div class="cm-tab" id="pgr-tab-huella" onclick="progressTab('huella')">Mi Huella</div>
+      </div>
+
+      <div id="pgr-insights-content">
+        <div id="pgr-insights-list" style="margin:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="pgr-records-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-records-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="pgr-projection-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-proj-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="pgr-huella-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-huella-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
       </div>
     </div>
 
@@ -1518,6 +1589,7 @@ function goScreen(id){
   if(id === 'screen-profile'){ loadProfileMobile(); }
   if(id === 'screen-mental'){ mentalTab('score'); }
   if(id === 'screen-raceday'){ racedayTab('dashboard'); }
+  if(id === 'screen-progress'){ progressTab('insights'); }
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -3457,6 +3529,160 @@ function renderRaceDayNutrition(p){
   card.innerHTML = '<div class="rc-mob-title">'+_escCm(p.race_goal_name||'Tu carrera')+'</div>'
     +'<div class="rc-mob-rec" style="margin-bottom:.7rem">Guía general por distancia — ajustá según tolerancia digestiva probada en entrenos</div>'
     +guide;
+}
+
+/* ── Progreso — Analytics + Mi Huella (Sprint 5 del roadmap app↔web) ── */
+var PGR_TABS = ['insights','records','projection','huella'];
+function progressTab(tab){
+  PGR_TABS.forEach(function(t){
+    var tabEl = document.getElementById('pgr-tab-'+t), contEl = document.getElementById('pgr-'+t+'-content');
+    if(tabEl) tabEl.classList.toggle('active', t===tab);
+    if(contEl) contEl.style.display = t===tab ? '' : 'none';
+  });
+  if(tab === 'insights') loadProgressInsights();
+  else if(tab === 'records') loadProgressRecords();
+  else if(tab === 'projection') loadProgressProjection();
+  else if(tab === 'huella') loadProgressHuella();
+}
+
+function loadProgressInsights(){
+  if(!_token) return;
+  var list = document.getElementById('pgr-insights-list');
+  list.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/insights')
+    .then(function(r){
+      if(r.status === 403){ list.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressInsights(d); })
+    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressInsights(d){
+  var list = document.getElementById('pgr-insights-list');
+  var items = d.insights || [];
+  if(!items.length){ list.innerHTML = '<div class="cm-empty">Todo en rango óptimo — sin insights por ahora.</div>'; return; }
+  list.innerHTML = items.map(function(ins){
+    return '<div class="pgr-insight-card '+(ins.severity||'info')+'">'
+      +'<div class="pgr-insight-title">'+_escCm(ins.title||'')+'</div>'
+      +'<div>'+_escCm(ins.body||'')+'</div>'
+      +(ins.action ? '<div class="pgr-insight-action">→ '+_escCm(ins.action)+'</div>' : '')
+    +'</div>';
+  }).join('');
+}
+
+var PR_SPORT_LABEL = { run:'Running', bike:'Ciclismo', swim:'Natación' };
+function loadProgressRecords(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-records-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/personal-records')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressRecords(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressRecords(d){
+  var card = document.getElementById('pgr-records-card');
+  var recs = d.records || {};
+  var sports = Object.keys(recs).filter(function(s){ return Object.keys(recs[s]||{}).length; });
+  if(!sports.length){ card.innerHTML = '<div class="cm-empty">Sin récords personales todavía.</div>'; return; }
+  card.innerHTML = sports.map(function(sport){
+    var dists = recs[sport];
+    var rows = Object.keys(dists).map(function(dk){
+      var r = dists[dk];
+      var val = r.pace_fmt ? r.pace_fmt+'/km' : r.pace_100m_fmt ? r.pace_100m_fmt+'/100m' : r.best_speed_kmh ? r.best_speed_kmh+' km/h' : (r.best_time?r.best_time.formatted:'—');
+      return '<div class="pr-mob-row">'
+        +'<div><div class="pr-mob-dist">'+_escCm(r.label||dk)+'</div><div class="pr-mob-meta">'+(r.best_time?_escCm(r.best_time.formatted)+' · '+_escCm(r.best_time.date):'')+(r.n_attempts?' · '+r.n_attempts+' intentos':'')+'</div></div>'
+        +'<div class="pr-mob-val">'+_escCm(String(val))+'</div>'
+      +'</div>';
+    }).join('');
+    return '<div class="pr-mob-sport-title">'+(PR_SPORT_LABEL[sport]||sport)+'</div>'+rows;
+  }).join('');
+}
+
+function loadProgressProjection(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-proj-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/ctl-projection')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressProjection(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressProjection(d){
+  var card = document.getElementById('pgr-proj-card');
+  var proj = d.projection || [];
+  if(!proj.length){ card.innerHTML = '<div class="cm-empty">Sin datos suficientes para proyectar.</div>'; return; }
+  var kpis = [
+    { l:'CTL actual', v: d.current_ctl, c:'#22D3EE' },
+    { l:'ATL actual', v: d.current_atl, c:'#FF6535' },
+    { l:'TSB actual', v: d.current_tsb!=null?((d.current_tsb>=0?'+':'')+d.current_tsb):'—', c:(d.current_tsb||0)>=0?'#10B981':'#EF4444' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+(k.v!=null?k.v:'—')+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  var mx = Math.max.apply(null, proj.map(function(p){ return p.ctl||0; })) * 1.15;
+  var bars = proj.filter(function(_,i){ return i % 2 === 0; }).map(function(p){
+    var h = Math.round((p.ctl/mx)*72);
+    return '<div class="hrv-mob-bar" style="height:'+h+'px;background:#22D3EE" title="'+p.date_iso+': CTL '+p.ctl+' · '+p.form_label+'"></div>';
+  }).join('');
+
+  var peak = proj.reduce(function(best,p){ return (best==null || p.tsb > best.tsb) ? p : best; }, null);
+
+  card.innerHTML = '<div class="rc-mob-title">Proyección '+proj.length+' días · TSS planificado '+d.planned_tss_per_day+'/día</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="rc-mob-title" style="margin-top:1rem">CTL proyectada</div>'
+    +'<div class="hrv-mob-chart">'+bars+'</div>'
+    +(peak ? '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.8rem">🟢 Ventana de forma pico: <strong>'+_escCm(peak.date_iso)+'</strong> (TSB '+(peak.tsb>=0?'+':'')+peak.tsb+', '+_escCm(peak.form_label)+')</div>' : '');
+}
+
+function loadProgressHuella(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-huella-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/athlete/year-in-review?year='+(new Date()).getFullYear())
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Mi Huella — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressHuella(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressHuella(d){
+  var card = document.getElementById('pgr-huella-card');
+  if(!d.total_activities){ card.innerHTML = '<div class="cm-empty">Sin actividades registradas en '+d.year+' todavía.</div>'; return; }
+  var kpis = [
+    { l:'Actividades', v: d.total_activities, c:'var(--orange)' },
+    { l:'Horas', v: Math.round(d.total_hours), c:'#22D3EE' },
+    { l:'Km', v: Math.round(d.total_km), c:'#10B981' },
+    { l:'TSS', v: Math.round(d.total_tss), c:'#A855F7' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  var bySport = d.by_sport || {};
+  var sportRows = Object.keys(bySport).filter(function(s){ return bySport[s].km > 0 || bySport[s].tss > 0; }).map(function(s){
+    var v = bySport[s];
+    return '<div class="yir-mob-sport-row"><span class="yir-mob-sport-name">'+_escCm(s)+'</span><span class="yir-mob-sport-val">'+Math.round(v.km)+' km · TSS '+Math.round(v.tss)+'</span></div>';
+  }).join('');
+
+  var longest = d.longest_by_sport || {};
+  var longestHtml = Object.keys(longest).filter(function(s){ return longest[s] && longest[s].dist_km; }).map(function(s){
+    var l = longest[s];
+    return '<div class="rec-mob-alert rec-mob-alert-info">🏆 Sesión más larga de '+_escCm(s)+': <strong>'+_escCm(l.name)+'</strong> — '+l.dist_km+'km ('+l.date_iso+')</div>';
+  }).join('');
+
+  card.innerHTML = '<div class="rc-mob-title">Tu año '+d.year+'</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="rc-mob-title" style="margin-top:1rem">Por deporte</div>'
+    + sportRows
+    +'<div class="rc-mob-rec" style="margin-top:.9rem">Semana pico: <strong style="color:var(--text)">'+_escCm(d.peak_week_iso||'—')+'</strong> (TSS '+Math.round(d.peak_week_tss||0)+') · CTL '+(d.ctl_improvement>=0?'+':'')+d.ctl_improvement+' en el año</div>'
+    +(longestHtml ? '<div style="margin-top:.8rem">'+longestHtml+'</div>' : '');
 }
 
 /* ── Bienestar: pestaña Resumen (Sprint 1 del port de recovery.html) ──
