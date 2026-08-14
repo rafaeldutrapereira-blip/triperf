@@ -132,6 +132,42 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   box-shadow: 0 4px 16px rgba(255,101,53,.4);
 }
 @media (max-width: 430px) { #aicoach-fab { right: 14px; } }
+
+/* ── Menú (bottom sheet) — reemplaza el grid "Más módulos" que vivía
+   adentro de Perfil (feedback del usuario: "los nombres están dentro
+   de la guía perfil", quería algo separado y más prolijo). El botón
+   "Perfil" del nav inferior pasa a ser "Menú"; Perfil vuelve a ser
+   solo el formulario de datos, y ahora es un ítem más DENTRO del
+   menú, agrupado exactamente como el sidebar de la web (routes.
+   config.js: daily/health/goal/account). */
+#menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; display: none; }
+#menu-backdrop.open { display: block; animation: menuFade .18s ease; }
+@keyframes menuFade { from{opacity:0} to{opacity:1} }
+#menu-sheet {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(100%);
+  bottom: 0; width: 100%; max-width: 430px; max-height: 82vh;
+  background: var(--bg); border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0; z-index: 201; overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+  transition: transform .26s cubic-bezier(.16,1,.3,1);
+  box-shadow: 0 -8px 30px rgba(0,0,0,.4);
+}
+#menu-sheet.open { transform: translateX(-50%) translateY(0); }
+.menu-sheet-grip { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: .7rem auto .3rem; }
+.menu-sheet-header { display: flex; align-items: center; gap: .7rem; padding: .7rem 1.2rem 1.1rem; border-bottom: 1px solid var(--border); }
+.menu-sheet-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--orange); flex-shrink: 0; }
+.menu-sheet-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.menu-sheet-plan { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--orange); background: rgba(255,101,53,.14); border: 1px solid rgba(255,101,53,.3); padding: .12rem .5rem; border-radius: 20px; margin-top: .2rem; }
+.menu-sheet-body { padding: .6rem 1.2rem 1.2rem; }
+.menu-group-title { font-size: .64rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 1.1rem 0 .5rem; }
+.menu-group-title:first-child { margin-top: .9rem; }
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+.menu-item { display: flex; align-items: center; gap: .6rem; padding: .7rem .8rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; text-align: left; }
+.menu-item:active { opacity: .7; }
+.menu-item svg { width: 19px; height: 19px; color: var(--orange); flex-shrink: 0; }
+.menu-item span { font-size: .8rem; font-weight: 600; }
+.menu-item.logout { color: var(--dim); }
+.menu-item.logout svg { color: var(--dim); }
 .nav-btn {
   display: flex; flex-direction: column; align-items: center;
   padding: .55rem .2rem .3rem;
@@ -646,21 +682,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .aic-sessions-list { display: none; padding: 0 1rem .6rem; max-height: 160px; overflow-y: auto; }
 .aic-sessions-list.open { display: block; }
 .aic-session-item { padding: .5rem .7rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: .4rem; font-size: .76rem; color: var(--muted); cursor: pointer; }
-
-/* ── Hub "Más módulos" en Perfil — arreglo de descubribilidad: Mental/
-   Race Day/Progreso/AI Coach solo se abrían desde puntos de entrada
-   contextuales dispersos (fila de Hoy, race-card-mini, FAB), sin un
-   lugar único donde verlos TODOS listados. El bottom nav ya está en
-   su máximo cómodo (5 slots) — no se le agrega un 6º botón, se agrega
-   este grid en Perfil en su lugar, mismos íconos exactos que el
-   sidebar de la web (routes.config.js) para mantener el mismo
-   lenguaje visual. */
-.more-mod-title { font-size: .7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 0 1rem .6rem; }
-.more-mod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: 0 1rem 1.3rem; }
-.more-mod-btn { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: .8rem .3rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; }
-.more-mod-btn:active { opacity: .7; }
-.more-mod-btn svg { width: 21px; height: 21px; color: var(--orange); flex-shrink: 0; }
-.more-mod-lbl { font-size: .62rem; font-weight: 600; text-align: center; line-height: 1.15; }
 
 /* ── Comunidad ── */
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
@@ -1205,26 +1226,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
       </div>
 
-      <div class="more-mod-title">Más módulos</div>
-      <div class="more-mod-grid">
-        <button class="more-mod-btn" onclick="goScreen('screen-mental')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-          <span class="more-mod-lbl">Mental</span>
-        </button>
-        <button class="more-mod-btn" onclick="goScreen('screen-raceday')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span class="more-mod-lbl">Race Day</span>
-        </button>
-        <button class="more-mod-btn" onclick="goScreen('screen-progress')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <span class="more-mod-lbl">Progreso</span>
-        </button>
-        <button class="more-mod-btn" onclick="goScreen('screen-aicoach')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <span class="more-mod-lbl">AI Coach</span>
-        </button>
-      </div>
-
       <div class="wellness-grid" id="profile-form-wrap">
         <div class="wl-card">
           <div class="wl-title">Datos personales</div>
@@ -1482,11 +1483,67 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       Comunidad
     </button>
-    <button class="nav-btn" onclick="goScreen('screen-profile')" id="nav-profile">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Perfil
+    <button class="nav-btn" onclick="openMenuSheet()" id="nav-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Menú
     </button>
   </nav>
+
+  <!-- Menú (bottom sheet) — reemplaza el grid que vivía dentro de
+       Perfil. Agrupado igual que el sidebar web (daily/health/goal/
+       account). -->
+  <div id="menu-backdrop" onclick="closeMenuSheet()"></div>
+  <div id="menu-sheet">
+    <div class="menu-sheet-grip"></div>
+    <div class="menu-sheet-header">
+      <div class="menu-sheet-avatar" id="menu-avatar">?</div>
+      <div>
+        <div class="menu-sheet-name" id="menu-name">Atleta</div>
+        <span class="menu-sheet-plan" id="menu-plan">—</span>
+      </div>
+    </div>
+    <div class="menu-sheet-body">
+      <div class="menu-group-title">Seguimiento y salud</div>
+      <div class="menu-grid">
+        <button class="menu-item" onclick="menuGo('screen-mental')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          <span>Mental</span>
+        </button>
+      </div>
+
+      <div class="menu-group-title">Objetivo</div>
+      <div class="menu-grid">
+        <button class="menu-item" onclick="menuGo('screen-raceday')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Race Day</span>
+        </button>
+        <button class="menu-item" onclick="menuGo('screen-progress')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Progreso</span>
+        </button>
+      </div>
+
+      <div class="menu-group-title">Herramientas</div>
+      <div class="menu-grid">
+        <button class="menu-item" onclick="menuGo('screen-aicoach')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>AI Coach</span>
+        </button>
+      </div>
+
+      <div class="menu-group-title">Cuenta</div>
+      <div class="menu-grid">
+        <button class="menu-item" onclick="menuGo('screen-profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>Perfil</span>
+        </button>
+        <button class="menu-item logout" onclick="closeMenuSheet();doLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Salir</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div><!-- /app -->
 
 <script>
@@ -1614,6 +1671,49 @@ function doLogout(){
   btn.textContent = 'Entrar →';
 }
 
+/* ── Menú (bottom sheet) — reemplaza el grid que vivía dentro de
+   Perfil (feedback del usuario: "los nombres están dentro de la guía
+   perfil", quería algo separado). Nombre/avatar/plan se cargan una
+   sola vez desde /athlete/profile y se cachean — no hace falta pegarle
+   a la red cada vez que se abre el menú. */
+var MENU_PLAN_LABELS = { basic:'Básico', agegroup:'Agegroup', elite:'Élite' };
+var _menuHeaderLoaded = false;
+
+function openMenuSheet(){
+  document.getElementById('menu-backdrop').classList.add('open');
+  document.getElementById('menu-sheet').classList.add('open');
+  var fab = document.getElementById('aicoach-fab');
+  if(fab) fab.style.display = 'none';
+  if(!_menuHeaderLoaded) loadMenuHeader();
+}
+
+function closeMenuSheet(){
+  document.getElementById('menu-backdrop').classList.remove('open');
+  document.getElementById('menu-sheet').classList.remove('open');
+  var fab = document.getElementById('aicoach-fab');
+  if(fab && !document.getElementById('screen-aicoach').classList.contains('active')) fab.style.display = 'flex';
+}
+
+function menuGo(id){
+  closeMenuSheet();
+  goScreen(id);
+}
+
+function loadMenuHeader(){
+  var name = localStorage.getItem('lx_co_nombre') || 'Atleta';
+  document.getElementById('menu-name').textContent = name;
+  document.getElementById('menu-avatar').textContent = name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+  apiFetch('/athlete/profile')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(p){
+      if(!p) return;
+      _menuHeaderLoaded = true;
+      var planEl = document.getElementById('menu-plan');
+      planEl.textContent = MENU_PLAN_LABELS[p.plan_nivel] || p.plan_nivel || '—';
+    })
+    .catch(function(){});
+}
+
 /* ── Perfil (Sprint 1 del roadmap de paridad app↔web, 2026-08-14) ──
    Mismo endpoint PATCH /athlete/profile que usa athlete_profile.html
    (la web), mismos campos exactos — subset de uso frecuente (datos
@@ -1670,7 +1770,7 @@ function goScreen(id){
   if(el) el.classList.add('active');
   var navMap = {
     'screen-today':'nav-today','screen-week':'nav-week','screen-wellness':'nav-wellness',
-    'screen-community':'nav-community','screen-profile':'nav-profile'
+    'screen-community':'nav-community'
   };
   var nb = document.getElementById(navMap[id]);
   if(nb) nb.classList.add('active');

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '95';  // 2026-08-14: fix descubribilidad — grid "Más módulos" en Perfil (Mental/Race Day/Progreso/AI Coach), antes solo accesibles por puntos de entrada dispersos
+var BUILD_VERSION = '96';  // 2026-08-14: rediseño de menú — bottom sheet "Menú" con header (avatar/nombre/plan) agrupado como el sidebar web, reemplaza el grid que vivía dentro de Perfil
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
