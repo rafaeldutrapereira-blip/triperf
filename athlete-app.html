@@ -1092,6 +1092,75 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div id="community-content"><div class="cm-empty">Cargando...</div></div>
     </div>
 
+    <!-- SCREEN 7: PERFIL — no existía ninguna pantalla de perfil en la
+         app (solo "Salir"); auditoría 2026-08-14 la marcó como el gap
+         más importante porque bloqueaba autonomía real desde el
+         teléfono (no se podía editar meta de carrera ni benchmarks sin
+         ir a la web). Mismo endpoint PATCH /athlete/profile que usa
+         athlete_profile.html — mismos campos exactos, solo el subset
+         de uso frecuente (no 2FA/sesiones/borrar cuenta, eso sigue
+         siendo web-only). -->
+    <div class="screen" id="screen-profile">
+      <div class="topbar">
+        <div style="min-width:0">
+          <div class="topbar-eye" id="s7-eye">Cargando...</div>
+          <div class="topbar-greet"><span id="s7-greet-txt">Buenos días</span>, <em id="s7-greet-name">Atleta</em></div>
+        </div>
+      </div>
+
+      <div class="wellness-grid" id="profile-form-wrap">
+        <div class="wl-card">
+          <div class="wl-title">Datos personales</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <input class="pw-input" id="pf-nombre" type="text" placeholder="Nombre">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">
+              <input class="pw-input" id="pf-peso" type="number" step="0.1" placeholder="Peso (kg)">
+              <input class="pw-input" id="pf-altura" type="number" placeholder="Altura (cm)">
+              <input class="pw-input" id="pf-edad" type="number" placeholder="Edad">
+            </div>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Meta de temporada</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <input class="pw-input" id="pf-race-name" type="text" placeholder="Ej: IRONMAN 70.3 Pucón">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+              <input class="pw-input" id="pf-race-date" type="date">
+              <select class="pw-input" id="pf-race-dist">
+                <option value="">— Distancia —</option>
+                <option value="ironman">Ironman (226 km)</option>
+                <option value="70.3">70.3 / Half (113 km)</option>
+                <option value="olympic">Olímpico (51.5 km)</option>
+                <option value="sprint">Sprint (25.75 km)</option>
+                <option value="marathon">Maratón</option>
+                <option value="half_marathon">Media Maratón</option>
+                <option value="10k">10K</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="wl-card">
+          <div class="wl-title">Benchmarks</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+            <input class="pw-input" id="pf-ftp" type="number" placeholder="FTP (W)">
+            <input class="pw-input" id="pf-vo2" type="number" step="0.1" placeholder="VO2 Max">
+            <input class="pw-input" id="pf-fcmax" type="number" placeholder="FC Máx (bpm)">
+            <input class="pw-input" id="pf-css" type="text" placeholder="CSS (min:seg/100m)">
+            <input class="pw-input" id="pf-run" type="text" placeholder="Ritmo umbral (min:seg/km)" style="grid-column:1/-1">
+          </div>
+        </div>
+      </div>
+
+      <button class="wl-submit" onclick="saveProfileMobile()">Guardar cambios</button>
+
+      <div style="margin:1.4rem 1rem 0;padding-top:1.1rem;border-top:1px solid var(--border)">
+        <button class="wl-submit" style="background:transparent;border:1px solid var(--border);color:var(--dim)" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+
   </div><!-- /screens -->
 
   <!-- BOTTOM NAV -->
@@ -1112,9 +1181,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       Comunidad
     </button>
-    <button class="nav-btn" onclick="doLogout()" id="nav-logout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Salir
+    <button class="nav-btn" onclick="goScreen('screen-profile')" id="nav-profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Perfil
     </button>
   </nav>
 </div><!-- /app -->
@@ -1243,6 +1312,54 @@ function doLogout(){
   btn.textContent = 'Entrar →';
 }
 
+/* ── Perfil (Sprint 1 del roadmap de paridad app↔web, 2026-08-14) ──
+   Mismo endpoint PATCH /athlete/profile que usa athlete_profile.html
+   (la web), mismos campos exactos — subset de uso frecuente (datos
+   personales, meta de temporada, benchmarks). 2FA/sesiones/borrar
+   cuenta quedan web-only a propósito, son de uso ocasional. */
+function loadProfileMobile(){
+  if(!_token) return;
+  apiFetch('/athlete/profile')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(p){
+      if(!p) return;
+      document.getElementById('pf-nombre').value    = p.nombre || p.name || '';
+      document.getElementById('pf-peso').value      = p.weight_kg || '';
+      document.getElementById('pf-altura').value    = p.height_cm || '';
+      document.getElementById('pf-edad').value      = p.age || p.edad || '';
+      document.getElementById('pf-race-name').value = p.race_goal_name || '';
+      document.getElementById('pf-race-date').value = p.race_goal_date || '';
+      document.getElementById('pf-race-dist').value = p.race_goal_dist || '';
+      document.getElementById('pf-ftp').value       = p.ftp || '';
+      document.getElementById('pf-vo2').value       = p.vo2max || '';
+      document.getElementById('pf-fcmax').value     = p.fcmax || '';
+      document.getElementById('pf-css').value       = p.css || '';
+      document.getElementById('pf-run').value       = p.run_pace || '';
+    })
+    .catch(function(){});
+}
+
+function saveProfileMobile(){
+  var body = {
+    nombre:         document.getElementById('pf-nombre').value.trim()   || null,
+    weight_kg:      parseFloat(document.getElementById('pf-peso').value)   || null,
+    height_cm:      parseInt(document.getElementById('pf-altura').value,10) || null,
+    age:            parseInt(document.getElementById('pf-edad').value,10)   || null,
+    race_goal_name: document.getElementById('pf-race-name').value.trim() || null,
+    race_goal_date: document.getElementById('pf-race-date').value        || null,
+    race_goal_dist: document.getElementById('pf-race-dist').value        || null,
+    ftp:            parseInt(document.getElementById('pf-ftp').value,10)    || null,
+    vo2max:         parseFloat(document.getElementById('pf-vo2').value)     || null,
+    fcmax:          parseInt(document.getElementById('pf-fcmax').value,10)  || null,
+    css:            document.getElementById('pf-css').value.trim()       || null,
+    run_pace:       document.getElementById('pf-run').value.trim()       || null,
+  };
+  apiFetch('/athlete/profile', { method: 'PATCH', body: JSON.stringify(body) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ toast('Perfil guardado ✓'); })
+    .catch(function(){ toast('No se pudo guardar el perfil', 'err'); });
+}
+
 /* ── Navigation ──────────────────────────────────────────── */
 function goScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
@@ -1251,7 +1368,7 @@ function goScreen(id){
   if(el) el.classList.add('active');
   var navMap = {
     'screen-today':'nav-today','screen-week':'nav-week','screen-wellness':'nav-wellness',
-    'screen-community':'nav-community'
+    'screen-community':'nav-community','screen-profile':'nav-profile'
   };
   var nb = document.getElementById(navMap[id]);
   if(nb) nb.classList.add('active');
@@ -1269,6 +1386,7 @@ function goScreen(id){
      llamada liviana y evita mostrar datos de un check-in que haya
      cambiado por otro medio (ej. la web) durante la misma sesión. */
   if(id === 'screen-wellness'){ loadWellnessToday(); wellnessTab('resumen'); }
+  if(id === 'screen-profile'){ loadProfileMobile(); }
 }
 
 /* ── Toast ───────────────────────────────────────────────── */
@@ -1901,7 +2019,7 @@ var MONTH_ES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ago
    vez desde initApp() — las 5 pantallas comparten el mismo día/hora/
    nombre, solo cambia el nombre del módulo en el eyebrow. */
 var _SCREEN_MODULE_LABEL = {
-  's1': 'Hoy', 's2': 'Durante', 's3': 'Registrar', 's4': 'Semana', 's5': 'Recovery', 's6': 'Comunidad'
+  's1': 'Hoy', 's2': 'Durante', 's3': 'Registrar', 's4': 'Semana', 's5': 'Recovery', 's6': 'Comunidad', 's7': 'Perfil'
 };
 var _communityLoaded = false;
 function updateGreetingHeaders(){
