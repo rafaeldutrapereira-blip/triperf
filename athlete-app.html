@@ -1446,6 +1446,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="cm-tab" id="pgr-tab-records" onclick="progressTab('records')">Récords</div>
         <div class="cm-tab" id="pgr-tab-projection" onclick="progressTab('projection')">Proyección</div>
         <div class="cm-tab" id="pgr-tab-huella" onclick="progressTab('huella')">Mi Huella</div>
+        <div class="cm-tab" id="pgr-tab-power" onclick="progressTab('power')">Potencia</div>
+        <div class="cm-tab" id="pgr-tab-vo2max" onclick="progressTab('vo2max')">VO2max</div>
+        <div class="cm-tab" id="pgr-tab-distrib" onclick="progressTab('distrib')">Distribución</div>
+        <div class="cm-tab" id="pgr-tab-zones" onclick="progressTab('zones')">Zonas</div>
       </div>
 
       <div id="pgr-insights-content">
@@ -1462,6 +1466,30 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div id="pgr-huella-content" style="display:none">
         <div class="rc-mob-card" id="pgr-huella-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Curva de Potencia (cierre de gap 2026-08-14) — /analytics/power-curve -->
+      <div id="pgr-power-content" style="display:none">
+        <div class="md-tabs" style="padding:1rem 1rem 0" id="pgr-power-sport-tabs">
+          <button class="md-tab on" data-s="bike" onclick="loadProgressPower('bike')">🚴 Bici</button>
+          <button class="md-tab" data-s="run" onclick="loadProgressPower('run')">🏃 Run</button>
+        </div>
+        <div class="rc-mob-card" id="pgr-power-card" style="margin-top:.7rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- VO2max histórico — /analytics/vo2max -->
+      <div id="pgr-vo2max-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-vo2max-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Distribución de entrenamiento por deporte — /analytics/training-distribution -->
+      <div id="pgr-distrib-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-distrib-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Calibración de zonas — /analytics/zone-calibration -->
+      <div id="pgr-zones-content" style="display:none">
+        <div class="rc-mob-card" id="pgr-zones-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
       </div>
     </div>
 
@@ -4006,7 +4034,7 @@ function renderRaceDayPlan(rk, profile, d){
 }
 
 /* ── Progreso — Analytics + Mi Huella (Sprint 5 del roadmap app↔web) ── */
-var PGR_TABS = ['insights','records','projection','huella'];
+var PGR_TABS = ['insights','records','projection','huella','power','vo2max','distrib','zones'];
 function progressTab(tab){
   PGR_TABS.forEach(function(t){
     var tabEl = document.getElementById('pgr-tab-'+t), contEl = document.getElementById('pgr-'+t+'-content');
@@ -4017,6 +4045,10 @@ function progressTab(tab){
   else if(tab === 'records') loadProgressRecords();
   else if(tab === 'projection') loadProgressProjection();
   else if(tab === 'huella') loadProgressHuella();
+  else if(tab === 'power') loadProgressPower(_pgrPowerSport);
+  else if(tab === 'vo2max') loadProgressVo2max();
+  else if(tab === 'distrib') loadProgressDistrib();
+  else if(tab === 'zones') loadProgressZones();
 }
 
 function loadProgressInsights(){
@@ -4157,6 +4189,143 @@ function renderProgressHuella(d){
     + sportRows
     +'<div class="rc-mob-rec" style="margin-top:.9rem">Semana pico: <strong style="color:var(--text)">'+_escCm(d.peak_week_iso||'—')+'</strong> (TSS '+Math.round(d.peak_week_tss||0)+') · CTL '+(d.ctl_improvement>=0?'+':'')+d.ctl_improvement+' en el año</div>'
     +(longestHtml ? '<div style="margin-top:.8rem">'+longestHtml+'</div>' : '');
+}
+
+/* ── Progreso: Curva de Potencia / VO2max / Distribución / Zonas
+   (cierre de gap 2026-08-14) — mismos 4 endpoints/campos exactos que
+   analytics.html, adaptados a listas/barras compactas para mobile en
+   vez de los canvas charts densos de la web. */
+var _pgrPowerSport = 'bike';
+function loadProgressPower(sport){
+  if(!_token) return;
+  _pgrPowerSport = sport;
+  document.querySelectorAll('#pgr-power-sport-tabs .md-tab').forEach(function(b){
+    b.classList.toggle('on', b.dataset.s === sport);
+  });
+  var card = document.getElementById('pgr-power-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/power-curve?sport='+sport+'&days_back=365')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressPower(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressPower(d){
+  var card = document.getElementById('pgr-power-card');
+  var pts = d.curve || [];
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin datos suficientes de '+(d.sport==='bike'?'ciclismo':'running')+' para calcular la curva.</div>'; return; }
+  var unit = d.sport === 'bike' ? 'W' : '/km';
+  var kpis = [
+    { l: d.sport==='bike'?'FTP estimado':'Umbral estimado', v: d.ftp_est!=null?Math.round(d.ftp_est)+unit:'—', c:'var(--orange)' },
+    { l:'W/kg', v: d.ftp_wkg!=null?d.ftp_wkg:'—', c:'#10B981' },
+    { l:'Actividades', v: d.n_activities!=null?d.n_activities:'—', c:'#22D3EE' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  var mx = Math.max.apply(null, pts.map(function(p){ return p.power_w||0; })) * 1.1;
+  var bars = pts.map(function(p){
+    var h = Math.max(2, Math.round(((p.power_w||0)/mx)*72));
+    return '<div class="hrv-mob-bar" style="height:'+h+'px;background:'+(p.is_estimated?'#7C3AED':'var(--orange)')+'" title="'+p.label+': '+Math.round(p.power_w||0)+'W"></div>';
+  }).join('');
+  var xlabels = ['5s','1m','5m','20m','1h','3h'];
+
+  card.innerHTML = '<div class="rc-mob-title">Curva de potencia crítica — 365d</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="hrv-mob-chart">'+bars+'</div>'
+    +'<div class="hrv-mob-baseline-note" style="color:var(--dim)">'+xlabels.join(' · ')+' · 🟣 estimado</div>';
+}
+
+function loadProgressVo2max(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-vo2max-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/vo2max?days_back=365')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressVo2max(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+function renderProgressVo2max(d){
+  var card = document.getElementById('pgr-vo2max-card');
+  var pts = (d.timeline || []).slice(-60);
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin datos de VO2max disponibles.</div>'; return; }
+  var trendColor = (d.trend_delta||0) > 0 ? '#10B981' : (d.trend_delta||0) < 0 ? '#EF4444' : '#7FB3CC';
+  var kpis = [
+    { l:'Actual', v: d.vo2max_current!=null?d.vo2max_current:'—', c:'var(--orange)' },
+    { l:'Tendencia', v: d.trend_delta!=null?((d.trend_delta>0?'+':'')+d.trend_delta):'—', c: trendColor },
+    { l:'Clasificación', v: d.classification||'—', c:'#22D3EE' },
+  ].map(function(k){ return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>'; }).join('');
+
+  var mx = Math.max.apply(null, pts.map(function(p){ return p.vo2max||0; })) * 1.05;
+  var mn = Math.min.apply(null, pts.map(function(p){ return p.vo2max||0; })) * 0.95;
+  var bars = pts.map(function(p){
+    var h = Math.max(2, Math.round(((p.vo2max-mn)/(mx-mn||1))*72));
+    return '<div class="hrv-mob-bar" style="height:'+h+'px;background:#22D3EE" title="'+p.date+': '+p.vo2max+'"></div>';
+  }).join('');
+
+  card.innerHTML = '<div class="rc-mob-title">VO2max — últimas '+pts.length+' lecturas</div>'
+    +'<div class="hrv-mob-kpis rd-mob-kpis">'+kpis+'</div>'
+    +'<div class="hrv-mob-chart">'+bars+'</div>';
+}
+
+function loadProgressDistrib(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-distrib-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/training-distribution?days_back=90')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressDistrib(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+var PGR_SPORT_COLOR = { swim:'#22D3EE', bike:'#FF6535', run:'#10B981', gym:'#A855F7', other:'#9CA3AF' };
+function renderProgressDistrib(d){
+  var card = document.getElementById('pgr-distrib-card');
+  var rows = (d.by_sport || []).filter(function(s){ return s.count > 0; });
+  if(!rows.length){ card.innerHTML = '<div class="cm-empty">Sin actividades en los últimos 90 días.</div>'; return; }
+  card.innerHTML = '<div class="rc-mob-title">Distribución por deporte — 90d</div>' + rows.map(function(s){
+    var col = PGR_SPORT_COLOR[s.sport] || '#9CA3AF';
+    return '<div class="yir-mob-sport-row" style="align-items:center">'
+      +'<span class="yir-mob-sport-name" style="color:'+col+'">● '+_escCm(s.sport)+'</span>'
+      +'<span class="yir-mob-sport-val">'+Math.round(s.hours)+'h · TSS '+Math.round(s.tss)+' · '+s.pct_tss+'%</span>'
+    +'</div>';
+  }).join('');
+}
+
+function loadProgressZones(){
+  if(!_token) return;
+  var card = document.getElementById('pgr-zones-card');
+  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/analytics/zone-calibration?days_back=90')
+    .then(function(r){
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      return r.ok ? r.json() : Promise.reject('err');
+    })
+    .then(function(d){ renderProgressZones(d); })
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+
+var PGR_ZONE_SPORT_LABEL = { cycling:'🚴 Ciclismo', running:'🏃 Running', swimming:'🏊 Natación' };
+function renderProgressZones(d){
+  var card = document.getElementById('pgr-zones-card');
+  var sports = ['cycling','running','swimming'].filter(function(s){ return d[s]; });
+  if(!sports.length){ card.innerHTML = '<div class="cm-empty">Sin datos suficientes para calibrar zonas.</div>'; return; }
+  card.innerHTML = sports.map(function(s){
+    var sp = d[s];
+    var zones = sp.zones || {};
+    var zoneRows = Object.keys(zones).map(function(z){
+      return '<div class="pr-mob-row"><span class="pr-mob-dist">'+z+'</span><span class="pr-mob-val" style="font-size:.78rem">'+_escCm(zones[z])+'</span></div>';
+    }).join('');
+    return '<div class="pr-mob-sport-title">'+PGR_ZONE_SPORT_LABEL[s]+' <span style="color:var(--dim);font-weight:400;text-transform:none">· '+_escCm(sp.source||'')+'</span></div>'+zoneRows;
+  }).join('');
 }
 
 /* ── AI Coach — chat (Sprint 6 del roadmap app↔web) ── Mismos 3
