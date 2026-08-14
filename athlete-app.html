@@ -634,6 +634,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mtl-proto-complete { padding: .4rem .8rem; background: rgba(16,185,129,.15); color: #10B981; border: 1px solid rgba(16,185,129,.35); border-radius: 8px; font-size: .7rem; font-weight: 700; cursor: pointer; }
 .mtl-proto-complete[disabled] { opacity: .5; }
 .mtl-proto-done-badge { font-size: .68rem; color: #10B981; font-weight: 700; }
+.mtl-breath-select { display: flex; flex-direction: column; gap: .6rem; margin: 1rem; }
+.mtl-breath-opt { padding: .8rem .9rem; background: var(--bg2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; }
+.mtl-breath-opt.on { border-color: var(--orange); background: rgba(255,101,53,.08); }
+.mtl-breath-opt-name { font-family: 'Barlow Condensed', sans-serif; font-size: .95rem; font-weight: 800; }
+.mtl-breath-opt-desc { font-size: .72rem; color: var(--dim); margin-top: .15rem; }
+.mtl-breath-ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 1.2rem auto; }
+.mtl-breath-ring { width: 200px; height: 200px; position: relative; }
+.mtl-breath-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.mtl-breath-bg { fill: none; stroke: var(--bg3); stroke-width: 10; }
+.mtl-breath-fill { fill: none; stroke: var(--orange); stroke-width: 10; stroke-linecap: round; }
+.mtl-breath-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.mtl-breath-phase { font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mtl-breath-count { font-family: 'Barlow Condensed', sans-serif; font-size: 2.6rem; font-weight: 900; color: var(--text); line-height: 1; margin: .2rem 0; }
+.mtl-breath-cycles { font-size: .72rem; color: var(--dim); }
 
 /* ── Pantalla Race Day + Nutrición (Sprints 3+4 del roadmap app↔web,
    fusionadas en una sola pantalla porque en la web race_day.html ya
@@ -1331,6 +1345,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
         <div class="cm-tab active" id="mtl-tab-score" onclick="mentalTab('score')">Score</div>
         <div class="cm-tab" id="mtl-tab-protocols" onclick="mentalTab('protocols')">Protocolos</div>
+        <div class="cm-tab" id="mtl-tab-breathing" onclick="mentalTab('breathing')">Respiración</div>
         <div class="cm-tab" id="mtl-tab-correlations" onclick="mentalTab('correlations')">Correlaciones</div>
         <div class="cm-tab" id="mtl-tab-prerace" onclick="mentalTab('prerace')">Pre-Carrera</div>
       </div>
@@ -1358,6 +1373,56 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <button class="mtl-filter-chip" data-cat="activation" onclick="mentalFilterCat('activation')">Activación</button>
         </div>
         <div class="mtl-proto-list" id="mtl-proto-list"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <!-- Timer de respiración guiada (cierre de gap 2026-08-14) —
+           mismos 4 protocolos/tiempos exactos que mental.html, aro SVG
+           animado con fase/cuenta regresiva/ciclos. Al completar,
+           guarda con el mismo endpoint /mental/protocols/{id}/complete
+           que ya usa la pestaña Protocolos. -->
+      <div id="mtl-breathing-content" style="display:none">
+        <div class="mtl-breath-select" id="mtl-breath-select">
+          <div class="mtl-breath-opt on" data-id="box" onclick="mtlSelectBreath(this,'box',4,4,4,4)">
+            <div class="mtl-breath-opt-name">Caja (4-4-4-4)</div>
+            <div class="mtl-breath-opt-desc">Foco y control. Navy SEALs.</div>
+          </div>
+          <div class="mtl-breath-opt" data-id="478" onclick="mtlSelectBreath(this,'478',4,7,8,0)">
+            <div class="mtl-breath-opt-name">4-7-8</div>
+            <div class="mtl-breath-opt-desc">Ansiedad y sueño.</div>
+          </div>
+          <div class="mtl-breath-opt" data-id="resonance" onclick="mtlSelectBreath(this,'resonance',5.5,0,5.5,0)">
+            <div class="mtl-breath-opt-name">Resonancia (5.5-5.5)</div>
+            <div class="mtl-breath-opt-desc">Maximiza HRV.</div>
+          </div>
+          <div class="mtl-breath-opt" data-id="physio" onclick="mtlSelectBreath(this,'physio',3,1,8,0)">
+            <div class="mtl-breath-opt-name">Suspiro Fisiológico</div>
+            <div class="mtl-breath-opt-desc">Reducción de estrés inmediata.</div>
+          </div>
+        </div>
+
+        <div class="mtl-breath-ring-wrap" id="mtl-breath-ring-wrap" style="display:none">
+          <div class="mtl-breath-ring">
+            <svg viewBox="0 0 200 200">
+              <circle class="mtl-breath-bg" cx="100" cy="100" r="82"/>
+              <circle class="mtl-breath-fill" id="mtl-breath-arc" cx="100" cy="100" r="82" stroke-dasharray="515" stroke-dashoffset="515"/>
+            </svg>
+            <div class="mtl-breath-center">
+              <div class="mtl-breath-phase" id="mtl-breath-phase">—</div>
+              <div class="mtl-breath-count" id="mtl-breath-count">0</div>
+              <div class="mtl-breath-cycles" id="mtl-breath-cycles">Ciclo 0/5</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:0 1rem">
+          <button class="wl-submit" id="mtl-breath-start-btn" onclick="mtlStartBreathing()">Comenzar</button>
+          <button class="wl-submit" id="mtl-breath-stop-btn" style="display:none;background:transparent;border:1px solid var(--border);color:var(--dim)" onclick="mtlStopBreathing()">Detener</button>
+        </div>
+
+        <div id="mtl-breath-complete" style="display:none;text-align:center;margin:1.2rem 1rem">
+          <div style="font-size:1.1rem;font-weight:800;margin-bottom:.6rem">✓ Sesión completada</div>
+          <button class="wl-submit" onclick="mtlSaveBreathSession()">Guardar sesión</button>
+        </div>
       </div>
 
       <div id="mtl-correlations-content" style="display:none">
@@ -1883,6 +1948,7 @@ function saveProfileMobile(){
 
 /* ── Navigation ──────────────────────────────────────────── */
 function goScreen(id){
+  if(id !== 'screen-mental' && typeof mtlStopBreathing === 'function') mtlStopBreathing();
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
   var el = document.getElementById(id);
@@ -3556,8 +3622,9 @@ function _mtlUpdateStars(field){
   });
 }
 
-var MTL_TABS = ['score','protocols','correlations','prerace'];
+var MTL_TABS = ['score','protocols','breathing','correlations','prerace'];
 function mentalTab(tab){
+  if(tab !== 'breathing') mtlStopBreathing();
   MTL_TABS.forEach(function(t){
     var tabEl = document.getElementById('mtl-tab-'+t), contEl = document.getElementById('mtl-'+t+'-content');
     if(tabEl) tabEl.classList.toggle('active', t===tab);
@@ -3752,6 +3819,96 @@ function renderMentalPreRace(d){
     }).join('');
   }
   card.innerHTML = html;
+}
+
+/* ── Mental: timer de respiración guiada (cierre de gap 2026-08-14) ──
+   Mismos 4 protocolos/tiempos exactos que mental.html (aro SVG con
+   fase/cuenta regresiva/ciclos, 5 ciclos). Al completar, guarda con el
+   mismo endpoint /mental/protocols/{id}/complete que ya usa la
+   pestaña Protocolos — el mapeo box/478/resonance/physio → ids reales
+   del backend es el mismo que usa la web. */
+var _mtlBreathProto = { id:'box', inhale:4, hold1:4, exhale:4, hold2:4 };
+var _mtlBreathTimer = null;
+var _mtlBreathCycle = 0, _mtlBreathMaxCycles = 5, _mtlBreathStep = 0, _mtlBreathSec = 0;
+var _mtlBreathProtoIdMap = { box:'breath_box', '478':'breath_478', resonance:'breath_resonance', physio:'breath_physiological' };
+
+function mtlSelectBreath(el, id, inhale, hold1, exhale, hold2){
+  document.querySelectorAll('#mtl-breath-select .mtl-breath-opt').forEach(function(o){ o.classList.remove('on'); });
+  el.classList.add('on');
+  _mtlBreathProto = { id:id, inhale:inhale, hold1:hold1, exhale:exhale, hold2:hold2 };
+}
+
+function mtlStartBreathing(){
+  var PHASES = [];
+  if(_mtlBreathProto.inhale) PHASES.push({label:'Inhala', secs:_mtlBreathProto.inhale});
+  if(_mtlBreathProto.hold1)  PHASES.push({label:'Retén',  secs:_mtlBreathProto.hold1});
+  if(_mtlBreathProto.exhale) PHASES.push({label:'Exhala', secs:_mtlBreathProto.exhale});
+  if(_mtlBreathProto.hold2)  PHASES.push({label:'Retén',  secs:_mtlBreathProto.hold2});
+
+  document.getElementById('mtl-breath-select').style.display = 'none';
+  document.getElementById('mtl-breath-ring-wrap').style.display = 'flex';
+  document.getElementById('mtl-breath-start-btn').style.display = 'none';
+  document.getElementById('mtl-breath-stop-btn').style.display = '';
+  document.getElementById('mtl-breath-complete').style.display = 'none';
+
+  _mtlBreathCycle = 0; _mtlBreathMaxCycles = 5; _mtlBreathStep = 0; _mtlBreathSec = 0;
+  var CIRC = 515;
+
+  function tick(){
+    var phase = PHASES[_mtlBreathStep];
+    if(!phase) return;
+    document.getElementById('mtl-breath-phase').textContent = phase.label;
+    document.getElementById('mtl-breath-count').textContent = Math.ceil(phase.secs - _mtlBreathSec);
+    document.getElementById('mtl-breath-cycles').textContent = 'Ciclo '+(_mtlBreathCycle+1)+'/'+_mtlBreathMaxCycles;
+    var progress = _mtlBreathSec / phase.secs;
+    document.getElementById('mtl-breath-arc').style.strokeDashoffset = CIRC - (CIRC*progress);
+
+    _mtlBreathSec += 0.1;
+    if(_mtlBreathSec >= phase.secs){
+      _mtlBreathSec = 0;
+      _mtlBreathStep++;
+      if(_mtlBreathStep >= PHASES.length){
+        _mtlBreathStep = 0;
+        _mtlBreathCycle++;
+        if(_mtlBreathCycle >= _mtlBreathMaxCycles){
+          mtlStopBreathing();
+          mtlFinishBreathing();
+          return;
+        }
+      }
+    }
+    _mtlBreathTimer = setTimeout(tick, 100);
+  }
+  tick();
+}
+
+function mtlStopBreathing(){
+  if(_mtlBreathTimer){ clearTimeout(_mtlBreathTimer); _mtlBreathTimer = null; }
+  var startBtn = document.getElementById('mtl-breath-start-btn');
+  var stopBtn = document.getElementById('mtl-breath-stop-btn');
+  if(startBtn) startBtn.style.display = '';
+  if(stopBtn) stopBtn.style.display = 'none';
+}
+
+function mtlFinishBreathing(){
+  document.getElementById('mtl-breath-ring-wrap').style.display = 'none';
+  document.getElementById('mtl-breath-complete').style.display = 'block';
+}
+
+function mtlSaveBreathSession(){
+  var pid = _mtlBreathProtoIdMap[_mtlBreathProto.id] || 'breath_box';
+  apiFetch('/mental/protocols/'+pid+'/complete', {
+    method: 'POST',
+    body: JSON.stringify({ protocol_id: pid, duration_min: _mtlBreathMaxCycles*2, rating: null }),
+  })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('err'); })
+    .then(function(){
+      toast('Sesión de respiración guardada ✓','ok');
+      document.getElementById('mtl-breath-complete').style.display = 'none';
+      document.getElementById('mtl-breath-select').style.display = '';
+      document.getElementById('mtl-breath-start-btn').style.display = '';
+    })
+    .catch(function(){ toast('No se pudo guardar la sesión','err'); });
 }
 
 /* ── Race Day + Nutrición (Sprints 3+4 del roadmap app↔web) ──

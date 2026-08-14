@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '99';  // 2026-08-14: cierre de gap 3/5 — Progreso con Curva de Potencia/VO2max/Distribución/Zonas (antes solo Insights/Récords/Proyección/Huella)
+var BUILD_VERSION = '100';  // 2026-08-14: cierre de gap 4/5 — timer de Respiración animado en Mental (aro SVG, 4 protocolos, guarda sesión)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
