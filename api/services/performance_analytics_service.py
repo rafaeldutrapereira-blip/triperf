@@ -1067,7 +1067,7 @@ def compute_season_summary(
     total_km          = round(sum(a.dist_km  or 0 for a in activities), 1)
     total_duration_h  = round(sum(a.dur_min  or 0 for a in activities) / 60, 1)
     total_tss         = round(sum(a.tss      or 0 for a in activities), 0)
-    total_elevation_m = round(sum((a.elevation_gain_m or 0) for a in activities), 0)
+    total_elevation_m = round(sum((a.elev_m or 0) for a in activities), 0)
 
     # Distribución por deporte
     sport_summary: dict[str, dict] = {}

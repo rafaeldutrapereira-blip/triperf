@@ -279,7 +279,7 @@ def _mock_activity(sport="run", dist_km=10.0, dur_min=60.0, tss=80.0, elev=200.0
     obj.dist_km         = dist_km
     obj.dur_min         = dur_min
     obj.tss             = tss
-    obj.elevation_gain_m = elev
+    obj.elev_m           = elev
     obj.date_iso        = date_iso or "2026-06-01"
     return obj
 
