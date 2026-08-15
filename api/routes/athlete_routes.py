@@ -2654,11 +2654,48 @@ def _compute_activity_splits(samples: list, sport: str) -> list:
     return splits
 
 
+
+# Garmin marca cada lap real con un rol dentro de la serie estructurada
+# (WARMUP/ACTIVE/REST/COOLDOWN — a veces también INTERVAL/RECOVERY según el
+# dispositivo) cuando el entrenamiento se ejecutó como workout con pasos
+# definidos, sea porque se subió a TrainingPeaks/Garmin Coach o porque el
+# reloj detectó la estructura de un fartlek/entrenamiento por intervalos.
+# Bug real reportado en vivo (2026-08-15): un atleta veía "km 5 · 10:28/km"
+# en Parciales y no entendía de dónde salía ese ritmo — Garmin Connect no
+# muestra splits fijos de 1km para esa actividad porque no los hay: son
+# laps reales de duración/distancia variable (calentamiento/serie/descanso/
+# enfriamiento). _compute_activity_splits() trocea la telemetría cruda en
+# ventanas artificiales de 1km que a veces caen a mitad de una transición
+# calentamiento→serie o serie→descanso, promediando ritmos de 2 estados
+# distintos en un solo número sin sentido.
+_INTENSITY_LABEL = {
+    "WARMUP":   "Calentamiento",
+    "COOLDOWN": "Enfriamiento",
+    "REST":     "Descanso",
+    "RECOVERY": "Descanso",
+    "ACTIVE":   "Serie",
+    "INTERVAL": "Serie",
+}
+
+
+def _laps_are_structured(laps: list) -> bool:
+    """True si los laps reales de Garmin reflejan una serie con roles
+    distintos (calentamiento/serie/descanso/enfriamiento) — no un simple
+    auto-lap uniforme de una carrera continua, donde sí tiene sentido
+    seguir mostrando splits parejos de 1km."""
+    types = {lap.get("intensityType") for lap in laps if lap.get("intensityType")}
+    non_active = types - {"ACTIVE", "INTERVAL"}
+    return bool(non_active)
+
+
 def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
     """Parciales reales por lap de Garmin (get_activity_splits) — necesarios
     para natación en piscina, donde la telemetría no trae distancia continua
-    (los largos se cuentan aparte). Se usan como respaldo cuando el cálculo
-    por distancia (_compute_activity_splits) no arroja nada."""
+    (los largos se cuentan aparte), y también preferidos sobre los splits
+    artificiales de _compute_activity_splits() cuando la serie real fue
+    estructurada (ver _laps_are_structured) — acá cada fila SÍ es un tramo
+    homogéneo real (un calentamiento, una serie, un descanso), no una
+    ventana de distancia fija que puede mezclar 2 estados distintos."""
     from pathlib import Path
     import json as _json
 
@@ -2688,6 +2725,7 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
             "avg_power":   None,
             "avg_hr":      round(lap["averageHR"]) if lap.get("averageHR") else None,
             "avg_pace_s_per_km": None,
+            "intensity_type": _INTENSITY_LABEL.get(lap.get("intensityType")),
         }
         if sport == "swim":
             row["avg_pace_s_per_100m"] = round(100 / spd) if spd else None
@@ -2931,7 +2969,21 @@ def get_activity_telemetry(
         zones["power"] = _bucket_time_in_zone(samples, "power", ftp_zones(owner.ftp))
         zone_bounds["power"] = ftp_zones(owner.ftp)
 
-    splits = _compute_activity_splits(samples, act.sport)
+    # Preferir los laps reales de Garmin cuando la serie fue estructurada
+    # (calentamiento/serie/descanso/enfriamiento) — solo entonces cada fila
+    # es un tramo real homogéneo. Para una actividad continua sin esa
+    # estructura, se mantienen los splits parejos de 1km/5km de siempre.
+    splits = []
+    _garmin_laps_path = Path("data/splits") / f"{activity_id}.json"
+    if _garmin_laps_path.exists():
+        try:
+            _raw_laps = _json.loads(_garmin_laps_path.read_text(encoding="utf-8"))
+        except Exception:
+            _raw_laps = []
+        if _laps_are_structured(_raw_laps):
+            splits = _splits_from_garmin_laps(activity_id, act.sport)
+    if not splits:
+        splits = _compute_activity_splits(samples, act.sport)
     if not splits:
         splits = _splits_from_garmin_laps(activity_id, act.sport)
 

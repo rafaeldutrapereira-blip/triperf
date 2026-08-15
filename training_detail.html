@@ -1012,6 +1012,18 @@ function renderSplitsReal(splits, sport){
       + '</div>';
   }
 
+  // Bloque (Calentamiento/Serie/Descanso/Enfriamiento) — presente solo
+  // cuando el backend detectó que esta actividad tiene laps reales de
+  // Garmin con esa estructura (_laps_are_structured en athlete_routes.py).
+  // Bug real reportado en vivo (2026-08-15): un atleta veía "km 5 ·
+  // 10:28/km" sin entender de dónde salía — Garmin Connect no muestra
+  // splits fijos de 1km para esa actividad porque no los hay, son tramos
+  // reales de duración variable; el split artificial de 1km promediaba 2
+  // estados distintos (ej. mitad calentamiento + mitad serie) en un solo
+  // número que no representa ningún tramo real del entrenamiento.
+  var hasBlocks = splits.some(function(s){ return s.intensity_type; });
+  var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
+
   var rows = splits.map(function(s, i){
     var distLbl = isSwim ? Math.round(s.distance_m)+' m'
       : isRun ? (s.distance_m/1000).toFixed(2)+' km'
@@ -1024,8 +1036,14 @@ function renderSplitsReal(splits, sport){
       ? (s.lengths!=null ? s.lengths : '—')
       : (s.avg_power!=null ? s.avg_power+' W' : '—');
     var swolfCol = isSwim ? '<td>'+(s.avg_swolf!=null ? s.avg_swolf : '—')+'</td>' : '';
+    var blockCol = hasBlocks
+      ? '<td>'+(s.intensity_type
+          ? '<span style="display:inline-block;padding:.15rem .5rem;border-radius:10px;font-size:.68rem;font-weight:700;background:'+(blockColors[s.intensity_type]||'#7FB3CC')+'22;color:'+(blockColors[s.intensity_type]||'#7FB3CC')+'">'+s.intensity_type+'</span>'
+          : '—')+'</td>'
+      : '';
     return '<tr'+(i===bestIdx ? ' class="best"' : '')+'>'
       + '<td>'+s.idx+'</td>'
+      + blockCol
       + '<td>'+distLbl+'</td>'
       + '<td>'+fmtDur(s.duration_s/60)+'</td>'
       + '<td>'+pace+'</td>'
@@ -1035,8 +1053,9 @@ function renderSplitsReal(splits, sport){
       + '</tr>';
   }).join('');
   var swolfHead = isSwim ? '<th>Swolf</th>' : '';
+  var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
   inner.innerHTML = summaryHtml + '<div style="overflow-x:auto"><table class="split-table">'
-    + '<thead><tr><th>#</th><th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th>'+swolfHead+'<th>FC</th></tr></thead>'
+    + '<thead><tr><th>#</th>'+blockHead+'<th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th>'+swolfHead+'<th>FC</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
 }
 
