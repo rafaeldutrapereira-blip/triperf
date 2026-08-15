@@ -1136,6 +1136,25 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-cycling-val">VO2 Max Ciclismo</span><span class="kcr-sub">ml/kg/min · estimado</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-cycling-val">—<span class="u"></span></span><span id="badge-vo2-cycling" class="badge" style="color:var(--dim)">—</span></span>
         </div>
+        <!-- CTL Proyectado y Fitness objetivo — pedido explícito del
+             usuario para completar "¿Hacia dónde voy?" con indicadores
+             de TRAYECTORIA (a diferencia de "¿Cómo va mi carga?", que es
+             estado actual). Ambos motores (Banister) ya existían 100%
+             completos en el backend (Sprint 25 /analytics/ctl-projection,
+             Sprint 29 /races/goal-countdown) pero sin ningún consumidor
+             en ninguna página — se conectan acá por primera vez. Sin
+             click-a-detalle: ninguna página web tiene hoy una vista
+             dedicada para estos 2 endpoints (se evaluó agregar una y se
+             descartó por alcance — son informativos por ahora, mismo
+             patrón que la fila "Riesgo de Lesión" de arriba). -->
+        <div class="kcr" id="kc-ctlproj" style="display:none">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="ctl_projected" data-lx-info-val="#kc-ctlproj-val">CTL Proyectado (28d)</span><span class="kcr-sub" id="ctlproj-meta"></span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-ctlproj" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-ctlproj-val">—</span><span id="badge-ctlproj" class="badge">—</span></span>
+        </div>
+        <div class="kcr" id="kc-goalrace" style="display:none">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="goal_race_ctl" data-lx-info-val="#kc-goalrace-val">Fitness objetivo</span><span class="kcr-sub" id="goalrace-meta"></span></span>
+          <span class="kcr-right"><span class="kcr-val" id="kc-goalrace-val">—</span><span id="badge-goalrace" class="badge">—</span></span>
+        </div>
       </div>
 
     </div><!-- /kpi-cluster-row3 -->
@@ -1325,6 +1344,62 @@ function drawSparkline(id, vals, color){
     '<polyline points="'+poly+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
     '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.3" fill="'+color+'"/>';
 }
+/* CTL Proyectado + Fitness objetivo — "¿Hacia dónde voy?". 2 endpoints
+   Banister que ya existían completos en el backend (Sprint 25/29) sin
+   ningún consumidor en ninguna página web hasta ahora. planned_tss usa
+   el promedio real de esta semana (d.tss_week/7) — proyecta "si
+   mantengo este ritmo", no un valor genérico fijo. */
+function loadGoalIndicators(tok, API, d){
+  if(d.tss_week != null){
+    var plannedTss = Math.max(20, Math.round(d.tss_week / 7));
+    fetch(API + '/analytics/ctl-projection?planned_tss=' + plannedTss + '&days=28', {
+      headers: {Authorization: 'Bearer ' + tok}
+    }).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(p){
+        if(!p || !p.projection || !p.projection.length) return;
+        var row = document.getElementById('kc-ctlproj');
+        var valEl = document.getElementById('kc-ctlproj-val');
+        var badgeEl = document.getElementById('badge-ctlproj');
+        var metaEl = document.getElementById('ctlproj-meta');
+        var last = p.projection[p.projection.length - 1];
+        var delta = last.ctl - p.current_ctl;
+        if(row) row.style.display = '';
+        if(valEl) valEl.textContent = last.ctl;
+        if(metaEl) metaEl.textContent = 'En 28 días, manteniendo ' + plannedTss + ' TSS/día';
+        if(badgeEl){
+          var up = delta >= 0;
+          badgeEl.className = 'badge ' + (up ? 'b-up' : 'b-dn');
+          badgeEl.innerHTML = (up ? '+' : '') + delta.toFixed(1);
+        }
+        drawSparkline('spark-ctlproj', p.projection.map(function(pt){ return pt.ctl; }), '#10B981');
+      }).catch(function(){});
+  }
+
+  fetch(API + '/races/goal-countdown', { headers: {Authorization: 'Bearer ' + tok} })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(g){
+      if(!g || !g.has_race) return;
+      var row = document.getElementById('kc-goalrace');
+      var valEl = document.getElementById('kc-goalrace-val');
+      var badgeEl = document.getElementById('badge-goalrace');
+      var metaEl = document.getElementById('goalrace-meta');
+      if(row) row.style.display = '';
+      if(metaEl) metaEl.textContent = g.race.name + ' · ' + g.countdown.days_to_race + 'd';
+      if(g.targets.already_fit){
+        if(valEl) valEl.textContent = '✓ Listo';
+        if(valEl) valEl.style.color = '#10B981';
+        if(badgeEl){ badgeEl.className = 'badge b-up'; badgeEl.textContent = 'CTL ' + g.fitness.ctl_current; }
+      } else {
+        if(valEl) valEl.textContent = '+' + g.targets.ctl_gap.toFixed(1);
+        if(valEl) valEl.style.color = g.directive.is_safe_ramp ? '#F0A500' : '#EF4444';
+        if(badgeEl){
+          badgeEl.className = 'badge ' + (g.directive.is_safe_ramp ? 'b-warn' : 'b-dn');
+          badgeEl.textContent = g.directive.tss_weekly + ' TSS/sem';
+        }
+      }
+    }).catch(function(){});
+}
+
 function updateLoadSparklines(d){
   // CTL/ATL/TSB: últimas semanas reales de PMC_ALL (ya reconstruido desde
   // Garmin en el fetch de /athlete/dashboard, sin datos sintéticos).
@@ -2454,6 +2529,7 @@ function _showSyncBanner(secsTotal){
     patchData();
     if(typeof drawPMC === 'function') drawPMC();
     loadHealth360(tok, API);
+    loadGoalIndicators(tok, API, fresh);
     if(genEl){
       var syncLabel = fresh.last_sync ? ' · Garmin: ' + fresh.last_sync : '';
       genEl.textContent = 'Actualizado: ' + fresh.generated + syncLabel;

@@ -736,6 +736,28 @@ def race_dashboard_s19(
     }
 
 
+# ── Sprint 29: Goal Race CTL Countdown ───────────────────────────────────────
+# Bug real encontrado 2026-08-15: esta ruta estática vivía DESPUÉS de
+# GET /{race_id} en el archivo — FastAPI resuelve por orden de registro,
+# así que cualquier request a /races/goal-countdown siempre calzaba
+# primero con /{race_id} (race_id="goal-countdown"), nunca encontraba esa
+# carrera y devolvía 404 "Carrera no encontrada". El endpoint nunca fue
+# alcanzable desde que se creó (Sprint 29) — explica por qué ninguna
+# página, ni web ni app, lo llamaba nunca. Debe ir ANTES del catch-all.
+@router.get("/goal-countdown")
+def goal_race_countdown(
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    """
+    Strategic race intelligence: current CTL → target CTL → race day.
+    Returns required weekly TSS, Banister projection, peak form window.
+    Prioritizes goal races (is_goal_race=True); falls back to next upcoming.
+    """
+    from ..services.goal_race_service import compute_race_countdown
+    return compute_race_countdown(me.id, db)
+
+
 @router.get("/{race_id}")
 def get_race(
     race_id: str,
@@ -1734,19 +1756,3 @@ def get_nutrition_plan(
     total_s = (plan.total_pred_s if plan and plan.total_pred_s else 7200)
     nutrition = _gen_nutrition(total_s, race.distance or "olympic", weight_kg, sweat_l_h)
     return {"source": "estimated", "nutrition": nutrition}
-
-
-# ── Sprint 29: Goal Race CTL Countdown ───────────────────────────────────────
-
-@router.get("/goal-countdown")
-def goal_race_countdown(
-    db: Session = Depends(get_db),
-    me: User    = Depends(get_current_user),
-):
-    """
-    Strategic race intelligence: current CTL → target CTL → race day.
-    Returns required weekly TSS, Banister projection, peak form window.
-    Prioritizes goal races (is_goal_race=True); falls back to next upcoming.
-    """
-    from ..services.goal_race_service import compute_race_countdown
-    return compute_race_countdown(me.id, db)

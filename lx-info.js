@@ -75,6 +75,35 @@ var METRICS = {
     unidad: 'ratio (sin unidad)',
   },
 
+  ctl_projected: {
+    nombre: 'CTL Proyectado (28 días)',
+    emoji: '📈',
+    definicion: 'Proyecta tu <strong>Fitness (CTL) a 28 días</strong> asumiendo que mantenés la carga diaria promedio de esta semana. Es una simulación del modelo de Banister, no una predicción garantizada — si tu carga real cambia, la proyección cambia con ella.',
+    formula: 'CTL[t+1] = CTL[t] + (TSS diario − CTL[t]) × (1 − e^(−1/42))',
+    rangos: [
+      {min:-999, max:0,   label:'Bajando',   color:'#EF4444', advice:'A este ritmo tu fitness va a caer. Si es una semana de descarga intencional, está bien — si no, subí el volumen.'},
+      {min:0,    max:3,   label:'Estable',   color:'#0EA5E9', advice:'Mantenés tu nivel de fitness actual, sin construir ni perder.'},
+      {min:3,    max:999, label:'Construyendo ✓', color:'#10B981', advice:'Estás en fase de construcción real de fitness — buen ritmo de progresión.'},
+    ],
+    meta_triathlon: 'Construir CTL de forma sostenida antes del taper, sin superar un ramp rate seguro (ACWR < 1.3).',
+    pro_tip: 'Este número asume carga CONSTANTE — una sola semana muy dura o muy floja puede moverlo mucho. Mirá la tendencia, no un solo valor.',
+    unidad: 'puntos CTL',
+  },
+
+  goal_race_ctl: {
+    nombre: 'Fitness Objetivo — Carrera Meta',
+    emoji: '🎯',
+    definicion: 'Compara tu <strong>CTL actual contra el CTL que necesitás</strong> el día de tu carrera objetivo (marcada como meta en Race Day), según la distancia y los días que quedan. Te dice cuánto TSS semanal hace falta para llegar a tiempo, de forma segura.',
+    formula: 'Brecha = CTL objetivo (según distancia) − CTL actual',
+    rangos: [
+      {min:0,   max:0,   label:'Listo ✓',        color:'#10B981', advice:'Ya alcanzaste el CTL objetivo — el foco ahora es mantener y planificar bien el taper.'},
+      {min:0.01,max:999, label:'En construcción', color:'#F0A500', advice:'Todavía falta CTL para llegar a tu objetivo — revisá el TSS semanal sugerido.'},
+    ],
+    meta_triathlon: 'Cerrar la brecha con un ramp rate seguro (ACWR proyectado ≤ 1.3) antes de empezar el taper.',
+    pro_tip: 'Si la brecha es grande y quedan pocas semanas, subir el volumen de golpe es más riesgoso que ajustar el objetivo de la carrera.',
+    unidad: 'puntos CTL',
+  },
+
   compliance: {
     nombre: 'Cumplimiento Semanal',
     emoji: '📊',
