@@ -2874,6 +2874,7 @@ function loadToday(){
    antes esto era invisible, la pantalla decía "Día de descanso" aunque
    el atleta sí hubiera entrenado (solo que no era lo asignado/planeado). */
 function renderUnplannedToday(activities){
+  _todayExtraRealFlat = [];
   var html = '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Sin plan para hoy — actividad registrada</div>';
   activities.forEach(function(act){
     html += _realActivityCard(act);
@@ -2896,16 +2897,48 @@ function _planVsRealCard(t, real){
     +'</div>';
 }
 
+// Actividad real de hoy SIN plan que la explique (deporte extra, o
+// ningún plan ese día) — antes era una card muerta, sin onclick, a
+// diferencia de la del entrenamiento planificado. Pedido explícito:
+// mismo comportamiento que la otra actividad — tocar abre el detalle
+// completo (mapa/Zonas/Gráficos/Parciales), vía showExtraActivityDetail().
+var _todayExtraRealFlat = [];
 function _realActivityCard(act){
   var col = SPORT_COL[act.sport] || '#9CA3AF';
-  return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px">'
-    +'<div class="th-sport"><span class="th-sport-emoji">'+(act.icon||SPORT_EMOJI[act.sport]||'🏋')+'</span>'
+  var idx = _todayExtraRealFlat.length;
+  _todayExtraRealFlat.push(act);
+  // SPORT_EMOJI primero, no act.icon (bug real encontrado: el icon que
+  // manda el backend para nado llega con mojibake — SPORT_EMOJI ya es la
+  // fuente confiable que usa el resto de la app).
+  return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px;cursor:pointer" onclick="showExtraActivityDetail('+idx+')">'
+    +'<div class="th-sport"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
     +'<div><div class="th-name">'+(act.name||'Actividad')+'</div></div></div>'
     +'<div class="th-meta-grid">'
     +(act.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+Math.round(act.dur_min)+'</div><div class="th-meta-lbl">min</div></div>':'')
     +(act.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+act.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
     +(act.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+Math.round(act.tss)+'</div><div class="th-meta-lbl">TSS</div></div>':'')
     +'</div></div>';
+}
+
+function showExtraActivityDetail(idx){
+  var act = _todayExtraRealFlat[idx];
+  if(!act || !act.activity_id) return;
+  var metaHtml = '<div class="th-meta-grid" style="margin-top:.6rem">'
+    +(act.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+(SPORT_COL[act.sport]||'#9CA3AF')+'">'+Math.round(act.dur_min)+'</div><div class="th-meta-lbl">min</div></div>':'')
+    +(act.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+(SPORT_COL[act.sport]||'#9CA3AF')+'">'+act.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
+    +(act.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+Math.round(act.tss)+'</div><div class="th-meta-lbl">TSS</div></div>':'')
+    +'</div>';
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="display:flex;align-items:center;gap:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'
+      +'<span>'+(SPORT_EMOJI[act.sport]||'🏋')+'</span><span>'+(act.name||'Actividad')+'</span>'
+    +'</div>'
+    +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+fmtDate(act.date_iso)+'</div>'
+    + metaHtml
+    +'<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>'
+    +'<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>'
+    +'<div id="today-real-tabs-wrap"></div>';
+  document.getElementById('wo-detail-modal').style.display = 'flex';
+  _loadActivityDetail(act.activity_id, act.sport, 'today-real-map-wrap', 'today-real-tabs-wrap');
 }
 
 /* Normaliza una fila de /athlete/planned-workouts (shape distinto, sin
@@ -3215,6 +3248,7 @@ function renderTodayWorkout(plannedList, realActivities){
 
   _todayAssignsFlat = plannedList;
   _todayMatchedRealFlat = m.matched.map(function(r){ return r ? [r] : []; });
+  _todayExtraRealFlat = [];
 
   var html = plannedList.map(function(a, idx){
     return _todayCardCompactHtml(a, idx, _todayMatchedRealFlat[idx]);
