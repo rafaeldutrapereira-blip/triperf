@@ -1058,6 +1058,39 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
 </div>
 
+<!-- Compartir actividad — gap real encontrado en la auditoría web↔app
+     (2026-08-15): community.html permite publicar una actividad al feed
+     (seleccionar+caption+visibilidad), la app solo podía VER/reaccionar
+     a lo que otros publicaban, nunca publicar la propia. Mismo endpoint
+     POST /community/posts, mismos 3 campos, mismo criterio de
+     visibilidad que la web — para que un post hecho desde el celular se
+     vea idéntico al hecho desde la compu. -->
+<div id="cm-share-modal" class="ios-guide" style="display:none" onclick="closeShareActivity(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeShareActivity()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Compartir actividad</div>
+    <div style="padding:0 1rem;margin-bottom:.9rem">
+      <label style="font-size:.72rem;color:var(--muted)">Actividad</label>
+      <select id="cm-share-activity-sel" class="pw-input" style="margin-top:.3rem">
+        <option value="">— Selecciona una actividad —</option>
+      </select>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.9rem">
+      <label style="font-size:.72rem;color:var(--muted)">¿Cómo fue? (opcional)</label>
+      <textarea id="cm-share-caption" class="pw-input" rows="3" maxlength="280" placeholder="Contá cómo te sentiste..." style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.5rem">
+      <label style="font-size:.72rem;color:var(--muted)">Quién puede verla</label>
+      <select id="cm-share-visibility" class="pw-input" style="margin-top:.3rem">
+        <option value="followers">👥 Mis seguidos</option>
+        <option value="public">🌍 Público</option>
+        <option value="private">🔒 Solo yo</option>
+      </select>
+    </div>
+    <button class="wl-submit" id="cm-share-submit-btn" onclick="submitSharePost()">📤 Publicar</button>
+  </div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div>
@@ -1329,6 +1362,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
       </div><!-- /screen-sticky-head -->
 
+      <button class="wl-submit" id="cm-share-open-btn" style="margin:.7rem 1rem 0" onclick="openShareActivity()">📤 Compartir actividad</button>
       <div id="community-content"><div class="cm-empty">Cargando...</div></div>
     </div>
 
@@ -5641,9 +5675,57 @@ function communityTab(tab){
   document.getElementById('cm-tab-feed').classList.toggle('active', tab==='feed');
   document.getElementById('cm-tab-rank').classList.toggle('active', tab==='rank');
   document.getElementById('cm-tab-discover').classList.toggle('active', tab==='discover');
+  var shareBtn = document.getElementById('cm-share-open-btn');
+  if(shareBtn) shareBtn.style.display = tab==='feed' ? '' : 'none';
   if(tab === 'feed') loadCommunityFeed();
   else if(tab === 'discover') loadCommunityDiscover();
   else loadCommunityLeaderboard();
+}
+
+/* Compartir actividad — antes solo existía en la web (community.html).
+   Mismo endpoint POST /community/posts, mismo criterio: seleccionar una
+   actividad Garmin propia + caption opcional + visibilidad. */
+function openShareActivity(){
+  document.getElementById('cm-share-modal').style.display = 'flex';
+  var sel = document.getElementById('cm-share-activity-sel');
+  if(sel.options.length <= 1){
+    apiFetch('/athlete/activities?per_page=10')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        var acts = (d && d.items) || [];
+        acts.forEach(function(a){
+          var opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = (a.date_iso||'') + ' · ' + (SPORT_EMOJI[a.sport]||'') + ' ' + (a.sport||'') + ' · ' + (a.dist_km||0) + 'km';
+          sel.appendChild(opt);
+        });
+      }).catch(function(){});
+  }
+}
+function closeShareActivity(e){
+  if(e && e.target !== e.currentTarget) return;
+  document.getElementById('cm-share-modal').style.display = 'none';
+}
+function submitSharePost(){
+  var actId = document.getElementById('cm-share-activity-sel').value;
+  if(!actId){ toast('Elegí una actividad', 'err'); return; }
+  var caption = document.getElementById('cm-share-caption').value.slice(0, 280);
+  var visibility = document.getElementById('cm-share-visibility').value;
+  var btn = document.getElementById('cm-share-submit-btn');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+  apiFetch('/community/posts', {
+    method: 'POST',
+    body: JSON.stringify({ activity_id: actId, body: caption, visibility: visibility }),
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){
+      toast('Actividad compartida');
+      document.getElementById('cm-share-caption').value = '';
+      document.getElementById('cm-share-activity-sel').selectedIndex = 0;
+      closeShareActivity();
+      loadCommunityFeed();
+    })
+    .catch(function(){ toast('No se pudo publicar — intentá de nuevo', 'err'); })
+    .finally(function(){ btn.disabled = false; btn.textContent = '📤 Publicar'; });
 }
 
 function _cmAvatarHtml(u){
