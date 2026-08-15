@@ -2260,11 +2260,20 @@ function _mwRenderBikeChart(){
 // usa _mwAutoTSS(), para que el gráfico y la estimación de TSS cuenten
 // siempre la misma historia.
 function _mwRunBlocksToSegments(){
+  // Bug real encontrado 2026-08-15: _mwGetRunJson() guarda los bloques con
+  // los nombres dist_m/dur_min (línea ~1985), pero esta función leía
+  // b.dist/b.dur — funcionaba mientras el builder tenía el estado recién
+  // armado en memoria, pero al reabrir un template YA guardado (que carga
+  // directo el JSON sin renombrar, ver openEditWorkout) los campos
+  // buscados no existían y la curva quedaba siempre con los valores por
+  // defecto (400m/10min), sin importar lo que el coach hubiera guardado
+  // de verdad. Fallback a los nombres viejos por las dudas de algún
+  // estado en memoria que aún no pasó por el round-trip de guardado.
   var segs = []; var t = 0;
   _mwRunBlocks.forEach(function(b){
     if(b.type==='intervals'){
       var pace = _parsePaceMinPerKm(b.pace);
-      var onDur = Math.max(1, (b.dist||400)/1000*pace*60);
+      var onDur = Math.max(1, (b.dist_m!=null?b.dist_m:(b.dist||400))/1000*pace*60);
       var onIF  = pace<4.25?1.05:pace<4.75?0.95:pace<5.25?0.88:0.80;
       var recIF = _ZONE_IF[b.rec_zone||'Z1']||0.68;
       var recDur = b.rec_sec||90;
@@ -2275,7 +2284,7 @@ function _mwRunBlocksToSegments(){
         t += recDur;
       }
     }else{
-      var dur = (b.dur||10)*60;
+      var dur = (b.dur_min!=null?b.dur_min:(b.dur||10))*60;
       var iv  = _ZONE_IF[b.zone||'Z2']||0.79;
       segs.push({ts:t, te:t+dur, ps:iv, pe:iv});
       t += dur;
@@ -2296,17 +2305,21 @@ function _mwRenderRunChart(){
 // Las pausas (rest_sec) no avanzan distancia, así que no generan un
 // segmento propio — solo importa el metraje real nadado.
 function _mwSwimBlocksToSegments(){
+  // Mismo bug que _mwRunBlocksToSegments (ver comentario ahí): guardado
+  // usa dist_m, esta función leía dist — roto para cualquier template
+  // ya guardado y reabierto.
   var segs = []; var d = 0;
   _mwSwimBlocks.forEach(function(b){
     var iv = (b.css_pct||80)/100;
+    var bDist = b.dist_m!=null ? b.dist_m : b.dist;
     if(b.type==='main'){
-      var repDist = b.dist||100;
+      var repDist = bDist||100;
       for(var r=0;r<(b.repeat||1);r++){
         segs.push({ts:d, te:d+repDist, ps:iv, pe:iv});
         d += repDist;
       }
     }else{
-      var dist = b.dist||400;
+      var dist = bDist||400;
       segs.push({ts:d, te:d+dist, ps:iv, pe:iv});
       d += dist;
     }

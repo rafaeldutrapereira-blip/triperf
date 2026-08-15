@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '106';  // 2026-08-14: estandarización dashboard+app — Training Readiness/Fatiga Mental/Sueño/Fatiga Muscular ahora tienen sparkline + "i" info, igual que el resto de indicadores
+var BUILD_VERSION = '107';  // 2026-08-15: gráfico de forma de la serie (WorkoutBlocks) en Hoy/Semana, igual estilo visual que coach.html
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

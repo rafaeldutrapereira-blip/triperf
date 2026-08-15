@@ -2939,6 +2939,112 @@ function _garminStepLabel(sp, step){
   return {bType: bType, bMain: bMain, bSub: bSub};
 }
 
+/* Gráfico de la forma de la serie (igual estilo visual que coach.html /
+   indoor_workout.html — motor compartido workout-blocks.js), pedido
+   explícito del usuario para que el atleta reconozca la serie de un
+   vistazo, no solo lea la lista de texto. Traduce blocks_json (coach)
+   o steps_json (Garmin/TrainingPeaks) a segmentos {ts,te,ps,pe} —
+   mismo formato que ya usa WorkoutBlocks.buildSegments() para bici. */
+var _WKT_ZONE_IF = {Z1:0.68, Z2:0.79, Z3:0.87, Z4:0.94, Z5:1.05};
+function _wktParsePace(paceStr){
+  if(!paceStr) return 5.0;
+  var parts = (paceStr+'').split(':');
+  return parts.length===2 ? parseInt(parts[0])+(parseInt(parts[1]||0)/60) : (parseFloat(paceStr)||5.0);
+}
+// Misma fórmula que _mwRunBlocksToSegments() en coach.html (motor de
+// carga automática de esa página) — dist_m/dur_min es el nombre real
+// que guarda el builder; dist/dur queda de fallback por si acaso.
+function _wktRunSegs(blocks){
+  var segs = [], t = 0;
+  blocks.forEach(function(b){
+    if(b.type==='intervals'){
+      var pace = _wktParsePace(b.pace);
+      var onDur = Math.max(1, (b.dist_m!=null?b.dist_m:(b.dist||400))/1000*pace*60);
+      var onIF  = pace<4.25?1.05:pace<4.75?0.95:pace<5.25?0.88:0.80;
+      var recIF = _WKT_ZONE_IF[b.rec_zone||'Z1']||0.68;
+      var recDur = b.rec_sec||90;
+      for(var r=0;r<(b.repeat||1);r++){
+        segs.push({ts:t, te:t+onDur, ps:onIF, pe:onIF}); t += onDur;
+        segs.push({ts:t, te:t+recDur, ps:recIF, pe:recIF}); t += recDur;
+      }
+    } else {
+      var dur = (b.dur_min!=null?b.dur_min:(b.dur||10))*60;
+      var iv  = _WKT_ZONE_IF[b.zone||'Z2']||0.79;
+      segs.push({ts:t, te:t+dur, ps:iv, pe:iv}); t += dur;
+    }
+  });
+  return segs;
+}
+// Eje X en metros, no segundos — una serie de pileta se piensa en
+// metros. Mismo criterio que _mwSwimBlocksToSegments() en coach.html.
+function _wktSwimSegs(blocks){
+  var segs = [], d = 0;
+  blocks.forEach(function(b){
+    var iv = (b.css_pct||80)/100;
+    var bDist = b.dist_m!=null ? b.dist_m : b.dist;
+    if(b.type==='main'){
+      var repDist = bDist||100;
+      for(var r=0;r<(b.repeat||1);r++){ segs.push({ts:d, te:d+repDist, ps:iv, pe:iv}); d += repDist; }
+    } else {
+      var dist = bDist||400;
+      segs.push({ts:d, te:d+dist, ps:iv, pe:iv}); d += dist;
+    }
+  });
+  return segs;
+}
+// steps_json (Garmin/TrainingPeaks) no trae FTP/ritmo umbral del atleta
+// para calcular un %intensidad absoluto — se normaliza cada paso contra
+// el máximo del propio entrenamiento (0.5..1.15), suficiente para
+// mostrar la FORMA relativa de la serie, que es lo que este gráfico
+// necesita transmitir. Pasos sin target objetivo (descanso/técnica)
+// caen a un valor típico según el tipo de paso.
+function _wktStepWeight(st){
+  var v1 = st.target_low, v2 = st.target_high;
+  if(v1==null && v2==null) return null;
+  return (v1!=null && v2!=null) ? (v1+v2)/2 : (v1!=null?v1:v2);
+}
+function _wktStepDefaultIF(st){
+  var key = ((st.stepType||{}).stepTypeKey||'').toLowerCase();
+  if(key==='warmup'||key==='cooldown'||key==='recovery'||key==='rest') return 0.55;
+  return 0.80;
+}
+function _wktStepsSegs(steps){
+  var weights = steps.map(_wktStepWeight);
+  var maxW = 0;
+  weights.forEach(function(w){ if(w!=null && w>maxW) maxW = w; });
+  var segs = [], t = 0;
+  steps.forEach(function(st, i){
+    var mult = st.repeat_count||1;
+    var dur = st.duration_s || (st.distance_m ? st.distance_m/3 : 60);
+    var w = weights[i];
+    var IF = (w!=null && maxW>0) ? (0.5+0.65*(w/maxW)) : _wktStepDefaultIF(st);
+    for(var r=0;r<mult;r++){ segs.push({ts:t, te:t+dur, ps:IF, pe:IF}); t += dur; }
+  });
+  return segs;
+}
+function _wktBuildSegments(sp, blocks, steps){
+  try{
+    if(blocks && blocks.length){
+      if(sp==='bike' && window.WorkoutBlocks) return window.WorkoutBlocks.buildSegments(blocks);
+      if(sp==='run') return _wktRunSegs(blocks);
+      if(sp==='swim') return _wktSwimSegs(blocks);
+    } else if(steps && steps.length){
+      return _wktStepsSegs(steps);
+    }
+  }catch(e){}
+  return [];
+}
+function _wktChartHtml(sp, blocks, steps){
+  if(!window.WorkoutBlocks) return '';
+  var segs = _wktBuildSegments(sp, blocks, steps);
+  if(!segs.length) return '';
+  var isDist = sp==='swim' && blocks && blocks.length; // metros solo para nado por bloques de coach
+  var svg = window.WorkoutBlocks.renderCurveSvg(segs, isDist
+    ? {xFmt: function(v){ return Math.round(v)+'m'; }, xStep: 200}
+    : {xFmt: function(v){ return Math.floor(v/60)+"'"; }});
+  return '<div style="margin:.4rem 1rem .2rem;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:.5rem .6rem .3rem;overflow:hidden">'+svg+'</div>';
+}
+
 /* Renderiza la lista completa de bloques — coach (blocks_json) o pasos
    reales de Garmin (steps_json), lo que haya disponible. Devuelve '' si
    no hay nada estructurado (el caller cae a la descripción libre). */
@@ -2955,7 +3061,8 @@ function _renderBlocksHtml(sp, col, blocks, steps, repeats){
     });
   }
   if(!items.length) return '';
-  var html = '<div class="block-list" style="padding-top:0">';
+  var html = _wktChartHtml(sp, blocks, steps);
+  html += '<div class="block-list" style="padding-top:0">';
   items.forEach(function(it){
     html += '<div class="workout-block"><div class="wb-bar" style="background:'+col+'"></div>'
       +'<div class="wb-body">'
@@ -6142,5 +6249,6 @@ if('serviceWorker' in navigator){
      guard adentro de lx-info.js). -->
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
+<script src="workout-blocks.js?v=1"></script>
 </body>
 </html>
