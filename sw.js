@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '107';  // 2026-08-15: gráfico de forma de la serie (WorkoutBlocks) en Hoy/Semana, igual estilo visual que coach.html
+var BUILD_VERSION = '108';  // 2026-08-15: card "Detalle real" (mapa+parciales) en Hoy, misma actividad real que ya mostraba Comunidad
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

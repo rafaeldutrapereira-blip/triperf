@@ -3189,6 +3189,10 @@ function showTodayWorkoutDetail(idx){
   var matchedReal = _todayMatchedRealFlat[idx] || [];
   document.getElementById('wo-detail-body').innerHTML = _workoutCardHtml(a, matchedReal);
   document.getElementById('wo-detail-modal').style.display = 'flex';
+  if(matchedReal.length && matchedReal[0].activity_id){
+    var sp = (a.template && a.template.sport) || 'run';
+    _loadActivityDetail(matchedReal[0].activity_id, sp, 'today-real-map-wrap', 'today-real-splits-wrap');
+  }
 }
 
 function _workoutCardHtml(a, matchedReal){
@@ -3239,6 +3243,17 @@ function _workoutCardHtml(a, matchedReal){
   // que coincide en deporte con lo planificado.
   if(matchedReal.length){
     html += _planVsRealCard(t, matchedReal[0]);
+    // Detalle real (mapa + parciales) — pedido explícito: la comparación
+    // de 3 números no alcanzaba, quería ver la actividad ejecutada con
+    // el mismo nivel de detalle que training_detail.html/Comunidad.
+    // Placeholders — showTodayWorkoutDetail() dispara la carga async
+    // después de montar este HTML en el DOM (_loadActivityDetail
+    // necesita que los divs ya existan para escribir sobre ellos).
+    if(matchedReal[0].activity_id){
+      html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>';
+      html += '<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>';
+      html += '<div id="today-real-splits-wrap"></div>';
+    }
   }
 
   // Estado — la pantalla "Durante"/"Registrar" con timer se sacó a
@@ -5822,6 +5837,69 @@ function _cmFmtPace(s, sport){
   return '—';
 }
 
+/* Mapa + parciales reales de una actividad — extraído de lo que ya
+   probó Comunidad, para reusarlo también en "Hoy" (pedido explícito:
+   la card Planificado→Real necesitaba el detalle real de la actividad
+   ejecutada, no solo los 3 números agregados que ya mostraba). Recibe
+   los ids de los 2 divs placeholder (mapa + parciales) para poder
+   montarse en cualquier modal que ya tenga esa estructura. */
+function _loadActivityDetail(activityId, sport, mapWrapId, splitsWrapId){
+  if(_cmDetailMap){ _cmDetailMap.remove(); _cmDetailMap = null; }
+
+  var pTrack = apiFetch('/athlete/activities/'+activityId+'/track')
+    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  var pTel = apiFetch('/athlete/activities/'+activityId+'/telemetry')
+    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+
+  return Promise.all([pTrack, pTel]).then(function(results){
+    var track = results[0], tel = results[1];
+    var mapWrap = document.getElementById(mapWrapId);
+    if(mapWrap){
+      if(track && track.points && track.points.length > 1){
+        var mapElId = mapWrapId+'-map';
+        mapWrap.innerHTML = '<div class="cm-detail-map" id="'+mapElId+'"></div>';
+        requestAnimationFrame(function(){
+          var route = track.points.map(function(p){ return [p.lat, p.lon]; });
+          var col = sport==='run' ? '#EF4444' : sport==='bike' ? '#EC4899' : '#0EA5E9';
+          _cmDetailMap = L.map(mapElId, {zoomControl:true, attributionControl:true, scrollWheelZoom:false});
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+            subdomains: 'abcd', maxZoom: 20,
+          }).addTo(_cmDetailMap);
+          L.polyline(route, {color:'#ffffff', weight:6, opacity:.9}).addTo(_cmDetailMap);
+          var poly = L.polyline(route, {color:col, weight:3, opacity:1}).addTo(_cmDetailMap);
+          _cmDetailMap.fitBounds(poly.getBounds(), {padding:[20,20]});
+        });
+      } else {
+        mapWrap.innerHTML = '<div class="cm-detail-empty">📡 Sin recorrido GPS disponible para esta actividad</div>';
+      }
+    }
+
+    var splitsWrap = document.getElementById(splitsWrapId);
+    if(splitsWrap){
+      var splits = tel && tel.splits;
+      if(splits && splits.length){
+        var unit = sport==='bike' ? '5km' : sport==='run' ? 'km' : 'tramo';
+        var rows = splits.map(function(s){
+          return '<tr><td>'+s.idx+'</td>'
+            +'<td>'+_cmFmtPace(s, sport)+'</td>'
+            +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
+            +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
+          +'</tr>';
+        }).join('');
+        var paceLbl = sport==='swim' ? 'Ritmo /100m' : sport==='run' ? 'Ritmo' : 'Vel. Media';
+        splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
+          +'<div style="overflow-x:auto"><table class="cm-splits-table">'
+          +'<tr><th>#</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
+          + rows
+          +'</table></div>';
+      } else {
+        splitsWrap.innerHTML = '<div class="cm-detail-empty" style="margin-top:.7rem">Sin parciales disponibles para esta actividad</div>';
+      }
+    }
+  });
+}
+
 function showCommunityActivityDetail(idx){
   var c = _communityFeedFlat[idx];
   if(!c || !c.activity_id) return;
@@ -5844,59 +5922,7 @@ function showCommunityActivityDetail(idx){
     + '<div id="cm-detail-splits-wrap"></div>';
   document.getElementById('wo-detail-modal').style.display = 'flex';
 
-  if(_cmDetailMap){ _cmDetailMap.remove(); _cmDetailMap = null; }
-
-  var pTrack = apiFetch('/athlete/activities/'+c.activity_id+'/track')
-    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
-  var pTel = apiFetch('/athlete/activities/'+c.activity_id+'/telemetry')
-    .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
-
-  Promise.all([pTrack, pTel]).then(function(results){
-    var track = results[0], tel = results[1];
-    var mapWrap = document.getElementById('cm-detail-map-wrap');
-    if(mapWrap){
-      if(track && track.points && track.points.length > 1){
-        mapWrap.innerHTML = '<div class="cm-detail-map" id="cm-detail-map"></div>';
-        requestAnimationFrame(function(){
-          var route = track.points.map(function(p){ return [p.lat, p.lon]; });
-          var col = c.sport==='run' ? '#EF4444' : c.sport==='bike' ? '#EC4899' : '#0EA5E9';
-          _cmDetailMap = L.map('cm-detail-map', {zoomControl:true, attributionControl:true, scrollWheelZoom:false});
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
-            subdomains: 'abcd', maxZoom: 20,
-          }).addTo(_cmDetailMap);
-          L.polyline(route, {color:'#ffffff', weight:6, opacity:.9}).addTo(_cmDetailMap);
-          var poly = L.polyline(route, {color:col, weight:3, opacity:1}).addTo(_cmDetailMap);
-          _cmDetailMap.fitBounds(poly.getBounds(), {padding:[20,20]});
-        });
-      } else {
-        mapWrap.innerHTML = '<div class="cm-detail-empty">📡 Sin recorrido GPS disponible para esta actividad</div>';
-      }
-    }
-
-    var splitsWrap = document.getElementById('cm-detail-splits-wrap');
-    if(splitsWrap){
-      var splits = tel && tel.splits;
-      if(splits && splits.length){
-        var unit = c.sport==='bike' ? '5km' : c.sport==='run' ? 'km' : 'tramo';
-        var rows = splits.map(function(s){
-          return '<tr><td>'+s.idx+'</td>'
-            +'<td>'+_cmFmtPace(s, c.sport)+'</td>'
-            +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
-            +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
-          +'</tr>';
-        }).join('');
-        var paceLbl = c.sport==='swim' ? 'Ritmo /100m' : c.sport==='run' ? 'Ritmo' : 'Vel. Media';
-        splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
-          +'<div style="overflow-x:auto"><table class="cm-splits-table">'
-          +'<tr><th>#</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
-          + rows
-          +'</table></div>';
-      } else {
-        splitsWrap.innerHTML = '<div class="cm-detail-empty" style="margin-top:.7rem">Sin parciales disponibles para esta actividad</div>';
-      }
-    }
-  });
+  _loadActivityDetail(c.activity_id, c.sport, 'cm-detail-map-wrap', 'cm-detail-splits-wrap');
 }
 
 /* ── Notificaciones push (Web Push / VAPID) ─────────────────────
