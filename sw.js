@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '115';  // 2026-08-15: actividad extra no planificada en Hoy ahora clickeable, detalle completo
+var BUILD_VERSION = '116';  // 2026-08-15: notificaciones sociales (kudos/comentarios/follows) conectadas por primera vez
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
