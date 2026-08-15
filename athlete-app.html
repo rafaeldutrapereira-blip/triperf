@@ -5997,24 +5997,55 @@ function _dtChartBlock(name, values, color, unit, avgVal){
     + '<svg class="dtc-svg" viewBox="0 0 320 70" preserveAspectRatio="none">'
     + '<path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></div>';
 }
+// Mismo set completo de gráficos que training_detail.html (la web) —
+// antes la app solo mostraba FC + Potencia/Cadencia/Velocidad, dejando
+// afuera dinámica de carrera, Stamina y los gráficos por largo de nado
+// que la web sí tiene. Se deja afuera a propósito el hover interactivo,
+// las bandas de zona de fondo y el overlay de "objetivo del plan" — no
+// aportan en un modal táctil chico y agregan bastante complejidad; acá
+// el atleta viene a ver la curva + promedio/máximo, no a inspeccionar
+// punto por punto (eso ya lo tiene disponible en la web).
 function _dtChartsHtml(sport, tel){
   var series = (tel && tel.series) || {};
   var avg = function(arr){ var v = (arr||[]).filter(function(x){return x!=null;}); return v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null; };
+  var has = function(arr){ return arr && arr.some(function(v){ return v!=null; }); };
   var blocks = '';
-  blocks += _dtChartBlock('Frecuencia Cardíaca', series.hr, '#EF4444', 'bpm', avg(series.hr));
+
   if(sport==='bike'){
     blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
+    blocks += _dtChartBlock('Frecuencia Cardíaca', series.hr, '#EF4444', 'bpm', avg(series.hr));
     blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'rpm', avg(series.cadence));
+  } else if(sport==='run'){
+    blocks += _dtChartBlock('Frecuencia Cardíaca', series.hr, '#EF4444', 'bpm', avg(series.hr));
+    blocks += _dtChartBlock('Velocidad', series.speed, '#10B981', 'm/s', avg(series.speed));
+    blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
+    blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'ppm', avg(series.cadence));
+    // Dinámica de carrera + Stamina real de Garmin — cada bloque se omite
+    // solo si esta actividad no tiene ese dato cacheado (telemetría
+    // descargada antes de que se agregaran estos campos, 2026-07-31/08-01).
+    blocks += _dtChartBlock('Stamina', series.stamina, '#0EA5E9', '%', avg(series.stamina));
+    blocks += _dtChartBlock('Longitud de Zancada', series.stride_length, '#8B5CF6', 'cm', avg(series.stride_length));
+    blocks += _dtChartBlock('Tiempo de Contacto', series.ground_contact_time, '#F59E0B', 'ms', avg(series.ground_contact_time));
+    blocks += _dtChartBlock('Oscilación Vertical', series.vertical_oscillation, '#EC4899', 'cm', avg(series.vertical_oscillation));
+    blocks += _dtChartBlock('Ratio Vertical', series.vertical_ratio, '#EC4899', '%', avg(series.vertical_ratio));
+    blocks += _dtChartBlock('Factor de Carga de Impacto', series.impact_load, '#EF4444', '', avg(series.impact_load));
+    blocks += _dtChartBlock('Frecuencia Respiratoria', series.respiration_rate, '#06B6D4', 'rpm', avg(series.respiration_rate));
   } else {
-    if(series.power && series.power.some(function(v){return v!=null;})){
-      blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
-    } else if(series.speed && series.speed.some(function(v){return v!=null;})){
-      blocks += _dtChartBlock('Velocidad', series.speed, '#10B981', 'm/s', avg(series.speed));
-    }
-    if(series.cadence && series.cadence.some(function(v){return v!=null;})){
-      blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'ppm', avg(series.cadence));
-    }
+    blocks += _dtChartBlock('Frecuencia Cardíaca', series.hr, '#EF4444', 'bpm', avg(series.hr));
+    if(has(series.power)) blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
+    else if(has(series.speed)) blocks += _dtChartBlock('Velocidad', series.speed, '#10B981', 'm/s', avg(series.speed));
+    if(has(series.cadence)) blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'ppm', avg(series.cadence));
   }
+
+  // Nado — por LARGO individual (25m), no por tiempo: mismo criterio que
+  // la web (cada largo es un punto, no hay hora real asociada).
+  if(sport==='swim' && tel && tel.swim_lengths){
+    var sl = tel.swim_lengths;
+    blocks += _dtChartBlock('Ritmo por Largo', sl.pace_s_per_100m, '#0EA5E9', 's/100m', avg(sl.pace_s_per_100m));
+    blocks += _dtChartBlock('Brazadas por Largo', sl.strokes, '#F0A500', '', avg(sl.strokes));
+    blocks += _dtChartBlock('Swolf por Largo', sl.swolf, '#10B981', '', avg(sl.swolf));
+  }
+
   return blocks || '<div class="cm-detail-empty">Sin series suficientes para graficar esta actividad.</div>';
 }
 
