@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script src="routes.config.js"></script><script>LX_ROUTES.guard();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="pg-title">Histórico — LabX</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
@@ -56,6 +57,11 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-logo span { color: var(--accent); }
 .nav-logo svg.sbl-svg { width: 32px; height: 32px; flex-shrink: 0; }
+/* En mobile el sb-topbar del sidebar compartido ya muestra el logo
+   LabX (y el botón hamburguesa) — ocultar acá evita el logo duplicado
+   apilado (reportado por el usuario al agregar el sidebar a esta
+   página, que antes no lo tenía). */
+@media (max-width: 860px) { .nav-logo { display: none; } }
 .sbl-flower { animation: sbl-spin-flower 24s linear infinite reverse; transform-origin: 50px 50px; }
 .sbl-arcs   { animation: sbl-spin-arcs  40s linear infinite;         transform-origin: 50px 50px; }
 @keyframes sbl-spin-flower { to { transform: rotate(360deg); } }
@@ -412,8 +418,20 @@ footer {
   color: var(--dim); letter-spacing: .1em;
 }
 </style>
+<link rel="stylesheet" href="nav.css">
 </head>
 <body>
+
+<!-- Sidebar compartido — esta página nunca lo tuvo (huérfana de antes de
+     que existiera el sistema de sidebar), reportado por el usuario:
+     "cuando ingresa en la página performance, no hay menu bar
+     disponible" (routes.config.js: módulo 'performance' apunta acá,
+     detalle.html?metric=pmc). nav.css ya aplica body{padding-left:220px}
+     a nivel global, así que el .nav-inner centrado de esta página no
+     necesita ningún ajuste propio — el offset lo resuelve solo. -->
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
 
 <!-- NAV -->
 <nav class="nav" aria-label="Navegación">
@@ -2693,5 +2711,7 @@ function renderCycleTable(a, b, c){
 })();
 </script>
 <script src="lx-info.js"></script>
+<script src="auth.js"></script>
+<script src="nav.js" defer></script>
 </body>
 </html>
