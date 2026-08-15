@@ -814,6 +814,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-club-meta { font-size: .68rem; color: var(--dim); margin-top: .1rem; }
 .cm-club-badge { font-size: .6rem; font-weight: 700; color: var(--green); background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.3); padding: .2rem .5rem; border-radius: 20px; flex-shrink: 0; }
 .cm-club-join { font-size: .62rem; font-weight: 700; color: var(--orange); background: rgba(255,101,53,.14); border: 1px solid rgba(255,101,53,.3); padding: .2rem .5rem; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
+.cm-challenge-row { padding: .8rem 0; border-top: 1px solid var(--border); }
+.cm-challenge-row:first-child { border-top: none; }
+.cm-challenge-name { font-family: 'Barlow Condensed', sans-serif; font-size: .95rem; font-weight: 700; color: var(--text); }
+.cm-challenge-desc { font-size: .74rem; color: var(--dim); margin-top: .15rem; }
+.cm-challenge-bar-bg { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; margin-top: .5rem; }
+.cm-challenge-bar-f { height: 100%; border-radius: 3px; background: var(--orange); }
+.cm-challenge-meta { font-size: .68rem; color: var(--dim); margin-top: .3rem; }
 .cm-card-head { display: flex; align-items: center; gap: .6rem; }
 .cm-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .8rem; color: var(--orange); }
 .cm-card-name { font-size: .86rem; font-weight: 700; }
@@ -5741,7 +5748,8 @@ function communityTab(tab){
 var CLUB_SPORT_ICO = { triathlon:'🏁', running:'🏃', cycling:'🚴', swimming:'🏊', all:'⚡' };
 function _clubCardHtml(g){
   var icon = CLUB_SPORT_ICO[g.sport] || '⚡';
-  return '<div class="cm-club-card" onclick="'+(g.is_member?'':'joinClubApp(\''+g.id+'\')')+'">'
+  var tap = g.is_member ? 'openClubChallenges(\''+g.id+'\',\''+_escCm(g.name||'').replace(/'/g,"\\'")+'\')' : 'joinClubApp(\''+g.id+'\')';
+  return '<div class="cm-club-card" onclick="'+tap+'">'
     +'<div class="cm-club-ico">'+icon+'</div>'
     +'<div class="cm-club-body"><div class="cm-club-name">'+_escCm(g.name||'—')+'</div>'
     +'<div class="cm-club-meta">'+(g.n_members||0)+' miembros · '+(g.sport||'multi')+'</div></div>'
@@ -5801,6 +5809,101 @@ function submitCreateClubApp(){
     })
     .catch(function(err){ toast((err && err.detail) || 'No se pudo crear el club', 'err'); })
     .finally(function(){ btn.disabled = false; btn.textContent = 'Crear club'; });
+}
+
+/* Desafíos — quinta brecha de la auditoría: community.html tiene un tab
+   "Desafíos" pero está roto de fondo (llama a /community/groups/all/
+   challenges y /groups/global/challenges — "all"/"global"/"null" no son
+   group_id reales, el backend siempre exige un group_id real y devuelve
+   404 en silencio, fetch().catch nunca revisó el status). El backend de
+   verdad: los desafíos son POR CLUB (solo admin/coach de ESE club puede
+   crear uno, con POST /groups/{id}/challenges), y cada miembro queda
+   inscripto automáticamente al crearse (no existe un endpoint de "unirme
+   a un desafío" — nunca hizo falta). Acá se construye la versión que sí
+   funciona: tocar un club del que ya sos miembro abre sus desafíos
+   reales, con tu progreso real. */
+var _clubChallengesGroupId = null;
+var _clubChallengesGroupName = '';
+var CHALLENGE_METRIC_LBL = { km:'km', tss:'TSS', activities:'actividades', hours:'horas' };
+function openClubChallenges(groupId, groupName){
+  _clubChallengesGroupId = groupId;
+  if(groupName) _clubChallengesGroupName = groupName;
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Desafíos — '+_escCm(_clubChallengesGroupName)+'</div>'
+    +'<button class="wl-submit" style="margin:.7rem 0" onclick="openCreateChallengeApp()">+ Crear desafío</button>'
+    +'<div id="club-challenges-list"><div class="cm-detail-empty">Cargando...</div></div>';
+  document.getElementById('wo-detail-modal').style.display = 'flex';
+  loadClubChallenges();
+}
+function loadClubChallenges(){
+  var list = document.getElementById('club-challenges-list');
+  if(!list || !_clubChallengesGroupId) return;
+  apiFetch('/community/groups/'+_clubChallengesGroupId+'/challenges')
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(chs){
+      if(!chs.length){ list.innerHTML = '<div class="cm-detail-empty">Sin desafíos activos en este club todavía.</div>'; return; }
+      list.innerHTML = chs.map(function(c){
+        var pct = Math.min(100, c.my_pct||0);
+        return '<div class="cm-challenge-row">'
+          +'<div class="cm-challenge-name">'+_escCm(c.name)+'</div>'
+          +(c.description?'<div class="cm-challenge-desc">'+_escCm(c.description)+'</div>':'')
+          +'<div class="cm-challenge-bar-bg"><div class="cm-challenge-bar-f" style="width:'+pct+'%"></div></div>'
+          +'<div class="cm-challenge-meta">'+(c.my_progress||0)+' / '+c.target+' '+(CHALLENGE_METRIC_LBL[c.metric]||c.metric)+' · '+c.start_date+' → '+c.end_date+'</div>'
+        +'</div>';
+      }).join('');
+    }).catch(function(){ list.innerHTML = '<div class="cm-detail-empty">Error al cargar</div>'; });
+}
+function openCreateChallengeApp(){
+  var today = todayIso();
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Crear desafío</div>'
+    +'<div style="margin:.9rem 0"><label style="font-size:.72rem;color:var(--muted)">Nombre*</label>'
+      +'<input id="chg-name" class="pw-input" type="text" placeholder="Ej: 100km en agosto" style="margin-top:.3rem"></div>'
+    +'<div style="margin-bottom:.9rem"><label style="font-size:.72rem;color:var(--muted)">Descripción (opcional)</label>'
+      +'<textarea id="chg-desc" class="pw-input" rows="2" style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem">'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">Métrica</label>'
+        +'<select id="chg-metric" class="pw-input" style="margin-top:.3rem"><option value="km">Km</option><option value="tss">TSS</option><option value="hours">Horas</option><option value="activities">Actividades</option></select></div>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">Objetivo</label>'
+        +'<input id="chg-target" class="pw-input" type="number" min="1" step="0.1" placeholder="100" style="margin-top:.3rem"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem">'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">Desde</label>'
+        +'<input id="chg-start" class="pw-input" type="date" value="'+today+'" style="margin-top:.3rem"></div>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">Hasta</label>'
+        +'<input id="chg-end" class="pw-input" type="date" style="margin-top:.3rem"></div>'
+    +'</div>'
+    +'<button class="wl-submit" id="chg-submit-btn" onclick="submitCreateChallengeApp()">Crear desafío</button>';
+}
+function submitCreateChallengeApp(){
+  var name = document.getElementById('chg-name').value.trim();
+  var target = parseFloat(document.getElementById('chg-target').value);
+  var start = document.getElementById('chg-start').value;
+  var end = document.getElementById('chg-end').value;
+  if(!name){ toast('El nombre es obligatorio', 'err'); return; }
+  if(!target || target <= 0){ toast('El objetivo debe ser mayor a 0', 'err'); return; }
+  if(!start || !end || end < start){ toast('Revisá las fechas', 'err'); return; }
+  var btn = document.getElementById('chg-submit-btn');
+  btn.disabled = true; btn.textContent = 'Creando...';
+  apiFetch('/community/groups/'+_clubChallengesGroupId+'/challenges', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: name,
+      description: document.getElementById('chg-desc').value.trim() || null,
+      metric: document.getElementById('chg-metric').value,
+      target: target,
+      start_date: start,
+      end_date: end,
+    }),
+  }).then(function(r){
+    if(r.status === 403) return Promise.reject({detail:'Solo el admin/coach del club puede crear desafíos'});
+    return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); });
+  }).then(function(){
+    toast('Desafío creado');
+    openClubChallenges(_clubChallengesGroupId, '');
+    loadClubChallenges();
+  }).catch(function(err){ toast((err && err.detail) || 'No se pudo crear el desafío', 'err'); })
+    .finally(function(){ if(btn) { btn.disabled = false; btn.textContent = 'Crear desafío'; } });
 }
 
 /* Compartir actividad — antes solo existía en la web (community.html).
