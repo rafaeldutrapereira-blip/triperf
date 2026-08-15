@@ -319,8 +319,24 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         elif request.url.path == "/sw.js":
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"]        = "no-cache"
-        # No-cache para el resto de JS/CSS propios (lx-info.js, dash-header.js,
-        # auth.js, nav.js, etc.): mismo bug de fondo que sw.js (Cache-Control
+        # Estáticos versionados (?v=N en la URL, ej. nav.js?v=1): cache
+        # agresivo e inmutable. Encontrado en vivo el 2026-08-15 — el
+        # "no-cache, must-revalidate" de abajo (bueno para evitar servir
+        # código viejo) obliga al browser a revalidar con el servidor en
+        # CADA navegación, y sobre el túnel eso se sentía como el sidebar
+        # quedando en blanco 250-670ms en cada click de módulo (medido con
+        # Playwright contra el sitio real, parejo en todas las páginas, no
+        # solo Mi Huella/Comunidad como reportó el usuario). Con querystring
+        # de versión el archivo es inmutable POR DEFINICIÓN mientras no
+        # cambie el número — cachear 1 año sin revalidar es seguro, y el
+        # día que el JS/CSS cambie de verdad, se sube el número en el HTML
+        # (misma disciplina que BUILD_VERSION en sw.js) y la URL nueva
+        # fuerza una descarga fresca al instante, sin repetir el incidente
+        # de Cloudflare sirviendo código viejo.
+        elif request.url.query.startswith("v=") or "&v=" in request.url.query:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # No-cache para el resto de JS/CSS propios sin versionar (lx-info.js,
+        # dash-header.js, etc.): mismo bug de fondo que sw.js (Cache-Control
         # ausente = heurística por defecto del browser/CDN), encontrado en
         # vivo el 2026-08-13 — Cloudflare cacheó lx-info.js por 4h (su
         # default para .js) y siguió sirviendo una versión vieja después de
