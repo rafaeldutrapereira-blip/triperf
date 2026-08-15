@@ -821,6 +821,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-challenge-bar-bg { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; margin-top: .5rem; }
 .cm-challenge-bar-f { height: 100%; border-radius: 3px; background: var(--orange); }
 .cm-challenge-meta { font-size: .68rem; color: var(--dim); margin-top: .3rem; }
+.cm-myprofile-card { margin: .7rem 1rem; padding: 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; }
+.cm-myprofile-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--orange); overflow: hidden; }
+.cm-avatar-edit { position: absolute; bottom: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; background: var(--orange); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg2); }
+.cm-myprofile-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--text); }
+.cm-myprofile-flag { font-size: .68rem; color: var(--dim); letter-spacing: .06em; margin-top: .1rem; }
+.cm-myprofile-stat-n { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 800; }
+.cm-myprofile-stat-l { font-size: .58rem; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+.cm-myprofile-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .6rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.cm-myprofile-chip { text-align: center; }
+.cm-myprofile-chip-n { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 800; }
+.cm-myprofile-chip-l { font-size: .58rem; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; margin-top: .1rem; }
 .cm-card-head { display: flex; align-items: center; gap: .6rem; }
 .cm-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .8rem; color: var(--orange); }
 .cm-card-name { font-size: .86rem; font-weight: 700; }
@@ -1411,6 +1422,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="cm-tab" id="cm-tab-rank" onclick="communityTab('rank')">Ranking</div>
         <div class="cm-tab" id="cm-tab-discover" onclick="communityTab('discover')">Descubrir</div>
         <div class="cm-tab" id="cm-tab-clubs" onclick="communityTab('clubs')">Clubes</div>
+        <div class="cm-tab" id="cm-tab-myprofile" onclick="communityTab('myprofile')">Mi Perfil</div>
       </div>
       </div><!-- /screen-sticky-head -->
 
@@ -5728,12 +5740,76 @@ function communityTab(tab){
   document.getElementById('cm-tab-rank').classList.toggle('active', tab==='rank');
   document.getElementById('cm-tab-discover').classList.toggle('active', tab==='discover');
   document.getElementById('cm-tab-clubs').classList.toggle('active', tab==='clubs');
+  document.getElementById('cm-tab-myprofile').classList.toggle('active', tab==='myprofile');
   var shareBtn = document.getElementById('cm-share-open-btn');
   if(shareBtn) shareBtn.style.display = tab==='feed' ? '' : 'none';
   if(tab === 'feed') loadCommunityFeed();
   else if(tab === 'discover') loadCommunityDiscover();
   else if(tab === 'clubs') loadCommunityClubs();
+  else if(tab === 'myprofile') loadCommunityMyProfile();
   else loadCommunityLeaderboard();
+}
+
+/* Perfil público de Comunidad — quinta y última brecha de la auditoría:
+   community.html tiene un tab "Mi Perfil" (avatar, seguidores/seguidos,
+   stats de temporada) que la app no tenía en ningún lado — su pantalla
+   "Perfil" es otra cosa (datos personales, PATCH /athlete/profile), no
+   confundir. Mismo endpoint GET /community/profile/me y mismo
+   POST /athlete/profile/avatar que ya usa la web, sin cambios de
+   backend. */
+function loadCommunityMyProfile(){
+  var el = document.getElementById('community-content');
+  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/community/profile/me')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d){ el.innerHTML = '<div class="cm-empty">Completá tu perfil en Configuración para mostrar tu página pública.</div>'; return; }
+      var u = d.user || {};
+      var ss = d.season_stats || {};
+      var avatarHtml = u.avatar_url
+        ? '<img src="'+u.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : (u.avatar_initial||'?');
+      el.innerHTML =
+        '<div class="cm-myprofile-card">'
+          +'<div style="display:flex;gap:1rem;align-items:flex-start">'
+            +'<div style="position:relative;flex-shrink:0">'
+              +'<div class="cm-myprofile-avatar">'+avatarHtml+'</div>'
+              +'<label class="cm-avatar-edit" title="Cambiar foto">'
+                +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>'
+                +'<input type="file" accept="image/*" style="display:none" onchange="uploadMyAvatarApp(this)">'
+              +'</label>'
+            +'</div>'
+            +'<div style="flex:1;min-width:0">'
+              +'<div class="cm-myprofile-name">'+_escCm(u.name||'—')+'</div>'
+              +'<div class="cm-myprofile-flag">'+(u.country_flag||'')+' '+(u.country_code||'')+'</div>'
+              +'<div style="display:flex;gap:1.3rem;margin-top:.6rem">'
+                +'<div><div class="cm-myprofile-stat-n" style="color:#22D3EE">'+(d.follower_count||0)+'</div><div class="cm-myprofile-stat-l">Seguidores</div></div>'
+                +'<div><div class="cm-myprofile-stat-n" style="color:var(--dim)">'+(d.following_count||0)+'</div><div class="cm-myprofile-stat-l">Siguiendo</div></div>'
+              +'</div>'
+            +'</div>'
+          +'</div>'
+          +'<div class="cm-myprofile-grid">'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:#22D3EE">'+(ss.km!=null?ss.km:'—')+'</div><div class="cm-myprofile-chip-l">Km temporada</div></div>'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--purple)">'+(ss.tss!=null?Math.round(ss.tss):'—')+'</div><div class="cm-myprofile-chip-l">TSS acumulado</div></div>'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--green)">'+(ss.hours!=null?ss.hours:'—')+'h</div><div class="cm-myprofile-chip-l">Horas totales</div></div>'
+          +'</div>'
+        +'</div>';
+    })
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+function uploadMyAvatarApp(input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('Solo se aceptan imágenes', 'err'); return; }
+  var fd = new FormData();
+  fd.append('file', file);
+  fetch(API+'/athlete/profile/avatar', {
+    method: 'POST',
+    headers: Object.assign({ Authorization: 'Bearer '+_token }, _NGROK_BYPASS),
+    body: fd,
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){ input.value = ''; toast('Foto actualizada'); loadCommunityMyProfile(); loadMenuHeader(); })
+    .catch(function(){ toast('No se pudo subir la foto', 'err'); });
 }
 
 /* Clubes — cuarta brecha real de la auditoría: mismo endpoint
