@@ -503,6 +503,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .leaflet-control-zoom a { background: var(--bg3) !important; color: var(--dim) !important; border-color: var(--border) !important; }
 .leaflet-control-attribution { background: rgba(4,8,15,.65) !important; color: var(--dim) !important; font-size: .55rem !important; }
 .leaflet-control-attribution a { color: var(--dim) !important; }
+
+/* Zonas / Gráficos / Parciales dentro del detalle real — mismas 3 guías
+   que ya tenía training_detail.html (la web), pedido explícito para no
+   dejar la app 1 paso atrás. Swipe horizontal + tabs clickeables, mismo
+   patrón visual que .md-tabs. */
+.dtabs-bar { display: flex; gap: .35rem; margin: .8rem 0 .5rem; }
+.dtabs-btn { flex: 1; padding: .45rem .3rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .64rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; text-align: center; }
+.dtabs-btn.on { background: rgba(255,101,53,.15); border-color: rgba(255,101,53,.5); color: var(--orange); }
+.dtabs-pane { display: none; touch-action: pan-y; }
+.dtabs-pane.on { display: block; }
+.dtz-col { margin-bottom: .9rem; }
+.dtz-title { font-size: .62rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+.dtz-row { display: grid; grid-template-columns: 5.2rem 1fr 2.4rem 2.6rem; align-items: center; gap: .5rem; padding: .22rem 0; }
+.dtz-name { font-size: .68rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dtz-bar-bg { height: 5px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
+.dtz-bar-f { height: 100%; border-radius: 3px; }
+.dtz-pct { font-size: .66rem; font-weight: 700; color: var(--text); text-align: right; }
+.dtz-min { font-size: .6rem; color: var(--dim); text-align: right; }
+.dtc-block { margin-bottom: 1rem; }
+.dtc-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .3rem; }
+.dtc-name { font-size: .7rem; font-weight: 700; color: var(--text); }
+.dtc-ann { font-size: .6rem; color: var(--dim); }
+.dtc-svg { width: 100%; height: 70px; display: block; }
 .cm-splits-title { padding: .1rem 0 .4rem; font-size: .65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
 .cm-splits-table { width: 100%; border-collapse: collapse; font-size: .74rem; }
 .cm-splits-table th { text-align: right; font-weight: 600; color: var(--dim); font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; padding: .3rem .2rem; border-bottom: 1px solid var(--border); }
@@ -3233,7 +3256,7 @@ function showTodayWorkoutDetail(idx){
   document.getElementById('wo-detail-modal').style.display = 'flex';
   if(matchedReal.length && matchedReal[0].activity_id){
     var sp = (a.template && a.template.sport) || 'run';
-    _loadActivityDetail(matchedReal[0].activity_id, sp, 'today-real-map-wrap', 'today-real-splits-wrap');
+    _loadActivityDetail(matchedReal[0].activity_id, sp, 'today-real-map-wrap', 'today-real-tabs-wrap');
   }
 }
 
@@ -3294,7 +3317,7 @@ function _workoutCardHtml(a, matchedReal){
     if(matchedReal[0].activity_id){
       html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>';
       html += '<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>';
-      html += '<div id="today-real-splits-wrap"></div>';
+      html += '<div id="today-real-tabs-wrap"></div>';
     }
   }
 
@@ -5879,13 +5902,160 @@ function _cmFmtPace(s, sport){
   return '—';
 }
 
-/* Mapa + parciales reales de una actividad — extraído de lo que ya
-   probó Comunidad, para reusarlo también en "Hoy" (pedido explícito:
-   la card Planificado→Real necesitaba el detalle real de la actividad
-   ejecutada, no solo los 3 números agregados que ya mostraba). Recibe
-   los ids de los 2 divs placeholder (mapa + parciales) para poder
-   montarse en cualquier modal que ya tenga esa estructura. */
-function _loadActivityDetail(activityId, sport, mapWrapId, splitsWrapId){
+/* Parciales — misma lógica de siempre, incluida la columna Bloque
+   (Calentamiento/Serie/Descanso/Enfriamiento cuando el backend detectó
+   una serie real estructurada, ver _laps_are_structured en
+   athlete_routes.py). Extraída a función propia para poder montarse
+   como una pestaña más junto a Zonas y Gráficos. */
+function _dtSplitsHtml(splits, sport){
+  if(!splits || !splits.length) return '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>';
+  var hasBlocks = splits.some(function(s){ return s.intensity_type; });
+  var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
+  var unit = sport==='bike' ? '5km' : sport==='run' ? 'km' : 'tramo';
+  var rows = splits.map(function(s){
+    var blockCell = hasBlocks
+      ? '<td>'+(s.intensity_type
+          ? '<span style="display:inline-block;padding:.1rem .4rem;border-radius:8px;font-size:.6rem;font-weight:700;background:'+(blockColors[s.intensity_type]||'#7FB3CC')+'22;color:'+(blockColors[s.intensity_type]||'#7FB3CC')+'">'+s.intensity_type+'</span>'
+          : '—')+'</td>'
+      : '';
+    return '<tr><td>'+s.idx+'</td>'
+      + blockCell
+      +'<td>'+_cmFmtPace(s, sport)+'</td>'
+      +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
+      +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
+    +'</tr>';
+  }).join('');
+  var paceLbl = sport==='swim' ? 'Ritmo /100m' : sport==='run' ? 'Ritmo' : 'Vel. Media';
+  var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
+  return '<div class="cm-splits-title">Parciales ('+unit+')</div>'
+    +'<div style="overflow-x:auto"><table class="cm-splits-table">'
+    +'<tr><th>#</th>'+blockHead+'<th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
+    + rows
+    +'</table></div>';
+}
+
+/* Zonas — mismo criterio y mismos labels/colores que training_detail.html
+   (la web): barras de tiempo en zona real de FC/Potencia, calculadas en
+   el backend con el FCmax/FTP del dueño de la actividad. */
+var DT_HR_ZONE = {
+  z1:{label:'Z1 Recuperación', color:'#0EA5E9'}, z2:{label:'Z2 Aeróbico', color:'#10B981'},
+  z3:{label:'Z3 Tempo', color:'#F0A500'}, z4:{label:'Z4 Umbral', color:'#FF6535'},
+  z5:{label:'Z5 VO2max', color:'#EF4444'},
+};
+var DT_POWER_ZONE = {
+  z1_active_recovery:{label:'Z1 Recuperación', color:'#0EA5E9'}, z2_endurance:{label:'Z2 Resistencia', color:'#10B981'},
+  z3_tempo:{label:'Z3 Tempo', color:'#F0A500'}, z4_threshold:{label:'Z4 Umbral', color:'#FF6535'},
+  z5_vo2max:{label:'Z5 VO2max', color:'#EF4444'}, z6_anaerobic:{label:'Z6 Anaeróbico', color:'#A855F7'},
+  z7_neuromuscular:{label:'Z7 Neuromuscular', color:'#EC4899'},
+};
+function _dtFmtMinSec(s){ var m=Math.floor(s/60), ss=Math.round(s%60); return m+':'+(ss<10?'0':'')+ss; }
+function _dtZonesHtml(tel){
+  var zones = (tel && tel.zones) || {};
+  var cols = [];
+  if(zones.hr && zones.hr.length) cols.push({title:'Frecuencia Cardíaca', rows:zones.hr, def:DT_HR_ZONE});
+  if(zones.power && zones.power.length) cols.push({title:'Potencia', rows:zones.power, def:DT_POWER_ZONE});
+  if(!cols.length) return '<div class="cm-detail-empty">Sin FC máx / FTP configurados para calcular zonas de esta actividad.</div>';
+  return cols.map(function(col){
+    return '<div class="dtz-col"><div class="dtz-title">'+col.title+'</div>'
+      + col.rows.map(function(r){
+          var meta = col.def[r.key] || {label:r.key, color:'var(--dim)'};
+          return '<div class="dtz-row">'
+            + '<div class="dtz-name">'+meta.label+'</div>'
+            + '<div class="dtz-bar-bg"><div class="dtz-bar-f" style="width:'+r.pct+'%;background:'+meta.color+'"></div></div>'
+            + '<div class="dtz-pct">'+r.pct+'%</div>'
+            + '<div class="dtz-min">'+_dtFmtMinSec(r.seconds)+'</div>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }).join('');
+}
+
+/* Gráficos — subconjunto mobile de lo que ya mostraba training_detail.html
+   (FC siempre que haya; Potencia/Cadencia en bici; Velocidad si no hay
+   potencia) — sin hover interactivo (no aporta en un modal táctil chico),
+   solo curva + promedio/máximo, que es lo que el atleta viene a ver acá. */
+function _dtSparkPath(values, W, H, pad){
+  var idx = []; for(var i=0;i<values.length;i++){ if(values[i]!=null) idx.push(values[i]); }
+  if(idx.length < 2) return null;
+  var minV = Math.min.apply(null, idx), maxV = Math.max.apply(null, idx);
+  if(minV===maxV){ minV -= 1; maxV += 1; }
+  var span = maxV - minV, n = values.length, d = '';
+  for(i=0;i<n;i++){
+    if(values[i]==null) continue;
+    var x = pad + (i/(n-1))*(W-pad*2);
+    var y = H - pad - ((values[i]-minV)/span)*(H-pad*2);
+    d += (d?'L':'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  }
+  return {d:d, min:minV, max:maxV};
+}
+function _dtChartBlock(name, values, color, unit, avgVal){
+  if(!values || !values.length) return '';
+  var res = _dtSparkPath(values, 320, 70, 4);
+  if(!res) return '';
+  return '<div class="dtc-block"><div class="dtc-head"><span class="dtc-name">'+name+'</span>'
+    + '<span class="dtc-ann">'+(avgVal!=null?'Prom '+Math.round(avgVal)+' '+unit+' · ':'')+'Máx '+Math.round(res.max)+' '+unit+'</span></div>'
+    + '<svg class="dtc-svg" viewBox="0 0 320 70" preserveAspectRatio="none">'
+    + '<path d="'+res.d+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></div>';
+}
+function _dtChartsHtml(sport, tel){
+  var series = (tel && tel.series) || {};
+  var avg = function(arr){ var v = (arr||[]).filter(function(x){return x!=null;}); return v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null; };
+  var blocks = '';
+  blocks += _dtChartBlock('Frecuencia Cardíaca', series.hr, '#EF4444', 'bpm', avg(series.hr));
+  if(sport==='bike'){
+    blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
+    blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'rpm', avg(series.cadence));
+  } else {
+    if(series.power && series.power.some(function(v){return v!=null;})){
+      blocks += _dtChartBlock('Potencia', series.power, '#FF6535', 'W', avg(series.power));
+    } else if(series.speed && series.speed.some(function(v){return v!=null;})){
+      blocks += _dtChartBlock('Velocidad', series.speed, '#10B981', 'm/s', avg(series.speed));
+    }
+    if(series.cadence && series.cadence.some(function(v){return v!=null;})){
+      blocks += _dtChartBlock('Cadencia', series.cadence, '#F0A500', 'ppm', avg(series.cadence));
+    }
+  }
+  return blocks || '<div class="cm-detail-empty">Sin series suficientes para graficar esta actividad.</div>';
+}
+
+/* Tabs Zonas/Gráficos/Parciales — click + swipe horizontal (pedido
+   explícito: "al pasar la tela a la derecha" para ver Zonas/Gráficos,
+   igual que ya tiene training_detail.html en la web). */
+var DT_TAB_ORDER = ['zones','charts','splits'];
+function _dtSwitchTab(wrapId, tab){
+  var wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  wrap.querySelectorAll('.dtabs-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===tab); });
+  wrap.querySelectorAll('.dtabs-pane').forEach(function(p){ p.classList.toggle('on', p.dataset.pane===tab); });
+}
+function _dtWireSwipe(wrapId){
+  var wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  var x0 = null, y0 = null;
+  wrap.addEventListener('touchstart', function(e){
+    if(!e.touches || !e.touches[0]) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, {passive:true});
+  wrap.addEventListener('touchend', function(e){
+    if(x0==null || !e.changedTouches || !e.changedTouches[0]) return;
+    var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if(Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)*1.3) return; // gesto horizontal claro, no scroll vertical
+    var activeBtn = wrap.querySelector('.dtabs-btn.on');
+    var cur = activeBtn ? DT_TAB_ORDER.indexOf(activeBtn.dataset.tab) : 0;
+    var next = dx < 0 ? Math.min(DT_TAB_ORDER.length-1, cur+1) : Math.max(0, cur-1);
+    if(next !== cur) _dtSwitchTab(wrapId, DT_TAB_ORDER[next]);
+  }, {passive:true});
+}
+
+/* Mapa + Zonas/Gráficos/Parciales reales de una actividad — extraído de
+   lo que ya probó Comunidad, para reusarlo también en "Hoy" (pedido
+   explícito: la card Planificado→Real necesitaba el mismo detalle real
+   que ya tenía training_detail.html — no solo mapa+parciales, también
+   las guías Zonas y Gráficos, con swipe entre ellas). Recibe los ids de
+   los 2 divs placeholder (mapa + tabs) para poder montarse en cualquier
+   modal que ya tenga esa estructura. */
+function _loadActivityDetail(activityId, sport, mapWrapId, tabsWrapId){
   if(_cmDetailMap){ _cmDetailMap.remove(); _cmDetailMap = null; }
 
   var pTrack = apiFetch('/athlete/activities/'+activityId+'/track')
@@ -5917,43 +6087,18 @@ function _loadActivityDetail(activityId, sport, mapWrapId, splitsWrapId){
       }
     }
 
-    var splitsWrap = document.getElementById(splitsWrapId);
-    if(splitsWrap){
-      var splits = tel && tel.splits;
-      if(splits && splits.length){
-        // Bloque (Calentamiento/Serie/Descanso/Enfriamiento) — mismo dato
-        // y mismo criterio que training_detail.html (la web): el backend
-        // ya viene marcando cada parcial con su rol real dentro de la
-        // serie cuando el entrenamiento fue estructurado (ver
-        // _laps_are_structured en athlete_routes.py). Antes esta tabla
-        // (compartida con Comunidad) ignoraba ese dato — pedido explícito
-        // del usuario para que "Hoy" también lo muestre, no solo la web.
-        var hasBlocks = splits.some(function(s){ return s.intensity_type; });
-        var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
-        var unit = sport==='bike' ? '5km' : sport==='run' ? 'km' : 'tramo';
-        var rows = splits.map(function(s){
-          var blockCell = hasBlocks
-            ? '<td>'+(s.intensity_type
-                ? '<span style="display:inline-block;padding:.1rem .4rem;border-radius:8px;font-size:.6rem;font-weight:700;background:'+(blockColors[s.intensity_type]||'#7FB3CC')+'22;color:'+(blockColors[s.intensity_type]||'#7FB3CC')+'">'+s.intensity_type+'</span>'
-                : '—')+'</td>'
-            : '';
-          return '<tr><td>'+s.idx+'</td>'
-            + blockCell
-            +'<td>'+_cmFmtPace(s, sport)+'</td>'
-            +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
-            +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
-          +'</tr>';
-        }).join('');
-        var paceLbl = sport==='swim' ? 'Ritmo /100m' : sport==='run' ? 'Ritmo' : 'Vel. Media';
-        var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
-        splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
-          +'<div style="overflow-x:auto"><table class="cm-splits-table">'
-          +'<tr><th>#</th>'+blockHead+'<th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
-          + rows
-          +'</table></div>';
-      } else {
-        splitsWrap.innerHTML = '<div class="cm-detail-empty" style="margin-top:.7rem">Sin parciales disponibles para esta actividad</div>';
-      }
+    var tabsWrap = document.getElementById(tabsWrapId);
+    if(tabsWrap){
+      tabsWrap.innerHTML =
+        '<div class="dtabs-bar">'
+          + '<button class="dtabs-btn on" data-tab="zones" onclick="_dtSwitchTab(\''+tabsWrapId+'\',\'zones\')">Zonas</button>'
+          + '<button class="dtabs-btn" data-tab="charts" onclick="_dtSwitchTab(\''+tabsWrapId+'\',\'charts\')">Gráficos</button>'
+          + '<button class="dtabs-btn" data-tab="splits" onclick="_dtSwitchTab(\''+tabsWrapId+'\',\'splits\')">Parciales</button>'
+        + '</div>'
+        + '<div class="dtabs-pane on" data-pane="zones">'+_dtZonesHtml(tel)+'</div>'
+        + '<div class="dtabs-pane" data-pane="charts">'+_dtChartsHtml(sport, tel)+'</div>'
+        + '<div class="dtabs-pane" data-pane="splits">'+_dtSplitsHtml(tel && tel.splits, sport)+'</div>';
+      _dtWireSwipe(tabsWrapId);
     }
   });
 }
@@ -5977,10 +6122,10 @@ function showCommunityActivityDetail(idx){
     +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+(c.user.name||'')+' · '+fmtDate(c.date_iso)+'</div>'
     + metaHtml
     + '<div id="cm-detail-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>'
-    + '<div id="cm-detail-splits-wrap"></div>';
+    + '<div id="cm-detail-tabs-wrap"></div>';
   document.getElementById('wo-detail-modal').style.display = 'flex';
 
-  _loadActivityDetail(c.activity_id, c.sport, 'cm-detail-map-wrap', 'cm-detail-splits-wrap');
+  _loadActivityDetail(c.activity_id, c.sport, 'cm-detail-map-wrap', 'cm-detail-tabs-wrap');
 }
 
 /* ── Notificaciones push (Web Push / VAPID) ─────────────────────
