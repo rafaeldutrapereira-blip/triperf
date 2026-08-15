@@ -3406,14 +3406,18 @@ function _wkSumSet(id, realVal, planVal){
 }
 
 var _weekAssignsFlat = [];  // para poder abrir el detalle al tocar una actividad de la semana
+var _weekMatchedRealFlat = [];  // actividad real (Garmin) emparejada 1:1 con _weekAssignsFlat, por día — igual criterio que "Hoy"
 
 function renderWeekGrid(assigns, monIso, realWeek){
   realWeek = realWeek || [];
   var today = todayIso();
   var assignByDay = {};
   (assigns||[]).forEach(function(a){ assignByDay[a.date_iso] = assignByDay[a.date_iso]||[]; assignByDay[a.date_iso].push(a); });
+  var realByDay = {};
+  realWeek.forEach(function(r){ realByDay[r.date_iso] = realByDay[r.date_iso]||[]; realByDay[r.date_iso].push(r); });
 
   _weekAssignsFlat = [];
+  _weekMatchedRealFlat = [];
   var totalTss=0, totalDist=0, totalSessions=0, totalDur=0;
   var DAYS_ABR=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   var html='';
@@ -3423,6 +3427,12 @@ function renderWeekGrid(assigns, monIso, realWeek){
     var iso = _isoLocal(d);
     var isToday = iso===today;
     var dayAssigns = assignByDay[iso]||[];
+    // Emparejar plan↔real DENTRO de este día (mismo deporte, duración más
+    // parecida) — mismo _matchPlannedToReal() que ya usa "Hoy", pero
+    // corrido día por día para no cruzar un real del lunes con un plan
+    // del martes. Pedido explícito: ver plan vs resultado real de cada
+    // entrenamiento de la semana, no solo el nombre + TSS planificado.
+    var dayMatch = _matchPlannedToReal(dayAssigns, realByDay[iso]||[]).matched;
 
     html+='<div class="wk-day'+(isToday?' wk-day-today':'')+'"><div class="wk-day-head">'
       +'<span class="wk-day-name">'+DAYS_ABR[i]+'</span>'
@@ -3431,16 +3441,18 @@ function renderWeekGrid(assigns, monIso, realWeek){
 
     if(dayAssigns.length){
       html+='<div class="wk-day-workouts">';
-      dayAssigns.forEach(function(a){
+      dayAssigns.forEach(function(a, dIdx){
         var t=a.template||{};
         var sp=t.sport||'run';
-        var done=a.logs&&a.logs.length>0;
+        var real = dayMatch[dIdx];
+        var done=(a.logs&&a.logs.length>0) || !!real;
         if(t.tss) totalTss+=t.tss;
         if(t.dist_km) totalDist+=t.dist_km;
         if(t.dur_min) totalDur+=t.dur_min;
         totalSessions++;
         var idx = _weekAssignsFlat.length;
         _weekAssignsFlat.push(a);
+        _weekMatchedRealFlat.push(real ? [real] : []);
         html+='<div class="wk-wo'+(done?' wk-wo-done':'')+'" onclick="showWeekWorkoutDetail('+idx+')" style="cursor:pointer">'
           +'<div class="wk-wo-dot" style="background:'+(SPORT_COL[sp]||'#9CA3AF')+'"></div>'
           +'<div class="wk-wo-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||sp)+'</div>'
@@ -3483,6 +3495,7 @@ function showWeekWorkoutDetail(idx){
   var t = a.template || {};
   var sp = t.sport || 'run';
   var col = SPORT_COL[sp] || '#9CA3AF';
+  var matchedReal = _weekMatchedRealFlat[idx] || [];
 
   var blocks = [];
   try{ if(t.blocks_json) blocks = JSON.parse(t.blocks_json); }catch(e){}
@@ -3513,14 +3526,34 @@ function showWeekWorkoutDetail(idx){
     bodyHtml = '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.</div>';
   }
 
+  // Planificado vs Real + Detalle real (mapa/Zonas/Gráficos/Parciales) —
+  // pedido explícito: ver el mismo detalle plan-vs-resultado que ya tiene
+  // "Hoy" para cada entrenamiento de la semana, no solo el planificado.
+  // Mismos placeholders que usa showTodayWorkoutDetail() — reusar los IDs
+  // es seguro porque nunca hay 2 detalles abiertos a la vez (un solo
+  // #wo-detail-modal compartido por Hoy y Semana).
+  var realHtml = '';
+  if(matchedReal.length){
+    realHtml += _planVsRealCard(t, matchedReal[0]);
+    if(matchedReal[0].activity_id){
+      realHtml += '<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>';
+      realHtml += '<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>';
+      realHtml += '<div id="today-real-tabs-wrap"></div>';
+    }
+  }
+
   var modal = document.getElementById('wo-detail-modal');
   document.getElementById('wo-detail-body').innerHTML =
     '<div style="display:flex;align-items:center;gap:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'
       +'<span>'+(SPORT_EMOJI[sp]||'🏋')+'</span><span>'+(t.nombre||sp)+'</span>'
     +'</div>'
     +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+fmtDate(a.date_iso)+'</div>'
-    + metaHtml + noteHtml + bodyHtml;
+    + metaHtml + noteHtml + bodyHtml + realHtml;
   modal.style.display = 'flex';
+
+  if(matchedReal.length && matchedReal[0].activity_id){
+    _loadActivityDetail(matchedReal[0].activity_id, sp, 'today-real-map-wrap', 'today-real-tabs-wrap');
+  }
 }
 function closeWeekWorkoutDetail(e){
   if(e) e.stopPropagation();
