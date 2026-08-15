@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '109';  // 2026-08-15: ACWR por disciplina bajo ACWR — Carga, Parciales por bloque real (Calentamiento/Serie/Descanso/Enfriamiento)
+var BUILD_VERSION = '110';  // 2026-08-15: columna Bloque en Parciales de Hoy/Comunidad (app), igual que la web
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
