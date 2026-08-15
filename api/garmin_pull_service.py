@@ -1120,29 +1120,6 @@ class GarminPullService:
                 db.add(new_act)
                 db.flush()  # obtener ID antes de crear el post
 
-                # Mini-mapa del feed de comunidad: intentar bajar el track GPS
-                # solo para actividades outdoor nuevas (bike/run); no bloqueante.
-                if parsed["sport"] in ("bike", "run"):
-                    try:
-                        _try_download_gps_track(client, act_id)
-                    except Exception as _gps_err:
-                        logger.debug("GPS download fallo (no bloqueante) activity=%s: %s", act_id, _gps_err)
-
-                # Telemetría segundo a segundo (potencia/FC/cadencia/ritmo) para
-                # el gráfico, zonas y parciales de training_detail.html. Aplica
-                # a cualquier deporte (no requiere GPS); no bloqueante.
-                try:
-                    _try_download_telemetry(client, act_id)
-                except Exception as _tel_err:
-                    logger.debug("Telemetry download fallo (no bloqueante) activity=%s: %s", act_id, _tel_err)
-
-                # Parciales reales por lap (esencial para natación, donde la
-                # telemetría no trae distancia continua); no bloqueante.
-                try:
-                    _try_download_splits(client, act_id)
-                except Exception as _splits_err:
-                    logger.debug("Splits download fallo (no bloqueante) activity=%s: %s", act_id, _splits_err)
-
                 # B-14 Community: auto-publicar actividad con visibilidad "followers"
                 # Solo actividades con duración mínima significativa (>= 10 min)
                 if (parsed.get("dur_min") or 0) >= 10:
@@ -1170,6 +1147,32 @@ class GarminPullService:
                         logger.debug("Auto-post comunidad fallo (no bloqueante): %s", _post_err)
 
                 new_count += 1
+
+            # GPS/telemetría/parciales — se intenta en TODO sync (no solo al
+            # crear la actividad): antes esto vivía únicamente en la rama de
+            # actividad nueva, así que si el primer intento fallaba (bug real
+            # 2026-08-15: Garmin todavía no había terminado de procesar el
+            # detalle de una actividad subida hace pocos minutos — get_activity_
+            # details()/download_activity()/get_activity_splits() devuelven
+            # vacío ese momento) quedaba sin reintento para siempre, porque el
+            # siguiente sync la encontraba en `existing` y nunca volvía a
+            # llamar a estas funciones. Es seguro reintentar en cada sync: las
+            # 3 funciones ya son idempotentes (retornan de inmediato si el
+            # archivo cacheado ya existe), así que solo golpean la API de
+            # Garmin para las actividades que de verdad quedaron sin datos.
+            if parsed["sport"] in ("bike", "run"):
+                try:
+                    _try_download_gps_track(client, act_id)
+                except Exception as _gps_err:
+                    logger.debug("GPS download fallo (no bloqueante) activity=%s: %s", act_id, _gps_err)
+            try:
+                _try_download_telemetry(client, act_id)
+            except Exception as _tel_err:
+                logger.debug("Telemetry download fallo (no bloqueante) activity=%s: %s", act_id, _tel_err)
+            try:
+                _try_download_splits(client, act_id)
+            except Exception as _splits_err:
+                logger.debug("Splits download fallo (no bloqueante) activity=%s: %s", act_id, _splits_err)
 
         db.commit()
 
