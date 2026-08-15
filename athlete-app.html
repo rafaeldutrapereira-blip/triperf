@@ -305,6 +305,18 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .mkc-val svg { width: 9px; height: 9px; flex-shrink: 0; }
 .mkc-pill { font-size: .58rem; font-weight: 700; padding: .16rem .5rem; border-radius: 20px; white-space: nowrap; }
 .mkc-row.tap { cursor: pointer; }
+/* Filas "hijas" — mismo criterio que .kcr-child en dashboard.html: el
+   desglose por disciplina de ACWR se lee como apertura del indicador
+   padre, no como otro indicador al mismo nivel. */
+.mkc-row-child { padding-top:.36rem; padding-bottom:.36rem; padding-left:.7rem; position:relative; }
+.mkc-row-child::before {
+  content:''; position:absolute; left:.15rem; top:0; bottom:0; width:1px;
+  background:var(--border);
+}
+.mkc-row-child .mkc-lbl { font-size:.66rem; color:var(--dim); font-weight:500; }
+.mkc-row-child .mkc-val { font-size:.85rem; }
+.mkc-row-child .mkc-pill { font-size:.52rem; padding:.12rem .4rem; }
+.mkc-row-child .mkc-spark { width:36px; height:16px; }
 .mkc-row.tap:active { opacity: .65; }
 
 /* Detalle de indicador (modal #md-modal) — mismo lenguaje visual que
@@ -2288,6 +2300,15 @@ function updateMobileSparklines(d){
     var acwrColor = (acwrValEl && acwrValEl.style.color) || '#10B981';
     drawMobileSparkline('mspark-acwr', d.acwr_history.slice(-14).map(function(p){ return p.acwr; }), acwrColor);
   }
+  if(d.acwr_by_sport){
+    ['swim','bike','run','gym'].forEach(function(sp){
+      var info = d.acwr_by_sport[sp];
+      if(!info || !info.history || info.history.length < 2) return;
+      var valEl = document.getElementById('mv-acwr-'+sp);
+      var color = (valEl && valEl.style.color) || '#3D6880';
+      drawMobileSparkline('mspark-acwr-'+sp, info.history.slice(-14).map(function(p){ return p.acwr; }), color);
+    });
+  }
   if(d.hrv_history && d.hrv_history.length > 1){
     var hrvPts = d.hrv_history.filter(function(p){ return p.hrv != null; }).slice(-14);
     if(hrvPts.length > 1) drawMobileSparkline('mspark-hrv', hrvPts.map(function(p){ return p.hrv; }), '#22D3EE');
@@ -2366,6 +2387,20 @@ function renderStatusHealth(d){
       +'<div class="mkc-row tap" onclick="openMetricDetail(\'tsb\')">'+_mkcLbl('Forma (TSB)','tsb','mv-tsb')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tsb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tsb" style="color:'+tsbCol+'">'+(tsb>=0?'+':'')+Math.round(tsb)+'</span><span class="mkc-pill" style="background:'+tsbCol+'22;color:'+tsbCol+'">'+tsbLabel+'</span></span></div>';
     if(az && d.acwr != null){
       rows += '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')">'+_mkcLbl('ACWR (Carga)','acwr','mv-acwr')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr" style="color:'+az.color+'">'+d.acwr+'</span><span class="mkc-pill" style="background:'+az.color+'22;color:'+az.color+'">'+az.label+'</span></span></div>';
+    }
+    // ACWR por disciplina — mismo indicador desglosado por deporte, igual
+    // que en la web (dashboard.html). Mismo criterio de "datos
+    // insuficientes" que ya usa la web/detalle.html: <3 sesiones en 28
+    // días no da un ratio confiable.
+    if(d.acwr_by_sport){
+      var acwrSportLbl = {swim:'Natación', bike:'Ciclismo', run:'Trote', gym:'Prep. física'};
+      ['swim','bike','run','gym'].forEach(function(sp){
+        var info = d.acwr_by_sport[sp] || {};
+        var insufficient = info.insufficient_data || info.acwr == null;
+        var spZ = insufficient ? {label:'Sin datos', color:'#3D6880'} : (acwrZones[info.zone] || {label:'Sin datos', color:'#3D6880'});
+        var spVal = insufficient ? '—' : info.acwr;
+        rows += '<div class="mkc-row mkc-row-child tap" onclick="openMetricDetail(\'acwr\',\''+sp+'\')">'+_mkcLbl('ACWR — '+acwrSportLbl[sp],'acwr','mv-acwr-'+sp)+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr-'+sp+'" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr-'+sp+'" style="color:'+spZ.color+'">'+spVal+'</span><span class="mkc-pill" style="background:'+spZ.color+'22;color:'+spZ.color+'">'+spZ.label+'</span></span></div>';
+      });
     }
     if(d.injury_risk && d.injury_risk.score != null){
       var ir = d.injury_risk;
@@ -2561,8 +2596,13 @@ function _mdBuildSeries(){
   if(d.atl != null && (!all.atl.length || all.atl[all.atl.length-1].date < todayISO)) all.atl.push({date:todayISO, value:Math.round(d.atl*10)/10});
   if(d.tsb != null && (!all.tsb.length || all.tsb[all.tsb.length-1].date < todayISO)) all.tsb.push({date:todayISO, value:Math.round(d.tsb*10)/10});
 
-  all.acwr = (d.acwr_history||[]).map(function(p){ return {date:p.dt, value:p.acwr}; }).filter(function(p){ return p.value != null; });
-  if(d.acwr != null && (!all.acwr.length || all.acwr[all.acwr.length-1].date < todayISO)) all.acwr.push({date:todayISO, value:d.acwr});
+  // ACWR por disciplina — mismo patrón que VO2 running/cycling: _mdSport
+  // selecciona la serie de esa disciplina en vez de la agregada.
+  var acwrSportInfo = _mdSport ? ((d.acwr_by_sport||{})[_mdSport] || {}) : null;
+  var acwrSrc    = acwrSportInfo ? acwrSportInfo.history : d.acwr_history;
+  var acwrLatest = acwrSportInfo ? acwrSportInfo.acwr    : d.acwr;
+  all.acwr = (acwrSrc||[]).map(function(p){ return {date:p.dt, value:p.acwr}; }).filter(function(p){ return p.value != null; });
+  if(acwrLatest != null && (!all.acwr.length || all.acwr[all.acwr.length-1].date < todayISO)) all.acwr.push({date:todayISO, value:acwrLatest});
 
   all.hrv = (d.hrv_history||[]).map(function(p){ return {date:p.dt, value:p.hrv}; }).filter(function(p){ return p.value != null; });
   if(d.hrv_last_night != null && all.hrv.length && all.hrv[all.hrv.length-1].date < todayISO) all.hrv.push({date:todayISO, value:d.hrv_last_night});
@@ -2594,7 +2634,9 @@ function _mdShortDate(iso, showYear){
 
 function _mdRender(){
   var cfg = MD_MC[_mdMetric];
-  var titleSuffix = (_mdMetric === 'vo2' && _mdSport) ? (_mdSport === 'cycling' ? ' — Ciclismo' : ' — Running') : '';
+  var _ACWR_SPORT_SUFFIX = {swim:' — Natación', bike:' — Ciclismo', run:' — Trote', gym:' — Prep. física'};
+  var titleSuffix = (_mdMetric === 'vo2' && _mdSport) ? (_mdSport === 'cycling' ? ' — Ciclismo' : ' — Running')
+    : (_mdMetric === 'acwr' && _mdSport) ? (_ACWR_SPORT_SUFFIX[_mdSport] || '') : '';
   document.getElementById('md-title').textContent = cfg.title + titleSuffix;
   document.getElementById('md-sub').textContent = cfg.sub;
   document.getElementById('md-hero-val').style.color = cfg.color;

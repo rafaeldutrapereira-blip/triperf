@@ -224,6 +224,19 @@ ul { list-style: none; }
 .kcr-val .u { font-family:'Inter',sans-serif; font-size:.7rem; font-weight:600; color:var(--dim); margin-left:.15rem; }
 .kcr .badge { flex-shrink:0; }
 .kcr-spark { flex-shrink:0; display:block; }
+/* Filas "hijas" — desglose por disciplina de un indicador padre (ej. ACWR
+   por deporte bajo ACWR — Carga). Mismo formato, pero un escalón más chico
+   y con guía visual a la izquierda, para que se lea como la apertura del
+   indicador de arriba y no como otro indicador más al mismo nivel. */
+.kcr-child { padding-top:.55rem; padding-bottom:.55rem; padding-left:.85rem; position:relative; }
+.kcr-child::before {
+  content:''; position:absolute; left:.2rem; top:0; bottom:0; width:1px;
+  background:var(--border2);
+}
+.kcr-child .kcr-label { font-size:.68rem; color:var(--dim); }
+.kcr-child .kcr-val { font-size:1.25rem; }
+.kcr-child .badge { font-size:.58rem; padding:.1rem .38rem; }
+.kcr-child .kcr-spark { width:38px; height:17px; }
 .kcr-more-link {
   display:block; text-align:right; margin-top:.6rem; padding-top:.7rem; border-top:1px solid var(--border2);
   font-family:'Oswald',sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.05em;
@@ -980,6 +993,29 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-val">ACWR — Carga</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-val" style="color:#10B981">1.18</span><span class="badge" id="kc-acwr-badge" style="background:rgba(16,185,129,.18);color:#10B981;border-color:rgba(16,185,129,.35)">Óptimo</span></span>
         </div>
+        <!-- ACWR por disciplina — mismo indicador desglosado por deporte
+             (pedido explícito: un ACWR agregado óptimo puede esconder un
+             pico de carga en una sola disciplina). Mismo estándar que el
+             resto: sparkline, "i" de información (reusa el mismo texto de
+             lx-info.js que ACWR — Carga, es la misma métrica filtrada por
+             deporte), click → detalle.html?metric=acwr&sport=X (misma
+             página que ya tiene la sección "por disciplina" completa). -->
+        <div class="kcr kcr-child" id="kc-acwr-swim" onclick="goMetric('acwr','swim')" role="button" tabindex="0" aria-label="Ver histórico ACWR Natación">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-swim-val">ACWR — Natación</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr-swim" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-swim-val">—</span><span class="badge" id="kc-acwr-swim-badge">—</span></span>
+        </div>
+        <div class="kcr kcr-child" id="kc-acwr-bike" onclick="goMetric('acwr','bike')" role="button" tabindex="0" aria-label="Ver histórico ACWR Ciclismo">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-bike-val">ACWR — Ciclismo</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-bike-val">—</span><span class="badge" id="kc-acwr-bike-badge">—</span></span>
+        </div>
+        <div class="kcr kcr-child" id="kc-acwr-run" onclick="goMetric('acwr','run')" role="button" tabindex="0" aria-label="Ver histórico ACWR Trote">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-run-val">ACWR — Trote</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-run-val">—</span><span class="badge" id="kc-acwr-run-badge">—</span></span>
+        </div>
+        <div class="kcr kcr-child" id="kc-acwr-gym" onclick="goMetric('acwr','gym')" role="button" tabindex="0" aria-label="Ver histórico ACWR Preparación física">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="acwr" data-lx-info-val="#kc-acwr-gym-val">ACWR — Prep. física</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-acwr-gym" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-acwr-gym-val">—</span><span class="badge" id="kc-acwr-gym-badge">—</span></span>
+        </div>
         <div class="kcr" id="kc-injury" style="display:none" role="button" tabindex="0" aria-label="Riesgo de lesión">
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="injury_risk" data-lx-info-val="#kc-injury-num">Riesgo de Lesión</span></span>
           <span class="kcr-right"><span class="kcr-val"><span id="kc-injury-num">—</span><span class="u">/100</span></span><span class="badge" id="kc-injury-badge">—</span></span>
@@ -1268,6 +1304,18 @@ function updateLoadSparklines(d){
     var acwrColor = (acwrValEl && acwrValEl.style.color) || '#10B981';
     var recentAcwr = d.acwr_history.slice(-14);
     drawSparkline('spark-acwr', recentAcwr.map(function(p){ return p.acwr; }), acwrColor);
+  }
+  // ACWR por disciplina — mismo criterio (últimos 14 puntos del historial
+  // real 7:28 de cada deporte, ya viene armado desde el backend).
+  if(d.acwr_by_sport){
+    ['swim','bike','run','gym'].forEach(function(sp){
+      var info = d.acwr_by_sport[sp];
+      if(!info || !info.history || info.history.length < 2) return;
+      var valEl = document.getElementById('kc-acwr-'+sp+'-val');
+      var color = (valEl && valEl.style.color) || '#3D6880';
+      var recent = info.history.slice(-14);
+      drawSparkline('spark-acwr-'+sp, recent.map(function(p){ return p.acwr; }), color);
+    });
   }
 
   // HRV / FC reposo: historial real de Garmin (hrv_history / rhr_history,
@@ -2020,6 +2068,37 @@ function patchData(){
       acwrBadge.style.background  = z.color+'18';
     }
     if(acwrTip) acwrTip.textContent = z.tip;
+  }
+
+  // ACWR por disciplina — mismos 5 colores/labels de zona que el ACWR
+  // agregado de arriba, más el caso "datos insuficientes" (<3 sesiones en
+  // 28 días — mismo criterio que ya usa detalle.html?metric=acwr, no un
+  // número confiable con tan pocas sesiones).
+  if(d.acwr_by_sport){
+    var acwrZones = {
+      danger:  {label:'⚠ Alto riesgo', color:'#EF4444'},
+      warning: {label:'Carga alta',    color:'#F0A500'},
+      optimal: {label:'Óptimo',        color:'#10B981'},
+      low:     {label:'Sub-carga',     color:'#0EA5E9'},
+      no_data: {label:'Sin datos',     color:'#3D6880'},
+    };
+    ['swim','bike','run','gym'].forEach(function(sp){
+      var info = d.acwr_by_sport[sp] || {};
+      var valEl   = document.getElementById('kc-acwr-'+sp+'-val');
+      var badgeEl = document.getElementById('kc-acwr-'+sp+'-badge');
+      var cardEl  = document.getElementById('kc-acwr-'+sp);
+      var insufficient = info.insufficient_data || info.acwr == null;
+      var z = insufficient ? acwrZones.no_data : (acwrZones[info.zone] || acwrZones.no_data);
+      var label = insufficient ? 'Datos insuficientes' : z.label;
+      if(valEl)   { valEl.textContent = insufficient ? '—' : info.acwr; valEl.style.color = z.color; }
+      if(cardEl)  cardEl.style.setProperty('--kc', z.color);
+      if(badgeEl){
+        badgeEl.textContent = label;
+        badgeEl.style.color = z.color;
+        badgeEl.style.borderColor = z.color+'55';
+        badgeEl.style.background  = z.color+'18';
+      }
+    });
   }
 
   // Injury Risk — card "¿Cómo va mi carga?": motor oficial ya consolidado
