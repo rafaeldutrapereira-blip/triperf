@@ -2141,7 +2141,7 @@ function loadStatusHealth(){
     if(!d) return;
     if(h360){
       if(h360.garmin_today) d.training_readiness_garmin = h360.garmin_today.training_readiness;
-      if(h360.mental) { d.mental_score = h360.mental.latest_score; d.mental_level = h360.mental.latest_level; }
+      if(h360.mental) { d.mental_score = h360.mental.latest_score; d.mental_level = h360.mental.latest_level; d.mental_trend_7d = h360.mental.trend_7d; }
     }
     /* Se cachea el payload crudo de /athlete/dashboard para que el
        detalle de indicador (openMetricDetail) reuse EXACTAMENTE la
@@ -2242,8 +2242,7 @@ function toggleInsightWhyMobile(){
    fija QUÉ métrica mostrar, data-lx-info-val="#id" apunta al span con
    el valor actual ya renderizado (lx-info.js lo lee con querySelector
    al momento del click, no hace falta pasarlo ahora). Sin infoId, cae
-   a un <span> plano sin ícono — mismo criterio que la web para
-   Sueño/Fatiga muscular (sin entrada en lx-info.js todavía). */
+   a un <span> plano sin ícono. */
 function _mkcLbl(text, infoId, valId){
   if(!infoId) return '<span class="mkc-lbl">'+text+'</span>';
   return '<span class="mkc-lbl"><span class="mkc-lbl-main" data-lx-info="'+infoId+'"'+(valId?' data-lx-info-val="#'+valId+'"':'')+'>'+text+'</span></span>';
@@ -2309,6 +2308,28 @@ function updateMobileSparklines(d){
   if(d.vo2_history_cycling && d.vo2_history_cycling.length > 1){
     var vbike = d.vo2_history_cycling.filter(function(p){ return p.vo2 != null; }).slice(-14);
     if(vbike.length > 1) drawMobileSparkline('mspark-vo2-bike', vbike.map(function(p){ return p.vo2; }), '#FF6535');
+  }
+  // Training Readiness/Fatiga Mental/Sueño/Fatiga muscular — auditoría de
+  // estandarización 2026-08-14 (mismo pedido del usuario, esta vez
+  // reportado directo sobre dashboard.html — se replica acá igual).
+  if(d.training_readiness_history && d.training_readiness_history.length > 1){
+    var trPts = d.training_readiness_history.filter(function(p){ return p.tr != null; }).slice(-14);
+    if(trPts.length > 1) drawMobileSparkline('mspark-tr', trPts.map(function(p){ return p.tr; }), '#0EA5E9');
+  }
+  if(d.mental_trend_7d && d.mental_trend_7d.length > 1){
+    var mPts = d.mental_trend_7d.filter(function(p){ return p.score != null; });
+    var mColor = (document.getElementById('mv-mental') || {}).style.color || '#10B981';
+    if(mPts.length > 1) drawMobileSparkline('mspark-mental', mPts.map(function(p){ return p.score; }), mColor);
+  }
+  if(d.sleep_history && d.sleep_history.length > 1){
+    var sleepPts = d.sleep_history.filter(function(p){ return p.h != null; }).slice(-14);
+    if(sleepPts.length > 1) drawMobileSparkline('mspark-sleep', sleepPts.map(function(p){ return p.h; }), '#A855F7');
+  }
+  if(pmc.length > 1){
+    var fatPts = pmc.slice(-14).map(function(p){
+      return Math.min(100, Math.max(0, Math.round(50 - (p.ctl - p.atl))));
+    });
+    drawMobileSparkline('mspark-fatmusc', fatPts, '#F0A500');
   }
 }
 
@@ -2378,31 +2399,31 @@ function renderStatusHealth(d){
   if(d.training_readiness_garmin != null){
     var trg = d.training_readiness_garmin;
     var trgCol = trg >= 70 ? '#10B981' : trg >= 40 ? '#F0A500' : '#EF4444';
-    hItems += '<div class="mkc-row">'+_mkcLbl('Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span>','training_readiness_garmin')+'<span class="mkc-right"><span class="mkc-val" style="color:'+trgCol+'">'+Math.round(trg)+'</span></span></div>';
+    hItems += '<div class="mkc-row">'+_mkcLbl('Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span>','training_readiness_garmin')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:'+trgCol+'">'+Math.round(trg)+'</span></span></div>';
   }
   if(d.mental_score != null){
     // MentalFatigueScore.level: peak/good (mejor) → moderate → low/critical
     // (peor) — mismos 5 niveles de mental_routes.py::_mfs_level().
     var MFS_UI_MOB = {peak:'#10B981', good:'#0EA5E9', moderate:'#F0A500', low:'#F97316', critical:'#EF4444'};
     var mCol = MFS_UI_MOB[d.mental_level] || '#9CA3AF';
-    hItems += '<div class="mkc-row tap" onclick="goScreen(\'screen-mental\')">'+_mkcLbl('Fatiga Mental','mental_fatigue')+'<span class="mkc-right"><span class="mkc-val" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
+    hItems += '<div class="mkc-row tap" onclick="goScreen(\'screen-mental\')">'+_mkcLbl('Fatiga Mental','mental_fatigue')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-mental" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-mental" style="color:'+mCol+'">'+Math.round(d.mental_score)+'</span></span></div>';
   }
   if(d.sleep_total_h != null){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">Sueño</span><span class="mkc-right"><span class="mkc-val" style="color:#A855F7">'+h+'h'+(m?' '+m+'m':'')+'</span></span></div>';
+    hItems += '<div class="mkc-row">'+_mkcLbl('Sueño','sleep')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-sleep" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:#A855F7">'+h+'h'+(m?' '+m+'m':'')+'</span></span></div>';
   }
   if(d.tsb != null){
     /* Misma fórmula que dashboard.html (la web): traducción cualitativa
        de TSB, no el mismo número que "Forma (TSB)" de la otra card —
        agregada acá 2026-08-14 para mantener la app igual a la web tras
        sacar el gauge "Estado del Atleta" (que ya no existe en ninguna
-       de las 2 plataformas). Sin sparkline/i-info — igual que en la
-       web, no hay entrada de "sleep"/"fatiga muscular" en lx-info.js
-       ni historial propio para estos 2 (derivados, no series Garmin). */
+       de las 2 plataformas). Estandarizada 2026-08-14: ahora sí tiene
+       sparkline (TSB derivado de pmc) e ícono "i" (entradas sleep/
+       muscle_fatigue nuevas en lx-info.js), igual que dashboard.html. */
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
     var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
     var fatCol = fatPct < 25 ? '#10B981' : fatPct < 50 ? '#0EA5E9' : fatPct < 75 ? '#F0A500' : '#EF4444';
-    hItems += '<div class="mkc-row"><span class="mkc-lbl">Fatiga muscular</span><span class="mkc-right"><span class="mkc-val" style="color:'+fatCol+'">'+fatLabel+'</span></span></div>';
+    hItems += '<div class="mkc-row">'+_mkcLbl('Fatiga muscular','muscle_fatigue')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-fatmusc" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:'+fatCol+'">'+fatLabel+'</span></span></div>';
   }
   if(hItems){
     var hoySev = (d.insight && d.insight.severity) || 'neutral';

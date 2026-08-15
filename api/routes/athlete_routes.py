@@ -851,6 +851,14 @@ def athlete_dashboard(
         {"dt": r.date_iso, "bb": r.body_battery_end}
         for r in _health_90 if r.body_battery_end is not None
     ]
+    # Training Readiness (Garmin) — misma tabla/ventana que hrv_history/
+    # rhr_history/bb_history, solo faltaba exponerla. Antes esta fila del
+    # dashboard mostraba el valor de hoy sin línea de tendencia porque no
+    # existía este array (auditoría de estandarización 2026-08-14).
+    training_readiness_history = [
+        {"dt": r.date_iso, "tr": r.training_readiness}
+        for r in _health_90 if r.training_readiness is not None
+    ]
     # "running" (generic) es lo que Garmin Connect muestra como "VO2 Max"
     # en el reloj/app — se prioriza de forma CONSISTENTE en toda la serie
     # (no por fila) para no mezclar dos métricas distintas en un mismo
@@ -1062,6 +1070,7 @@ def athlete_dashboard(
         "hrv_history":   hrv_history,
         "rhr_history":   rhr_history,
         "bb_history":    bb_history,
+        "training_readiness_history": training_readiness_history,
         "vo2max_garmin": vo2max_garmin,
         "vo2_history":   vo2_history,
         "vo2max_running_garmin": vo2max_running_garmin,

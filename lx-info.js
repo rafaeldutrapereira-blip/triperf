@@ -181,6 +181,35 @@ var METRICS = {
     unidad: '% (0-100)',
   },
 
+  sleep: {
+    nombre: 'Sueño — Horas de la última noche',
+    emoji: '🌙',
+    definicion: 'Total de horas dormidas anoche según tu reloj Garmin (incluye fases profunda/REM/liviana). Base del descanso y la recuperación — un déficit sostenido afecta HRV, Body Battery y el Recovery Score de los días siguientes.',
+    formula: 'Medido por el sensor de sueño de Garmin (movimiento + FC + HRV durante la noche)',
+    rangos: [
+      {min:0,   max:6,   label:'Insuficiente',  color:'#EF4444', advice:'Menos de 6h sostenido afecta recuperación y rendimiento. Prioriza dormir más esta semana.'},
+      {min:6,   max:7,   label:'Ajustado',       color:'#F0A500', advice:'Por debajo del rango ideal para un atleta en carga. Bien ocasionalmente, no como rutina.'},
+      {min:7,   max:999, label:'Adecuado ✓',    color:'#10B981', advice:'Rango recomendado para atletas en entrenamiento (7-9h).'},
+    ],
+    pro_tip: 'Ver el histórico completo (incluye fases de sueño profundo/REM) en la guía de Bienestar → pestaña Sueño.',
+    unidad: 'horas',
+  },
+
+  muscle_fatigue: {
+    nombre: 'Fatiga Muscular',
+    emoji: '💪',
+    definicion: 'Estimación directa de <strong>TSB (Training Stress Balance)</strong> — no es una medición muscular separada, es la misma métrica de forma/fatiga de la card "¿Cómo va mi carga?" traducida a una escala de 0-100 más intuitiva (fatiga = 50 - TSB). Cuanto más carga acumulada sin recuperar, más alta la fatiga.',
+    formula: 'Fatiga % = 50 - TSB, acotado a 0-100 (TSB = CTL - ATL)',
+    rangos: [
+      {min:0,  max:25,  label:'Baja',      color:'#10B981', advice:'Poca fatiga acumulada — buen momento para carga o intensidad.'},
+      {min:25, max:50,  label:'Moderada',  color:'#0EA5E9', advice:'Fatiga normal de un bloque de entrenamiento activo.'},
+      {min:50, max:75,  label:'Media',     color:'#F0A500', advice:'Carga acumulándose. Vigila sueño y HRV los próximos días.'},
+      {min:75, max:100, label:'Alta',      color:'#EF4444', advice:'Fatiga alta — considera un día de recuperación o reducir volumen.'},
+    ],
+    pro_tip: 'Como es un derivado directo de TSB, el histórico real (con la misma línea de tendencia) está en la card "¿Cómo va mi carga?" → TSB — Forma.',
+    unidad: '% (0-100, invertido: más alto = más fatiga)',
+  },
+
   injury_risk: {
     nombre: 'Riesgo de Lesión',
     emoji: '🛡',

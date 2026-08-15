@@ -1008,30 +1008,38 @@ ul { list-style: none; }
         <!-- Panel de Salud 360° (Fase 2 Sprint D, 2026-08-11): Training
              Readiness es el score PROPIO de Garmin — se sincroniza desde
              hace tiempo pero nunca se mostraba en ningún lado. Distinto
-             del "Readiness" que ya calcula LabX (gauge de arriba). -->
+             del "Readiness" que ya calcula LabX (gauge de arriba).
+             Estandarizada 2026-08-14 (auditoría del usuario: estos 4
+             indicadores no tenían línea de tendencia/"i"/click-a-histórico
+             como el resto) — sparkline real desde training_readiness_history
+             (nuevo, GarminHealthDaily.training_readiness por día). -->
         <div class="kcr" id="kc-tr" style="display:none" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Training Readiness de Garmin">
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="training_readiness_garmin">Training Readiness <span style="color:var(--dim);font-weight:400">(Garmin)</span></span></span>
-          <span class="kcr-right"><span class="kcr-val" id="kc-tr-val">—</span><span id="badge-tr" class="badge">—</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-tr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-tr-val">—</span><span id="badge-tr" class="badge">—</span></span>
         </div>
+        <!-- Fatiga Mental sigue llevando a mental.html (no a detalle.html
+             como el resto) a propósito: ahí vive el histórico real completo
+             (Score + 30 protocolos), sería peor UX forzarlo al chart
+             genérico de "wellbeing". El sparkline usa el mismo trend_7d
+             real de /athlete/health-360 que ya consume mental.html. -->
         <div class="kcr" id="kc-mental" style="display:none" onclick="location.href='mental.html'" role="button" tabindex="0" aria-label="Ver estado mental">
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="mental_fatigue">Fatiga Mental</span></span>
-          <span class="kcr-right"><span class="kcr-val" id="kc-mental-val">—</span><span id="badge-mental" class="badge">—</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-mental" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kc-mental-val">—</span><span id="badge-mental" class="badge">—</span></span>
         </div>
         <!-- Sueño y Fatiga muscular — movidas acá 2026-08-14 desde la
-             card "Estado del Atleta" (eliminada, pedido explícito del
-             usuario): esta card ya es el hub de "todo lo de hoy", tiene
-             más sentido acá que en un gauge aparte. Sin ícono "i" (igual
-             que antes en el gauge) porque no hay entrada en lx-info.js
-             para "sleep" — agregar data-lx-info acá sin esa entrada
-             repetiría el bug real "Métrica no encontrada" ya corregido
-             antes esta misma sesión para otras métricas. -->
-        <div class="kcr" style="cursor:default" aria-label="Sueño">
-          <span class="kcr-label"><span class="kcr-label-main">Sueño</span></span>
-          <span class="kcr-right"><span class="kcr-val" id="w-sleep-val">—</span></span>
+             ex-card "Estado del Atleta". Estandarizadas el mismo día:
+             ahora sí tienen sparkline (sleep_history / TSB derivado de
+             PMC_ALL) e ícono "i" (nuevas entradas sleep/muscle_fatigue en
+             lx-info.js) — antes no tenían ninguno de los 2. Fatiga
+             muscular lleva a TSB (su métrica fuente real); Sueño lleva al
+             histórico de bienestar, igual que HRV/FC Reposo/Body Battery. -->
+        <div class="kcr" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico de sueño">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="sleep">Sueño</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-sleep" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="w-sleep-val">—</span></span>
         </div>
-        <div class="kcr" style="cursor:default" aria-label="Fatiga muscular">
-          <span class="kcr-label"><span class="kcr-label-main">Fatiga muscular</span></span>
-          <span class="kcr-right"><span class="kcr-val" id="w-fat-val" style="font-size:.85rem">—</span></span>
+        <div class="kcr" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB (fuente de fatiga muscular)">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="muscle_fatigue">Fatiga muscular</span></span>
+          <span class="kcr-right"><svg class="kcr-spark" id="spark-fatmusc" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="w-fat-val" style="font-size:.85rem">—</span></span>
         </div>
         <a href="detalle.html?metric=wellbeing" class="kcr-more-link">Ver histórico de bienestar completo →</a>
       </div>
@@ -1293,6 +1301,28 @@ function updateLoadSparklines(d){
   if(d.vo2_history_cycling && d.vo2_history_cycling.length > 1){
     var vo2BikePts = d.vo2_history_cycling.filter(function(p){ return p.vo2 != null; }).slice(-14);
     if(vo2BikePts.length > 1) drawSparkline('spark-vo2-bike', vo2BikePts.map(function(p){ return p.vo2; }), '#FF6535');
+  }
+
+  // Training Readiness (Garmin): mismo array/ventana que hrv_history/
+  // rhr_history/bb_history — auditoría de estandarización 2026-08-14.
+  if(d.training_readiness_history && d.training_readiness_history.length > 1){
+    var trPts = d.training_readiness_history.filter(function(p){ return p.tr != null; }).slice(-14);
+    if(trPts.length > 1) drawSparkline('spark-tr', trPts.map(function(p){ return p.tr; }), '#0EA5E9');
+  }
+  // Sueño (horas/noche): mismo sleep_history que ya alimenta la card de
+  // detalle de bienestar.
+  if(d.sleep_history && d.sleep_history.length > 1){
+    var sleepPts = d.sleep_history.filter(function(p){ return p.h != null; }).slice(-14);
+    if(sleepPts.length > 1) drawSparkline('spark-sleep', sleepPts.map(function(p){ return p.h; }), '#A855F7');
+  }
+  // Fatiga muscular: no tiene tabla propia — se deriva de TSB (50-TSB,
+  // igual fórmula que el valor puntual de hoy), reutilizando el mismo
+  // PMC_ALL ya cargado para CTL/ATL/TSB arriba.
+  if(typeof PMC_ALL !== 'undefined' && PMC_ALL && PMC_ALL.length > 1){
+    var fatPts = PMC_ALL.slice(-14).map(function(p){
+      return Math.min(100, Math.max(0, Math.round(50 - (p.ctl - p.atl))));
+    });
+    drawSparkline('spark-fatmusc', fatPts, '#F0A500');
   }
 }
 
@@ -2208,6 +2238,13 @@ function loadHealth360(tok, API){
         bMental.textContent = mCfg.label;
         bMental.style.background = mCfg.color + '2e';
         bMental.style.color = mCfg.color;
+
+        // Sparkline: mismo trend_7d real que ya trae este endpoint (usado
+        // también en mental.html), auditoría de estandarización 2026-08-14.
+        if(mental.trend_7d && mental.trend_7d.length > 1){
+          var mPts = mental.trend_7d.filter(function(p){ return p.score != null; });
+          if(mPts.length > 1) drawSparkline('spark-mental', mPts.map(function(p){ return p.score; }), mCfg.color);
+        }
       }
     })
     .catch(function(){});

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '105';  // 2026-08-14: fix real — VO2max separaba mal running/cycling (Garmin guarda ambos, se mezclaban con "or"); ahora /analytics/vo2max?sport= + toggle en Progreso
+var BUILD_VERSION = '106';  // 2026-08-14: estandarización dashboard+app — Training Readiness/Fatiga Mental/Sueño/Fatiga Muscular ahora tienen sparkline + "i" info, igual que el resto de indicadores
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
