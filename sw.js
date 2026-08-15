@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '121';  // 2026-08-15: CTL Proyectado + Fitness objetivo en ¿Hacia dónde voy?, fix ruteo /races/goal-countdown
+var BUILD_VERSION = '122';  // 2026-08-15: CTL Proyectado/Fitness objetivo en la app + ojo mostrar/ocultar contraseña en login
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
