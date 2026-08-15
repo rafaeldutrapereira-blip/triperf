@@ -5921,18 +5921,34 @@ function _loadActivityDetail(activityId, sport, mapWrapId, splitsWrapId){
     if(splitsWrap){
       var splits = tel && tel.splits;
       if(splits && splits.length){
+        // Bloque (Calentamiento/Serie/Descanso/Enfriamiento) — mismo dato
+        // y mismo criterio que training_detail.html (la web): el backend
+        // ya viene marcando cada parcial con su rol real dentro de la
+        // serie cuando el entrenamiento fue estructurado (ver
+        // _laps_are_structured en athlete_routes.py). Antes esta tabla
+        // (compartida con Comunidad) ignoraba ese dato — pedido explícito
+        // del usuario para que "Hoy" también lo muestre, no solo la web.
+        var hasBlocks = splits.some(function(s){ return s.intensity_type; });
+        var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
         var unit = sport==='bike' ? '5km' : sport==='run' ? 'km' : 'tramo';
         var rows = splits.map(function(s){
+          var blockCell = hasBlocks
+            ? '<td>'+(s.intensity_type
+                ? '<span style="display:inline-block;padding:.1rem .4rem;border-radius:8px;font-size:.6rem;font-weight:700;background:'+(blockColors[s.intensity_type]||'#7FB3CC')+'22;color:'+(blockColors[s.intensity_type]||'#7FB3CC')+'">'+s.intensity_type+'</span>'
+                : '—')+'</td>'
+            : '';
           return '<tr><td>'+s.idx+'</td>'
+            + blockCell
             +'<td>'+_cmFmtPace(s, sport)+'</td>'
             +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
             +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
           +'</tr>';
         }).join('');
         var paceLbl = sport==='swim' ? 'Ritmo /100m' : sport==='run' ? 'Ritmo' : 'Vel. Media';
+        var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
         splitsWrap.innerHTML = '<div class="cm-splits-title">Parciales ('+unit+')</div>'
           +'<div style="overflow-x:auto"><table class="cm-splits-table">'
-          +'<tr><th>#</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
+          +'<tr><th>#</th>'+blockHead+'<th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
           + rows
           +'</table></div>';
       } else {
