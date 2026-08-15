@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '101';  // 2026-08-14: cierre de gap 5/5 — pestaña Conexiones (Garmin/Strava, solo lectura) en Perfil; los 5 gaps del cierre de paridad app↔web completos
+var BUILD_VERSION = '102';  // 2026-08-14: fix navegación — header pegajoso (topbar+pestañas) en Recovery/Comunidad/Mental/Race Day/Progreso/AI Coach, antes se perdían al scrollear el contenido
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
