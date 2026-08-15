@@ -1582,7 +1582,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <!-- VO2max histórico — /analytics/vo2max -->
       <div id="pgr-vo2max-content" style="display:none">
-        <div class="rc-mob-card" id="pgr-vo2max-card" style="margin-top:1rem"><div class="cm-empty">Cargando...</div></div>
+        <div class="md-tabs" style="padding:1rem 1rem 0" id="pgr-vo2max-sport-tabs">
+          <button class="md-tab on" data-s="running" onclick="loadProgressVo2max('running')">🏃 Running</button>
+          <button class="md-tab" data-s="cycling" onclick="loadProgressVo2max('cycling')">🚴 Ciclismo</button>
+        </div>
+        <div class="rc-mob-card" id="pgr-vo2max-card" style="margin-top:.7rem"><div class="cm-empty">Cargando...</div></div>
       </div>
 
       <!-- Distribución de entrenamiento por deporte — /analytics/training-distribution -->
@@ -4468,11 +4472,17 @@ function renderProgressPower(d){
     +'<div class="hrv-mob-baseline-note" style="color:var(--dim)">'+xlabels.join(' · ')+' · 🟣 estimado</div>';
 }
 
-function loadProgressVo2max(){
+var _pgrVo2Sport = 'running';
+function loadProgressVo2max(sport){
   if(!_token) return;
+  sport = sport || _pgrVo2Sport;
+  _pgrVo2Sport = sport;
+  document.querySelectorAll('#pgr-vo2max-sport-tabs .md-tab').forEach(function(b){
+    b.classList.toggle('on', b.dataset.s === sport);
+  });
   var card = document.getElementById('pgr-vo2max-card');
   card.innerHTML = '<div class="cm-empty">Cargando...</div>';
-  apiFetch('/analytics/vo2max?days_back=365')
+  apiFetch('/analytics/vo2max?days_back=365&sport='+sport)
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
@@ -4484,7 +4494,7 @@ function loadProgressVo2max(){
 function renderProgressVo2max(d){
   var card = document.getElementById('pgr-vo2max-card');
   var pts = (d.timeline || []).slice(-60);
-  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin datos de VO2max disponibles.</div>'; return; }
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin datos de VO2max de '+(d.sport==='cycling'?'ciclismo':'running')+' disponibles.</div>'; return; }
   var trendColor = (d.trend_delta||0) > 0 ? '#10B981' : (d.trend_delta||0) < 0 ? '#EF4444' : '#7FB3CC';
   var kpis = [
     { l:'Actual', v: d.vo2max_current!=null?d.vo2max_current:'—', c:'var(--orange)' },

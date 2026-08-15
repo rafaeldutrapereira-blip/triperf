@@ -322,6 +322,7 @@ def compute_vo2max_history(
     user_id:   str,
     db:        Session,
     days_back: int = 365,
+    sport:     str = "running",
 ) -> dict:
     """
     Estima el VO2max mensual desde actividades de running usando el modelo
@@ -334,10 +335,19 @@ def compute_vo2max_history(
     VO2max = (pace_vo2) / (%VO2max_from_hr)
 
     También usa el VO2max de Garmin si está disponible en GarminHealthDaily.
+
+    `sport`: "running" (default) o "cycling" — Garmin reporta VO2max por
+    separado para cada disciplina (vo2max_running/vo2max_cycling en
+    GarminHealthDaily). Antes se mezclaban con `running or cycling`,
+    lo que silenciosamente descartaba ciclismo cualquier día que
+    también hubiera lectura de running. La estimación por pace+FC
+    (Daniels) solo aplica a running — no existe modelo equivalente
+    para ciclismo sin potenciómetro, así que en "cycling" el timeline
+    es 100% lecturas reales de Garmin.
     """
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
 
-    # VO2max de Garmin Connect (si disponible)
+    # VO2max de Garmin Connect (si disponible), separado por disciplina
     hrv_days = (
         db.query(GarminHealthDaily)
         .filter(
@@ -348,29 +358,32 @@ def compute_vo2max_history(
         .all()
     )
 
+    vo2_col = "vo2max_cycling" if sport == "cycling" else "vo2max_running"
     garmin_vo2max = [
-        {"date": r.date_iso, "vo2max": round(r.vo2max_running or r.vo2max_cycling, 1)}
+        {"date": r.date_iso, "vo2max": round(getattr(r, vo2_col), 1)}
         for r in hrv_days
-        if (r.vo2max_running or r.vo2max_cycling) and (r.vo2max_running or r.vo2max_cycling) > 20
+        if getattr(r, vo2_col) and getattr(r, vo2_col) > 20
     ]
 
-    # VO2max estimado desde actividades de running
+    # VO2max estimado desde actividades de running (solo aplica a running)
     user = db.query(User).filter(User.id == user_id).first()
     fcmax = getattr(user, "fcmax", None) or 180
 
-    run_acts = (
-        db.query(GarminActivity)
-        .filter(
-            GarminActivity.user_id  == user_id,
-            GarminActivity.date_iso >= cutoff,
-            GarminActivity.sport    == "run",
-            GarminActivity.avg_hr.isnot(None),
-            GarminActivity.dist_km  >= 3.0,
-            GarminActivity.dur_min  >= 20,
+    run_acts = []
+    if sport == "running":
+        run_acts = (
+            db.query(GarminActivity)
+            .filter(
+                GarminActivity.user_id  == user_id,
+                GarminActivity.date_iso >= cutoff,
+                GarminActivity.sport    == "run",
+                GarminActivity.avg_hr.isnot(None),
+                GarminActivity.dist_km  >= 3.0,
+                GarminActivity.dur_min  >= 20,
+            )
+            .order_by(GarminActivity.date_iso)
+            .all()
         )
-        .order_by(GarminActivity.date_iso)
-        .all()
-    )
 
     estimated_timeline = []
     for act in run_acts:
@@ -436,6 +449,7 @@ def compute_vo2max_history(
     classification = _classify_vo2max(vo2max_current, sex) if vo2max_current else None
 
     return {
+        "sport":           sport,
         "timeline":        all_vo2,
         "vo2max_current":  vo2max_current,
         "vo2max_prev":     vo2max_prev,

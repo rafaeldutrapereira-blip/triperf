@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '104';  // 2026-08-14: fix botón Volver de Progreso (iba a Perfil, ahora vuelve a Hoy, igual que Mental/Race Day/AI Coach); rename "Mi Huella"→"Huella"
+var BUILD_VERSION = '105';  // 2026-08-14: fix real — VO2max separaba mal running/cycling (Garmin guarda ambos, se mezclaban con "or"); ahora /analytics/vo2max?sport= + toggle en Progreso
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -63,14 +63,19 @@ def get_power_curve(
 @router.get("/vo2max")
 def get_vo2max_history(
     days_back: int = Query(365, ge=30, le=730),
+    sport:     str = Query("running", description="running | cycling"),
     db:        Session = Depends(get_db),
     me:        User    = Depends(get_current_user),
 ):
     """
     Histórico de VO2max estimado: combina lecturas Garmin + estimación
-    desde pace+FC de actividades de running.
+    desde pace+FC de actividades de running. Garmin reporta VO2max por
+    separado para running y cycling — pasar sport=cycling para ver esa
+    disciplina (sin estimación por pace, solo lecturas reales del reloj).
     """
-    return compute_vo2max_history(me.id, db, days_back=days_back)
+    if sport not in ("running", "cycling"):
+        raise HTTPException(400, "sport debe ser 'running' o 'cycling'")
+    return compute_vo2max_history(me.id, db, days_back=days_back, sport=sport)
 
 
 @router.get("/personal-records")
