@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '114';  // 2026-08-15: ícono ✅/⏳ estandarizado en Semana (antes tachado), igual que Hoy
+var BUILD_VERSION = '115';  // 2026-08-15: actividad extra no planificada en Hoy ahora clickeable, detalle completo
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
