@@ -178,6 +178,25 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .nav-btn.active { color: var(--orange); }
 .nav-btn svg { width: 20px; height: 20px; }
+/* Notificaciones sociales (kudos/comentarios/follows) — backend
+   (CommunityNotification) ya existía completo pero sin ningún
+   consumidor en la app; punto de entrada = ítem en Menú + puntito rojo
+   en el botón "Menú" del nav inferior (siempre visible, misma idea que
+   el badge de un ícono de campana). */
+.nav-btn { position: relative; }
+.nav-menu-dot { position: absolute; top: .3rem; right: 28%; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); border: 1.5px solid var(--bg); display: none; }
+.nav-menu-dot.on { display: block; }
+.menu-item-notif { position: relative; }
+.menu-item-notif .menu-item-badge { position: absolute; top: .3rem; right: .5rem; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: var(--orange); color: #fff; font-size: .58rem; font-weight: 700; display: none; align-items: center; justify-content: center; }
+.menu-item-notif .menu-item-badge.on { display: flex; }
+.notif-row { display: flex; gap: .6rem; padding: .7rem 0; border-top: 1px solid var(--border); }
+.notif-row:first-child { border-top: none; }
+.notif-row.unread { background: rgba(255,101,53,.06); margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem; }
+.notif-ico { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .9rem; background: var(--bg3); }
+.notif-body { flex: 1; min-width: 0; }
+.notif-text { font-size: .8rem; color: var(--text); line-height: 1.4; }
+.notif-text strong { font-weight: 700; }
+.notif-time { font-size: .65rem; color: var(--dim); margin-top: .15rem; }
 
 /* ── Common ── */
 .topbar {
@@ -1751,6 +1770,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       Comunidad
     </button>
     <button class="nav-btn" onclick="openMenuSheet()" id="nav-menu">
+      <span class="nav-menu-dot" id="nav-menu-dot"></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
       Menú
     </button>
@@ -1800,6 +1820,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div class="menu-group-title">Cuenta</div>
       <div class="menu-grid">
+        <button class="menu-item menu-item-notif" onclick="showNotifications()">
+          <span class="menu-item-badge" id="menu-notif-badge">0</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Notificaciones</span>
+        </button>
         <button class="menu-item" onclick="menuGo('screen-profile')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           <span>Perfil</span>
@@ -1904,6 +1929,7 @@ function initApp(tok){
   loadWeek();
   loadStatusHealth();
   _pushRefreshBtnState();
+  loadNotifCountApp();
 }
 
 /* Cierra sesión — mismo criterio que KL.logout() en auth.js (llama al
@@ -1964,6 +1990,78 @@ function closeMenuSheet(){
 function menuGo(id){
   closeMenuSheet();
   goScreen(id);
+}
+
+/* Notificaciones sociales (kudos/comentarios/follows) — el backend
+   (CommunityNotification, /community/notifications*) ya existía completo
+   y disparándose en cada kudo/comentario/follow real, pero no había
+   ningún consumidor en la app (ni en la web hasta este mismo cambio).
+   Mismo criterio que dash-header.js: fetch al cargar + al abrir la
+   lista, sin polling. */
+var _APP_NOTIF_ICO = { kudo:'🔥', comment:'💬', follow:'➕', challenge:'🏆', mention:'📣' };
+function _notifRelTime(iso){
+  if(!iso) return '';
+  var diff = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if(diff < 1) return 'ahora';
+  if(diff < 60) return 'hace '+diff+'min';
+  if(diff < 1440) return 'hace '+Math.round(diff/60)+'h';
+  return 'hace '+Math.round(diff/1440)+'d';
+}
+function _notifText(n){
+  var actor = '<strong>'+_escH(n.actor)+'</strong>';
+  if(n.type==='kudo')      return actor+' le dio kudo a tu actividad';
+  if(n.type==='comment')   return actor+' comentó tu actividad'+(n.body?': "'+_escH(n.body)+'"':'');
+  if(n.type==='follow')    return actor+' empezó a seguirte';
+  if(n.type==='challenge') return actor+' '+_escH(n.body||'te invitó a un desafío');
+  if(n.type==='mention')   return actor+' te mencionó'+(n.body?': "'+_escH(n.body)+'"':'');
+  return _escH(n.body||'Nueva notificación');
+}
+function _escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function loadNotifCountApp(){
+  apiFetch('/community/notifications/count')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var n = d && d.unread || 0;
+      var dot = document.getElementById('nav-menu-dot');
+      var badge = document.getElementById('menu-notif-badge');
+      if(dot) dot.classList.toggle('on', n>0);
+      if(badge){ badge.textContent = n>9?'9+':String(n); badge.classList.toggle('on', n>0); }
+    }).catch(function(){});
+}
+function showNotifications(){
+  closeMenuSheet();
+  document.getElementById('wo-detail-body').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Notificaciones</span>'
+      +'<button onclick="markNotifsRead()" style="background:none;border:none;color:var(--orange);font-family:\'Oswald\',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.05em;cursor:pointer">Marcar leídas</button>'
+    +'</div>'
+    +'<div id="notif-list" style="margin-top:.4rem"><div class="cm-detail-empty">Cargando...</div></div>';
+  document.getElementById('wo-detail-modal').style.display = 'flex';
+  apiFetch('/community/notifications?per_page=30')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var list = document.getElementById('notif-list');
+      if(!list) return;
+      var items = d && d.items || [];
+      if(!items.length){ list.innerHTML = '<div class="cm-detail-empty">Sin notificaciones todavía</div>'; return; }
+      list.innerHTML = items.map(function(n){
+        return '<div class="notif-row'+(n.read?'':' unread')+'" onclick="closeWeekWorkoutDetail();goScreen(\'screen-community\')">'
+          +'<div class="notif-ico">'+(_APP_NOTIF_ICO[n.type]||'🔔')+'</div>'
+          +'<div class="notif-body"><div class="notif-text">'+_notifText(n)+'</div>'
+          +'<div class="notif-time">'+_notifRelTime(n.created_at)+'</div></div>'
+          +'</div>';
+      }).join('');
+    }).catch(function(){
+      var list = document.getElementById('notif-list');
+      if(list) list.innerHTML = '<div class="cm-detail-empty">Error al cargar</div>';
+    });
+}
+function markNotifsRead(){
+  apiFetch('/community/notifications/mark-read', { method:'POST' })
+    .then(function(){
+      loadNotifCountApp();
+      document.querySelectorAll('.notif-row.unread').forEach(function(el){ el.classList.remove('unread'); });
+    }).catch(function(){});
 }
 
 function loadMenuHeader(){

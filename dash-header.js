@@ -68,6 +68,34 @@ function injectCSS(){
     '@keyframes dhx-blink{0%,100%{opacity:1}50%{opacity:.3}}',
     '.dhx-btn{display:flex;align-items:center;gap:.4rem;padding:.38rem .85rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:"Oswald",sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-decoration:none}',
     '.dhx-btn:hover{border-color:var(--orange);color:var(--orange)}',
+    // Campana de notificaciones sociales (kudos/comentarios/follows) —
+    // el backend (CommunityNotification, /community/notifications*) ya
+    // existía completo desde antes, disparándose en cada kudo/comentario/
+    // follow real, pero no había NINGÚN consumidor en ningún lado (ni
+    // web ni app) — el atleta nunca se enteraba. Mismo criterio de fetch
+    // que readiness/garmin-sync de este archivo: una vez al cargar +
+    // al abrir el dropdown, sin polling — no hay cliente SSE en el
+    // frontend todavía (fuera de alcance acá, backend ya emite por SSE
+    // para quien lo conecte a futuro).
+    '.dhx-bell-wrap{position:relative}',
+    '.dhx-bell-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;position:relative}',
+    '.dhx-bell-btn:hover{border-color:var(--orange);color:var(--orange)}',
+    '.dhx-bell-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--orange);color:#fff;font-family:"Oswald",sans-serif;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}',
+    '.dhx-bell-badge.on{display:flex}',
+    '.dhx-bell-panel{position:absolute;top:calc(100% + .6rem);right:0;width:320px;max-width:90vw;max-height:420px;overflow-y:auto;background:#0A1626;border:1px solid var(--border2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.4);z-index:60;display:none}',
+    '.dhx-bell-panel.on{display:block}',
+    '.dhx-bell-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border2)}',
+    '.dhx-bell-title{font-family:"Oswald",sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text)}',
+    '.dhx-bell-mark{font-family:"Oswald",sans-serif;font-size:.62rem;font-weight:600;color:var(--orange);cursor:pointer;background:none;border:none;letter-spacing:.04em}',
+    '.dhx-bell-item{display:flex;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer}',
+    '.dhx-bell-item:hover{background:rgba(255,255,255,.02)}',
+    '.dhx-bell-item.unread{background:rgba(255,101,53,.06)}',
+    '.dhx-bell-ico{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;background:var(--bg3)}',
+    '.dhx-bell-body{flex:1;min-width:0}',
+    '.dhx-bell-text{font-size:.76rem;color:var(--text);line-height:1.35}',
+    '.dhx-bell-text strong{font-weight:700}',
+    '.dhx-bell-time{font-size:.62rem;color:var(--dim);margin-top:.15rem}',
+    '.dhx-bell-empty{padding:1.6rem 1rem;text-align:center;font-size:.76rem;color:var(--dim)}',
     // Páginas con wrapper .app/.main (style.css) envuelven TODO su contenido
     // -incluido este header- en el padding de .main (1.5rem arriba +
     // clamp(1rem,3vw,2rem) a los lados). Las páginas con <header
@@ -94,6 +122,16 @@ function buildHTML(){
     +         '<div class="dhx-chip-row" role="status" aria-live="polite">'
     +           '<div class="dhx-chip"><span class="dhx-dot dhx-dot-g"></span>Readiness <strong id="dhx-readiness-val">— / 100</strong></div>'
     +           '<div class="dhx-chip" style="border-color:rgba(34,211,238,.22)"><span class="dhx-dot dhx-dot-c"></span><span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span><span id="dhx-garmin-chip">—</span></div>'
+    +         '</div>'
+    +         '<div class="dhx-bell-wrap">'
+    +           '<button class="dhx-bell-btn" id="dhx-bell-btn" aria-label="Notificaciones" onclick="window.__dhxToggleBell && window.__dhxToggleBell()">'
+    +             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
+    +             '<span class="dhx-bell-badge" id="dhx-bell-badge">0</span>'
+    +           '</button>'
+    +           '<div class="dhx-bell-panel" id="dhx-bell-panel">'
+    +             '<div class="dhx-bell-head"><span class="dhx-bell-title">Notificaciones</span><button class="dhx-bell-mark" onclick="window.__dhxMarkRead && window.__dhxMarkRead()">Marcar leídas</button></div>'
+    +             '<div id="dhx-bell-list"><div class="dhx-bell-empty">Cargando...</div></div>'
+    +           '</div>'
     +         '</div>'
     +         '<a href="athlete_profile.html" class="dhx-btn" aria-label="Ir al Perfil del Atleta">'
     +           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>'
@@ -210,6 +248,80 @@ function setupUpgradeBtn(){
   });
 }
 
+var _DHX_NOTIF_ICO = { kudo:'🔥', comment:'💬', follow:'➕', challenge:'🏆', mention:'📣' };
+function _dhxRelTime(iso){
+  if(!iso) return '';
+  var diff = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if(diff < 1) return 'ahora';
+  if(diff < 60) return 'hace ' + diff + 'min';
+  if(diff < 1440) return 'hace ' + Math.round(diff/60) + 'h';
+  return 'hace ' + Math.round(diff/1440) + 'd';
+}
+function _dhxNotifText(n){
+  var actor = '<strong>' + esc(n.actor) + '</strong>';
+  if(n.notif_type === 'kudo')      return actor + ' le dio kudo a tu actividad';
+  if(n.notif_type === 'comment')   return actor + ' comentó tu actividad' + (n.body ? ': "' + esc(n.body) + '"' : '');
+  if(n.notif_type === 'follow')    return actor + ' empezó a seguirte';
+  if(n.notif_type === 'challenge') return actor + ' ' + esc(n.body || 'te invitó a un desafío');
+  if(n.notif_type === 'mention')   return actor + ' te mencionó' + (n.body ? ': "' + esc(n.body) + '"' : '');
+  return esc(n.body || 'Nueva notificación');
+}
+function loadNotifCount(){
+  var badge = document.getElementById('dhx-bell-badge');
+  if(!badge) return;
+  var tok = authToken();
+  if(!tok) return;
+  fetch(apiBase() + '/community/notifications/count', { headers: { Authorization: 'Bearer ' + tok } })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var n = d && d.unread || 0;
+      badge.textContent = n > 9 ? '9+' : String(n);
+      badge.classList.toggle('on', n > 0);
+    })
+    .catch(function(){});
+}
+function loadNotifList(){
+  var list = document.getElementById('dhx-bell-list');
+  if(!list) return;
+  var tok = authToken();
+  fetch(apiBase() + '/community/notifications?per_page=20', { headers: { Authorization: 'Bearer ' + tok } })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var items = d && d.items || [];
+      if(!items.length){ list.innerHTML = '<div class="dhx-bell-empty">Sin notificaciones todavía</div>'; return; }
+      list.innerHTML = items.map(function(n){
+        return '<div class="dhx-bell-item' + (n.read ? '' : ' unread') + '" onclick="window.location.href=\'community.html\'">'
+          + '<div class="dhx-bell-ico">' + (_DHX_NOTIF_ICO[n.type] || '🔔') + '</div>'
+          + '<div class="dhx-bell-body"><div class="dhx-bell-text">' + _dhxNotifText({actor:n.actor, notif_type:n.type, body:n.body}) + '</div>'
+          + '<div class="dhx-bell-time">' + _dhxRelTime(n.created_at) + '</div></div>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function(){ list.innerHTML = '<div class="dhx-bell-empty">Error al cargar</div>'; });
+}
+function setupBell(){
+  var panel = document.getElementById('dhx-bell-panel');
+  if(!panel) return;
+  var loaded = false;
+  window.__dhxToggleBell = function(){
+    var on = panel.classList.toggle('on');
+    if(on && !loaded){ loaded = true; loadNotifList(); }
+  };
+  window.__dhxMarkRead = function(){
+    var tok = authToken();
+    fetch(apiBase() + '/community/notifications/mark-read', { method:'POST', headers: { Authorization: 'Bearer ' + tok } })
+      .then(function(){
+        loadNotifCount();
+        panel.querySelectorAll('.dhx-bell-item.unread').forEach(function(el){ el.classList.remove('unread'); });
+      }).catch(function(){});
+  };
+  document.addEventListener('click', function(e){
+    if(!panel.classList.contains('on')) return;
+    if(panel.contains(e.target) || e.target.closest('#dhx-bell-btn')) return;
+    panel.classList.remove('on');
+  });
+}
+
 function init(){
   injectCSS();
   mount();
@@ -217,6 +329,8 @@ function init(){
   loadReadiness();
   loadGarminSync();
   setupUpgradeBtn();
+  setupBell();
+  loadNotifCount();
 }
 
 if(document.readyState === 'loading'){
