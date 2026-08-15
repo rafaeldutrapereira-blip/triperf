@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '119';  // 2026-08-15: Desafíos por club en Comunidad (app) — versión funcional, la web está rota
+var BUILD_VERSION = '120';  // 2026-08-15: Mi Perfil (público) en Comunidad — cierra la paridad web↔app de las 5 features
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
