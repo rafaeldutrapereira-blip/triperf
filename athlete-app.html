@@ -2865,8 +2865,16 @@ function _coachBlockLabel(sp, b){
   var bType = (b.type||b.zone||'bloque').toUpperCase();
   var bMain = '', bSub = '';
   if(sp==='bike'){
-    bMain = (b.repeat&&b.repeat>1?b.repeat+'×':'')+' '+(b.on_duration?Math.round(b.on_duration/60)+'min':'')+' @ '+(b.on_power?Math.round(b.on_power*100)+'% FTP':'');
-    if(b.off_duration) bSub = 'Rec: '+Math.round(b.off_duration/60)+'min @ '+Math.round((b.off_power||0.5)*100)+'%';
+    if(b.type==='intervals'){
+      bMain = (b.repeat&&b.repeat>1?b.repeat+'×':'')+' '+(b.on_duration?Math.round(b.on_duration/60)+'min':'')+' @ '+(b.on_power?Math.round(b.on_power*100)+'% FTP':'');
+      if(b.off_duration) bSub = 'Rec: '+Math.round(b.off_duration/60)+'min @ '+Math.round((b.off_power||0.5)*100)+'%';
+    } else if(b.type==='steady'){
+      bMain = (b.duration?Math.round(b.duration/60)+'min':'')+' @ '+(b.power?Math.round(b.power*100)+'% FTP':'');
+    } else if(b.type==='warmup' || b.type==='cooldown' || b.type==='ramp'){
+      bMain = (b.duration?Math.round(b.duration/60)+'min':'')+' · '+(b.power_low!=null?Math.round(b.power_low*100)+'%':'')+'→'+(b.power_high!=null?Math.round(b.power_high*100)+'% FTP':'');
+    } else if(b.type==='freeride'){
+      bMain = (b.duration?Math.round(b.duration/60)+'min':'')+' · Intensidad libre';
+    }
   } else if(sp==='run'){
     if(b.type==='intervals'){
       bMain = b.repeat+'× '+b.dist_m+'m @ '+(b.pace_min+':'+String(b.pace_sec||0).padStart(2,'0'))+'/km';
