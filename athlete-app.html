@@ -807,6 +807,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .pgr-tabs-hint { font-size: .6rem; color: var(--dim); text-align: center; padding: 0 0 .5rem; }
 .cm-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--dim); font-size: .85rem; }
 .cm-card { margin: 0 1rem .75rem; padding: .9rem 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; }
+.cm-club-card { display: flex; align-items: center; gap: .7rem; margin: 0 1rem .6rem; padding: .75rem .9rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.cm-club-ico { width: 38px; height: 38px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.cm-club-body { flex: 1; min-width: 0; }
+.cm-club-name { font-family: 'Barlow Condensed', sans-serif; font-size: .95rem; font-weight: 700; color: var(--text); }
+.cm-club-meta { font-size: .68rem; color: var(--dim); margin-top: .1rem; }
+.cm-club-badge { font-size: .6rem; font-weight: 700; color: var(--green); background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.3); padding: .2rem .5rem; border-radius: 20px; flex-shrink: 0; }
+.cm-club-join { font-size: .62rem; font-weight: 700; color: var(--orange); background: rgba(255,101,53,.14); border: 1px solid rgba(255,101,53,.3); padding: .2rem .5rem; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
 .cm-card-head { display: flex; align-items: center; gap: .6rem; }
 .cm-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: .8rem; color: var(--orange); }
 .cm-card-name { font-size: .86rem; font-weight: 700; }
@@ -1091,6 +1098,43 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
 </div>
 
+<!-- Crear club — tercera brecha de la auditoría web↔app: community.html
+     tiene un tab "Clubes" completo (mis clubes/directorio/crear), la app
+     no tenía nada. Mismo endpoint POST /community/groups, mismos campos
+     que ya usa community.html. -->
+<div id="cm-club-modal" class="ios-guide" style="display:none" onclick="closeCreateClub(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeCreateClub()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Crear club</div>
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--muted)">Nombre*</label>
+      <input id="cm-club-name" class="pw-input" type="text" placeholder="Ej: Triatletas Vitacura" style="margin-top:.3rem">
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--muted)">Descripción (opcional)</label>
+      <textarea id="cm-club-desc" class="pw-input" rows="2" placeholder="De qué se trata el club" style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea>
+    </div>
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem">
+      <div><label style="font-size:.72rem;color:var(--muted)">Deporte</label>
+        <select id="cm-club-sport" class="pw-input" style="margin-top:.3rem">
+          <option value="triathlon">🏁 Triatlón</option>
+          <option value="running">🏃 Running</option>
+          <option value="cycling">🚴 Ciclismo</option>
+          <option value="swimming">🏊 Natación</option>
+          <option value="all">⚡ Multi</option>
+        </select>
+      </div>
+      <div><label style="font-size:.72rem;color:var(--muted)">Privacidad</label>
+        <select id="cm-club-privacy" class="pw-input" style="margin-top:.3rem">
+          <option value="false">🌍 Público</option>
+          <option value="true">🔒 Privado (por invitación)</option>
+        </select>
+      </div>
+    </div>
+    <button class="wl-submit" id="cm-club-submit-btn" onclick="submitCreateClubApp()">Crear club</button>
+  </div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div>
@@ -1355,10 +1399,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </button>
       </div>
 
-      <div class="cm-tabs">
+      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
         <div class="cm-tab active" id="cm-tab-feed" onclick="communityTab('feed')">Feed</div>
         <div class="cm-tab" id="cm-tab-rank" onclick="communityTab('rank')">Ranking</div>
         <div class="cm-tab" id="cm-tab-discover" onclick="communityTab('discover')">Descubrir</div>
+        <div class="cm-tab" id="cm-tab-clubs" onclick="communityTab('clubs')">Clubes</div>
       </div>
       </div><!-- /screen-sticky-head -->
 
@@ -5675,11 +5720,87 @@ function communityTab(tab){
   document.getElementById('cm-tab-feed').classList.toggle('active', tab==='feed');
   document.getElementById('cm-tab-rank').classList.toggle('active', tab==='rank');
   document.getElementById('cm-tab-discover').classList.toggle('active', tab==='discover');
+  document.getElementById('cm-tab-clubs').classList.toggle('active', tab==='clubs');
   var shareBtn = document.getElementById('cm-share-open-btn');
   if(shareBtn) shareBtn.style.display = tab==='feed' ? '' : 'none';
   if(tab === 'feed') loadCommunityFeed();
   else if(tab === 'discover') loadCommunityDiscover();
+  else if(tab === 'clubs') loadCommunityClubs();
   else loadCommunityLeaderboard();
+}
+
+/* Clubes — cuarta brecha real de la auditoría: mismo endpoint
+   /community/groups que ya usa community.html. OJO: la web lee mal la
+   respuesta (d.groups||d.results, cuando el backend devuelve d.items;
+   g.member_count, cuando el campo real es n_members) — acá se usan los
+   nombres REALES del backend, no los de community.html, para no copiar
+   ese bug. "Ver club" en la web es solo un alert placeholder — acá en
+   vez de eso, tocar un club del directorio te une de verdad (POST
+   /groups/{id}/join, siempre disponible para clubes públicos, que son
+   los únicos que trae el directorio) — más útil que un alert vacío. */
+var CLUB_SPORT_ICO = { triathlon:'🏁', running:'🏃', cycling:'🚴', swimming:'🏊', all:'⚡' };
+function _clubCardHtml(g){
+  var icon = CLUB_SPORT_ICO[g.sport] || '⚡';
+  return '<div class="cm-club-card" onclick="'+(g.is_member?'':'joinClubApp(\''+g.id+'\')')+'">'
+    +'<div class="cm-club-ico">'+icon+'</div>'
+    +'<div class="cm-club-body"><div class="cm-club-name">'+_escCm(g.name||'—')+'</div>'
+    +'<div class="cm-club-meta">'+(g.n_members||0)+' miembros · '+(g.sport||'multi')+'</div></div>'
+    +(g.is_member?'<span class="cm-club-badge">Miembro</span>':'<span class="cm-club-join">+ Unirme</span>')
+    +'</div>';
+}
+function loadCommunityClubs(){
+  var el = document.getElementById('community-content');
+  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  Promise.all([
+    apiFetch('/community/groups?mine=true&per_page=50').then(function(r){ return r.ok?r.json():null; }),
+    apiFetch('/community/groups?per_page=50').then(function(r){ return r.ok?r.json():null; }),
+  ]).then(function(results){
+    var mine = (results[0] && results[0].items) || [];
+    var all  = (results[1] && results[1].items) || [];
+    var mineIds = {}; mine.forEach(function(g){ mineIds[g.id] = true; });
+    var directory = all.filter(function(g){ return !mineIds[g.id]; });
+    el.innerHTML =
+      '<button class="wl-submit" style="margin:.7rem 1rem" onclick="openCreateClub()">+ Crear club</button>'
+      +'<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Mis clubes</div>'
+      +(mine.length ? mine.map(_clubCardHtml).join('') : '<div class="cm-empty">Todavía no perteneces a ningún club.</div>')
+      +'<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Directorio</div>'
+      +(directory.length ? directory.map(_clubCardHtml).join('') : '<div class="cm-empty">No hay más clubes disponibles.</div>');
+  }).catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+}
+function joinClubApp(id){
+  apiFetch('/community/groups/'+id+'/join', { method:'POST' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){ toast('Te uniste al club'); loadCommunityClubs(); })
+    .catch(function(){ toast('No se pudo unir — intentá de nuevo', 'err'); });
+}
+function openCreateClub(){ document.getElementById('cm-club-modal').style.display = 'flex'; }
+function closeCreateClub(e){
+  if(e && e.target !== e.currentTarget) return;
+  document.getElementById('cm-club-modal').style.display = 'none';
+}
+function submitCreateClubApp(){
+  var name = document.getElementById('cm-club-name').value.trim();
+  if(!name || name.length < 3){ toast('El nombre debe tener al menos 3 caracteres', 'err'); return; }
+  var btn = document.getElementById('cm-club-submit-btn');
+  btn.disabled = true; btn.textContent = 'Creando...';
+  apiFetch('/community/groups', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: name,
+      description: document.getElementById('cm-club-desc').value.trim() || null,
+      sport: document.getElementById('cm-club-sport').value,
+      is_private: document.getElementById('cm-club-privacy').value === 'true',
+    }),
+  }).then(function(r){ return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); }); })
+    .then(function(){
+      toast('Club creado');
+      document.getElementById('cm-club-name').value = '';
+      document.getElementById('cm-club-desc').value = '';
+      closeCreateClub();
+      loadCommunityClubs();
+    })
+    .catch(function(err){ toast((err && err.detail) || 'No se pudo crear el club', 'err'); })
+    .finally(function(){ btn.disabled = false; btn.textContent = 'Crear club'; });
 }
 
 /* Compartir actividad — antes solo existía en la web (community.html).
