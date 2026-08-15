@@ -463,7 +463,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wk-wo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .wk-wo-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wk-wo-tss { font-size: .65rem; color: var(--dim); flex-shrink: 0; }
-.wk-wo-done { opacity: .5; text-decoration: line-through; }
+/* Mismo lenguaje visual que "Hoy" para "completado" (ícono, no tachado) —
+   estandarizado a pedido explícito: tachar+atenuar el texto lo hacía
+   difícil de leer justo cuando el atleta quería revisar qué entrenó ese
+   día; el ícono comunica el estado sin sacrificar legibilidad. */
+.wk-wo-status { font-size: .78rem; flex-shrink: 0; }
 .wk-rest { padding: .2rem .85rem .65rem; font-size: .75rem; color: var(--dim); font-style: italic; }
 .wk-summary { margin: 0 1rem .5rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .8rem .6rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem 0; text-align: center; }
 .wk-sum-val { font-family: 'Oswald', sans-serif; font-size: 1.15rem; font-weight: 700; }
@@ -3453,10 +3457,11 @@ function renderWeekGrid(assigns, monIso, realWeek){
         var idx = _weekAssignsFlat.length;
         _weekAssignsFlat.push(a);
         _weekMatchedRealFlat.push(real ? [real] : []);
-        html+='<div class="wk-wo'+(done?' wk-wo-done':'')+'" onclick="showWeekWorkoutDetail('+idx+')" style="cursor:pointer">'
+        html+='<div class="wk-wo" onclick="showWeekWorkoutDetail('+idx+')" style="cursor:pointer">'
           +'<div class="wk-wo-dot" style="background:'+(SPORT_COL[sp]||'#9CA3AF')+'"></div>'
           +'<div class="wk-wo-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||sp)+'</div>'
           +(t.tss?'<div class="wk-wo-tss">'+t.tss+' TSS</div>':'')
+          +'<div class="wk-wo-status">'+(done?'✅':'⏳')+'</div>'
           +'</div>';
       });
       html+='</div>';
