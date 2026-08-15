@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '112';  // 2026-08-15: paridad completa de gráficos (dinámica de carrera, nado por largo) en el detalle real de la app
+var BUILD_VERSION = '113';  // 2026-08-15: Plan vs Real (mapa/Zonas/Gráficos/Parciales) por día en la guía Semana
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
