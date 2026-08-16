@@ -506,6 +506,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .wp-mob-stat-val { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; margin-top: .1rem; }
 .wp-mob-chart-wrap { position: relative; width: 100%; height: 100px; touch-action: pan-y; }
 .wp-mob-chart-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+/* Barras con relleno degradado + crecimiento animado al cargar — mismo
+   dato/interacción de siempre (tap/hover sigue funcionando igual),
+   solo un poco más pulido visualmente. y/height son atributos SVG
+   animables por CSS en los navegadores modernos. */
+.wp-mob-bar { transition: height .75s cubic-bezier(.16,1,.3,1), y .75s cubic-bezier(.16,1,.3,1), fill-opacity .18s; }
+@media (prefers-reduced-motion: reduce) { .wp-mob-bar { transition: fill-opacity .18s; } }
 .wp-mob-tooltip {
   position: absolute; top: 0; left: 0; pointer-events: none;
   background: #07111D; border: 1px solid rgba(61,104,128,.4);
@@ -4034,6 +4040,15 @@ function _renderWpMob(sport){
   var col = SPORT_COL[sport] || '#FF6535';
 
   var svgParts = [];
+  // Gradiente vertical para el relleno de las barras — mismo color de
+  // deporte de siempre, solo con más cuerpo visual que un fill-opacity
+  // plano (pedido explícito de pulido, mismo criterio que "an area fill"
+  // ya usado en otros charts de la sesión).
+  var gradId = 'wpBarGrad-'+sport;
+  svgParts.push('<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="'+col+'" stop-opacity=".85"/>'
+    +'<stop offset="100%" stop-color="'+col+'" stop-opacity=".25"/>'
+    +'</linearGradient></defs>');
   svgParts.push('<line x1="'+padL+'" y1="'+(padT+chartH)+'" x2="'+(W-padR)+'" y2="'+(padT+chartH)+'" stroke="rgba(255,255,255,.08)" stroke-width="1"/>');
 
   // Línea de promedio — pedido explícito, igual que dashboard.html (línea
@@ -4053,7 +4068,7 @@ function _renderWpMob(sport){
     var barH = val>0 ? (val/maxLine)*chartH : 0;
     var y = padT+chartH-barH;
     if(val>0){
-      svgParts.push('<rect class="wp-mob-bar" data-wk-idx="'+i+'" x="'+(x+barW*0.22)+'" y="'+y+'" width="'+(barW*0.56)+'" height="'+barH+'" rx="2" fill="'+col+'" fill-opacity=".35"/>');
+      svgParts.push('<rect class="wp-mob-bar" data-wk-idx="'+i+'" data-final-y="'+y+'" data-final-h="'+barH+'" x="'+(x+barW*0.22)+'" y="'+(padT+chartH)+'" width="'+(barW*0.56)+'" height="0" rx="3" fill="url(#'+gradId+')" fill-opacity=".35"/>');
     }
     var cx = padL+(i+0.5)*barW;
     var cy = val>0 ? padT+chartH-(val/maxLine)*chartH : null;
@@ -4076,12 +4091,33 @@ function _renderWpMob(sport){
     svgParts.push('<rect x="'+x+'" y="0" width="'+barW+'" height="'+H+'" fill="transparent" data-wk-idx="'+i+'"/>');
   });
 
-  document.getElementById('wp-mob-chart').innerHTML = svgParts.join('');
+  var chartEl = document.getElementById('wp-mob-chart');
+  chartEl.innerHTML = svgParts.join('');
   _wpMobWeeksSnapshot = weeks;
   _wpMobActiveColor   = col;
   _wpMobDefaultIdx    = weeks.length-1;
   _wpMobHighlight(_wpMobDefaultIdx);
   _wpMobWireTouch();
+
+  // Crecimiento animado — mismo criterio que los anillos: arranca en 0 y
+  // crece a su altura real un frame después, para que la transición CSS
+  // de arriba (.wp-mob-bar) se dispare.
+  var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reducedMotion){
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        chartEl.querySelectorAll('.wp-mob-bar').forEach(function(el){
+          el.setAttribute('y', el.getAttribute('data-final-y'));
+          el.setAttribute('height', el.getAttribute('data-final-h'));
+        });
+      });
+    });
+  } else {
+    chartEl.querySelectorAll('.wp-mob-bar').forEach(function(el){
+      el.setAttribute('y', el.getAttribute('data-final-y'));
+      el.setAttribute('height', el.getAttribute('data-final-h'));
+    });
+  }
 }
 
 /* Resalta la semana `idx` (barra a full opacidad + punto más grande +
