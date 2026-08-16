@@ -488,10 +488,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
    día; el ícono comunica el estado sin sacrificar legibilidad. */
 .wk-wo-status { font-size: .78rem; flex-shrink: 0; }
 .wk-rest { padding: .2rem .85rem .65rem; font-size: .75rem; color: var(--dim); font-style: italic; }
-.wk-summary { margin: 0 1rem .5rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .8rem .6rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem 0; text-align: center; }
-.wk-sum-val { font-family: 'Oswald', sans-serif; font-size: 1.15rem; font-weight: 700; }
-.wk-sum-plan { font-size: .68rem; font-weight: 500; color: var(--dim); }
-.wk-sum-lbl { font-size: .6rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin-top: .1rem; }
+/* Resumen semanal en anillos de cumplimiento — pedido explícito del
+   usuario tras ver el mockup (artifact 4ed4a9ee): "real / plan" en
+   texto obligaba a restar mentalmente; un anillo con el % ya calculado
+   se lee en medio segundo. Mismo dato exacto de siempre (real y plan
+   sin redondear "de más"), solo cambia la forma. Un color fijo por
+   métrica (no por bueno/malo — a mitad de semana no llegar al 100%
+   todavía es normal) para poder distinguir los 4 anillos sin leer la
+   etiqueta. */
+.wk-summary { margin: 0 1rem .75rem; background: linear-gradient(165deg,var(--bg2),#060B12); border: 1px solid var(--border); border-radius: 14px; padding: .9rem .7rem .8rem; }
+.wk-summary-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .7rem; padding: 0 .1rem; }
+.wk-summary-title { font-family: 'Oswald', sans-serif; font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.wk-summary-days { font-size: .62rem; color: var(--dim); }
+.wk-rings-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; }
+.wk-ring { display: flex; flex-direction: column; align-items: center; gap: .35rem; }
+.wk-ring-svg { position: relative; width: 56px; height: 56px; }
+.wk-ring-svg svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.wk-ring-track { fill: none; stroke: rgba(255,255,255,.06); stroke-width: 5.5; }
+.wk-ring-fill { fill: none; stroke-width: 5.5; stroke-linecap: round; stroke-dasharray: 170; transition: stroke-dashoffset .9s cubic-bezier(.16,1,.3,1); }
+.wk-ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: .82rem; }
+.wk-ring-lbl { font-family: 'Oswald', sans-serif; font-size: .56rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--dim); text-align: center; }
+.wk-ring-nums { font-size: .6rem; color: var(--muted); text-align: center; }
+.wk-ring-nums b { color: var(--text); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .wk-ring-fill { transition: none; } }
 
 /* ── Progreso Semanal (5 semanas móviles, mismo dato/agregación que
    dashboard.html) ── */
@@ -1250,10 +1269,44 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <!-- Real / plan en cada métrica — pedido explícito: comparar
            ejecutado contra planificado, no mostrar solo un número. -->
       <div class="wk-summary" id="wk-summary">
-        <div><div class="wk-sum-val" id="wk-tss">—</div><div class="wk-sum-lbl">TSS</div></div>
-        <div><div class="wk-sum-val" id="wk-dist">—</div><div class="wk-sum-lbl">km</div></div>
-        <div><div class="wk-sum-val" id="wk-sessions">—</div><div class="wk-sum-lbl">Sesiones</div></div>
-        <div><div class="wk-sum-val" id="wk-hours">—</div><div class="wk-sum-lbl">Horas</div></div>
+        <div class="wk-summary-head">
+          <span class="wk-summary-title">Cumplimiento semanal</span>
+          <span class="wk-summary-days" id="wk-summary-days"></span>
+        </div>
+        <div class="wk-rings-grid">
+          <div class="wk-ring">
+            <div class="wk-ring-svg">
+              <svg viewBox="0 0 62 62"><circle class="wk-ring-track" cx="31" cy="31" r="27"/><circle class="wk-ring-fill" id="wk-tss-ring" cx="31" cy="31" r="27" stroke="#A855F7" style="stroke-dashoffset:170"/></svg>
+              <div class="wk-ring-center" id="wk-tss-pct">—</div>
+            </div>
+            <div class="wk-ring-lbl">TSS</div>
+            <div class="wk-ring-nums" id="wk-tss">—</div>
+          </div>
+          <div class="wk-ring">
+            <div class="wk-ring-svg">
+              <svg viewBox="0 0 62 62"><circle class="wk-ring-track" cx="31" cy="31" r="27"/><circle class="wk-ring-fill" id="wk-dist-ring" cx="31" cy="31" r="27" stroke="#0EA5E9" style="stroke-dashoffset:170"/></svg>
+              <div class="wk-ring-center" id="wk-dist-pct">—</div>
+            </div>
+            <div class="wk-ring-lbl">Km</div>
+            <div class="wk-ring-nums" id="wk-dist">—</div>
+          </div>
+          <div class="wk-ring">
+            <div class="wk-ring-svg">
+              <svg viewBox="0 0 62 62"><circle class="wk-ring-track" cx="31" cy="31" r="27"/><circle class="wk-ring-fill" id="wk-sessions-ring" cx="31" cy="31" r="27" stroke="#FF6535" style="stroke-dashoffset:170"/></svg>
+              <div class="wk-ring-center" id="wk-sessions-pct">—</div>
+            </div>
+            <div class="wk-ring-lbl">Sesiones</div>
+            <div class="wk-ring-nums" id="wk-sessions">—</div>
+          </div>
+          <div class="wk-ring">
+            <div class="wk-ring-svg">
+              <svg viewBox="0 0 62 62"><circle class="wk-ring-track" cx="31" cy="31" r="27"/><circle class="wk-ring-fill" id="wk-hours-ring" cx="31" cy="31" r="27" stroke="#10B981" style="stroke-dashoffset:170"/></svg>
+              <div class="wk-ring-center" id="wk-hours-pct">—</div>
+            </div>
+            <div class="wk-ring-lbl">Horas</div>
+            <div class="wk-ring-nums" id="wk-hours">—</div>
+          </div>
+        </div>
       </div>
 
       <!-- Progreso Semanal — misma ventana móvil de 5 semanas que
@@ -3740,10 +3793,24 @@ function loadWeek(){
 /* Muestra "real / plan" en cada celda del resumen semanal — antes solo
    mostraba el total planificado, sin ningún dato de lo realmente
    ejecutado. */
-function _wkSumSet(id, realVal, planVal){
-  var el = document.getElementById(id);
-  if(!el) return;
-  el.innerHTML = realVal + '<span class="wk-sum-plan"> / '+planVal+'</span>';
+/* key: 'tss'|'dist'|'sessions'|'hours'. realVal/planVal: números crudos
+   (para el % real del anillo, nunca redondeados "de más"). displayReal/
+   displayPlan: lo que se muestra como texto (ya formateado, ej. "6h12m"
+   para horas) — mismos valores que ya se mostraban antes del cambio. */
+function _wkSumSet(key, realVal, planVal, displayReal, displayPlan){
+  var ringEl = document.getElementById('wk-'+key+'-ring');
+  var pctEl  = document.getElementById('wk-'+key+'-pct');
+  var numsEl = document.getElementById('wk-'+key);
+  var pct = planVal > 0 ? Math.round((realVal/planVal)*100) : (realVal > 0 ? 100 : 0);
+  var offset = 170 * (1 - Math.min(100, pct)/100);
+  if(pctEl) pctEl.textContent = pct+'%';
+  if(numsEl) numsEl.innerHTML = '<b>'+displayReal+'</b>/'+displayPlan;
+  if(ringEl){
+    ringEl.style.strokeDashoffset = '170';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ringEl.style.strokeDashoffset = offset; });
+    });
+  }
 }
 
 var _weekAssignsFlat = [];  // para poder abrir el detalle al tocar una actividad de la semana
@@ -3762,11 +3829,13 @@ function renderWeekGrid(assigns, monIso, realWeek){
   var totalTss=0, totalDist=0, totalSessions=0, totalDur=0;
   var DAYS_ABR=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   var html='';
+  var todayDayNum = null;
 
   for(var i=0;i<7;i++){
     var d = new Date(monIso+'T12:00:00'); d.setDate(d.getDate()+i);
     var iso = _isoLocal(d);
     var isToday = iso===today;
+    if(isToday) todayDayNum = i+1;
     var dayAssigns = assignByDay[iso]||[];
     // Emparejar plan↔real DENTRO de este día (mismo deporte, duración más
     // parecida) — mismo _matchPlannedToReal() que ya usa "Hoy", pero
@@ -3820,10 +3889,13 @@ function renderWeekGrid(assigns, monIso, realWeek){
   });
   var realSessions = realWeek.length;
 
-  _wkSumSet('wk-tss',      Math.round(realTss),        Math.round(totalTss));
-  _wkSumSet('wk-dist',     Math.round(realDist*10)/10, Math.round(totalDist*10)/10);
-  _wkSumSet('wk-sessions', realSessions,                totalSessions);
-  _wkSumSet('wk-hours',    _wpMobFmtDur(realDur),       _wpMobFmtDur(totalDur));
+  var daysEl = document.getElementById('wk-summary-days');
+  if(daysEl) daysEl.textContent = todayDayNum ? ('Día '+todayDayNum+' de 7') : '';
+
+  _wkSumSet('tss',      realTss,  totalTss,  Math.round(realTss),        Math.round(totalTss));
+  _wkSumSet('dist',     realDist, totalDist, Math.round(realDist*10)/10, Math.round(totalDist*10)/10);
+  _wkSumSet('sessions', realSessions, totalSessions, realSessions, totalSessions);
+  _wkSumSet('hours',    realDur,  totalDur,  _wpMobFmtDur(realDur),      _wpMobFmtDur(totalDur));
 }
 
 /* Detalle de una actividad de la semana al tocarla — pedido explícito
