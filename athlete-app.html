@@ -3205,9 +3205,14 @@ function _realActivityCard(act){
   // alcanza con saber que existe y poder tocarla para ver el detalle
   // completo (que sí la sigue mostrando, junto con mapa/Zonas/Gráficos/
   // Parciales, en showExtraActivityDetail()).
+  // min-width:0 en .th-sport (por defecto un flex-item no puede achicarse
+  // más allá del ancho de su contenido) + nombre con ellipsis — sin esto,
+  // un nombre largo ("Natación en piscina") empuja al elemento entero a
+  // envolver, tirando la flecha a una línea aparte. Bug real reportado en
+  // vivo dos veces: el fix anterior (solo flex-direction:row) no alcanzaba.
   return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:.6rem" onclick="showExtraActivityDetail('+idx+')">'
-    +'<div class="th-sport" style="margin:0"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
-    +'<div><div class="th-name">'+(act.name||'Actividad')+'</div></div></div>'
+    +'<div class="th-sport" style="margin:0;min-width:0;flex:1 1 auto"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
+    +'<div style="min-width:0;overflow:hidden"><div class="th-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(act.name||'Actividad')+'</div></div></div>'
     +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
     +'</div>';
 }
