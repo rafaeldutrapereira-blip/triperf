@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '125';  // 2026-08-16: Progreso Semanal con relleno degradado y animación de crecimiento
+var BUILD_VERSION = '126';  // 2026-08-16: anillos de cumplimiento semanal (TSS/km/Sesiones/Horas) en Semana
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
