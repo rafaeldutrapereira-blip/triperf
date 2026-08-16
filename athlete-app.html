@@ -796,6 +796,15 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cm-tabs { display: flex; gap: .5rem; padding: .75rem 1rem .5rem; }
 .cm-tab { flex: 1; padding: .55rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; text-align: center; }
 .cm-tab.active { background: rgba(255,101,53,.12); border-color: rgba(255,101,53,.4); color: var(--orange); }
+/* Barras con muchas pestañas (5+) o palabras largas ("Check-in",
+   "Correlaciones", "Mi Perfil") — pedido explícito tras verse feo:
+   flex:1 en .cm-tab fuerza un ancho igual y arbitrario por pestaña que
+   no alcanza para el texto, y lo corta/aprieta. Acá cada pestaña toma
+   su ancho natural y la barra entera scrollea horizontal, en vez de
+   apretar el texto — mismo criterio que ya usan los carruseles de
+   chips de esta app. */
+.cm-tabs-scroll { overflow-x: auto; flex-wrap: nowrap; }
+.cm-tabs-scroll .cm-tab { flex: 0 0 auto; white-space: nowrap; padding: .55rem .85rem; }
 /* Header pegajoso (topbar + pestañas) — feedback del usuario: las
    pestañas de Mental/Race Day/Progreso/AI Coach (y Recovery/Comunidad,
    mismo patrón) quedaban "debajo de los indicadores": al scrollear el
@@ -917,7 +926,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .login-token-input:focus { outline: none; border-color: var(--orange); }
 /* Ojo para mostrar/ocultar contraseña — pedido explícito: el usuario no
    tenía forma de confirmar que tipeó bien la clave antes de enviar. */
-.login-pw-wrap { position: relative; }
+/* #login-screen usa align-items:center (no stretch) — un <div> nuevo
+   como hijo flex directo se encoge a su contenido por default, mientras
+   que el <input> de email (sin wrapper) sí toma el 100% explícito de su
+   CSS. Sin este width:100% acá, el campo de contraseña quedaba más
+   angosto que el de email — bug real reportado en vivo. */
+.login-pw-wrap { position: relative; width: 100%; }
 .login-pw-wrap .login-token-input { padding-right: 2.6rem; }
 .login-pw-eye { position: absolute; top: 50%; right: .8rem; transform: translateY(-50%); background: none; border: none; color: var(--dim); cursor: pointer; padding: .3rem; display: flex; }
 .login-pw-eye:hover { color: var(--text); }
@@ -1284,7 +1298,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
            contexto/Sueño detallado/Timeline/Correlaciones/Protocolos quedan
            para sprints siguientes). Mismo patrón visual .cm-tabs que ya usa
            Comunidad. -->
-      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
+      <div class="cm-tabs cm-tabs-scroll">
         <div class="cm-tab active" id="wl-tab-resumen" onclick="wellnessTab('resumen')">Resumen</div>
         <div class="cm-tab" id="wl-tab-hrv" onclick="wellnessTab('hrv')">HRV</div>
         <div class="cm-tab" id="wl-tab-sleep" onclick="wellnessTab('sleep')">Sueño</div>
@@ -1428,7 +1442,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </button>
       </div>
 
-      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
+      <div class="cm-tabs cm-tabs-scroll">
         <div class="cm-tab active" id="cm-tab-feed" onclick="communityTab('feed')">Feed</div>
         <div class="cm-tab" id="cm-tab-rank" onclick="communityTab('rank')">Ranking</div>
         <div class="cm-tab" id="cm-tab-discover" onclick="communityTab('discover')">Descubrir</div>
@@ -1541,7 +1555,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
       </div>
 
-      <div class="cm-tabs" style="overflow-x:auto;flex-wrap:nowrap">
+      <div class="cm-tabs cm-tabs-scroll">
         <div class="cm-tab active" id="mtl-tab-score" onclick="mentalTab('score')">Score</div>
         <div class="cm-tab" id="mtl-tab-protocols" onclick="mentalTab('protocols')">Protocolos</div>
         <div class="cm-tab" id="mtl-tab-breathing" onclick="mentalTab('breathing')">Respiración</div>
@@ -1709,7 +1723,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
       </div>
 
-      <div class="cm-tabs pgr-tabs-scroll" style="overflow-x:auto;flex-wrap:nowrap">
+      <div class="cm-tabs cm-tabs-scroll">
         <div class="cm-tab active" id="pgr-tab-insights" onclick="progressTab('insights')">Insights</div>
         <div class="cm-tab" id="pgr-tab-records" onclick="progressTab('records')">Récords</div>
         <div class="cm-tab" id="pgr-tab-projection" onclick="progressTab('projection')">Proyección</div>
@@ -3186,14 +3200,16 @@ function _realActivityCard(act){
   // SPORT_EMOJI primero, no act.icon (bug real encontrado: el icon que
   // manda el backend para nado llega con mojibake — SPORT_EMOJI ya es la
   // fuente confiable que usa el resto de la app).
-  return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px;cursor:pointer" onclick="showExtraActivityDetail('+idx+')">'
-    +'<div class="th-sport"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
+  // Sin grilla de min/km/TSS acá — pedido explícito: esa info no hace
+  // falta en el vistazo de Hoy para una actividad extra no planificada,
+  // alcanza con saber que existe y poder tocarla para ver el detalle
+  // completo (que sí la sigue mostrando, junto con mapa/Zonas/Gráficos/
+  // Parciales, en showExtraActivityDetail()).
+  return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.6rem" onclick="showExtraActivityDetail('+idx+')">'
+    +'<div class="th-sport" style="margin:0"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
     +'<div><div class="th-name">'+(act.name||'Actividad')+'</div></div></div>'
-    +'<div class="th-meta-grid">'
-    +(act.dur_min?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+Math.round(act.dur_min)+'</div><div class="th-meta-lbl">min</div></div>':'')
-    +(act.dist_km?'<div class="th-meta-item"><div class="th-meta-val" style="color:'+col+'">'+act.dist_km+'</div><div class="th-meta-lbl">km</div></div>':'')
-    +(act.tss?'<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">'+Math.round(act.tss)+'</div><div class="th-meta-lbl">TSS</div></div>':'')
-    +'</div></div>';
+    +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
+    +'</div>';
 }
 
 function showExtraActivityDetail(idx){
