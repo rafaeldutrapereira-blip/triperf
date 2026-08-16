@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '123';  // 2026-08-15: fix ancho login, card actividad extra sin meta, pestañas largas con scroll
+var BUILD_VERSION = '124';  // 2026-08-15: fix real flecha actividad extra (min-width:0 + ellipsis) — build anterior no se había subido, celular quedó en caché vieja
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
