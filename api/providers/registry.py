@@ -26,10 +26,11 @@ _FLAG_ENV_VAR = {
 # no tiene sentido reportarlos como "disponibles" si ni siquiera hay
 # código). Wahoo/Polar/Coros/Apple Health se agregan acá recién cuando
 # su Sprint correspondiente (52-55) los implemente de verdad.
-# Wahoo (Sprint 52): implementado contra la API pública documentada,
-# pero WAHOO_ENABLED sigue en false hasta validar con un usuario real
-# con dispositivo Wahoo — ver docs/plan-multi-brand-wearables.md.
-_IMPLEMENTED_PROVIDERS = {"garmin", "strava", "wahoo"}
+# Wahoo (Sprint 52) / Polar (Sprint 53): implementados contra sus APIs
+# públicas documentadas, pero sus flags siguen en false hasta validar
+# con un usuario real con el dispositivo correspondiente — ver
+# docs/plan-multi-brand-wearables.md.
+_IMPLEMENTED_PROVIDERS = {"garmin", "strava", "wahoo", "polar"}
 
 
 def is_provider_enabled(name: str) -> bool:

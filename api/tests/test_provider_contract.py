@@ -20,6 +20,7 @@ import pytest
 
 from api.garmin_pull_service import _parse_garmin_activity
 from api.providers.wahoo import normalize_wahoo_workout
+from api.providers.polar import normalize_polar_exercise
 
 _FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -37,6 +38,7 @@ def _load_fixtures(provider: str) -> list[tuple[str, dict]]:
 
 GARMIN_FIXTURES = _load_fixtures("garmin")
 WAHOO_FIXTURES = _load_fixtures("wahoo")
+POLAR_FIXTURES = _load_fixtures("polar")
 
 
 def assert_normalized_activity_contract(normalized: dict, fixture_name: str, has_hr_or_power: bool):
@@ -76,6 +78,14 @@ def test_wahoo_provider_contract(fixture_name, raw):
     assert_normalized_activity_contract(normalized, fixture_name, has_hr_or_power)
 
 
+@pytest.mark.skipif(not POLAR_FIXTURES, reason="sin fixtures de Polar")
+@pytest.mark.parametrize("fixture_name,raw", POLAR_FIXTURES, ids=[f[0] for f in POLAR_FIXTURES])
+def test_polar_provider_contract(fixture_name, raw):
+    normalized = normalize_polar_exercise(raw, fcmax=190)
+    has_hr_or_power = bool((raw.get("heart_rate") or {}).get("average"))
+    assert_normalized_activity_contract(normalized, fixture_name, has_hr_or_power)
+
+
 def test_at_least_one_fixture_per_known_provider():
     """Recordatorio duro: si se agrega un provider nuevo (Polar/Coros) sin
     fixtures reales acá, este test falla — no se puede mergear un provider
@@ -93,3 +103,4 @@ def test_at_least_one_fixture_per_known_provider():
     docs/plan-multi-brand-wearables.md)."""
     assert len(GARMIN_FIXTURES) >= 3, "Se esperaban al menos 3 fixtures reales de Garmin"
     assert len(WAHOO_FIXTURES) >= 1, "Se esperaba al menos 1 fixture real (de la doc oficial) de Wahoo"
+    assert len(POLAR_FIXTURES) >= 1, "Se esperaba al menos 1 fixture real (de la doc oficial) de Polar"
