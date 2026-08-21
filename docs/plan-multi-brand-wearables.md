@@ -55,6 +55,8 @@ Objetivo: dejar de crecer deuda nueva con nombres `Garmin*`, sin arriesgar una m
 > **Prompt:**
 > "Crea `api/tests/fixtures/garmin/*.json` capturando 5-10 respuestas reales (anonimizadas: reemplaza nombre/email por valores ficticios, deja las métricas reales) del sync que ya corre hoy contra la cuenta Garmin real del usuario. Escribe un test contractual parametrizado `test_provider_contract.py` que cualquier `WearableProvider` debe pasar: dado un fixture crudo, el resultado normalizado debe tener `sport`, `date_iso`, `dur_min` válidos, y `tss` no nulo si hay HR o potencia. Corre este contrato contra `GarminProvider` con los fixtures reales para confirmar que pasa. Este test es el gate obligatorio antes de aceptar cualquier provider nuevo (Wahoo/Polar/Coros) más adelante, aunque no tengamos el dispositivo físico para probarlo en vivo."
 
+**Estado Sprint 52 (2026-08-21, commit `abc6583`): CÓDIGO listo, activación PENDIENTE.** `WahooProvider` implementado contra la API pública real documentada (https://cloud-api.wahooligan.com/). Hallazgo real: Wahoo trae TSS nativo (`power_bike_tss_last`) para bici con potencia — mejor que Garmin en ese aspecto. `download_gps`/`download_splits`/`get_health_daily`/`get_sleep` quedan con `NotImplementedError`: Wahoo no expone esos endpoints en su API pública (solo un .FIT crudo, sin datos de salud/sueño — son ciclocomputadoras). Fixture: 1 solo ejemplo real (el único que la doc de Wahoo publica, repetido en todos sus endpoints CRUD) — no se inventaron fixtures adicionales para forzar el mínimo de 3 del Sprint 51; se ajustó esa regla explícitamente para Wahoo. **Bloqueante real para activar en producción:** Wahoo limita el acceso a su API a apps aprobadas — ni siquiera se puede probar el flujo OAuth end-to-end sin que aprueben la app + un usuario real con dispositivo Wahoo conectado. `WAHOO_ENABLED` sigue en `false`.
+
 ### Sprint 52 — Wahoo (primera marca nueva candidata)
 
 Por qué Wahoo primero: developer portal público con ejemplos de respuesta reales documentados, sin requerir compra de hardware para acceder a la doc, y es una marca común en triatlón (overlap alto con tu público).
@@ -82,7 +84,7 @@ Distinto a los anteriores: no es una API cloud con OAuth, es integración nativa
 - [x] Sprint 49 — Renombrado simbólico (commit `49cd046`) — alias creados, 44 call-sites existentes quedaron sin migrar a propósito (ver nota arriba)
 - [x] Sprint 50 — Registry + flags + endpoint `/providers/enabled` (commit `f8b87de`) — UI de Conexiones NO adaptada todavía a propósito: hoy no hay ninguna card de marca nueva que ocultar, se hace data-driven recién cuando Sprint 52 agregue la primera card real (Wahoo)
 - [x] Sprint 51 — Contract tests (commit `e008e7f`) — 8 fixtures reales anonimizadas de `data/cache/`, gate `test_provider_contract.py` listo para exigirse a Wahoo/Polar/Coros
-- [ ] Sprint 52 — Wahoo
+- [~] Sprint 52 — Wahoo (código listo, commit `abc6583`) — falta: solicitar aprobación de app en Wahoo + conseguir 1 usuario real con dispositivo antes de `WAHOO_ENABLED=true`
 - [ ] Sprint 53 — Polar
 - [ ] Sprint 54 — Coros
 - [ ] Sprint 55 — Apple Health (app móvil)
