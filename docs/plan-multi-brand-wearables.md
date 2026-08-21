@@ -86,7 +86,14 @@ Se encontraron y corrigieron 2 problemas reales en el camino:
 
 **NO verificado en dispositivo real** (sin Android SDK/emulador en esta máquina) — es código correcto contra la API documentada del plugin, pero nunca se compiló ni corrió un APK real. No activar/distribuir hasta probarlo en un dispositivo Android real con Health Connect instalado.
 
-**iOS (2026-08-21, commit `5a465fe`): plataforma agregada, YA NO bloqueado por falta de acceso — usuario creó cuenta gratuita en Codemagic.** `npx cap add ios` no requiere Mac (solo genera el proyecto Xcode; compilarlo sí). Se agregaron `NSHealthShareUsageDescription`/`NSHealthUpdateUsageDescription` a Info.plist (obligatorias, si no Apple rechaza la app en review) y el entitlement `com.apple.developer.healthkit` enlazado al build target en `project.pbxproj` — edición manual verificada con el parser real `xcode` (paquete npm), no solo conteo de llaves. **Sin verificar en Xcode real todavía**: falta que el usuario cree cuenta de Apple Developer y se configure el pipeline de Codemagic para compilar/probar de verdad.
+**iOS (2026-08-21, commit `5a465fe`): plataforma agregada en código, PAUSADO por decisión del usuario.** `npx cap add ios` no requiere Mac (solo genera el proyecto Xcode; compilarlo sí). Se agregaron `NSHealthShareUsageDescription`/`NSHealthUpdateUsageDescription` a Info.plist y el entitlement `com.apple.developer.healthkit` enlazado en `project.pbxproj` (verificado con el parser real `xcode` de npm). Se investigó a fondo el camino de compilación:
+
+- Capacitor 8 (el que este proyecto usa) exige **Xcode 26**.
+- La Mac del usuario es de 2015 o más vieja — no puede actualizar a una versión de macOS que corra Xcode 26. Callejón sin salida para compilar localmente.
+- El iPad Pro 11 nuevo del usuario **no puede compilar nada** (iPadOS no corre Xcode) — solo serviría como dispositivo de prueba una vez compilado en otro lado.
+- Codemagic (cloud, ya con cuenta creada) SÍ podría compilar sin Mac local, pero su firma automática requiere una App Store Connect API key, que a su vez **requiere la cuenta paga de Apple Developer Program (US$99/año)** — las cuentas gratis ("Personal Team") no tienen acceso al portal web de Certificates/Identifiers/Profiles, solo pueden firmar vía Xcode corriendo localmente.
+
+**Conclusión: el único camino sin comprar una Mac nueva es pagar los US$99/año + Codemagic + instalar en el iPad vía TestFlight.** El usuario decidió NO pagar por ahora y quedarse con Android únicamente. iOS queda con el código listo pero pausado — no reabrir este tema a menos que el usuario lo pida explícitamente (ya evaluó las opciones y decidió).
 
 ## 4. Cómo validar sin comprar el hardware
 
@@ -104,4 +111,4 @@ Se encontraron y corrigieron 2 problemas reales en el camino:
 - [~] Sprint 53 — Polar (código listo, commit `9f75d31`) — falta: registrar app self-serve en Polar (sin aprobación previa) + conseguir 1 usuario real con dispositivo antes de `POLAR_ENABLED=true`
 - [!] Sprint 54 — Coros **BLOQUEADO**: su doc de API no es pública (requiere aprobación de partner). Acción pendiente del usuario: enviar solicitud a Coros. Ver nota arriba.
 - [~] Sprint 55 — Health Connect (Android) código listo, commit `cc075a2` — falta: instalar Android SDK/emulador para probar de verdad, luego conseguir usuario real.
-- [~] Sprint 55 — HealthKit (iOS) plataforma agregada, commit `5a465fe` — usuario ya tiene cuenta Codemagic; falta cuenta Apple Developer + configurar pipeline para compilar/probar de verdad.
+- [~] Sprint 55 — HealthKit (iOS) código listo, commit `5a465fe` — **PAUSADO por decisión del usuario**: única vía sin Mac nueva es pagar Apple Developer (US$99/año) + Codemagic + TestFlight al iPad; decidió no pagar por ahora. No retomar sin pedido explícito.
