@@ -68,11 +68,15 @@ Por qué Wahoo primero: developer portal público con ejemplos de respuesta real
 
 ### Sprint 54 — Coros
 
-Mismo patrón que Sprint 52/53: buscar documentación oficial real de Coros Developer API, implementar contra endpoints reales, fixtures solo si son datos genuinos de su doc (ajustar el mínimo si su doc publica menos de 3 ejemplos, igual que se hizo con Wahoo), flag `COROS_ENABLED` apagado hasta validar con usuario real.
+**BLOQUEADO (2026-08-21).** A diferencia de Wahoo (doc pública, requiere aprobación de app) y Polar (doc pública, self-serve), **la documentación oficial de la API de Coros NO es pública** — solo se comparte después de que Coros aprueba una solicitud de partner ("Submit an API Application"). Lo único encontrado públicamente son wrappers de terceros (ej. `xballoy/coros-api` en GitHub) construidos contra una API no oficial/reverse-engineered, con advertencia explícita del propio autor: *"This repository is using a non-public API from COROS Training Hub that could break anytime."*
+
+Construir `CorosProvider` contra eso violaría la regla no negociable de este plan (fixtures y contratos solo desde documentación pública oficial, nunca reverse-engineering no verificado). **Acción pendiente del lado del usuario**, no de una sesión de Claude Code: enviar la solicitud de partner a Coros y esperar aprobación + acceso a la doc real. Una vez ahí, este sprint se retoma con el mismo patrón de Wahoo/Polar (documentación consultada en vivo, fixtures verbatim, flag `COROS_ENABLED` apagado hasta validar con un usuario real).
 
 ### Sprint 55 — Apple Health / Health Connect
 
-Distinto a los anteriores: no es una API cloud con OAuth, es integración nativa en la app móvil (lectura local de HealthKit/Health Connect). Requiere trabajo en el proyecto de la app (ver memoria de paridad app↔web), no solo backend. Planificar aparte cuando llegue el momento.
+**BLOQUEADO — hallazgo más profundo de lo esperado (2026-08-21).** No es solo que este sprint "requiera trabajo en la app" (como se anotó originalmente): LabX **no tiene ningún shell nativo hoy**. Se verificó el repo — no hay Capacitor, Cordova, carpeta `android/` ni proyecto Xcode, solo un `manifest.json` de PWA pura. HealthKit (iOS) y Health Connect (Android) son APIs nativas del sistema operativo — inaccesibles desde JavaScript de una PWA sin un wrapper nativo (ej. Capacitor) alrededor.
+
+Esto convierte Sprint 55 en una decisión arquitectónica de fondo (¿introducir Capacitor u otro wrapper nativo? ¿mantener la PWA y aceptar no tener HealthKit/Health Connect?), no una tarea de "agregar un provider más". Es una decisión de producto/plataforma que le corresponde al usuario, no algo para resolver unilateralmente dentro de este plan. Queda pendiente de decisión explícita antes de planificarse en detalle.
 
 ## 4. Cómo validar sin comprar el hardware
 
@@ -88,5 +92,5 @@ Distinto a los anteriores: no es una API cloud con OAuth, es integración nativa
 - [x] Sprint 51 — Contract tests (commit `e008e7f`) — 8 fixtures reales anonimizadas de `data/cache/`, gate `test_provider_contract.py` listo para exigirse a Wahoo/Polar/Coros
 - [~] Sprint 52 — Wahoo (código listo, commit `abc6583`) — falta: solicitar aprobación de app en Wahoo + conseguir 1 usuario real con dispositivo antes de `WAHOO_ENABLED=true`
 - [~] Sprint 53 — Polar (código listo, commit `9f75d31`) — falta: registrar app self-serve en Polar (sin aprobación previa) + conseguir 1 usuario real con dispositivo antes de `POLAR_ENABLED=true`
-- [ ] Sprint 54 — Coros
-- [ ] Sprint 55 — Apple Health (app móvil)
+- [!] Sprint 54 — Coros **BLOQUEADO**: su doc de API no es pública (requiere aprobación de partner). Acción pendiente del usuario: enviar solicitud a Coros. Ver nota arriba.
+- [!] Sprint 55 — Apple Health/Health Connect **BLOQUEADO**: LabX no tiene shell nativo (PWA pura, sin Capacitor/Cordova/proyecto nativo) — decisión de arquitectura de fondo pendiente del usuario, no una tarea de código. Ver nota arriba.
