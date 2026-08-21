@@ -84,7 +84,9 @@ Se encontraron y corrigieron 2 problemas reales en el camino:
 1. El patrón `apiBase()` existente en 5 archivos chequeaba `protocol === 'file:'`, pero Capacitor usa `http://localhost` — ese fallback nunca se activaba dentro del shell nativo. Se agregó detección real vía `window.Capacitor.isNativePlatform()`.
 2. `coach_main.py` monta `StaticFiles` en la raíz completa del repo; `node_modules/` (miles de `.js`) no estaba en el deny-list de `nginx/labx.conf` y habría quedado servible por HTTP. Se agregó al deny-list junto con `android/`, `www/` y los metadata de npm.
 
-**NO verificado en dispositivo real** (sin Android SDK/emulador en esta máquina) — es código correcto contra la API documentada del plugin, pero nunca se compiló ni corrió un APK real. No activar/distribuir hasta probarlo en un dispositivo Android real con Health Connect instalado. iOS/HealthKit sigue bloqueado por falta de Mac.
+**NO verificado en dispositivo real** (sin Android SDK/emulador en esta máquina) — es código correcto contra la API documentada del plugin, pero nunca se compiló ni corrió un APK real. No activar/distribuir hasta probarlo en un dispositivo Android real con Health Connect instalado.
+
+**iOS (2026-08-21, commit `5a465fe`): plataforma agregada, YA NO bloqueado por falta de acceso — usuario creó cuenta gratuita en Codemagic.** `npx cap add ios` no requiere Mac (solo genera el proyecto Xcode; compilarlo sí). Se agregaron `NSHealthShareUsageDescription`/`NSHealthUpdateUsageDescription` a Info.plist (obligatorias, si no Apple rechaza la app en review) y el entitlement `com.apple.developer.healthkit` enlazado al build target en `project.pbxproj` — edición manual verificada con el parser real `xcode` (paquete npm), no solo conteo de llaves. **Sin verificar en Xcode real todavía**: falta que el usuario cree cuenta de Apple Developer y se configure el pipeline de Codemagic para compilar/probar de verdad.
 
 ## 4. Cómo validar sin comprar el hardware
 
@@ -101,4 +103,5 @@ Se encontraron y corrigieron 2 problemas reales en el camino:
 - [~] Sprint 52 — Wahoo (código listo, commit `abc6583`) — falta: solicitar aprobación de app en Wahoo + conseguir 1 usuario real con dispositivo antes de `WAHOO_ENABLED=true`
 - [~] Sprint 53 — Polar (código listo, commit `9f75d31`) — falta: registrar app self-serve en Polar (sin aprobación previa) + conseguir 1 usuario real con dispositivo antes de `POLAR_ENABLED=true`
 - [!] Sprint 54 — Coros **BLOQUEADO**: su doc de API no es pública (requiere aprobación de partner). Acción pendiente del usuario: enviar solicitud a Coros. Ver nota arriba.
-- [~] Sprint 55 — Health Connect (Android) código listo, commit `cc075a2` — falta: instalar Android SDK/emulador para probar de verdad, luego conseguir usuario real. iOS/HealthKit sigue bloqueado por falta de Mac.
+- [~] Sprint 55 — Health Connect (Android) código listo, commit `cc075a2` — falta: instalar Android SDK/emulador para probar de verdad, luego conseguir usuario real.
+- [~] Sprint 55 — HealthKit (iOS) plataforma agregada, commit `5a465fe` — usuario ya tiene cuenta Codemagic; falta cuenta Apple Developer + configurar pipeline para compilar/probar de verdad.
