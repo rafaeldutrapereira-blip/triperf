@@ -76,7 +76,15 @@ Construir `CorosProvider` contra eso violaría la regla no negociable de este pl
 
 **BLOQUEADO — hallazgo más profundo de lo esperado (2026-08-21).** No es solo que este sprint "requiera trabajo en la app" (como se anotó originalmente): LabX **no tiene ningún shell nativo hoy**. Se verificó el repo — no hay Capacitor, Cordova, carpeta `android/` ni proyecto Xcode, solo un `manifest.json` de PWA pura. HealthKit (iOS) y Health Connect (Android) son APIs nativas del sistema operativo — inaccesibles desde JavaScript de una PWA sin un wrapper nativo (ej. Capacitor) alrededor.
 
-Esto convierte Sprint 55 en una decisión arquitectónica de fondo (¿introducir Capacitor u otro wrapper nativo? ¿mantener la PWA y aceptar no tener HealthKit/Health Connect?), no una tarea de "agregar un provider más". Es una decisión de producto/plataforma que le corresponde al usuario, no algo para resolver unilateralmente dentro de este plan. Queda pendiente de decisión explícita antes de planificarse en detalle.
+Esto convierte Sprint 55 en una decisión arquitectónica de fondo (¿introducir Capacitor u otro wrapper nativo? ¿mantener la PWA y aceptar no tener HealthKit/Health Connect?), no una tarea de "agregar un provider más". Es una decisión de producto/plataforma que le corresponde al usuario, no algo para resolver unilateralmente dentro de este plan.
+
+**Estado (2026-08-21, commit `cc075a2`): decisión tomada — Android primero, iOS pendiente de acceso a Mac.** Se evaluaron costos de Mac en la nube (Codemagic: 500 min/mes gratis; GitHub Actions ~$0.062/min; MacInCloud ~$65/mes) y se decidió avanzar con Android ahora. Se agregó Capacitor 8.5.0 (primer shell nativo del proyecto — antes era PWA pura) + `@capgo/capacitor-health` (plugin real, activo, cubre HealthKit y Health Connect con la misma API — mismo plugin servirá para iOS cuando se destrabe el acceso a Mac). `scripts/build_www.py` genera `www/` con whitelist estricta de extensiones (la raíz del repo también tiene `.env` con secretos reales). `capacitor-health-bridge.js` normaliza `Workout` al mismo formato interno de Activity que Garmin/Wahoo/Polar.
+
+Se encontraron y corrigieron 2 problemas reales en el camino:
+1. El patrón `apiBase()` existente en 5 archivos chequeaba `protocol === 'file:'`, pero Capacitor usa `http://localhost` — ese fallback nunca se activaba dentro del shell nativo. Se agregó detección real vía `window.Capacitor.isNativePlatform()`.
+2. `coach_main.py` monta `StaticFiles` en la raíz completa del repo; `node_modules/` (miles de `.js`) no estaba en el deny-list de `nginx/labx.conf` y habría quedado servible por HTTP. Se agregó al deny-list junto con `android/`, `www/` y los metadata de npm.
+
+**NO verificado en dispositivo real** (sin Android SDK/emulador en esta máquina) — es código correcto contra la API documentada del plugin, pero nunca se compiló ni corrió un APK real. No activar/distribuir hasta probarlo en un dispositivo Android real con Health Connect instalado. iOS/HealthKit sigue bloqueado por falta de Mac.
 
 ## 4. Cómo validar sin comprar el hardware
 
@@ -93,4 +101,4 @@ Esto convierte Sprint 55 en una decisión arquitectónica de fondo (¿introducir
 - [~] Sprint 52 — Wahoo (código listo, commit `abc6583`) — falta: solicitar aprobación de app en Wahoo + conseguir 1 usuario real con dispositivo antes de `WAHOO_ENABLED=true`
 - [~] Sprint 53 — Polar (código listo, commit `9f75d31`) — falta: registrar app self-serve en Polar (sin aprobación previa) + conseguir 1 usuario real con dispositivo antes de `POLAR_ENABLED=true`
 - [!] Sprint 54 — Coros **BLOQUEADO**: su doc de API no es pública (requiere aprobación de partner). Acción pendiente del usuario: enviar solicitud a Coros. Ver nota arriba.
-- [!] Sprint 55 — Apple Health/Health Connect **BLOQUEADO**: LabX no tiene shell nativo (PWA pura, sin Capacitor/Cordova/proyecto nativo) — decisión de arquitectura de fondo pendiente del usuario, no una tarea de código. Ver nota arriba.
+- [~] Sprint 55 — Health Connect (Android) código listo, commit `cc075a2` — falta: instalar Android SDK/emulador para probar de verdad, luego conseguir usuario real. iOS/HealthKit sigue bloqueado por falta de Mac.
