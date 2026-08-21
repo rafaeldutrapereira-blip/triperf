@@ -25,6 +25,18 @@ Dado que **no tienes hardware de otras marcas para probar**, y dado el historial
 4. **Cada sprint termina con un tag git de respaldo** antes de arrancar el siguiente (`git tag pre-sprintNN-<fecha>`).
 5. **El sprint de Garmin actual no se toca en su comportamiento visible** hasta que el refactor estructural (Sprint 48-49) esté 100% verde en tests — es tu única fuente de datos reales, no puede quebrarse.
 
+## 2.1 Pendiente importante: Garmin no usa un canal oficial (a diferencia de las demás)
+
+A diferencia de Strava/Wahoo/Polar (todas implementadas contra su API oficial documentada, con las aprobaciones correspondientes), **la integración de Garmin en producción NO pasa por ningún canal oficial de partner**. `GarminPullService`/`_garmin_login` usa la librería `garminconnect`, que hace login directo con email+contraseña del usuario, replicando el tráfico de la app oficial de Garmin Connect (ingeniería inversa de su API interna, no un partner API aprobado).
+
+Esto es deuda técnica/riesgo heredado (existía antes de este plan, no algo introducido por los Sprints 48-55), pero vale la pena dejarlo explícito porque es inconsistente con el criterio de "solo APIs oficiales" que se aplicó al resto de las marcas nuevas:
+- Viola el ToS de Garmin (acceso no autorizado a su API interna).
+- Se puede romper sin aviso si Garmin cambia su app/backend.
+- LabX guarda la contraseña real de la cuenta de Garmin de cada usuario (cifrada, pero existe) — mayor superficie de riesgo que un token OAuth revocable.
+- Riesgo de que Garmin banee la cuenta del usuario real por patrones de acceso automatizado.
+
+**No es urgente resolverlo** — es la integración con más usuarios reales activos en producción, y migrarla es un trabajo grande que tocaría el sync que todos usan hoy. Queda anotado como pendiente futuro (evaluar el Garmin Health API oficial de partners) para cuando se decida abordarlo, no como parte de los sprints 48-55.
+
 ## 3. Sprints propuestos
 
 Cada sprint incluye un **prompt listo para pegar** en una futura sesión de Claude Code.
