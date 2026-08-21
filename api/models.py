@@ -2033,3 +2033,20 @@ class GarminPlannedWorkout(Base):
     # en garmin_pull_service.py.
     steps_json          = Column(Text,    nullable=True)
     description         = Column(Text,    nullable=True)    # descripción/nota libre del workout (si la plataforma la trae)
+
+
+# ──────────────────────────────────────────────────────────
+# Sprint 49 (multi-marca) — alias genéricos
+# ──────────────────────────────────────────────────────────
+# Las tablas físicas siguen llamándose garmin_* (renombrarlas es una
+# migración de datos aparte, fuera de alcance de este sprint). Estos
+# alias existen para que TODO código nuevo deje de importar los nombres
+# Garmin-específicos y no siga creciendo la deuda: cualquier código que
+# no sea literalmente específico de la API de Garmin (auth/tokens) debe
+# usar Activity/TrainingLoad/ProviderSyncStatus/HealthDaily/SleepSession.
+# Ver docs/plan-multi-brand-wearables.md.
+Activity           = GarminActivity
+TrainingLoad       = GarminTrainingLoad
+ProviderSyncStatus = GarminSyncStatus
+HealthDaily        = GarminHealthDaily
+SleepSession       = GarminSleepSession
