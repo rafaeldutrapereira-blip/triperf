@@ -80,7 +80,7 @@ Distinto a los anteriores: no es una API cloud con OAuth, es integración nativa
 
 - [x] Sprint 48 — Interfaz WearableProvider (commit `ecc1fe4`) — nota: `get_health_daily`/`get_sleep` y el list/detail de Strava quedaron con `NotImplementedError` explícito, no decoupled todavía (ver decisión en el commit)
 - [x] Sprint 49 — Renombrado simbólico (commit `49cd046`) — alias creados, 44 call-sites existentes quedaron sin migrar a propósito (ver nota arriba)
-- [ ] Sprint 50 — Registry + flags + UI
+- [x] Sprint 50 — Registry + flags + endpoint `/providers/enabled` (commit `f8b87de`) — UI de Conexiones NO adaptada todavía a propósito: hoy no hay ninguna card de marca nueva que ocultar, se hace data-driven recién cuando Sprint 52 agregue la primera card real (Wahoo)
 - [ ] Sprint 51 — Contract tests
 - [ ] Sprint 52 — Wahoo
 - [ ] Sprint 53 — Polar
