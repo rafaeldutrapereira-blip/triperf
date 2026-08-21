@@ -10,6 +10,12 @@
   'use strict';
 
   function _apiBase() {
+    // Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
+    // no es la URL real de produccion -- el check de 'file:' de abajo no
+    // cubre ese caso (Capacitor no usa protocolo file:).
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      return 'https://beta.labx.app/api';
+    }
     return window.location.protocol === 'file:'
       ? 'http://localhost:8000/api'
       : window.location.origin + '/api';

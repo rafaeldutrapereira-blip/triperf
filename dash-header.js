@@ -16,6 +16,13 @@ function esc(s){
 }
 
 function apiBase(){
+  // Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
+  // es 'http://localhost' (o similar), NO la URL real de producción — hay
+  // que detectar la plataforma nativa explícitamente, el check de 'file:'
+  // de abajo no cubre este caso (Capacitor no usa protocolo file:).
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    return 'https://beta.labx.app/api';
+  }
   return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 }
 function authToken(){

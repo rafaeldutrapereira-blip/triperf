@@ -682,6 +682,9 @@ function _render(metricId, currentValue){
 
 /* ── Helpers de fetch autenticado (para datos en vivo, ej. readiness) ──── */
 function _apiBase(){
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    return 'https://beta.labx.app/api';
+  }
   return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 }
 function _authToken(){

@@ -2027,7 +2027,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 ═══════════════════════════════════════════════════════════ */
 
 /* ── Config ─────────────────────────────────────────────── */
-var API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
+// Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
+// no es la URL real de produccion -- Capacitor no usa protocolo file:,
+// asi que ese check no lo cubre, hay que detectar la plataforma nativa.
+var API = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  ? 'https://beta.labx.app/api'
+  : (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
 /* Mientras el backend se sirve por un túnel ngrok gratuito (fase de
    pruebas, no producción): ngrok le muestra a cualquier request con cara
    de navegador (sin este header) una página HTML de advertencia
@@ -7279,5 +7284,9 @@ if('serviceWorker' in navigator){
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
 <script src="workout-blocks.js?v=1"></script>
+<!-- Sprint 55: puente a HealthKit/Health Connect. window.Capacitor ya lo
+     inyecta el runtime nativo automaticamente (no requiere script propio);
+     este archivo es no-op fuera del shell nativo de Capacitor. -->
+<script src="capacitor-health-bridge.js"></script>
 </body>
 </html>
