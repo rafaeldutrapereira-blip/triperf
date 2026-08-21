@@ -76,7 +76,7 @@ Distinto a los anteriores: no es una API cloud con OAuth, es integración nativa
 
 ## 5. Progreso
 
-- [ ] Sprint 48 — Interfaz WearableProvider
+- [x] Sprint 48 — Interfaz WearableProvider (commit `ecc1fe4`) — nota: `get_health_daily`/`get_sleep` y el list/detail de Strava quedaron con `NotImplementedError` explícito, no decoupled todavía (ver decisión en el commit)
 - [ ] Sprint 49 — Renombrado simbólico
 - [ ] Sprint 50 — Registry + flags + UI
 - [ ] Sprint 51 — Contract tests
