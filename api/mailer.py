@@ -52,17 +52,17 @@ def send_welcome(email: str, nombre: str, app_url: str = "") -> None:
           <span style="color:#F0F9FF">LAB</span><span style="background:linear-gradient(125deg,#F0A500,#FF6535);-webkit-background-clip:text;-webkit-text-fill-color:transparent">X</span>
         </span>🌺
       </div>
-      <h1 style="font-size:1.4rem;margin-bottom:8px">¡Bienvenido, {nombre}! 🏊🚴🏃</h1>
-      <p style="color:#7FB3CC;margin-bottom:24px">Tu cuenta LabX está lista. Aquí puedes empezar:</p>
+      <h1 style="font-size:1.4rem;margin-bottom:8px">¡Bienvenido a LabX, {nombre}! 🏊🚴🏃</h1>
+      <p style="color:#7FB3CC;margin-bottom:24px">Tu cuenta ya está lista. LabX es tu plataforma de entrenamiento para deportes de resistencia — running, ciclismo, natación y triatlón: sincroniza tus datos reales, calcula tu carga de entrenamiento y te ayuda a llegar a tu próxima carrera en tu mejor forma.</p>
       <ul style="padding-left:20px;color:#7FB3CC;margin-bottom:24px">
-        <li style="margin-bottom:8px">📊 Registra tu primer entrenamiento en el Dashboard</li>
-        <li style="margin-bottom:8px">🔄 Conecta Garmin para sync automático</li>
-        <li style="margin-bottom:8px">🏁 Usa el Predictor de carrera para tu próximo objetivo</li>
-        <li style="margin-bottom:8px">🧬 Registra tus análisis de sangre y nutrición</li>
+        <li style="margin-bottom:8px">🔄 Conecta Garmin o Strava — tu carga de entrenamiento (CTL/ATL/TSB) y tu Readiness diario se calculan solos, con tus datos reales, sea cual sea tu deporte</li>
+        <li style="margin-bottom:8px">🤖 Hablá con tu AI Coach — te ayuda a ajustar el plan según cómo llegaste a entrenar</li>
+        <li style="margin-bottom:8px">🏁 Usa el Predictor de Carrera — mirá si vas a llegar a tu objetivo (maratón, media maratón, o triatlón sprint/olímpico/70.3/Ironman) con tu forma actual</li>
+        <li style="margin-bottom:8px">📲 Instalá LabX en tu celular — agregala a la pantalla de inicio desde el navegador, funciona como una app</li>
       </ul>
       <div style="text-align:center;margin-bottom:28px">
         <a href="{app_url}/onboarding.html" style="display:inline-block;background:linear-gradient(135deg,#FF6535,#E8490A);color:#fff;font-weight:800;font-size:1rem;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;padding:14px 32px;border-radius:10px;box-shadow:0 4px 24px rgba(255,101,53,.3)">
-          Configurar mi cuenta →
+          Empezar mi plan →
         </a>
       </div>
       <p style="color:#3D6880;font-size:.8rem;text-align:center">El equipo LabX &nbsp;·&nbsp; Soporte: partnerships@labxperformanceapp.com</p>
