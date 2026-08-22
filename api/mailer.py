@@ -206,3 +206,113 @@ def send_day7_drip(email: str, nombre: str, app_url: str = "") -> None:
       <p style="text-align:center;margin:12px 0 0"><a href="{app_url}/unsubscribe" style="color:#3D6880;font-size:10pt">Cancelar suscripción a estos emails</a></p>
     """
     send_email(email, f"Una semana con LabX — ¿tienes coach, {nombre}? 🧑‍💼", _wrap_email_body(inner), tags=["drip", "day7"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTIFICACIÓN DE INICIO DE SESIÓN (I-04, rediseñado 2026-08-22)
+# ─────────────────────────────────────────────────────────────────────────────
+# Reemplaza el _alert_new_device() que vivía inline en auth_routes.py con HTML
+# ad-hoc (sin el estándar de marca) -- movido acá para que use el mismo
+# header/footer/tipografía que el resto de los correos, y con datos reales
+# de dispositivo/ubicación en vez de solo el user-agent crudo sin parsear.
+
+_UA_BROWSERS = [
+    ("Edg/", "Edge"), ("OPR/", "Opera"), ("Firefox/", "Firefox"),
+    ("Chrome/", "Chrome"), ("Safari/", "Safari"),
+]
+_UA_OS = [
+    # iPhone/iPad ANTES que Mac OS X -- el user-agent de iOS Safari siempre
+    # incluye la cadena literal "like Mac OS X" (por compatibilidad historica
+    # de Apple), asi que si "Mac OS X" se revisa primero, un iPhone se
+    # detecta erroneamente como "macOS". Bug real encontrado probando con
+    # un UA de iPhone antes de dar esto por terminado.
+    ("iPhone", "iOS"), ("iPad", "iOS"), ("Android", "Android"),
+    ("Windows NT", "Windows"), ("Mac OS X", "macOS"), ("Linux", "Linux"),
+]
+
+
+def _parse_device(ua: str) -> str:
+    """Parseo liviano por substring (sin agregar dependencia nueva tipo
+    user-agents/ua-parser) -- cubre los casos reales más comunes. No es
+    exhaustivo (no distingue versiones ni dispositivos exóticos), pero es
+    honesto: si no reconoce el patrón, dice 'Navegador desconocido' en vez
+    de inventar un dato."""
+    if not ua:
+        return "Dispositivo desconocido"
+    browser = next((name for key, name in _UA_BROWSERS if key in ua), None)
+    os_name = next((name for key, name in _UA_OS if key in ua), None)
+    if browser and os_name:
+        return f"{browser} en {os_name}"
+    if browser:
+        return browser
+    if os_name:
+        return os_name
+    return "Navegador desconocido"
+
+
+def _geolocate_ip(ip: str) -> str | None:
+    """Ubicación estimada real vía ip-api.com (gratis, sin API key,
+    pedido explícito del usuario tras confirmar el trade-off: manda la IP
+    a un tercero, agrega latencia solo en logins de dispositivo nuevo --no
+    en cada login normal--, y no funciona para IPs privadas/localhost
+    (127.0.0.1, 192.168.x.x, etc., que devuelven None a propósito, nunca
+    una ubicación inventada)."""
+    if not ip or ip.startswith(("127.", "192.168.", "10.", "::1")):
+        return None
+    try:
+        import httpx
+        r = httpx.get(f"http://ip-api.com/json/{ip}", params={"fields": "status,city,country"}, timeout=3)
+        data = r.json()
+        if data.get("status") == "success":
+            city = data.get("city")
+            country = data.get("country")
+            if city and country:
+                return f"{city}, {country}"
+            return country or city
+    except Exception as e:
+        logger.warning("Geolocalización de IP falló para %s: %s", ip, e)
+    return None
+
+
+def send_login_alert(email: str, nombre: str, ip: str, ua: str) -> None:
+    """Notifica un login desde un dispositivo/IP no reconocido previamente
+    (disparado por auth_routes.py::login solo cuando is_new_device es True,
+    no en cada inicio de sesión)."""
+    from datetime import datetime as _dt
+    from urllib.parse import quote as _urlquote
+    when = _dt.now().strftime("%d/%m/%Y %H:%M")
+    device = _parse_device(ua)
+    location = _geolocate_ip(ip) or "No disponible"
+    # Los valores interpolados (when/device/ip) pueden traer espacios y
+    # acentos -- deben ir URL-encoded o el body del mailto se corta/rompe
+    # en varios clientes de correo apenas encuentran el primer espacio sin codificar.
+    report_body = _urlquote(
+        f"Detecté un inicio de sesión que no reconozco:\n"
+        f"Fecha: {when}\nDispositivo: {device}\nIP: {ip}"
+    )
+    report_url = (
+        "mailto:partnerships@labxperformanceapp.com"
+        f"?subject={_urlquote('Acceso no autorizado a mi cuenta LabX')}"
+        f"&body={report_body}"
+    )
+    inner = f"""
+      <p style="margin:0 0 16px">Hola <strong>{nombre}</strong>,</p>
+      <p style="color:#7FB3CC;margin:0 0 16px">Se registró un nuevo acceso a su cuenta en <strong style="color:#F0F9FF">LabX</strong> desde un dispositivo o ubicación que no reconocíamos.</p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:11pt;color:#7FB3CC;margin:0 0 20px;background:#060E1C;border-radius:8px;overflow:hidden">
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Fecha y hora</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{when}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Dispositivo</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{device}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Dirección IP</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{ip}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF">Ubicación estimada</td><td style="padding:10px 14px">{location}</td></tr>
+      </table>
+
+      <p style="color:#7FB3CC;margin:0 0 16px">Si fue usted quien inició esta sesión, puede ignorar este mensaje.</p>
+
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:16px;text-align:center;margin-bottom:8px">
+        <p style="color:#EF4444;font-weight:700;margin:0 0 12px">¿No fue usted?</p>
+        <a href="{report_url}" style="display:inline-block;background:#EF4444;color:#fff;font-weight:800;font-size:12pt;text-decoration:none;padding:12px 28px;border-radius:10px">
+          Reportar acceso no autorizado
+        </a>
+      </div>
+    """
+    send_email(email, "LabX — Nuevo inicio de sesión detectado en su cuenta", _wrap_email_body(inner), tags=["security", "login-alert"])

@@ -17,7 +17,7 @@ from ..auth import (
     revoke_token, _extract_token, TOKEN_HOURS, IS_PROD
 )
 
-from ..mailer import send_welcome
+from ..mailer import send_welcome, send_login_alert
 from ..garmin_pull_service import background_sync_user, dispatch_garmin_sync
 from ..audit import audit, ip_from_request, Action
 from ..redis_client import check_rate_limit_redis, redis_delete
@@ -196,7 +196,7 @@ def login(
 
     # I-04: Enviar alerta de login desde dispositivo nuevo (best-effort)
     if is_new_device:
-        background_tasks.add_task(_alert_new_device, user.email, user.nombre, ip, ua)
+        background_tasks.add_task(send_login_alert, user.email, user.nombre, ip, ua)
 
     # Setear HttpOnly cookie (más segura que localStorage)
     response.set_cookie(
@@ -222,30 +222,6 @@ def login(
         plan_nivel   = user.plan_nivel or "basico",
         onboarding_done = (user.rol != "atleta") or (user.onboarding_completed_at is not None),
     )
-
-
-def _alert_new_device(email: str, nombre: str, ip: str, ua: str) -> None:
-    """I-04: Notifica al usuario de login desde dispositivo/IP no reconocido."""
-    try:
-        from ..mailer import send_email
-        html = f"""
-        <div style="font-family:Inter,sans-serif;background:#04080F;color:#F0F9FF;padding:40px 24px;max-width:560px;margin:0 auto;border-radius:16px">
-          <h2 style="color:#F0A500">⚠️ Nuevo acceso a tu cuenta LabX</h2>
-          <p style="color:#7FB3CC;margin:16px 0">Hola <strong>{nombre}</strong>, detectamos un
-          inicio de sesión desde un dispositivo o ubicación que no reconocemos.</p>
-          <table style="width:100%;border-collapse:collapse;font-size:.85rem;color:#7FB3CC;margin:16px 0">
-            <tr><td style="padding:6px 0;color:#F0F9FF">IP:</td><td>{ip}</td></tr>
-            <tr><td style="padding:6px 0;color:#F0F9FF">Dispositivo:</td><td>{ua[:80]}</td></tr>
-          </table>
-          <p style="color:#EF4444;margin:16px 0">
-            Si <strong>no fuiste tú</strong>, cambia tu contraseña inmediatamente y activa el 2FA.
-          </p>
-          <p style="color:#3D6880;font-size:.8rem">Si fuiste tú, ignora este mensaje.</p>
-        </div>
-        """
-        send_email(email, "LabX — Nuevo inicio de sesión detectado", html)
-    except Exception as exc:
-        logger.warning("No se pudo enviar alerta de nuevo dispositivo: %s", exc)
 
 
 @router.post("/logout")
