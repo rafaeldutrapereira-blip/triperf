@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '127';  // 2026-08-22: indicador de siesta (Como estoy hoy?/Guia Hoy + deuda de sueno en Recovery)
+var BUILD_VERSION = '128';  // 2026-08-22: guia sueno (Recovery) agrega periodos Hoy/Semana + fix desfase de fecha
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

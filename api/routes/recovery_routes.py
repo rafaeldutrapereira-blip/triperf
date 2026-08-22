@@ -700,16 +700,40 @@ def hrv_history(
 
 @router.get("/sleep/history")
 def sleep_history(
-    days: int = Query(30, ge=7, le=180),
+    days: int = Query(30, ge=1, le=180),
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
-    """Tendencia de sueño con desglose de fases."""
-    cutoff = (date.today() - timedelta(days=days)).isoformat()
+    """Tendencia de sueño con desglose de fases.
+
+    `days=1` ("Hoy") y `days=7` ("Semana") son válidos -- antes el mínimo
+    era 7, lo que impedía ver un solo día. La deuda de sueño (sleep_debt_7d_h)
+    SIEMPRE se calcula sobre una ventana fija de 7 días reales, sin importar
+    qué `days` pidió el usuario para el gráfico de barras -- si no, pedir
+    "Hoy" (days=1) habría calculado una "deuda de 7 días" con un solo día
+    de datos, dando un número técnicamente correcto pero engañoso.
+    """
+    # days-1: el filtro es inclusivo (>= cutoff), así que "días=1" (Hoy)
+    # debe cortar en HOY mismo (0 días atrás), no en ayer -- si no, devuelve
+    # 2 fechas (ayer+hoy) para una opción que dice "Hoy".
+    cutoff = (date.today() - timedelta(days=days - 1)).isoformat()
     rows   = db.query(GarminSleepSession).filter(
         GarminSleepSession.user_id  == me.id,
         GarminSleepSession.date_iso >= cutoff,
     ).order_by(asc(GarminSleepSession.date_iso)).all()
+
+    # Ventana fija de 7 días para la deuda, independiente del `days` del
+    # gráfico. Si days >= 7, ya están en `rows`; si days < 7 (Hoy/día
+    # puntual), se consulta aparte para no calcular "deuda semanal" con
+    # menos de una semana real de datos.
+    _debt_cutoff = (date.today() - timedelta(days=6)).isoformat()  # 7 días incl. hoy
+    if days >= 7:
+        debt_rows = [r for r in rows if r.date_iso >= _debt_cutoff]
+    else:
+        debt_rows = db.query(GarminSleepSession).filter(
+            GarminSleepSession.user_id  == me.id,
+            GarminSleepSession.date_iso >= _debt_cutoff,
+        ).order_by(asc(GarminSleepSession.date_iso)).all()
 
     points = [
         {
@@ -741,12 +765,14 @@ def sleep_history(
     SLEEP_TARGET_H = 8.0
     sleep_debt_h = 0.0
     nap_h_7d = 0.0
-    for p in points[-7:]:
-        if p["total_h"] is not None:
-            effective_h = p["total_h"] + (p["nap_h"] or 0)
+    for r in debt_rows:
+        total_h_r = round(r.total_min / 60, 1) if r.total_min else None
+        nap_h_r   = round(r.nap_min   / 60, 1) if r.nap_min   else None
+        if total_h_r is not None:
+            effective_h = total_h_r + (nap_h_r or 0)
             sleep_debt_h += max(0, SLEEP_TARGET_H - effective_h)
-        if p["nap_h"]:
-            nap_h_7d += p["nap_h"]
+        if nap_h_r:
+            nap_h_7d += nap_h_r
 
     # Porcentaje de noches con <6h
     nights_under_6h = sum(1 for p in points if p["total_h"] and p["total_h"] < 6)
