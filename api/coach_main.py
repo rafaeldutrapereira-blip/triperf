@@ -425,7 +425,7 @@ def create_app() -> FastAPI:
         redoc_url   = "/redoc" if (not _IS_PROD or os.getenv("ENABLE_DOCS") == "1") else None,
         openapi_tags= _OPENAPI_TAGS,
         lifespan    = lifespan,
-        contact     = {"name": "LabX Team", "email": "soporte@labx.app"},
+        contact     = {"name": "LabX Team", "email": "partnerships@labxperformanceapp.com"},
         license_info= {"name": "Propietario — uso interno"},
     )
 

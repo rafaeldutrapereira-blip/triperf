@@ -65,7 +65,7 @@ def send_welcome(email: str, nombre: str, app_url: str = "") -> None:
           Configurar mi cuenta →
         </a>
       </div>
-      <p style="color:#3D6880;font-size:.8rem;text-align:center">El equipo LabX &nbsp;·&nbsp; Soporte: soporte@labx.app</p>
+      <p style="color:#3D6880;font-size:.8rem;text-align:center">El equipo LabX &nbsp;·&nbsp; Soporte: partnerships@labxperformanceapp.com</p>
     </div>
     """
     send_email(email, f"¡Bienvenido a LabX, {nombre}! 🌺", html, tags=["welcome"])

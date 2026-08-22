@@ -492,7 +492,7 @@ async def strava_disconnect(
           </p>
           <p style="color:#3D6880;font-size:.8rem">
             Si no realizaste esta acción, contacta soporte de inmediato en
-            <a href="mailto:soporte@labx.app" style="color:#0EA5E9">soporte@labx.app</a>.
+            <a href="mailto:partnerships@labxperformanceapp.com" style="color:#0EA5E9">partnerships@labxperformanceapp.com</a>.
           </p>
         </div>
         """
