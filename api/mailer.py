@@ -82,7 +82,7 @@ def _email_footer_html() -> str:
     version = _get_build_version()
     return f"""
     <div style="border-top:1px solid rgba(8,145,178,.15);margin-top:28px;padding-top:16px;text-align:center">
-      <p style="margin:0 0 6px;font-size:12pt;color:#F0F9FF">Con cariño, <strong>El equipo LabX</strong> 🌺</p>
+      <p style="margin:0 0 6px;font-size:12pt;color:#F0F9FF">Saludos cordiales, <strong>El equipo LabX</strong> 🌺</p>
       <p style="margin:0 0 3px;font-size:10pt;color:#3D6880">LabX v{version} &middot; Plataforma privada de rendimiento atlético</p>
       <p style="margin:0;font-size:10pt;color:#3D6880">Soporte: <a href="mailto:partnerships@labxperformanceapp.com" style="color:#3D6880">partnerships@labxperformanceapp.com</a></p>
     </div>
@@ -134,23 +134,42 @@ def send_email(
 
 
 def send_welcome(email: str, nombre: str, app_url: str = "") -> None:
+    """Correo de bienvenida institucional (2026-08-22, pedido explícito del
+    usuario -- tono formal/corporativo en vez del casual con emojis que
+    tenía antes). No se linkea a App Store/Google Play: la app nativa
+    (Capacitor, Sprint 55) todavía no está compilada ni publicada en
+    ninguna tienda -- se indica instalación PWA real, que sí funciona hoy."""
     app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
     inner = f"""
-      <h1 style="font-size:18px;margin:0 0 8px">¡Bienvenido a LabX, {nombre}! 🏊🚴🏃</h1>
-      <p style="color:#7FB3CC;margin:0 0 20px">Tu cuenta ya está lista. LabX es tu plataforma de entrenamiento para deportes de resistencia — running, ciclismo, natación y triatlón: sincroniza tus datos reales, calcula tu carga de entrenamiento y te ayuda a llegar a tu próxima carrera en tu mejor forma.</p>
+      <p style="margin:0 0 16px">Estimado/a <strong>{nombre}</strong>,</p>
+      <p style="color:#7FB3CC;margin:0 0 16px">En nombre de todo el equipo de <strong style="color:#F0F9FF">LabX</strong>, le damos la más cordial bienvenida y le agradecemos la confianza depositada en nuestra plataforma.</p>
+      <p style="color:#7FB3CC;margin:0 0 20px">LabX es una plataforma de entrenamiento diseñada para deportistas de resistencia — running, ciclismo, natación y triatlón. Sincronizamos sus datos reales de dispositivos como Garmin y Strava para calcular su carga de entrenamiento (CTL/ATL/TSB), su estado de recuperación diario, y ofrecerle herramientas como nuestro Predictor de Carrera y un Coach con inteligencia artificial, para acompañarle en cada etapa de su preparación.</p>
+
+      <p style="margin:0 0 6px"><strong>Acceso a la plataforma</strong></p>
       <ul style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
-        <li style="margin-bottom:8px">🔄 Conecta Garmin o Strava — tu carga de entrenamiento (CTL/ATL/TSB) y tu Readiness diario se calculan solos, con tus datos reales, sea cual sea tu deporte</li>
-        <li style="margin-bottom:8px">🤖 Hablá con tu AI Coach — te ayuda a ajustar el plan según cómo llegaste a entrenar</li>
-        <li style="margin-bottom:8px">🏁 Usa el Predictor de Carrera — mirá si vas a llegar a tu objetivo (maratón, media maratón, o triatlón sprint/olímpico/70.3/Ironman) con tu forma actual</li>
-        <li style="margin-bottom:8px">📲 Instalá LabX en tu celular — agregala a la pantalla de inicio desde el navegador, funciona como una app</li>
+        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">Plataforma web:</strong> ingrese en <a href="{app_url}" style="color:#0EA5E9">{app_url}</a> con su correo y contraseña registrados.</li>
+        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">Aplicación móvil:</strong> LabX está disponible como aplicación web progresiva — desde su celular, abra el sitio en su navegador y seleccione "Agregar a pantalla de inicio" para instalarla como una app.</li>
       </ul>
-      <div style="text-align:center;margin-bottom:8px">
+
+      <p style="margin:0 0 6px"><strong>Primeros pasos recomendados</strong></p>
+      <ol style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
+        <li style="margin-bottom:8px">Complete su perfil — datos personales, objetivos deportivos y parámetros de entrenamiento (FTP, umbrales).</li>
+        <li style="margin-bottom:8px">Conecte su dispositivo (Garmin o Strava) para que su carga de entrenamiento se calcule automáticamente con datos reales.</li>
+        <li style="margin-bottom:8px">Explore su Dashboard y defina su próximo objetivo de carrera en el Predictor.</li>
+      </ol>
+
+      <div style="text-align:center;margin-bottom:20px">
         <a href="{app_url}/onboarding.html" style="display:inline-block;background:linear-gradient(135deg,#FF6535,#E8490A);color:#fff;font-weight:800;font-size:13pt;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 32px;border-radius:10px">
-          Empezar mi plan →
+          Acceder a mi cuenta →
         </a>
       </div>
+
+      <p style="margin:0 0 6px"><strong>¿Necesita ayuda?</strong></p>
+      <p style="color:#7FB3CC;margin:0 0 16px">Ante cualquier consulta, escríbanos a <a href="mailto:partnerships@labxperformanceapp.com" style="color:#0EA5E9">partnerships@labxperformanceapp.com</a> — con gusto le asistiremos.</p>
+
+      <p style="color:#7FB3CC;margin:0">Quedamos atentos a acompañarle en esta nueva etapa.</p>
     """
-    send_email(email, f"¡Bienvenido a LabX, {nombre}! 🌺", _wrap_email_body(inner), tags=["welcome"])
+    send_email(email, f"Bienvenido a LabX — Su plataforma de rendimiento ya está lista", _wrap_email_body(inner), tags=["welcome"])
 
 
 def send_day3_drip(email: str, nombre: str, app_url: str = "") -> None:
