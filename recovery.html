@@ -698,31 +698,46 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (r) { return r.json(); })
       .then(function (d) {
         // KPIs
-        document.getElementById('sleep-kpis').innerHTML = [
+        var kpiList = [
           { label: 'Promedio horas', value: d.avg_hours ? d.avg_hours + 'h' : '—',  color: '#1D4ED8' },
           { label: 'Score promedio', value: d.avg_score ? d.avg_score : '—',         color: '#7C3AED' },
           { label: 'Deuda 7d',       value: d.sleep_debt_7d_h > 0 ? d.sleep_debt_7d_h + 'h' : '✅ 0h', color: d.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
-        ].map(function (k) {
+        ];
+        // Siesta -- solo se muestra si hubo al menos una en los últimos 7d
+        // (no todos los usuarios/días tienen). Cuenta para la deuda de
+        // arriba (cantidad total de sueño), pero NO para el score/promedio
+        // (calidad de fases, distinta arquitectura que el sueño nocturno).
+        if (d.nap_h_7d) {
+          kpiList.push({ label: 'Siesta (7d)', value: d.nap_h_7d + 'h', color: '#F0A500' });
+        }
+        document.getElementById('sleep-kpis').innerHTML = kpiList.map(function (k) {
           return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
         }).join('');
 
-        // Bar chart
+        // Bar chart -- un punto naranja arriba de la barra marca los días
+        // con siesta real (no se suma a la altura de la barra, que sigue
+        // siendo solo sueño nocturno).
         var pts = (d.points || []).filter(function (p) { return p.total_h; });
         var barHtml = '<div style="display:flex;align-items:flex-end;gap:3px;height:80px;overflow-x:auto">';
         pts.forEach(function (p) {
           var h   = Math.round((p.total_h / 10) * 72);
           var col = p.total_h >= 8 ? '#10B981' : (p.total_h >= 6 ? '#1D4ED8' : '#EF4444');
-          barHtml += '<div style="width:100%;max-width:20px;height:' + h + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.8;flex:1;min-width:6px" title="' + p.date_iso + ': ' + p.total_h + 'h"></div>';
+          var napDot = p.nap_h ? '<div style="width:5px;height:5px;border-radius:50%;background:#F0A500;margin:0 auto 2px"></div>' : '';
+          var title = p.date_iso + ': ' + p.total_h + 'h' + (p.nap_h ? ' + ' + p.nap_h + 'h siesta' : '');
+          barHtml += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:6px;max-width:20px">' + napDot + '<div style="width:100%;height:' + h + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.8" title="' + title + '"></div></div>';
         });
-        barHtml += '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h</div>';
+        barHtml += '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h &nbsp; 🟠 ● con siesta</div>';
         document.getElementById('sleep-bars').innerHTML = barHtml;
 
-        // Debt
+        // Debt -- si hubo siesta en la semana, se aclara que ya está
+        // descontada de la deuda mostrada (evita que el usuario piense
+        // que la deuda no la considera).
         var debtEl = document.getElementById('sleep-debt-box');
+        var napNote = d.nap_h_7d ? ' (ya descuenta ' + d.nap_h_7d + 'h de siesta esta semana)' : '';
         if (d.sleep_debt_7d_h > 1) {
-          debtEl.innerHTML = '<div class="alert-chip ' + (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') + '">💤 Deuda de sueño esta semana: <strong>' + d.sleep_debt_7d_h + 'h</strong>. Objetivo: ' + d.target_h + 'h/noche. ' + (d.nights_under_6h ? d.nights_under_6h + ' noches con menos de 6h.' : '') + '</div>';
+          debtEl.innerHTML = '<div class="alert-chip ' + (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') + '">💤 Deuda de sueño esta semana: <strong>' + d.sleep_debt_7d_h + 'h</strong>' + napNote + '. Objetivo: ' + d.target_h + 'h/noche. ' + (d.nights_under_6h ? d.nights_under_6h + ' noches con menos de 6h.' : '') + '</div>';
         } else {
-          debtEl.innerHTML = '<div class="alert-chip info">✅ Sin deuda de sueño significativa esta semana.</div>';
+          debtEl.innerHTML = '<div class="alert-chip info">✅ Sin deuda de sueño significativa esta semana' + napNote + '.</div>';
         }
       }).catch(function () {});
   }

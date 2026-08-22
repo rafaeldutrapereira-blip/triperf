@@ -839,7 +839,10 @@ def athlete_dashboard(
     sleep_history = [
         {"dt": r.date_iso, "h": round(r.total_min / 60, 1) if r.total_min else None,
          "score": r.sleep_score, "deep": round(r.deep_min / 60, 1) if r.deep_min else None,
-         "rem": round(r.rem_min / 60, 1) if r.rem_min else None}
+         "rem": round(r.rem_min / 60, 1) if r.rem_min else None,
+         # Siesta diurna -- SEPARADA de "h" (sueño nocturno), nunca sumada
+         # ahí (ver comentario en models.py:GarminSleepSession.nap_min).
+         "nap": round(r.nap_min / 60, 1) if r.nap_min else None}
         for r in _sleep_90
         if r.total_min is not None
     ]
@@ -891,6 +894,10 @@ def athlete_dashboard(
     sleep_score      = sleep_today.sleep_score  if sleep_today else None
     sleep_total_h    = round(sleep_today.total_min / 60, 1) if (sleep_today and sleep_today.total_min) else None
     sleep_deep_h     = round(sleep_today.deep_min  / 60, 1) if (sleep_today and sleep_today.deep_min)  else None
+    # Siesta de hoy -- SEPARADA de sleep_total_h, nunca sumada ahí (ver
+    # models.py:GarminSleepSession.nap_min). Se muestra como indicador
+    # hijo aparte en las cards "¿Cómo estoy hoy?" (dashboard.html y app).
+    sleep_nap_h      = round(sleep_today.nap_min   / 60, 1) if (sleep_today and sleep_today.nap_min)   else None
 
     # Readiness: usa el MISMO motor (readiness_service / DRS, Sprint 23) que
     # ya usan las otras 15+ páginas vía dash-header.js → GET /readiness/daily.
@@ -1038,6 +1045,7 @@ def athlete_dashboard(
         "sleep_score":      sleep_score,
         "sleep_total_h":    sleep_total_h,
         "sleep_deep_h":     sleep_deep_h,
+        "sleep_nap_h":      sleep_nap_h,
         "stress_avg":       stress_avg,
         "resting_hr":       resting_hr,
         "rhr_7d_avg":       rhr_7d_avg,

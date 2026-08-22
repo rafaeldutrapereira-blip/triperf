@@ -1110,6 +1110,15 @@ ul { list-style: none; }
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="sleep">Sueño</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-sleep" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="w-sleep-val">—</span></span>
         </div>
+        <!-- Siesta -- indicador HIJO de Sueño (mismo patrón que ACWR por
+             disciplina arriba), oculto por defecto y solo se muestra si
+             hay dato real ese día (ver updateWellbeingCard). NO se suma
+             a las horas de sueño nocturno (arquitectura de fases
+             distinta) -- es un dato aparte, informativo. -->
+        <div class="kcr kcr-child" id="kc-nap" style="display:none" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico de siesta">
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="nap">Siesta</span></span>
+          <span class="kcr-right"><span class="kcr-val" id="w-nap-val">—</span></span>
+        </div>
         <div class="kcr" onclick="goMetric('tsb')" role="button" tabindex="0" aria-label="Ver histórico TSB (fuente de fatiga muscular)">
           <span class="kcr-label"><span class="kcr-label-main" data-lx-info="muscle_fatigue">Fatiga muscular</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-fatmusc" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="w-fat-val" style="font-size:.85rem">—</span></span>
@@ -2146,6 +2155,19 @@ function patchData(){
   // (movidas 2026-08-14 desde la ex-card "Estado del Atleta").
   var sleepVal = document.getElementById('w-sleep-val');
   if(sleepVal) sleepVal.textContent = d.sleep_total_h != null ? d.sleep_total_h + 'h' : '—';
+
+  // Siesta -- fila hija de Sueño, solo visible si hay dato real hoy
+  // (no todos los días hay siesta). NO se suma al valor de arriba.
+  var napRow = document.getElementById('kc-nap');
+  var napVal = document.getElementById('w-nap-val');
+  if(napRow){
+    if(d.sleep_nap_h != null){
+      napRow.style.display = '';
+      if(napVal) napVal.textContent = d.sleep_nap_h + 'h';
+    } else {
+      napRow.style.display = 'none';
+    }
+  }
 
   if(d.tsb != null){
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));

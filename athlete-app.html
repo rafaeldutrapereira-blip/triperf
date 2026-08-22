@@ -2819,6 +2819,13 @@ function renderStatusHealth(d){
     var h = Math.floor(d.sleep_total_h), m = Math.round((d.sleep_total_h-h)*60);
     hItems += '<div class="mkc-row">'+_mkcLbl('Sueño','sleep')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-sleep" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:#A855F7">'+h+'h'+(m?' '+m+'m':'')+'</span></span></div>';
   }
+  // Siesta -- fila hija de Sueño, solo si hay dato real hoy (no todos los
+  // días hay siesta). NO se suma al valor de arriba (ver comentario en
+  // models.py:GarminSleepSession.nap_min).
+  if(d.sleep_nap_h != null){
+    var nh = Math.floor(d.sleep_nap_h), nm = Math.round((d.sleep_nap_h-nh)*60);
+    hItems += '<div class="mkc-row mkc-row-child">'+_mkcLbl('Siesta','nap')+'<span class="mkc-right"><span class="mkc-val">'+(nh?nh+'h ':'')+nm+'m</span></span></div>';
+  }
   if(d.tsb != null){
     /* Misma fórmula que dashboard.html (la web): traducción cualitativa
        de TSB, no el mismo número que "Forma (TSB)" de la otra card —
@@ -5788,7 +5795,11 @@ function renderSleepHistoryMobile(dashData, hist){
       { l:'Promedio',   v: hist.avg_hours != null ? hist.avg_hours+'h' : '—', c:'#1D4ED8' },
       { l:'Score prom.', v: hist.avg_score != null ? hist.avg_score : '—',    c:'#7C3AED' },
       { l:'Deuda 7d',   v: hist.sleep_debt_7d_h > 0 ? hist.sleep_debt_7d_h+'h' : '✅ 0h', c: hist.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
-    ].map(function(k){
+    ];
+    if(hist.nap_h_7d){
+      kpisHtml.push({ l:'Siesta (7d)', v: hist.nap_h_7d+'h', c:'#F0A500' });
+    }
+    kpisHtml = kpisHtml.map(function(k){
       return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>';
     }).join('');
 
@@ -5796,17 +5807,19 @@ function renderSleepHistoryMobile(dashData, hist){
     var barsHtml = pts.map(function(p){
       var h = Math.round((p.total_h/10)*72);
       var col = p.total_h >= 8 ? '#10B981' : p.total_h >= 6 ? '#1D4ED8' : '#EF4444';
-      return '<div class="hrv-mob-bar" style="height:'+h+'px;background:'+col+'" title="'+p.date_iso+': '+p.total_h+'h"></div>';
+      var title = p.date_iso+': '+p.total_h+'h'+(p.nap_h ? ' + '+p.nap_h+'h siesta' : '');
+      return '<div class="hrv-mob-bar" style="height:'+h+'px;background:'+col+'" title="'+title+'"></div>';
     }).join('');
 
     html += '<div class="rc-mob-title" style="margin-top:1rem">Historial ('+_wlSleepDays+'d)</div>';
     html += '<div class="hrv-mob-kpis" style="margin-top:.5rem">'+kpisHtml+'</div>';
     if(pts.length) html += '<div class="hrv-mob-chart">'+barsHtml+'</div><div class="hrv-mob-baseline-note" style="color:var(--dim)">🟢 ≥8h · 🔵 6-8h · 🔴 &lt;6h</div>';
 
+    var napNoteMob = hist.nap_h_7d ? ' (ya descuenta '+hist.nap_h_7d+'h de siesta esta semana)' : '';
     if(hist.sleep_debt_7d_h > 1){
-      html += '<div class="rec-mob-alert '+(hist.sleep_debt_7d_h > 3 ? 'rec-mob-alert-high' : 'rec-mob-alert-medium')+'">💤 Deuda de sueño esta semana: <strong>'+hist.sleep_debt_7d_h+'h</strong>. Objetivo: '+hist.target_h+'h/noche.'+(hist.nights_under_6h ? ' '+hist.nights_under_6h+' noches con menos de 6h.' : '')+'</div>';
+      html += '<div class="rec-mob-alert '+(hist.sleep_debt_7d_h > 3 ? 'rec-mob-alert-high' : 'rec-mob-alert-medium')+'">💤 Deuda de sueño esta semana: <strong>'+hist.sleep_debt_7d_h+'h</strong>'+napNoteMob+'. Objetivo: '+hist.target_h+'h/noche.'+(hist.nights_under_6h ? ' '+hist.nights_under_6h+' noches con menos de 6h.' : '')+'</div>';
     } else {
-      html += '<div class="rec-mob-alert rec-mob-alert-info">✅ Sin deuda de sueño significativa esta semana.</div>';
+      html += '<div class="rec-mob-alert rec-mob-alert-info">✅ Sin deuda de sueño significativa esta semana'+napNoteMob+'.</div>';
     }
   }
 

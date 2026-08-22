@@ -722,6 +722,11 @@ def sleep_history(
             "score":      r.sleep_score,
             "quality":    r.sleep_score_qual,
             "hrv_rmssd":  r.hrv_rmssd_night,
+            # Siesta diurna -- SEPARADA de total_h (arquitectura de fases
+            # distinta, nunca se suma al sleep_score/promedio). Pero SÍ
+            # cuenta para la deuda de sueño de abajo, porque esa es una
+            # medida de cantidad total de descanso, no de calidad nocturna.
+            "nap_h":      round(r.nap_min / 60, 1) if r.nap_min else None,
         }
         for r in rows
     ]
@@ -729,12 +734,19 @@ def sleep_history(
     valid_scores = [p["score"]   for p in points if p["score"]   is not None]
     valid_hours  = [p["total_h"] for p in points if p["total_h"] is not None]
 
-    # Deuda de sueño (vs 8h objetivo)
+    # Deuda de sueño (vs 8h objetivo). La siesta SÍ cuenta acá (a diferencia
+    # del sleep_score/promedio de arriba) -- para efectos de cantidad total
+    # de sueño reparador del día, una siesta real reduce la deuda igual que
+    # dormir más esa noche.
     SLEEP_TARGET_H = 8.0
     sleep_debt_h = 0.0
+    nap_h_7d = 0.0
     for p in points[-7:]:
         if p["total_h"] is not None:
-            sleep_debt_h += max(0, SLEEP_TARGET_H - p["total_h"])
+            effective_h = p["total_h"] + (p["nap_h"] or 0)
+            sleep_debt_h += max(0, SLEEP_TARGET_H - effective_h)
+        if p["nap_h"]:
+            nap_h_7d += p["nap_h"]
 
     # Porcentaje de noches con <6h
     nights_under_6h = sum(1 for p in points if p["total_h"] and p["total_h"] < 6)
@@ -745,6 +757,7 @@ def sleep_history(
         "avg_score":      round(statistics.mean(valid_scores), 1) if valid_scores else None,
         "avg_hours":      round(statistics.mean(valid_hours), 1)  if valid_hours  else None,
         "sleep_debt_7d_h":round(sleep_debt_h, 1),
+        "nap_h_7d":       round(nap_h_7d, 1) if nap_h_7d else None,
         "nights_under_6h":nights_under_6h,
         "target_h":       SLEEP_TARGET_H,
         "n":              len(points),

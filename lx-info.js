@@ -224,6 +224,15 @@ var METRICS = {
     unidad: 'horas',
   },
 
+  nap: {
+    nombre: 'Siesta — Sueño diurno',
+    emoji: '😴',
+    definicion: 'Minutos de siesta detectados hoy (Garmin trae esto separado del sueño nocturno). No se suma a las horas de sueño de la noche porque una siesta corta no tiene la misma arquitectura de fases profunda/REM que el descanso nocturno — mezclarlas distorsionaría tu Sleep Score. En cambio, aporta un pequeño bonus (hasta +5 puntos) a tu Recovery Score de hoy, porque sí representa recuperación real de fatiga.',
+    formula: 'Detectado por el sensor de sueño de Garmin fuera de tu ventana habitual nocturna',
+    pro_tip: 'Para el cálculo de deuda de sueño semanal (guía Recovery), la siesta sí cuenta como sueño total del día.',
+    unidad: 'horas',
+  },
+
   muscle_fatigue: {
     nombre: 'Fatiga Muscular',
     emoji: '💪',
