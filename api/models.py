@@ -1076,6 +1076,13 @@ class GarminSleepSession(Base):
     light_min     = Column(Integer, nullable=True)
     rem_min       = Column(Integer, nullable=True)
     awake_min     = Column(Integer, nullable=True)
+    # Siesta diurna (minutos) -- HERMANA de total_min, NUNCA sumada a el.
+    # Verificado con datos reales: garminconnect.get_sleep_data() trae
+    # dailySleepDTO.napTimeSeconds separado del sueno nocturno. Una siesta
+    # corta no tiene la misma arquitectura de fases que el descanso
+    # nocturno -- mezclarla distorsionaria sleep_score. Contribuye aparte
+    # como bonus acotado al Recovery Score del dia (ver recovery_service.py).
+    nap_min       = Column(Integer, nullable=True)
 
     # Scores
     sleep_score        = Column(Integer, nullable=True)

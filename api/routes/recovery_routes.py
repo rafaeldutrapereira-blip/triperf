@@ -107,15 +107,38 @@ def _hrv_factor(health: Optional[GarminHealthDaily],
     return round(factor, 1)
 
 
+def _nap_bonus(sleep: Optional[GarminSleepSession]) -> float:
+    """
+    Bonus acotado por siesta diurna (nap_min) -- SEPARADO del sueño
+    nocturno, nunca sumado a total_min/sleep_score (una siesta corta no
+    tiene la misma arquitectura de fases que el descanso nocturno, ver
+    comentario en models.py:GarminSleepSession.nap_min). Verificado con
+    datos reales: garminconnect.get_sleep_data() trae
+    dailySleepDTO.napTimeSeconds, 35 días reales con valor != 0 en la
+    cuenta del usuario (rango 18-108 min).
+
+    Tope de +5 puntos a los 60 min de siesta -- una siesta más larga no
+    suma más (rendimientos decrecientes, y dormir de más de día puede
+    incluso ser señal de fatiga acumulada, no de recuperación extra).
+    """
+    if not sleep or not sleep.nap_min:
+        return 0.0
+    return round(min(5.0, (sleep.nap_min / 60) * 5.0), 1)
+
+
 def _sleep_factor(sleep: Optional[GarminSleepSession],
                   health: Optional[GarminHealthDaily]) -> Optional[float]:
     """
     Factor de sueño 0-100 basado en:
     - Score Garmin si disponible (0-100 → usado directamente)
     - Si no: tiempo total + % deep/REM
+    Sobre ese resultado se suma un bonus acotado por siesta diurna (ver
+    _nap_bonus) -- independiente de qué rama calculó el valor base.
     """
+    nap_bonus = _nap_bonus(sleep)
+
     if sleep and sleep.sleep_score is not None:
-        return float(sleep.sleep_score)
+        return round(min(100.0, float(sleep.sleep_score) + nap_bonus), 1)
 
     if sleep and sleep.total_min:
         total_h = sleep.total_min / 60
@@ -133,17 +156,18 @@ def _sleep_factor(sleep: Optional[GarminSleepSession],
             bonus = min(10, quality_ratio * 25)
         else:
             bonus = 0
-        return round(min(100.0, base + bonus), 1)
+        return round(min(100.0, base + bonus + nap_bonus), 1)
 
     # Sin datos de sueño → usar resting HR como proxy (si está disponible)
     if health and health.resting_hr:
         rhr = health.resting_hr
-        if rhr <= 40:   return 80.0
-        if rhr <= 48:   return 65.0
-        if rhr <= 55:   return 50.0
-        return 35.0
+        if rhr <= 40:   base = 80.0
+        elif rhr <= 48: base = 65.0
+        elif rhr <= 55: base = 50.0
+        else:           base = 35.0
+        return round(min(100.0, base + nap_bonus), 1)
 
-    return None
+    return round(nap_bonus, 1) if nap_bonus else None
 
 
 def _tsb_factor(tl: Optional[GarminTrainingLoad]) -> Optional[float]:

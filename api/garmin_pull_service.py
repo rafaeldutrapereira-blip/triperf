@@ -1999,6 +1999,10 @@ class GarminPullService:
                     spo2_night = _safe_float(daily.get("averageSpO2Value")) or None
                     resp_night = _safe_float(daily.get("averageRespirationValue")) or None
                     hrv_night_sleep = _safe_float(daily.get("hrvValue")) or None
+                    # Siesta diurna -- separada del sueno nocturno, verificado
+                    # con datos reales (35 dias con valor != 0 en el cache de
+                    # sync). NUNCA se suma a total_min (ver comentario en models.py).
+                    nap_min = _safe_int(daily.get("napTimeSeconds", 0)) // 60 or None
 
                     sleep_start_raw = daily.get("sleepStartTimestampGMT")
                     sleep_end_raw   = daily.get("sleepEndTimestampGMT")
@@ -2018,6 +2022,7 @@ class GarminPullService:
                         sl_existing.light_min             = light_min
                         sl_existing.rem_min               = rem_min
                         sl_existing.awake_min             = awake_min
+                        sl_existing.nap_min                = nap_min
                         sl_existing.sleep_score           = score
                         sl_existing.sleep_score_qual      = qual
                         sl_existing.avg_spo2_night        = spo2_night
@@ -2038,6 +2043,7 @@ class GarminPullService:
                             light_min             = light_min,
                             rem_min               = rem_min,
                             awake_min             = awake_min,
+                            nap_min               = nap_min,
                             sleep_score           = score,
                             sleep_score_qual      = qual,
                             avg_spo2_night        = spo2_night,
