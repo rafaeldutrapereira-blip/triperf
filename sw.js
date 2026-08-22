@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '128';  // 2026-08-22: guia sueno (Recovery) agrega periodos Hoy/Semana + fix desfase de fecha
+var BUILD_VERSION = '129';  // 2026-08-22: rango acumulado real en Parciales (natacion/laps Garmin)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

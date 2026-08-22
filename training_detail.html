@@ -1025,9 +1025,20 @@ function renderSplitsReal(splits, sport){
   var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
 
   var rows = splits.map(function(s, i){
-    var distLbl = isSwim ? Math.round(s.distance_m)+' m'
-      : isRun ? (s.distance_m/1000).toFixed(2)+' km'
-      : (s.distance_m/1000).toFixed(1)+' km';
+    // Rango acumulado real (ej. "450-500 m") -- en qué tramo del total cae
+    // este parcial, no solo cuánto midió el parcial suelto. Solo disponible
+    // cuando el parcial viene de laps reales de Garmin (_splits_from_garmin_laps
+    // en athlete_routes.py); si no, cae al valor suelto de siempre.
+    var distLbl;
+    if(s.dist_from_m != null && s.dist_to_m != null){
+      distLbl = isSwim
+        ? s.dist_from_m+'-'+s.dist_to_m+' m'
+        : (s.dist_from_m/1000).toFixed(2)+'-'+(s.dist_to_m/1000).toFixed(2)+' km';
+    } else {
+      distLbl = isSwim ? Math.round(s.distance_m)+' m'
+        : isRun ? (s.distance_m/1000).toFixed(2)+' km'
+        : (s.distance_m/1000).toFixed(1)+' km';
+    }
     var pace = '—';
     if(isSwim && s.avg_pace_s_per_100m){ pace = fmtPace100(s.avg_pace_s_per_100m); }
     else if(isRun && s.avg_pace_s_per_km){ pace = fmtPace(s.avg_pace_s_per_km); }

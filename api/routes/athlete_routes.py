@@ -2717,6 +2717,10 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
 
     out = []
     idx = 0
+    cum_dist_m = 0.0  # rango acumulado real (metros ya nadados/corridos/pedaleados
+                       # ANTES de este parcial) -- pedido explícito del usuario para
+                       # natación: ver en qué tramo del total cae cada parcial
+                       # (ej. "450-500m"), no solo cuánto midió el parcial suelto.
     for lap in laps:
         dist = lap.get("distance") or 0
         if dist <= 0:
@@ -2726,9 +2730,14 @@ def _splits_from_garmin_laps(activity_id: str, sport: str) -> list:
         idx += 1
         dur = lap.get("duration") or 0
         spd = lap.get("averageSpeed")
+        dist_from_m = round(cum_dist_m)
+        cum_dist_m += dist
+        dist_to_m   = round(cum_dist_m)
         row = {
             "idx":         idx,
             "distance_m":  round(dist),
+            "dist_from_m": dist_from_m,
+            "dist_to_m":   dist_to_m,
             "duration_s":  round(dur),
             "avg_power":   None,
             "avg_hr":      round(lap["averageHR"]) if lap.get("averageHR") else None,
