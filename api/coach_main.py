@@ -66,6 +66,8 @@ from .routes.zones_routes               import athlete_router as zones_athlete_r
 from .routes.template_routes            import router as template_router
 from .routes.template_routes            import athlete_router as template_athlete_router
 from .routes.calendar_routes            import router as calendar_router
+from .routes.gear_routes                import router as gear_router
+from .routes.gear_routes                import coach_router as gear_coach_router
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent
 _IS_PROD  = os.getenv("APP_ENV", "development") == "production"
@@ -522,6 +524,8 @@ def create_app() -> FastAPI:
     _app.include_router(template_router,               prefix="/api")
     _app.include_router(template_athlete_router,       prefix="/api")
     _app.include_router(calendar_router,               prefix="/api")
+    _app.include_router(gear_router,                   prefix="/api")
+    _app.include_router(gear_coach_router,             prefix="/api")
 
     # ── Infra endpoints ───────────────────────────────────────────
 
