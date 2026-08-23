@@ -62,7 +62,7 @@ class User(Base):
     totp_enabled     = Column(Boolean, default=False)
     totp_backup_hash = Column(Text,    nullable=True)   # JSON list de hashes SHA-256 de backup codes
     # Sesiones activas â€” I-06: fingerprint del Ãºltimo dispositivo conocido
-    last_device_hash = Column(String, nullable=True)    # SHA-256(user_agent+IP) del Ãºltimo login OK
+    last_device_hash = Column(String, nullable=True)    # JSON list de device_id conocidos (cookie lx_device_id) -- ver auth_routes.py::login
     # Strava OAuth (D-06)
     strava_access_token    = Column(String,  nullable=True)
     strava_refresh_token   = Column(String,  nullable=True)

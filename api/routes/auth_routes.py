@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import secrets
 import logging
@@ -179,12 +180,29 @@ def login(
             logger.critical("pyotp no instalado — 2FA DESACTIVADO. Instalar: pip install pyotp")
             raise HTTPException(503, "Servicio 2FA no disponible — contacta soporte")
 
-    # I-04: Detectar dispositivo nuevo — SHA-256(user_agent + IP)
+    # I-04: Detectar dispositivo nuevo -- cookie persistente por navegador,
+    # NO por IP+user-agent. La IP sola cambia todo el tiempo en redes
+    # móviles (NAT de carrier) y sería un falso "dispositivo nuevo" en
+    # CADA login desde el celular; el user-agent tampoco alcanza porque
+    # dos dispositivos distintos pueden compartir el mismo. Se guarda una
+    # lista corta de los últimos dispositivos conocidos (cookie válida por
+    # navegador) en vez de un solo valor, para que alternar entre celu y
+    # notebook no dispare la alerta en cada cambio.
     ua = request.headers.get("user-agent", "")
-    device_hash = hashlib.sha256(f"{ua}:{ip}".encode()).hexdigest()[:16]
-    is_new_device = user.last_device_hash and user.last_device_hash != device_hash
-    user.last_device_hash = device_hash
-    user.last_login_at    = datetime.now(timezone.utc).replace(tzinfo=None)
+    known_devices = json.loads(user.last_device_hash) if user.last_device_hash else []
+    device_cookie = request.cookies.get("lx_device_id")
+
+    if device_cookie and device_cookie in known_devices:
+        is_new_device = False
+        device_id = device_cookie
+    else:
+        is_new_device = bool(known_devices)  # primer login del usuario nunca alerta
+        device_id = secrets.token_urlsafe(24)
+        known_devices.append(device_id)
+        known_devices = known_devices[-5:]  # tope de 5 dispositivos conocidos
+        user.last_device_hash = json.dumps(known_devices)
+
+    user.last_login_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
 
     remember = getattr(body, "remember_me", False)
@@ -206,6 +224,15 @@ def login(
         secure   = IS_PROD,
         samesite = "lax",
         max_age  = cookie_max_age,
+        path     = "/",
+    )
+    response.set_cookie(
+        key      = "lx_device_id",
+        value    = device_id,
+        httponly = True,
+        secure   = IS_PROD,
+        samesite = "lax",
+        max_age  = 365 * 24 * 3600,
         path     = "/",
     )
 

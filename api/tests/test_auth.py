@@ -58,6 +58,66 @@ class TestLogin:
         assert r.status_code == 200
 
 
+class TestNewDeviceDetection:
+    """El correo de "nuevo dispositivo" no debe dispararse en cada login --
+    solo cuando el navegador no trae la cookie lx_device_id de un
+    dispositivo ya conocido. Antes se basaba en IP+user-agent, lo que
+    disparaba una alerta en CADA login desde redes móviles (la IP cambia
+    todo el tiempo por NAT de carrier)."""
+
+    def _login(self, client, device_id=None):
+        """client conserva cookies entre requests (jar de sesión) -- hay que
+        limpiarlas explícitamente para simular "otro dispositivo" sin cookie,
+        y setear la cookie a mano para simular volver a un dispositivo conocido."""
+        client.cookies.clear()
+        if device_id:
+            client.cookies.set("lx_device_id", device_id)
+        return client.post("/api/auth/login", json={"email": "athlete@test.com", "password": "AthlPass123"})
+
+    def test_first_login_ever_does_not_alert(self, client, athlete_user, monkeypatch):
+        calls = []
+        monkeypatch.setattr("api.routes.auth_routes.send_login_alert", lambda *a, **k: calls.append(a))
+        r = self._login(client)
+        assert r.status_code == 200
+        assert "lx_device_id" in r.cookies
+        assert calls == []
+
+    def test_same_device_cookie_does_not_realert(self, client, athlete_user, monkeypatch):
+        calls = []
+        monkeypatch.setattr("api.routes.auth_routes.send_login_alert", lambda *a, **k: calls.append(a))
+        r1 = self._login(client)
+        device_id = r1.cookies.get("lx_device_id")
+
+        r2 = self._login(client, device_id=device_id)
+        assert r2.status_code == 200
+        assert calls == []  # mismo dispositivo, nunca alertó
+
+    def test_missing_cookie_after_known_device_triggers_alert(self, client, athlete_user, monkeypatch):
+        calls = []
+        monkeypatch.setattr("api.routes.auth_routes.send_login_alert", lambda *a, **k: calls.append(a))
+        self._login(client)  # dispositivo 1, registra sin alertar
+
+        r2 = self._login(client)  # sin cookie -> "otro" dispositivo
+        assert r2.status_code == 200
+        assert len(calls) == 1
+
+    def test_alternating_between_two_known_devices_does_not_realert(self, client, athlete_user, monkeypatch):
+        calls = []
+        monkeypatch.setattr("api.routes.auth_routes.send_login_alert", lambda *a, **k: calls.append(a))
+        r1 = self._login(client)  # celular, dispositivo 1 (sin alerta, primer login)
+        device_a = r1.cookies.get("lx_device_id")
+
+        r2 = self._login(client)  # notebook, sin cookie -> dispositivo 2 (alerta 1)
+        device_b = r2.cookies.get("lx_device_id")
+        assert len(calls) == 1
+
+        r3 = self._login(client, device_id=device_a)  # vuelve al celular
+        assert len(calls) == 1  # sigue siendo 1 -- ya lo conocía
+
+        r4 = self._login(client, device_id=device_b)  # vuelve a la notebook
+        assert len(calls) == 1  # tampoco vuelve a alertar
+
+
 class TestAuthMe:
     def test_me_authenticated(self, client, athlete_user):
         token = login(client, "athlete@test.com", "AthlPass123")
