@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..auth import get_current_user
 from ..models import User, GarminActivity
+from ..services.gear_service import assign_gear
 
 logger = logging.getLogger("labx.strava")
 router = APIRouter(prefix="/strava", tags=["strava"])
@@ -396,6 +397,10 @@ def _upsert_strava_activity(a: dict[str, Any], user: User, db: Session) -> tuple
         existing.pace_str   = pace_str
         existing.calories   = a.get("calories") or a.get("kilojoules")
         existing.tss        = tss
+        try:
+            assign_gear(db, existing)
+        except Exception as _gear_err:
+            logger.debug("Gear assign fallo (no bloqueante) activity=%s: %s", existing.activity_id, _gear_err)
         return "updated", existing.activity_id
 
     # Deduplicar contra una actividad de OTRO origen que ya represente este
@@ -448,6 +453,10 @@ def _upsert_strava_activity(a: dict[str, Any], user: User, db: Session) -> tuple
     )
     db.add(row)
     db.flush()
+    try:
+        assign_gear(db, row)
+    except Exception as _gear_err:
+        logger.debug("Gear assign fallo (no bloqueante) activity=%s: %s", row.activity_id, _gear_err)
     return "imported", row.activity_id
 
 

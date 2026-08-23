@@ -35,6 +35,7 @@ from .models   import (
     CommunityPost, GarminTrainingLoad as _TL,
     GarminPlannedWorkout, WeightLog,
 )
+from .services.gear_service import assign_gear
 
 # ── Token storage ─────────────────────────────────────────────────────────────
 # Cada usuario tiene su propio directorio de tokens Garmin (garth session)
@@ -1147,6 +1148,12 @@ class GarminPullService:
                         logger.debug("Auto-post comunidad fallo (no bloqueante): %s", _post_err)
 
                 new_count += 1
+
+            act_row = existing if existing else new_act
+            try:
+                assign_gear(db, act_row)
+            except Exception as _gear_err:
+                logger.debug("Gear assign fallo (no bloqueante) activity=%s: %s", act_id, _gear_err)
 
             # GPS/telemetría/parciales — se intenta en TODO sync (no solo al
             # crear la actividad): antes esto vivía únicamente en la rama de
