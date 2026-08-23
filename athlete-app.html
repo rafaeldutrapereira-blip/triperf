@@ -1383,9 +1383,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="login-sub">Where Champions Are Built</div>
   </div>
   <p style="font-size:.82rem;color:#6B7280;line-height:1.6">Iniciá sesión con la misma cuenta que usás en la web.</p>
-  <input type="email" class="login-token-input" id="login-email" placeholder="tu@email.com" autocomplete="email" autocapitalize="off">
+  <input type="email" class="login-token-input" id="login-email" placeholder="tu@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="login-pw-wrap">
-    <input type="password" class="login-token-input" id="login-password" placeholder="Contraseña" autocomplete="current-password">
+    <input type="password" class="login-token-input" id="login-password" placeholder="Contraseña" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
     <button type="button" class="login-pw-eye" id="login-pw-eye" onclick="toggleLoginPwVisibility()" aria-label="Mostrar contraseña">
       <svg id="login-pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
@@ -2330,7 +2330,7 @@ async function doLogin(){
       body: JSON.stringify({email: email, password: pw, remember_me: true}),
     });
     var data = await res.json();
-    if(!res.ok) throw new Error(data.detail || 'Email o contraseña incorrectos.');
+    if(!res.ok) throw new Error((data.errors && data.errors[0] && data.errors[0].message) || data.detail || 'Email o contraseña incorrectos.');
 
     localStorage.setItem('lxapp_token', data.access_token);
     localStorage.setItem('lx_co_token', data.access_token);

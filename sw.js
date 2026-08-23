@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '136';  // 2026-08-23: fix critico -- app apuntaba a dominio inexistente beta.labx.app en vez de labxperformanceapp.com
+var BUILD_VERSION = '137';  // 2026-08-23: fix mensaje de error de login (mostraba "credenciales incorrectas" para CUALQUIER error real)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
