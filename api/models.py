@@ -2090,6 +2090,12 @@ class RunningShoe(Base):
     # valida en el endpoint, no acá).
     default_for_json = Column(Text, nullable=True)
     last_alert_pct   = Column(Integer, nullable=True)  # 80|100 -- evita re-alertar en cada actividad
+    # JSON list de días de semana ('mon'..'sun') en que esta zapatilla es la
+    # asignación automática -- tiene prioridad sobre default_for_json al
+    # sincronizar. Un día solo puede pertenecer a UNA zapatilla (se valida
+    # en el endpoint, no acá).
+    schedule_days_json   = Column(Text, nullable=True)
+    tracking_start_date  = Column(Date, nullable=True)  # para recalculo retroactivo de km
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
                             onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

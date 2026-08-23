@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,8 @@ from ..models import (
 )
 
 logger = logging.getLogger(__name__)
+
+_WEEKDAY_ABBR = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 def life_pct(accumulated: float, target: float) -> float:
@@ -84,6 +87,37 @@ def assign_gear(db: Session, activity: GarminActivity) -> None:
         _assign_bike(db, activity)
 
 
+def _resolve_shoe_for_date(db: Session, user_id: str, date_iso: str | None) -> RunningShoe | None:
+    """Resuelve qué zapatilla le corresponde a una actividad de carrera de
+    ESE día, para el sync automático y para el backfill retroactivo (ambos
+    usan esta misma lógica, para no divergir):
+    1. Prioridad: zapatilla con ese día de semana en su horario
+       (schedule_days_json) -- ej. "corro con las azules lunes/miércoles/viernes".
+    2. Fallback: zapatilla marcada default para "rodaje" (bucket general,
+       para atletas que no configuraron un horario)."""
+    shoes = db.query(RunningShoe).filter(
+        RunningShoe.user_id == user_id,
+        RunningShoe.status == "active",
+    ).all()
+
+    if date_iso:
+        try:
+            weekday = _WEEKDAY_ABBR[date.fromisoformat(date_iso).weekday()]
+        except ValueError:
+            weekday = None
+        if weekday:
+            for s in shoes:
+                days = json.loads(s.schedule_days_json) if s.schedule_days_json else []
+                if weekday in days:
+                    return s
+
+    for s in shoes:
+        types = json.loads(s.default_for_json) if s.default_for_json else []
+        if "rodaje" in types:
+            return s
+    return None
+
+
 def _assign_shoe(db: Session, activity: GarminActivity) -> None:
     already = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == activity.id).first()
     if already:
@@ -93,35 +127,65 @@ def _assign_shoe(db: Session, activity: GarminActivity) -> None:
     if dist_km <= 0:
         return
 
-    # La sincronización real no distingue rodaje/series/competencia -- se
-    # asigna a la zapatilla marcada como default para "rodaje", que es el
-    # bucket general de running. Series/competición se asignan a mano
-    # desde la UI cuando el atleta quiere trackear una zapatilla distinta
-    # para esos casos.
-    shoes = db.query(RunningShoe).filter(
-        RunningShoe.user_id == activity.user_id,
-        RunningShoe.status == "active",
-    ).all()
-    default_shoe = None
-    for s in shoes:
-        types = json.loads(s.default_for_json) if s.default_for_json else []
-        if "rodaje" in types:
-            default_shoe = s
-            break
-    if not default_shoe:
+    shoe = _resolve_shoe_for_date(db, activity.user_id, activity.date_iso)
+    if not shoe:
         return
 
-    db.add(ShoeActivityLink(shoe_id=default_shoe.id, activity_id=activity.id, distance_km=dist_km))
-    default_shoe.accumulated_km = (default_shoe.accumulated_km or 0.0) + dist_km
+    db.add(ShoeActivityLink(shoe_id=shoe.id, activity_id=activity.id, distance_km=dist_km))
+    shoe.accumulated_km = (shoe.accumulated_km or 0.0) + dist_km
 
     def _mark(threshold: int) -> None:
-        default_shoe.last_alert_pct = threshold
+        shoe.last_alert_pct = threshold
 
-    label = f"{default_shoe.brand} {default_shoe.model}" + (f" ({default_shoe.nickname})" if default_shoe.nickname else "")
+    label = f"{shoe.brand} {shoe.model}" + (f" ({shoe.nickname})" if shoe.nickname else "")
     _check_and_alert(
         db, activity.user_id, "shoe", label,
-        default_shoe.accumulated_km, default_shoe.target_km, default_shoe.last_alert_pct, _mark,
+        shoe.accumulated_km, shoe.target_km, shoe.last_alert_pct, _mark,
     )
+
+
+def backfill_shoe(db: Session, shoe: RunningShoe, start_date_iso: str) -> tuple[int, float]:
+    """Recalcula retroactivamente el km de ESTA zapatilla desde start_date_iso:
+    recorre las carreras reales del atleta en ese rango que todavía no
+    tienen zapatilla asignada y les asigna esta SI la resolución
+    día-de-semana/default (misma lógica que el sync en vivo) la elige a
+    ella. Nunca toca actividades que ya tienen otra zapatilla asignada --
+    ni por el default automático ni por una corrección manual previa.
+    Devuelve (cantidad de actividades sumadas, km totales agregados)."""
+    activities = db.query(GarminActivity).filter(
+        GarminActivity.user_id == shoe.user_id,
+        GarminActivity.sport == "run",
+        GarminActivity.date_iso >= start_date_iso,
+    ).all()
+
+    added_count = 0
+    added_km = 0.0
+    for act in activities:
+        already = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == act.id).first()
+        if already:
+            continue
+        dist_km = act.dist_km or 0.0
+        if dist_km <= 0:
+            continue
+        resolved = _resolve_shoe_for_date(db, shoe.user_id, act.date_iso)
+        if not resolved or resolved.id != shoe.id:
+            continue
+        db.add(ShoeActivityLink(shoe_id=shoe.id, activity_id=act.id, distance_km=dist_km))
+        shoe.accumulated_km = (shoe.accumulated_km or 0.0) + dist_km
+        added_km += dist_km
+        added_count += 1
+
+    if added_count:
+        def _mark(threshold: int) -> None:
+            shoe.last_alert_pct = threshold
+
+        label = f"{shoe.brand} {shoe.model}" + (f" ({shoe.nickname})" if shoe.nickname else "")
+        _check_and_alert(
+            db, shoe.user_id, "shoe", label,
+            shoe.accumulated_km, shoe.target_km, shoe.last_alert_pct, _mark,
+        )
+
+    return added_count, added_km
 
 
 def reassign_shoe(db: Session, activity: GarminActivity, new_shoe_id: str | None) -> None:

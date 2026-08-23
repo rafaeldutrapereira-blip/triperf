@@ -81,6 +81,118 @@ class TestShoes:
         assert r.status_code == 404
 
 
+class TestShoeSchedule:
+    def test_set_schedule_persists_days(self, client, athlete_user):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        r = client.patch(f"/api/gear/shoes/{shoe['id']}/schedule", json={"days": ["mon", "wed", "fri"]}, headers=h)
+        assert r.status_code == 200, r.text
+        assert sorted(r.json()["schedule_days"]) == ["fri", "mon", "wed"]
+
+    def test_set_schedule_invalid_day_400(self, client, athlete_user):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        r = client.patch(f"/api/gear/shoes/{shoe['id']}/schedule", json={"days": ["lunes"]}, headers=h)
+        assert r.status_code == 400
+
+    def test_set_schedule_removes_conflicting_day_from_other_shoe(self, client, athlete_user):
+        h = _auth(client, athlete_user)
+        s1 = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        s2 = client.post("/api/gear/shoes", json={"brand": "B", "model": "2"}, headers=h).json()
+
+        client.patch(f"/api/gear/shoes/{s1['id']}/schedule", json={"days": ["mon", "wed"]}, headers=h)
+        client.patch(f"/api/gear/shoes/{s2['id']}/schedule", json={"days": ["wed", "fri"]}, headers=h)
+
+        shoes = {s["id"]: s for s in client.get("/api/gear/shoes", headers=h).json()["shoes"]}
+        assert sorted(shoes[s1["id"]]["schedule_days"]) == ["mon"]  # perdió "wed"
+        assert sorted(shoes[s2["id"]]["schedule_days"]) == ["fri", "wed"]
+
+
+class TestShoeBackfill:
+    def _make_run(self, db, user_id, date_iso, dist_km=10.0):
+        import uuid
+        from ..models import GarminActivity
+        act = GarminActivity(
+            id=str(uuid.uuid4()), user_id=user_id, activity_id=str(uuid.uuid4()),
+            sport="run", date_iso=date_iso, date_label=date_iso, dur_min=50.0, dist_km=dist_km,
+        )
+        db.add(act)
+        db.commit()
+        db.refresh(act)
+        return act
+
+    def test_backfill_requires_start_date_or_tracking_start_date(self, client, athlete_user):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        r = client.post(f"/api/gear/shoes/{shoe['id']}/backfill", json={}, headers=h)
+        assert r.status_code == 400
+
+    def test_backfill_sums_unassigned_runs_since_start_date(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Hoka", "model": "Clifton", "target_km": 700}, headers=h).json()
+        client.patch(f"/api/gear/shoes/{shoe['id']}/schedule", json={"days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}, headers=h)
+
+        # 2026-03-02 (lunes) y 2026-03-04 (miércoles), ambas sin asignar todavía
+        self._make_run(db, athlete_user.id, "2026-03-02", dist_km=10.0)
+        self._make_run(db, athlete_user.id, "2026-03-04", dist_km=8.0)
+        # anterior al rango de backfill -- no debe sumarse
+        self._make_run(db, athlete_user.id, "2026-02-01", dist_km=100.0)
+
+        r = client.post(f"/api/gear/shoes/{shoe['id']}/backfill", json={"start_date": "2026-03-01"}, headers=h)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["added_count"] == 2
+        assert body["added_km"] == 18.0
+        assert body["shoe"]["accumulated_km"] == 18.0
+
+    def test_backfill_never_touches_already_assigned_activity(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe_a = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        shoe_b = client.post("/api/gear/shoes", json={"brand": "B", "model": "2"}, headers=h).json()
+        client.patch(f"/api/gear/shoes/{shoe_b['id']}/schedule", json={"days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}, headers=h)
+
+        act = self._make_run(db, athlete_user.id, "2026-03-02", dist_km=12.0)
+        # asignación manual previa a shoe_a
+        client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe_a["id"]}, headers=h)
+
+        r = client.post(f"/api/gear/shoes/{shoe_b['id']}/backfill", json={"start_date": "2026-03-01"}, headers=h)
+        assert r.status_code == 200
+        assert r.json()["added_count"] == 0  # ya estaba asignada a shoe_a, no se toca
+
+        shoes = {s["id"]: s for s in client.get("/api/gear/shoes", headers=h).json()["shoes"]}
+        assert shoes[shoe_a["id"]]["accumulated_km"] == 12.0
+        assert shoes[shoe_b["id"]]["accumulated_km"] == 0.0
+
+    def test_backfill_uses_tracking_start_date_when_no_param(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe = client.post(
+            "/api/gear/shoes",
+            json={"brand": "A", "model": "1", "tracking_start_date": "2026-03-01"},
+            headers=h,
+        ).json()
+        client.patch(f"/api/gear/shoes/{shoe['id']}/schedule", json={"days": ["mon"]}, headers=h)
+        self._make_run(db, athlete_user.id, "2026-03-02", dist_km=9.0)  # lunes
+
+        r = client.post(f"/api/gear/shoes/{shoe['id']}/backfill", json={}, headers=h)
+        assert r.status_code == 200, r.text
+        assert r.json()["added_count"] == 1
+        assert r.json()["added_km"] == 9.0
+
+    def test_backfill_respects_schedule_priority_over_other_shoes(self, client, athlete_user, db):
+        """Si otra zapatilla tiene el día reclamado en su horario, el
+        backfill de ESTA zapatilla no debe sumar esa actividad."""
+        h = _auth(client, athlete_user)
+        shoe_mon = client.post("/api/gear/shoes", json={"brand": "A", "model": "Lunes"}, headers=h).json()
+        shoe_other = client.post("/api/gear/shoes", json={"brand": "B", "model": "Otra"}, headers=h).json()
+        client.patch(f"/api/gear/shoes/{shoe_mon['id']}/schedule", json={"days": ["mon"]}, headers=h)
+
+        self._make_run(db, athlete_user.id, "2026-03-02", dist_km=10.0)  # lunes -> reclamado por shoe_mon
+
+        r = client.post(f"/api/gear/shoes/{shoe_other['id']}/backfill", json={"start_date": "2026-03-01"}, headers=h)
+        assert r.status_code == 200
+        assert r.json()["added_count"] == 0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Bicicletas y componentes
 # ─────────────────────────────────────────────────────────────────────────────

@@ -21,7 +21,7 @@ from ..models import (
     User, CoachAthlete, RunningShoe, Bike, BikeComponent, MaintenanceLog,
     GarminActivity, ShoeActivityLink,
 )
-from ..services.gear_service import life_pct as _life_pct, reassign_shoe
+from ..services.gear_service import life_pct as _life_pct, reassign_shoe, backfill_shoe
 
 router = APIRouter(prefix="/gear", tags=["gear"])
 
@@ -33,6 +33,7 @@ _COMPONENT_TYPES = {
 }
 _TRACKING_UNITS = {"km", "horas", "meses", "carga_pct"}
 _DEFAULT_TARGET_KM = {"rodaje": 700.0, "series": 500.0, "competicion": 300.0, "trail": 600.0, "otro": 700.0}
+_WEEKDAYS = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
 
 
 def _now():
@@ -46,6 +47,8 @@ def _shoe_out(s: RunningShoe) -> dict:
         "target_km": s.target_km, "accumulated_km": round(s.accumulated_km, 1),
         "life_pct": _life_pct(s.accumulated_km, s.target_km),
         "default_for": json.loads(s.default_for_json) if s.default_for_json else [],
+        "schedule_days": json.loads(s.schedule_days_json) if s.schedule_days_json else [],
+        "tracking_start_date": s.tracking_start_date.isoformat() if s.tracking_start_date else None,
         "status": s.status,
     }
 
@@ -104,10 +107,17 @@ def create_shoe(body: dict, db: Session = Depends(get_db), me: User = Depends(ge
             target_km = float(target_km)
         except (TypeError, ValueError):
             raise HTTPException(400, "target_km debe ser numérico")
+    tracking_start_date = None
+    if body.get("tracking_start_date"):
+        try:
+            tracking_start_date = date.fromisoformat(body["tracking_start_date"])
+        except ValueError:
+            raise HTTPException(400, "tracking_start_date debe ser YYYY-MM-DD")
     shoe = RunningShoe(
         user_id=me.id, brand=brand, model=model, nickname=body.get("nickname"),
         purchase_date=purchase_date, shoe_type=shoe_type,
         target_km=target_km if target_km else _DEFAULT_TARGET_KM.get(shoe_type, 700.0),
+        tracking_start_date=tracking_start_date,
     )
     db.add(shoe)
     db.commit()
@@ -132,6 +142,14 @@ def update_shoe(shoe_id: str, body: dict, db: Session = Depends(get_db), me: Use
             shoe.target_km = float(body["target_km"])
         except (TypeError, ValueError):
             raise HTTPException(400, "target_km debe ser numérico")
+    if "tracking_start_date" in body:
+        if body["tracking_start_date"]:
+            try:
+                shoe.tracking_start_date = date.fromisoformat(body["tracking_start_date"])
+            except ValueError:
+                raise HTTPException(400, "tracking_start_date debe ser YYYY-MM-DD")
+        else:
+            shoe.tracking_start_date = None
     if "status" in body:
         if body["status"] not in ("active", "retired"):
             raise HTTPException(400, "status debe ser active|retired")
@@ -182,6 +200,62 @@ def set_default_shoe(shoe_id: str, body: dict, db: Session = Depends(get_db), me
     db.commit()
     db.refresh(shoe)
     return _shoe_out(shoe)
+
+
+@router.patch("/shoes/{shoe_id}/schedule")
+def set_shoe_schedule(shoe_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Define qué días de semana se corre con esta zapatilla (ej. lunes/
+    miércoles/viernes) -- tiene prioridad sobre el default por tipo al
+    sincronizar. Un día solo puede pertenecer a UNA zapatilla: se lo quita
+    a cualquier otra que lo tuviera."""
+    days = body.get("days")
+    if not isinstance(days, list) or any(d not in _WEEKDAYS for d in days):
+        raise HTTPException(400, f"days debe ser una lista de: {sorted(_WEEKDAYS)}")
+    shoe = db.query(RunningShoe).filter(RunningShoe.id == shoe_id, RunningShoe.user_id == me.id).first()
+    if not shoe:
+        raise HTTPException(404, "Zapatilla no encontrada")
+
+    others = db.query(RunningShoe).filter(
+        RunningShoe.user_id == me.id, RunningShoe.id != shoe_id,
+    ).all()
+    for other in others:
+        other_days = json.loads(other.schedule_days_json) if other.schedule_days_json else []
+        remaining = [d for d in other_days if d not in days]
+        if remaining != other_days:
+            other.schedule_days_json = json.dumps(remaining)
+
+    shoe.schedule_days_json = json.dumps(days)
+    db.commit()
+    db.refresh(shoe)
+    return _shoe_out(shoe)
+
+
+@router.post("/shoes/{shoe_id}/backfill")
+def backfill_shoe_km(shoe_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Recalcula retroactivamente el km de esta zapatilla desde una fecha
+    de inicio (parámetro o shoe.tracking_start_date) -- solo llena
+    actividades SIN zapatilla asignada todavía, nunca sobrescribe una
+    asignación (automática o manual) previa."""
+    shoe = db.query(RunningShoe).filter(RunningShoe.id == shoe_id, RunningShoe.user_id == me.id).first()
+    if not shoe:
+        raise HTTPException(404, "Zapatilla no encontrada")
+
+    start_date_raw = body.get("start_date")
+    if start_date_raw:
+        try:
+            date.fromisoformat(start_date_raw)
+        except ValueError:
+            raise HTTPException(400, "start_date debe ser YYYY-MM-DD")
+        shoe.tracking_start_date = date.fromisoformat(start_date_raw)
+    elif shoe.tracking_start_date:
+        start_date_raw = shoe.tracking_start_date.isoformat()
+    else:
+        raise HTTPException(400, "Debes indicar start_date o definir una fecha de inicio en la zapatilla")
+
+    added_count, added_km = backfill_shoe(db, shoe, start_date_raw)
+    db.commit()
+    db.refresh(shoe)
+    return {"added_count": added_count, "added_km": round(added_km, 1), "shoe": _shoe_out(shoe)}
 
 
 # ── Bicicletas ────────────────────────────────────────────────────────────

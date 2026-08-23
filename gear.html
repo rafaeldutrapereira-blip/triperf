@@ -87,7 +87,12 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237FB3CC' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .65rem center;padding-right:1.8rem}
 .form-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
 .form-check{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
+.form-hint{font-size:.7rem;color:var(--dim);margin-top:.35rem;line-height:1.4}
 .modal-foot{padding:.85rem 1.2rem;border-top:1px solid var(--border2);display:flex;gap:.55rem;justify-content:flex-end}
+.weekday-picker{display:flex;gap:.35rem;flex-wrap:wrap}
+.weekday-picker label{display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.65rem;color:var(--muted);cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.4rem .55rem}
+.weekday-picker input:checked+label,.weekday-picker label:has(input:checked){border-color:var(--cyan);color:var(--cyan);background:rgba(14,165,233,.08)}
+.weekday-picker input{margin:0}
 
 footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
 footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
@@ -179,6 +184,44 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     <div class="modal-foot">
       <button class="btn btn-g btn-sm" onclick="closeModal('modal-shoe')">Cancelar</button>
       <button class="btn btn-p btn-sm" onclick="submitShoe()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: HORARIO SEMANAL + RECALCULO RETROACTIVO ── -->
+<div class="modal-ov" id="modal-schedule" onclick="closeModalOv(event,'modal-schedule')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Días de uso y recálculo</div>
+      <button class="modal-close" onclick="closeModal('modal-schedule')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sched-shoe-id">
+      <div class="form-row">
+        <label class="form-label">¿Qué días de la semana corrés con este par?</label>
+        <div class="weekday-picker" id="sched-days">
+          <label><input type="checkbox" value="mon">Lun</label>
+          <label><input type="checkbox" value="tue">Mar</label>
+          <label><input type="checkbox" value="wed">Mié</label>
+          <label><input type="checkbox" value="thu">Jue</label>
+          <label><input type="checkbox" value="fri">Vie</label>
+          <label><input type="checkbox" value="sat">Sáb</label>
+          <label><input type="checkbox" value="sun">Dom</label>
+        </div>
+        <div class="form-hint">Si marcás días acá, tienen prioridad sobre "predeterminada para rodaje" al sincronizar. Un día solo puede pertenecer a un par — se lo quitamos automáticamente a otra zapatilla si lo tenía.</div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Empecé a usar este par el (opcional)</label>
+        <input class="form-input" type="date" id="sched-start-date">
+        <div class="form-hint">Usalo si ya corriste con este par antes de cargarlo acá — te deja sumar retroactivamente el km ya corrido.</div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn btn-g btn-sm" id="sched-backfill-btn" onclick="runBackfill()">↻ Recalcular km retroactivo</button>
+      <div style="display:flex;gap:.55rem">
+        <button class="btn btn-g btn-sm" onclick="closeModal('modal-schedule')">Cerrar</button>
+        <button class="btn btn-p btn-sm" onclick="saveSchedule()">Guardar horario</button>
+      </div>
     </div>
   </div>
 </div>
@@ -361,21 +404,24 @@ function renderShoes() {
       '</p></div>';
     return;
   }
+  var DAY_LABELS = {mon:'Lun',tue:'Mar',wed:'Mié',thu:'Jue',fri:'Vie',sat:'Sáb',sun:'Dom'};
   grid.innerHTML = ST.shoes.map(function(s){
     var color = lifeColor(s.life_pct);
     var badges = (s.default_for || []).map(function(t){ return '<span class="gc-badge">★ ' + t + '</span>'; }).join('');
+    var dayBadges = (s.schedule_days || []).map(function(d){ return '<span class="gc-badge">' + (DAY_LABELS[d]||d) + '</span>'; }).join('');
     return '<div class="gear-card">' +
       '<div class="gc-head">' +
         '<div class="gear-icon">👟</div>' +
         '<div style="flex:1"><div class="gc-name">' + esc(s.brand) + ' ' + esc(s.model) + '</div>' +
         '<div class="gc-sub">' + (s.nickname ? esc(s.nickname) + ' · ' : '') + s.shoe_type + '</div>' +
-        '<div class="gc-badges">' + badges + '</div></div>' +
+        '<div class="gc-badges">' + badges + dayBadges + '</div></div>' +
       '</div>' +
       '<div class="prog-wrap"><div class="prog-fill" style="width:' + Math.min(100, s.life_pct) + '%;background:' + color + '"></div></div>' +
       '<div class="prog-lbl"><span><b style="color:' + color + '">' + s.life_pct + '%</b> de vida útil</span><span>' + s.accumulated_km.toFixed(0) + ' / ' + s.target_km.toFixed(0) + ' km</span></div>' +
       '<div class="gc-actions">' +
         (ST.shoeStatus === 'active' ?
           '<button class="btn btn-g btn-sm" onclick="setDefaultShoe(\'' + s.id + '\')">Predeterminada rodaje</button>' +
+          '<button class="btn btn-g btn-sm" onclick="openScheduleModal(\'' + s.id + '\')">📅 Días / recálculo</button>' +
           '<button class="btn btn-danger btn-sm" onclick="retireShoe(\'' + s.id + '\')">Retirar</button>'
           : '<button class="btn btn-g btn-sm" onclick="reactivateShoe(\'' + s.id + '\')">Reactivar</button>') +
       '</div>' +
@@ -419,6 +465,50 @@ function retireShoe(id) {
 
 function reactivateShoe(id) {
   gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(e.message); });
+}
+
+function openScheduleModal(shoeId) {
+  var shoe = ST.shoes.find(function(s){ return s.id === shoeId; });
+  if (!shoe) return;
+  document.getElementById('sched-shoe-id').value = shoeId;
+  document.querySelectorAll('#sched-days input[type=checkbox]').forEach(function(cb){
+    cb.checked = (shoe.schedule_days || []).indexOf(cb.value) !== -1;
+  });
+  document.getElementById('sched-start-date').value = shoe.tracking_start_date || '';
+  openModal('modal-schedule');
+}
+
+function saveSchedule() {
+  var shoeId = document.getElementById('sched-shoe-id').value;
+  var days = Array.prototype.slice.call(document.querySelectorAll('#sched-days input[type=checkbox]:checked')).map(function(cb){ return cb.value; });
+  var startDate = document.getElementById('sched-start-date').value || null;
+
+  gearFetch('/gear/shoes/' + shoeId + '/schedule', { method: 'PATCH', body: { days: days } })
+    .then(function(){
+      if (startDate !== null) {
+        return gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: { tracking_start_date: startDate } });
+      }
+    })
+    .then(function(){
+      closeModal('modal-schedule');
+      loadShoes();
+    }).catch(function(e){ alert(e.message); });
+}
+
+function runBackfill() {
+  var shoeId = document.getElementById('sched-shoe-id').value;
+  var startDate = document.getElementById('sched-start-date').value;
+  if (!confirm('Esto va a revisar tus carreras' + (startDate ? ' desde ' + startDate : ' desde la fecha de inicio guardada') + ' y sumar a esta zapatilla las que todavía no tengan un par asignado. Las que ya tienen otra zapatilla asignada (automática o manual) NO se tocan. ¿Continuar?')) return;
+
+  var body = startDate ? { start_date: startDate } : {};
+  gearFetch('/gear/shoes/' + shoeId + '/backfill', { method: 'POST', body: body })
+    .then(function(d){
+      alert(d.added_count > 0
+        ? 'Listo: se sumaron ' + d.added_km.toFixed(1) + ' km de ' + d.added_count + ' carrera(s) previamente sin asignar.'
+        : 'No se encontraron carreras nuevas para sumar en ese rango (todas ya tenían zapatilla asignada, o no coinciden con el horario configurado).');
+      closeModal('modal-schedule');
+      loadShoes();
+    }).catch(function(e){ alert(e.message); });
 }
 
 // ── BICICLETAS ──────────────────────────────────────────────
