@@ -188,6 +188,42 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   </div>
 </div>
 
+<!-- ── MODAL: EDITAR ZAPATILLA ── -->
+<div class="modal-ov" id="modal-edit-shoe" onclick="closeModalOv(event,'modal-edit-shoe')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Editar zapatilla</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-shoe')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-shoe-id">
+      <div class="form-2">
+        <div class="form-row"><label class="form-label">Marca</label><input class="form-input" id="edit-shoe-brand"></div>
+        <div class="form-row"><label class="form-label">Modelo</label><input class="form-input" id="edit-shoe-model"></div>
+      </div>
+      <div class="form-row"><label class="form-label">Apodo (opcional)</label><input class="form-input" id="edit-shoe-nickname"></div>
+      <div class="form-2">
+        <div class="form-row">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" id="edit-shoe-type">
+            <option value="rodaje">Rodaje</option>
+            <option value="series">Series</option>
+            <option value="competicion">Competición</option>
+            <option value="trail">Trail</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Meta de vida útil (km)</label><input class="form-input" type="number" id="edit-shoe-target"></div>
+      </div>
+      <div class="form-hint">Cambiar la meta recalcula el % de vida útil al instante — útil si el fabricante recomienda más o menos km de los que pusiste al cargarla (ej. de 500 a 700 km).</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-edit-shoe')">Cancelar</button>
+      <button class="btn btn-p btn-sm" onclick="submitEditShoe()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: HORARIO SEMANAL + RECALCULO RETROACTIVO ── -->
 <div class="modal-ov" id="modal-schedule" onclick="closeModalOv(event,'modal-schedule')">
   <div class="modal">
@@ -422,6 +458,7 @@ function renderShoes() {
         (ST.shoeStatus === 'active' ?
           '<button class="btn btn-g btn-sm" onclick="setDefaultShoe(\'' + s.id + '\')">Predeterminada rodaje</button>' +
           '<button class="btn btn-g btn-sm" onclick="openScheduleModal(\'' + s.id + '\')">📅 Días / recálculo</button>' +
+          '<button class="btn btn-g btn-sm" onclick="openEditShoeModal(\'' + s.id + '\')">✎ Editar</button>' +
           '<button class="btn btn-danger btn-sm" onclick="retireShoe(\'' + s.id + '\')">Retirar</button>'
           : '<button class="btn btn-g btn-sm" onclick="reactivateShoe(\'' + s.id + '\')">Reactivar</button>') +
       '</div>' +
@@ -465,6 +502,38 @@ function retireShoe(id) {
 
 function reactivateShoe(id) {
   gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(e.message); });
+}
+
+function openEditShoeModal(shoeId) {
+  var shoe = ST.shoes.find(function(s){ return s.id === shoeId; });
+  if (!shoe) return;
+  document.getElementById('edit-shoe-id').value = shoeId;
+  document.getElementById('edit-shoe-brand').value = shoe.brand;
+  document.getElementById('edit-shoe-model').value = shoe.model;
+  document.getElementById('edit-shoe-nickname').value = shoe.nickname || '';
+  document.getElementById('edit-shoe-type').value = shoe.shoe_type;
+  document.getElementById('edit-shoe-target').value = shoe.target_km;
+  openModal('modal-edit-shoe');
+}
+
+function submitEditShoe() {
+  var shoeId = document.getElementById('edit-shoe-id').value;
+  var brand = document.getElementById('edit-shoe-brand').value.trim();
+  var model = document.getElementById('edit-shoe-model').value.trim();
+  if (!brand || !model) { alert('Marca y modelo son obligatorios'); return; }
+  var target = parseFloat(document.getElementById('edit-shoe-target').value);
+  if (!target || target <= 0) { alert('Ingresa una meta de km válida'); return; }
+
+  var body = {
+    brand: brand, model: model,
+    nickname: document.getElementById('edit-shoe-nickname').value.trim() || null,
+    shoe_type: document.getElementById('edit-shoe-type').value,
+    target_km: target,
+  };
+  gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: body }).then(function(){
+    closeModal('modal-edit-shoe');
+    loadShoes();
+  }).catch(function(e){ alert(e.message); });
 }
 
 function openScheduleModal(shoeId) {

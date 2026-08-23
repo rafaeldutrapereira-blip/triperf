@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '132';  // 2026-08-23: horario semanal por zapatilla + recalculo retroactivo de km
+var BUILD_VERSION = '133';  // 2026-08-23: editar zapatilla (marca/modelo/apodo/tipo/meta km) desde Mi Equipo
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
