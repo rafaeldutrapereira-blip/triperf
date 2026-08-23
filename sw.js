@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '137';  // 2026-08-23: fix mensaje de error de login (mostraba "credenciales incorrectas" para CUALQUIER error real)
+var BUILD_VERSION = '138';  // 2026-08-23: guia sueno app -- agrega botones Hoy/Semana junto a 14d/30d (paridad con recovery.html web)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
