@@ -7339,10 +7339,27 @@ function _cmFmtPace(s, sport){
    como una pestaña más junto a Zonas y Gráficos. */
 function _dtSplitsHtml(splits, sport){
   if(!splits || !splits.length) return '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>';
+  var isSwim = sport === 'swim';
   var hasBlocks = splits.some(function(s){ return s.intensity_type; });
   var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
   var unit = sport==='bike' ? '5km' : sport==='run' ? 'km' : 'tramo';
+
+  // Rango acumulado real (ej. "1.50-2.00 km") -- en qué tramo del total cae
+  // este parcial, no solo cuánto midió el parcial suelto. Mismo criterio
+  // que training_detail.html (la web): solo disponible cuando el parcial
+  // viene de laps reales de Garmin (_splits_from_garmin_laps), si no cae
+  // al valor suelto de siempre.
   var rows = splits.map(function(s){
+    var distLbl;
+    if(s.dist_from_m != null && s.dist_to_m != null){
+      distLbl = isSwim
+        ? s.dist_from_m+'-'+s.dist_to_m+' m'
+        : (s.dist_from_m/1000).toFixed(2)+'-'+(s.dist_to_m/1000).toFixed(2)+' km';
+    } else if(s.distance_m != null){
+      distLbl = isSwim ? Math.round(s.distance_m)+' m' : (s.distance_m/1000).toFixed(2)+' km';
+    } else {
+      distLbl = '—';
+    }
     var blockCell = hasBlocks
       ? '<td>'+(s.intensity_type
           ? '<span style="display:inline-block;padding:.1rem .4rem;border-radius:8px;font-size:.6rem;font-weight:700;background:'+(blockColors[s.intensity_type]||'#7FB3CC')+'22;color:'+(blockColors[s.intensity_type]||'#7FB3CC')+'">'+s.intensity_type+'</span>'
@@ -7350,6 +7367,8 @@ function _dtSplitsHtml(splits, sport){
       : '';
     return '<tr><td>'+s.idx+'</td>'
       + blockCell
+      +'<td>'+distLbl+'</td>'
+      +'<td>'+(s.duration_s!=null?_dtFmtMinSec(s.duration_s):'—')+'</td>'
       +'<td>'+_cmFmtPace(s, sport)+'</td>'
       +(s.avg_hr!=null?'<td>'+s.avg_hr+'</td>':'<td>—</td>')
       +(s.avg_power!=null?'<td>'+s.avg_power+'W</td>':'<td>—</td>')
@@ -7359,7 +7378,7 @@ function _dtSplitsHtml(splits, sport){
   var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
   return '<div class="cm-splits-title">Parciales ('+unit+')</div>'
     +'<div style="overflow-x:auto"><table class="cm-splits-table">'
-    +'<tr><th>#</th>'+blockHead+'<th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
+    +'<tr><th>#</th>'+blockHead+'<th>Distancia</th><th>Tiempo</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
     + rows
     +'</table></div>';
 }
