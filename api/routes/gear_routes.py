@@ -20,6 +20,7 @@ from ..database import get_db
 from ..models import (
     User, CoachAthlete, RunningShoe, Bike, BikeComponent, MaintenanceLog,
 )
+from ..services.gear_service import life_pct as _life_pct
 
 router = APIRouter(prefix="/gear", tags=["gear"])
 
@@ -35,12 +36,6 @@ _DEFAULT_TARGET_KM = {"rodaje": 700.0, "series": 500.0, "competicion": 300.0, "t
 
 def _now():
     return datetime.now(timezone.utc).replace(tzinfo=None)
-
-
-def _life_pct(accumulated: float, target: float) -> float:
-    if not target:
-        return 0.0
-    return round(min(200.0, (accumulated / target) * 100), 1)
 
 
 def _shoe_out(s: RunningShoe) -> dict:

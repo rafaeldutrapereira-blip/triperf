@@ -22,10 +22,54 @@ from sqlalchemy.orm import Session
 
 from ..models import (
     GarminActivity, RunningShoe, ShoeActivityLink,
-    Bike, BikeComponent, BikeActivityLink,
+    Bike, BikeComponent, BikeActivityLink, User,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def life_pct(accumulated: float, target: float) -> float:
+    if not target:
+        return 0.0
+    return round(min(200.0, (accumulated / target) * 100), 1)
+
+
+def _check_and_alert(db: Session, user_id: str, gear_kind: str, label: str,
+                      accumulated: float, target: float, last_alert_pct: int | None,
+                      mark_fn) -> None:
+    """Dispara alerta (email + push) la PRIMERA vez que el equipo cruza 80%
+    o 100% de vida útil -- usa last_alert_pct para no reenviar en cada
+    sync. mark_fn(threshold) persiste el nuevo umbral en la fila real."""
+    pct = life_pct(accumulated, target)
+    threshold = None
+    if pct >= 100 and (last_alert_pct or 0) < 100:
+        threshold = 100
+    elif pct >= 80 and (last_alert_pct or 0) < 80:
+        threshold = 80
+    if threshold is None:
+        return
+
+    mark_fn(threshold)
+    try:
+        _notify_gear_threshold(db, user_id, gear_kind, label, pct, threshold)
+    except Exception as exc:
+        logger.warning("Alerta de equipamiento falló (no bloqueante) user=%s gear=%s: %s", user_id, label, exc)
+
+
+def _notify_gear_threshold(db: Session, user_id: str, gear_kind: str, label: str,
+                            pct: float, threshold: int) -> None:
+    from .. import mailer
+    from ..routes.notification_routes import send_push_to_user
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.email:
+        mailer.send_gear_alert(user.email, user.nombre or "", label, gear_kind, pct, threshold)
+    send_push_to_user(user_id, push_gear_alert_payload(label, gear_kind, pct, threshold), db)
+
+
+def push_gear_alert_payload(label: str, gear_kind: str, pct: float, threshold: int) -> dict:
+    from .notification_service import push_gear_alert
+    return push_gear_alert(label, gear_kind, pct, threshold)
 
 
 def assign_gear(db: Session, activity: GarminActivity) -> None:
@@ -70,6 +114,15 @@ def _assign_shoe(db: Session, activity: GarminActivity) -> None:
     db.add(ShoeActivityLink(shoe_id=default_shoe.id, activity_id=activity.id, distance_km=dist_km))
     default_shoe.accumulated_km = (default_shoe.accumulated_km or 0.0) + dist_km
 
+    def _mark(threshold: int) -> None:
+        default_shoe.last_alert_pct = threshold
+
+    label = f"{default_shoe.brand} {default_shoe.model}" + (f" ({default_shoe.nickname})" if default_shoe.nickname else "")
+    _check_and_alert(
+        db, activity.user_id, "shoe", label,
+        default_shoe.accumulated_km, default_shoe.target_km, default_shoe.last_alert_pct, _mark,
+    )
+
 
 def _assign_bike(db: Session, activity: GarminActivity) -> None:
     already = db.query(BikeActivityLink).filter(BikeActivityLink.activity_id == activity.id).first()
@@ -108,5 +161,17 @@ def _assign_bike(db: Session, activity: GarminActivity) -> None:
             c.accumulated_value = (c.accumulated_value or 0.0) + dist_km
         elif c.tracking_unit == "horas":
             c.accumulated_value = (c.accumulated_value or 0.0) + (dur_min / 60.0)
-        # tracking_unit == "meses": se mide por tiempo calendario desde
-        # installed_date/last_service_date, no por acumulado de actividad.
+        else:
+            # tracking_unit == "meses": se mide por tiempo calendario desde
+            # installed_date/last_service_date, no por acumulado de actividad
+            # -- no participa de la alerta por acumulado.
+            continue
+
+        def _mark(threshold: int, comp=c) -> None:
+            comp.last_alert_pct = threshold
+
+        label = f"{c.label or c.component_type} ({bike.brand} {bike.model})"
+        _check_and_alert(
+            db, activity.user_id, "component", label,
+            c.accumulated_value, c.target_value, c.last_alert_pct, _mark,
+        )

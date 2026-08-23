@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es" translate="no">
+<head>
+<meta charset="UTF-8"><script src="routes.config.js?v=1"></script><script>LX_ROUTES.guard();</script><meta name="google" content="notranslate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabX — Mi Equipo</title>
+<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme-vars.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.62rem 1.3rem;border-radius:8px;border:none;cursor:pointer;transition:all var(--ease)}
+.btn-p{background:var(--orange);color:#fff}.btn-p:hover{filter:brightness(1.1)}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-danger{background:transparent;color:#EF4444;border:1.5px solid rgba(239,68,68,.35)}.btn-danger:hover{background:rgba(239,68,68,.08)}
+.btn-sm{padding:.4rem .85rem;font-size:.68rem}
+.sr{opacity:0;transform:translateY(16px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
+
+.ph{padding-top:1.6rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
+.ph-inner{padding:1.6rem 0 1.3rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;letter-spacing:-.02em}
+.ph-sub{color:var(--muted);font-size:.88rem;margin-top:.2rem}
+
+.alert-banner{display:none;align-items:center;gap:.6rem;background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.25);border-radius:10px;padding:.75rem 1.1rem;margin:1.2rem 0;font-size:.82rem;color:var(--muted)}
+.alert-banner.on{display:flex}
+.alert-banner strong{color:var(--gold)}
+
+.main-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;width:fit-content;margin:1.4rem 0 1rem}
+.mt-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.5rem 1.2rem;border-radius:6px;color:var(--dim);transition:all var(--ease);display:flex;align-items:center;gap:.4rem}
+.mt-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.main-pane{display:none}.main-pane.on{display:block}
+
+.sub-tabs{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.8rem}
+.pill-tabs{display:flex;gap:3px}
+.pill-btn{background:var(--surface);border:1px solid var(--border);cursor:pointer;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.34rem .85rem;border-radius:6px;color:var(--dim)}
+.pill-btn.on{color:var(--text);border-color:var(--cyan);background:rgba(14,165,233,.08)}
+.sub-pane{display:none}.sub-pane.on{display:block}
+
+.gear-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.gear-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;transition:border-color var(--ease)}
+.gear-card:hover{border-color:rgba(255,101,53,.25)}
+.gc-head{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.85rem}
+.gear-icon{width:44px;height:44px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.gc-name{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;line-height:1.2}
+.gc-sub{font-size:.72rem;color:var(--dim);margin-top:.1rem}
+.gc-badges{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.gc-badge{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.15rem .5rem;border-radius:5px;background:rgba(14,165,233,.1);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}
+.prog-wrap{background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;margin:.3rem 0}
+.prog-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.prog-lbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.prog-lbl b{color:var(--text)}
+.gc-actions{display:flex;gap:.4rem;margin-top:.9rem;flex-wrap:wrap}
+.gc-comps{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border2)}
+.comp-row{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.78rem}
+.comp-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.comp-body{flex:1;min-width:0}
+.comp-name{color:var(--text);font-weight:600}
+.comp-val{font-size:.7rem;color:var(--dim)}
+.comp-actions{display:flex;gap:.25rem;flex-shrink:0}
+.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.72rem;transition:all var(--ease)}
+.icon-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.battery-chip{font-size:.7rem;font-family:'Barlow Condensed',sans-serif;font-weight:800;padding:.1rem .5rem;border-radius:5px}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--dim)}
+.empty-state .es-icon{font-size:2.2rem;margin-bottom:.6rem;opacity:.5}
+.empty-state p{font-size:.85rem;max-width:340px;margin:0 auto}
+
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(4,8,15,.9);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:460px;max-height:92vh;overflow-y:auto}
+.modal-head{padding:1rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.modal-close{width:24px;height:24px;border-radius:5px;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:.85rem}
+.modal-body{padding:1.2rem}
+.form-row{margin-bottom:.8rem}
+.form-label{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.3rem}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.52rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--orange)}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237FB3CC' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .65rem center;padding-right:1.8rem}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.form-check{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
+.modal-foot{padding:.85rem 1.2rem;border-top:1px solid var(--border2);display:flex;gap:.55rem;justify-content:flex-end}
+
+footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
+footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+</style>
+<link rel="stylesheet" href="nav.css?v=1">
+</head>
+<body>
+
+<aside id="sidebar"></aside>
+<header class="sb-topbar"></header>
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<div class="ph">
+  <div class="c">
+    <div class="ph-inner">
+      <div>
+        <div class="ph-title">👟 🚲 Mi Equipo</div>
+        <div class="ph-sub">Kilometraje real de zapatillas y bicicletas — vida útil calculada desde tus actividades sincronizadas</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="c">
+  <div class="alert-banner" id="alert-banner">
+    ⚠️ <span id="alert-text"></span>
+  </div>
+
+  <div class="main-tabs">
+    <button class="mt-btn on" data-main="shoes" onclick="setMainTab('shoes')">👟 Zapatillas</button>
+    <button class="mt-btn" data-main="bikes" onclick="setMainTab('bikes')">🚲 Bicicletas</button>
+  </div>
+
+  <!-- ── ZAPATILLAS ── -->
+  <div class="main-pane on" id="pane-shoes">
+    <div class="sub-tabs">
+      <div class="pill-tabs">
+        <button class="pill-btn on" data-shoe-status="active" onclick="setShoeStatus('active')">Activas</button>
+        <button class="pill-btn" data-shoe-status="retired" onclick="setShoeStatus('retired')">Retiradas</button>
+      </div>
+      <button class="btn btn-p btn-sm" onclick="openModal('modal-shoe')">+ Agregar zapatilla</button>
+    </div>
+    <div class="gear-grid" id="shoes-grid"></div>
+  </div>
+
+  <!-- ── BICICLETAS ── -->
+  <div class="main-pane" id="pane-bikes">
+    <div class="sub-tabs">
+      <div class="pill-tabs">
+        <button class="pill-btn on" data-bike-status="active" onclick="setBikeStatus('active')">Activas</button>
+        <button class="pill-btn" data-bike-status="retired" onclick="setBikeStatus('retired')">Retiradas</button>
+      </div>
+      <button class="btn btn-p btn-sm" onclick="openModal('modal-bike')">+ Agregar bicicleta</button>
+    </div>
+    <div class="gear-grid" id="bikes-grid"></div>
+  </div>
+</div>
+
+<footer><div>LabX © 2026</div></footer>
+
+<!-- ── MODAL: AGREGAR ZAPATILLA ── -->
+<div class="modal-ov" id="modal-shoe" onclick="closeModalOv(event,'modal-shoe')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">+ Agregar zapatilla</div>
+      <button class="modal-close" onclick="closeModal('modal-shoe')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-2">
+        <div class="form-row"><label class="form-label">Marca</label><input class="form-input" id="shoe-brand" placeholder="Hoka, Asics, Nike..."></div>
+        <div class="form-row"><label class="form-label">Modelo</label><input class="form-input" id="shoe-model" placeholder="Clifton 9"></div>
+      </div>
+      <div class="form-row"><label class="form-label">Apodo (opcional)</label><input class="form-input" id="shoe-nickname" placeholder="Ej: las rojas"></div>
+      <div class="form-2">
+        <div class="form-row">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" id="shoe-type">
+            <option value="rodaje">Rodaje</option>
+            <option value="series">Series</option>
+            <option value="competicion">Competición</option>
+            <option value="trail">Trail</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Meta (km)</label><input class="form-input" type="number" id="shoe-target" placeholder="700"></div>
+      </div>
+      <div class="form-check"><input type="checkbox" id="shoe-default" checked><label for="shoe-default">Usar como predeterminada para rodaje (asignación automática de km)</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-shoe')">Cancelar</button>
+      <button class="btn btn-p btn-sm" onclick="submitShoe()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: AGREGAR BICICLETA ── -->
+<div class="modal-ov" id="modal-bike" onclick="closeModalOv(event,'modal-bike')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">+ Agregar bicicleta</div>
+      <button class="modal-close" onclick="closeModal('modal-bike')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-2">
+        <div class="form-row"><label class="form-label">Marca</label><input class="form-input" id="bike-brand" placeholder="Canyon, Trek..."></div>
+        <div class="form-row"><label class="form-label">Modelo</label><input class="form-input" id="bike-model" placeholder="Aeroad"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="bike-type">
+          <option value="ruta">Ruta</option>
+          <option value="tt_triatlon">TT / Triatlón</option>
+          <option value="mtb">MTB</option>
+          <option value="gravel">Gravel</option>
+        </select>
+      </div>
+      <div class="form-check"><input type="checkbox" id="bike-default" checked><label for="bike-default">Usar como bici predeterminada (asignación automática de km)</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-bike')">Cancelar</button>
+      <button class="btn btn-p btn-sm" onclick="submitBike()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: AGREGAR COMPONENTE ── -->
+<div class="modal-ov" id="modal-component" onclick="closeModalOv(event,'modal-component')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">+ Agregar componente</div>
+      <button class="modal-close" onclick="closeModal('modal-component')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="comp-bike-id">
+      <div class="form-row">
+        <label class="form-label">Componente</label>
+        <select class="form-select" id="comp-type" onchange="onCompTypeChange()">
+          <option value="cadena">Cadena</option>
+          <option value="cubiertas">Cubiertas</option>
+          <option value="pastillas_freno">Pastillas de freno</option>
+          <option value="discos_freno">Discos de freno</option>
+          <option value="bateria_grupo">Batería grupo electrónico</option>
+          <option value="suspension">Suspensión</option>
+          <option value="sellante_tubeless">Sellante tubeless</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-row"><label class="form-label">Etiqueta (opcional)</label><input class="form-input" id="comp-label" placeholder="Ej: cadena trasera"></div>
+      <div class="form-2" id="comp-tracking-row">
+        <div class="form-row">
+          <label class="form-label">Se mide por</label>
+          <select class="form-select" id="comp-unit">
+            <option value="km">Kilómetros</option>
+            <option value="horas">Horas de uso</option>
+            <option value="meses">Meses (calendario)</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Meta</label><input class="form-input" type="number" id="comp-target" placeholder="3000"></div>
+      </div>
+      <div class="form-row" id="comp-charge-row" style="display:none">
+        <label class="form-label">% de carga actual</label>
+        <input class="form-input" type="number" id="comp-charge" min="0" max="100" placeholder="90">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-component')">Cancelar</button>
+      <button class="btn btn-p btn-sm" onclick="submitComponent()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: REGISTRAR MANTENIMIENTO ── -->
+<div class="modal-ov" id="modal-service" onclick="closeModalOv(event,'modal-service')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Registrar mantenimiento</div>
+      <button class="modal-close" onclick="closeModal('modal-service')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="service-bike-id">
+      <input type="hidden" id="service-comp-id">
+      <div class="form-row"><label class="form-label">Descripción</label><textarea class="form-textarea" id="service-desc" placeholder="Ej: cambio de cadena por desgaste"></textarea></div>
+      <div class="form-2">
+        <div class="form-row"><label class="form-label">Costo (opcional)</label><input class="form-input" type="number" id="service-cost" placeholder="35000"></div>
+        <div class="form-row"><label class="form-label">Fecha</label><input class="form-input" type="date" id="service-date"></div>
+      </div>
+      <div class="form-check"><input type="checkbox" id="service-reset" checked><label for="service-reset">Se reemplazó la pieza — reiniciar acumulado a 0</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-service')">Cancelar</button>
+      <button class="btn btn-p btn-sm" onclick="submitService()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var GEAR_API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
+var ST = { shoeStatus: 'active', bikeStatus: 'active', shoes: [], bikes: [] };
+
+function getGearToken() {
+  try {
+    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+    return (s && s.token) ? s.token : (localStorage.getItem('lx_co_token') || null);
+  } catch(e) { return null; }
+}
+
+function gearFetch(path, opts) {
+  var tok = getGearToken();
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Authorization': 'Bearer ' + tok }, opts.headers || {});
+  if (opts.body && typeof opts.body !== 'string') {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(opts.body);
+  }
+  return fetch(GEAR_API + path, opts).then(function(r){
+    if (!r.ok) return r.json().then(function(e){ throw new Error((e.errors && e.errors[0] && e.errors[0].message) || 'Error'); });
+    return r.json();
+  });
+}
+
+function setMainTab(tab) {
+  document.querySelectorAll('.mt-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.main === tab); });
+  document.getElementById('pane-shoes').classList.toggle('on', tab === 'shoes');
+  document.getElementById('pane-bikes').classList.toggle('on', tab === 'bikes');
+}
+
+function setShoeStatus(status) {
+  ST.shoeStatus = status;
+  document.querySelectorAll('[data-shoe-status]').forEach(function(b){ b.classList.toggle('on', b.dataset.shoeStatus === status); });
+  loadShoes();
+}
+
+function setBikeStatus(status) {
+  ST.bikeStatus = status;
+  document.querySelectorAll('[data-bike-status]').forEach(function(b){ b.classList.toggle('on', b.dataset.bikeStatus === status); });
+  loadBikes();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOv(ev, id) { if (ev.target.id === id) closeModal(id); }
+
+function lifeColor(pct) {
+  if (pct >= 100) return '#EF4444';
+  if (pct >= 80) return '#F0A500';
+  return '#10B981';
+}
+
+var COMP_ICONS = { cadena:'⛓️', cubiertas:'🛞', pastillas_freno:'🛑', discos_freno:'💿', bateria_grupo:'🔋', suspension:'🔧', sellante_tubeless:'💧', otro:'⚙️' };
+var COMP_LABELS = { cadena:'Cadena', cubiertas:'Cubiertas', pastillas_freno:'Pastillas de freno', discos_freno:'Discos de freno', bateria_grupo:'Batería grupo', suspension:'Suspensión', sellante_tubeless:'Sellante tubeless', otro:'Otro' };
+
+// ── ZAPATILLAS ──────────────────────────────────────────────
+
+function loadShoes() {
+  gearFetch('/gear/shoes?status=' + ST.shoeStatus).then(function(d){
+    ST.shoes = d.shoes || [];
+    renderShoes();
+  }).catch(function(){ renderShoesError(); });
+  checkSummaryAlerts();
+}
+
+function renderShoesError() {
+  document.getElementById('shoes-grid').innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>No se pudo cargar tu equipo. Reintenta en unos segundos.</p></div>';
+}
+
+function renderShoes() {
+  var grid = document.getElementById('shoes-grid');
+  if (!ST.shoes.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="es-icon">👟</div><p>' +
+      (ST.shoeStatus === 'active' ? 'Todavía no agregaste zapatillas. Agrega tu primer par para empezar a trackear el kilometraje real.' : 'No tienes zapatillas retiradas.') +
+      '</p></div>';
+    return;
+  }
+  grid.innerHTML = ST.shoes.map(function(s){
+    var color = lifeColor(s.life_pct);
+    var badges = (s.default_for || []).map(function(t){ return '<span class="gc-badge">★ ' + t + '</span>'; }).join('');
+    return '<div class="gear-card">' +
+      '<div class="gc-head">' +
+        '<div class="gear-icon">👟</div>' +
+        '<div style="flex:1"><div class="gc-name">' + esc(s.brand) + ' ' + esc(s.model) + '</div>' +
+        '<div class="gc-sub">' + (s.nickname ? esc(s.nickname) + ' · ' : '') + s.shoe_type + '</div>' +
+        '<div class="gc-badges">' + badges + '</div></div>' +
+      '</div>' +
+      '<div class="prog-wrap"><div class="prog-fill" style="width:' + Math.min(100, s.life_pct) + '%;background:' + color + '"></div></div>' +
+      '<div class="prog-lbl"><span><b style="color:' + color + '">' + s.life_pct + '%</b> de vida útil</span><span>' + s.accumulated_km.toFixed(0) + ' / ' + s.target_km.toFixed(0) + ' km</span></div>' +
+      '<div class="gc-actions">' +
+        (ST.shoeStatus === 'active' ?
+          '<button class="btn btn-g btn-sm" onclick="setDefaultShoe(\'' + s.id + '\')">Predeterminada rodaje</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="retireShoe(\'' + s.id + '\')">Retirar</button>'
+          : '<button class="btn btn-g btn-sm" onclick="reactivateShoe(\'' + s.id + '\')">Reactivar</button>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function submitShoe() {
+  var brand = document.getElementById('shoe-brand').value.trim();
+  var model = document.getElementById('shoe-model').value.trim();
+  if (!brand || !model) { alert('Marca y modelo son obligatorios'); return; }
+  var body = {
+    brand: brand, model: model,
+    nickname: document.getElementById('shoe-nickname').value.trim() || null,
+    shoe_type: document.getElementById('shoe-type').value,
+    target_km: parseFloat(document.getElementById('shoe-target').value) || undefined,
+  };
+  gearFetch('/gear/shoes', { method: 'POST', body: body }).then(function(shoe){
+    if (document.getElementById('shoe-default').checked) {
+      return gearFetch('/gear/shoes/' + shoe.id + '/set-default', { method: 'POST', body: { workout_subtype: 'rodaje' } });
+    }
+  }).then(function(){
+    closeModal('modal-shoe');
+    document.getElementById('shoe-brand').value = '';
+    document.getElementById('shoe-model').value = '';
+    document.getElementById('shoe-nickname').value = '';
+    document.getElementById('shoe-target').value = '';
+    loadShoes();
+  }).catch(function(e){ alert(e.message); });
+}
+
+function setDefaultShoe(id) {
+  gearFetch('/gear/shoes/' + id + '/set-default', { method: 'POST', body: { workout_subtype: 'rodaje' } })
+    .then(loadShoes).catch(function(e){ alert(e.message); });
+}
+
+function retireShoe(id) {
+  if (!confirm('¿Retirar esta zapatilla? El historial de km se conserva.')) return;
+  gearFetch('/gear/shoes/' + id, { method: 'DELETE' }).then(loadShoes).catch(function(e){ alert(e.message); });
+}
+
+function reactivateShoe(id) {
+  gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(e.message); });
+}
+
+// ── BICICLETAS ──────────────────────────────────────────────
+
+function loadBikes() {
+  gearFetch('/gear/bikes?status=' + ST.bikeStatus).then(function(d){
+    ST.bikes = d.bikes || [];
+    renderBikes();
+  }).catch(function(){ renderBikesError(); });
+  checkSummaryAlerts();
+}
+
+function renderBikesError() {
+  document.getElementById('bikes-grid').innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>No se pudo cargar tu equipo. Reintenta en unos segundos.</p></div>';
+}
+
+function renderBikes() {
+  var grid = document.getElementById('bikes-grid');
+  if (!ST.bikes.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="es-icon">🚲</div><p>' +
+      (ST.bikeStatus === 'active' ? 'Todavía no agregaste bicicletas. Agrega la tuya para trackear cadena, cubiertas y más.' : 'No tienes bicicletas retiradas.') +
+      '</p></div>';
+    return;
+  }
+  grid.innerHTML = ST.bikes.map(function(b){
+    var compsHtml = b.components.map(function(c){
+      if (c.tracking_unit === 'carga_pct') {
+        var chargeColor = (c.charge_pct !== null && c.charge_pct <= 20) ? '#EF4444' : (c.charge_pct !== null && c.charge_pct <= 40 ? '#F0A500' : '#10B981');
+        return '<div class="comp-row">' +
+          '<div class="comp-icon">' + (COMP_ICONS[c.component_type] || '⚙️') + '</div>' +
+          '<div class="comp-body"><div class="comp-name">' + esc(c.label || COMP_LABELS[c.component_type]) + '</div>' +
+          '<div class="comp-val">' + (c.last_service_date ? 'Última revisión: ' + c.last_service_date : 'Sin revisión registrada') + '</div></div>' +
+          '<span class="battery-chip" style="background:' + chargeColor + '22;color:' + chargeColor + '">' + (c.charge_pct !== null ? c.charge_pct + '%' : '—') + '</span>' +
+          '<div class="comp-actions"><button class="icon-btn" title="Actualizar % de carga" onclick="promptChargeUpdate(\'' + b.id + '\',\'' + c.id + '\',' + (c.charge_pct||0) + ')">✎</button></div>' +
+        '</div>';
+      }
+      var color = lifeColor(c.life_pct);
+      return '<div class="comp-row">' +
+        '<div class="comp-icon">' + (COMP_ICONS[c.component_type] || '⚙️') + '</div>' +
+        '<div class="comp-body"><div class="comp-name">' + esc(c.label || COMP_LABELS[c.component_type]) + '</div>' +
+        '<div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:' + Math.min(100,c.life_pct) + '%;background:' + color + '"></div></div>' +
+        '<div class="comp-val"><b style="color:' + color + '">' + c.life_pct + '%</b> · ' + c.accumulated_value.toFixed(0) + ' / ' + c.target_value.toFixed(0) + ' ' + c.tracking_unit + '</div></div>' +
+        '<div class="comp-actions">' +
+          '<button class="icon-btn" title="Registrar mantenimiento" onclick="openServiceModal(\'' + b.id + '\',\'' + c.id + '\')">🔧</button>' +
+          '<button class="icon-btn" title="Quitar componente" onclick="removeComponent(\'' + b.id + '\',\'' + c.id + '\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="gear-card">' +
+      '<div class="gc-head">' +
+        '<div class="gear-icon">🚲</div>' +
+        '<div style="flex:1"><div class="gc-name">' + esc(b.brand) + ' ' + esc(b.model) + (b.is_default ? ' <span class="gc-badge">★ predeterminada</span>' : '') + '</div>' +
+        '<div class="gc-sub">' + b.bike_type + '</div></div>' +
+      '</div>' +
+      '<div class="gc-comps">' + (compsHtml || '<div class="comp-val" style="padding:.4rem 0">Sin componentes registrados.</div>') + '</div>' +
+      '<div class="gc-actions">' +
+        '<button class="btn btn-g btn-sm" onclick="openComponentModal(\'' + b.id + '\')">+ Componente</button>' +
+        (ST.bikeStatus === 'active' ?
+          (!b.is_default ? '<button class="btn btn-g btn-sm" onclick="setDefaultBike(\'' + b.id + '\')">Marcar predeterminada</button>' : '') +
+          '<button class="btn btn-danger btn-sm" onclick="retireBike(\'' + b.id + '\')">Retirar</button>'
+          : '<button class="btn btn-g btn-sm" onclick="reactivateBike(\'' + b.id + '\')">Reactivar</button>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function submitBike() {
+  var brand = document.getElementById('bike-brand').value.trim();
+  var model = document.getElementById('bike-model').value.trim();
+  if (!brand || !model) { alert('Marca y modelo son obligatorios'); return; }
+  var body = { brand: brand, model: model, bike_type: document.getElementById('bike-type').value, is_default: document.getElementById('bike-default').checked };
+  gearFetch('/gear/bikes', { method: 'POST', body: body }).then(function(){
+    closeModal('modal-bike');
+    document.getElementById('bike-brand').value = '';
+    document.getElementById('bike-model').value = '';
+    loadBikes();
+  }).catch(function(e){ alert(e.message); });
+}
+
+function setDefaultBike(id) {
+  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { is_default: true } }).then(loadBikes).catch(function(e){ alert(e.message); });
+}
+
+function retireBike(id) {
+  if (!confirm('¿Retirar esta bicicleta?')) return;
+  gearFetch('/gear/bikes/' + id, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(e.message); });
+}
+
+function reactivateBike(id) {
+  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadBikes).catch(function(e){ alert(e.message); });
+}
+
+function onCompTypeChange() {
+  var isBattery = document.getElementById('comp-type').value === 'bateria_grupo';
+  document.getElementById('comp-tracking-row').style.display = isBattery ? 'none' : 'grid';
+  document.getElementById('comp-charge-row').style.display = isBattery ? 'block' : 'none';
+  if (isBattery) document.getElementById('comp-unit').value = 'carga_pct';
+}
+
+function openComponentModal(bikeId) {
+  document.getElementById('comp-bike-id').value = bikeId;
+  document.getElementById('comp-type').value = 'cadena';
+  document.getElementById('comp-label').value = '';
+  document.getElementById('comp-unit').value = 'km';
+  document.getElementById('comp-target').value = '';
+  document.getElementById('comp-charge').value = '';
+  onCompTypeChange();
+  openModal('modal-component');
+}
+
+function submitComponent() {
+  var bikeId = document.getElementById('comp-bike-id').value;
+  var type = document.getElementById('comp-type').value;
+  var isBattery = type === 'bateria_grupo';
+  var body = {
+    component_type: type,
+    label: document.getElementById('comp-label').value.trim() || null,
+    tracking_unit: isBattery ? 'carga_pct' : document.getElementById('comp-unit').value,
+    target_value: isBattery ? 100 : (parseFloat(document.getElementById('comp-target').value) || null),
+    charge_pct: isBattery ? (parseInt(document.getElementById('comp-charge').value) || 100) : undefined,
+  };
+  if (!body.target_value) { alert('Ingresa una meta válida'); return; }
+  gearFetch('/gear/bikes/' + bikeId + '/components', { method: 'POST', body: body }).then(function(){
+    closeModal('modal-component');
+    loadBikes();
+  }).catch(function(e){ alert(e.message); });
+}
+
+function removeComponent(bikeId, compId) {
+  if (!confirm('¿Quitar este componente del seguimiento?')) return;
+  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(e.message); });
+}
+
+function promptChargeUpdate(bikeId, compId, current) {
+  var val = prompt('% de carga actual de la batería:', current);
+  if (val === null) return;
+  var pct = parseInt(val);
+  if (isNaN(pct) || pct < 0 || pct > 100) { alert('Ingresa un valor entre 0 y 100'); return; }
+  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'PATCH', body: { charge_pct: pct } })
+    .then(loadBikes).catch(function(e){ alert(e.message); });
+}
+
+function openServiceModal(bikeId, compId) {
+  document.getElementById('service-bike-id').value = bikeId;
+  document.getElementById('service-comp-id').value = compId;
+  document.getElementById('service-desc').value = '';
+  document.getElementById('service-cost').value = '';
+  document.getElementById('service-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('service-reset').checked = true;
+  openModal('modal-service');
+}
+
+function submitService() {
+  var bikeId = document.getElementById('service-bike-id').value;
+  var compId = document.getElementById('service-comp-id').value;
+  var desc = document.getElementById('service-desc').value.trim();
+  if (!desc) { alert('Describe el mantenimiento realizado'); return; }
+  var body = {
+    description: desc,
+    cost: parseFloat(document.getElementById('service-cost').value) || null,
+    date_iso: document.getElementById('service-date').value || undefined,
+    resets_accumulated: document.getElementById('service-reset').checked,
+  };
+  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId + '/service', { method: 'POST', body: body }).then(function(){
+    closeModal('modal-service');
+    loadBikes();
+  }).catch(function(e){ alert(e.message); });
+}
+
+// ── RESUMEN / ALERTAS ──────────────────────────────────────────
+
+function checkSummaryAlerts() {
+  gearFetch('/gear/summary').then(function(d){
+    var banner = document.getElementById('alert-banner');
+    if (d.alerts_count > 0) {
+      document.getElementById('alert-text').textContent = d.alerts_count === 1
+        ? 'Tienes 1 equipo por encima del 80% de su vida útil recomendada.'
+        : 'Tienes ' + d.alerts_count + ' equipos por encima del 80% de su vida útil recomendada.';
+      banner.classList.add('on');
+    } else {
+      banner.classList.remove('on');
+    }
+  }).catch(function(){});
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+loadShoes();
+loadBikes();
+</script>
+<script src="auth.js?v=1"></script>
+<script>KL.guard('gear');</script>
+<script src="nav.js?v=1"></script>
+<script src="footer.js"></script>
+</body>
+</html>

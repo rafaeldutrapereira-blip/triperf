@@ -181,3 +181,21 @@ def push_overtraining_alert(tsb: float) -> dict:
         "icon":  "/icons/icon-192.png",
         "requireInteraction": True,
     }
+
+
+def push_gear_alert(gear_label: str, gear_kind: str, life_pct: float, threshold: int) -> dict:
+    icon = "👟" if gear_kind == "shoe" else "🚲"
+    if threshold >= 100:
+        title = f"{icon} {gear_label} llegó al 100%"
+        body  = "Cumplió su vida útil recomendada — es momento de reemplazarlo."
+    else:
+        title = f"{icon} {gear_label} al {life_pct:.0f}%"
+        body  = "Se acerca a su vida útil recomendada."
+    return {
+        "type":  "gear_alert",
+        "title": title,
+        "body":  body,
+        "url":   "/gear.html",
+        "icon":  "/icons/icon-192.png",
+        "tag":   f"gear-{gear_kind}-{threshold}",
+    }

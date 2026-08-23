@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '129';  // 2026-08-22: rango acumulado real en Parciales (natacion/laps Garmin)
+var BUILD_VERSION = '130';  // 2026-08-22: modulo Gestion de Equipamiento (gear.html) + alertas 80/100%
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -27,6 +27,7 @@ var PRECACHE = [
   '/adaptive.html',
   '/mental.html',
   '/ai_coach.html',
+  '/gear.html',
 ];
 
 /* â”€â”€ Install: pre-cache archivos estÃ¡ticos â”€â”€ */

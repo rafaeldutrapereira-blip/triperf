@@ -316,3 +316,28 @@ def send_login_alert(email: str, nombre: str, ip: str, ua: str) -> None:
       </div>
     """
     send_email(email, "LabX — Nuevo inicio de sesión detectado en su cuenta", _wrap_email_body(inner), tags=["security", "login-alert"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ALERTA DE VIDA ÚTIL DE EQUIPAMIENTO (Sprint 4 — Gestión de Equipamiento)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def send_gear_alert(email: str, nombre: str, gear_label: str, gear_kind: str,
+                     life_pct: float, threshold: int, app_url: str = "") -> None:
+    """gear_kind: 'shoe' | 'component'. threshold: 80 o 100 (% de vida útil)."""
+    app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    icon = "👟" if gear_kind == "shoe" else "🚲"
+    if threshold >= 100:
+        color, title = "#EF4444", f"{icon} {gear_label} llegó al 100% de su vida útil"
+        message = "Ya cumplió el kilometraje recomendado por el fabricante. Seguir usándolo aumenta el riesgo de lesión o falla del componente."
+    else:
+        color, title = "#F0A500", f"{icon} {gear_label} está al {life_pct:.0f}% de su vida útil"
+        message = "Se acerca al kilometraje recomendado por el fabricante. Es un buen momento para planear su reemplazo."
+    inner = f"""
+      <h1 style="font-size:16px;margin:0 0 8px;color:{color}">{title}</h1>
+      <p style="color:#7FB3CC;margin:0 0 20px">Hola {nombre}, {message}</p>
+      <a href="{app_url}/gear.html" style="display:inline-block;background:{color};color:#fff;font-weight:800;font-size:12pt;text-decoration:none;padding:12px 28px;border-radius:10px">
+        Ver mi equipo
+      </a>
+    """
+    send_email(email, title, _wrap_email_body(inner), tags=["gear", f"threshold-{threshold}"])

@@ -47,8 +47,8 @@
     }
     return {
       basic:    { label:'Básico',   color:'#0EA5E9', modules:['dashboard','athlete_profile'] },
-      agegroup: { label:'Agegroup', color:'#A855F7', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','race_predictor','year_in_review','community','recovery','mental','race_day'] },
-      elite:    { label:'Élite',    color:'#F0A500', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','blood_labs','training_detail','race_predictor','year_in_review','community','recovery','mental','race_day','ai_coach','adaptive','indoor_workout'] }
+      agegroup: { label:'Agegroup', color:'#A855F7', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','race_predictor','year_in_review','community','recovery','mental','race_day','gear'] },
+      elite:    { label:'Élite',    color:'#F0A500', modules:['dashboard','athlete_profile','training_plan','nutrition','analytics','blood_labs','training_detail','race_predictor','year_in_review','community','recovery','mental','race_day','ai_coach','adaptive','indoor_workout','gear'] }
     };
   }());
 

@@ -145,3 +145,88 @@ class TestAssignGearOtherSports:
         db.commit()
         assert db.query(ShoeActivityLink).count() == 0
         assert db.query(BikeActivityLink).count() == 0
+
+
+class TestLifeThresholdAlerts:
+    """RESEND_API_KEY/VAPID_PRIVATE_KEY no están configurados en el entorno
+    de test, así que mailer.send_email y send_push_to_user retornan de
+    inmediato sin red real -- se ejercita el código real de decisión de
+    umbral (last_alert_pct), no un mock de la capa de negocio."""
+
+    def test_shoe_crossing_80pct_marks_last_alert_pct(self, db, athlete_user):
+        shoe = RunningShoe(
+            user_id=athlete_user.id, brand="Hoka", model="Clifton",
+            default_for_json='["rodaje"]', target_km=100.0, accumulated_km=75.0,
+        )
+        db.add(shoe)
+        db.commit()
+
+        act = _make_activity(db, athlete_user.id, "run", dist_km=10.0)  # 85%
+        assign_gear(db, act)
+        db.commit()
+
+        db.refresh(shoe)
+        assert shoe.accumulated_km == 85.0
+        assert shoe.last_alert_pct == 80
+
+    def test_shoe_does_not_realert_same_threshold_on_next_sync(self, db, athlete_user):
+        shoe = RunningShoe(
+            user_id=athlete_user.id, brand="Hoka", model="Clifton",
+            default_for_json='["rodaje"]', target_km=100.0, accumulated_km=82.0, last_alert_pct=80,
+        )
+        db.add(shoe)
+        db.commit()
+
+        act = _make_activity(db, athlete_user.id, "run", dist_km=2.0)  # 84%, sigue en banda 80
+        assign_gear(db, act)
+        db.commit()
+
+        db.refresh(shoe)
+        assert shoe.last_alert_pct == 80  # no reescribe ni reenvía
+
+    def test_shoe_crossing_100pct_after_80_updates_to_100(self, db, athlete_user):
+        shoe = RunningShoe(
+            user_id=athlete_user.id, brand="Hoka", model="Clifton",
+            default_for_json='["rodaje"]', target_km=100.0, accumulated_km=95.0, last_alert_pct=80,
+        )
+        db.add(shoe)
+        db.commit()
+
+        act = _make_activity(db, athlete_user.id, "run", dist_km=10.0)  # 105%
+        assign_gear(db, act)
+        db.commit()
+
+        db.refresh(shoe)
+        assert shoe.last_alert_pct == 100
+
+    def test_bike_component_km_crossing_80pct_marks_alert(self, db, athlete_user):
+        bike = Bike(user_id=athlete_user.id, brand="Canyon", model="Aeroad", is_default=True)
+        db.add(bike)
+        db.commit()
+        chain = BikeComponent(bike_id=bike.id, component_type="cadena", tracking_unit="km", target_value=100.0, accumulated_value=70.0)
+        db.add(chain)
+        db.commit()
+
+        act = _make_activity(db, athlete_user.id, "bike", dist_km=15.0)  # 85%
+        assign_gear(db, act)
+        db.commit()
+
+        db.refresh(chain)
+        assert chain.accumulated_value == 85.0
+        assert chain.last_alert_pct == 80
+
+    def test_battery_component_never_gets_threshold_alert_from_sync(self, db, athlete_user):
+        bike = Bike(user_id=athlete_user.id, brand="Canyon", model="Aeroad", is_default=True)
+        db.add(bike)
+        db.commit()
+        battery = BikeComponent(bike_id=bike.id, component_type="bateria_grupo", tracking_unit="carga_pct", target_value=100.0, charge_pct=15)
+        db.add(battery)
+        db.commit()
+
+        act = _make_activity(db, athlete_user.id, "bike", dist_km=50.0)
+        assign_gear(db, act)
+        db.commit()
+
+        db.refresh(battery)
+        assert battery.last_alert_pct is None
+        assert battery.accumulated_value == 0.0
