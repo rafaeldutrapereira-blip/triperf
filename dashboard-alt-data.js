@@ -14,7 +14,7 @@
     // no es la URL real de produccion -- el check de 'file:' de abajo no
     // cubre ese caso (Capacitor no usa protocolo file:).
     if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-      return 'https://beta.labx.app/api';
+      return 'https://labxperformanceapp.com/api';
     }
     return window.location.protocol === 'file:'
       ? 'http://localhost:8000/api'

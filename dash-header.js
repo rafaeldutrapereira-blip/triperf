@@ -21,7 +21,7 @@ function apiBase(){
   // que detectar la plataforma nativa explícitamente, el check de 'file:'
   // de abajo no cubre este caso (Capacitor no usa protocolo file:).
   if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-    return 'https://beta.labx.app/api';
+    return 'https://labxperformanceapp.com/api';
   }
   return window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
 }

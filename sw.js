@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '135';  // 2026-08-23: Mi Equipo pantalla nativa en athlete-app.html (zapatillas+bicicletas+horario+recalculo)
+var BUILD_VERSION = '136';  // 2026-08-23: fix critico -- app apuntaba a dominio inexistente beta.labx.app en vez de labxperformanceapp.com
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
