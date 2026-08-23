@@ -961,6 +961,37 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .login-pw-eye { position: absolute; top: 50%; right: .8rem; transform: translateY(-50%); background: none; border: none; color: var(--dim); cursor: pointer; padding: .3rem; display: flex; }
 .login-pw-eye:hover { color: var(--text); }
 .login-btn { width: 100%; padding: .9rem; background: var(--orange); border: none; border-radius: 12px; color: #fff; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .08em; cursor: pointer; }
+
+/* ── Mi Equipo (Gestión de Equipamiento) ──────────────────── */
+.gear-alert-banner { display: none; align-items: center; gap: .5rem; margin: .8rem 1rem 0; background: rgba(240,165,0,.08); border: 1px solid rgba(240,165,0,.3); border-radius: 10px; padding: .6rem .8rem; font-size: .76rem; color: var(--dim); }
+.gear-alert-banner.on { display: flex; }
+.gear-add-btn { margin: .8rem 1rem 0; }
+.gear-card { margin: .8rem 1rem 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; }
+.gear-card-head { display: flex; align-items: flex-start; gap: .65rem; margin-bottom: .7rem; }
+.gear-card-ico { width: 40px; height: 40px; border-radius: 9px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.gear-card-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text); }
+.gear-card-sub { font-size: .72rem; color: var(--dim); margin-top: .1rem; }
+.gear-badges { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .35rem; }
+.gear-badge { font-size: .6rem; font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .12rem .45rem; border-radius: 5px; background: rgba(34,211,238,.1); color: var(--cyan); border: 1px solid rgba(34,211,238,.25); }
+.gear-prog-wrap { background: var(--bg3); border-radius: 4px; height: 7px; overflow: hidden; margin: .3rem 0; }
+.gear-prog-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.gear-prog-lbl { display: flex; justify-content: space-between; font-size: .7rem; color: var(--dim); }
+.gear-prog-lbl b { color: var(--text); }
+.gear-card-actions { display: flex; gap: .4rem; margin-top: .8rem; flex-wrap: wrap; }
+.gear-btn { flex-shrink: 0; padding: .38rem .7rem; border-radius: 7px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-family: 'Oswald', sans-serif; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; }
+.gear-btn.gear-btn-on { border-color: rgba(34,211,238,.4); color: var(--cyan); background: rgba(34,211,238,.08); }
+.gear-btn.gear-btn-danger { border-color: rgba(239,68,68,.35); color: var(--red); }
+.gear-comp-row { display: flex; align-items: center; gap: .55rem; padding: .45rem 0; border-top: 1px solid var(--border); font-size: .76rem; }
+.gear-comp-row:first-child { border-top: none; }
+.gear-comp-ico { font-size: .95rem; width: 20px; text-align: center; flex-shrink: 0; }
+.gear-comp-body { flex: 1; min-width: 0; }
+.gear-comp-name { color: var(--text); font-weight: 600; }
+.gear-comp-val { font-size: .68rem; color: var(--dim); }
+.gear-weekday-picker { display: flex; gap: .3rem; flex-wrap: wrap; padding: 0 1rem; margin-bottom: .9rem; }
+.gear-weekday-picker label { display: flex; flex-direction: column; align-items: center; gap: .2rem; font-size: .62rem; color: var(--dim); cursor: pointer; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: .35rem .5rem; }
+.gear-weekday-picker label:has(input:checked) { border-color: rgba(34,211,238,.5); color: var(--cyan); background: rgba(34,211,238,.08); }
+.gear-weekday-picker input { margin: 0; }
+.gear-hint { font-size: .68rem; color: var(--dim); line-height: 1.4; padding: 0 1rem; margin: -.5rem 0 .9rem; }
 </style>
 <style>.topbar-brand.topbar-brand svg.sbl-svg{width:26px;height:26px;flex-shrink:0}<style>.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}</style></style></head>
 <body>
@@ -1158,6 +1189,153 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </select>
     </div>
     <button class="wl-submit" id="cm-share-submit-btn" onclick="submitSharePost()">📤 Publicar</button>
+  </div>
+</div>
+
+<!-- ── Mi Equipo: modales (agregar/editar zapatilla, horario+recálculo,
+     agregar bicicleta/componente, registrar mantenimiento) — mismos
+     endpoints /api/gear/* que gear.html. -->
+<div id="gear-shoe-modal" class="ios-guide" style="display:none" onclick="closeGearShoeModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeGearShoeModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title" id="gear-shoe-modal-title">Agregar zapatilla</div>
+    <input type="hidden" id="gear-shoe-id">
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.7rem">
+      <div><label style="font-size:.72rem;color:var(--dim)">Marca</label><input id="gear-shoe-brand" class="pw-input" placeholder="Hoka, Asics..." style="margin-top:.3rem"></div>
+      <div><label style="font-size:.72rem;color:var(--dim)">Modelo</label><input id="gear-shoe-model" class="pw-input" placeholder="Clifton 9" style="margin-top:.3rem"></div>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">Apodo (opcional)</label>
+      <input id="gear-shoe-nickname" class="pw-input" placeholder="Ej: las rojas" style="margin-top:.3rem">
+    </div>
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.7rem">
+      <div>
+        <label style="font-size:.72rem;color:var(--dim)">Tipo</label>
+        <select id="gear-shoe-type" class="pw-input" style="margin-top:.3rem">
+          <option value="rodaje">Rodaje</option>
+          <option value="series">Series</option>
+          <option value="competicion">Competición</option>
+          <option value="trail">Trail</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div><label style="font-size:.72rem;color:var(--dim)">Meta (km)</label><input id="gear-shoe-target" type="number" class="pw-input" placeholder="700" style="margin-top:.3rem"></div>
+    </div>
+    <div style="padding:0 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.78rem;color:var(--dim)">
+      <input type="checkbox" id="gear-shoe-default" checked><label for="gear-shoe-default">Predeterminada para rodaje (solo al crear)</label>
+    </div>
+    <button class="wl-submit" onclick="submitGearShoe()">Guardar</button>
+  </div>
+</div>
+
+<div id="gear-schedule-modal" class="ios-guide" style="display:none" onclick="closeGearScheduleModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeGearScheduleModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Días de uso y recálculo</div>
+    <input type="hidden" id="gear-sched-shoe-id">
+    <div style="padding:0 1rem;font-size:.72rem;color:var(--dim);margin-bottom:.5rem">¿Qué días corrés con este par?</div>
+    <div class="gear-weekday-picker" id="gear-sched-days">
+      <label><input type="checkbox" value="mon">Lun</label>
+      <label><input type="checkbox" value="tue">Mar</label>
+      <label><input type="checkbox" value="wed">Mié</label>
+      <label><input type="checkbox" value="thu">Jue</label>
+      <label><input type="checkbox" value="fri">Vie</label>
+      <label><input type="checkbox" value="sat">Sáb</label>
+      <label><input type="checkbox" value="sun">Dom</label>
+    </div>
+    <div class="gear-hint">Tienen prioridad sobre "predeterminada rodaje" al sincronizar. Un día solo puede pertenecer a un par.</div>
+    <div style="padding:0 1rem;margin-bottom:.5rem">
+      <label style="font-size:.72rem;color:var(--dim)">Empecé a usar este par el (opcional)</label>
+      <input id="gear-sched-start-date" type="date" class="pw-input" style="margin-top:.3rem">
+    </div>
+    <div class="gear-hint">Usalo si ya corriste con este par antes de cargarlo — al guardar, recalcula automáticamente el km ya corrido (mueve km de otra zapatilla si hacía falta).</div>
+    <button class="wl-submit" onclick="saveGearSchedule()">Guardar y recalcular</button>
+  </div>
+</div>
+
+<div id="gear-bike-modal" class="ios-guide" style="display:none" onclick="closeGearBikeModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeGearBikeModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Agregar bicicleta</div>
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.7rem">
+      <div><label style="font-size:.72rem;color:var(--dim)">Marca</label><input id="gear-bike-brand" class="pw-input" placeholder="Canyon, Trek..." style="margin-top:.3rem"></div>
+      <div><label style="font-size:.72rem;color:var(--dim)">Modelo</label><input id="gear-bike-model" class="pw-input" placeholder="Aeroad" style="margin-top:.3rem"></div>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">Tipo</label>
+      <select id="gear-bike-type" class="pw-input" style="margin-top:.3rem">
+        <option value="ruta">Ruta</option>
+        <option value="tt_triatlon">TT / Triatlón</option>
+        <option value="mtb">MTB</option>
+        <option value="gravel">Gravel</option>
+      </select>
+    </div>
+    <div style="padding:0 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.78rem;color:var(--dim)">
+      <input type="checkbox" id="gear-bike-default" checked><label for="gear-bike-default">Usar como bici predeterminada</label>
+    </div>
+    <button class="wl-submit" onclick="submitGearBike()">Guardar</button>
+  </div>
+</div>
+
+<div id="gear-component-modal" class="ios-guide" style="display:none" onclick="closeGearComponentModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeGearComponentModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Agregar componente</div>
+    <input type="hidden" id="gear-comp-bike-id">
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">Componente</label>
+      <select id="gear-comp-type" class="pw-input" style="margin-top:.3rem" onchange="onGearCompTypeChange()">
+        <option value="cadena">Cadena</option>
+        <option value="cubiertas">Cubiertas</option>
+        <option value="pastillas_freno">Pastillas de freno</option>
+        <option value="discos_freno">Discos de freno</option>
+        <option value="bateria_grupo">Batería grupo electrónico</option>
+        <option value="suspension">Suspensión</option>
+        <option value="sellante_tubeless">Sellante tubeless</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">Etiqueta (opcional)</label>
+      <input id="gear-comp-label" class="pw-input" placeholder="Ej: cadena trasera" style="margin-top:.3rem">
+    </div>
+    <div id="gear-comp-tracking-row" style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.7rem">
+      <div>
+        <label style="font-size:.72rem;color:var(--dim)">Se mide por</label>
+        <select id="gear-comp-unit" class="pw-input" style="margin-top:.3rem">
+          <option value="km">Kilómetros</option>
+          <option value="horas">Horas de uso</option>
+          <option value="meses">Meses (calendario)</option>
+        </select>
+      </div>
+      <div><label style="font-size:.72rem;color:var(--dim)">Meta</label><input id="gear-comp-target" type="number" class="pw-input" placeholder="3000" style="margin-top:.3rem"></div>
+    </div>
+    <div id="gear-comp-charge-row" style="display:none;padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">% de carga actual</label>
+      <input id="gear-comp-charge" type="number" min="0" max="100" class="pw-input" placeholder="90" style="margin-top:.3rem">
+    </div>
+    <button class="wl-submit" onclick="submitGearComponent()">Guardar</button>
+  </div>
+</div>
+
+<div id="gear-service-modal" class="ios-guide" style="display:none" onclick="closeGearServiceModal(event)">
+  <div class="ios-guide-card" onclick="event.stopPropagation()">
+    <button class="ios-guide-close" onclick="closeGearServiceModal()" aria-label="Cerrar">✕</button>
+    <div class="ios-guide-title">Registrar mantenimiento</div>
+    <input type="hidden" id="gear-service-bike-id">
+    <input type="hidden" id="gear-service-comp-id">
+    <div style="padding:0 1rem;margin-bottom:.7rem">
+      <label style="font-size:.72rem;color:var(--dim)">Descripción</label>
+      <textarea id="gear-service-desc" class="pw-input" rows="2" placeholder="Ej: cambio de cadena por desgaste" style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea>
+    </div>
+    <div style="padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.7rem">
+      <div><label style="font-size:.72rem;color:var(--dim)">Costo (opcional)</label><input id="gear-service-cost" type="number" class="pw-input" placeholder="35000" style="margin-top:.3rem"></div>
+      <div><label style="font-size:.72rem;color:var(--dim)">Fecha</label><input id="gear-service-date" type="date" class="pw-input" style="margin-top:.3rem"></div>
+    </div>
+    <div style="padding:0 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.78rem;color:var(--dim)">
+      <input type="checkbox" id="gear-service-reset" checked><label for="gear-service-reset">Se reemplazó la pieza — reiniciar acumulado</label>
+    </div>
+    <button class="wl-submit" onclick="submitGearService()">Guardar</button>
   </div>
 </div>
 
@@ -1840,6 +2018,49 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
     </div>
 
+    <!-- SCREEN: MI EQUIPO (Gestión de Equipamiento) -- pantalla nativa,
+         mismos endpoints /api/gear/* que gear.html (web): CRUD de
+         zapatillas/bicicletas/componentes, asignación automática por
+         horario semanal, alertas 80/100% de vida útil, recálculo
+         retroactivo (con opción de forzar sobre asignaciones previas). -->
+    <div class="screen" id="screen-gear">
+      <div class="screen-sticky-head">
+      <div class="topbar">
+        <button class="cm-priv-btn" onclick="goScreen('screen-today')" aria-label="Volver">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="min-width:0">
+          <div class="topbar-eye">MI EQUIPO</div>
+          <div class="topbar-greet">Kilometraje real de zapatillas y bicicletas</div>
+        </div>
+      </div>
+      <div class="cm-tabs">
+        <div class="cm-tab active" id="gear-tab-shoes" onclick="gearTab('shoes')">👟 Zapatillas</div>
+        <div class="cm-tab" id="gear-tab-bikes" onclick="gearTab('bikes')">🚲 Bicicletas</div>
+      </div>
+      </div><!-- /screen-sticky-head -->
+
+      <div class="gear-alert-banner" id="gear-alert-banner"><span id="gear-alert-text"></span></div>
+
+      <div id="gear-shoes-content">
+        <button class="wl-submit gear-add-btn" onclick="openGearShoeModal()">+ Agregar zapatilla</button>
+        <div class="md-tabs" style="padding:.8rem 1rem 0" id="gear-shoe-status-tabs">
+          <button class="md-tab on" data-status="active" onclick="gearShoeStatus('active')">Activas</button>
+          <button class="md-tab" data-status="retired" onclick="gearShoeStatus('retired')">Retiradas</button>
+        </div>
+        <div id="gear-shoes-list"><div class="cm-empty">Cargando...</div></div>
+      </div>
+
+      <div id="gear-bikes-content" style="display:none">
+        <button class="wl-submit gear-add-btn" onclick="openGearBikeModal()">+ Agregar bicicleta</button>
+        <div class="md-tabs" style="padding:.8rem 1rem 0" id="gear-bike-status-tabs">
+          <button class="md-tab on" data-status="active" onclick="gearBikeStatus('active')">Activas</button>
+          <button class="md-tab" data-status="retired" onclick="gearBikeStatus('retired')">Retiradas</button>
+        </div>
+        <div id="gear-bikes-list"><div class="cm-empty">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- SCREEN 11: AI COACH (Sprint 6 del roadmap app↔web) — chat con
          el mismo motor que ai_coach.html. Se abre desde el FAB naranja
          flotante (visible en toda la app salvo dentro del propio chat).
@@ -1997,6 +2218,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <button class="menu-item" onclick="menuGo('screen-aicoach')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span>AI Coach</span>
+        </button>
+        <button class="menu-item" onclick="menuGo('screen-gear')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+          <span>Mi Equipo</span>
         </button>
       </div>
 
@@ -2363,6 +2588,429 @@ function saveProfileMobile(){
     .catch(function(){ toast('No se pudo guardar el perfil', 'err'); });
 }
 
+/* ── Mi Equipo (Gestión de Equipamiento) — pantalla nativa ────────────────
+   Mismos endpoints /api/gear/* que gear.html (web): CRUD de zapatillas/
+   bicicletas/componentes, asignación automática por horario semanal,
+   alertas 80/100% de vida útil, recálculo retroactivo. */
+var GEAR = { tab: 'shoes', shoeStatus: 'active', bikeStatus: 'active', shoes: [], bikes: [], loaded: false };
+var GEAR_DAY_LABELS = {mon:'Lun',tue:'Mar',wed:'Mié',thu:'Jue',fri:'Vie',sat:'Sáb',sun:'Dom'};
+var GEAR_COMP_ICONS = { cadena:'⛓️', cubiertas:'🛞', pastillas_freno:'🛑', discos_freno:'💿', bateria_grupo:'🔋', suspension:'🔧', sellante_tubeless:'💧', otro:'⚙️' };
+var GEAR_COMP_LABELS = { cadena:'Cadena', cubiertas:'Cubiertas', pastillas_freno:'Pastillas de freno', discos_freno:'Discos de freno', bateria_grupo:'Batería grupo', suspension:'Suspensión', sellante_tubeless:'Sellante tubeless', otro:'Otro' };
+
+function gearLifeColor(pct){
+  if(pct >= 100) return 'var(--red)';
+  if(pct >= 80) return 'var(--gold)';
+  return 'var(--green)';
+}
+
+function loadGearScreen(){
+  if(GEAR.loaded) return;
+  GEAR.loaded = true;
+  loadGearShoes();
+  loadGearBikes();
+}
+
+function gearTab(tab){
+  GEAR.tab = tab;
+  document.getElementById('gear-tab-shoes').classList.toggle('active', tab==='shoes');
+  document.getElementById('gear-tab-bikes').classList.toggle('active', tab==='bikes');
+  document.getElementById('gear-shoes-content').style.display = tab==='shoes' ? '' : 'none';
+  document.getElementById('gear-bikes-content').style.display = tab==='bikes' ? '' : 'none';
+}
+
+function gearShoeStatus(status){
+  GEAR.shoeStatus = status;
+  document.querySelectorAll('#gear-shoe-status-tabs .md-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.status===status); });
+  loadGearShoes();
+}
+
+function gearBikeStatus(status){
+  GEAR.bikeStatus = status;
+  document.querySelectorAll('#gear-bike-status-tabs .md-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.status===status); });
+  loadGearBikes();
+}
+
+function checkGearAlerts(){
+  apiFetch('/gear/summary').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    var banner = document.getElementById('gear-alert-banner');
+    if(!d){ return; }
+    if(d.alerts_count > 0){
+      document.getElementById('gear-alert-text').textContent = '⚠️ ' + (d.alerts_count===1
+        ? 'Tienes 1 equipo por encima del 80% de su vida útil.'
+        : 'Tienes ' + d.alerts_count + ' equipos por encima del 80% de su vida útil.');
+      banner.classList.add('on');
+    } else {
+      banner.classList.remove('on');
+    }
+  }).catch(function(){});
+}
+
+/* ── Zapatillas ── */
+function loadGearShoes(){
+  document.getElementById('gear-shoes-list').innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/gear/shoes?status=' + GEAR.shoeStatus).then(function(r){ return r.ok ? r.json() : {shoes:[]}; })
+    .then(function(d){ GEAR.shoes = d.shoes || []; renderGearShoes(); })
+    .catch(function(){ document.getElementById('gear-shoes-list').innerHTML = '<div class="cm-empty">No se pudo cargar tu equipo.</div>'; });
+  checkGearAlerts();
+}
+
+function renderGearShoes(){
+  var list = document.getElementById('gear-shoes-list');
+  if(!GEAR.shoes.length){
+    list.innerHTML = '<div class="cm-empty">' + (GEAR.shoeStatus==='active' ? 'Todavía no agregaste zapatillas.' : 'No tienes zapatillas retiradas.') + '</div>';
+    return;
+  }
+  list.innerHTML = GEAR.shoes.map(function(s){
+    var color = gearLifeColor(s.life_pct);
+    var badges = (s.default_for||[]).map(function(t){ return '<span class="gear-badge">★ '+t+'</span>'; }).join('');
+    var dayBadges = (s.schedule_days||[]).map(function(d){ return '<span class="gear-badge">'+(GEAR_DAY_LABELS[d]||d)+'</span>'; }).join('');
+    var actions = GEAR.shoeStatus==='active'
+      ? '<button class="gear-btn" onclick="setGearDefaultShoe(\''+s.id+'\')">Predet. rodaje</button>'
+        + '<button class="gear-btn" onclick="openGearScheduleModal(\''+s.id+'\')">📅 Días/recálculo</button>'
+        + '<button class="gear-btn" onclick="openEditGearShoeModal(\''+s.id+'\')">✎ Editar</button>'
+        + '<button class="gear-btn gear-btn-danger" onclick="retireGearShoe(\''+s.id+'\')">Retirar</button>'
+      : '<button class="gear-btn" onclick="reactivateGearShoe(\''+s.id+'\')">Reactivar</button>';
+    return '<div class="gear-card">'
+      + '<div class="gear-card-head">'
+        + '<div class="gear-card-ico">👟</div>'
+        + '<div style="flex:1;min-width:0"><div class="gear-card-name">'+_escH(s.brand)+' '+_escH(s.model)+'</div>'
+        + '<div class="gear-card-sub">'+(s.nickname?_escH(s.nickname)+' · ':'')+s.shoe_type+'</div>'
+        + '<div class="gear-badges">'+badges+dayBadges+'</div></div>'
+      + '</div>'
+      + '<div class="gear-prog-wrap"><div class="gear-prog-fill" style="width:'+Math.min(100,s.life_pct)+'%;background:'+color+'"></div></div>'
+      + '<div class="gear-prog-lbl"><span><b style="color:'+color+'">'+s.life_pct+'%</b> vida útil</span><span>'+s.accumulated_km.toFixed(0)+' / '+s.target_km.toFixed(0)+' km</span></div>'
+      + '<div class="gear-card-actions">'+actions+'</div>'
+    + '</div>';
+  }).join('');
+}
+
+function openGearShoeModal(){
+  document.getElementById('gear-shoe-modal-title').textContent = 'Agregar zapatilla';
+  document.getElementById('gear-shoe-id').value = '';
+  document.getElementById('gear-shoe-brand').value = '';
+  document.getElementById('gear-shoe-model').value = '';
+  document.getElementById('gear-shoe-nickname').value = '';
+  document.getElementById('gear-shoe-type').value = 'rodaje';
+  document.getElementById('gear-shoe-target').value = '';
+  document.getElementById('gear-shoe-default').checked = true;
+  document.getElementById('gear-shoe-default').parentElement.style.display = '';
+  document.getElementById('gear-shoe-modal').style.display = 'flex';
+}
+
+function openEditGearShoeModal(shoeId){
+  var shoe = GEAR.shoes.find(function(s){ return s.id === shoeId; });
+  if(!shoe) return;
+  document.getElementById('gear-shoe-modal-title').textContent = 'Editar zapatilla';
+  document.getElementById('gear-shoe-id').value = shoeId;
+  document.getElementById('gear-shoe-brand').value = shoe.brand;
+  document.getElementById('gear-shoe-model').value = shoe.model;
+  document.getElementById('gear-shoe-nickname').value = shoe.nickname || '';
+  document.getElementById('gear-shoe-type').value = shoe.shoe_type;
+  document.getElementById('gear-shoe-target').value = shoe.target_km;
+  document.getElementById('gear-shoe-default').parentElement.style.display = 'none';
+  document.getElementById('gear-shoe-modal').style.display = 'flex';
+}
+
+function closeGearShoeModal(ev){
+  if(ev && ev.target.id !== 'gear-shoe-modal') return;
+  document.getElementById('gear-shoe-modal').style.display = 'none';
+}
+
+function submitGearShoe(){
+  var shoeId = document.getElementById('gear-shoe-id').value;
+  var brand = document.getElementById('gear-shoe-brand').value.trim();
+  var model = document.getElementById('gear-shoe-model').value.trim();
+  if(!brand || !model){ toast('Marca y modelo son obligatorios', 'err'); return; }
+  var target = parseFloat(document.getElementById('gear-shoe-target').value);
+
+  if(shoeId){
+    if(!target || target<=0){ toast('Ingresa una meta de km válida', 'err'); return; }
+    var body = {
+      brand: brand, model: model,
+      nickname: document.getElementById('gear-shoe-nickname').value.trim() || null,
+      shoe_type: document.getElementById('gear-shoe-type').value,
+      target_km: target,
+    };
+    apiFetch('/gear/shoes/'+shoeId, { method:'PATCH', body: JSON.stringify(body) })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+      .then(function(){ closeGearShoeModal(); loadGearShoes(); toast('Zapatilla actualizada ✓'); })
+      .catch(function(){ toast('No se pudo guardar', 'err'); });
+    return;
+  }
+
+  var createBody = {
+    brand: brand, model: model,
+    nickname: document.getElementById('gear-shoe-nickname').value.trim() || null,
+    shoe_type: document.getElementById('gear-shoe-type').value,
+    target_km: target || undefined,
+  };
+  apiFetch('/gear/shoes', { method:'POST', body: JSON.stringify(createBody) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(newShoe){
+      if(document.getElementById('gear-shoe-default').checked){
+        return apiFetch('/gear/shoes/'+newShoe.id+'/set-default', { method:'POST', body: JSON.stringify({workout_subtype:'rodaje'}) });
+      }
+    })
+    .then(function(){ closeGearShoeModal(); loadGearShoes(); toast('Zapatilla agregada ✓'); })
+    .catch(function(){ toast('No se pudo agregar la zapatilla', 'err'); });
+}
+
+function setGearDefaultShoe(id){
+  apiFetch('/gear/shoes/'+id+'/set-default', { method:'POST', body: JSON.stringify({workout_subtype:'rodaje'}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearShoes(); })
+    .catch(function(){ toast('No se pudo actualizar', 'err'); });
+}
+
+function retireGearShoe(id){
+  if(!confirm('¿Retirar esta zapatilla? El historial de km se conserva.')) return;
+  apiFetch('/gear/shoes/'+id, { method:'DELETE' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearShoes(); })
+    .catch(function(){ toast('No se pudo retirar', 'err'); });
+}
+
+function reactivateGearShoe(id){
+  apiFetch('/gear/shoes/'+id, { method:'PATCH', body: JSON.stringify({status:'active'}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearShoes(); })
+    .catch(function(){ toast('No se pudo reactivar', 'err'); });
+}
+
+/* ── Horario semanal + recálculo retroactivo ── */
+function openGearScheduleModal(shoeId){
+  var shoe = GEAR.shoes.find(function(s){ return s.id === shoeId; });
+  if(!shoe) return;
+  document.getElementById('gear-sched-shoe-id').value = shoeId;
+  document.querySelectorAll('#gear-sched-days input[type=checkbox]').forEach(function(cb){
+    cb.checked = (shoe.schedule_days||[]).indexOf(cb.value) !== -1;
+  });
+  document.getElementById('gear-sched-start-date').value = shoe.tracking_start_date || '';
+  document.getElementById('gear-schedule-modal').style.display = 'flex';
+}
+
+function closeGearScheduleModal(ev){
+  if(ev && ev.target.id !== 'gear-schedule-modal') return;
+  document.getElementById('gear-schedule-modal').style.display = 'none';
+}
+
+function saveGearSchedule(){
+  var shoeId = document.getElementById('gear-sched-shoe-id').value;
+  var days = Array.prototype.slice.call(document.querySelectorAll('#gear-sched-days input[type=checkbox]:checked')).map(function(cb){ return cb.value; });
+  var startDate = document.getElementById('gear-sched-start-date').value || null;
+
+  apiFetch('/gear/shoes/'+shoeId+'/schedule', { method:'PATCH', body: JSON.stringify({days:days}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){
+      if(startDate !== null){
+        return apiFetch('/gear/shoes/'+shoeId, { method:'PATCH', body: JSON.stringify({tracking_start_date:startDate}) });
+      }
+    })
+    .then(function(){
+      // Guardar horario/fecha recalcula automáticamente y de forma
+      // FORZADA -- si el sync ya había asignado esas carreras a otra
+      // zapatilla (ej. el default "rodaje" genérico), esto corrige
+      // moviendo el km sin que el atleta tenga que hacerlo actividad
+      // por actividad.
+      if(startDate){
+        return apiFetch('/gear/shoes/'+shoeId+'/backfill', { method:'POST', body: JSON.stringify({start_date:startDate, force:true}) })
+          .then(function(r){ return r.ok ? r.json() : null; });
+      }
+      return null;
+    })
+    .then(function(result){
+      document.getElementById('gear-schedule-modal').style.display = 'none';
+      loadGearShoes();
+      if(result && (result.added_count || result.moved_count)){
+        var parts = [];
+        if(result.moved_count) parts.push(result.moved_count+' movida(s) (+'+result.moved_km.toFixed(1)+'km)');
+        if(result.added_count) parts.push(result.added_count+' sin asignar (+'+result.added_km.toFixed(1)+'km)');
+        toast('Recalculado: '+parts.join(', '));
+      } else {
+        toast('Horario guardado ✓');
+      }
+    })
+    .catch(function(){ toast('No se pudo guardar el horario', 'err'); });
+}
+
+/* ── Bicicletas y componentes ── */
+function loadGearBikes(){
+  document.getElementById('gear-bikes-list').innerHTML = '<div class="cm-empty">Cargando...</div>';
+  apiFetch('/gear/bikes?status=' + GEAR.bikeStatus).then(function(r){ return r.ok ? r.json() : {bikes:[]}; })
+    .then(function(d){ GEAR.bikes = d.bikes || []; renderGearBikes(); })
+    .catch(function(){ document.getElementById('gear-bikes-list').innerHTML = '<div class="cm-empty">No se pudo cargar tu equipo.</div>'; });
+}
+
+function renderGearBikes(){
+  var list = document.getElementById('gear-bikes-list');
+  if(!GEAR.bikes.length){
+    list.innerHTML = '<div class="cm-empty">' + (GEAR.bikeStatus==='active' ? 'Todavía no agregaste bicicletas.' : 'No tienes bicicletas retiradas.') + '</div>';
+    return;
+  }
+  list.innerHTML = GEAR.bikes.map(function(b){
+    var compsHtml = b.components.map(function(c){
+      if(c.tracking_unit === 'carga_pct'){
+        var chargeColor = (c.charge_pct!==null && c.charge_pct<=20) ? 'var(--red)' : (c.charge_pct!==null && c.charge_pct<=40 ? 'var(--gold)' : 'var(--green)');
+        return '<div class="gear-comp-row">'
+          + '<div class="gear-comp-ico">'+(GEAR_COMP_ICONS[c.component_type]||'⚙️')+'</div>'
+          + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS[c.component_type])+'</div>'
+          + '<div class="gear-comp-val">'+(c.last_service_date?'Última revisión: '+c.last_service_date:'Sin revisión')+'</div></div>'
+          + '<span style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;font-size:.8rem;color:'+chargeColor+'">'+(c.charge_pct!==null?c.charge_pct+'%':'—')+'</span>'
+          + '<button class="gear-btn" onclick="promptGearCharge(\''+b.id+'\',\''+c.id+'\','+(c.charge_pct||0)+')">✎</button>'
+        + '</div>';
+      }
+      var color = gearLifeColor(c.life_pct);
+      return '<div class="gear-comp-row">'
+        + '<div class="gear-comp-ico">'+(GEAR_COMP_ICONS[c.component_type]||'⚙️')+'</div>'
+        + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS[c.component_type])+'</div>'
+        + '<div class="gear-prog-wrap" style="height:5px"><div class="gear-prog-fill" style="width:'+Math.min(100,c.life_pct)+'%;background:'+color+'"></div></div>'
+        + '<div class="gear-comp-val"><b style="color:'+color+'">'+c.life_pct+'%</b> · '+c.accumulated_value.toFixed(0)+'/'+c.target_value.toFixed(0)+' '+c.tracking_unit+'</div></div>'
+        + '<button class="gear-btn" onclick="openGearServiceModal(\''+b.id+'\',\''+c.id+'\')">🔧</button>'
+        + '<button class="gear-btn gear-btn-danger" onclick="removeGearComponent(\''+b.id+'\',\''+c.id+'\')">✕</button>'
+      + '</div>';
+    }).join('');
+    var actions = GEAR.bikeStatus==='active'
+      ? '<button class="gear-btn" onclick="openGearComponentModal(\''+b.id+'\')">+ Componente</button>'
+        + (!b.is_default ? '<button class="gear-btn" onclick="setGearDefaultBike(\''+b.id+'\')">Predet.</button>' : '')
+        + '<button class="gear-btn gear-btn-danger" onclick="retireGearBike(\''+b.id+'\')">Retirar</button>'
+      : '<button class="gear-btn" onclick="reactivateGearBike(\''+b.id+'\')">Reactivar</button>';
+    return '<div class="gear-card">'
+      + '<div class="gear-card-head">'
+        + '<div class="gear-card-ico">🚲</div>'
+        + '<div style="flex:1;min-width:0"><div class="gear-card-name">'+_escH(b.brand)+' '+_escH(b.model)+(b.is_default?' <span class="gear-badge">★</span>':'')+'</div>'
+        + '<div class="gear-card-sub">'+b.bike_type+'</div></div>'
+      + '</div>'
+      + (compsHtml || '<div class="gear-comp-val" style="padding:.4rem 0">Sin componentes.</div>')
+      + '<div class="gear-card-actions">'+actions+'</div>'
+    + '</div>';
+  }).join('');
+}
+
+function openGearBikeModal(){
+  document.getElementById('gear-bike-brand').value = '';
+  document.getElementById('gear-bike-model').value = '';
+  document.getElementById('gear-bike-type').value = 'ruta';
+  document.getElementById('gear-bike-default').checked = true;
+  document.getElementById('gear-bike-modal').style.display = 'flex';
+}
+function closeGearBikeModal(ev){
+  if(ev && ev.target.id !== 'gear-bike-modal') return;
+  document.getElementById('gear-bike-modal').style.display = 'none';
+}
+function submitGearBike(){
+  var brand = document.getElementById('gear-bike-brand').value.trim();
+  var model = document.getElementById('gear-bike-model').value.trim();
+  if(!brand || !model){ toast('Marca y modelo son obligatorios', 'err'); return; }
+  var body = { brand:brand, model:model, bike_type:document.getElementById('gear-bike-type').value, is_default:document.getElementById('gear-bike-default').checked };
+  apiFetch('/gear/bikes', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ closeGearBikeModal(); loadGearBikes(); toast('Bicicleta agregada ✓'); })
+    .catch(function(){ toast('No se pudo agregar', 'err'); });
+}
+function setGearDefaultBike(id){
+  apiFetch('/gear/bikes/'+id, { method:'PATCH', body: JSON.stringify({is_default:true}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearBikes(); })
+    .catch(function(){ toast('No se pudo actualizar', 'err'); });
+}
+function retireGearBike(id){
+  if(!confirm('¿Retirar esta bicicleta?')) return;
+  apiFetch('/gear/bikes/'+id, { method:'DELETE' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearBikes(); })
+    .catch(function(){ toast('No se pudo retirar', 'err'); });
+}
+function reactivateGearBike(id){
+  apiFetch('/gear/bikes/'+id, { method:'PATCH', body: JSON.stringify({status:'active'}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearBikes(); })
+    .catch(function(){ toast('No se pudo reactivar', 'err'); });
+}
+
+function onGearCompTypeChange(){
+  var isBattery = document.getElementById('gear-comp-type').value === 'bateria_grupo';
+  document.getElementById('gear-comp-tracking-row').style.display = isBattery ? 'none' : 'grid';
+  document.getElementById('gear-comp-charge-row').style.display = isBattery ? 'block' : 'none';
+}
+function openGearComponentModal(bikeId){
+  document.getElementById('gear-comp-bike-id').value = bikeId;
+  document.getElementById('gear-comp-type').value = 'cadena';
+  document.getElementById('gear-comp-label').value = '';
+  document.getElementById('gear-comp-unit').value = 'km';
+  document.getElementById('gear-comp-target').value = '';
+  document.getElementById('gear-comp-charge').value = '';
+  onGearCompTypeChange();
+  document.getElementById('gear-component-modal').style.display = 'flex';
+}
+function closeGearComponentModal(ev){
+  if(ev && ev.target.id !== 'gear-component-modal') return;
+  document.getElementById('gear-component-modal').style.display = 'none';
+}
+function submitGearComponent(){
+  var bikeId = document.getElementById('gear-comp-bike-id').value;
+  var type = document.getElementById('gear-comp-type').value;
+  var isBattery = type === 'bateria_grupo';
+  var body = {
+    component_type: type,
+    label: document.getElementById('gear-comp-label').value.trim() || null,
+    tracking_unit: isBattery ? 'carga_pct' : document.getElementById('gear-comp-unit').value,
+    target_value: isBattery ? 100 : (parseFloat(document.getElementById('gear-comp-target').value) || null),
+    charge_pct: isBattery ? (parseInt(document.getElementById('gear-comp-charge').value,10) || 100) : undefined,
+  };
+  if(!body.target_value){ toast('Ingresa una meta válida', 'err'); return; }
+  apiFetch('/gear/bikes/'+bikeId+'/components', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ closeGearComponentModal(); loadGearBikes(); toast('Componente agregado ✓'); })
+    .catch(function(){ toast('No se pudo agregar', 'err'); });
+}
+function removeGearComponent(bikeId, compId){
+  if(!confirm('¿Quitar este componente del seguimiento?')) return;
+  apiFetch('/gear/bikes/'+bikeId+'/components/'+compId, { method:'DELETE' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearBikes(); })
+    .catch(function(){ toast('No se pudo quitar', 'err'); });
+}
+function promptGearCharge(bikeId, compId, current){
+  var val = prompt('% de carga actual de la batería:', current);
+  if(val === null) return;
+  var pct = parseInt(val,10);
+  if(isNaN(pct) || pct<0 || pct>100){ toast('Ingresa un valor entre 0 y 100', 'err'); return; }
+  apiFetch('/gear/bikes/'+bikeId+'/components/'+compId, { method:'PATCH', body: JSON.stringify({charge_pct:pct}) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ loadGearBikes(); })
+    .catch(function(){ toast('No se pudo actualizar', 'err'); });
+}
+
+function openGearServiceModal(bikeId, compId){
+  document.getElementById('gear-service-bike-id').value = bikeId;
+  document.getElementById('gear-service-comp-id').value = compId;
+  document.getElementById('gear-service-desc').value = '';
+  document.getElementById('gear-service-cost').value = '';
+  document.getElementById('gear-service-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('gear-service-reset').checked = true;
+  document.getElementById('gear-service-modal').style.display = 'flex';
+}
+function closeGearServiceModal(ev){
+  if(ev && ev.target.id !== 'gear-service-modal') return;
+  document.getElementById('gear-service-modal').style.display = 'none';
+}
+function submitGearService(){
+  var bikeId = document.getElementById('gear-service-bike-id').value;
+  var compId = document.getElementById('gear-service-comp-id').value;
+  var desc = document.getElementById('gear-service-desc').value.trim();
+  if(!desc){ toast('Describe el mantenimiento realizado', 'err'); return; }
+  var body = {
+    description: desc,
+    cost: parseFloat(document.getElementById('gear-service-cost').value) || null,
+    date_iso: document.getElementById('gear-service-date').value || undefined,
+    resets_accumulated: document.getElementById('gear-service-reset').checked,
+  };
+  apiFetch('/gear/bikes/'+bikeId+'/components/'+compId+'/service', { method:'POST', body: JSON.stringify(body) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(){ closeGearServiceModal(); loadGearBikes(); toast('Mantenimiento registrado ✓'); })
+    .catch(function(){ toast('No se pudo guardar', 'err'); });
+}
+
 /* ── Navigation ──────────────────────────────────────────── */
 function goScreen(id){
   if(id !== 'screen-mental' && typeof mtlStopBreathing === 'function') mtlStopBreathing();
@@ -2394,6 +3042,7 @@ function goScreen(id){
      cambiado por otro medio (ej. la web) durante la misma sesión. */
   if(id === 'screen-wellness'){ loadWellnessToday(); wellnessTab('resumen'); }
   if(id === 'screen-profile'){ loadProfileMobile(); }
+  if(id === 'screen-gear'){ loadGearScreen(); }
   if(id === 'screen-mental'){ mentalTab('score'); }
   if(id === 'screen-raceday'){ racedayTab('dashboard'); }
   if(id === 'screen-progress'){ progressTab('insights'); }

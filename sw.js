@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '134';  // 2026-08-23: recalculo forzado (mueve km entre zapatillas) + auto-recalculo al guardar horario
+var BUILD_VERSION = '135';  // 2026-08-23: Mi Equipo pantalla nativa en athlete-app.html (zapatillas+bicicletas+horario+recalculo)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
