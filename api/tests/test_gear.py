@@ -163,6 +163,49 @@ class TestShoeBackfill:
         assert shoes[shoe_a["id"]]["accumulated_km"] == 12.0
         assert shoes[shoe_b["id"]]["accumulated_km"] == 0.0
 
+    def test_backfill_force_moves_km_from_previously_assigned_shoe(self, client, athlete_user, db):
+        """Caso real: el sync automático ya había asignado carreras al
+        default 'rodaje' ANTES de que el atleta configurara el horario de
+        otra zapatilla para ese día -- force=true corrige moviendo el km."""
+        h = _auth(client, athlete_user)
+        rodaje_shoe = client.post("/api/gear/shoes", json={"brand": "New Balance", "model": "1080"}, headers=h).json()
+        client.post(f"/api/gear/shoes/{rodaje_shoe['id']}/set-default", json={"workout_subtype": "rodaje"}, headers=h)
+
+        act = self._make_run(db, athlete_user.id, "2026-03-04", dist_km=12.0)  # miércoles
+        # simula el sync automático real: assign_gear asigna al default rodaje
+        from ..services.gear_service import assign_gear
+        assign_gear(db, act)
+        db.commit()
+
+        asics = client.post("/api/gear/shoes", json={"brand": "Asics", "model": "Placa Carbono"}, headers=h).json()
+        client.patch(f"/api/gear/shoes/{asics['id']}/schedule", json={"days": ["wed"]}, headers=h)
+
+        # sin force: no toca nada (comportamiento por default)
+        r1 = client.post(f"/api/gear/shoes/{asics['id']}/backfill", json={"start_date": "2026-03-01"}, headers=h)
+        assert r1.json()["added_count"] == 0
+        assert r1.json()["moved_count"] == 0
+
+        # con force: mueve la actividad de rodaje_shoe a asics
+        r2 = client.post(f"/api/gear/shoes/{asics['id']}/backfill", json={"start_date": "2026-03-01", "force": True}, headers=h)
+        assert r2.status_code == 200, r2.text
+        assert r2.json()["moved_count"] == 1
+        assert r2.json()["moved_km"] == 12.0
+
+        shoes = {s["id"]: s for s in client.get("/api/gear/shoes", headers=h).json()["shoes"]}
+        assert shoes[rodaje_shoe["id"]]["accumulated_km"] == 0.0
+        assert shoes[asics["id"]]["accumulated_km"] == 12.0
+
+    def test_backfill_force_does_not_touch_activities_already_correct(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "A", "model": "1"}, headers=h).json()
+        client.patch(f"/api/gear/shoes/{shoe['id']}/schedule", json={"days": ["wed"]}, headers=h)
+        act = self._make_run(db, athlete_user.id, "2026-03-04", dist_km=10.0)
+        client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe["id"]}, headers=h)
+
+        r = client.post(f"/api/gear/shoes/{shoe['id']}/backfill", json={"start_date": "2026-03-01", "force": True}, headers=h)
+        assert r.json()["moved_count"] == 0
+        assert r.json()["added_count"] == 0  # ya estaba bien asignada, no hace nada
+
     def test_backfill_uses_tracking_start_date_when_no_param(self, client, athlete_user, db):
         h = _auth(client, athlete_user)
         shoe = client.post(

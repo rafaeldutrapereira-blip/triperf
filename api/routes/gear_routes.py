@@ -233,9 +233,11 @@ def set_shoe_schedule(shoe_id: str, body: dict, db: Session = Depends(get_db), m
 @router.post("/shoes/{shoe_id}/backfill")
 def backfill_shoe_km(shoe_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     """Recalcula retroactivamente el km de esta zapatilla desde una fecha
-    de inicio (parámetro o shoe.tracking_start_date) -- solo llena
-    actividades SIN zapatilla asignada todavía, nunca sobrescribe una
-    asignación (automática o manual) previa."""
+    de inicio (parámetro o shoe.tracking_start_date). Por default solo
+    llena actividades SIN zapatilla asignada todavía; con force=true
+    también reasigna actividades que el sync automático ya le había
+    asignado a OTRA zapatilla (ej. el default "rodaje" genérico, antes de
+    configurar este horario) -- mueve el km del par viejo al nuevo."""
     shoe = db.query(RunningShoe).filter(RunningShoe.id == shoe_id, RunningShoe.user_id == me.id).first()
     if not shoe:
         raise HTTPException(404, "Zapatilla no encontrada")
@@ -252,10 +254,14 @@ def backfill_shoe_km(shoe_id: str, body: dict, db: Session = Depends(get_db), me
     else:
         raise HTTPException(400, "Debes indicar start_date o definir una fecha de inicio en la zapatilla")
 
-    added_count, added_km = backfill_shoe(db, shoe, start_date_raw)
+    result = backfill_shoe(db, shoe, start_date_raw, force=bool(body.get("force")))
     db.commit()
     db.refresh(shoe)
-    return {"added_count": added_count, "added_km": round(added_km, 1), "shoe": _shoe_out(shoe)}
+    return {
+        "added_count": result["added_count"], "added_km": round(result["added_km"], 1),
+        "moved_count": result["moved_count"], "moved_km": round(result["moved_km"], 1),
+        "shoe": _shoe_out(shoe),
+    }
 
 
 # ── Bicicletas ────────────────────────────────────────────────────────────

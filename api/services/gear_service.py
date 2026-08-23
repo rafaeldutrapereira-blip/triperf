@@ -144,14 +144,19 @@ def _assign_shoe(db: Session, activity: GarminActivity) -> None:
     )
 
 
-def backfill_shoe(db: Session, shoe: RunningShoe, start_date_iso: str) -> tuple[int, float]:
-    """Recalcula retroactivamente el km de ESTA zapatilla desde start_date_iso:
-    recorre las carreras reales del atleta en ese rango que todavía no
-    tienen zapatilla asignada y les asigna esta SI la resolución
-    día-de-semana/default (misma lógica que el sync en vivo) la elige a
-    ella. Nunca toca actividades que ya tienen otra zapatilla asignada --
-    ni por el default automático ni por una corrección manual previa.
-    Devuelve (cantidad de actividades sumadas, km totales agregados)."""
+def backfill_shoe(db: Session, shoe: RunningShoe, start_date_iso: str, force: bool = False) -> dict:
+    """Recalcula retroactivamente el km de ESTA zapatilla desde start_date_iso,
+    para las actividades donde la resolución día-de-semana/default (misma
+    lógica que el sync en vivo) elige a esta zapatilla:
+    - force=False (default): solo llena huecos -- actividades SIN zapatilla
+      asignada todavía. Nunca toca una asignación previa (automática o manual).
+    - force=True: además REASIGNA actividades que ya tenían OTRA zapatilla
+      asignada por el sync automático (típicamente el default "rodaje"
+      genérico, asignado antes de configurar este horario) -- mueve el km
+      del par viejo al nuevo. Sigue sin tocar asignaciones que YA son de
+      esta misma zapatilla (no-op) y sigue sin adivinar: solo actúa donde
+      la resolución actual elegiría a esta zapatilla.
+    Devuelve {"added_count", "added_km", "moved_count", "moved_km"}."""
     activities = db.query(GarminActivity).filter(
         GarminActivity.user_id == shoe.user_id,
         GarminActivity.sport == "run",
@@ -160,22 +165,38 @@ def backfill_shoe(db: Session, shoe: RunningShoe, start_date_iso: str) -> tuple[
 
     added_count = 0
     added_km = 0.0
+    moved_count = 0
+    moved_km = 0.0
+
     for act in activities:
-        already = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == act.id).first()
-        if already:
-            continue
         dist_km = act.dist_km or 0.0
         if dist_km <= 0:
             continue
         resolved = _resolve_shoe_for_date(db, shoe.user_id, act.date_iso)
         if not resolved or resolved.id != shoe.id:
             continue
-        db.add(ShoeActivityLink(shoe_id=shoe.id, activity_id=act.id, distance_km=dist_km))
-        shoe.accumulated_km = (shoe.accumulated_km or 0.0) + dist_km
-        added_km += dist_km
-        added_count += 1
 
-    if added_count:
+        link = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == act.id).first()
+        if link:
+            if link.shoe_id == shoe.id:
+                continue  # ya asignada a esta zapatilla
+            if not force:
+                continue  # asignada a otra, y no se pidió forzar
+            old_shoe = db.query(RunningShoe).filter(RunningShoe.id == link.shoe_id).first()
+            if old_shoe:
+                old_shoe.accumulated_km = max(0.0, (old_shoe.accumulated_km or 0.0) - link.distance_km)
+            link.shoe_id = shoe.id
+            link.distance_km = dist_km
+            shoe.accumulated_km = (shoe.accumulated_km or 0.0) + dist_km
+            moved_km += dist_km
+            moved_count += 1
+        else:
+            db.add(ShoeActivityLink(shoe_id=shoe.id, activity_id=act.id, distance_km=dist_km))
+            shoe.accumulated_km = (shoe.accumulated_km or 0.0) + dist_km
+            added_km += dist_km
+            added_count += 1
+
+    if added_count or moved_count:
         def _mark(threshold: int) -> None:
             shoe.last_alert_pct = threshold
 
@@ -185,7 +206,7 @@ def backfill_shoe(db: Session, shoe: RunningShoe, start_date_iso: str) -> tuple[
             shoe.accumulated_km, shoe.target_km, shoe.last_alert_pct, _mark,
         )
 
-    return added_count, added_km
+    return {"added_count": added_count, "added_km": added_km, "moved_count": moved_count, "moved_km": moved_km}
 
 
 def reassign_shoe(db: Session, activity: GarminActivity, new_shoe_id: str | None) -> None:
