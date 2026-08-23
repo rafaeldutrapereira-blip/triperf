@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '130';  // 2026-08-22: modulo Gestion de Equipamiento (gear.html) + alertas 80/100%
+var BUILD_VERSION = '131';  // 2026-08-23: selector manual de zapatilla por actividad (training_detail.html)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

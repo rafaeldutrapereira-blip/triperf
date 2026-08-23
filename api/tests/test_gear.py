@@ -267,3 +267,93 @@ class TestSummaryAndCoachView:
         r2 = client.get(f"/api/coach/athletes/{athlete_user.id}/gear", headers=h_coach)
         assert r2.status_code == 200
         assert len(r2.json()["shoes"]) == 1
+
+
+class TestManualActivityShoeAssignment:
+    def _make_run(self, db, user_id, dist_km=10.0):
+        import uuid
+        from ..models import GarminActivity
+        act = GarminActivity(
+            id=str(uuid.uuid4()), user_id=user_id, activity_id=str(uuid.uuid4()),
+            sport="run", date_iso="2026-08-20", date_label="2026-08-20",
+            dur_min=50.0, dist_km=dist_km,
+        )
+        db.add(act)
+        db.commit()
+        db.refresh(act)
+        return act
+
+    def test_get_shoe_for_unassigned_activity(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        act = self._make_run(db, athlete_user.id)
+        r = client.get(f"/api/gear/activities/{act.id}/shoe", headers=h)
+        assert r.status_code == 200
+        assert r.json()["shoe_id"] is None
+
+    def test_assign_shoe_manually_to_unassigned_activity(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Nike", "model": "Vaporfly"}, headers=h).json()
+        act = self._make_run(db, athlete_user.id, dist_km=15.0)
+
+        r = client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe["id"]}, headers=h)
+        assert r.status_code == 200, r.text
+        assert r.json()["shoe_id"] == shoe["id"]
+
+        shoes = client.get("/api/gear/shoes", headers=h).json()["shoes"]
+        s = next(s for s in shoes if s["id"] == shoe["id"])
+        assert s["accumulated_km"] == 15.0
+
+    def test_reassign_activity_moves_km_between_shoes(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe_a = client.post("/api/gear/shoes", json={"brand": "Nike", "model": "A"}, headers=h).json()
+        shoe_b = client.post("/api/gear/shoes", json={"brand": "Adidas", "model": "B"}, headers=h).json()
+        act = self._make_run(db, athlete_user.id, dist_km=12.0)
+
+        client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe_a["id"]}, headers=h)
+        r = client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe_b["id"]}, headers=h)
+        assert r.status_code == 200
+        assert r.json()["shoe_id"] == shoe_b["id"]
+
+        shoes = {s["id"]: s for s in client.get("/api/gear/shoes", headers=h).json()["shoes"]}
+        assert shoes[shoe_a["id"]]["accumulated_km"] == 0.0
+        assert shoes[shoe_b["id"]]["accumulated_km"] == 12.0
+
+    def test_unassign_activity_removes_km(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Nike", "model": "A"}, headers=h).json()
+        act = self._make_run(db, athlete_user.id, dist_km=8.0)
+        client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe["id"]}, headers=h)
+
+        r = client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": None}, headers=h)
+        assert r.status_code == 200
+        assert r.json()["shoe_id"] is None
+
+        shoes = client.get("/api/gear/shoes", headers=h).json()["shoes"]
+        s = next(s for s in shoes if s["id"] == shoe["id"])
+        assert s["accumulated_km"] == 0.0
+
+    def test_assign_to_nonexistent_shoe_404(self, client, athlete_user, db):
+        h = _auth(client, athlete_user)
+        act = self._make_run(db, athlete_user.id)
+        r = client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": "does-not-exist"}, headers=h)
+        assert r.status_code == 404
+
+    def test_cannot_assign_shoe_to_non_run_activity(self, client, athlete_user, db):
+        import uuid
+        from ..models import GarminActivity
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Nike", "model": "A"}, headers=h).json()
+        act = GarminActivity(id=str(uuid.uuid4()), user_id=athlete_user.id, activity_id=str(uuid.uuid4()),
+                              sport="bike", date_iso="2026-08-20", date_label="2026-08-20", dur_min=60.0, dist_km=30.0)
+        db.add(act)
+        db.commit()
+
+        r = client.post(f"/api/gear/activities/{act.id}/shoe", json={"shoe_id": shoe["id"]}, headers=h)
+        assert r.status_code == 400
+
+    def test_cannot_access_other_users_activity(self, client, athlete_user, coach_user, db):
+        act = self._make_run(db, athlete_user.id)
+        token_coach = login(client, "coach@test.com", "CoachPass123")
+        h_coach = auth_headers(token_coach)
+        r = client.get(f"/api/gear/activities/{act.id}/shoe", headers=h_coach)
+        assert r.status_code == 404

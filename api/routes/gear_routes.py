@@ -19,8 +19,9 @@ from ..auth import get_current_user
 from ..database import get_db
 from ..models import (
     User, CoachAthlete, RunningShoe, Bike, BikeComponent, MaintenanceLog,
+    GarminActivity, ShoeActivityLink,
 )
-from ..services.gear_service import life_pct as _life_pct
+from ..services.gear_service import life_pct as _life_pct, reassign_shoe
 
 router = APIRouter(prefix="/gear", tags=["gear"])
 
@@ -325,6 +326,48 @@ def remove_component(bike_id: str, component_id: str, db: Session = Depends(get_
     component.status = "replaced"
     db.commit()
     return {"ok": True}
+
+
+# ── Asignación manual por actividad ────────────────────────────────────────
+
+@router.get("/activities/{activity_id}/shoe")
+def get_activity_shoe(activity_id: str, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """activity_id acá es el id INTERNO de garmin_activities (campo `id`
+    devuelto por /athlete/activities/{activity_id} como "id"), no el
+    activity_id nativo de Garmin/Strava."""
+    act = db.query(GarminActivity).filter(GarminActivity.id == activity_id, GarminActivity.user_id == me.id).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    link = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == activity_id).first()
+    shoe = db.query(RunningShoe).filter(RunningShoe.id == link.shoe_id).first() if link else None
+    return {
+        "shoe_id": shoe.id if shoe else None,
+        "shoe_label": f"{shoe.brand} {shoe.model}" if shoe else None,
+        "distance_km": act.dist_km,
+    }
+
+
+@router.post("/activities/{activity_id}/shoe")
+def set_activity_shoe(activity_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Reasigna manualmente qué zapatilla se usó en esta actividad puntual
+    -- distinto del default automático de assign_gear(). shoe_id=null quita
+    la asignación (la actividad queda sin zapatilla)."""
+    act = db.query(GarminActivity).filter(GarminActivity.id == activity_id, GarminActivity.user_id == me.id).first()
+    if not act:
+        raise HTTPException(404, "Actividad no encontrada")
+    if act.sport != "run":
+        raise HTTPException(400, "Solo actividades de carrera pueden tener zapatilla asignada")
+    try:
+        reassign_shoe(db, act, body.get("shoe_id"))
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    db.commit()
+    link = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == activity_id).first()
+    shoe = db.query(RunningShoe).filter(RunningShoe.id == link.shoe_id).first() if link else None
+    return {
+        "shoe_id": shoe.id if shoe else None,
+        "shoe_label": f"{shoe.brand} {shoe.model}" if shoe else None,
+    }
 
 
 @router.post("/bikes/{bike_id}/components/{component_id}/service")

@@ -124,6 +124,54 @@ def _assign_shoe(db: Session, activity: GarminActivity) -> None:
     )
 
 
+def reassign_shoe(db: Session, activity: GarminActivity, new_shoe_id: str | None) -> None:
+    """Reasignación MANUAL de una actividad a otra zapatilla (o a ninguna),
+    disparada desde la UI de detalle de sesión -- distinto de assign_gear()
+    (que solo asigna al default en el sync). Mueve el km acumulado del par
+    viejo al nuevo, sin doble conteo."""
+    dist_km = activity.dist_km or 0.0
+    link = db.query(ShoeActivityLink).filter(ShoeActivityLink.activity_id == activity.id).first()
+
+    old_shoe = None
+    if link:
+        old_shoe = db.query(RunningShoe).filter(RunningShoe.id == link.shoe_id).first()
+
+    if new_shoe_id is None:
+        if link:
+            if old_shoe:
+                old_shoe.accumulated_km = max(0.0, (old_shoe.accumulated_km or 0.0) - link.distance_km)
+            db.delete(link)
+        return
+
+    new_shoe = db.query(RunningShoe).filter(
+        RunningShoe.id == new_shoe_id, RunningShoe.user_id == activity.user_id,
+    ).first()
+    if not new_shoe:
+        raise ValueError("Zapatilla no encontrada")
+
+    if link and link.shoe_id == new_shoe_id:
+        return  # ya asignada a esta zapatilla, nada que hacer
+
+    if link:
+        if old_shoe:
+            old_shoe.accumulated_km = max(0.0, (old_shoe.accumulated_km or 0.0) - link.distance_km)
+        link.shoe_id = new_shoe_id
+        link.distance_km = dist_km
+    else:
+        db.add(ShoeActivityLink(shoe_id=new_shoe_id, activity_id=activity.id, distance_km=dist_km))
+
+    new_shoe.accumulated_km = (new_shoe.accumulated_km or 0.0) + dist_km
+
+    def _mark(threshold: int) -> None:
+        new_shoe.last_alert_pct = threshold
+
+    label = f"{new_shoe.brand} {new_shoe.model}" + (f" ({new_shoe.nickname})" if new_shoe.nickname else "")
+    _check_and_alert(
+        db, activity.user_id, "shoe", label,
+        new_shoe.accumulated_km, new_shoe.target_km, new_shoe.last_alert_pct, _mark,
+    )
+
+
 def _assign_bike(db: Session, activity: GarminActivity) -> None:
     already = db.query(BikeActivityLink).filter(BikeActivityLink.activity_id == activity.id).first()
     if already:

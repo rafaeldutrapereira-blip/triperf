@@ -150,6 +150,12 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 /* ── ANIMATIONS ── */
 .sr{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
 .vis{opacity:1;transform:none}
+
+/* ── SHOE PICKER (asignación manual de zapatilla por actividad) ── */
+.shoe-picker{display:flex;align-items:center;gap:.55rem;margin-top:.75rem;padding:.55rem .85rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:fit-content;font-size:.8rem}
+.shoe-picker-icon{font-size:1.05rem}
+.shoe-picker select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.32rem .6rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.78rem;cursor:pointer}
+.shoe-picker-status{font-size:.7rem;color:var(--dim);min-width:70px}
 </style>
 <link rel="stylesheet" href="nav.css?v=1">
 </head>
@@ -178,6 +184,7 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
       <div class="ah-title" id="act-title">—</div>
       <div class="ah-meta" id="act-meta"></div>
       <div class="ah-stats" id="act-kpis"></div>
+      <div id="act-shoe-picker" style="display:none"></div>
       <div id="act-te" style="display:none"></div>
     </div>
   </div>
@@ -391,6 +398,52 @@ window.revokeShareUrl = function(){
     .catch(function(){ alert('No se pudo dejar de compartir'); });
 };
 
+function _gearTok(){
+  try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) return s.token; }catch(e){}
+  return localStorage.getItem('lx_co_token');
+}
+function _gearApi(){ return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api'; }
+
+function initShoePicker(){
+  var box = document.getElementById('act-shoe-picker');
+  var tok = _gearTok();
+  if(!tok) return;
+  var api = _gearApi();
+
+  Promise.all([
+    fetch(api+'/gear/shoes?status=active', {headers:{Authorization:'Bearer '+tok}}).then(function(r){ return r.ok?r.json():{shoes:[]}; }),
+    fetch(api+'/gear/activities/'+ACT.id+'/shoe', {headers:{Authorization:'Bearer '+tok}}).then(function(r){ return r.ok?r.json():null; })
+  ]).then(function(res){
+    var shoes = res[0].shoes || [];
+    var current = res[1];
+    if(!shoes.length){
+      box.style.display = 'flex';
+      box.innerHTML = '<span class="shoe-picker-icon">👟</span><span class="shoe-picker-status">Agrega zapatillas en <a href="gear.html" style="color:var(--cyan)">Mi Equipo</a> para trackear cuál usaste acá.</span>';
+      return;
+    }
+    var opts = '<option value="">Sin asignar</option>' + shoes.map(function(s){
+      var sel = current && current.shoe_id===s.id ? ' selected' : '';
+      return '<option value="'+s.id+'"'+sel+'>'+s.brand+' '+s.model+(s.nickname?' ('+s.nickname+')':'')+'</option>';
+    }).join('');
+    box.style.display = 'flex';
+    box.innerHTML = '<span class="shoe-picker-icon">👟</span>'
+      + '<select id="shoe-picker-select">'+opts+'</select>'
+      + '<span class="shoe-picker-status" id="shoe-picker-status"></span>';
+    document.getElementById('shoe-picker-select').addEventListener('change', function(ev){
+      var shoeId = ev.target.value || null;
+      var statusEl = document.getElementById('shoe-picker-status');
+      statusEl.textContent = 'Guardando…';
+      fetch(api+'/gear/activities/'+ACT.id+'/shoe', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+        body: JSON.stringify({shoe_id: shoeId})
+      }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(){ statusEl.textContent = '✓ Guardado'; setTimeout(function(){ statusEl.textContent=''; }, 2000); })
+        .catch(function(){ statusEl.textContent = '⚠ Error al guardar'; });
+    });
+  }).catch(function(){});
+}
+
 var d = new Date(ACT.date_iso+'T12:00:00');
 var durH = Math.floor(ACT.dur_min/60), durM = Math.round(ACT.dur_min%60);
 var durStr = durH ? durH+'h '+(durM?durM+'min':'') : durM+'min';
@@ -456,6 +509,12 @@ document.getElementById('act-kpis').innerHTML = kpis.map(function(k){
     +'<div class="ah-stat-unit">'+k.unit+'</div>'
     +'</div>';
 }).join('');
+
+// Selector manual de zapatilla — solo carreras propias, solo si el
+// atleta tiene al menos una zapatilla activa registrada en Mi Equipo.
+if(ACT.sport==='run' && ACT.is_own !== false){
+  initShoePicker();
+}
 
 // Training Effect real de Garmin (aeróbico/anaeróbico) — solo si Garmin lo
 // reportó para esta actividad; si no, no se muestra nada (nunca se estima).
