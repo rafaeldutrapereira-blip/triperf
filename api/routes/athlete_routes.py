@@ -25,6 +25,7 @@ from ..auth import get_current_user, hash_password, require_role
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember, Follow, CoachAthlete
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
+from ..services.gear_service import get_active_gear_alerts
 from .mental_routes import _mfs_from_checkin
 from ..garmin_pull_service import _CTL_DECAY, _ATL_DECAY
 
@@ -1111,6 +1112,7 @@ def athlete_dashboard(
             sleep_total_h=sleep_total_h, sleep_trend=sleep_trend, rhr_trend=rhr_trend,
             acwr_by_sport=acwr_by_sport, mental_score=mental_score,
             injury_risk=injury_risk, compliance_week=compliance_week,
+            gear_alerts=get_active_gear_alerts(db, me.id),
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo

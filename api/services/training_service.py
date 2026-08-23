@@ -291,6 +291,7 @@ def build_daily_insight(
     mental_score: Optional[float] = None,
     injury_risk: Optional[dict] = None,
     compliance_week: Optional[float] = None,
+    gear_alerts: Optional[list] = None,
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -308,6 +309,18 @@ def build_daily_insight(
     # tone: mismo lenguaje de color que el resto de LabX — rojo = preocupante,
     # ámbar = precaución, verde = bien, texto normal = sin señal fuerte.
     drivers = []
+    # Alertas de equipamiento (zapatillas/bici >=80% de vida útil, ver
+    # gear_service.py::get_active_gear_alerts) -- no compite por prioridad
+    # con las señales de carga/recuperación (no cambia la decisión de
+    # entrenar hoy), pero SIEMPRE se muestra como driver si hay alguna
+    # activa, y se menciona explícitamente en el caso good/neutral (donde
+    # nada más urgente ya lo cubre).
+    if gear_alerts:
+        worst_gear = max(gear_alerts, key=lambda g: g["life_pct"])
+        drivers.append({
+            "label": "Equipo", "value": f"{len(gear_alerts)} alerta" + ("s" if len(gear_alerts) != 1 else ""),
+            "tone": "bad" if worst_gear["life_pct"] >= 100 else "caution", "delta": None,
+        })
     if hrv_last_night is not None:
         hrv_tone = "bad" if hrv_down else "good" if hrv_up else "neutral"
         hrv_delta = f"↓ {abs(hrv_pct)}%" if hrv_pct else (f"↑ {hrv_trend:.0f}ms" if hrv_up else None)
@@ -342,6 +355,19 @@ def build_daily_insight(
             h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
             bits.append(f"Sueño anoche: {h}h {m:02d}m")
         return bits
+
+    def _gear_alert_bullets(gear_alerts):
+        """Bullet de equipo próximo a fin de vida útil (>=80%) para los
+        casos good/neutral -- solo ahí, porque cuando ya hay una señal más
+        urgente (fatiga/lesión) esa es la prioridad del día, no el
+        mantenimiento del equipo. Nunca inventa: lista vacía si no hay
+        alertas reales."""
+        if not gear_alerts:
+            return []
+        worst = max(gear_alerts, key=lambda g: g["life_pct"])
+        if len(gear_alerts) == 1:
+            return [f"Equipo: {worst['label']} al {worst['life_pct']:.0f}% de su vida útil — revisalo en Mi Equipo"]
+        return [f"Equipo: {len(gear_alerts)} ítems por encima del 80% de vida útil (el más avanzado: {worst['label']} {worst['life_pct']:.0f}%) — revisalos en Mi Equipo"]
 
     def _base(severity, headline, message_bullets, message_technical=None, cta=None, cta_href=None):
         # message_bullets: 2 bullets en lenguaje llano, sin jerga ni números
@@ -586,7 +612,7 @@ def build_daily_insight(
                 f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3), no viene de entrenar de menos",
             ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
                 "Ningún indicador de fatiga o mala recuperación está activo",
-            ],
+            ] + _gear_alert_bullets(gear_alerts),
         )
 
     # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
@@ -601,7 +627,7 @@ def build_daily_insight(
             f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3)",
         ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
             "Ninguno de tus indicadores de carga o recuperación está fuera de rango",
-        ],
+        ] + _gear_alert_bullets(gear_alerts),
     )
 
 

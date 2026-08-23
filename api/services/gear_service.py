@@ -308,3 +308,36 @@ def _assign_bike(db: Session, activity: GarminActivity) -> None:
             db, activity.user_id, "component", label,
             c.accumulated_value, c.target_value, c.last_alert_pct, _mark,
         )
+
+
+def get_active_gear_alerts(db: Session, user_id: str) -> list[dict]:
+    """Equipo activo por encima de 80% de vida útil -- para que el Insight
+    del Día (training_service.py::build_daily_insight) pueda mencionarlo.
+    No incluye batería (tracking_unit=carga_pct): esa se reporta por %
+    de carga, no por vida útil consumida."""
+    alerts = []
+
+    shoes = db.query(RunningShoe).filter(RunningShoe.user_id == user_id, RunningShoe.status == "active").all()
+    for s in shoes:
+        pct = life_pct(s.accumulated_km, s.target_km)
+        if pct >= 80:
+            alerts.append({
+                "kind": "shoe", "label": f"{s.brand} {s.model}" + (f" ({s.nickname})" if s.nickname else ""),
+                "life_pct": pct,
+            })
+
+    bikes = db.query(Bike).filter(Bike.user_id == user_id, Bike.status == "active").all()
+    for b in bikes:
+        components = db.query(BikeComponent).filter(
+            BikeComponent.bike_id == b.id, BikeComponent.status == "active",
+            BikeComponent.tracking_unit != "carga_pct",
+        ).all()
+        for c in components:
+            pct = life_pct(c.accumulated_value, c.target_value)
+            if pct >= 80:
+                alerts.append({
+                    "kind": "component", "label": f"{c.label or c.component_type} ({b.brand} {b.model})",
+                    "life_pct": pct,
+                })
+
+    return alerts

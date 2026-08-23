@@ -112,3 +112,81 @@ class TestDailyInsightMessageBullets:
             ins = build_daily_insight(**kwargs)
             assert isinstance(ins["message_bullets"], list), ins["severity"]
             assert len(ins["message_bullets"]) == 2, ins["severity"]
+
+
+class TestDailyInsightGearAlerts:
+    """El Insight del Día debe considerar alertas del módulo de
+    Equipamiento (zapatillas/bici >=80% de vida útil) -- pedido
+    explícito del usuario 2026-08-23. No compite por prioridad con
+    fatiga/lesión (no cambia la decisión de entrenar hoy), pero siempre
+    aparece como driver, y se menciona en los casos good/neutral."""
+
+    def _shoe_alert(self, pct=85.0):
+        return [{"kind": "shoe", "label": "Hoka Clifton", "life_pct": pct}]
+
+    def test_no_gear_alerts_no_driver(self):
+        ins = build_daily_insight(tsb=-3.0, atl=60.0, ctl=58.0, acwr=1.05, acwr_zone="optimal")
+        labels = [d["label"] for d in ins["drivers"]]
+        assert "Equipo" not in labels
+
+    def test_gear_alert_adds_driver_regardless_of_severity(self):
+        ins = build_daily_insight(
+            tsb=-25.0, atl=90.0, ctl=60.0, acwr=1.7, acwr_zone="danger",
+            gear_alerts=self._shoe_alert(),
+        )
+        assert ins["severity"] == "reduce"  # la fatiga sigue siendo la prioridad del día
+        driver = next(d for d in ins["drivers"] if d["label"] == "Equipo")
+        assert driver["value"] == "1 alerta"
+        assert driver["tone"] == "caution"
+
+    def test_gear_alert_100pct_driver_is_bad_tone(self):
+        ins = build_daily_insight(
+            tsb=-3.0, atl=60.0, ctl=58.0, acwr=1.05, acwr_zone="optimal",
+            gear_alerts=self._shoe_alert(pct=105.0),
+        )
+        driver = next(d for d in ins["drivers"] if d["label"] == "Equipo")
+        assert driver["tone"] == "bad"
+
+    def test_neutral_case_mentions_gear_in_technical_bullets(self):
+        ins = build_daily_insight(
+            tsb=-3.0, atl=60.0, ctl=58.0, acwr=1.05, acwr_zone="optimal",
+            gear_alerts=self._shoe_alert(),
+        )
+        assert ins["severity"] == "neutral"
+        joined = " ".join(ins["message_technical"])
+        assert "Hoka Clifton" in joined
+        assert "85" in joined
+
+    def test_good_case_mentions_gear_in_technical_bullets(self):
+        ins = build_daily_insight(
+            tsb=18.0, atl=40.0, ctl=55.0, acwr=1.0, acwr_zone="optimal",
+            compliance_week=95.0, gear_alerts=self._shoe_alert(),
+        )
+        assert ins["severity"] == "good"
+        joined = " ".join(ins["message_technical"])
+        assert "Hoka Clifton" in joined
+
+    def test_multiple_gear_alerts_shows_count_and_worst(self):
+        alerts = [
+            {"kind": "shoe", "label": "Hoka Clifton", "life_pct": 82.0},
+            {"kind": "component", "label": "Cadena (Canyon Aeroad)", "life_pct": 96.0},
+        ]
+        ins = build_daily_insight(
+            tsb=-3.0, atl=60.0, ctl=58.0, acwr=1.05, acwr_zone="optimal",
+            gear_alerts=alerts,
+        )
+        driver = next(d for d in ins["drivers"] if d["label"] == "Equipo")
+        assert driver["value"] == "2 alertas"
+        joined = " ".join(ins["message_technical"])
+        assert "Cadena" in joined and "96" in joined
+
+    def test_reduce_case_does_not_mention_gear_in_bullets(self):
+        """Cuando hay algo más urgente (reduce/caution), el equipo no debe
+        aparecer en los bullets de ESE caso -- solo como driver. Los
+        bullets de mensaje son sobre la señal prioritaria del día."""
+        ins = build_daily_insight(
+            tsb=-25.0, atl=90.0, ctl=60.0, acwr=1.7, acwr_zone="danger",
+            gear_alerts=self._shoe_alert(),
+        )
+        joined = " ".join(ins["message_technical"])
+        assert "Hoka Clifton" not in joined

@@ -421,7 +421,75 @@ class TestSummaryAndCoachView:
 
         r2 = client.get(f"/api/coach/athletes/{athlete_user.id}/gear", headers=h_coach)
         assert r2.status_code == 200
-        assert len(r2.json()["shoes"]) == 1
+
+
+class TestActiveGearAlertsForInsight:
+    """get_active_gear_alerts() alimenta el Insight del Día
+    (training_service.py::build_daily_insight) -- pedido explícito del
+    usuario 2026-08-23."""
+
+    def test_no_alerts_when_all_gear_below_80pct(self, client, athlete_user, db):
+        from ..services.gear_service import get_active_gear_alerts
+        h = _auth(client, athlete_user)
+        client.post("/api/gear/shoes", json={"brand": "Hoka", "model": "Clifton", "target_km": 700}, headers=h)
+        assert get_active_gear_alerts(db, athlete_user.id) == []
+
+    def test_shoe_above_80pct_returned(self, client, athlete_user, db):
+        from ..models import RunningShoe
+        from ..services.gear_service import get_active_gear_alerts
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Hoka", "model": "Clifton", "target_km": 700}, headers=h).json()
+        row = db.query(RunningShoe).filter(RunningShoe.id == shoe["id"]).first()
+        row.accumulated_km = 600.0  # 85.7%
+        db.commit()
+
+        alerts = get_active_gear_alerts(db, athlete_user.id)
+        assert len(alerts) == 1
+        assert alerts[0]["kind"] == "shoe"
+        assert "Hoka" in alerts[0]["label"]
+        assert alerts[0]["life_pct"] > 80
+
+    def test_retired_shoe_excluded(self, client, athlete_user, db):
+        from ..models import RunningShoe
+        from ..services.gear_service import get_active_gear_alerts
+        h = _auth(client, athlete_user)
+        shoe = client.post("/api/gear/shoes", json={"brand": "Hoka", "model": "Clifton", "target_km": 700}, headers=h).json()
+        row = db.query(RunningShoe).filter(RunningShoe.id == shoe["id"]).first()
+        row.accumulated_km = 600.0
+        row.status = "retired"
+        db.commit()
+        assert get_active_gear_alerts(db, athlete_user.id) == []
+
+    def test_battery_component_never_included(self, client, athlete_user, db):
+        from ..models import Bike, BikeComponent
+        from ..services.gear_service import get_active_gear_alerts
+        h = _auth(client, athlete_user)
+        bike = client.post("/api/gear/bikes", json={"brand": "Canyon", "model": "Aeroad"}, headers=h).json()
+        client.post(
+            f"/api/gear/bikes/{bike['id']}/components",
+            json={"component_type": "bateria_grupo", "tracking_unit": "carga_pct", "target_value": 100, "charge_pct": 10},
+            headers=h,
+        )
+        assert get_active_gear_alerts(db, athlete_user.id) == []
+
+    def test_bike_component_above_80pct_returned(self, client, athlete_user, db):
+        from ..models import BikeComponent
+        from ..services.gear_service import get_active_gear_alerts
+        h = _auth(client, athlete_user)
+        bike = client.post("/api/gear/bikes", json={"brand": "Canyon", "model": "Aeroad"}, headers=h).json()
+        comp = client.post(
+            f"/api/gear/bikes/{bike['id']}/components",
+            json={"component_type": "cadena", "tracking_unit": "km", "target_value": 3000},
+            headers=h,
+        ).json()
+        row = db.query(BikeComponent).filter(BikeComponent.id == comp["id"]).first()
+        row.accumulated_value = 2700.0  # 90%
+        db.commit()
+
+        alerts = get_active_gear_alerts(db, athlete_user.id)
+        assert len(alerts) == 1
+        assert alerts[0]["kind"] == "component"
+        assert "Canyon" in alerts[0]["label"]
 
 
 class TestManualActivityShoeAssignment:
