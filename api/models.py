@@ -2057,3 +2057,146 @@ TrainingLoad       = GarminTrainingLoad
 ProviderSyncStatus = GarminSyncStatus
 HealthDaily        = GarminHealthDaily
 SleepSession       = GarminSleepSession
+
+
+# ──────────────────────────────────────────────────────────
+# GESTIÓN DE EQUIPAMIENTO Y MANTENIMIENTO (Sprint 1, 2026-08-22)
+# ──────────────────────────────────────────────────────────
+# Propuesta de diseño completa en artifact publicado (ver memoria
+# project-labx-gear-module-design). Decisiones ya tomadas por el usuario:
+# solo km (sin toggle de millas), ícono genérico por tipo (sin foto real
+# ni catálogo de productos externo).
+
+class RunningShoe(Base):
+    """Par de zapatillas de un atleta, con kilometraje acumulado real."""
+    __tablename__ = "running_shoes"
+    __table_args__ = (
+        Index("ix_shoes_user", "user_id"),
+    )
+
+    id            = Column(String, primary_key=True, default=_uuid)
+    user_id       = Column(String, ForeignKey("users.id"), nullable=False)
+    brand         = Column(String, nullable=False)
+    model         = Column(String, nullable=False)
+    nickname      = Column(String, nullable=True)
+    purchase_date = Column(Date, nullable=True)
+    shoe_type     = Column(String, nullable=False, default="rodaje")  # rodaje|series|competicion|trail|otro
+    target_km     = Column(Float, nullable=False, default=700.0)
+    accumulated_km= Column(Float, nullable=False, default=0.0)
+    status        = Column(String, nullable=False, default="active")  # active|retired
+    # JSON list de shoe_type para los que esta zapatilla es la predeterminada
+    # (ej. '["rodaje","trail"]") -- una zapatilla puede ser default de mas
+    # de un tipo, pero solo UNA zapatilla puede ser default por tipo (se
+    # valida en el endpoint, no acá).
+    default_for_json = Column(Text, nullable=True)
+    last_alert_pct   = Column(Integer, nullable=True)  # 80|100 -- evita re-alertar en cada actividad
+    created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                            onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    user = relationship("User", backref="running_shoes")
+
+
+class ShoeActivityLink(Base):
+    """Una fila por (actividad de running, zapatilla) -- permite recalcular
+    accumulated_km correctamente si la actividad se edita/borra despues."""
+    __tablename__ = "shoe_activity_links"
+    __table_args__ = (
+        UniqueConstraint("activity_id", name="uq_shoe_activity"),
+        Index("ix_sal_shoe", "shoe_id"),
+    )
+
+    id          = Column(String, primary_key=True, default=_uuid)
+    shoe_id     = Column(String, ForeignKey("running_shoes.id"), nullable=False)
+    activity_id = Column(String, ForeignKey("garmin_activities.id"), nullable=False)
+    distance_km = Column(Float, nullable=False)
+    created_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    shoe     = relationship("RunningShoe", backref="activity_links")
+    activity = relationship("GarminActivity")
+
+
+class Bike(Base):
+    """Bicicleta de un atleta."""
+    __tablename__ = "bikes"
+    __table_args__ = (
+        Index("ix_bikes_user", "user_id"),
+    )
+
+    id         = Column(String, primary_key=True, default=_uuid)
+    user_id    = Column(String, ForeignKey("users.id"), nullable=False)
+    brand      = Column(String, nullable=False)
+    model      = Column(String, nullable=False)
+    bike_type  = Column(String, nullable=False, default="ruta")  # ruta|tt_triatlon|mtb|gravel
+    is_default = Column(Boolean, nullable=False, default=False)
+    status     = Column(String, nullable=False, default="active")  # active|retired
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    user = relationship("User", backref="bikes")
+
+
+class BikeComponent(Base):
+    """Componente de una bicicleta (cadena, cubiertas, pastillas, etc.)
+    con vida util propia -- por km, horas, meses, o carga% (bateria)."""
+    __tablename__ = "bike_components"
+    __table_args__ = (
+        Index("ix_components_bike", "bike_id"),
+    )
+
+    id                = Column(String, primary_key=True, default=_uuid)
+    bike_id           = Column(String, ForeignKey("bikes.id"), nullable=False)
+    component_type    = Column(String, nullable=False)  # cadena|cubiertas|pastillas_freno|discos_freno|bateria_grupo|suspension|sellante_tubeless|otro
+    label             = Column(String, nullable=True)
+    tracking_unit     = Column(String, nullable=False, default="km")  # km|horas|meses|carga_pct
+    target_value      = Column(Float, nullable=False)
+    accumulated_value = Column(Float, nullable=False, default=0.0)
+    # Solo para tracking_unit="carga_pct" (bateria Di2/eTap) -- se actualiza
+    # aparte, NUNCA por el fan-out de assign_gear() (ver gear_service.py).
+    charge_pct        = Column(Integer, nullable=True)
+    installed_date    = Column(Date, nullable=True)
+    last_service_date = Column(Date, nullable=True)
+    last_alert_pct    = Column(Integer, nullable=True)
+    status            = Column(String, nullable=False, default="active")  # active|replaced
+    created_at        = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    bike = relationship("Bike", backref="components")
+
+
+class BikeActivityLink(Base):
+    """Una fila por (actividad de ciclismo, bicicleta) -- el fan-out a cada
+    componente se calcula desde acá, no se guarda un link por componente."""
+    __tablename__ = "bike_activity_links"
+    __table_args__ = (
+        UniqueConstraint("activity_id", name="uq_bike_activity"),
+        Index("ix_bal_bike", "bike_id"),
+    )
+
+    id          = Column(String, primary_key=True, default=_uuid)
+    bike_id     = Column(String, ForeignKey("bikes.id"), nullable=False)
+    activity_id = Column(String, ForeignKey("garmin_activities.id"), nullable=False)
+    distance_km = Column(Float, nullable=False)
+    duration_s  = Column(Float, nullable=False, default=0.0)
+    created_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    bike     = relationship("Bike", backref="activity_links")
+    activity = relationship("GarminActivity")
+
+
+class MaintenanceLog(Base):
+    """Historial de mantenimientos reales de una bici/componente."""
+    __tablename__ = "maintenance_logs"
+    __table_args__ = (
+        Index("ix_maint_bike", "bike_id"),
+    )
+
+    id                  = Column(String, primary_key=True, default=_uuid)
+    bike_id             = Column(String, ForeignKey("bikes.id"), nullable=False)
+    component_id        = Column(String, ForeignKey("bike_components.id"), nullable=True)  # null = servicio general
+    date_iso            = Column(String, nullable=False)
+    description         = Column(Text, nullable=False)
+    cost                = Column(Float, nullable=True)
+    resets_accumulated  = Column(Boolean, nullable=False, default=False)
+    created_at          = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    bike      = relationship("Bike", backref="maintenance_logs")
+    component = relationship("BikeComponent", backref="maintenance_logs")
