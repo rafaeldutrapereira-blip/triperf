@@ -117,8 +117,18 @@ class TestNewDeviceDetection:
         r4 = self._login(client, device_id=device_b)  # vuelve a la notebook
         assert len(calls) == 1  # tampoco vuelve a alertar
 
+    def test_legacy_hash_format_does_not_crash_login(self, client, athlete_user, db):
+        """Regresión real: cuentas que ya tenían un login registrado ANTES
+        de este cambio guardan el hash SHA-256 viejo (string de 16 hex
+        chars, no JSON) en last_device_hash -- json.loads() sobre eso
+        rompía el login con 500 para cualquier cuenta ya usada (bug
+        reportado en vivo: "Error interno del servidor")."""
+        athlete_user.last_device_hash = "a3f9c21b8e0d1234"  # formato viejo real
+        db.commit()
 
-class TestAuthMe:
+        r = self._login(client)
+        assert r.status_code == 200, r.text
+        assert "lx_device_id" in r.cookies
     def test_me_authenticated(self, client, athlete_user):
         token = login(client, "athlete@test.com", "AthlPass123")
         r = client.get("/api/auth/me", headers=auth_headers(token))

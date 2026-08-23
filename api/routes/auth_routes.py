@@ -189,7 +189,18 @@ def login(
     # navegador) en vez de un solo valor, para que alternar entre celu y
     # notebook no dispare la alerta en cada cambio.
     ua = request.headers.get("user-agent", "")
-    known_devices = json.loads(user.last_device_hash) if user.last_device_hash else []
+    try:
+        # Usuarios que ya tenían un login registrado ANTES de este cambio
+        # tienen acá el hash SHA-256 viejo (string de 16 hex chars, no
+        # JSON) -- json.loads() sobre eso tira JSONDecodeError y rompía el
+        # login con 500 para cualquier cuenta ya usada. Se trata como "sin
+        # dispositivos conocidos todavía": se sobreescribe con el formato
+        # nuevo (JSON list) en este mismo login, sin romper nada.
+        known_devices = json.loads(user.last_device_hash) if user.last_device_hash else []
+        if not isinstance(known_devices, list):
+            known_devices = []
+    except (ValueError, TypeError):
+        known_devices = []
     device_cookie = request.cookies.get("lx_device_id")
 
     if device_cookie and device_cookie in known_devices:
