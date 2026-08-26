@@ -1298,8 +1298,21 @@ class GarminPullService:
                 if step_type != "ExecutableStepDTO":
                     continue
                 end_cond = (step.get("endCondition") or {}).get("conditionTypeKey")
-                dur_s = step.get("endConditionValue") if end_cond == "time" else None
-                if not dur_s:
+                dur_s  = step.get("endConditionValue") if end_cond == "time" else None
+                dist_m = step.get("endConditionValue") if end_cond == "distance" else None
+                # Bug real encontrado en vivo (2026-08-26): un workout de
+                # "intervalos pista" (6x1600m) real de 64min/14km calculaba
+                # solo 1.0 TSS -- los pasos de trabajo/calentamiento/enfriar
+                # de un track workout casi siempre terminan por DISTANCIA
+                # ("corré 1600m"), no por tiempo. Antes esto los descartaba
+                # todos (`if not dur_s: continue`) y solo contaba los
+                # descansos entre repeticiones (los únicos con endCondition
+                # "time"), subestimando el TSS real por completo. Si el paso
+                # termina por distancia y el target es de ritmo, se estima
+                # la duración real a partir de distancia/ritmo objetivo --
+                # nunca se inventa un tiempo si no hay ritmo con el que
+                # derivarlo (queda sin computar, igual que antes).
+                if not dur_s and not dist_m:
                     continue
                 v1, v2 = step.get("targetValueOne"), step.get("targetValueTwo")
                 if v1 is None and v2 is None:
@@ -1308,19 +1321,23 @@ class GarminPullService:
                 target_key = (step.get("targetType") or {}).get("workoutTargetTypeKey") or ""
 
                 intensity = None
-                if "power" in target_key and ftp:
+                if "power" in target_key and ftp and dur_s:
                     intensity = avg_target / ftp
-                elif "heart.rate" in target_key and fcmax:
+                elif "heart.rate" in target_key and fcmax and dur_s:
                     intensity = avg_target / (fcmax * 0.92)
                 elif "pace" in target_key and avg_target:
                     # avg_target viene en m/s en ambos deportes
                     if sport == "run" and run_pace_s_km:
                         step_pace_s_km = 1000 / avg_target
                         intensity = run_pace_s_km / step_pace_s_km
+                        if dur_s is None and dist_m:
+                            dur_s = (dist_m / 1000) * step_pace_s_km
                     elif sport == "swim" and css_s_100m:
                         step_pace_s_100m = 100 / avg_target
                         intensity = css_s_100m / step_pace_s_100m
-                if intensity is None:
+                        if dur_s is None and dist_m:
+                            dur_s = (dist_m / 100) * step_pace_s_100m
+                if intensity is None or not dur_s:
                     continue
 
                 intensity = max(0.3, min(1.3, intensity))

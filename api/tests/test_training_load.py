@@ -248,6 +248,53 @@ class TestEstimatePlannedTss:
         assert tss > 50, "El bloque principal (RepeatGroupDTO) no se está contando"
         assert abs(tss - 62.3) < 0.5
 
+    def test_distance_based_steps_se_cuentan_track_workout_real(self):
+        """
+        Reproduce el caso real reportado en vivo (workoutId 1674275826,
+        "intervalos pista" de 64min/14km): calentamiento 3km + 6x1600m +
+        6x60s de descanso + enfriar 1km. Los pasos de trabajo de un
+        workout de pista terminan por DISTANCIA ("corré 1600m"), no por
+        tiempo -- antes esto los descartaba TODOS (`if not dur_s: continue`)
+        y solo contaba los 60s de descanso entre repeticiones (el único
+        paso con endCondition "time"), dando 1.0 TSS para una sesión real
+        de ~60-90 TSS. El fix deriva la duración de distancia/ritmo
+        objetivo cuando el paso termina por distancia y el target es de
+        ritmo.
+        """
+        from api.garmin_pull_service import GarminPullService
+        run_pace_s_km = 270  # 4:30/km, ritmo umbral real del atleta
+        workout = {
+            "estimatedDurationInSecs": 3840,
+            "workoutSegments": [{"workoutSteps": [
+                {"type": "ExecutableStepDTO", "description": "Calentamiento",
+                 "endCondition": {"conditionTypeKey": "distance"}, "endConditionValue": 3000.0,
+                 "targetType": {"workoutTargetTypeKey": "pace.zone"},
+                 "targetValueOne": 3.043, "targetValueTwo": 3.478},
+                {"type": "RepeatGroupDTO", "numberOfIterations": 6, "workoutSteps": [
+                    {"type": "ExecutableStepDTO", "description": "Difícil",
+                     "endCondition": {"conditionTypeKey": "distance"}, "endConditionValue": 1600.0,
+                     "targetType": {"workoutTargetTypeKey": "pace.zone"},
+                     "targetValueOne": 4.13, "targetValueTwo": 4.348},
+                    {"type": "ExecutableStepDTO", "description": "Fácil",
+                     "endCondition": {"conditionTypeKey": "time"}, "endConditionValue": 60.0,
+                     "targetType": {"workoutTargetTypeKey": "pace.zone"},
+                     "targetValueOne": 0.87, "targetValueTwo": 1.522},
+                ]},
+                {"type": "ExecutableStepDTO", "description": "Enfriar",
+                 "endCondition": {"conditionTypeKey": "distance"}, "endConditionValue": 1000.0,
+                 "targetType": {"workoutTargetTypeKey": "pace.zone"},
+                 "targetValueOne": 3.043, "targetValueTwo": 3.478},
+                {"type": "ExecutableStepDTO",
+                 "endCondition": {"conditionTypeKey": "lap.button"},
+                 "targetType": {"workoutTargetTypeKey": "no.target"}},
+            ]}]
+        }
+        tss, precise = GarminPullService._estimate_planned_tss(
+            workout, "run", ftp=250, fcmax=180, run_pace_s_km=run_pace_s_km, css_s_100m=None)
+        assert precise is True
+        # Antes del fix esto daba 1.0 (solo los 6x60s de descanso)
+        assert tss > 30, "Los pasos de trabajo por distancia (calentamiento/intervalos/enfriar) no se están contando"
+
 
 class TestExtractWorkoutSteps:
     """
