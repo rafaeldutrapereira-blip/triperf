@@ -4137,18 +4137,49 @@ function _wktStepDefaultIF(st){
   if(key==='warmup'||key==='cooldown'||key==='recovery'||key==='rest') return 0.55;
   return 0.80;
 }
+// Bug real reportado en vivo (2026-08-28): un workout de bici con series
+// reales (20min calentar + 5x(8min trabajo + 2min descanso) + 10min
+// enfriar) se veía mal en el gráfico -- en vez de 5 subidas/bajadas
+// alternadas se mostraba UN bloque largo de trabajo seguido de UN
+// bloque largo de descanso. Causa: _extract_workout_steps() (backend)
+// aplana un RepeatGroupDTO a pasos SUELTOS, uno por cada paso interno
+// (trabajo, descanso), cada uno con su propio repeat_count -- pierde el
+// hecho de que trabajo+descanso son pareja del MISMO grupo. Esta función
+// repetía cada paso `mult` veces SEGUIDO antes de pasar al siguiente
+// (trabajo×5, después descanso×5) en vez de alternar (trabajo,descanso)×5.
+// Fix: agrupa los pasos CONSECUTIVOS que comparten el mismo repeat_count
+// (son los miembros reales de un mismo grupo repetido) y los intercala.
 function _wktStepsSegs(steps){
   var weights = steps.map(_wktStepWeight);
   var maxW = 0;
   weights.forEach(function(w){ if(w!=null && w>maxW) maxW = w; });
-  var segs = [], t = 0;
-  steps.forEach(function(st, i){
-    var mult = st.repeat_count||1;
+  function segFor(st, i){
     var dur = st.duration_s || (st.distance_m ? st.distance_m/3 : 60);
     var w = weights[i];
     var IF = (w!=null && maxW>0) ? (0.5+0.65*(w/maxW)) : _wktStepDefaultIF(st);
-    for(var r=0;r<mult;r++){ segs.push({ts:t, te:t+dur, ps:IF, pe:IF}); t += dur; }
-  });
+    return {dur: dur, IF: IF};
+  }
+  var segs = [], t = 0;
+  var i = 0;
+  while(i < steps.length){
+    var mult = steps[i].repeat_count || 1;
+    if(mult > 1){
+      var group = [];
+      var j = i;
+      while(j < steps.length && (steps[j].repeat_count||1) === mult){ group.push(j); j++; }
+      for(var r=0;r<mult;r++){
+        group.forEach(function(idx){
+          var s = segFor(steps[idx], idx);
+          segs.push({ts:t, te:t+s.dur, ps:s.IF, pe:s.IF}); t += s.dur;
+        });
+      }
+      i = j;
+    } else {
+      var s0 = segFor(steps[i], i);
+      segs.push({ts:t, te:t+s0.dur, ps:s0.IF, pe:s0.IF}); t += s0.dur;
+      i++;
+    }
+  }
   return segs;
 }
 function _wktBuildSegments(sp, blocks, steps){
