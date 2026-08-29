@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '140';  // 2026-08-28: fix grafico de series repetidas en detalle de entrenamiento (interleaving trabajo/descanso)
+var BUILD_VERSION = '141';  // 2026-08-29: blinda new URL() en el fetch handler del SW contra SyntaxError de Safari
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -71,7 +71,14 @@ function _withNgrokBypass(req){
 
 /* â”€â”€ Fetch: cache-first para estÃ¡ticos, network-first para API â”€â”€ */
 self.addEventListener('fetch', function(e){
-  var url = new URL(e.request.url);
+  // Defensivo: new URL() puede tirar SyntaxError en Safari/WebKit ("The
+  // string did not match the expected pattern") si e.request.url viniera
+  // malformada por cualquier motivo -- sin este try/catch, ESE error
+  // rompía el fetch completo (login incluido) sin ningún log ni forma
+  // de diagnosticarlo desde el servidor, porque nunca llegaba a la red.
+  var url;
+  try{ url = new URL(e.request.url); }
+  catch(err){ return; } // deja pasar el request sin intervenir (comportamiento default del browser)
 
   // API calls: siempre red, sin cache
   if(url.pathname.startsWith('/api')){
