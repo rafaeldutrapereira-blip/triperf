@@ -2626,9 +2626,43 @@ def _bucket_time_in_zone(samples: list, field: str, zdef: dict) -> list:
     return out
 
 
+
+# Bug real reportado en vivo (2026-08-30): un atleta se detuvo ~5 minutos
+# al inicio de una salida corta (semáforo/pausa real) sin pausar el reloj;
+# el parcial de ese km mostró "10:29/km" porque el cálculo usaba tiempo
+# TRANSCURRIDO entre muestras, no tiempo en movimiento. Confirmado con el
+# dato crudo: la cadencia normal de muestreo es 1 muestra/segundo, y hubo
+# un único salto real de 309s con la distancia casi sin cambiar (87→88m).
+# Cualquier hueco entre 2 muestras consecutivas mayor a este umbral es una
+# pausa real (el reloj deja de samplear seguido cuando detecta que no hay
+# movimiento), no la cadencia normal de grabación — se excluye del tiempo
+# en movimiento de los parciales Y se reporta aparte (ver
+# _total_paused_seconds), igual que "tiempo en movimiento" en Strava/Garmin
+# Connect.
+_PAUSE_GAP_THRESHOLD_S = 20.0
+
+
+def _total_paused_seconds(samples: list) -> float:
+    """Segundos totales de pausa real (parado/descanso) durante la
+    actividad — huecos entre muestras consecutivas por encima de
+    _PAUSE_GAP_THRESHOLD_S. Nunca inventa: 0.0 si no hay huecos así."""
+    valid = [s for s in samples if s.get("t") is not None]
+    if len(valid) < 2:
+        return 0.0
+    total = 0.0
+    prev_t = valid[0]["t"]
+    for s in valid[1:]:
+        gap = s["t"] - prev_t
+        if gap > _PAUSE_GAP_THRESHOLD_S:
+            total += gap
+        prev_t = s["t"]
+    return total
+
+
 def _compute_activity_splits(samples: list, sport: str) -> list:
     """Parciales por segmento de distancia (1km carrera, 5km ciclismo).
-    Usa distancia y tiempo acumulados reales de Garmin — no estima nada."""
+    Usa distancia real acumulada y tiempo EN MOVIMIENTO real (excluye
+    pausas reales -- ver _PAUSE_GAP_THRESHOLD_S) — no estima nada."""
     seg_m = 1000 if sport == "run" else 5000 if sport == "bike" else None
     if not seg_m:
         return []
@@ -2639,6 +2673,8 @@ def _compute_activity_splits(samples: list, sport: str) -> list:
     splits = []
     idx = 1
     seg_t0, seg_d0 = valid[0]["t"], valid[0]["dist"]
+    seg_paused_s = 0.0
+    prev_t = valid[0]["t"]
     pw, hr = [], []
 
     def _flush(dist_m, dur_s):
@@ -2650,17 +2686,22 @@ def _compute_activity_splits(samples: list, sport: str) -> list:
         }
 
     for s in valid:
+        gap = s["t"] - prev_t
+        if gap > _PAUSE_GAP_THRESHOLD_S:
+            seg_paused_s += gap
+        prev_t = s["t"]
         if s.get("power") is not None: pw.append(s["power"])
         if s.get("hr")    is not None: hr.append(s["hr"])
         if s["dist"] - seg_d0 >= seg_m:
-            splits.append(_flush(seg_m, s["t"] - seg_t0))
+            splits.append(_flush(seg_m, max(0.0, (s["t"] - seg_t0) - seg_paused_s)))
             idx += 1
             seg_t0, seg_d0 = s["t"], s["dist"]
+            seg_paused_s = 0.0
             pw, hr = [], []
 
     last_d = valid[-1]["dist"] - seg_d0
     if last_d > seg_m * 0.2:
-        splits.append(_flush(last_d, valid[-1]["t"] - seg_t0))
+        splits.append(_flush(last_d, max(0.0, (valid[-1]["t"] - seg_t0) - seg_paused_s)))
     return splits
 
 
@@ -3007,6 +3048,7 @@ def get_activity_telemetry(
         splits = _splits_from_garmin_laps(activity_id, act.sport)
 
     swim_lengths = _swim_lengths_real(activity_id) if act.sport == "swim" else None
+    paused_min = round(_total_paused_seconds(samples) / 60, 1)
 
     target_power = _bike_target_power_series(owner, act, series["t"], db) if is_own else None
 
@@ -3041,6 +3083,7 @@ def get_activity_telemetry(
         "zone_bounds":  zone_bounds,
         "splits":       splits,
         "swim_lengths": swim_lengths,
+        "paused_min":   paused_min,
         "target_power": target_power,
         "is_own":       is_own,
         "owner_name":   None if is_own else (owner.nombre or owner.email.split("@")[0]),

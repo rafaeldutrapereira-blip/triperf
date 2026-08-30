@@ -7368,8 +7368,14 @@ function _cmFmtPace(s, sport){
    una serie real estructurada, ver _laps_are_structured en
    athlete_routes.py). Extraída a función propia para poder montarse
    como una pestaña más junto a Zonas y Gráficos. */
-function _dtSplitsHtml(splits, sport){
-  if(!splits || !splits.length) return '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>';
+function _dtSplitsHtml(splits, sport, pausedMin){
+  // Tiempo detenido real (semáforo, pausa, etc.) -- ya excluido del ritmo
+  // de cada parcial (ver _compute_activity_splits en athlete_routes.py),
+  // solo informativo para que el atleta/coach entienda la duración real.
+  var pausedNote = (pausedMin && pausedMin > 0)
+    ? '<div style="padding:.5rem .7rem;margin-bottom:.5rem;font-size:.72rem;color:var(--gold);background:rgba(240,165,0,.08);border-radius:8px">⏸ Tiempo detenido real: <strong>'+pausedMin.toFixed(1)+' min</strong> — ya excluido del ritmo</div>'
+    : '';
+  if(!splits || !splits.length) return pausedNote + '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>';
   var isSwim = sport === 'swim';
   var hasBlocks = splits.some(function(s){ return s.intensity_type; });
   var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
@@ -7407,7 +7413,7 @@ function _dtSplitsHtml(splits, sport){
   }).join('');
   var paceLbl = sport==='swim' ? 'Ritmo /100m' : sport==='run' ? 'Ritmo' : 'Vel. Media';
   var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
-  return '<div class="cm-splits-title">Parciales ('+unit+')</div>'
+  return pausedNote + '<div class="cm-splits-title">Parciales ('+unit+')</div>'
     +'<div style="overflow-x:auto"><table class="cm-splits-table">'
     +'<tr><th>#</th>'+blockHead+'<th>Distancia</th><th>Tiempo</th><th>'+paceLbl+'</th><th>FC</th><th>Pot.</th></tr>'
     + rows
@@ -7608,7 +7614,7 @@ function _loadActivityDetail(activityId, sport, mapWrapId, tabsWrapId){
         + '</div>'
         + '<div class="dtabs-pane on" data-pane="zones">'+_dtZonesHtml(tel)+'</div>'
         + '<div class="dtabs-pane" data-pane="charts">'+_dtChartsHtml(sport, tel)+'</div>'
-        + '<div class="dtabs-pane" data-pane="splits">'+_dtSplitsHtml(tel && tel.splits, sport)+'</div>';
+        + '<div class="dtabs-pane" data-pane="splits">'+_dtSplitsHtml(tel && tel.splits, sport, tel && tel.paused_min)+'</div>';
       _dtWireSwipe(tabsWrapId);
     }
   });
