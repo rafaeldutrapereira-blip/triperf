@@ -931,8 +931,8 @@ ul { list-style: none; }
                    cuidado que ya tuvo training_readiness_garmin en
                    lx-info.js para no repetir la confusión "¿por qué hay
                    2 números?" que ya reportó el usuario una vez. -->
-              <span class="insight-readiness-pill" id="insight-readiness-pill" title="Readiness Score — motor propio de LabX, distinto de la severidad de este insight">
-                <span class="irp-label">Readiness</span><strong id="insight-readiness-val">—</strong><span class="irp-max">/100</span>
+              <span class="insight-readiness-pill" id="insight-readiness-pill" title="Readiness Score de LabX (combina carga, HRV, sueño y fatiga mental) — distinto del Recovery Score de Recuperación y del Training Readiness nativo de Garmin">
+                <span class="irp-label">Readiness LabX</span><strong id="insight-readiness-val">—</strong><span class="irp-max">/100</span>
               </span>
               <span class="insight-severity sev-neutral" id="insight-severity">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
@@ -1272,8 +1272,23 @@ function tick(){
   }
   var diff = t - new Date();
   if(diff <= 0){
-    ['cd-d','cd-h','cd-m','cd-s'].forEach(function(i){_set(i,'00');});
     var nameEl = document.getElementById('kc-race-name');
+    var goalEl = document.getElementById('kc-race-goal');
+    // Bug real reportado en una auditoría externa (26/09/2026): una
+    // carrera de hace SEMANAS seguía mostrando "00:00:00:00" para
+    // siempre, como si fuera el día de la carrera -- el atleta nunca
+    // actualizó su objetivo de temporada tras correrla. Se distingue
+    // "hoy es el día" (diff entre -1 día y 0, se mantiene el 00 en
+    // verde) de "ya pasó hace rato" (más de 1 día): ahí se reemplaza el
+    // countdown por un CTA para actualizar el objetivo, en vez de dejar
+    // un reloj en cero indefinidamente.
+    if(-diff > 86400000){
+      ['cd-d','cd-h','cd-m','cd-s'].forEach(function(i){_set(i,'—');});
+      if(nameEl){ nameEl.textContent = (window._raceName||'Tu carrera') + ' ya finalizó'; nameEl.style.color = 'var(--dim)'; }
+      if(goalEl) goalEl.innerHTML = '<a href="athlete_profile.html" style="color:var(--orange)">Actualizar objetivo de temporada →</a>';
+      return;
+    }
+    ['cd-d','cd-h','cd-m','cd-s'].forEach(function(i){_set(i,'00');});
     if(nameEl) nameEl.style.color = 'var(--green)';
     return;
   }
@@ -2278,7 +2293,7 @@ function patchData(){
     {key:'tsb',              label:'TSB — Forma',                unit:'pts'},
     {key:'tss_week',         label:'TSS Semana',                 unit:'pts'},
     {key:'acwr',             label:'ACWR',                       unit:'ratio'},
-    {key:'readiness',        label:'Readiness',                  unit:'/100'},
+    {key:'readiness',        label:'Readiness LabX',             unit:'/100'},
     {key:'hrv_last_night',   label:'HRV anoche',                 unit:'ms'},
     {key:'hrv_7d_avg',       label:'HRV promedio 7d',            unit:'ms'},
     {key:'sleep_total_h',    label:'Sueño',                      unit:'h'},

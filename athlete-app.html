@@ -3174,7 +3174,7 @@ function renderInsightMobile(ins, readiness){
      (mismo cuidado que ya tuvo training_readiness_garmin para no repetir
      la confusión "¿por qué hay 2 números?" que ya reportó el usuario). */
   var readinessHtml = readiness != null
-    ? '<span class="insight-mob-readiness" title="Readiness Score — motor propio de LabX, distinto de la severidad de este insight">Readiness <strong>'+Math.round(readiness)+'</strong>/100</span>'
+    ? '<span class="insight-mob-readiness" title="Readiness Score de LabX (combina carga, HRV, sueño y fatiga mental) — distinto del Recovery Score de Recuperación y del Training Readiness nativo de Garmin">Readiness LabX <strong>'+Math.round(readiness)+'</strong>/100</span>'
     : '';
 
   var driversHtml = (ins.drivers||[]).map(function(dr){
@@ -3538,6 +3538,7 @@ function renderStatusHealth(d){
     var MS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var dt = new Date(d.race_goal_date+'T12:00:00');
     window._raceDate = new Date(d.race_goal_date+'T07:00:00');
+    window._raceName = d.race_goal_name;
     rc.innerHTML =
       '<div class="rcm-head">🏁 Próxima Carrera</div>'
       +'<div class="rcm-cd">'
@@ -3551,7 +3552,7 @@ function renderStatusHealth(d){
       +'</div>'
       +'<div class="race-card-mini-name" id="rcm-name">'+d.race_goal_name+'</div>'
       +'<div class="race-card-mini-date">'+dt.getDate()+' '+MS_ES[dt.getMonth()]+' '+dt.getFullYear()+'</div>'
-      +'<div class="race-card-mini-cta">Ver Race Day →</div>';
+      +'<div class="race-card-mini-cta" id="rcm-cta">Ver Race Day →</div>';
     rc.style.display = 'block';
     rc.style.cursor = 'pointer';
     rc.onclick = function(){ goScreen('screen-raceday'); };
@@ -3765,8 +3766,18 @@ function _raceTick(){
   if(!t) return;
   var diff = t - new Date();
   if(diff <= 0){
-    ['rcm-d','rcm-h','rcm-m','rcm-s'].forEach(function(i){ _set(i,'00'); });
     var nameEl = document.getElementById('rcm-name');
+    var ctaEl  = document.getElementById('rcm-cta');
+    // Mismo fix que dashboard.html (bug real reportado en auditoría
+    // externa 2026-09-26): distingue "hoy es el día" de "ya pasó hace
+    // rato" en vez de un countdown en 00 para siempre.
+    if(-diff > 86400000){
+      ['rcm-d','rcm-h','rcm-m','rcm-s'].forEach(function(i){ _set(i,'—'); });
+      if(nameEl){ nameEl.textContent = (window._raceName||'Tu carrera') + ' ya finalizó'; nameEl.style.color = 'var(--dim)'; }
+      if(ctaEl){ ctaEl.textContent = 'Actualizar objetivo →'; ctaEl.onclick = function(ev){ ev.stopPropagation(); goScreen('screen-profile'); }; }
+      return;
+    }
+    ['rcm-d','rcm-h','rcm-m','rcm-s'].forEach(function(i){ _set(i,'00'); });
     if(nameEl) nameEl.style.color = 'var(--green)';
     return;
   }
