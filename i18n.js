@@ -194,6 +194,19 @@ var DICT = {
     det_body_bat: 'Body Battery',
     det_tsb_form: 'TSB (Forma)',
     reg_have_account: '¿Ya tienes cuenta?',
+    /* Login page */
+    login_back_home: 'Volver al inicio',
+    login_welcome: 'Bienvenido', login_welcome_back: 'de vuelta',
+    login_subtitle: 'Beta privada · Ingresa con tu email y contraseña',
+    login_denied: 'Tu plan no incluye ese módulo. Actualiza para acceder.',
+    login_wrong_creds: 'Email o contraseña incorrectos.',
+    login_conn_error: 'Error de conexión. Verifica que la API esté activa.',
+    login_show_password: 'Mostrar contraseña',
+    login_verifying: 'Verificando...', login_access_granted: 'Acceso concedido',
+    login_first_time: '¿Primera vez en LabX?', login_create_free: 'Crear cuenta gratis →',
+    login_footer: 'LabX · Plataforma privada de rendimiento atlético · 2026',
+    login_stat_athletes: 'Atletas activos', login_stat_syncs: 'Actividades sync',
+    login_stat_modules: 'Módulos activos',
   },
 
   pt: {
@@ -348,6 +361,19 @@ var DICT = {
     det_body_bat: 'Body Battery',
     det_tsb_form: 'TSB (Forma)',
     reg_have_account: 'Já tem conta?',
+    /* Login page */
+    login_back_home: 'Voltar ao início',
+    login_welcome: 'Bem-vindo', login_welcome_back: 'de volta',
+    login_subtitle: 'Beta privada · Entre com seu email e senha',
+    login_denied: 'Seu plano não inclui esse módulo. Faça upgrade para acessar.',
+    login_wrong_creds: 'Email ou senha incorretos.',
+    login_conn_error: 'Erro de conexão. Verifique se a API está ativa.',
+    login_show_password: 'Mostrar senha',
+    login_verifying: 'Verificando...', login_access_granted: 'Acesso concedido',
+    login_first_time: 'Primeira vez no LabX?', login_create_free: 'Criar conta grátis →',
+    login_footer: 'LabX · Plataforma privada de desempenho atlético · 2026',
+    login_stat_athletes: 'Atletas ativos', login_stat_syncs: 'Atividades sync',
+    login_stat_modules: 'Módulos ativos',
   },
 
   en: {
@@ -502,11 +528,30 @@ var DICT = {
     det_body_bat: 'Body Battery',
     det_tsb_form: 'TSB (Form)',
     reg_have_account: 'Already have an account?',
+    /* Login page */
+    login_back_home: 'Back to home',
+    login_welcome: 'Welcome', login_welcome_back: 'back',
+    login_subtitle: 'Private beta · Sign in with your email and password',
+    login_denied: 'Your plan does not include that module. Upgrade to access it.',
+    login_wrong_creds: 'Incorrect email or password.',
+    login_conn_error: 'Connection error. Check that the API is up.',
+    login_show_password: 'Show password',
+    login_verifying: 'Verifying...', login_access_granted: 'Access granted',
+    login_first_time: 'First time on LabX?', login_create_free: 'Create free account →',
+    login_footer: 'LabX · Private athletic performance platform · 2026',
+    login_stat_athletes: 'Active athletes', login_stat_syncs: 'Synced activities',
+    login_stat_modules: 'Active modules',
   }
 };
 
 /* ─────────────────────────── ESTADO ─────────────────────────── */
-var _lang = 'es'; /* i18n desactivado temporalmente — idioma fijo español */
+var _lang = (function(){
+  try {
+    var saved = localStorage.getItem('lx_lang');
+    if (saved && DICT[saved]) return saved;
+  } catch(e) {}
+  return 'es';
+})();
 var _chartRegistry = {};   /* id → { instance, getConfig } */
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
