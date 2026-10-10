@@ -6706,7 +6706,7 @@ function loadCommunityMyProfile(){
   apiFetch('/community/profile/me')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      if(!d){ el.innerHTML = '<div class="cm-empty">Completá tu perfil en Configuración para mostrar tu página pública.</div>'; return; }
+      if(!d){ el.innerHTML = '<div class="cm-empty">'+_t('app_complete_profile','Completá tu perfil en Configuración para mostrar tu página pública.')+'</div>'; return; }
       var u = d.user || {};
       var ss = d.season_stats || {};
       var avatarHtml = u.avatar_url
@@ -6717,7 +6717,7 @@ function loadCommunityMyProfile(){
           +'<div style="display:flex;gap:1rem;align-items:flex-start">'
             +'<div style="position:relative;flex-shrink:0">'
               +'<div class="cm-myprofile-avatar">'+avatarHtml+'</div>'
-              +'<label class="cm-avatar-edit" title="Cambiar foto">'
+              +'<label class="cm-avatar-edit" title="'+_t('app_change_photo','Cambiar foto')+'">'
                 +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>'
                 +'<input type="file" accept="image/*" style="display:none" onchange="uploadMyAvatarApp(this)">'
               +'</label>'
@@ -6726,15 +6726,15 @@ function loadCommunityMyProfile(){
               +'<div class="cm-myprofile-name">'+_escCm(u.name||'—')+'</div>'
               +'<div class="cm-myprofile-flag">'+(u.country_flag||'')+' '+(u.country_code||'')+'</div>'
               +'<div style="display:flex;gap:1.3rem;margin-top:.6rem">'
-                +'<div><div class="cm-myprofile-stat-n" style="color:#22D3EE">'+(d.follower_count||0)+'</div><div class="cm-myprofile-stat-l">Seguidores</div></div>'
-                +'<div><div class="cm-myprofile-stat-n" style="color:var(--dim)">'+(d.following_count||0)+'</div><div class="cm-myprofile-stat-l">Siguiendo</div></div>'
+                +'<div><div class="cm-myprofile-stat-n" style="color:#22D3EE">'+(d.follower_count||0)+'</div><div class="cm-myprofile-stat-l">'+_t('app_followers','Seguidores')+'</div></div>'
+                +'<div><div class="cm-myprofile-stat-n" style="color:var(--dim)">'+(d.following_count||0)+'</div><div class="cm-myprofile-stat-l">'+_t('app_following','Siguiendo')+'</div></div>'
               +'</div>'
             +'</div>'
           +'</div>'
           +'<div class="cm-myprofile-grid">'
-            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:#22D3EE">'+(ss.km!=null?ss.km:'—')+'</div><div class="cm-myprofile-chip-l">Km temporada</div></div>'
-            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--purple)">'+(ss.tss!=null?Math.round(ss.tss):'—')+'</div><div class="cm-myprofile-chip-l">TSS acumulado</div></div>'
-            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--green)">'+(ss.hours!=null?ss.hours:'—')+'h</div><div class="cm-myprofile-chip-l">Horas totales</div></div>'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:#22D3EE">'+(ss.km!=null?ss.km:'—')+'</div><div class="cm-myprofile-chip-l">'+_t('app_km_season','Km temporada')+'</div></div>'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--purple)">'+(ss.tss!=null?Math.round(ss.tss):'—')+'</div><div class="cm-myprofile-chip-l">'+_t('app_tss_accumulated','TSS acumulado')+'</div></div>'
+            +'<div class="cm-myprofile-chip"><div class="cm-myprofile-chip-n" style="color:var(--green)">'+(ss.hours!=null?ss.hours:'—')+'h</div><div class="cm-myprofile-chip-l">'+_t('app_total_hours','Horas totales')+'</div></div>'
           +'</div>'
         +'</div>';
     })
@@ -6743,7 +6743,7 @@ function loadCommunityMyProfile(){
 function uploadMyAvatarApp(input){
   var file = input.files && input.files[0];
   if(!file) return;
-  if(!file.type.startsWith('image/')){ toast('Solo se aceptan imágenes', 'err'); return; }
+  if(!file.type.startsWith('image/')){ toast(_t('app_images_only','Solo se aceptan imágenes'), 'err'); return; }
   var fd = new FormData();
   fd.append('file', file);
   fetch(API+'/athlete/profile/avatar', {
@@ -6751,8 +6751,8 @@ function uploadMyAvatarApp(input){
     headers: Object.assign({ Authorization: 'Bearer '+_token }, _NGROK_BYPASS),
     body: fd,
   }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(){ input.value = ''; toast('Foto actualizada'); loadCommunityMyProfile(); loadMenuHeader(); })
-    .catch(function(){ toast('No se pudo subir la foto', 'err'); });
+    .then(function(){ input.value = ''; toast(_t('app_photo_updated','Foto actualizada')); loadCommunityMyProfile(); loadMenuHeader(); })
+    .catch(function(){ toast(_t('app_photo_upload_failed','No se pudo subir la foto'), 'err'); });
 }
 
 /* Clubes — cuarta brecha real de la auditoría: mismo endpoint
@@ -6771,8 +6771,8 @@ function _clubCardHtml(g){
   return '<div class="cm-club-card" onclick="'+tap+'">'
     +'<div class="cm-club-ico">'+icon+'</div>'
     +'<div class="cm-club-body"><div class="cm-club-name">'+_escCm(g.name||'—')+'</div>'
-    +'<div class="cm-club-meta">'+(g.n_members||0)+' miembros · '+(g.sport||'multi')+'</div></div>'
-    +(g.is_member?'<span class="cm-club-badge">Miembro</span>':'<span class="cm-club-join">+ Unirme</span>')
+    +'<div class="cm-club-meta">'+(g.n_members||0)+' '+_t('app_members','miembros')+' · '+(g.sport||'multi')+'</div></div>'
+    +(g.is_member?'<span class="cm-club-badge">'+_t('app_member_badge','Miembro')+'</span>':'<span class="cm-club-join">'+_t('app_join_btn','+ Unirme')+'</span>')
     +'</div>';
 }
 function loadCommunityClubs(){
@@ -6787,18 +6787,18 @@ function loadCommunityClubs(){
     var mineIds = {}; mine.forEach(function(g){ mineIds[g.id] = true; });
     var directory = all.filter(function(g){ return !mineIds[g.id]; });
     el.innerHTML =
-      '<button class="wl-submit" style="margin:.7rem 1rem" onclick="openCreateClub()">+ Crear club</button>'
-      +'<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Mis clubes</div>'
-      +(mine.length ? mine.map(_clubCardHtml).join('') : '<div class="cm-empty">Todavía no perteneces a ningún club.</div>')
-      +'<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Directorio</div>'
-      +(directory.length ? directory.map(_clubCardHtml).join('') : '<div class="cm-empty">No hay más clubes disponibles.</div>');
+      '<button class="wl-submit" style="margin:.7rem 1rem" onclick="openCreateClub()">'+_t('app_create_club_btn','+ Crear club')+'</button>'
+      +'<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_my_clubs','Mis clubes')+'</div>'
+      +(mine.length ? mine.map(_clubCardHtml).join('') : '<div class="cm-empty">'+_t('app_no_clubs_yet','Todavía no perteneces a ningún club.')+'</div>')
+      +'<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_directory','Directorio')+'</div>'
+      +(directory.length ? directory.map(_clubCardHtml).join('') : '<div class="cm-empty">'+_t('app_no_more_clubs','No hay más clubes disponibles.')+'</div>');
   }).catch(function(){ el.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 function joinClubApp(id){
   apiFetch('/community/groups/'+id+'/join', { method:'POST' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(){ toast('Te uniste al club'); loadCommunityClubs(); })
-    .catch(function(){ toast('No se pudo unir — intentá de nuevo', 'err'); });
+    .then(function(){ toast(_t('app_joined_club','Te uniste al club')); loadCommunityClubs(); })
+    .catch(function(){ toast(_t('app_join_failed','No se pudo unir — intentá de nuevo'), 'err'); });
 }
 function openCreateClub(){ document.getElementById('cm-club-modal').style.display = 'flex'; }
 function closeCreateClub(e){
@@ -6807,9 +6807,9 @@ function closeCreateClub(e){
 }
 function submitCreateClubApp(){
   var name = document.getElementById('cm-club-name').value.trim();
-  if(!name || name.length < 3){ toast('El nombre debe tener al menos 3 caracteres', 'err'); return; }
+  if(!name || name.length < 3){ toast(_t('app_name_min_chars','El nombre debe tener al menos 3 caracteres'), 'err'); return; }
   var btn = document.getElementById('cm-club-submit-btn');
-  btn.disabled = true; btn.textContent = 'Creando...';
+  btn.disabled = true; btn.textContent = _t('app_creating','Creando...');
   apiFetch('/community/groups', {
     method: 'POST',
     body: JSON.stringify({
@@ -6820,14 +6820,14 @@ function submitCreateClubApp(){
     }),
   }).then(function(r){ return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); }); })
     .then(function(){
-      toast('Club creado');
+      toast(_t('app_club_created','Club creado'));
       document.getElementById('cm-club-name').value = '';
       document.getElementById('cm-club-desc').value = '';
       closeCreateClub();
       loadCommunityClubs();
     })
-    .catch(function(err){ toast((err && err.detail) || 'No se pudo crear el club', 'err'); })
-    .finally(function(){ btn.disabled = false; btn.textContent = 'Crear club'; });
+    .catch(function(err){ toast((err && err.detail) || _t('app_club_create_failed','No se pudo crear el club'), 'err'); })
+    .finally(function(){ btn.disabled = false; btn.textContent = _t('app_club_create','Crear club'); });
 }
 
 /* Desafíos — quinta brecha de la auditoría: community.html tiene un tab
@@ -6843,14 +6843,14 @@ function submitCreateClubApp(){
    reales, con tu progreso real. */
 var _clubChallengesGroupId = null;
 var _clubChallengesGroupName = '';
-var CHALLENGE_METRIC_LBL = { km:'km', tss:'TSS', activities:'actividades', hours:'horas' };
+function CHALLENGE_METRIC_LBL(){ return { km:_t('app_metric_km','km'), tss:_t('app_metric_tss','TSS'), activities:_t('app_metric_activities','actividades'), hours:_t('app_metric_hours','horas') }; }
 function openClubChallenges(groupId, groupName){
   _clubChallengesGroupId = groupId;
   if(groupName) _clubChallengesGroupName = groupName;
   document.getElementById('wo-detail-body').innerHTML =
-    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Desafíos — '+_escCm(_clubChallengesGroupName)+'</div>'
-    +'<button class="wl-submit" style="margin:.7rem 0" onclick="openCreateChallengeApp()">+ Crear desafío</button>'
-    +'<div id="club-challenges-list"><div class="cm-detail-empty">Cargando...</div></div>';
+    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'+_t('app_challenges_title','Desafíos —')+' '+_escCm(_clubChallengesGroupName)+'</div>'
+    +'<button class="wl-submit" style="margin:.7rem 0" onclick="openCreateChallengeApp()">'+_t('app_create_challenge_btn','+ Crear desafío')+'</button>'
+    +'<div id="club-challenges-list"><div class="cm-detail-empty">'+_t('status_loading','Cargando...')+'</div></div>';
   document.getElementById('wo-detail-modal').style.display = 'flex';
   loadClubChallenges();
 }
@@ -6860,50 +6860,50 @@ function loadClubChallenges(){
   apiFetch('/community/groups/'+_clubChallengesGroupId+'/challenges')
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(chs){
-      if(!chs.length){ list.innerHTML = '<div class="cm-detail-empty">Sin desafíos activos en este club todavía.</div>'; return; }
+      if(!chs.length){ list.innerHTML = '<div class="cm-detail-empty">'+_t('app_no_active_challenges','Sin desafíos activos en este club todavía.')+'</div>'; return; }
       list.innerHTML = chs.map(function(c){
         var pct = Math.min(100, c.my_pct||0);
         return '<div class="cm-challenge-row">'
           +'<div class="cm-challenge-name">'+_escCm(c.name)+'</div>'
           +(c.description?'<div class="cm-challenge-desc">'+_escCm(c.description)+'</div>':'')
           +'<div class="cm-challenge-bar-bg"><div class="cm-challenge-bar-f" style="width:'+pct+'%"></div></div>'
-          +'<div class="cm-challenge-meta">'+(c.my_progress||0)+' / '+c.target+' '+(CHALLENGE_METRIC_LBL[c.metric]||c.metric)+' · '+c.start_date+' → '+c.end_date+'</div>'
+          +'<div class="cm-challenge-meta">'+(c.my_progress||0)+' / '+c.target+' '+(CHALLENGE_METRIC_LBL()[c.metric]||c.metric)+' · '+c.start_date+' → '+c.end_date+'</div>'
         +'</div>';
       }).join('');
-    }).catch(function(){ list.innerHTML = '<div class="cm-detail-empty">Error al cargar</div>'; });
+    }).catch(function(){ list.innerHTML = '<div class="cm-detail-empty">'+_t('app_load_error','Error al cargar')+'</div>'; });
 }
 function openCreateChallengeApp(){
   var today = todayIso();
   document.getElementById('wo-detail-body').innerHTML =
-    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Crear desafío</div>'
-    +'<div style="margin:.9rem 0"><label style="font-size:.72rem;color:var(--muted)">Nombre*</label>'
+    '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'+_t('app_create_challenge_title','Crear desafío')+'</div>'
+    +'<div style="margin:.9rem 0"><label style="font-size:.72rem;color:var(--muted)">'+_t('app_name_required_star','Nombre*')+'</label>'
       +'<input id="chg-name" class="pw-input" type="text" placeholder="Ej: 100km en agosto" style="margin-top:.3rem"></div>'
-    +'<div style="margin-bottom:.9rem"><label style="font-size:.72rem;color:var(--muted)">Descripción (opcional)</label>'
+    +'<div style="margin-bottom:.9rem"><label style="font-size:.72rem;color:var(--muted)">'+_t('app_desc_optional','Descripción (opcional)')+'</label>'
       +'<textarea id="chg-desc" class="pw-input" rows="2" style="margin-top:.3rem;resize:none;background:var(--bg3)"></textarea></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem">'
-      +'<div><label style="font-size:.72rem;color:var(--muted)">Métrica</label>'
-        +'<select id="chg-metric" class="pw-input" style="margin-top:.3rem"><option value="km">Km</option><option value="tss">TSS</option><option value="hours">Horas</option><option value="activities">Actividades</option></select></div>'
-      +'<div><label style="font-size:.72rem;color:var(--muted)">Objetivo</label>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">'+_t('app_metric','Métrica')+'</label>'
+        +'<select id="chg-metric" class="pw-input" style="margin-top:.3rem"><option value="km">Km</option><option value="tss">TSS</option><option value="hours">'+_t('app_metric_hours','Horas')+'</option><option value="activities">'+_t('app_metric_activities','Actividades')+'</option></select></div>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">'+_t('app_goal','Objetivo')+'</label>'
         +'<input id="chg-target" class="pw-input" type="number" min="1" step="0.1" placeholder="100" style="margin-top:.3rem"></div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem">'
-      +'<div><label style="font-size:.72rem;color:var(--muted)">Desde</label>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">'+_t('app_from_date','Desde')+'</label>'
         +'<input id="chg-start" class="pw-input" type="date" value="'+today+'" style="margin-top:.3rem"></div>'
-      +'<div><label style="font-size:.72rem;color:var(--muted)">Hasta</label>'
+      +'<div><label style="font-size:.72rem;color:var(--muted)">'+_t('app_to_date','Hasta')+'</label>'
         +'<input id="chg-end" class="pw-input" type="date" style="margin-top:.3rem"></div>'
     +'</div>'
-    +'<button class="wl-submit" id="chg-submit-btn" onclick="submitCreateChallengeApp()">Crear desafío</button>';
+    +'<button class="wl-submit" id="chg-submit-btn" onclick="submitCreateChallengeApp()">'+_t('app_create_challenge_title','Crear desafío')+'</button>';
 }
 function submitCreateChallengeApp(){
   var name = document.getElementById('chg-name').value.trim();
   var target = parseFloat(document.getElementById('chg-target').value);
   var start = document.getElementById('chg-start').value;
   var end = document.getElementById('chg-end').value;
-  if(!name){ toast('El nombre es obligatorio', 'err'); return; }
-  if(!target || target <= 0){ toast('El objetivo debe ser mayor a 0', 'err'); return; }
-  if(!start || !end || end < start){ toast('Revisá las fechas', 'err'); return; }
+  if(!name){ toast(_t('app_name_required','El nombre es obligatorio'), 'err'); return; }
+  if(!target || target <= 0){ toast(_t('app_goal_gt_zero','El objetivo debe ser mayor a 0'), 'err'); return; }
+  if(!start || !end || end < start){ toast(_t('app_check_dates','Revisá las fechas'), 'err'); return; }
   var btn = document.getElementById('chg-submit-btn');
-  btn.disabled = true; btn.textContent = 'Creando...';
+  btn.disabled = true; btn.textContent = _t('app_creating','Creando...');
   apiFetch('/community/groups/'+_clubChallengesGroupId+'/challenges', {
     method: 'POST',
     body: JSON.stringify({
@@ -6915,14 +6915,14 @@ function submitCreateChallengeApp(){
       end_date: end,
     }),
   }).then(function(r){
-    if(r.status === 403) return Promise.reject({detail:'Solo el admin/coach del club puede crear desafíos'});
+    if(r.status === 403) return Promise.reject({detail:_t('app_challenge_admin_only','Solo el admin/coach del club puede crear desafíos')});
     return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); });
   }).then(function(){
-    toast('Desafío creado');
+    toast(_t('app_challenge_created','Desafío creado'));
     openClubChallenges(_clubChallengesGroupId, '');
     loadClubChallenges();
-  }).catch(function(err){ toast((err && err.detail) || 'No se pudo crear el desafío', 'err'); })
-    .finally(function(){ if(btn) { btn.disabled = false; btn.textContent = 'Crear desafío'; } });
+  }).catch(function(err){ toast((err && err.detail) || _t('app_challenge_create_failed','No se pudo crear el desafío'), 'err'); })
+    .finally(function(){ if(btn) { btn.disabled = false; btn.textContent = _t('app_create_challenge_title','Crear desafío'); } });
 }
 
 /* Compartir actividad — antes solo existía en la web (community.html).
@@ -6951,24 +6951,24 @@ function closeShareActivity(e){
 }
 function submitSharePost(){
   var actId = document.getElementById('cm-share-activity-sel').value;
-  if(!actId){ toast('Elegí una actividad', 'err'); return; }
+  if(!actId){ toast(_t('app_choose_activity','Elegí una actividad'), 'err'); return; }
   var caption = document.getElementById('cm-share-caption').value.slice(0, 280);
   var visibility = document.getElementById('cm-share-visibility').value;
   var btn = document.getElementById('cm-share-submit-btn');
-  btn.disabled = true; btn.textContent = 'Publicando...';
+  btn.disabled = true; btn.textContent = _t('app_publishing','Publicando...');
   apiFetch('/community/posts', {
     method: 'POST',
     body: JSON.stringify({ activity_id: actId, body: caption, visibility: visibility }),
   }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
     .then(function(){
-      toast('Actividad compartida');
+      toast(_t('app_activity_shared','Actividad compartida'));
       document.getElementById('cm-share-caption').value = '';
       document.getElementById('cm-share-activity-sel').selectedIndex = 0;
       closeShareActivity();
       loadCommunityFeed();
     })
-    .catch(function(){ toast('No se pudo publicar — intentá de nuevo', 'err'); })
-    .finally(function(){ btn.disabled = false; btn.textContent = '📤 Publicar'; });
+    .catch(function(){ toast(_t('app_publish_failed','No se pudo publicar — intentá de nuevo'), 'err'); })
+    .finally(function(){ btn.disabled = false; btn.textContent = _t('app_share_submit','📤 Publicar'); });
 }
 
 function _cmAvatarHtml(u){
@@ -6985,15 +6985,15 @@ function loadCommunityFeed(){
   apiFetch('/community/activity-feed?limit=20')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
-      if(!data){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el feed</div>'; return; }
+      if(!data){ el.innerHTML = '<div class="cm-empty">'+_t('app_feed_offline','Sin conexión — no se pudo cargar el feed')+'</div>'; return; }
       if(!data.feed.length){
-        el.innerHTML = '<div class="cm-empty">Todavía no hay actividad de la gente que seguís.<br>Seguí a otros atletas desde la web para ver su feed acá.</div>';
+        el.innerHTML = '<div class="cm-empty">'+_t('app_no_feed_activity','Todavía no hay actividad de la gente que seguís.<br>Seguí a otros atletas desde la web para ver su feed acá.')+'</div>';
         return;
       }
       _communityFeedFlat = data.feed;
       el.innerHTML = data.feed.map(_communityCardHtml).join('');
     })
-    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar el feed</div>'; });
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">'+_t('app_feed_offline','Sin conexión — no se pudo cargar el feed')+'</div>'; });
 }
 
 function _communityCardHtml(c, idx){

@@ -158,3 +158,36 @@ def test_wellness_screen_factors_translated(page: Page, athlete_api):
     )
 
     assert not errors, f"JS errors en Bienestar (en): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_community_clubs_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta sin clubes (estado real de cualquier cuenta nueva)
+    When:  entra a Comunidad > Clubes con idioma portugués
+    Then:  el botón de crear club y el estado vacío aparecen en
+           portugués, no en español.
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "pt")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-community')")
+    page.evaluate("communityTab('clubs')")
+    # No esperar por ausencia de "Cargando" (en PT ahora dice "Carregando",
+    # justamente lo que se está probando) -- esperar el botón real en su lugar.
+    page.wait_for_selector("#community-content .wl-submit", timeout=20000)
+
+    content_text = page.locator("#community-content").inner_text().lower()
+    assert "criar clube" in content_text, f"Botón de crear club no está en portugués: {content_text!r}"
+    assert "crear club" not in content_text, f"Quedó texto en español: {content_text!r}"
+
+    assert not errors, f"JS errors en Comunidad/Clubes (pt): {errors}"
