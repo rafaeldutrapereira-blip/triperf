@@ -242,6 +242,39 @@ def test_sw_build_version_was_bumped_for_i18n_changes():
 #    (regresión directa del bug F1 de la auditoría)
 # ──────────────────────────────────────────────────────────────────────
 
+def test_i18n_script_tag_has_no_query_string():
+    """
+    Bug real encontrado en vivo (2026-10-10, Sprint 2b): cuatro páginas
+    cargaban <script src="i18n.js?v=1">, un cache key de Cloudflare
+    DISTINTO al que usan las otras 16 páginas (<script src="i18n.js">,
+    sin query). Cloudflare cachea cada URL+query por separado -- la
+    variante ?v=1 quedó congelada desde la primera vez que alguien la
+    pidió, mientras la variante sin query sí se actualizaba en cada
+    deploy. Resultado: durante buena parte de una sesión de trabajo,
+    `curl .../i18n.js` (sin query, usado para verificar cada deploy)
+    mostraba el diccionario actualizado, pero el navegador real --que
+    pide exactamente la URL del atributo src, con su query string--
+    seguía sirviendo una copia vieja, invisible a esa verificación.
+    Mientras no haya un mecanismo real de cache-busting (ver nota en
+    sw.js sobre BUILD_VERSION), la regla simple es: ninguna página debe
+    agregar su propio query string a i18n.js.
+    """
+    offenders = []
+    for page in _i18n_pages():
+        text = page.read_text(encoding="utf-8", errors="ignore")
+        for m in re.finditer(r'<script[^>]+src="(i18n\.js[^"]*)"', text):
+            src = m.group(1)
+            if src != "i18n.js":
+                offenders.append(f"{page.name}: src=\"{src}\"")
+
+    assert not offenders, (
+        "Página(s) cargando i18n.js con un query string distinto al resto "
+        "del sitio -- Cloudflare lo cachea como una URL aparte y puede "
+        "quedar desactualizada sin que un `curl .../i18n.js` (sin query) "
+        "lo note:\n" + "\n".join(offenders)
+    )
+
+
 def test_lang_is_not_hardcoded():
     text = I18N_JS.read_text(encoding="utf-8")
     assert "var _lang = 'es';" not in text.replace(" ", "") or \

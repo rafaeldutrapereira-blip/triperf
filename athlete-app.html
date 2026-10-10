@@ -15,7 +15,7 @@
      GPS del detalle de actividad en Comunidad (pedido explícito: mismo
      recorrido/parciales que training_detail.html, igual Strava). -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="i18n.js?v=1"></script>
+<script src="i18n.js"></script>
 <style>
 :root {
   --bg:     #0B0F1A;
@@ -2254,6 +2254,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
    LabX Athlete App — PWA JS
 ═══════════════════════════════════════════════════════════ */
 
+/* Helper de traducción para contenido armado acá en JS (tarjetas,
+   listas, mensajes de estado) — a diferencia de data-i18n (que el motor
+   de i18n.js aplica solo al cargar la página o cambiar idioma), este
+   contenido se inyecta después vía innerHTML cuando llega la respuesta
+   de la API, así que tiene que pedir la traducción en el momento mismo
+   en que arma el string. Nombre _t (no t) para no chocar con variables
+   locales `t` que ya existen en varias funciones (template de un
+   entrenamiento). Sprint 2b. */
+function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
+
 /* ── Config ─────────────────────────────────────────────── */
 // Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
 // no es la URL real de produccion -- Capacitor no usa protocolo file:,
@@ -3842,7 +3852,7 @@ function updateGreetingHeaders(){
 function loadToday(){
   var today = todayIso();
 
-  if(!_token){ renderNoWorkout('Inicia sesión para ver tu plan'); return; }
+  if(!_token){ renderNoWorkout(_t('app_login_required','Inicia sesión para ver tu plan')); return; }
 
   /* Bug real encontrado en vivo: esta pantalla solo miraba /athlete/plan
      (AssignedWorkout = asignado directo por un coach acá en LabX), pero
@@ -3871,7 +3881,7 @@ function loadToday(){
 
   Promise.all([pCoach, pTP, pDash]).then(function(results){
     var coachAssigns = results[0], tpRows = results[1], dash = results[2];
-    if(coachAssigns === null){ renderNoWorkout('Sin conexión — plan no disponible'); return; }
+    if(coachAssigns === null){ renderNoWorkout(_t('app_offline_no_plan','Sin conexión — plan no disponible')); return; }
 
     var realToday = (dash && dash.activities)
       ? dash.activities.filter(function(act){ return act.date_iso === today; })
@@ -3895,7 +3905,7 @@ function loadToday(){
       .map(_tpRowToAssignShape);
     var plannedList = coachAssigns.concat(tpAsAssigns);
 
-    if(!plannedList.length && realToday.length === 0){ renderNoWorkout('Día de descanso 🧘'); return; }
+    if(!plannedList.length && realToday.length === 0){ renderNoWorkout(_t('app_rest_day','Día de descanso 🧘'), true); return; }
     if(!plannedList.length){ _todayAssign = null; renderUnplannedToday(realToday); return; }
 
     _todayAssign = plannedList[0];
@@ -3908,7 +3918,7 @@ function loadToday(){
    el atleta sí hubiera entrenado (solo que no era lo asignado/planeado). */
 function renderUnplannedToday(activities){
   _todayExtraRealFlat = [];
-  var html = '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Sin plan para hoy — actividad registrada</div>';
+  var html = '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_unplanned_today','Sin plan para hoy — actividad registrada')+'</div>';
   activities.forEach(function(act){
     html += _realActivityCard(act);
   });
@@ -3923,9 +3933,9 @@ function _planVsRealCard(t, real){
     return '<div class="pvr-row"><span class="pvr-lbl">'+label+'</span><span class="pvr-plan">'+pv+' '+unit+'</span><span class="pvr-arrow">→</span><span class="pvr-real">'+rv+' '+unit+'</span></div>';
   }
   return '<div class="pvr-card">'
-    +'<div class="pvr-head">Planificado → Real</div>'
-    +row('Duración','min', t.dur_min, real.dur_min)
-    +row('Distancia','km', t.dist_km, real.dist_km, 2)
+    +'<div class="pvr-head">'+_t('app_plan_vs_real','Planificado → Real')+'</div>'
+    +row(_t('app_label_duration','Duración'),'min', t.dur_min, real.dur_min)
+    +row(_t('app_label_distance_short','Distancia'),'km', t.dist_km, real.dist_km, 2)
     +row('TSS','', t.tss, real.tss)
     +'</div>';
 }
@@ -3955,7 +3965,7 @@ function _realActivityCard(act){
   // vivo dos veces: el fix anterior (solo flex-direction:row) no alcanzaba.
   return '<div class="today-hero" style="margin:.5rem 1rem;border-radius:10px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:.6rem" onclick="showExtraActivityDetail('+idx+')">'
     +'<div class="th-sport" style="margin:0;min-width:0;flex:1 1 auto"><span class="th-sport-emoji">'+(SPORT_EMOJI[act.sport]||act.icon||'🏋')+'</span>'
-    +'<div style="min-width:0;overflow:hidden"><div class="th-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(act.name||'Actividad')+'</div></div></div>'
+    +'<div style="min-width:0;overflow:hidden"><div class="th-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(act.name||_t('app_default_activity','Actividad'))+'</div></div></div>'
     +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
     +'</div>';
 }
@@ -3970,12 +3980,12 @@ function showExtraActivityDetail(idx){
     +'</div>';
   document.getElementById('wo-detail-body').innerHTML =
     '<div style="display:flex;align-items:center;gap:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">'
-      +'<span>'+(SPORT_EMOJI[act.sport]||'🏋')+'</span><span>'+(act.name||'Actividad')+'</span>'
+      +'<span>'+(SPORT_EMOJI[act.sport]||'🏋')+'</span><span>'+(act.name||_t('app_default_activity','Actividad'))+'</span>'
     +'</div>'
     +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+fmtDate(act.date_iso)+'</div>'
     + metaHtml
-    +'<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>'
-    +'<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>'
+    +'<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_detail_real','Detalle real')+'</div>'
+    +'<div id="today-real-map-wrap"><div class="cm-detail-empty">'+_t('app_loading_route','Cargando recorrido...')+'</div></div>'
     +'<div id="today-real-tabs-wrap"></div>';
   document.getElementById('wo-detail-modal').style.display = 'flex';
   _loadActivityDetail(act.activity_id, act.sport, 'today-real-map-wrap', 'today-real-tabs-wrap');
@@ -3992,7 +4002,7 @@ function _tpRowToAssignShape(p){
     notas: null,
     logs: [],
     template: {
-      sport: p.sport, nombre: p.title || 'Entrenamiento',
+      sport: p.sport, nombre: p.title || _t('app_default_workout','Entrenamiento'),
       dur_min: p.dur_min, dist_km: p.dist_km, tss: p.tss,
       tipo: null, blocks_json: null, steps_json: p.steps_json || null,
       garmin_description: p.description || null,
@@ -4256,10 +4266,13 @@ function _renderBlocksHtml(sp, col, blocks, steps, repeats){
   return html;
 }
 
-function renderNoWorkout(msg){
+/* isRest: antes se adivinaba por msg.indexOf('descanso')>-1 — se rompía
+   en PT/EN porque el mensaje traducido no contiene esa palabra. Ahora
+   el llamador lo indica explícitamente. */
+function renderNoWorkout(msg, isRest){
   document.getElementById('today-content').innerHTML =
     '<div class="no-workout">'
-    +'<div class="no-workout-ico">'+(msg.indexOf('descanso')>-1?'🛌':'📡')+'</div>'
+    +'<div class="no-workout-ico">'+(isRest?'🛌':'📡')+'</div>'
     +'<div class="no-workout-lbl">'+msg+'</div>'
     +'</div>';
 }
@@ -4326,7 +4339,7 @@ function renderTodayWorkout(plannedList, realActivities){
   }).join('');
 
   if(m.extraReal.length){
-    html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Otra actividad de hoy</div>';
+    html += '<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_other_activity_today','Otra actividad de hoy')+'</div>';
     m.extraReal.forEach(function(act){ html += _realActivityCard(act); });
   }
 
@@ -4346,7 +4359,7 @@ function _todayCardCompactHtml(a, idx, matchedReal){
   return '<div class="today-card-compact" onclick="showTodayWorkoutDetail('+idx+')">'
     +'<div class="tcc-dot" style="background:'+col+'"></div>'
     +'<div class="tcc-body">'
-      +'<div class="tcc-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||'Entrenamiento')+'</div>'
+      +'<div class="tcc-name">'+(SPORT_EMOJI[sp]||'🏋')+' '+(t.nombre||_t('app_default_workout','Entrenamiento'))+'</div>'
       +(meta.length?'<div class="tcc-meta">'+meta.join(' · ')+'</div>':'')
     +'</div>'
     +'<div class="tcc-status">'+(done?'✅':'⏳')+'</div>'
@@ -4389,7 +4402,7 @@ function _workoutCardHtml(a, matchedReal){
   html += '<div class="today-hero">';
   html += '<div class="th-date">'+fmtDate(a.date_iso)+'</div>';
   html += '<div class="th-sport"><span class="th-sport-emoji">'+(SPORT_EMOJI[sp]||'🏋')+'</span>'
-    +'<div><div class="th-name">'+(t.nombre||'Entrenamiento')+'</div>'
+    +'<div><div class="th-name">'+(t.nombre||_t('app_default_workout','Entrenamiento'))+'</div>'
     +(t.tipo?'<span class="th-tipo" style="background:'+((TIPO_COL[t.tipo]||'#6B7280')+'22')+';color:'+(TIPO_COL[t.tipo]||'#9CA3AF')+';border:1px solid '+((TIPO_COL[t.tipo]||'#6B7280')+'44')+'">'+t.tipo.toUpperCase()+'</span>':'')
     +'</div></div>';
   html += '<div class="th-meta-grid">'
@@ -4401,16 +4414,16 @@ function _workoutCardHtml(a, matchedReal){
 
   // Coach notes
   if(a.notas){
-    html += '<div class="coach-notes"><div class="cn-label">📋 Notas del Coach</div><div class="cn-text">'+a.notas+'</div></div>';
+    html += '<div class="coach-notes"><div class="cn-label">'+_t('app_coach_notes','📋 Notas del Coach')+'</div><div class="cn-text">'+a.notas+'</div></div>';
   }
 
   // Blocks — coach (blocks_json) o pasos reales de Garmin/TrainingPeaks (steps_json)
   var blocksHtml = _renderBlocksHtml(sp, col, blocks, steps);
   if(blocksHtml){
-    html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Bloques</div>';
+    html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_blocks_title','Bloques')+'</div>';
     html += blocksHtml;
   } else if(t.notas || t.garmin_description){
-    html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Descripción</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+(t.notas||t.garmin_description)+'</div></div>';
+    html += '<div style="margin:.5rem 1rem;"><div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">'+_t('app_description_title','Descripción')+'</div><div style="font-size:.85rem;color:#D1D5DB;line-height:1.6">'+(t.notas||t.garmin_description)+'</div></div>';
   }
 
   // Planificado vs Real — solo si Garmin ya trajo una actividad de hoy
@@ -4424,8 +4437,8 @@ function _workoutCardHtml(a, matchedReal){
     // después de montar este HTML en el DOM (_loadActivityDetail
     // necesita que los divs ya existan para escribir sobre ellos).
     if(matchedReal[0].activity_id){
-      html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>';
-      html += '<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>';
+      html += '<div style="padding:.75rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_detail_real','Detalle real')+'</div>';
+      html += '<div id="today-real-map-wrap"><div class="cm-detail-empty">'+_t('app_loading_route','Cargando recorrido...')+'</div></div>';
       html += '<div id="today-real-tabs-wrap"></div>';
     }
   }
@@ -4439,9 +4452,9 @@ function _workoutCardHtml(a, matchedReal){
   // cuando hay un assignment_id real (a.id), nunca para filas
   // sintetizadas de TrainingPeaks (_tpRowToAssignShape no trae id).
   if(!done){
-    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;font-size:.8rem;color:var(--dim);text-align:center">⏳ Pendiente — se completa solo al sincronizar tu actividad desde Garmin</div>';
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;font-size:.8rem;color:var(--dim);text-align:center">'+_t('app_pending_sync_msg','⏳ Pendiente — se completa solo al sincronizar tu actividad desde Garmin')+'</div>';
     if(a.id){
-      html += '<div style="margin:.6rem 1rem 0"><button onclick="openLogManualModal(\''+a.id+'\')" style="width:100%;padding:.65rem;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.8rem;font-family:\'Barlow Condensed\',sans-serif;cursor:pointer">¿Entrenaste sin reloj? Registrar esfuerzo</button></div>';
+      html += '<div style="margin:.6rem 1rem 0"><button onclick="openLogManualModal(\''+a.id+'\')" style="width:100%;padding:.65rem;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.8rem;font-family:\'Barlow Condensed\',sans-serif;cursor:pointer">'+_t('app_log_manual_cta','¿Entrenaste sin reloj? Registrar esfuerzo')+'</button></div>';
     }
   } else if(!matchedReal.length){
     // Único caso posible acá: un log manual histórico de ANTES de sacar
@@ -4452,7 +4465,7 @@ function _workoutCardHtml(a, matchedReal){
     // razón por la que "Natación" y "Carrera" se veían distintas: la
     // card de comparación ya es la única señal de "completado" que hace
     // falta cuando hay dato real).
-    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">✅ Completado</div>';
+    html += '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">'+_t('app_completed_badge','✅ Completado')+'</div>';
   }
 
   return html;
@@ -4542,7 +4555,7 @@ function renderWeekGrid(assigns, monIso, realWeek){
   _weekAssignsFlat = [];
   _weekMatchedRealFlat = [];
   var totalTss=0, totalDist=0, totalSessions=0, totalDur=0;
-  var DAYS_ABR=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var DAYS_ABR=[_t('app_day_mon','Lun'),_t('app_day_tue','Mar'),_t('app_day_wed','Mié'),_t('app_day_thu','Jue'),_t('app_day_fri','Vie'),_t('app_day_sat','Sáb'),_t('app_day_sun','Dom')];
   var html='';
   var todayDayNum = null;
 
@@ -4587,7 +4600,7 @@ function renderWeekGrid(assigns, monIso, realWeek){
       });
       html+='</div>';
     } else {
-      html+='<div class="wk-rest">Descanso</div>';
+      html+='<div class="wk-rest">'+_t('app_rest','Descanso')+'</div>';
     }
     html+='</div>';
   }
@@ -4605,7 +4618,7 @@ function renderWeekGrid(assigns, monIso, realWeek){
   var realSessions = realWeek.length;
 
   var daysEl = document.getElementById('wk-summary-days');
-  if(daysEl) daysEl.textContent = todayDayNum ? ('Día '+todayDayNum+' de 7') : '';
+  if(daysEl) daysEl.textContent = todayDayNum ? (_t('app_day_x_of_7_prefix','Día ')+todayDayNum+_t('app_day_x_of_7_suffix',' de 7')) : '';
 
   _wkSumSet('tss',      realTss,  totalTss,  Math.round(realTss),        Math.round(totalTss));
   _wkSumSet('dist',     realDist, totalDist, Math.round(realDist*10)/10, Math.round(totalDist*10)/10);
@@ -4642,17 +4655,17 @@ function showWeekWorkoutDetail(idx){
   var noteHtml = '';
   if(a.notas){
     noteHtml += '<div style="margin-top:.9rem;padding:.65rem .8rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px">'
-      +'<div style="font-size:.6rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem">📋 Notas del Coach</div>'
+      +'<div style="font-size:.6rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem">'+_t('app_coach_notes','📋 Notas del Coach')+'</div>'
       +'<div style="font-size:.82rem;color:#D1D5DB;line-height:1.5">'+a.notas+'</div></div>';
   }
 
   var bodyHtml = _renderBlocksHtml(sp, col, blocks, steps);
   if(bodyHtml){
-    bodyHtml = '<div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin:.9rem 0 .4rem">Bloques</div>' + bodyHtml;
+    bodyHtml = '<div style="font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin:.9rem 0 .4rem">'+_t('app_blocks_title','Bloques')+'</div>' + bodyHtml;
   } else if(t.notas || t.garmin_description){
     bodyHtml = '<div style="font-size:.8rem;color:#D1D5DB;line-height:1.6;margin-top:.9rem">'+(t.notas||t.garmin_description)+'</div>';
   } else if(!noteHtml){
-    bodyHtml = '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.</div>';
+    bodyHtml = '<div style="font-size:.78rem;color:var(--dim);margin-top:.9rem">'+_t('app_no_detailed_blocks','Sin bloques detallados para esta sesión — segui el plan y controlá tu esfuerzo.')+'</div>';
   }
 
   // Planificado vs Real + Detalle real (mapa/Zonas/Gráficos/Parciales) —
@@ -4665,8 +4678,8 @@ function showWeekWorkoutDetail(idx){
   if(matchedReal.length){
     realHtml += _planVsRealCard(t, matchedReal[0]);
     if(matchedReal[0].activity_id){
-      realHtml += '<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Detalle real</div>';
-      realHtml += '<div id="today-real-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>';
+      realHtml += '<div style="padding:.75rem 0 .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">'+_t('app_detail_real','Detalle real')+'</div>';
+      realHtml += '<div id="today-real-map-wrap"><div class="cm-detail-empty">'+_t('app_loading_route','Cargando recorrido...')+'</div></div>';
       realHtml += '<div id="today-real-tabs-wrap"></div>';
     }
   }
