@@ -150,7 +150,7 @@ var DICT = {
     /* Nutricion */
     nutr_sprint: '⚡ Sprint', nutr_olympic: '🏊 Olímpico', nutr_703: '🌊 70.3',
     nutr_ironman: '🔥 Ironman', nutr_summary: '📊 Resumen',
-    nutr_plan: '📋 Plan Hora a Hora', nutr_prerace: '📋 Pre-Carrera',
+    nutr_plan: '📋 Plan Hora a Hora', nutr_prerace: '📋 Pre-Carrera', nutr_postrace: '🔄 Post-Carrera',
     nutr_cho: 'Carbohidratos', nutr_pro: 'Proteínas', nutr_fat: 'Grasas',
     nutr_kcal: 'Calorías', nutr_fluid: 'Líquidos',
     /* Plan entrenamiento */
@@ -442,7 +442,7 @@ var DICT = {
     chart_trend_label: 'Valor', chart_trend_ref_low: 'Ref. mínimo', chart_trend_ref_high: 'Ref. máximo',
     nutr_sprint: '⚡ Sprint', nutr_olympic: '🏊 Olímpico', nutr_703: '🌊 70.3',
     nutr_ironman: '🔥 Ironman', nutr_summary: '📊 Resumo',
-    nutr_plan: '📋 Plano Hora a Hora', nutr_prerace: '📋 Pré-Corrida',
+    nutr_plan: '📋 Plano Hora a Hora', nutr_prerace: '📋 Pré-Corrida', nutr_postrace: '🔄 Pós-Corrida',
     nutr_cho: 'Carboidratos', nutr_pro: 'Proteínas', nutr_fat: 'Gorduras',
     nutr_kcal: 'Calorias', nutr_fluid: 'Líquidos',
     tp_discipline: 'Disciplina', tp_session_name: 'Nome da sessão',
@@ -727,7 +727,7 @@ var DICT = {
     chart_trend_label: 'Value', chart_trend_ref_low: 'Min ref', chart_trend_ref_high: 'Max ref',
     nutr_sprint: '⚡ Sprint', nutr_olympic: '🏊 Olympic', nutr_703: '🌊 70.3',
     nutr_ironman: '🔥 Ironman', nutr_summary: '📊 Summary',
-    nutr_plan: '📋 Hour-by-Hour Plan', nutr_prerace: '📋 Pre-Race',
+    nutr_plan: '📋 Hour-by-Hour Plan', nutr_prerace: '📋 Pre-Race', nutr_postrace: '🔄 Post-Race',
     nutr_cho: 'Carbohydrates', nutr_pro: 'Proteins', nutr_fat: 'Fats',
     nutr_kcal: 'Calories', nutr_fluid: 'Fluids',
     tp_discipline: 'Discipline', tp_session_name: 'Session Name',
