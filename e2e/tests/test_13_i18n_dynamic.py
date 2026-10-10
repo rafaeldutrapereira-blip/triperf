@@ -223,3 +223,34 @@ def test_community_discover_screen_translated(page: Page, athlete_api):
     assert "suggested athletes" in content_text, f"Título de sugerencias no está en inglés: {content_text!r}"
 
     assert not errors, f"JS errors en Comunidad/Descubrir (en): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_profile_screen_connections_translated(page: Page, athlete_api):
+    """
+    Given: un atleta sin Garmin/Strava conectados (estado real de una
+           cuenta nueva)
+    When:  entra a Perfil con idioma portugués
+    Then:  el estado de conexión ("Não conectado") aparece en
+           portugués, no en español ("No conectado").
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "pt")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-profile')")
+    page.wait_for_selector("#pf-connections .pf-conn-row", timeout=20000)
+
+    conn_text = page.locator("#pf-connections").inner_text()
+    assert "Não conectado" in conn_text, f"Estado de conexión no está en portugués: {conn_text!r}"
+    assert "No conectado" not in conn_text, f"Quedó texto en español: {conn_text!r}"
+
+    assert not errors, f"JS errors en Perfil (pt): {errors}"

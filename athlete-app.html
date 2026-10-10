@@ -2568,16 +2568,16 @@ function renderProfileConnections(garmin, strava){
 
   var html = '<div class="pf-conn-row">'
     +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(gOn?'on':'off')+'"></span>Garmin Connect</div>'
-    +'<div class="pf-conn-meta">'+(gOn ? 'Última sync: '+_escCm(garmin.last_sync||'—')+' · '+(garmin.activities_total||0)+' actividades' : (garmin && garmin.has_credentials ? 'Error de sincronización' : 'No conectado'))+'</div></div>'
-    +(gOn ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">Sincronizar</button>' : '')
+    +'<div class="pf-conn-meta">'+(gOn ? _t('app_last_sync','Última sync:')+' '+_escCm(garmin.last_sync||'—')+' · '+(garmin.activities_total||0)+' '+_t('app_activities_count','actividades') : (garmin && garmin.has_credentials ? _t('app_sync_error','Error de sincronización') : _t('app_not_connected','No conectado')))+'</div></div>'
+    +(gOn ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">'+_t('app_sync_btn','Sincronizar')+'</button>' : '')
   +'</div>';
 
   html += '<div class="pf-conn-row">'
     +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(sOn?'on':'off')+'"></span>Strava</div>'
-    +'<div class="pf-conn-meta">'+(sOn ? 'Conectado'+(strava.token_expires?' · vence '+_escCm(strava.token_expires.slice(0,10)):'') : 'No conectado')+'</div></div>'
+    +'<div class="pf-conn-meta">'+(sOn ? _t('app_connected','Conectado')+(strava.token_expires?' · '+_t('app_expires','vence')+' '+_escCm(strava.token_expires.slice(0,10)):'') : _t('app_not_connected','No conectado'))+'</div></div>'
   +'</div>';
 
-  html += '<div class="rc-mob-rec" style="margin-top:.7rem">Para conectar, desconectar o resolver problemas de autenticación, hacelo desde la web en Mi Perfil → Conexiones.</div>';
+  html += '<div class="rc-mob-rec" style="margin-top:.7rem">'+_t('app_connections_hint','Para conectar, desconectar o resolver problemas de autenticación, hacelo desde la web en Mi Perfil → Conexiones.')+'</div>';
   box.innerHTML = html;
 }
 
@@ -2598,8 +2598,8 @@ function saveProfileMobile(){
   };
   apiFetch('/athlete/profile', { method: 'PATCH', body: JSON.stringify(body) })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
-    .then(function(){ toast('Perfil guardado ✓'); })
-    .catch(function(){ toast('No se pudo guardar el perfil', 'err'); });
+    .then(function(){ toast(_t('app_profile_saved','Perfil guardado ✓')); })
+    .catch(function(){ toast(_t('app_profile_save_failed','No se pudo guardar el perfil'), 'err'); });
 }
 
 /* ── Mi Equipo (Gestión de Equipamiento) — pantalla nativa ────────────────
@@ -2607,9 +2607,9 @@ function saveProfileMobile(){
    bicicletas/componentes, asignación automática por horario semanal,
    alertas 80/100% de vida útil, recálculo retroactivo. */
 var GEAR = { tab: 'shoes', shoeStatus: 'active', bikeStatus: 'active', shoes: [], bikes: [], loaded: false };
-var GEAR_DAY_LABELS = {mon:'Lun',tue:'Mar',wed:'Mié',thu:'Jue',fri:'Vie',sat:'Sáb',sun:'Dom'};
+function GEAR_DAY_LABELS(){ return {mon:_t('app_day_mon','Lun'),tue:_t('app_day_tue','Mar'),wed:_t('app_day_wed','Mié'),thu:_t('app_day_thu','Jue'),fri:_t('app_day_fri','Vie'),sat:_t('app_day_sat','Sáb'),sun:_t('app_day_sun','Dom')}; }
 var GEAR_COMP_ICONS = { cadena:'⛓️', cubiertas:'🛞', pastillas_freno:'🛑', discos_freno:'💿', bateria_grupo:'🔋', suspension:'🔧', sellante_tubeless:'💧', otro:'⚙️' };
-var GEAR_COMP_LABELS = { cadena:'Cadena', cubiertas:'Cubiertas', pastillas_freno:'Pastillas de freno', discos_freno:'Discos de freno', bateria_grupo:'Batería grupo', suspension:'Suspensión', sellante_tubeless:'Sellante tubeless', otro:'Otro' };
+function GEAR_COMP_LABELS(){ return { cadena:_t('app_gear_comp_chain','Cadena'), cubiertas:_t('app_gear_comp_tires','Cubiertas'), pastillas_freno:_t('app_gear_comp_brake_pads','Pastillas de freno'), discos_freno:_t('app_gear_comp_brake_discs','Discos de freno'), bateria_grupo:_t('app_gear_comp_battery','Batería grupo'), suspension:_t('app_gear_comp_suspension','Suspensión'), sellante_tubeless:_t('app_gear_comp_tubeless','Sellante tubeless'), otro:_t('app_gear_comp_other','Otro') }; }
 
 function gearLifeColor(pct){
   if(pct >= 100) return 'var(--red)';
@@ -2677,7 +2677,7 @@ function renderGearShoes(){
   list.innerHTML = GEAR.shoes.map(function(s){
     var color = gearLifeColor(s.life_pct);
     var badges = (s.default_for||[]).map(function(t){ return '<span class="gear-badge">★ '+t+'</span>'; }).join('');
-    var dayBadges = (s.schedule_days||[]).map(function(d){ return '<span class="gear-badge">'+(GEAR_DAY_LABELS[d]||d)+'</span>'; }).join('');
+    var dayBadges = (s.schedule_days||[]).map(function(d){ return '<span class="gear-badge">'+(GEAR_DAY_LABELS()[d]||d)+'</span>'; }).join('');
     var actions = GEAR.shoeStatus==='active'
       ? '<button class="gear-btn" onclick="setGearDefaultShoe(\''+s.id+'\')">Predet. rodaje</button>'
         + '<button class="gear-btn" onclick="openGearScheduleModal(\''+s.id+'\')">📅 Días/recálculo</button>'
@@ -2867,7 +2867,7 @@ function renderGearBikes(){
         var chargeColor = (c.charge_pct!==null && c.charge_pct<=20) ? 'var(--red)' : (c.charge_pct!==null && c.charge_pct<=40 ? 'var(--gold)' : 'var(--green)');
         return '<div class="gear-comp-row">'
           + '<div class="gear-comp-ico">'+(GEAR_COMP_ICONS[c.component_type]||'⚙️')+'</div>'
-          + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS[c.component_type])+'</div>'
+          + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS()[c.component_type])+'</div>'
           + '<div class="gear-comp-val">'+(c.last_service_date?'Última revisión: '+c.last_service_date:'Sin revisión')+'</div></div>'
           + '<span style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;font-size:.8rem;color:'+chargeColor+'">'+(c.charge_pct!==null?c.charge_pct+'%':'—')+'</span>'
           + '<button class="gear-btn" onclick="promptGearCharge(\''+b.id+'\',\''+c.id+'\','+(c.charge_pct||0)+')">✎</button>'
@@ -2876,7 +2876,7 @@ function renderGearBikes(){
       var color = gearLifeColor(c.life_pct);
       return '<div class="gear-comp-row">'
         + '<div class="gear-comp-ico">'+(GEAR_COMP_ICONS[c.component_type]||'⚙️')+'</div>'
-        + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS[c.component_type])+'</div>'
+        + '<div class="gear-comp-body"><div class="gear-comp-name">'+_escH(c.label||GEAR_COMP_LABELS()[c.component_type])+'</div>'
         + '<div class="gear-prog-wrap" style="height:5px"><div class="gear-prog-fill" style="width:'+Math.min(100,c.life_pct)+'%;background:'+color+'"></div></div>'
         + '<div class="gear-comp-val"><b style="color:'+color+'">'+c.life_pct+'%</b> · '+c.accumulated_value.toFixed(0)+'/'+c.target_value.toFixed(0)+' '+c.tracking_unit+'</div></div>'
         + '<button class="gear-btn" onclick="openGearServiceModal(\''+b.id+'\',\''+c.id+'\')">🔧</button>'
@@ -7672,7 +7672,7 @@ function showCommunityActivityDetail(idx){
     +'</div>'
     +'<div style="font-size:.68rem;color:var(--dim);margin-top:.15rem">'+(c.user.name||'')+' · '+fmtDate(c.date_iso)+'</div>'
     + metaHtml
-    + '<div id="cm-detail-map-wrap"><div class="cm-detail-empty">Cargando recorrido...</div></div>'
+    + '<div id="cm-detail-map-wrap"><div class="cm-detail-empty">'+_t('app_loading_route','Cargando recorrido...')+'</div></div>'
     + '<div id="cm-detail-tabs-wrap"></div>';
   document.getElementById('wo-detail-modal').style.display = 'flex';
 
@@ -7708,7 +7708,7 @@ function _pushRefreshBtnState(){
 }
 function togglePushSubscription(){
   if(!('serviceWorker' in navigator) || !('PushManager' in window)){
-    toast('Tu navegador no soporta notificaciones push', 'err'); return;
+    toast(_t('app_push_not_supported','Tu navegador no soporta notificaciones push'), 'err'); return;
   }
   navigator.serviceWorker.ready.then(function(reg){
     reg.pushManager.getSubscription().then(function(existing){
@@ -7716,17 +7716,17 @@ function togglePushSubscription(){
         existing.unsubscribe().then(function(){
           return apiFetch('/notifications/unsubscribe?endpoint='+encodeURIComponent(existing.endpoint), {method:'DELETE'});
         }).then(function(){
-          toast('Notificaciones desactivadas', 'ok');
+          toast(_t('app_push_disabled','Notificaciones desactivadas'), 'ok');
           _pushRefreshBtnState();
-        }).catch(function(){ toast('No se pudo desactivar', 'err'); });
+        }).catch(function(){ toast(_t('app_push_disable_failed','No se pudo desactivar'), 'err'); });
         return;
       }
       if(Notification.permission === 'denied'){
-        toast('Bloqueaste las notificaciones en el navegador — activalas desde la configuración del sitio', 'err');
+        toast(_t('app_push_blocked','Bloqueaste las notificaciones en el navegador — activalas desde la configuración del sitio'), 'err');
         return;
       }
       Notification.requestPermission().then(function(perm){
-        if(perm !== 'granted'){ toast('Permiso de notificaciones no concedido', ''); return; }
+        if(perm !== 'granted'){ toast(_t('app_push_permission_denied','Permiso de notificaciones no concedido'), ''); return; }
         apiFetch('/notifications/vapid-public-key').then(function(r){
           if(!r.ok) throw new Error('vapid');
           return r.json();
@@ -7743,10 +7743,10 @@ function togglePushSubscription(){
           });
         }).then(function(r){
           if(!r.ok) throw new Error('subscribe');
-          toast('Notificaciones activadas ✓', 'ok');
+          toast(_t('app_push_enabled','Notificaciones activadas ✓'), 'ok');
           _pushRefreshBtnState();
         }).catch(function(){
-          toast('No se pudieron activar las notificaciones', 'err');
+          toast(_t('app_push_enable_failed','No se pudieron activar las notificaciones'), 'err');
         });
       });
     });

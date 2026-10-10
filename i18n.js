@@ -548,6 +548,18 @@ var DICT = {
     app_search_offline: 'Sin conexión — no se pudo buscar',
     app_following_label: 'Siguiendo', app_follow_btn: '+ Seguir',
     app_follow_update_failed: 'No se pudo actualizar — intentá de nuevo',
+    /* App móvil — notificaciones push (Sprint 2b-v) */
+    app_push_not_supported: 'Tu navegador no soporta notificaciones push',
+    app_push_disabled: 'Notificaciones desactivadas', app_push_disable_failed: 'No se pudo desactivar',
+    app_push_blocked: 'Bloqueaste las notificaciones en el navegador — activalas desde la configuración del sitio',
+    app_push_permission_denied: 'Permiso de notificaciones no concedido',
+    app_push_enabled: 'Notificaciones activadas ✓', app_push_enable_failed: 'No se pudieron activar las notificaciones',
+    /* App móvil — Perfil (Sprint 2b-v) */
+    app_last_sync: 'Última sync:', app_sync_error: 'Error de sincronización', app_not_connected: 'No conectado',
+    app_sync_btn: 'Sincronizar', app_connected: 'Conectado', app_expires: 'vence',
+    app_activities_count: 'actividades',
+    app_connections_hint: 'Para conectar, desconectar o resolver problemas de autenticación, hacelo desde la web en Mi Perfil → Conexiones.',
+    app_profile_saved: 'Perfil guardado ✓', app_profile_save_failed: 'No se pudo guardar el perfil',
   },
 
   pt: {
@@ -1055,6 +1067,18 @@ var DICT = {
     app_search_offline: 'Sem conexão — não foi possível buscar',
     app_following_label: 'Seguindo', app_follow_btn: '+ Seguir',
     app_follow_update_failed: 'Não foi possível atualizar — tente de novo',
+    /* App móvel — notificações push (Sprint 2b-v) */
+    app_push_not_supported: 'Seu navegador não suporta notificações push',
+    app_push_disabled: 'Notificações desativadas', app_push_disable_failed: 'Não foi possível desativar',
+    app_push_blocked: 'Você bloqueou as notificações no navegador — ative nas configurações do site',
+    app_push_permission_denied: 'Permissão de notificações não concedida',
+    app_push_enabled: 'Notificações ativadas ✓', app_push_enable_failed: 'Não foi possível ativar as notificações',
+    /* App móvel — Perfil (Sprint 2b-v) */
+    app_last_sync: 'Última sync:', app_sync_error: 'Erro de sincronização', app_not_connected: 'Não conectado',
+    app_sync_btn: 'Sincronizar', app_connected: 'Conectado', app_expires: 'expira',
+    app_activities_count: 'atividades',
+    app_connections_hint: 'Para conectar, desconectar ou resolver problemas de autenticação, faça isso pela web em Meu Perfil → Conexões.',
+    app_profile_saved: 'Perfil salvo ✓', app_profile_save_failed: 'Não foi possível salvar o perfil',
   },
 
   en: {
@@ -1562,6 +1586,18 @@ var DICT = {
     app_search_offline: 'Offline — could not search',
     app_following_label: 'Following', app_follow_btn: '+ Follow',
     app_follow_update_failed: 'Could not update — try again',
+    /* Mobile app — push notifications (Sprint 2b-v) */
+    app_push_not_supported: 'Your browser does not support push notifications',
+    app_push_disabled: 'Notifications disabled', app_push_disable_failed: 'Could not disable',
+    app_push_blocked: 'You blocked notifications in the browser — enable them from the site settings',
+    app_push_permission_denied: 'Notification permission not granted',
+    app_push_enabled: 'Notifications enabled ✓', app_push_enable_failed: 'Could not enable notifications',
+    /* Mobile app — Profile (Sprint 2b-v) */
+    app_last_sync: 'Last sync:', app_sync_error: 'Sync error', app_not_connected: 'Not connected',
+    app_sync_btn: 'Sync', app_connected: 'Connected', app_expires: 'expires',
+    app_activities_count: 'activities',
+    app_connections_hint: 'To connect, disconnect, or fix authentication issues, do it from the web in My Profile → Connections.',
+    app_profile_saved: 'Profile saved ✓', app_profile_save_failed: 'Could not save the profile',
   }
 };
 
