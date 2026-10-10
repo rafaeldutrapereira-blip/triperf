@@ -7042,13 +7042,13 @@ function _communityCardHtml(c, idx){
       +'</button>'
       +'<button class="cm-comment-btn" onclick="event.stopPropagation();toggleCommunityComments(\''+c.id+'\')">'
         +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-        +'<span>'+(c.n_comments>0?c.n_comments:'Comentar')+'</span>'
+        +'<span>'+(c.n_comments>0?c.n_comments:_t('app_comment_label','Comentar'))+'</span>'
       +'</button>'
     +'</div>'
     +'<div class="cm-comments" id="cm-comments-'+c.id+'" onclick="event.stopPropagation()">'
       +'<div id="cm-comments-list-'+c.id+'"></div>'
       +'<div class="cm-comment-row">'
-        +'<input class="cm-comment-input" id="cm-comment-inp-'+c.id+'" placeholder="Escribí un comentario…" onkeydown="if(event.key===\'Enter\')submitCommunityComment(\''+c.id+'\')">'
+        +'<input class="cm-comment-input" id="cm-comment-inp-'+c.id+'" placeholder="'+_t('app_comment_placeholder','Escribí un comentario…')+'" onkeydown="if(event.key===\'Enter\')submitCommunityComment(\''+c.id+'\')">'
         +'<button class="cm-comment-send" onclick="submitCommunityComment(\''+c.id+'\')">→</button>'
       +'</div>'
     +'</div>'
@@ -7120,11 +7120,11 @@ function uploadCommunityPhotos(inputEl, activityId, postId){
     .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo subir la foto', 'err'); });
 }
 function deleteCommunityPhoto(activityId, photoId, postId){
-  if(!confirm('¿Borrar esta foto?')) return;
+  if(!confirm(_t('app_delete_photo_confirm','¿Borrar esta foto?'))) return;
   apiFetch('/athlete/activities/'+activityId+'/photos/'+photoId, { method:'DELETE' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(){ _cmRefreshPhotos(postId, activityId); })
-    .catch(function(){ toast('No se pudo borrar la foto', 'err'); });
+    .catch(function(){ toast(_t('app_photo_delete_failed','No se pudo borrar la foto'), 'err'); });
 }
 function openCmLightbox(url){
   var box = document.getElementById('cm-lightbox');
@@ -7153,7 +7153,7 @@ function _cmLoadComments(postId){
     .then(function(items){
       var list = document.getElementById('cm-comments-list-'+postId);
       if(!list) return;
-      if(!items.length){ list.innerHTML = '<div class="cm-comment-empty">Sé el primero en comentar</div>'; return; }
+      if(!items.length){ list.innerHTML = '<div class="cm-comment-empty">'+_t('app_be_first_comment','Sé el primero en comentar')+'</div>'; return; }
       list.innerHTML = items.map(function(cm){
         return '<div class="cm-comment-item">'
           +'<div class="cm-comment-av">'+((cm.author||'?')[0]).toUpperCase()+'</div>'
@@ -7182,7 +7182,7 @@ function submitCommunityComment(postId){
       var btn = document.querySelector('[onclick*="toggleCommunityComments(\''+postId+'\')"] span:last-child');
       if(btn){ var n = parseInt(btn.textContent, 10); btn.textContent = isNaN(n) ? 1 : n+1; }
     })
-    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo publicar el comentario', 'err'); });
+    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || _t('app_comment_post_failed','No se pudo publicar el comentario'), 'err'); });
 }
 
 /* Kudo de un solo toque (tipo "me gusta" de Strava) — usa "fire" 🔥 como
@@ -7220,8 +7220,8 @@ var _cmLbClubId = null;
 
 function _cmLbScopeBarHtml(clubs){
   var bar = '<div class="cm-lb-scope-bar">'
-    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='social'?' active':'')+'" onclick="cmLbSetScope(\'social\')">👥 Amigos</button>'
-    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='club'?' active':'')+'" onclick="cmLbSetScope(\'club\')">🏆 Club</button>'
+    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='social'?' active':'')+'" onclick="cmLbSetScope(\'social\')">'+_t('app_lb_friends','👥 Amigos')+'</button>'
+    +'<button class="cm-lb-scope-btn'+(_cmLbScope==='club'?' active':'')+'" onclick="cmLbSetScope(\'club\')">'+_t('app_lb_club','🏆 Club')+'</button>'
   +'</div>';
   if(_cmLbScope === 'club' && clubs && clubs.length){
     bar += '<div class="cm-lb-club-chips">' + clubs.map(function(c){
@@ -7257,7 +7257,7 @@ function _renderCommunityLeaderboard(clubs){
   var scopeBar = _cmLbScopeBarHtml(clubs);
 
   if(_cmLbScope === 'club' && (!clubs || !clubs.length)){
-    el.innerHTML = scopeBar + '<div class="cm-empty">No perteneces a ningún club todavía — unite a uno desde la web (Comunidad → Clubs).</div>';
+    el.innerHTML = scopeBar + '<div class="cm-empty">'+_t('app_no_club_leaderboard','No perteneces a ningún club todavía — unite a uno desde la web (Comunidad → Clubs).')+'</div>';
     return;
   }
 
@@ -7268,24 +7268,24 @@ function _renderCommunityLeaderboard(clubs){
   apiFetch(url)
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
-      if(!data){ el.innerHTML = scopeBar + '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; return; }
+      if(!data){ el.innerHTML = scopeBar + '<div class="cm-empty">'+_t('app_ranking_offline','Sin conexión — no se pudo cargar el ranking')+'</div>'; return; }
       if(!data.leaderboard.length){
-        el.innerHTML = scopeBar + '<div class="cm-empty">Todavía no hay datos de ranking esta semana.</div>';
+        el.innerHTML = scopeBar + '<div class="cm-empty">'+_t('app_no_ranking_data','Todavía no hay datos de ranking esta semana.')+'</div>';
         return;
       }
       el.innerHTML = scopeBar
-        + '<div style="padding:0 1rem .5rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">'+(data.metric_label||'TSS Total')+' — esta semana</div>'
+        + '<div style="padding:0 1rem .5rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">'+(data.metric_label||_t('app_tss_total','TSS Total'))+_t('app_this_week_suffix',' — esta semana')+'</div>'
         + data.leaderboard.map(function(r){
           return '<div class="cm-lb-row'+(r.is_me?' me':'')+'">'
             +'<div class="cm-lb-rank">'+r.rank+'</div>'
             + _cmAvatarHtml(r.user)
             +'<div class="cm-lb-name">'+(r.user.name||'—')+' '+(r.user.country_flag||'')+'</div>'
             +'<div class="cm-lb-val-wrap"><div class="cm-lb-val">'+r.value+'</div>'
-              +'<div class="cm-lb-hours">'+(r.hours_week||0).toFixed(1)+'h/sem</div></div>'
+              +'<div class="cm-lb-hours">'+(r.hours_week||0).toFixed(1)+_t('app_hours_per_week_suffix','h/sem')+'</div></div>'
           +'</div>';
         }).join('');
     })
-    .catch(function(){ el.innerHTML = scopeBar + '<div class="cm-empty">Sin conexión — no se pudo cargar el ranking</div>'; });
+    .catch(function(){ el.innerHTML = scopeBar + '<div class="cm-empty">'+_t('app_ranking_offline','Sin conexión — no se pudo cargar el ranking')+'</div>'; });
 }
 
 /* ── Descubrir: buscar atletas + sugerencias ──────────────────
@@ -7299,11 +7299,11 @@ function _renderCommunityLeaderboard(clubs){
 function loadCommunityDiscover(){
   var el = document.getElementById('community-content');
   el.innerHTML = '<div class="cm-search-bar">'
-    +'<input class="cm-search-input" id="cm-search-inp" placeholder="Buscar atletas por nombre o email…" onkeydown="if(event.key===\'Enter\')doCommunitySearch()">'
-    +'<button class="cm-search-btn" onclick="doCommunitySearch()">Buscar</button>'
+    +'<input class="cm-search-input" id="cm-search-inp" placeholder="'+_t('app_search_placeholder','Buscar atletas por nombre o email…')+'" onkeydown="if(event.key===\'Enter\')doCommunitySearch()">'
+    +'<button class="cm-search-btn" onclick="doCommunitySearch()">'+_t('app_search_btn','Buscar')+'</button>'
   +'</div>'
   +'<div id="cm-search-results"></div>'
-  +'<div class="cm-discover-title">Atletas sugeridos</div>'
+  +'<div class="cm-discover-title">'+_t('app_suggested_athletes','Atletas sugeridos')+'</div>'
   +'<div id="cm-suggestions-list"><div class="cm-empty">'+_t('status_loading','Cargando...')+'</div></div>';
   loadCommunitySuggestions();
 }
@@ -7315,25 +7315,25 @@ function loadCommunitySuggestions(){
     .then(function(d){
       if(!el) return;
       var users = Array.isArray(d) ? d : (d && (d.suggestions || d.users)) || [];
-      if(!users.length){ el.innerHTML = '<div class="cm-empty">No hay sugerencias por ahora — probá buscar atletas arriba.</div>'; return; }
+      if(!users.length){ el.innerHTML = '<div class="cm-empty">'+_t('app_no_suggestions','No hay sugerencias por ahora — probá buscar atletas arriba.')+'</div>'; return; }
       el.innerHTML = users.map(_cmProfileRowHtml).join('');
     })
-    .catch(function(){ if(el) el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudieron cargar sugerencias</div>'; });
+    .catch(function(){ if(el) el.innerHTML = '<div class="cm-empty">'+_t('app_suggestions_offline','Sin conexión — no se pudieron cargar sugerencias')+'</div>'; });
 }
 
 function doCommunitySearch(){
   var q = (document.getElementById('cm-search-inp').value || '').trim();
   var el = document.getElementById('cm-search-results');
   if(q.length < 2){ el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="cm-empty">Buscando...</div>';
+  el.innerHTML = '<div class="cm-empty">'+_t('app_searching','Buscando...')+'</div>';
   apiFetch('/community/search?q='+encodeURIComponent(q))
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
       var users = (d && d.results) || [];
-      if(!users.length){ el.innerHTML = '<div class="cm-empty">Sin resultados para "'+_escCm(q)+'".</div>'; return; }
+      if(!users.length){ el.innerHTML = '<div class="cm-empty">'+_t('app_no_results_for','Sin resultados para')+' "'+_escCm(q)+'".</div>'; return; }
       el.innerHTML = users.map(_cmProfileRowHtml).join('');
     })
-    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo buscar</div>'; });
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">'+_t('app_search_offline','Sin conexión — no se pudo buscar')+'</div>'; });
 }
 
 function _cmProfileRowHtml(u){
@@ -7348,7 +7348,7 @@ function _cmProfileRowHtml(u){
       +(meta?'<div class="cm-profile-meta">'+_escCm(meta)+'</div>':'')
     +'</div>'
     +'<button class="cm-follow-btn'+(following?' following':'')+'" id="cm-follow-'+id+'" onclick="toggleCommunityFollow(\''+id+'\')">'
-      +(following?'Siguiendo':'+ Seguir')
+      +(following?_t('app_following_label','Siguiendo'):_t('app_follow_btn','+ Seguir'))
     +'</button>'
   +'</div>';
 }
@@ -7359,9 +7359,9 @@ function toggleCommunityFollow(userId){
   apiFetch('/community/follow/'+userId, { method: isFollowing ? 'DELETE' : 'POST' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(){
-      if(btn){ btn.classList.toggle('following', !isFollowing); btn.textContent = isFollowing ? '+ Seguir' : 'Siguiendo'; }
+      if(btn){ btn.classList.toggle('following', !isFollowing); btn.textContent = isFollowing ? _t('app_follow_btn','+ Seguir') : _t('app_following_label','Siguiendo'); }
     })
-    .catch(function(){ toast('No se pudo actualizar — intentá de nuevo', 'err'); });
+    .catch(function(){ toast(_t('app_follow_update_failed','No se pudo actualizar — intentá de nuevo'), 'err'); });
 }
 
 /* Detalle real de una actividad de Comunidad — GPS + parciales, igual

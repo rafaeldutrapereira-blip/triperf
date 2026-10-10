@@ -191,3 +191,35 @@ def test_community_clubs_screen_translated(page: Page, athlete_api):
     assert "crear club" not in content_text, f"Quedó texto en español: {content_text!r}"
 
     assert not errors, f"JS errors en Comunidad/Clubes (pt): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_community_discover_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta cualquiera
+    When:  entra a Comunidad > Descubrir con idioma inglés
+    Then:  el placeholder de búsqueda, el botón y el título de
+           sugerencias aparecen en inglés, no en español.
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "en")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-community')")
+    page.evaluate("communityTab('discover')")
+    page.wait_for_selector("#community-content .cm-search-bar", timeout=20000)
+
+    placeholder = page.locator("#cm-search-inp").get_attribute("placeholder")
+    assert placeholder and "search" in placeholder.lower(), f"Placeholder no está en inglés: {placeholder!r}"
+    content_text = page.locator("#community-content").inner_text().lower()
+    assert "suggested athletes" in content_text, f"Título de sugerencias no está en inglés: {content_text!r}"
+
+    assert not errors, f"JS errors en Comunidad/Descubrir (en): {errors}"
