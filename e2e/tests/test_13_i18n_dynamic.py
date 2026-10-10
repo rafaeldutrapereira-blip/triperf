@@ -124,3 +124,37 @@ def test_week_screen_days_and_rest_label_translated(page: Page, athlete_api):
     )
 
     assert not errors, f"JS errors en Semana (pt): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_wellness_screen_factors_translated(page: Page, athlete_api):
+    """
+    Given: un atleta sin datos de recuperación cargados aún
+    When:  entra a Bienestar > Resumen con idioma inglés
+    Then:  o bien aparece el mensaje "no recovery data" traducido, o
+           (si por algún motivo sí hay datos) las etiquetas de los
+           factores (Sleep/Load/Stress/Battery/Wellness) aparecen en
+           inglés, nunca en español ("Sueño"/"Carga"/"Estrés").
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "en")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-wellness')")
+    page.wait_for_selector("#rc-mob-card:not(:has-text('Cargando'))", timeout=20000)
+
+    card_text = page.locator("#rc-mob-card").inner_text()
+    assert "Cargando" not in card_text, f"Pantalla quedó en estado de carga: {card_text!r}"
+    assert "Sueño" not in card_text and "Carga" not in card_text and "Estrés" not in card_text, (
+        f"Etiquetas quedaron en español pese a lang=en: {card_text!r}"
+    )
+
+    assert not errors, f"JS errors en Bienestar (en): {errors}"

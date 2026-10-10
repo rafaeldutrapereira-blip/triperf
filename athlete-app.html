@@ -2554,7 +2554,7 @@ function loadProfileMobile(){
    y resolver MFA quedan web-only a propósito. */
 function loadProfileConnections(){
   var box = document.getElementById('pf-connections');
-  box.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  box.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   Promise.all([
     apiFetch('/athlete/garmin/sync-status').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
     apiFetch('/strava/status').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
@@ -2661,7 +2661,7 @@ function checkGearAlerts(){
 
 /* ── Zapatillas ── */
 function loadGearShoes(){
-  document.getElementById('gear-shoes-list').innerHTML = '<div class="cm-empty">Cargando...</div>';
+  document.getElementById('gear-shoes-list').innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/gear/shoes?status=' + GEAR.shoeStatus).then(function(r){ return r.ok ? r.json() : {shoes:[]}; })
     .then(function(d){ GEAR.shoes = d.shoes || []; renderGearShoes(); })
     .catch(function(){ document.getElementById('gear-shoes-list').innerHTML = '<div class="cm-empty">No se pudo cargar tu equipo.</div>'; });
@@ -2849,7 +2849,7 @@ function saveGearSchedule(){
 
 /* ── Bicicletas y componentes ── */
 function loadGearBikes(){
-  document.getElementById('gear-bikes-list').innerHTML = '<div class="cm-empty">Cargando...</div>';
+  document.getElementById('gear-bikes-list').innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/gear/bikes?status=' + GEAR.bikeStatus).then(function(r){ return r.ok ? r.json() : {bikes:[]}; })
     .then(function(d){ GEAR.bikes = d.bikes || []; renderGearBikes(); })
     .catch(function(){ document.getElementById('gear-bikes-list').innerHTML = '<div class="cm-empty">No se pudo cargar tu equipo.</div>'; });
@@ -5138,14 +5138,14 @@ function mentalTab(tab){
 function loadMentalScore(){
   if(!_token) return;
   var card = document.getElementById('mtl-score-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/dashboard?date_iso='+todayIso())
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalScore(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderMentalScore(d){
@@ -5215,7 +5215,7 @@ function mentalFilterCat(cat){
 function loadMentalProtocols(){
   if(!_token) return;
   var list = document.getElementById('mtl-proto-list');
-  list.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  list.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   var qs = _mtlCat ? '?category='+_mtlCat : '';
   apiFetch('/mental/protocols'+qs)
     .then(function(r){
@@ -5223,7 +5223,7 @@ function loadMentalProtocols(){
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ _mtlProtocols = d.protocols || []; renderMentalProtocols(); })
-    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderMentalProtocols(){
@@ -5261,14 +5261,14 @@ function mentalCompleteProto(id){
 function loadMentalCorrelations(){
   if(!_token) return;
   var card = document.getElementById('mtl-corr-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/correlations?days=30')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalCorrelations(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderMentalCorrelations(d){
@@ -5290,14 +5290,14 @@ function renderMentalCorrelations(d){
 function loadMentalPreRace(){
   if(!_token) return;
   var card = document.getElementById('mtl-prerace-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/pre-race')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalPreRace(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderMentalPreRace(d){
@@ -5432,14 +5432,14 @@ function racedayTab(tab){
 function loadRaceDayDashboard(){
   if(!_token) return;
   var card = document.getElementById('rd-dash-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/races/dashboard-s19')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Race Day — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderRaceDayDashboard(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderRaceDayDashboard(d){
@@ -5494,11 +5494,11 @@ var RD_NUT_GUIDELINES = {
 function loadRaceDayNutrition(){
   if(!_token) return;
   var card = document.getElementById('rd-nut-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/athlete/profile')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(p){ renderRaceDayNutrition(p); })
-    .catch(function(){ card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(){ card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderRaceDayNutrition(p){
@@ -5622,7 +5622,7 @@ function loadRaceDayPlan(){
   if(!_token) return;
   var sumCard = document.getElementById('rd-plan-summary');
   var cpCard  = document.getElementById('rd-plan-checkpoints');
-  sumCard.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  sumCard.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   cpCard.innerHTML = '';
   apiFetch('/athlete/profile')
     .then(function(r){ return r.ok ? r.json() : null; })
@@ -5650,7 +5650,7 @@ function loadRaceDayPlan(){
         .then(function(d){ renderRaceDayPlan(rk, p, d); })
         .catch(function(e){ if(e !== 'gated') sumCard.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo calcular el plan</div>'; });
     })
-    .catch(function(){ sumCard.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(){ sumCard.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderRaceDayPlan(rk, profile, d){
@@ -5710,14 +5710,14 @@ function progressTab(tab){
 function loadProgressInsights(){
   if(!_token) return;
   var list = document.getElementById('pgr-insights-list');
-  list.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  list.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/insights')
     .then(function(r){
       if(r.status === 403){ list.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressInsights(d); })
-    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') list.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressInsights(d){
@@ -5737,14 +5737,14 @@ var PR_SPORT_LABEL = { run:'Running', bike:'Ciclismo', swim:'Natación' };
 function loadProgressRecords(){
   if(!_token) return;
   var card = document.getElementById('pgr-records-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/personal-records')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressRecords(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressRecords(d){
@@ -5769,14 +5769,14 @@ function renderProgressRecords(d){
 function loadProgressProjection(){
   if(!_token) return;
   var card = document.getElementById('pgr-proj-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/ctl-projection')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressProjection(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressProjection(d){
@@ -5807,14 +5807,14 @@ function renderProgressProjection(d){
 function loadProgressHuella(){
   if(!_token) return;
   var card = document.getElementById('pgr-huella-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/athlete/year-in-review?year='+(new Date()).getFullYear())
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Huella — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressHuella(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressHuella(d){
@@ -5859,14 +5859,14 @@ function loadProgressPower(sport){
     b.classList.toggle('on', b.dataset.s === sport);
   });
   var card = document.getElementById('pgr-power-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/power-curve?sport='+sport+'&days_back=365')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressPower(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressPower(d){
@@ -5902,14 +5902,14 @@ function loadProgressVo2max(sport){
     b.classList.toggle('on', b.dataset.s === sport);
   });
   var card = document.getElementById('pgr-vo2max-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/vo2max?days_back=365&sport='+sport)
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressVo2max(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderProgressVo2max(d){
@@ -5938,14 +5938,14 @@ function renderProgressVo2max(d){
 function loadProgressDistrib(){
   if(!_token) return;
   var card = document.getElementById('pgr-distrib-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/training-distribution?days_back=90')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressDistrib(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 var PGR_SPORT_COLOR = { swim:'#22D3EE', bike:'#FF6535', run:'#10B981', gym:'#A855F7', other:'#9CA3AF' };
@@ -5965,14 +5965,14 @@ function renderProgressDistrib(d){
 function loadProgressZones(){
   if(!_token) return;
   var card = document.getElementById('pgr-zones-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/analytics/zone-calibration?days_back=90')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Analytics — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProgressZones(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 var PGR_ZONE_SPORT_LABEL = { cycling:'🚴 Ciclismo', running:'🏃 Running', swimming:'🏊 Natación' };
@@ -6171,14 +6171,14 @@ function renderAicWorkout(d){
 function loadAicReport(){
   if(!_token) return;
   var card = document.getElementById('aic-report-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/ai/weekly-report')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye AI Coach — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ _aicReportLoaded = true; renderAicReport(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderAicReport(d){
@@ -6216,14 +6216,14 @@ function renderAicReport(d){
 function loadAicInjury(){
   if(!_token) return;
   var card = document.getElementById('aic-injury-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/ai/injury-forecast')
     .then(function(r){
       if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye AI Coach — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ _aicInjuryLoaded = true; renderAicInjury(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 var AIC_RISK_COLOR = { low:'#10B981', caution:'#F0A500', high:'#EF4444', critical:'#EF4444' };
@@ -6282,19 +6282,19 @@ function wellnessTab(tab){
   else if(tab === 'correlations') loadCorrelationsMobile(_wlCorrDays);
 }
 
-var RC_MOB_FACTOR_DEFS = [
+function RC_MOB_FACTOR_DEFS(){ return [
   { key:'hrv',          label:'HRV',       icon:'🫀', color:'#7C3AED' },
-  { key:'sleep',        label:'Sueño',     icon:'🌙', color:'#1D4ED8' },
-  { key:'tsb',          label:'Carga',     icon:'⚡', color:'#0EA5E9' },
-  { key:'stress',       label:'Estrés',    icon:'🧘', color:'#10B981' },
-  { key:'body_battery', label:'Batería',   icon:'🔋', color:'#F59E0B' },
-  { key:'wellness',     label:'Bienestar', icon:'❤️', color:'#F43F5E' },
-];
+  { key:'sleep',        label:_t('kpi_sleep','Sueño'), icon:'🌙', color:'#1D4ED8' },
+  { key:'tsb',          label:_t('app_factor_load','Carga'), icon:'⚡', color:'#0EA5E9' },
+  { key:'stress',       label:_t('app_factor_stress','Estrés'), icon:'🧘', color:'#10B981' },
+  { key:'body_battery', label:_t('app_factor_battery','Batería'), icon:'🔋', color:'#F59E0B' },
+  { key:'wellness',     label:_t('app_factor_wellness','Bienestar'), icon:'❤️', color:'#F43F5E' },
+]; }
 
 function loadWellnessResumen(){
   if(!_token) return;
   var card = document.getElementById('rc-mob-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   document.getElementById('rec-mob-box').style.display = 'none';
   var today = todayIso();
   Promise.all([
@@ -6303,7 +6303,7 @@ function loadWellnessResumen(){
   ]).then(function(resArr){
     var rDash = resArr[0], rRec = resArr[1];
     if(rDash.status === 403 || rRec.status === 403){
-      card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>';
+      card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>';
       return Promise.reject('gated');
     }
     return Promise.all([
@@ -6316,21 +6316,21 @@ function loadWellnessResumen(){
     renderRecommendationMobile(data[1]);
   }).catch(function(e){
     if(e === 'gated') return;
-    card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>';
+    card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>';
   });
 }
 
 function renderRecoveryScoreMobile(rec){
   var card = document.getElementById('rc-mob-card');
   if(!rec){
-    card.innerHTML = '<div class="cm-empty">Sin datos de recuperación para hoy — sincronizá tu Garmin.</div>';
+    card.innerHTML = '<div class="cm-empty">'+_t('app_no_recovery_data','Sin datos de recuperación para hoy — sincronizá tu Garmin.')+'</div>';
     return;
   }
   var score = rec.score != null ? rec.score : 0;
   var color = rec.color || '#9CA3AF';
   var label = rec.label || '';
   var factors = rec.factors || {};
-  var factorsHtml = RC_MOB_FACTOR_DEFS.map(function(f){
+  var factorsHtml = RC_MOB_FACTOR_DEFS().map(function(f){
     var val = factors[f.key];
     if(val == null) return '';
     var pct = Math.round(val);
@@ -6356,14 +6356,14 @@ function renderRecommendationMobile(d){
   var box = document.getElementById('rec-mob-box');
   if(!d){ box.style.display = 'none'; return; }
   var level = d.training_suggestion || 'moderate';
-  var sessionLabels = { full:'Sesión completa', moderate:'Sesión moderada', easy:'Sesión suave / Z1-Z2', rest:'Descanso' };
+  var sessionLabels = { full:_t('app_session_full','Sesión completa'), moderate:_t('app_session_moderate','Sesión moderada'), easy:_t('app_session_easy','Sesión suave / Z1-Z2'), rest:_t('app_rest','Descanso') };
   var icons = { full:'🟢', moderate:'🟡', easy:'🟠', rest:'🔴' };
   box.className = 'rec-mob-box rec-mob-'+level;
 
   var html = '<div class="rec-mob-title">'+(icons[level]||'')+' '+(sessionLabels[level]||level)+'</div>'
     +'<div class="rec-mob-text">'+_escCm(d.main_recommendation || d.session_type || '')+'</div>';
   if(d.recommended_tss){
-    html += '<div class="rec-mob-tss">TSS sugerido: <strong>'+d.recommended_tss+'</strong>'+(d.planned_tss?' (plan: '+d.planned_tss+')':'')+'</div>';
+    html += '<div class="rec-mob-tss">'+_t('app_tss_suggested','TSS sugerido:')+' <strong>'+d.recommended_tss+'</strong>'+(d.planned_tss?' ('+_t('app_plan_label','plan:')+' '+d.planned_tss+')':'')+'</div>';
   }
   if(d.alerts && d.alerts.length){
     html += d.alerts.map(function(a){
@@ -6371,7 +6371,7 @@ function renderRecommendationMobile(d){
     }).join('');
   }
   if(d.recovery_priorities && d.recovery_priorities.length){
-    html += '<div class="rec-mob-pri-title">Para esta noche</div>'
+    html += '<div class="rec-mob-pri-title">'+_t('app_tonight','Para esta noche')+'</div>'
       + d.recovery_priorities.map(function(p){ return '<div class="rec-mob-pri-item">'+_escCm(p)+'</div>'; }).join('');
   }
   box.innerHTML = html;
@@ -6390,30 +6390,30 @@ function loadHrvHistoryMobile(days){
     b.classList.toggle('on', parseInt(b.dataset.d, 10) === days);
   });
   var card = document.getElementById('hrv-mob-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/recovery/hrv/history?days='+days)
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderHrvHistoryMobile(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
 function renderHrvHistoryMobile(d){
   var card = document.getElementById('hrv-mob-card');
   var pts = (d.points || []).filter(function(p){ return p.hrv_ms != null; });
   if(!pts.length){
-    card.innerHTML = '<div class="cm-empty">Sin datos de HRV en este período — sincronizá tu Garmin.</div>';
+    card.innerHTML = '<div class="cm-empty">'+_t('app_no_hrv_data','Sin datos de HRV en este período — sincronizá tu Garmin.')+'</div>';
     return;
   }
 
   var trendColor = d.trend_direction === 'up' ? '#10B981' : d.trend_direction === 'down' ? '#EF4444' : '#7FB3CC';
   var trendVal = d.trend_ms_week != null ? (d.trend_ms_week > 0 ? '+' : '') + d.trend_ms_week + 'ms/sem' : '—';
   var kpisHtml = [
-    { l:'Promedio', v: d.avg_ms != null ? d.avg_ms+'ms' : '—', c:'#7C3AED' },
+    { l:_t('app_kpi_avg','Promedio'), v: d.avg_ms != null ? d.avg_ms+'ms' : '—', c:'#7C3AED' },
     { l:'Baseline', v: d.baseline_ms != null ? d.baseline_ms+'ms' : '—', c:'#A855F7' },
-    { l:'Tendencia', v: trendVal, c: trendColor },
+    { l:_t('app_kpi_trend','Tendencia'), v: trendVal, c: trendColor },
   ].map(function(k){
     return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>';
   }).join('');
@@ -6428,16 +6428,16 @@ function renderHrvHistoryMobile(d){
 
   var zp = d.zones_pct || {};
   var zonesHtml = [
-    ['optimal','🟢 Óptimo','#10B981'], ['normal','🟣 Normal','#7C3AED'],
-    ['low','🟡 Bajo','#F59E0B'], ['critical','🔴 Crítico','#EF4444'],
+    ['optimal',_t('app_zone_optimal','🟢 Óptimo'),'#10B981'], ['normal',_t('app_zone_normal','🟣 Normal'),'#7C3AED'],
+    ['low',_t('app_zone_low','🟡 Bajo'),'#F59E0B'], ['critical',_t('app_zone_critical','🔴 Crítico'),'#EF4444'],
   ].map(function(z){
     return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+z[2]+'">'+(zp[z[0]]||0)+'%</div><div class="hrv-mob-kpi-l">'+z[1]+'</div></div>';
   }).join('');
 
   var trendMsg = {
-    up:     '📈 Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.',
-    down:   '📉 Tendencia bajista — HRV en descenso. Considerá reducir carga o revisar recuperación.',
-    stable: '→ HRV estable. Respuesta normal de mantenimiento.',
+    up:     _t('app_hrv_trend_up','📈 Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.'),
+    down:   _t('app_hrv_trend_down','📉 Tendencia bajista — HRV en descenso. Considerá reducir carga o revisar recuperación.'),
+    stable: _t('app_hrv_trend_stable','→ HRV estable. Respuesta normal de mantenimiento.'),
   };
 
   card.innerHTML =
@@ -6445,7 +6445,7 @@ function renderHrvHistoryMobile(d){
     +'<div class="hrv-mob-chart">'+barsHtml+'</div>'
     +(base ? '<div class="hrv-mob-baseline-note">Baseline: '+base+'ms · 🟢 ≥baseline 🟣 normal 🔴 bajo</div>' : '')
     +'<div class="rc-mob-factors">'
-      +'<div class="rc-mob-title" style="margin-bottom:.5rem">Distribución de zonas</div>'
+      +'<div class="rc-mob-title" style="margin-bottom:.5rem">'+_t('app_zones_distribution','Distribución de zonas')+'</div>'
       +'<div class="hrv-mob-kpis">'+zonesHtml+'</div>'
     +'</div>'
     +(d.trend_direction ? '<div class="hrv-mob-insight">'+(trendMsg[d.trend_direction]||'')+'</div>' : '');
@@ -6462,14 +6462,14 @@ function loadSleepHistoryMobile(days){
     b.classList.toggle('on', parseInt(b.dataset.d, 10) === days);
   });
   var card = document.getElementById('sleep-mob-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   Promise.all([
     apiFetch('/recovery/dashboard?date_iso='+todayIso()),
     apiFetch('/recovery/sleep/history?days='+days),
   ]).then(function(resArr){
     var rDash = resArr[0], rHist = resArr[1];
     if(rDash.status === 403 || rHist.status === 403){
-      card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>';
+      card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>';
       return Promise.reject('gated');
     }
     return Promise.all([ rDash.ok ? rDash.json() : null, rHist.ok ? rHist.json() : null ]);
@@ -6477,7 +6477,7 @@ function loadSleepHistoryMobile(days){
     renderSleepHistoryMobile(data[0], data[1]);
   }).catch(function(e){
     if(e === 'gated') return;
-    card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>';
+    card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>';
   });
 }
 
@@ -6489,7 +6489,7 @@ function renderSleepHistoryMobile(dashData, hist){
   if(sleep.total_h != null){
     var deep = sleep.deep_min||0, rem = sleep.rem_min||0, light = sleep.light_min||0, awake = sleep.awake_min||0;
     var tot  = sleep.total_min || 1;
-    html += '<div class="rc-mob-title">Anoche</div>';
+    html += '<div class="rc-mob-title">'+_t('app_last_night','Anoche')+'</div>';
     html += '<div class="sleep-mob-total">'+sleep.total_h+'h</div>';
     html += '<div class="sleep-mob-phase-bar">';
     if(deep)  html += '<div class="sleep-mob-phase-seg" style="width:'+Math.round(deep/tot*100)+'%;background:#1D4ED8">Deep</div>';
@@ -6501,19 +6501,19 @@ function renderSleepHistoryMobile(dashData, hist){
     if(rem)   html += '<span style="color:#7C3AED">● REM '+rem+'min</span>';
     if(light) html += '<span style="color:#0EA5E9">● Light '+light+'min</span>';
     html += '</div>';
-    if(sleep.score) html += '<div class="rc-mob-rec" style="margin-top:.5rem">Score Garmin: <strong style="color:var(--text)">'+sleep.score+'</strong>'+(sleep.quality?' · '+_escCm(sleep.quality):'')+'</div>';
+    if(sleep.score) html += '<div class="rc-mob-rec" style="margin-top:.5rem">'+_t('app_garmin_score','Score Garmin:')+' <strong style="color:var(--text)">'+sleep.score+'</strong>'+(sleep.quality?' · '+_escCm(sleep.quality):'')+'</div>';
   } else {
-    html += '<div class="cm-empty">Sin datos de sueño para anoche.</div>';
+    html += '<div class="cm-empty">'+_t('app_no_sleep_data','Sin datos de sueño para anoche.')+'</div>';
   }
 
   if(hist){
     var kpisHtml = [
-      { l:'Promedio',   v: hist.avg_hours != null ? hist.avg_hours+'h' : '—', c:'#1D4ED8' },
-      { l:'Score prom.', v: hist.avg_score != null ? hist.avg_score : '—',    c:'#7C3AED' },
-      { l:'Deuda 7d',   v: hist.sleep_debt_7d_h > 0 ? hist.sleep_debt_7d_h+'h' : '✅ 0h', c: hist.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
+      { l:_t('app_kpi_avg','Promedio'),   v: hist.avg_hours != null ? hist.avg_hours+'h' : '—', c:'#1D4ED8' },
+      { l:_t('app_kpi_avg_score','Score prom.'), v: hist.avg_score != null ? hist.avg_score : '—',    c:'#7C3AED' },
+      { l:_t('app_kpi_debt_7d','Deuda 7d'),   v: hist.sleep_debt_7d_h > 0 ? hist.sleep_debt_7d_h+'h' : '✅ 0h', c: hist.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
     ];
     if(hist.nap_h_7d){
-      kpisHtml.push({ l:'Siesta (7d)', v: hist.nap_h_7d+'h', c:'#F0A500' });
+      kpisHtml.push({ l:_t('app_kpi_nap_7d','Siesta (7d)'), v: hist.nap_h_7d+'h', c:'#F0A500' });
     }
     kpisHtml = kpisHtml.map(function(k){
       return '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:'+k.c+'">'+k.v+'</div><div class="hrv-mob-kpi-l">'+k.l+'</div></div>';
@@ -6527,15 +6527,15 @@ function renderSleepHistoryMobile(dashData, hist){
       return '<div class="hrv-mob-bar" style="height:'+h+'px;background:'+col+'" title="'+title+'"></div>';
     }).join('');
 
-    html += '<div class="rc-mob-title" style="margin-top:1rem">Historial ('+_wlSleepDays+'d)</div>';
+    html += '<div class="rc-mob-title" style="margin-top:1rem">'+_t('app_history_days','Historial (')+_wlSleepDays+_t('app_history_days_suffix','d)')+'</div>';
     html += '<div class="hrv-mob-kpis" style="margin-top:.5rem">'+kpisHtml+'</div>';
     if(pts.length) html += '<div class="hrv-mob-chart">'+barsHtml+'</div><div class="hrv-mob-baseline-note" style="color:var(--dim)">🟢 ≥8h · 🔵 6-8h · 🔴 &lt;6h</div>';
 
-    var napNoteMob = hist.nap_h_7d ? ' (ya descuenta '+hist.nap_h_7d+'h de siesta esta semana)' : '';
+    var napNoteMob = hist.nap_h_7d ? (_t('app_nap_discount_note',' (ya descuenta ')+hist.nap_h_7d+_t('app_nap_discount_suffix','h de siesta esta semana)')) : '';
     if(hist.sleep_debt_7d_h > 1){
-      html += '<div class="rec-mob-alert '+(hist.sleep_debt_7d_h > 3 ? 'rec-mob-alert-high' : 'rec-mob-alert-medium')+'">💤 Deuda de sueño esta semana: <strong>'+hist.sleep_debt_7d_h+'h</strong>'+napNoteMob+'. Objetivo: '+hist.target_h+'h/noche.'+(hist.nights_under_6h ? ' '+hist.nights_under_6h+' noches con menos de 6h.' : '')+'</div>';
+      html += '<div class="rec-mob-alert '+(hist.sleep_debt_7d_h > 3 ? 'rec-mob-alert-high' : 'rec-mob-alert-medium')+'">💤 '+_t('app_sleep_debt_week','Deuda de sueño esta semana:')+' <strong>'+hist.sleep_debt_7d_h+'h</strong>'+napNoteMob+'. '+_t('app_target_label','Objetivo:')+' '+hist.target_h+'h/noche.'+(hist.nights_under_6h ? ' '+hist.nights_under_6h+' '+_t('app_nights_under_6h','noches con menos de 6h.') : '')+'</div>';
     } else {
-      html += '<div class="rec-mob-alert rec-mob-alert-info">✅ Sin deuda de sueño significativa esta semana'+napNoteMob+'.</div>';
+      html += '<div class="rec-mob-alert rec-mob-alert-info">'+_t('app_no_sleep_debt','✅ Sin deuda de sueño significativa esta semana')+napNoteMob+'.</div>';
     }
   }
 
@@ -6551,14 +6551,14 @@ function loadTimelineMobile(days){
     b.classList.toggle('on', parseInt(b.dataset.d, 10) === days);
   });
   var card = document.getElementById('tl-mob-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/recovery/timeline?days='+days)
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderTimelineMobile(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 window.loadTimelineMobile = loadTimelineMobile;
 
@@ -6574,16 +6574,16 @@ function _tlSeriesHtml(pts, field, color, maxVal){
 function renderTimelineMobile(d){
   var card = document.getElementById('tl-mob-card');
   var pts = d.timeline || [];
-  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin datos suficientes para timeline.</div>'; return; }
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">'+_t('app_insufficient_timeline','Sin datos suficientes para timeline.')+'</div>'; return; }
 
   var html = '';
-  html += '<div class="tl-mob-sec-title">Recovery Score</div><div class="hrv-mob-chart" style="margin-top:0">'+_tlSeriesHtml(pts,'recovery_score','var(--green)',100)+'</div>';
+  html += '<div class="tl-mob-sec-title">'+_t('app_recovery_score_title','Recovery Score')+'</div><div class="hrv-mob-chart" style="margin-top:0">'+_tlSeriesHtml(pts,'recovery_score','var(--green)',100)+'</div>';
   html += '<div class="tl-mob-sec-title">HRV (ms)</div><div class="hrv-mob-chart" style="margin-top:0">'+_tlSeriesHtml(pts,'hrv_ms','#7C3AED',80)+'</div>';
-  html += '<div class="tl-mob-sec-title">Sueño (score)</div><div class="hrv-mob-chart" style="margin-top:0">'+_tlSeriesHtml(pts,'sleep_score','#1D4ED8',100)+'</div>';
+  html += '<div class="tl-mob-sec-title">'+_t('app_sleep_score','Sueño (score)')+'</div><div class="hrv-mob-chart" style="margin-top:0">'+_tlSeriesHtml(pts,'sleep_score','#1D4ED8',100)+'</div>';
 
   var wins = d.optimal_windows || [];
   if(wins.length){
-    html += '<div class="tl-mob-sec-title">Ventanas de forma óptima</div>';
+    html += '<div class="tl-mob-sec-title">'+_t('app_optimal_windows','Ventanas de forma óptima')+'</div>';
     html += wins.map(function(w){ return '<div class="rec-mob-alert rec-mob-alert-info">🟢 '+_escCm(w.start)+' — '+_escCm(w.label)+'</div>'; }).join('');
   }
   card.innerHTML = html;
@@ -6598,14 +6598,14 @@ function loadCorrelationsMobile(days){
     b.classList.toggle('on', parseInt(b.dataset.d, 10) === days);
   });
   var card = document.getElementById('corr-mob-card');
-  card.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/recovery/correlations?days='+days)
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderCorrelationsMobile(d); })
-    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 window.loadCorrelationsMobile = loadCorrelationsMobile;
 
@@ -6615,12 +6615,12 @@ function renderCorrelationsMobile(d){
   if(d.insights && d.insights.length){
     html += d.insights.map(function(msg){ return '<div class="rec-mob-alert rec-mob-alert-info">🔬 '+_escCm(msg)+'</div>'; }).join('');
   } else {
-    html += '<div class="cm-empty">Sin suficientes datos para análisis de correlación.</div>';
+    html += '<div class="cm-empty">'+_t('app_insufficient_correlation','Sin suficientes datos para análisis de correlación.')+'</div>';
   }
   var corrs = (d.correlations || []).slice(-20);
   if(corrs.length){
     var maxHrv = Math.max.apply(null, corrs.map(function(c){ return c.hrv_ms||0; })) || 1;
-    html += '<div class="rc-mob-title" style="margin:1rem 0 .3rem">Últimos entrenamientos</div>';
+    html += '<div class="rc-mob-title" style="margin:1rem 0 .3rem">'+_t('app_last_workouts','Últimos entrenamientos')+'</div>';
     html += corrs.slice().reverse().map(function(c){
       var barW = c.hrv_ms ? Math.round(c.hrv_ms/maxHrv*100) : 0;
       return '<div class="corr-mob-row">'
@@ -6641,14 +6641,14 @@ window.loadProtocolMobile = function(ptype){
     b.classList.toggle('on', b.dataset.p === ptype);
   });
   var el = document.getElementById('proto-mob-content');
-  el.innerHTML = '<div class="cm-empty" style="margin:1rem">Cargando...</div>';
+  el.innerHTML = '<div class="cm-empty" style="margin:1rem">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/recovery/protocol/'+ptype)
     .then(function(r){
-      if(r.status === 403){ el.innerHTML = '<div class="cm-empty" style="margin:1rem">Tu plan no incluye Recuperación — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ el.innerHTML = '<div class="cm-empty" style="margin:1rem">'+_t('app_plan_gate_recovery','Tu plan no incluye Recuperación — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderProtocolMobile(d); })
-    .catch(function(e){ if(e !== 'gated') el.innerHTML = '<div class="cm-empty" style="margin:1rem">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(e){ if(e !== 'gated') el.innerHTML = '<div class="cm-empty" style="margin:1rem">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 };
 
 function renderProtocolMobile(d){
@@ -6702,7 +6702,7 @@ function communityTab(tab){
    backend. */
 function loadCommunityMyProfile(){
   var el = document.getElementById('community-content');
-  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  el.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/community/profile/me')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
@@ -6738,7 +6738,7 @@ function loadCommunityMyProfile(){
           +'</div>'
         +'</div>';
     })
-    .catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+    .catch(function(){ el.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 function uploadMyAvatarApp(input){
   var file = input.files && input.files[0];
@@ -6777,7 +6777,7 @@ function _clubCardHtml(g){
 }
 function loadCommunityClubs(){
   var el = document.getElementById('community-content');
-  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  el.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   Promise.all([
     apiFetch('/community/groups?mine=true&per_page=50').then(function(r){ return r.ok?r.json():null; }),
     apiFetch('/community/groups?per_page=50').then(function(r){ return r.ok?r.json():null; }),
@@ -6792,7 +6792,7 @@ function loadCommunityClubs(){
       +(mine.length ? mine.map(_clubCardHtml).join('') : '<div class="cm-empty">Todavía no perteneces a ningún club.</div>')
       +'<div style="padding:1rem 1rem .3rem;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Directorio</div>'
       +(directory.length ? directory.map(_clubCardHtml).join('') : '<div class="cm-empty">No hay más clubes disponibles.</div>');
-  }).catch(function(){ el.innerHTML = '<div class="cm-empty">Sin conexión — no se pudo cargar</div>'; });
+  }).catch(function(){ el.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 function joinClubApp(id){
   apiFetch('/community/groups/'+id+'/join', { method:'POST' })
@@ -6981,7 +6981,7 @@ var _communityFeedFlat = [];  // para abrir el detalle GPS al tocar una card
 function loadCommunityFeed(){
   if(!_token) return;
   var el = document.getElementById('community-content');
-  el.innerHTML = '<div class="cm-empty">Cargando...</div>';
+  el.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/community/activity-feed?limit=20')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
@@ -7238,7 +7238,7 @@ function loadCommunityLeaderboard(){
   if(!_token) return;
   if(_cmLbScope === 'club'){
     var el0 = document.getElementById('community-content');
-    el0.innerHTML = '<div class="cm-empty">Cargando...</div>';
+    el0.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
     apiFetch('/community/groups?mine=true&per_page=50')
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
@@ -7264,7 +7264,7 @@ function _renderCommunityLeaderboard(clubs){
   var url = '/community/leaderboard?scope='+_cmLbScope+'&metric=tss&period=week';
   if(_cmLbScope === 'club') url += '&group_id='+encodeURIComponent(_cmLbClubId);
 
-  el.innerHTML = scopeBar + '<div class="cm-empty">Cargando...</div>';
+  el.innerHTML = scopeBar + '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch(url)
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
@@ -7304,7 +7304,7 @@ function loadCommunityDiscover(){
   +'</div>'
   +'<div id="cm-search-results"></div>'
   +'<div class="cm-discover-title">Atletas sugeridos</div>'
-  +'<div id="cm-suggestions-list"><div class="cm-empty">Cargando...</div></div>';
+  +'<div id="cm-suggestions-list"><div class="cm-empty">'+_t('status_loading','Cargando...')+'</div></div>';
   loadCommunitySuggestions();
 }
 
