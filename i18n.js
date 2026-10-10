@@ -325,6 +325,13 @@ var DICT = {
     lnd_footer_h_platform: 'Plataforma', lnd_footer_h_tech: 'Tecnología', lnd_footer_h_legal: 'Legal',
     lnd_footer_create_account: 'Crear cuenta', lnd_tos: 'Términos de servicio', lnd_privacy: 'Privacidad',
     lnd_footer_online: 'Plataforma 100% online',
+    /* App móvil — pantalla de login */
+    app_login_sub: 'Iniciá sesión con la misma cuenta que usás en la web.',
+    app_login_btn: 'Entrar →',
+    app_login_hint: 'Si ya iniciaste sesión antes en Safari en este mismo celular, probá cerrar y volver a abrir la app — a veces alcanza con eso.',
+    app_login_coach_link: '¿Sos coach? Entrá desde la web →',
+    app_login_need_fields: 'Completá email y contraseña.',
+    app_login_conn_error: 'Error de conexión. Probá de nuevo.',
   },
 
   pt: {
@@ -610,6 +617,13 @@ var DICT = {
     lnd_footer_h_platform: 'Plataforma', lnd_footer_h_tech: 'Tecnologia', lnd_footer_h_legal: 'Legal',
     lnd_footer_create_account: 'Criar conta', lnd_tos: 'Termos de serviço', lnd_privacy: 'Privacidade',
     lnd_footer_online: 'Plataforma 100% online',
+    /* App móvel — tela de login */
+    app_login_sub: 'Entre com a mesma conta que você usa na web.',
+    app_login_btn: 'Entrar →',
+    app_login_hint: 'Se você já entrou antes no Safari neste mesmo celular, tente fechar e abrir o app de novo — às vezes resolve.',
+    app_login_coach_link: 'É coach? Entre pela web →',
+    app_login_need_fields: 'Preencha email e senha.',
+    app_login_conn_error: 'Erro de conexão. Tente de novo.',
   },
 
   en: {
@@ -895,6 +909,13 @@ var DICT = {
     lnd_footer_h_platform: 'Platform', lnd_footer_h_tech: 'Technology', lnd_footer_h_legal: 'Legal',
     lnd_footer_create_account: 'Create account', lnd_tos: 'Terms of service', lnd_privacy: 'Privacy',
     lnd_footer_online: '100% online platform',
+    /* Mobile app — login screen */
+    app_login_sub: 'Sign in with the same account you use on the web.',
+    app_login_btn: 'Sign in →',
+    app_login_hint: 'If you already signed in before in Safari on this same phone, try closing the app completely and reopening it — that sometimes fixes it.',
+    app_login_coach_link: 'Are you a coach? Sign in from the web →',
+    app_login_need_fields: 'Enter your email and password.',
+    app_login_conn_error: 'Connection error. Try again.',
   }
 };
 
