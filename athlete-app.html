@@ -5141,7 +5141,7 @@ function loadMentalScore(){
   card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/dashboard?date_iso='+todayIso())
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_mental','Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalScore(d); })
@@ -5153,7 +5153,7 @@ function renderMentalScore(d){
   var t = d.today || {};
   var score = t.score != null ? t.score : 0;
   var color = t.color || '#9CA3AF';
-  var html = '<div class="rc-mob-head"><span class="rc-mob-title">Mental Fatigue Score</span></div>'
+  var html = '<div class="rc-mob-head"><span class="rc-mob-title">'+_t('app_mfs_title','Mental Fatigue Score')+'</span></div>'
     +'<div class="rc-mob-body">'
       +'<div class="rc-mob-num" style="color:'+color+'">'+score+'</div>'
       +'<div class="rc-mob-info">'
@@ -5169,15 +5169,15 @@ function renderMentalScore(d){
       var h = Math.round((p.score/mx)*72);
       return '<div class="hrv-mob-bar" style="height:'+h+'px;background:#A855F7" title="'+p.date_iso+': '+p.score+'"></div>';
     }).join('');
-    html += '<div class="rc-mob-title" style="margin-top:1rem">Últimos 7 días</div><div class="hrv-mob-chart">'+bars+'</div>';
+    html += '<div class="rc-mob-title" style="margin-top:1rem">'+_t('app_last_7_days','Últimos 7 días')+'</div><div class="hrv-mob-chart">'+bars+'</div>';
   }
 
   if(d.suggested_protocol){
     var sp = d.suggested_protocol;
-    html += '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.9rem">💡 Sugerido: <strong>'+_escCm(sp.name)+'</strong> ('+sp.duration_min+' min) — '+_escCm(sp.description)+'</div>';
+    html += '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.9rem">'+_t('app_suggested_label','💡 Sugerido:')+' <strong>'+_escCm(sp.name)+'</strong> ('+sp.duration_min+' min) — '+_escCm(sp.description)+'</div>';
   }
   if(d.race && d.race.days_to_race != null){
-    html += '<div class="rc-mob-rec" style="margin-top:.6rem">🏁 '+d.race.days_to_race+' días para '+_escCm(d.race.race_name||'tu carrera')+'</div>';
+    html += '<div class="rc-mob-rec" style="margin-top:.6rem">🏁 '+d.race.days_to_race+' '+_t('app_days_to_race_suffix','días para')+' '+_escCm(d.race.race_name||_t('app_your_race_default','tu carrera'))+'</div>';
   }
   card.innerHTML = html;
 
@@ -5189,20 +5189,20 @@ function renderMentalScore(d){
 }
 
 function saveMentalCheckin(){
-  if(!_token){ toast('Inicia sesión para guardar',''); return; }
+  if(!_token){ toast(_t('app_login_to_save','Inicia sesión para guardar'),''); return; }
   var body = { date_iso: todayIso() };
   _MTL_FIELDS.forEach(function(f){ if(_mtlValues[f]) body[f] = _mtlValues[f]; });
   apiFetch('/mental/checkin', { method:'POST', body: JSON.stringify(body) })
     .then(function(r){
-      if(r.status === 403){ toast('Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil',''); return Promise.reject('gated'); }
+      if(r.status === 403){ toast(_t('app_plan_gate_mental','Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil'),''); return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
-    .then(function(){ toast('Check-in mental guardado ✓','ok'); loadMentalScore(); })
-    .catch(function(e){ if(e !== 'gated') toast('Sin conexión — no se pudo guardar',''); });
+    .then(function(){ toast(_t('app_checkin_saved','Check-in mental guardado ✓'),'ok'); loadMentalScore(); })
+    .catch(function(e){ if(e !== 'gated') toast(_t('app_save_offline_error','Sin conexión — no se pudo guardar'),''); });
 }
 
-var MTL_CAT_LABELS = { breathing:'Respiración', visualization:'Visualización', mindfulness:'Mindfulness', cognitive:'Cognitivo', activation:'Activación', pre_race:'Pre-Carrera', recovery_mental:'Recuperación Mental' };
-var MTL_DIFF_LABELS = { beginner:'Principiante', intermediate:'Intermedio', advanced:'Avanzado' };
+function MTL_CAT_LABELS(){ return { breathing:_t('app_mtl_filter_breathing','Respiración'), visualization:_t('app_mtl_filter_visualization','Visualización'), mindfulness:_t('app_mtl_filter_mindfulness','Mindfulness'), cognitive:_t('app_mtl_filter_cognitive','Cognitivo'), activation:_t('app_mtl_filter_activation','Activación'), pre_race:_t('app_cat_prerace','Pre-Carrera'), recovery_mental:_t('app_cat_recovery_mental','Recuperación Mental') }; }
+function MTL_DIFF_LABELS(){ return { beginner:_t('app_diff_beginner','Principiante'), intermediate:_t('app_diff_intermediate','Intermedio'), advanced:_t('app_diff_advanced','Avanzado') }; }
 
 function mentalFilterCat(cat){
   _mtlCat = cat;
@@ -5219,7 +5219,7 @@ function loadMentalProtocols(){
   var qs = _mtlCat ? '?category='+_mtlCat : '';
   apiFetch('/mental/protocols'+qs)
     .then(function(r){
-      if(r.status === 403){ list.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ list.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_mental','Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ _mtlProtocols = d.protocols || []; renderMentalProtocols(); })
@@ -5228,19 +5228,20 @@ function loadMentalProtocols(){
 
 function renderMentalProtocols(){
   var list = document.getElementById('mtl-proto-list');
-  if(!_mtlProtocols.length){ list.innerHTML = '<div class="cm-empty">Sin protocolos con este filtro.</div>'; return; }
+  if(!_mtlProtocols.length){ list.innerHTML = '<div class="cm-empty">'+_t('app_no_protocols_filter','Sin protocolos con este filtro.')+'</div>'; return; }
+  var catLbl = MTL_CAT_LABELS(), diffLbl = MTL_DIFF_LABELS();
   list.innerHTML = _mtlProtocols.map(function(p, idx){
     var done = p.completed_this_week;
     return '<div class="mtl-proto-card'+(done?' done':'')+'">'
       +'<div class="mtl-proto-head" onclick="mentalToggleProto('+idx+')" style="cursor:pointer">'
-        +'<div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(MTL_CAT_LABELS[p.category]||p.category)+'</span></div>'
+        +'<div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(catLbl[p.category]||p.category)+'</span></div>'
         +'<span class="mtl-proto-dur">'+p.duration_min+' min</span>'
       +'</div>'
       +'<div class="mtl-proto-desc">'+_escCm(p.description)+'</div>'
       +'<ol class="mtl-proto-steps" id="mtl-proto-steps-'+idx+'">'+(p.steps||[]).map(function(s){ return '<li>'+_escCm(s)+'</li>'; }).join('')+'</ol>'
       +'<div class="mtl-proto-foot">'
-        +'<span style="font-size:.62rem;color:var(--dim)">'+(MTL_DIFF_LABELS[p.difficulty]||p.difficulty)+'</span>'
-        +(done ? '<span class="mtl-proto-done-badge">✓ Completado esta semana</span>' : '<button class="mtl-proto-complete" onclick="event.stopPropagation();mentalCompleteProto(\''+p.id+'\')">Marcar completado</button>')
+        +'<span style="font-size:.62rem;color:var(--dim)">'+(diffLbl[p.difficulty]||p.difficulty)+'</span>'
+        +(done ? '<span class="mtl-proto-done-badge">'+_t('app_completed_week_badge','✓ Completado esta semana')+'</span>' : '<button class="mtl-proto-complete" onclick="event.stopPropagation();mentalCompleteProto(\''+p.id+'\')">'+_t('app_mark_complete','Marcar completado')+'</button>')
       +'</div>'
     +'</div>';
   }).join('');
@@ -5254,8 +5255,8 @@ function mentalToggleProto(idx){
 function mentalCompleteProto(id){
   apiFetch('/mental/protocols/'+id+'/complete', { method:'POST', body: JSON.stringify({protocol_id:id, rating:null}) })
     .then(function(r){ return r.ok ? r.json() : Promise.reject('err'); })
-    .then(function(){ toast('Protocolo completado ✓','ok'); loadMentalProtocols(); })
-    .catch(function(){ toast('No se pudo registrar','err'); });
+    .then(function(){ toast(_t('app_protocol_completed','Protocolo completado ✓'),'ok'); loadMentalProtocols(); })
+    .catch(function(){ toast(_t('app_log_failed','No se pudo registrar'),'err'); });
 }
 
 function loadMentalCorrelations(){
@@ -5264,7 +5265,7 @@ function loadMentalCorrelations(){
   card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/correlations?days=30')
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_mental','Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalCorrelations(d); })
@@ -5274,9 +5275,9 @@ function loadMentalCorrelations(){
 function renderMentalCorrelations(d){
   var card = document.getElementById('mtl-corr-card');
   var pts = (d.data_points || []).slice(-20).reverse();
-  if(!pts.length){ card.innerHTML = '<div class="cm-empty">Sin suficientes datos para correlación.</div>'; return; }
+  if(!pts.length){ card.innerHTML = '<div class="cm-empty">'+_t('app_no_correlation_data','Sin suficientes datos para correlación.')+'</div>'; return; }
   var maxTss = Math.max.apply(null, pts.map(function(p){ return p.tss||0; })) || 1;
-  card.innerHTML = '<div class="rc-mob-title">Score mental vs. carga de entrenamiento</div>'
+  card.innerHTML = '<div class="rc-mob-title">'+_t('app_mental_vs_load','Score mental vs. carga de entrenamiento')+'</div>'
     + pts.map(function(p){
       var barW = p.tss ? Math.round(p.tss/maxTss*100) : 0;
       return '<div class="corr-mob-row">'
@@ -5293,7 +5294,7 @@ function loadMentalPreRace(){
   card.innerHTML = '<div class="cm-empty">'+_t('status_loading','Cargando...')+'</div>';
   apiFetch('/mental/pre-race')
     .then(function(r){
-      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil</div>'; return Promise.reject('gated'); }
+      if(r.status === 403){ card.innerHTML = '<div class="cm-empty">'+_t('app_plan_gate_mental','Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil')+'</div>'; return Promise.reject('gated'); }
       return r.ok ? r.json() : Promise.reject('err');
     })
     .then(function(d){ renderMentalPreRace(d); })
@@ -5303,15 +5304,15 @@ function loadMentalPreRace(){
 function renderMentalPreRace(d){
   var card = document.getElementById('mtl-prerace-card');
   var race = d.race || {};
-  if(!race.name){ card.innerHTML = '<div class="cm-empty">Configurá tu meta de carrera en Perfil para ver protocolos pre-carrera.</div>'; return; }
+  if(!race.name){ card.innerHTML = '<div class="cm-empty">'+_t('app_configure_race_goal','Configurá tu meta de carrera en Perfil para ver protocolos pre-carrera.')+'</div>'; return; }
   var html = '<div class="rc-mob-title">'+_escCm(race.name)+'</div>'
-    +'<div class="rc-mob-rec">'+(race.days_to_race!=null?race.days_to_race+' días para la carrera':'')+(race.distance?' · '+_escCm(race.distance):'')+'</div>';
+    +'<div class="rc-mob-rec">'+(race.days_to_race!=null?race.days_to_race+' '+_t('app_days_to_race_suffix2','días para la carrera'):'')+(race.distance?' · '+_escCm(race.distance):'')+'</div>';
   var protos = d.protocols_today || [];
   if(protos.length){
-    html += '<div class="rc-mob-title" style="margin-top:1rem">Protocolos recomendados para hoy</div>';
+    html += '<div class="rc-mob-title" style="margin-top:1rem">'+_t('app_recommended_protocols_today','Protocolos recomendados para hoy')+'</div>';
     html += protos.map(function(p){
       return '<div class="mtl-proto-card" style="margin-top:.6rem">'
-        +'<div class="mtl-proto-head"><div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(MTL_CAT_LABELS[p.category]||p.category)+'</span></div><span class="mtl-proto-dur">'+p.duration_min+' min</span></div>'
+        +'<div class="mtl-proto-head"><div><div class="mtl-proto-name">'+_escCm(p.name)+'</div><span class="mtl-proto-cat">'+(MTL_CAT_LABELS()[p.category]||p.category)+'</span></div><span class="mtl-proto-dur">'+p.duration_min+' min</span></div>'
         +'<div class="mtl-proto-desc">'+_escCm(p.description)+'</div>'
         +'<ol class="mtl-proto-steps open">'+(p.steps||[]).map(function(s){ return '<li>'+_escCm(s)+'</li>'; }).join('')+'</ol>'
       +'</div>';

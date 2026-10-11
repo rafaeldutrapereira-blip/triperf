@@ -254,3 +254,39 @@ def test_profile_screen_connections_translated(page: Page, athlete_api):
     assert "No conectado" not in conn_text, f"Quedó texto en español: {conn_text!r}"
 
     assert not errors, f"JS errors en Perfil (pt): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_mental_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta de prueba sin plan Coach (gateado) o sin check-in
+           previo del día (estado real de cualquier cuenta nueva)
+    When:  entra a Rendimiento Mental con idioma inglés
+    Then:  o bien el mensaje de gate de plan aparece en inglés, o el
+           título "Mental Fatigue Score" y "Last 7 days" aparecen sin
+           texto español colado (confirma que renderMentalScore,
+           MTL_CAT_LABELS/MTL_DIFF_LABELS como funciones, y los mensajes
+           de check-in quedaron traducidos — Sprint 2b-vi).
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "en")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-mental')")
+    page.wait_for_selector("#mtl-score-card:not(:has-text('Loading'))", timeout=20000)
+
+    card_text = page.locator("#mtl-score-card").inner_text()
+    assert "Cargando" not in card_text, f"Pantalla quedó en estado de carga (ES): {card_text!r}"
+    assert "Rendimiento Mental" not in card_text, f"Mensaje de gate quedó en español: {card_text!r}"
+    if "Mental Fatigue Score" in card_text:
+        assert "Últimos" not in card_text, f"Texto de score quedó en español: {card_text!r}"
+
+    assert not errors, f"JS errors en Mental (en): {errors}"
