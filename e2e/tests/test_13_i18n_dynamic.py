@@ -290,3 +290,36 @@ def test_mental_screen_translated(page: Page, athlete_api):
         assert "Últimos" not in card_text, f"Texto de score quedó en español: {card_text!r}"
 
     assert not errors, f"JS errors en Mental (en): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_raceday_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta de prueba sin meta de carrera configurada (estado
+           real de cualquier cuenta nueva) o sin plan Race Day (gateado)
+    When:  entra a Race Day > Dashboard con idioma portugués
+    Then:  el mensaje de "configurá tu meta de carrera" (o el gate de
+           plan) aparece en portugués, nunca en español — confirma que
+           renderRaceDayDashboard/loadRaceDayDashboard quedaron
+           traducidos (Sprint 2b-vii).
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "pt")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-raceday')")
+    page.wait_for_selector("#rd-dash-card:not(:has-text('Carregando'))", timeout=20000)
+
+    card_text = page.locator("#rd-dash-card").inner_text()
+    assert "Configurá tu meta" not in card_text, f"Mensaje quedó en español: {card_text!r}"
+    assert "Tu plan no incluye" not in card_text, f"Gate de plan quedó en español: {card_text!r}"
+
+    assert not errors, f"JS errors en Race Day (pt): {errors}"
