@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '146';  // 2026-10-11: i18n Race Day (dashboard, nutrición, plan hora a hora)
+var BUILD_VERSION = '147';  // 2026-10-11: i18n Progreso (insights, récords, proyección, huella, potencia, vo2max, distribución, zonas)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

@@ -323,3 +323,38 @@ def test_raceday_screen_translated(page: Page, athlete_api):
     assert "Tu plan no incluye" not in card_text, f"Gate de plan quedó en español: {card_text!r}"
 
     assert not errors, f"JS errors en Race Day (pt): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_progress_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta de prueba sin insights/datos de analytics todavía
+           (estado real de cualquier cuenta nueva) o sin plan Analytics
+           (gateado)
+    When:  entra a Progreso > Insights con idioma inglés
+    Then:  el mensaje de "todo en rango óptimo" (o el gate de plan)
+           aparece en inglés, nunca en español — confirma que
+           loadProgressInsights/renderProgressInsights quedaron
+           traducidos (Sprint 2b-viii).
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "en")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-progress')")
+    page.wait_for_selector("#pgr-insights-list:not(:has-text('Loading'))", timeout=20000)
+
+    list_text = page.locator("#pgr-insights-list").inner_text()
+    assert "Cargando" not in list_text, f"Pantalla quedó en estado de carga (ES): {list_text!r}"
+    assert "Todo en rango óptimo" not in list_text, f"Mensaje quedó en español: {list_text!r}"
+    assert "Tu plan no incluye" not in list_text, f"Gate de plan quedó en español: {list_text!r}"
+
+    assert not errors, f"JS errors en Progreso (en): {errors}"
