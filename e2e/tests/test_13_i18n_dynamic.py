@@ -390,3 +390,36 @@ def test_aicoach_chat_new_conversation_translated(page: Page, athlete_api):
     assert "Nueva conversación" not in msg_text, f"Saludo quedó en español: {msg_text!r}"
 
     assert not errors, f"JS errors en AI Coach (pt): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_gear_screen_translated(page: Page, athlete_api):
+    """
+    Given: un atleta de prueba sin zapatillas/bicicletas registradas
+           (estado real de cualquier cuenta nueva)
+    When:  entra a Mi Equipo > Zapatillas con idioma inglés
+    Then:  el mensaje de "todavía no agregaste zapatillas" aparece en
+           inglés, nunca en español — confirma que
+           loadGearShoes/renderGearShoes quedaron traducidos
+           (Sprint 2b-x).
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "en")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-gear')")
+    page.wait_for_selector("#gear-shoes-list:not(:has-text('Loading'))", timeout=20000)
+
+    list_text = page.locator("#gear-shoes-list").inner_text()
+    assert "Cargando" not in list_text, f"Pantalla quedó en estado de carga (ES): {list_text!r}"
+    assert "Todavía no agregaste" not in list_text, f"Mensaje quedó en español: {list_text!r}"
+
+    assert not errors, f"JS errors en Mi Equipo (en): {errors}"
