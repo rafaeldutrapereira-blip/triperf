@@ -18,6 +18,7 @@ servidor — mismo patrón que test_frontend_api_contracts.py.
 """
 from __future__ import annotations
 
+import pytest
 import re
 import sys
 from pathlib import Path
@@ -190,6 +191,9 @@ def test_mobile_mirrors_match_root_i18n():
     stale = [str(p.relative_to(REPO_ROOT)) for p in MIRROR_I18N
              if p.exists() and p.read_text(encoding="utf-8") != root_src]
     missing = [str(p.relative_to(REPO_ROOT)) for p in MIRROR_I18N if not p.exists()]
+    if len(missing) == len(MIRROR_I18N):
+        # Copias gitignored: en un checkout limpio (CI) no existen hasta correr build_www + cap sync
+        pytest.skip("copias móviles no generadas en este checkout")
 
     assert not missing, (
         f"Copias de i18n.js faltantes (correr `npx cap sync`): {missing}"
@@ -208,6 +212,9 @@ def test_mobile_mirrors_match_root_sw():
     stale = [str(p.relative_to(REPO_ROOT)) for p in MIRROR_SW
              if p.exists() and p.read_text(encoding="utf-8") != root_src]
     missing = [str(p.relative_to(REPO_ROOT)) for p in MIRROR_SW if not p.exists()]
+    if len(missing) == len(MIRROR_SW):
+        # Copias gitignored: en un checkout limpio (CI) no existen hasta correr build_www + cap sync
+        pytest.skip("copias móviles no generadas en este checkout")
 
     assert not missing, f"Copias de sw.js faltantes (correr `npx cap sync`): {missing}"
     assert not stale, (
