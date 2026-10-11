@@ -358,3 +358,35 @@ def test_progress_screen_translated(page: Page, athlete_api):
     assert "Tu plan no incluye" not in list_text, f"Gate de plan quedó en español: {list_text!r}"
 
     assert not errors, f"JS errors en Progreso (en): {errors}"
+
+
+@pytest.mark.mobile
+@pytest.mark.timeout(60)
+def test_aicoach_chat_new_conversation_translated(page: Page, athlete_api):
+    """
+    Given: un atleta de prueba cualquiera
+    When:  entra a AI Coach > Chat con idioma portugués y toca "Nueva
+           conversación"
+    Then:  el mensaje de saludo inicial aparece en portugués, nunca en
+           español — confirma que aicNewChat() quedó traducido
+           (Sprint 2b-ix).
+    """
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.goto(f"{BASE_URL}/login.html")
+    _inject_auth_and_lang(page, athlete_api._token, "pt")
+
+    page.goto(f"{BASE_URL}/athlete-app.html")
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
+
+    page.evaluate("goScreen('screen-aicoach')")
+    page.evaluate("aicNewChat()")
+    page.wait_for_selector("#aic-messages .aic-msg-ai", timeout=10000)
+
+    msg_text = page.locator("#aic-messages .aic-msg-ai").first.inner_text()
+    assert "Nueva conversación" not in msg_text, f"Saludo quedó en español: {msg_text!r}"
+
+    assert not errors, f"JS errors en AI Coach (pt): {errors}"
