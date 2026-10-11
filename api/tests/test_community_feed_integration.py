@@ -69,6 +69,20 @@ class TestActivityFeedIntegration:
         assert "author_name" not in body
         assert "user_name" not in body
 
+    def test_comment_on_nonexistent_post_has_semantic_code(self, client, athlete_user):
+        """
+        Sprint 3b (i18n): el frontend muestra el texto de error del backend
+        directamente para comentarios (ver _errMsg() en athlete-app.html,
+        a diferencia de la mayoría de catch() de Comunidad que ignoran el
+        detail) -- por eso este 404 necesita código semántico, no solo el
+        texto en español.
+        """
+        token = login(client, "athlete@test.com", "AthlPass123")
+        r = client.post("/api/community/posts/post-que-no-existe/comments",
+                         json={"body": "hola"}, headers=auth_headers(token))
+        assert r.status_code == 404
+        assert r.json()["errors"][0]["code"] == "post_not_found"
+
     def test_can_add_photos_false_for_someone_elses_activity(self, client, db, athlete_user, coach_user):
         """can_add_photos solo debe ser True para el dueño de la
         actividad — coach_user sigue a athlete_user y ve su feed, pero no

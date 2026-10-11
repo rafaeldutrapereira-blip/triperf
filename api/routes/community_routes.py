@@ -641,7 +641,7 @@ def add_comment(
 ):
     post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
     if not post:
-        raise HTTPException(404, "Post no encontrado")
+        raise HTTPException(404, {"code": "post_not_found", "message": "Post no encontrado"})
 
     comment = Comment(
         id        = _new_id(),

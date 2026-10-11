@@ -151,6 +151,22 @@ def test_photo_upload_non_image_rejected(client, auth_headers):
     assert resp.status_code in (400, 404)
 
 
+def test_photos_gallery_upload_invalid_type_has_semantic_code(client, auth_headers):
+    """
+    Sprint 3b (i18n): el endpoint plural /photos (galería, usado por la
+    app móvil vía uploadCommunityPhotos()) muestra el error del backend
+    directamente al usuario -- distinto del endpoint singular /photo
+    de arriba, que ningún frontend usa.
+    """
+    resp = client.post(
+        "/api/athlete/activities/nonexistent-id/photos",
+        files={"files": ("data.csv", b"a,b,c", "text/csv")},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["errors"][0]["code"] == "activity_not_found"
+
+
 def test_activities_list_includes_swim_fields(client, auth_headers):
     resp = client.get("/api/athlete/activities?sport=swim&per_page=5", headers=auth_headers)
     assert resp.status_code == 200

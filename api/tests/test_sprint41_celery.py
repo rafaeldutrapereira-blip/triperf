@@ -134,6 +134,20 @@ class TestAiCoachAsync:
         )
         assert resp.status_code == 503
 
+    def test_coach_suggest_503_has_semantic_code(self, client, db):
+        """
+        Sprint 3b (i18n): aicSend() en athlete-app.html muestra el
+        "message" del backend directamente en el chat -- sin código
+        semántico, un tester PT/EN vería este error siempre en español.
+        """
+        token = _register_and_login(client, "aitest_code@test.com", db=db)
+        resp = client.post(
+            "/api/ai/coach-suggest",
+            json={"message": "hola"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.json()["errors"][0]["code"] == "ai_not_configured"
+
     def test_coach_suggest_requires_auth(self, client):
         resp = client.post("/api/ai/coach-suggest", json={"message": "hello"})
         assert resp.status_code in (401, 403)

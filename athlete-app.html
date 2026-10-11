@@ -2276,6 +2276,13 @@ var ERR_CODE_KEYS = {
   pw_too_short: 'err_pw_too_short', pw_needs_upper: 'err_pw_needs_upper',
   pw_needs_lower: 'err_pw_needs_lower', pw_needs_digit: 'err_pw_needs_digit',
   twofa_wrong_code: 'err_twofa_wrong_code', twofa_unavailable: 'err_twofa_unavailable',
+  /* Sprint 3b */
+  ai_not_configured: 'err_ai_not_configured', ai_message_required: 'err_ai_message_required',
+  ai_message_too_long: 'err_ai_message_too_long', ai_sdk_missing: 'err_ai_sdk_missing',
+  ai_timeout: 'err_ai_timeout', ai_api_error: 'err_ai_api_error', ai_internal_error: 'err_ai_internal_error',
+  post_not_found: 'err_post_not_found', activity_not_found: 'err_activity_not_found',
+  max_photos_reached: 'err_max_photos_reached', invalid_image_type: 'err_invalid_image_type',
+  image_too_large: 'err_image_too_large',
 };
 function _errMsg(data, fallback){
   var e = data && data.errors && data.errors[0];
@@ -6115,7 +6122,7 @@ function aicSend(){
         _aicSessionId = d.session_id || _aicSessionId;
         _aicSessionsLoaded = false;
       } else {
-        var errMsg = (d.errors && d.errors[0] && d.errors[0].message) || d.detail || _t('app_empty_response','Respuesta vacía');
+        var errMsg = _errMsg(d, _t('app_empty_response','Respuesta vacía'));
         aicAppendMsg('ai', _t('app_error_prefix','Error:')+' '+errMsg);
       }
     })
@@ -7145,7 +7152,7 @@ function uploadCommunityPhotos(inputEl, activityId, postId){
   })
     .then(function(r){ return r.ok ? r.json() : r.json().then(function(e){ return Promise.reject(e); }); })
     .then(function(){ inputEl.value=''; _cmRefreshPhotos(postId, activityId); })
-    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo subir la foto', 'err'); });
+    .catch(function(e){ toast(_errMsg(e, _t('app_photo_upload_failed','No se pudo subir la foto')), 'err'); });
 }
 function deleteCommunityPhoto(activityId, photoId, postId){
   if(!confirm(_t('app_delete_photo_confirm','¿Borrar esta foto?'))) return;
@@ -7210,7 +7217,7 @@ function submitCommunityComment(postId){
       var btn = document.querySelector('[onclick*="toggleCommunityComments(\''+postId+'\')"] span:last-child');
       if(btn){ var n = parseInt(btn.textContent, 10); btn.textContent = isNaN(n) ? 1 : n+1; }
     })
-    .catch(function(e){ toast((e && e.errors && e.errors[0] && e.errors[0].message) || _t('app_comment_post_failed','No se pudo publicar el comentario'), 'err'); });
+    .catch(function(e){ toast(_errMsg(e, _t('app_comment_post_failed','No se pudo publicar el comentario')), 'err'); });
 }
 
 /* Kudo de un solo toque (tipo "me gusta" de Strava) — usa "fire" 🔥 como

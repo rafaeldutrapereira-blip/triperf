@@ -97,21 +97,21 @@ async def coach_suggest(
       history:    [{role,content}] — Historial reciente del frontend (hasta 10 turnos)
     """
     if not _ANTHROPIC_KEY:
-        raise HTTPException(503, "AI Coach no configurado — agrega ANTHROPIC_API_KEY al .env")
+        raise HTTPException(503, {"code": "ai_not_configured", "message": "AI Coach no configurado — agrega ANTHROPIC_API_KEY al .env"})
 
     question   = (body.get("message") or "").strip()
     session_id = body.get("session_id")
     history    = body.get("history", [])
 
     if not question:
-        raise HTTPException(422, "Mensaje requerido")
+        raise HTTPException(422, {"code": "ai_message_required", "message": "Mensaje requerido"})
     if len(question) > 2000:
-        raise HTTPException(422, "Mensaje demasiado largo (máx 2000 caracteres)")
+        raise HTTPException(422, {"code": "ai_message_too_long", "message": "Mensaje demasiado largo (máx 2000 caracteres)"})
 
     try:
         import anthropic
     except ImportError:
-        raise HTTPException(503, "anthropic SDK no instalado — pip install anthropic")
+        raise HTTPException(503, {"code": "ai_sdk_missing", "message": "anthropic SDK no instalado — pip install anthropic"})
 
     # ── Contexto del atleta ──────────────────────────────────────────────────
     athlete_context = get_context_for_prompt(me.id, db)
@@ -147,13 +147,13 @@ async def coach_suggest(
 
     except asyncio.TimeoutError:
         logger.error("Anthropic timeout (%ds) user=%s", _AI_TIMEOUT, me.id)
-        raise HTTPException(504, f"AI Coach tardó más de {_AI_TIMEOUT}s. Intenta de nuevo.")
+        raise HTTPException(504, {"code": "ai_timeout", "message": f"AI Coach tardó más de {_AI_TIMEOUT}s. Intenta de nuevo."})
     except anthropic.APIStatusError as e:
         logger.error("Anthropic API error user=%s: %s", me.id, e)
-        raise HTTPException(502, f"Error de API AI: {e.message}")
+        raise HTTPException(502, {"code": "ai_api_error", "message": f"Error de API AI: {e.message}"})
     except Exception as e:
         logger.error("AI coach error user=%s: %s", me.id, e)
-        raise HTTPException(500, "Error interno del AI Coach")
+        raise HTTPException(500, {"code": "ai_internal_error", "message": "Error interno del AI Coach"})
 
     # ── Persistir sesión y mensajes ──────────────────────────────────────────
     try:

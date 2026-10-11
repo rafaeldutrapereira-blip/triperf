@@ -2279,20 +2279,20 @@ async def upload_activity_photos(
         GarminActivity.user_id == me.id,
     ).first()
     if not act:
-        raise HTTPException(404, "Actividad no encontrada")
+        raise HTTPException(404, {"code": "activity_not_found", "message": "Actividad no encontrada"})
 
     existing_count = db.query(ActivityPhoto).filter(ActivityPhoto.activity_id == act.id).count()
     if existing_count + len(files) > _MAX_PHOTOS_PER_ACTIVITY:
-        raise HTTPException(400, f"Máx {_MAX_PHOTOS_PER_ACTIVITY} fotos por actividad")
+        raise HTTPException(400, {"code": "max_photos_reached", "message": f"Máx {_MAX_PHOTOS_PER_ACTIVITY} fotos por actividad"})
 
     created = []
     for file in files:
         content_type = file.content_type or ""
         if not content_type.startswith("image/"):
-            raise HTTPException(400, "Solo se aceptan imágenes (JPEG / PNG)")
+            raise HTTPException(400, {"code": "invalid_image_type", "message": "Solo se aceptan imágenes (JPEG / PNG)"})
         raw = await file.read()
         if len(raw) > _MAX_PHOTO_BYTES:
-            raise HTTPException(400, "Imagen demasiado grande (máx 8 MB)")
+            raise HTTPException(400, {"code": "image_too_large", "message": "Imagen demasiado grande (máx 8 MB)"})
 
         compressed = _compress_photo(raw)
         photo = ActivityPhoto(activity_id=act.id, user_id=me.id, storage_key="")
