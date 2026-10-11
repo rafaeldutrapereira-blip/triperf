@@ -456,6 +456,27 @@ var API = (function(){
   return 'http://localhost:8000';
 })();
 
+/* Mapea códigos de error semánticos del backend (Sprint 3a) a claves de
+   i18n.js. Nota: esta página en sí sigue 100% hardcodeada en español
+   (no está en el patrón data-i18n todavía) — esto solo traduce el
+   mensaje de error que viene del backend, no el resto del formulario. */
+var ERR_CODE_KEYS = {
+  invalid_credentials: 'err_invalid_credentials', account_inactive: 'err_account_inactive',
+  rate_limited: 'err_rate_limited', email_already_registered: 'err_email_already_registered',
+  pw_too_short: 'err_pw_too_short', pw_needs_upper: 'err_pw_needs_upper',
+  pw_needs_lower: 'err_pw_needs_lower', pw_needs_digit: 'err_pw_needs_digit',
+  twofa_wrong_code: 'err_twofa_wrong_code', twofa_unavailable: 'err_twofa_unavailable',
+};
+function _errMsg(data, fallback){
+  var e = data && data.errors && data.errors[0];
+  var key = e && ERR_CODE_KEYS[e.code];
+  if(key && window.i18n){
+    var translated = window.i18n.t(key);
+    if(translated && translated !== key) return translated;
+  }
+  return (e && e.message) || (data && data.detail) || fallback;
+}
+
 var _currentRole = 'atleta';
 
 function selectRole(r){
@@ -535,7 +556,7 @@ async function doRegister(e){
       body: JSON.stringify({nombre: nombre, email: email, password: pw, rol: _currentRole}),
     });
     var data = await res.json();
-    if(!res.ok) throw new Error(data.detail || 'Error al crear la cuenta.');
+    if(!res.ok) throw new Error(_errMsg(data, 'Error al crear la cuenta.'));
 
     var _planMap    = { elite:'elite', agegroup:'agegroup', basico:'basic' };
     var _roleLabels = { admin:'Admin · Coach', coach:'Coach', atleta:'Atleta' };

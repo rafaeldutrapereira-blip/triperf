@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '149';  // 2026-10-11: i18n Mi Equipo/Gear (zapatillas, bicicletas, componentes, mantenimiento)
+var BUILD_VERSION = '150';  // 2026-10-11: i18n Sprint 3a — errores backend por código (login/registro/2FA)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

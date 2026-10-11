@@ -26,6 +26,36 @@ class TestLogin:
         msg = r.json()["errors"][0]["message"].lower()
         assert "inválidas" in msg or "incorrecta" in msg
 
+    def test_login_wrong_password_has_semantic_code(self, client, athlete_user):
+        """
+        Sprint 3a (i18n): el frontend traduce errores de auth por código
+        (ver ERR_CODE_KEYS en login.html/athlete-app.html/registro.html),
+        no por el texto en español de "message" -- si este código
+        desaparece o cambia de nombre, un tester PT/EN vuelve a ver el
+        error crudo en español sin que ningún test lo detecte.
+        """
+        r = client.post("/api/auth/login", json={
+            "email": "athlete@test.com",
+            "password": "WrongPassword",
+        })
+        assert r.json()["errors"][0]["code"] == "invalid_credentials"
+
+    def test_login_inactive_user_has_semantic_code(self, client, db, athlete_user):
+        athlete_user.activo = False
+        db.commit()
+        r = client.post("/api/auth/login", json={
+            "email": "athlete@test.com",
+            "password": "AthlPass123",
+        })
+        assert r.json()["errors"][0]["code"] == "account_inactive"
+
+    def test_login_rate_limited_has_semantic_code(self, client, db):
+        for _ in range(11):
+            client.post("/api/auth/login", json={"email": "noexiste@test.com", "password": "x"})
+        r = client.post("/api/auth/login", json={"email": "noexiste@test.com", "password": "x"})
+        assert r.status_code == 429
+        assert r.json()["errors"][0]["code"] == "rate_limited"
+
     def test_login_nonexistent_email(self, client):
         r = client.post("/api/auth/login", json={
             "email": "noexiste@test.com",
@@ -181,6 +211,13 @@ class TestRegister:
             "password": "Password123",
         })
         assert r.status_code == 409
+        assert r.json()["errors"][0]["code"] == "email_already_registered"
+
+    def test_register_short_password_has_semantic_code(self, client):
+        r = client.post("/api/auth/register", json={
+            "email": "otro2@test.com", "nombre": "Test", "password": "1234567",
+        })
+        assert r.json()["errors"][0]["code"] == "pw_too_short"
 
     def test_register_short_password(self, client):
         r = client.post("/api/auth/register", json={

@@ -2264,6 +2264,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
    entrenamiento). Sprint 2b. */
 function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
 
+/* Mapea códigos de error semánticos del backend (Sprint 3a, ver
+   api/routes/auth_routes.py) a claves de i18n.js. No se reusa _t() de
+   arriba porque window.i18n.t() devuelve la clave cruda cuando no la
+   encuentra (verdadero ⇒ _t la toma como traducción real) — acá hace
+   falta distinguir "no encontrada" de "encontrada" para caer al
+   mensaje en español del backend en vez de mostrar la clave cruda. */
+var ERR_CODE_KEYS = {
+  invalid_credentials: 'err_invalid_credentials', account_inactive: 'err_account_inactive',
+  rate_limited: 'err_rate_limited', email_already_registered: 'err_email_already_registered',
+  pw_too_short: 'err_pw_too_short', pw_needs_upper: 'err_pw_needs_upper',
+  pw_needs_lower: 'err_pw_needs_lower', pw_needs_digit: 'err_pw_needs_digit',
+  twofa_wrong_code: 'err_twofa_wrong_code', twofa_unavailable: 'err_twofa_unavailable',
+};
+function _errMsg(data, fallback){
+  var e = data && data.errors && data.errors[0];
+  var key = e && ERR_CODE_KEYS[e.code];
+  if(key && window.i18n){
+    var translated = window.i18n.t(key);
+    if(translated && translated !== key) return translated;
+  }
+  return (e && e.message) || (data && data.detail) || fallback;
+}
+
 /* ── Config ─────────────────────────────────────────────── */
 // Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
 // no es la URL real de produccion -- Capacitor no usa protocolo file:,
@@ -2344,7 +2367,7 @@ async function doLogin(){
       body: JSON.stringify({email: email, password: pw, remember_me: true}),
     });
     var data = await res.json();
-    if(!res.ok) throw new Error((data.errors && data.errors[0] && data.errors[0].message) || data.detail || t('login_wrong_creds', 'Email o contraseña incorrectos.'));
+    if(!res.ok) throw new Error(_errMsg(data, t('login_wrong_creds', 'Email o contraseña incorrectos.')));
 
     localStorage.setItem('lxapp_token', data.access_token);
     localStorage.setItem('lx_co_token', data.access_token);

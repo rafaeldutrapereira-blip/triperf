@@ -398,6 +398,29 @@ var API = (function(){
   return 'http://localhost:8000';
 })();
 
+/* Mapea códigos de error semánticos del backend (ver api/routes/auth_routes.py
+   y coach_main.py::http_exception_handler, Sprint 3a) a claves de i18n.js —
+   así el mensaje se traduce siempre, sin depender de que el backend conozca
+   el idioma del usuario. Si el código no está en este mapa o la clave no
+   existe en el idioma actual, cae al "message" en español que manda el
+   backend (mejor que nada, nunca un error silencioso). */
+var ERR_CODE_KEYS = {
+  invalid_credentials: 'err_invalid_credentials', account_inactive: 'err_account_inactive',
+  rate_limited: 'err_rate_limited', email_already_registered: 'err_email_already_registered',
+  pw_too_short: 'err_pw_too_short', pw_needs_upper: 'err_pw_needs_upper',
+  pw_needs_lower: 'err_pw_needs_lower', pw_needs_digit: 'err_pw_needs_digit',
+  twofa_wrong_code: 'err_twofa_wrong_code', twofa_unavailable: 'err_twofa_unavailable',
+};
+function _errMsg(data, fallback){
+  var e = data && data.errors && data.errors[0];
+  var key = e && ERR_CODE_KEYS[e.code];
+  if(key && window.i18n){
+    var translated = window.i18n.t(key);
+    if(translated && translated !== key) return translated;
+  }
+  return (e && e.message) || (data && data.detail) || fallback;
+}
+
 function togglePw(){
   var inp  = document.getElementById('password');
   var show = document.getElementById('eye-show');
@@ -427,7 +450,7 @@ async function doLogin(e){
       body: JSON.stringify({email: email, password: pw}),
     });
     var data = await res.json();
-    if(!res.ok) throw new Error((data.errors && data.errors[0] && data.errors[0].message) || data.detail || (window.i18n ? window.i18n.t('login_wrong_creds') : 'Email o contraseña incorrectos.'));
+    if(!res.ok) throw new Error(_errMsg(data, window.i18n ? window.i18n.t('login_wrong_creds') : 'Email o contraseña incorrectos.'));
 
     var _planMap    = {elite:'elite', agegroup:'agegroup', basico:'basic'};
     var _roleLabels = {admin:'Admin · Coach', coach:'Coach', atleta:'Atleta'};

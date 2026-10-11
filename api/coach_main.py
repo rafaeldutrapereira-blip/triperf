@@ -451,11 +451,22 @@ def create_app() -> FastAPI:
     @_app.exception_handler(_HTTPExc)
     async def http_exception_handler(request: Request, exc: _HTTPExc):
         req_id = str(_uuid_mod.uuid4())[:8]
+        detail = exc.detail
+        # I18N: un detail={"code": "invalid_credentials", "message": "..."} permite
+        # que el frontend traduzca por código (ver i18n.js ERR_CODE_KEYS) sin que
+        # el backend necesite saber el idioma del usuario -- el string en
+        # "message" queda solo como fallback/log si el código es desconocido.
+        if isinstance(detail, dict) and "message" in detail:
+            code = detail.get("code") or str(exc.status_code)
+            message = detail["message"]
+        else:
+            code = str(exc.status_code)
+            message = detail
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "ok": False,
-                "errors": [{"code": str(exc.status_code), "message": exc.detail}],
+                "errors": [{"code": code, "message": message}],
                 "request_id": req_id,
             },
             headers=getattr(exc, "headers", None) or {},

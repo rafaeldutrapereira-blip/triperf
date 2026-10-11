@@ -55,7 +55,7 @@ def _check_rate_limit(ip: str, db: Session, max_attempts: int = _MAX_ATTEMPTS,
         logger.warning("Rate limit Redis excedido ip=%s action=%s count=%d", ip, action, count)
         raise HTTPException(
             status_code=429,
-            detail="Demasiados intentos. Espera 1 hora antes de reintentar.",
+            detail={"code": "rate_limited", "message": "Demasiados intentos. Espera 1 hora antes de reintentar."},
             headers=rl_hdrs,
         )
 
@@ -71,7 +71,7 @@ def _check_rate_limit(ip: str, db: Session, max_attempts: int = _MAX_ATTEMPTS,
         logger.warning("Rate limit DB excedido ip=%s action=%s count=%d", ip, action, db_count)
         raise HTTPException(
             status_code=429,
-            detail="Demasiados intentos. Espera 1 hora antes de reintentar.",
+            detail={"code": "rate_limited", "message": "Demasiados intentos. Espera 1 hora antes de reintentar."},
             headers=rl_hdrs,
         )
 
@@ -104,13 +104,13 @@ def _validate_password_strength(password: str) -> None:
     """
     import re
     if len(password) < 8:
-        raise HTTPException(422, "La contraseña debe tener al menos 8 caracteres.")
+        raise HTTPException(422, {"code": "pw_too_short", "message": "La contraseña debe tener al menos 8 caracteres."})
     if not re.search(r"[A-Z]", password):
-        raise HTTPException(422, "La contraseña debe incluir al menos una letra mayúscula.")
+        raise HTTPException(422, {"code": "pw_needs_upper", "message": "La contraseña debe incluir al menos una letra mayúscula."})
     if not re.search(r"[a-z]", password):
-        raise HTTPException(422, "La contraseña debe incluir al menos una letra minúscula.")
+        raise HTTPException(422, {"code": "pw_needs_lower", "message": "La contraseña debe incluir al menos una letra minúscula."})
     if not re.search(r"[0-9]", password):
-        raise HTTPException(422, "La contraseña debe incluir al menos un número.")
+        raise HTTPException(422, {"code": "pw_needs_digit", "message": "La contraseña debe incluir al menos un número."})
 
 
 # ── Endpoints ─────────────────────────────────────────────────
@@ -133,11 +133,11 @@ def login(
         audit(db, Action.LOGIN_FAIL, ip=ip,
               user_agent=request.headers.get("user-agent"),
               detail={"email": body.email}, success=False)
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        raise HTTPException(status_code=401, detail={"code": "invalid_credentials", "message": "Credenciales inválidas"})
     if not user.activo:
         audit(db, Action.LOGIN_FAIL, user_id=user.id, ip=ip, success=False,
               detail={"reason": "account_inactive"})
-        raise HTTPException(status_code=403, detail="Cuenta desactivada. Contacta al soporte.")
+        raise HTTPException(status_code=403, detail={"code": "account_inactive", "message": "Cuenta desactivada. Contacta al soporte."})
 
     _clear_attempts(ip, db)
 
@@ -175,10 +175,10 @@ def login(
 
             if not totp_ok:
                 _record_failed(ip, db)
-                raise HTTPException(401, "Código 2FA incorrecto")
+                raise HTTPException(401, {"code": "twofa_wrong_code", "message": "Código 2FA incorrecto"})
         except ImportError:
             logger.critical("pyotp no instalado — 2FA DESACTIVADO. Instalar: pip install pyotp")
-            raise HTTPException(503, "Servicio 2FA no disponible — contacta soporte")
+            raise HTTPException(503, {"code": "twofa_unavailable", "message": "Servicio 2FA no disponible — contacta soporte"})
 
     # I-04: Detectar dispositivo nuevo -- cookie persistente por navegador,
     # NO por IP+user-agent. La IP sola cambia todo el tiempo en redes
@@ -390,7 +390,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
 
     if existing and not existing.pending_invite:
         _record_failed(ip, db)
-        raise HTTPException(status_code=409, detail="Este email ya está registrado.")
+        raise HTTPException(status_code=409, detail={"code": "email_already_registered", "message": "Este email ya está registrado."})
     _validate_password_strength(body.password)
 
     if existing:
