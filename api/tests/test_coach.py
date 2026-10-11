@@ -377,12 +377,13 @@ class TestAthleteGarminActivitiesForCoach:
     def test_returns_synced_activities(self, client, db, coach_user,
                                         athlete_user, group_with_athlete):
         from api.models import GarminActivity
+        from datetime import date, timedelta
         athlete_user.garmin_email = "athlete@garmin.test"
         athlete_user.garmin_password = "enc-fake"
         db.add(athlete_user)
         db.add(GarminActivity(
             user_id=athlete_user.id, activity_id="999", name="Long Ride",
-            sport="bike", date_iso="2026-08-05", dur_min=120, dist_km=45.0,
+            sport="bike", date_iso=(date.today() - timedelta(days=5)).isoformat(), dur_min=120, dist_km=45.0,
             avg_hr=132, tss=95,
         ))
         db.commit()

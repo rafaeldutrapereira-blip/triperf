@@ -670,7 +670,7 @@ def get_status_board(
         ).first()
 
         # Insights activos (no dismisseados, no expirados)
-        from datetime import datetime
+        from datetime import datetime, timezone
         insights = db.query(AIInsight).filter(
             AIInsight.user_id      == uid,
             AIInsight.dismissed_at.is_(None),

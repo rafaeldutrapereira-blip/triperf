@@ -1516,6 +1516,5 @@ def create_plan_from_template(
         "weeks":       tmpl.weeks,
         "n_sessions":  n_created,
     }
-    return plan
 
 

@@ -1,130 +1,145 @@
 name: Deploy to Production
 
+# Despliega al VM de GCP (labx-server) cuando el CI de main termina en verde.
+# El VM no es un clon git: el código vive en ~/labx (venv, .env y data/ son locales del VM
+# y NUNCA se tocan). Se sube un `git archive` del commit, se reinicia labx.service y,
+# si /health no responde, se restaura el código anterior automáticamente.
+#
+# Se activa al configurar estos secrets en el repo (Settings → Secrets → Actions):
+#   PROD_HOST     IP del VM (34.145.118.232)
+#   PROD_USER     usuario SSH (labx-deploy)
+#   PROD_SSH_KEY  llave privada (contenido de deploy/keys/gcp_labx)
+# Sin ellos el workflow termina en "skipped" sin fallar.
+
 on:
-  push:
+  workflow_run:
+    workflows: ["CI — LabX"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
-    inputs:
-      force:
-        description: "Force deploy even if no code changes"
-        required: false
-        default: "false"
 
 concurrency:
   group: production-deploy
   cancel-in-progress: false   # never cancel a deploy in flight
 
 jobs:
-  # ── Guard: only deploy when CI passes ────────────────────────────────────
-  wait-for-ci:
-    name: Wait for CI
+  check:
+    name: Check deploy config
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    outputs:
+      enabled: ${{ steps.guard.outputs.enabled }}
     steps:
-      - name: Check CI status
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.sha }}
-          check-name: "test"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 15
-
-  # ── Alembic migrations (run before rolling update) ────────────────────────
-  migrate:
-    name: Database Migrations
-    runs-on: ubuntu-latest
-    needs: wait-for-ci
-    environment: production
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Alembic upgrade head
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host:     ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd /opt/labx
-            echo "── Pulling latest image ──"
-            docker compose pull api
-            echo "── Running Alembic migrations ──"
-            docker compose run --rm api python -c "
-            from alembic.config import Config
-            from alembic import command
-            cfg = Config('alembic.ini')
-            command.upgrade(cfg, 'head')
-            print('Alembic upgrade head: OK')
-            "
-
-  # ── Rolling deploy: zero-downtime via healthcheck ─────────────────────────
-  deploy:
-    name: Deploy App
-    runs-on: ubuntu-latest
-    needs: migrate
-    environment: production
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host:     ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd /opt/labx
-
-            echo "── Starting new container ──"
-            docker compose up -d --no-deps --build api
-
-            echo "── Waiting for health check ──"
-            for i in $(seq 1 12); do
-              STATUS=$(docker compose exec -T api curl -sf http://localhost:8000/health 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','err'))" 2>/dev/null || echo "err")
-              if [ "$STATUS" = "ok" ]; then
-                echo "Health check passed after ${i}×5s"
-                break
-              fi
-              if [ $i -eq 12 ]; then
-                echo "Health check FAILED after 60s — rolling back"
-                docker compose up -d --no-deps api@$(git rev-parse HEAD~1) || true
-                exit 1
-              fi
-              sleep 5
-            done
-
-            echo "── Restarting Celery worker ──"
-            docker compose up -d --no-deps worker || true
-
-            echo "── Pruning old images ──"
-            docker image prune -f --filter "until=24h"
-
-            echo "── Deploy complete ✓ ──"
-
-  # ── Post-deploy smoke test ─────────────────────────────────────────────────
-  smoke-test:
-    name: Post-deploy Smoke Test
-    runs-on: ubuntu-latest
-    needs: deploy
-    environment: production
-    steps:
-      - name: Health check from CI runner
+      - id: guard
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
         run: |
-          APP_URL="${{ secrets.PROD_APP_URL }}"
-          echo "Checking ${APP_URL}/health …"
-          STATUS=$(curl -sf "${APP_URL}/health" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','err'))")
+          if [ -n "$PROD_HOST" ] && [ -n "$PROD_USER" ] && [ -n "$PROD_SSH_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Deploy automático desactivado: faltan los secrets PROD_HOST / PROD_USER / PROD_SSH_KEY."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy to labx-server
+    runs-on: ubuntu-latest
+    needs: check
+    if: needs.check.outputs.enabled == 'true'
+    timeout-minutes: 20
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Build bundle (solo código; sin data/, apps nativas ni tests e2e)
+        run: |
+          git archive --format=tar.gz -o labx-bundle.tar.gz HEAD -- . \
+            ':(exclude)data' ':(exclude)android' ':(exclude)ios' ':(exclude)e2e' \
+            ':(exclude)docs' ':(exclude)deploy' ':(exclude).github'
+          ls -lh labx-bundle.tar.gz
+
+      - name: Setup SSH
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload + deploy
+        env:
+          TARGET: ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}
+        run: |
+          SSH="ssh -i $HOME/.ssh/id_deploy -o BatchMode=yes"
+          scp -i ~/.ssh/id_deploy -o BatchMode=yes labx-bundle.tar.gz "$TARGET:/tmp/labx-bundle.tar.gz"
+          $SSH "$TARGET" "SHA=$SHA bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP=~/labx
+          REL=~/labx-releases
+          TS=$(date +%Y%m%d-%H%M%S)
+          mkdir -p "$REL"
+          cd "$APP"
+
+          echo "── Respaldo del código actual (rollback) ──"
+          tar czf "$REL/code-$TS.tar.gz" --exclude=./data --exclude=./venv --exclude=./.env \
+            --exclude='*.log' --exclude='__pycache__' .
+          ls -1t "$REL"/code-*.tar.gz | tail -n +6 | xargs -r rm --
+
+          echo "── Respaldo de la BD (sqlite backup API) ──"
+          if [ -f data/labx_coach.db ]; then
+            venv/bin/python -c "import sqlite3; s=sqlite3.connect('data/labx_coach.db'); d=sqlite3.connect('$REL/db-$TS.db'); s.backup(d); d.close(); s.close()"
+            ls -1t "$REL"/db-*.db | tail -n +4 | xargs -r rm --
+          fi
+
+          rollback() {
+            echo "::error::Deploy falló — restaurando código anterior ($REL/code-$TS.tar.gz)"
+            tar xzf "$REL/code-$TS.tar.gz" -C "$APP"
+            sudo systemctl restart labx
+          }
+          trap rollback ERR
+
+          echo "── Instalando código $SHA ──"
+          tar xzf /tmp/labx-bundle.tar.gz -C "$APP"
+          rm -f /tmp/labx-bundle.tar.gz
+          echo "$SHA" > "$APP/DEPLOYED_SHA"
+
+          echo "── Dependencias ──"
+          venv/bin/pip install -q -r requirements-api.txt
+
+          echo "── Migraciones Alembic ──"
+          venv/bin/python -c "from dotenv import load_dotenv; load_dotenv('.env'); from alembic.config import main; main(argv=['upgrade', 'head'])"
+
+          echo "── Reiniciando labx.service ──"
+          sudo systemctl restart labx
+
+          for i in $(seq 1 24); do
+            if curl -sf http://127.0.0.1:8000/health >/dev/null; then
+              echo "Health OK tras ${i}×5s — deploy $SHA completo"
+              exit 0
+            fi
+            sleep 5
+          done
+
+          trap - ERR
+          echo "::error::Health check falló tras 120s"
+          rollback
+          exit 1
+          REMOTE
+
+      - name: Smoke test público
+        run: |
+          STATUS=$(curl -sf https://labxperformanceapp.com/health | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','err'))")
           if [ "$STATUS" != "ok" ]; then
-            echo "SMOKE TEST FAILED: ${APP_URL}/health returned status=${STATUS}"
+            echo "::error::https://labxperformanceapp.com/health devolvió status=${STATUS}"
             exit 1
           fi
-          echo "Smoke test passed ✓"
-
-      - name: Notify on success
-        if: success()
-        run: echo "Deploy to production succeeded for ${{ github.sha }}"
-
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "::error::Deploy FAILED for ${{ github.sha }} — investigate immediately"
-          # Add Slack/PagerDuty webhook call here when configured
+          echo "Smoke test OK ✓ ($SHA)"

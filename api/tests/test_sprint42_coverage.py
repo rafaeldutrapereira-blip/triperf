@@ -310,11 +310,13 @@ class TestWellnessTrend:
         from api.models import WellnessLog
         from api.services.wellness_service import wellness_trend
         import uuid
+        from datetime import date, timedelta
         user_id = str(uuid.uuid4())
+        day = (date.today() - timedelta(days=1)).isoformat()
         log = WellnessLog(
             id=str(uuid.uuid4()),
             user_id=user_id,
-            date_iso="2026-07-01",
+            date_iso=day,
             fatigue=2,
             sleep_q=4,
             soreness=2,
@@ -324,7 +326,7 @@ class TestWellnessTrend:
         db.commit()
         result = wellness_trend(db, user_id, days=30)
         assert len(result) == 1
-        assert result[0]["date"] == "2026-07-01"
+        assert result[0]["date"] == day
         assert result[0]["score"] > 0
 
 
@@ -340,8 +342,10 @@ class TestWellnessSummary:
         from api.models import WellnessLog
         from api.services.wellness_service import wellness_summary
         import uuid
+        from datetime import date, timedelta
         user_id = str(uuid.uuid4())
-        for i, d in enumerate(["2026-07-01", "2026-07-02"]):
+        days = [(date.today() - timedelta(days=n)).isoformat() for n in (2, 1)]
+        for i, d in enumerate(days):
             log = WellnessLog(
                 id=str(uuid.uuid4()),
                 user_id=user_id,

@@ -227,8 +227,8 @@ class TestCICD:
     def test_has_test_job(self):
         assert "pytest" in self._content()
 
-    def test_uses_noconftest(self):
-        assert "--noconftest" in self._content()
+    def test_enforces_coverage(self):
+        assert "--cov-fail-under=70" in self._content()
 
     def test_has_docker_build(self):
         assert "docker build" in self._content()

@@ -25,6 +25,7 @@ El backend corre en un servidor cloud, **no en la PC de Rafael** — ver [[proje
 - `cloudflared.service` (systemd) expone el mismo túnel de Cloudflare que ya apuntaba a `labxperformanceapp.com` — no hubo que tocar DNS.
 - **Rollback si el VM falla:** en la PC de Rafael siguen instalados (no borrados) `scripts/run_backend_forever.ps1` y `scripts/run_cloudflared_forever.ps1` — relanzarlos vuelve a servir desde ahí, Cloudflare Tunnel soporta réplicas simultáneas del mismo túnel.
 - Acceso SSH: `deploy/keys/gcp_labx` (gitignored, nunca commitear), usuario `labx-deploy`.
+- **CI/CD (desde 2026-10-11):** `ci.yml` corre en cada push; `deploy.yml` se dispara cuando el CI de `main` termina en verde y despliega al VM vía SSH (`git archive` sin `data/` → `~/labx`, `pip install`, Alembic, `systemctl restart labx`, rollback automático si `/health` falla; respaldos en `~/labx-releases/`). Solo se activa si existen los secrets `PROD_HOST`/`PROD_USER`/`PROD_SSH_KEY`; sin ellos queda en "skipped". La migración Alembic inicial no corre desde cero: una BD nueva se crea con `create_all` al arrancar la app.
 
 ## Patrones de bug recurrentes (evitar repetir)
 

@@ -10,10 +10,14 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from sqlalchemy.orm import Session
+
+if TYPE_CHECKING:
+    from .models import User
 
 logger = logging.getLogger("labx.scheduler")
 _scheduler: BackgroundScheduler | None = None
