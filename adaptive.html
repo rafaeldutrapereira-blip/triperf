@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--amber:#F59E0B;--blue:#1D4ED8;}
@@ -149,7 +150,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   <div class="c">
     <div class="ph-inner">
       <div></div>
-      <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+      <button class="btn btn-g btn-sm" onclick="loadDashboard()" data-i18n="adp_refresh">↻ Actualizar</button>
     </div>
   </div>
 </div>
@@ -174,15 +175,15 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     <div class="panel-head">
       <span class="panel-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Análisis Adaptativo
+        <span data-i18n="adp_title">Análisis Adaptativo</span>
       </span>
       <div class="tabs-bar">
-        <button class="tab-btn on" onclick="switchTab('week',this)">📅 Semana</button>
-        <button class="tab-btn" onclick="switchTab('compliance',this)">📊 Compliance</button>
-        <button class="tab-btn" onclick="switchTab('taper',this)">🏁 Tapering</button>
-        <button class="tab-btn" onclick="switchTab('projections',this)">📈 Proyección CTL</button>
-        <button class="tab-btn" onclick="switchTab('history',this)">📋 Historial</button>
-        <button class="tab-btn" id="coach-tab-btn" style="display:none" onclick="switchTab('coach',this)">👥 Coach</button>
+        <button class="tab-btn on" onclick="switchTab('week',this)">📅 <span data-i18n="adp_tab_week">Semana</span></button>
+        <button class="tab-btn" onclick="switchTab('compliance',this)">📊 <span data-i18n="adp_tab_compliance">Compliance</span></button>
+        <button class="tab-btn" onclick="switchTab('taper',this)">🏁 <span data-i18n="adp_tab_taper">Tapering</span></button>
+        <button class="tab-btn" onclick="switchTab('projections',this)">📈 <span data-i18n="adp_tab_projections">Proyección CTL</span></button>
+        <button class="tab-btn" onclick="switchTab('history',this)">📋 <span data-i18n="adp_tab_history">Historial</span></button>
+        <button class="tab-btn" id="coach-tab-btn" style="display:none" onclick="switchTab('coach',this)">👥 <span data-i18n="adp_tab_coach">Coach</span></button>
       </div>
     </div>
     <div style="padding:1.5rem">
@@ -191,11 +192,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="tab-pane on" id="tab-week">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
           <div style="display:flex;gap:.5rem;align-items:center">
-            <button class="btn btn-g btn-sm" id="prev-week-btn" onclick="changeWeek(-1)">← Anterior</button>
+            <button class="btn btn-g btn-sm" id="prev-week-btn" onclick="changeWeek(-1)" data-i18n="adp_prev_week">← Anterior</button>
             <span id="week-label" style="font-family:'Oswald',sans-serif;font-size:.75rem;color:var(--muted);letter-spacing:.06em"></span>
-            <button class="btn btn-g btn-sm" id="next-week-btn" onclick="changeWeek(1)">Siguiente →</button>
+            <button class="btn btn-g btn-sm" id="next-week-btn" onclick="changeWeek(1)" data-i18n="adp_next_week">Siguiente →</button>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="acceptAllWeek()">✅ Aceptar toda la semana</button>
+          <button class="btn btn-primary btn-sm" onclick="acceptAllWeek()">✅ <span data-i18n="adp_accept_all_week">Aceptar toda la semana</span></button>
         </div>
         <div id="week-sessions"></div>
         <div id="form-windows-week" style="margin-top:1rem"></div>
@@ -206,8 +207,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <div class="g3" id="compliance-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
         <div class="comp-hd">
           <div>
-            <div class="comp-title">📊 Cumplimiento semanal</div>
-            <div class="comp-sub">TSS realmente completado vs. TSS planificado, últimas 8 semanas</div>
+            <div class="comp-title">📊 <span data-i18n="adp_compliance_title">Cumplimiento semanal</span></div>
+            <div class="comp-sub" data-i18n="adp_compliance_sub">TSS realmente completado vs. TSS planificado, últimas 8 semanas</div>
           </div>
           <span id="compliance-info-mount"></span>
         </div>
@@ -218,28 +219,28 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <!-- ── TAB: TAPERING ── -->
       <div class="tab-pane" id="tab-taper">
         <div id="taper-content">
-          <div style="color:var(--dim);font-size:.82rem">Cargando protocolo de tapering…</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_taper">Cargando protocolo de tapering…</div>
         </div>
       </div>
 
       <!-- ── TAB: PROYECCIÓN CTL ── -->
       <div class="tab-pane" id="tab-projections">
         <div id="projections-content">
-          <div style="color:var(--dim);font-size:.82rem">Cargando proyección…</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_projections">Cargando proyección…</div>
         </div>
       </div>
 
       <!-- ── TAB: HISTORIAL ── -->
       <div class="tab-pane" id="tab-history">
         <div id="history-content">
-          <div style="color:var(--dim);font-size:.82rem">Cargando historial de adaptaciones…</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_history">Cargando historial de adaptaciones…</div>
         </div>
       </div>
 
       <!-- ── TAB: COACH ── -->
       <div class="tab-pane" id="tab-coach">
         <div id="coach-queue-content">
-          <div style="color:var(--dim);font-size:.82rem">Cargando cola de aprobaciones…</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_coach">Cargando cola de aprobaciones…</div>
         </div>
       </div>
 
@@ -266,7 +267,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   var API  = '/api';
   var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_k.token || '') };
 
-  var DAYS_ES  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
+  function DAYS_ES(){ return [
+    _t('app_day_sun','Dom'), _t('app_day_mon','Lun'), _t('app_day_tue','Mar'), _t('app_day_wed','Mié'),
+    _t('app_day_thu','Jue'), _t('app_day_fri','Vie'), _t('app_day_sat','Sáb'),
+  ]; }
   var PHASE_COLORS = { base:'#0EA5E9', build:'#F0A500', peak:'#EF4444', taper:'#22D3EE', recovery:'#10B981' };
 
   // ── Current week state ────────────────────────────────────────────────────
@@ -320,7 +325,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       })
       .catch(function () {
         document.getElementById('signal-banner-wrap').innerHTML =
-          '<div class="alert-chip warn">⚠️ Sin datos suficientes. Sincroniza tu Garmin y registra tu carrera objetivo.</div>';
+          '<div class="alert-chip warn">⚠️ ' + _t('adp_no_data_warn','Sin datos suficientes. Sincroniza tu Garmin y registra tu carrera objetivo.') + '</div>';
       });
     loadWeek();
   }
@@ -337,7 +342,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       '<div>' +
       '<div class="phase-name" style="color:' + col + '">' + (phase.phase_label || phase.current || '') + '</div>' +
       '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' +
-        'Semana ' + (phase.phase_week || 1) + ' de ' + (phase.total_weeks || '—') +
+        _t('adp_week_word','Semana') + ' ' + (phase.phase_week || 1) + ' ' + _t('adp_of_word','de') + ' ' + (phase.total_weeks || '—') +
         (phase.race_name ? ' · ' + phase.race_name : '') +
       '</div>' +
       '<div class="phase-prog mt2" style="margin-top:.5rem;gap:.6rem;display:flex;align-items:center">' +
@@ -350,7 +355,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       (phase.days_to_race !== null && phase.days_to_race !== undefined
         ? '<div style="text-align:right">' +
           '<div class="phase-countdown" style="color:' + col + '">' + phase.days_to_race + '</div>' +
-          '<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--dim)">DÍAS</div>' +
+          '<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--dim)">' + _t('adp_days_label','DÍAS') + '</div>' +
           '</div>'
         : '') +
       '</div>';
@@ -365,9 +370,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       '<div>' +
       '<div class="signal-label">' + (adap.signal_label || '') + '</div>' +
       '<div style="font-size:.7rem;color:var(--dim);margin-top:.12rem;font-family:\'Oswald\',sans-serif;letter-spacing:.06em">' +
-        'Recovery: ' + (adap.recovery_score !== null ? adap.recovery_score : '—') + ' · ' +
+        _t('adp_recovery_label','Recovery') + ': ' + (adap.recovery_score !== null ? adap.recovery_score : '—') + ' · ' +
         'TSB: ' + (adap.tsb !== null ? (adap.tsb > 0 ? '+' : '') + Math.round(adap.tsb || 0) : '—') + ' · ' +
-        'Compliance 7d: ' + (adap.compliance_7d !== null ? Math.round((adap.compliance_7d || 0) * 100) + '%' : '—') +
+        _t('adp_compliance7d_label','Compliance 7d') + ': ' + (adap.compliance_7d !== null ? Math.round((adap.compliance_7d || 0) * 100) + '%' : '—') +
       '</div>' +
       '</div>' +
       '<div class="signal-reason">' + (adap.reason_text || '') + '</div>' +
@@ -381,10 +386,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var delta = week.tss_delta_pct || 0;
     var deltaCol = delta < -5 ? 'var(--amber)' : (delta > 5 ? 'var(--purple)' : 'var(--green)');
     var kpis = [
-      { label: 'TSS Planificado', value: week.tss_planned,  color: 'var(--muted)',   sub: 'esta semana' },
-      { label: 'TSS Adaptado',    value: week.tss_adjusted, color: 'var(--cyan)',    sub: (delta > 0 ? '+' : '') + delta + '%' },
-      { label: 'CTL',             value: tl && tl.ctl ? Math.round(tl.ctl) : '—',    color: 'var(--purple)',  sub: 'fitness' },
-      { label: 'TSB',             value: tl && tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: tl && (tl.tsb || 0) > 0 ? 'var(--green)' : 'var(--amber)', sub: 'forma' },
+      { label: _t('adp_kpi_tss_planned','TSS Planificado'), value: week.tss_planned,  color: 'var(--muted)',   sub: _t('adp_this_week','esta semana') },
+      { label: _t('adp_kpi_tss_adjusted','TSS Adaptado'),    value: week.tss_adjusted, color: 'var(--cyan)',    sub: (delta > 0 ? '+' : '') + delta + '%' },
+      { label: 'CTL',             value: tl && tl.ctl ? Math.round(tl.ctl) : '—',    color: 'var(--purple)',  sub: _t('adp_fitness_word','fitness') },
+      { label: 'TSB',             value: tl && tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: tl && (tl.tsb || 0) > 0 ? 'var(--green)' : 'var(--amber)', sub: _t('adp_form_word','forma') },
     ];
     document.getElementById('week-kpis').innerHTML = kpis.map(function (k) {
       return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div>' +
@@ -418,7 +423,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         updateWeekLabel(d.week_start, d.week_end);
       })
       .catch(function () {
-        document.getElementById('week-sessions').innerHTML = '<div style="color:var(--dim);font-size:.82rem">Sin datos de plan para esta semana.</div>';
+        document.getElementById('week-sessions').innerHTML = '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_week_data','Sin datos de plan para esta semana.') + '</div>';
       });
   }
 
@@ -437,7 +442,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var pending = _weekAdaptations.filter(function (a) {
       return a.signal !== 'maintain' && a.accepted === null && a.date_iso >= today;
     });
-    if (!pending.length) { alert('No hay adaptaciones pendientes de aceptar esta semana.'); return; }
+    if (!pending.length) { alert(_t('adp_no_pending_adaptations','No hay adaptaciones pendientes de aceptar esta semana.')); return; }
     var promises = pending.map(function (a) {
       return fetch(API + '/adaptive/accept/' + a.date_iso, { method: 'POST', headers: hdrs });
     });
@@ -448,7 +453,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var el       = document.getElementById('week-sessions');
     var adaptations = d.adaptations || [];
     if (!adaptations.length) {
-      el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">Sin sesiones planificadas esta semana.</div>';
+      el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_sessions_week','Sin sesiones planificadas esta semana.') + '</div>';
       return;
     }
 
@@ -456,16 +461,16 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       easy: '#10B981', moderate: '#F59E0B', hard: '#EF4444', race: '#EF4444', rest: '#3D6880'
     };
     var intensityLabel = {
-      easy: '🟢 Fácil', moderate: '🟡 Moderado', hard: '🟠 Intenso', race: '🔴 Carrera', rest: '⚪ Descanso'
-    };
-    var phaseLabel = {
-      increase: '🎯 VENTANA', maintain: '', decrease: '⚠️ Reducido', taper: '🩵 Taper', rest: '🔴 Descanso'
+      easy: '🟢 ' + _t('adp_int_easy','Fácil'), moderate: '🟡 ' + _t('adp_int_moderate','Moderado'),
+      hard: '🟠 ' + _t('adp_int_hard','Intenso'), race: '🔴 ' + _t('adp_int_race','Carrera'),
+      rest: '⚪ ' + _t('adp_int_rest','Descanso'),
     };
 
+    var days = DAYS_ES();
     var html = '';
     adaptations.forEach(function (a) {
       var d_date  = new Date(a.date_iso + 'T12:00:00');
-      var dayName = DAYS_ES[d_date.getDay()];
+      var dayName = days[d_date.getDay()];
       var dayN    = d_date.getDate();
       var isAdapted = a.signal && a.signal !== 'maintain';
       var isWindow  = a.signal === 'increase';
@@ -480,11 +485,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       var adjLabel = intensityLabel[a.adjusted_intensity] || a.adjusted_intensity || '—';
 
       var acceptState = '';
-      if (a.accepted === true)  acceptState = '<span class="accepted-badge">✅ ACEPTADO</span>';
-      else if (a.accepted === false) acceptState = '<span class="rejected-badge">✗ RECHAZADO</span>';
+      if (a.accepted === true)  acceptState = '<span class="accepted-badge">✅ ' + _t('adp_accepted_badge','ACEPTADO') + '</span>';
+      else if (a.accepted === false) acceptState = '<span class="rejected-badge">✗ ' + _t('adp_rejected_badge','RECHAZADO') + '</span>';
       else if (isAdapted) {
-        acceptState = '<button class="accept-btn" onclick="acceptDay(\'' + a.date_iso + '\')">✅ Aceptar</button>' +
-                      '<button class="reject-btn" onclick="rejectDay(\'' + a.date_iso + '\')">✗ Rechazar</button>';
+        acceptState = '<button class="accept-btn" onclick="acceptDay(\'' + a.date_iso + '\')">✅ ' + _t('adp_accept_btn','Aceptar') + '</button>' +
+                      '<button class="reject-btn" onclick="rejectDay(\'' + a.date_iso + '\')">✗ ' + _t('adp_reject_btn','Rechazar') + '</button>';
       }
 
       html += '<div class="' + cardClass + '" id="card-' + a.date_iso + '">' +
@@ -495,11 +500,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         '<div>' +
         '<div class="session-name" style="color:' + adjCol + '">' + adjLabel + '</div>' +
         '<div class="session-detail">' +
-          'Fase: ' + (a.phase || '—') +
-          (a.coach_note ? ' · Coach: ' + a.coach_note : '') +
+          _t('adp_phase_label','Fase') + ': ' + (a.phase || '—') +
+          (a.coach_note ? ' · ' + _t('adp_coach_note_label','Coach') + ': ' + a.coach_note : '') +
         '</div>' +
         (isAdapted ? '<div class="session-reason">' + (a.reason_text || '') + '</div>' : '') +
-        (isWindow   ? '<span class="session-window-badge">🎯 VENTANA DE FORMA</span>' : '') +
+        (isWindow   ? '<span class="session-window-badge">🎯 ' + _t('adp_window_badge','VENTANA DE FORMA') + '</span>' : '') +
         '<div class="session-actions">' + acceptState + '</div>' +
         '</div>' +
         '<div class="session-tss">' +
@@ -534,9 +539,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var avg = d.avg_pct;
         var trend = d.trend;
         document.getElementById('compliance-kpis').innerHTML = [
-          { label: 'Promedio 8 semanas', value: avg ? avg + '%' : '—', color: avg >= 85 ? 'var(--green)' : avg >= 70 ? 'var(--amber)' : 'var(--red)' },
-          { label: 'Tendencia', value: { improving:'↑ Mejorando', stable:'→ Estable', declining:'↓ Bajando' }[trend] || trend, color: trend === 'improving' ? 'var(--green)' : trend === 'declining' ? 'var(--red)' : 'var(--muted)' },
-          { label: 'Semanas analizadas', value: (d.history || []).filter(function(h){return h.compliance_pct !== null;}).length, color: 'var(--cyan)' },
+          { label: _t('adp_kpi_avg8weeks','Promedio 8 semanas'), value: avg ? avg + '%' : '—', color: avg >= 85 ? 'var(--green)' : avg >= 70 ? 'var(--amber)' : 'var(--red)' },
+          { label: _t('adp_kpi_trend','Tendencia'), value: { improving:'↑ '+_t('adp_trend_improving','Mejorando'), stable:'→ '+_t('adp_trend_stable','Estable'), declining:'↓ '+_t('adp_trend_declining','Bajando') }[trend] || trend, color: trend === 'improving' ? 'var(--green)' : trend === 'declining' ? 'var(--red)' : 'var(--muted)' },
+          { label: _t('adp_kpi_weeks_analyzed','Semanas analizadas'), value: (d.history || []).filter(function(h){return h.compliance_pct !== null;}).length, color: 'var(--cyan)' },
         ].map(function (k) {
           return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
         }).join('');
@@ -566,23 +571,23 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         });
         barHtml += '</div>';
         barHtml += '<div style="font-size:.7rem;color:var(--dim);margin-top:.5rem">' +
-          '🟢 ≥85% cumplido &nbsp; 🟡 70-84% &nbsp; 🔴 &lt;70% &nbsp; · &nbsp; altura de la barra = volumen planificado esa semana (TSS), relleno = % realmente completado' +
+          _t('adp_compliance_legend','🟢 ≥85% cumplido &nbsp; 🟡 70-84% &nbsp; 🔴 &lt;70% &nbsp; · &nbsp; altura de la barra = volumen planificado esa semana (TSS), relleno = % realmente completado') +
           '</div>';
         document.getElementById('compliance-chart').innerHTML = barHtml;
 
         // Insights
         var insHtml = '';
         if (avg && avg < 70) {
-          insHtml += '<div class="alert-chip warn">📉 Compliance bajo (' + avg + '%). El plan se ha reducido automáticamente para acomodarse a tu ritmo real. Prioriza consistencia sobre volumen: es mejor completar un plan más chico que abandonar uno grande a la mitad.</div>';
+          insHtml += '<div class="alert-chip warn">📉 ' + _t('adp_insight_low','Compliance bajo ({pct}%). El plan se ha reducido automáticamente para acomodarse a tu ritmo real. Prioriza consistencia sobre volumen: es mejor completar un plan más chico que abandonar uno grande a la mitad.').replace('{pct}',avg) + '</div>';
         } else if (avg && avg >= 90) {
-          insHtml += '<div class="alert-chip good">✅ Excelente consistencia (' + avg + '%). Estás completando el plan con alta fidelidad — el motor adaptativo puede mantener la carga nominal e incluso subirla si tu recuperación lo permite.</div>';
+          insHtml += '<div class="alert-chip good">✅ ' + _t('adp_insight_high','Excelente consistencia ({pct}%). Estás completando el plan con alta fidelidad — el motor adaptativo puede mantener la carga nominal e incluso subirla si tu recuperación lo permite.').replace('{pct}',avg) + '</div>';
         } else if (avg) {
-          insHtml += '<div class="alert-chip">🟡 Cumplimiento moderado (' + avg + '%). Estás completando la mayoría del plan pero con algunas sesiones incompletas — normal en semanas cargadas, vigila que no se vuelva la tendencia.</div>';
+          insHtml += '<div class="alert-chip">🟡 ' + _t('adp_insight_moderate','Cumplimiento moderado ({pct}%). Estás completando la mayoría del plan pero con algunas sesiones incompletas — normal en semanas cargadas, vigila que no se vuelva la tendencia.').replace('{pct}',avg) + '</div>';
         }
         if (trend === 'improving') {
-          insHtml += '<div class="alert-chip good">↑ Tu compliance está mejorando semana a semana. La adaptación está funcionando: el plan se está ajustando a un volumen que sí puedes sostener.</div>';
+          insHtml += '<div class="alert-chip good">↑ ' + _t('adp_insight_improving','Tu compliance está mejorando semana a semana. La adaptación está funcionando: el plan se está ajustando a un volumen que sí puedes sostener.') + '</div>';
         } else if (trend === 'declining') {
-          insHtml += '<div class="alert-chip warn">↓ Compliance en descenso semana a semana. Revisa si el volumen del plan es sostenible o si hay factores externos (trabajo, viaje, estrés) — 2-3 semanas seguidas a la baja suelen anticipar un ajuste de plan necesario.</div>';
+          insHtml += '<div class="alert-chip warn">↓ ' + _t('adp_insight_declining','Compliance en descenso semana a semana. Revisa si el volumen del plan es sostenible o si hay factores externos (trabajo, viaje, estrés) — 2-3 semanas seguidas a la baja suelen anticipar un ajuste de plan necesario.') + '</div>';
         }
         document.getElementById('compliance-insights').innerHTML = insHtml;
       }).catch(function () {});
@@ -600,28 +605,28 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (d) {
         if (!d) {
           document.getElementById('taper-content').innerHTML =
-            '<div class="alert-chip warn">Sin carrera objetivo registrada. Agrega una en tu Perfil para activar el protocolo de tapering.</div>';
+            '<div class="alert-chip warn">' + _t('adp_no_race_taper','Sin carrera objetivo registrada. Agrega una en tu Perfil para activar el protocolo de tapering.') + '</div>';
           return;
         }
 
         var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
         var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
           [
-            { label: '🏁 Días para la carrera', value: d.days_to_race, color: 'var(--cyan)' },
-            { label: '📊 TSB actual', value: d.tsb_now !== null ? (d.tsb_now > 0 ? '+' : '') + d.tsb_now : '—', color: (d.tsb_now || 0) > 0 ? 'var(--green)' : 'var(--amber)' },
-            { label: '🎯 TSB objetivo carrera', value: '+' + d.tsb_target_race, color: trackCol },
+            { label: '🏁 ' + _t('adp_taper_kpi_days','Días para la carrera'), value: d.days_to_race, color: 'var(--cyan)' },
+            { label: '📊 ' + _t('adp_taper_kpi_tsb_now','TSB actual'), value: d.tsb_now !== null ? (d.tsb_now > 0 ? '+' : '') + d.tsb_now : '—', color: (d.tsb_now || 0) > 0 ? 'var(--green)' : 'var(--amber)' },
+            { label: '🎯 ' + _t('adp_taper_kpi_tsb_target','TSB objetivo carrera'), value: '+' + d.tsb_target_race, color: trackCol },
           ].map(function (k) {
             return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
           }).join('') + '</div>';
 
         if (d.on_track) {
-          html += '<div class="alert-chip good" style="margin-bottom:1rem">✅ En camino — proyección TSB ' + d.tsb_projected + ' para carrera. Meta: +' + d.tsb_target_race + '.</div>';
+          html += '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' + _t('adp_taper_ontrack','En camino — proyección TSB {tsb} para carrera. Meta: +{target}.').replace('{tsb}',d.tsb_projected).replace('{target}',d.tsb_target_race) + '</div>';
         } else {
-          html += '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ Ajusta la carga — proyección TSB ' + d.tsb_projected + ' para carrera. Meta: +' + d.tsb_target_race + '.</div>';
+          html += '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' + _t('adp_taper_offtrack','Ajusta la carga — proyección TSB {tsb} para carrera. Meta: +{target}.').replace('{tsb}',d.tsb_projected).replace('{target}',d.tsb_target_race) + '</div>';
         }
 
         // Key rules
-        html += '<div class="panel" style="padding:1rem;margin-bottom:1rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.5rem;color:var(--cyan)">REGLAS DE TAPERING</div>' +
+        html += '<div class="panel" style="padding:1rem;margin-bottom:1rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.5rem;color:var(--cyan)">' + _t('adp_taper_rules_title','REGLAS DE TAPERING') + '</div>' +
           (d.key_rules || []).map(function (r) {
             return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0;border-bottom:1px solid var(--border2)">→ ' + r + '</div>';
           }).join('') + '</div>';
@@ -629,7 +634,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         // Taper curve
         var curve = (d.taper_curve || []).slice(0, 14);
         if (curve.length) {
-          html += '<div class="sec-h" style="font-size:.78rem">Curva de tapering (próximos ' + curve.length + ' días)</div>';
+          html += '<div class="sec-h" style="font-size:.78rem">' + _t('adp_taper_curve_title','Curva de tapering (próximos {n} días)').replace('{n}',curve.length) + '</div>';
           curve.forEach(function (day) {
             var col = day.taper_factor >= 0.85 ? 'var(--muted)' : day.taper_factor >= 0.55 ? 'var(--cyan)' : day.taper_factor >= 0.35 ? 'var(--amber)' : 'var(--red)';
             html += '<div class="taper-day">' +
@@ -642,7 +647,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
         document.getElementById('taper-content').innerHTML = html;
       }).catch(function () {
-        document.getElementById('taper-content').innerHTML = '<div class="alert-chip warn">Error cargando protocolo de tapering.</div>';
+        document.getElementById('taper-content').innerHTML = '<div class="alert-chip warn">' + _t('adp_taper_load_error','Error cargando protocolo de tapering.') + '</div>';
       });
   }
 
@@ -664,18 +669,18 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
         var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
           [
-            { label: 'CTL actual',      value: d.ctl_now,       color: 'var(--purple)' },
-            { label: 'CTL proyectado',  value: d.ctl_projected, color: 'var(--cyan)' },
-            { label: 'CTL objetivo',    value: d.ctl_target,    color: trackCol },
+            { label: _t('adp_ctl_now','CTL actual'),      value: d.ctl_now,       color: 'var(--purple)' },
+            { label: _t('adp_ctl_projected','CTL proyectado'),  value: d.ctl_projected, color: 'var(--cyan)' },
+            { label: _t('adp_ctl_target','CTL objetivo'),    value: d.ctl_target,    color: trackCol },
           ].map(function (k) {
             return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
           }).join('') + '</div>';
 
         html += d.on_track
-          ? '<div class="alert-chip good" style="margin-bottom:1rem">✅ En camino. Al ritmo actual llegarás con CTL ' + d.ctl_projected + ' (meta: ' + d.ctl_target + ').</div>'
-          : '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ Gap de ' + d.gap + ' puntos CTL. Para llegar al objetivo de ' + d.ctl_target + ' necesitas aumentar compliance o extender la preparación.</div>';
+          ? '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' + _t('adp_proj_ontrack','En camino. Al ritmo actual llegarás con CTL {ctl} (meta: {target}).').replace('{ctl}',d.ctl_projected).replace('{target}',d.ctl_target) + '</div>'
+          : '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' + _t('adp_proj_gap','Gap de {gap} puntos CTL. Para llegar al objetivo de {target} necesitas aumentar compliance o extender la preparación.').replace('{gap}',d.gap).replace('{target}',d.ctl_target) + '</div>';
 
-        html += '<div class="sec-h" style="font-size:.78rem">Proyección semanal de CTL (' + d.weeks_left + ' semanas)</div>';
+        html += '<div class="sec-h" style="font-size:.78rem">' + _t('adp_proj_weekly_title','Proyección semanal de CTL ({n} semanas)').replace('{n}',d.weeks_left) + '</div>';
         (d.projection || []).forEach(function (p) {
           var w     = Math.round(p.ctl_projected / maxCTL * 100);
           var pcol  = { base:'var(--cyan)', build:'var(--gold)', peak:'var(--red)', taper:'var(--aqua)', recovery:'var(--green)' }[p.phase] || 'var(--muted)';
@@ -701,10 +706,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var stats = d.stats || {};
         var html  = '<div class="g4" style="margin-bottom:1.5rem;gap:.75rem">' +
           [
-            { label: 'Días analizados', value: stats.total_days || 0,   color: 'var(--muted)' },
-            { label: 'Días adaptados',  value: stats.adapted_days || 0, color: 'var(--amber)' },
-            { label: '✅ Aceptadas',    value: stats.accepted || 0,      color: 'var(--green)' },
-            { label: '✗ Rechazadas',   value: stats.rejected || 0,      color: 'var(--red)' },
+            { label: _t('adp_hist_total_days','Días analizados'), value: stats.total_days || 0,   color: 'var(--muted)' },
+            { label: _t('adp_hist_adapted_days','Días adaptados'),  value: stats.adapted_days || 0, color: 'var(--amber)' },
+            { label: '✅ ' + _t('adp_hist_accepted','Aceptadas'),    value: stats.accepted || 0,      color: 'var(--green)' },
+            { label: '✗ ' + _t('adp_hist_rejected','Rechazadas'),   value: stats.rejected || 0,      color: 'var(--red)' },
           ].map(function (k) {
             return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
           }).join('') + '</div>';
@@ -724,7 +729,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
               '</div>';
           });
         } else {
-          html += '<div style="color:var(--dim);font-size:.82rem">Sin adaptaciones en los últimos 30 días.</div>';
+          html += '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_adaptations_30d','Sin adaptaciones en los últimos 30 días.') + '</div>';
         }
         document.getElementById('history-content').innerHTML = html;
       }).catch(function () {});
@@ -741,9 +746,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       })
       .then(function (d) {
         if (!d) { document.getElementById('coach-queue-content').innerHTML = ''; return; }
-        var html = '<div style="margin-bottom:.75rem;font-size:.8rem;color:var(--muted)">Adaptaciones pendientes de aprobación: <strong style="color:var(--text)">' + d.pending_count + '</strong></div>';
+        var html = '<div style="margin-bottom:.75rem;font-size:.8rem;color:var(--muted)">' + _t('adp_pending_approval_label','Adaptaciones pendientes de aprobación') + ': <strong style="color:var(--text)">' + d.pending_count + '</strong></div>';
         if (!(d.queue || []).length) {
-          html += '<div class="alert-chip good">✅ Sin adaptaciones pendientes de aprobación esta semana.</div>';
+          html += '<div class="alert-chip good">✅ ' + _t('adp_no_pending_approval','Sin adaptaciones pendientes de aprobación esta semana.') + '</div>';
         } else {
           (d.queue || []).forEach(function (a) {
             var sigCol = a.signal_color || 'var(--muted)';
@@ -753,7 +758,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
               '<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">' + (a.reason_text || '') + '</div>' +
               '</div>' +
               '<div style="display:flex;gap:.35rem">' +
-              '<button class="accept-btn" onclick="coachApprove(\'' + a.id + '\')">✅ Aprobar</button>' +
+              '<button class="accept-btn" onclick="coachApprove(\'' + a.id + '\')">✅ ' + _t('adp_approve_btn','Aprobar') + '</button>' +
               '<button class="reject-btn" onclick="coachReject(\'' + a.id + '\')">✗</button>' +
               '</div>' +
               '</div>';
@@ -768,7 +773,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function () { loadCoachQueue(); }).catch(function () {});
   };
   window.coachReject = function (id) {
-    var note = prompt('Nota para el atleta (opcional):') || '';
+    var note = prompt(_t('adp_coach_reject_prompt','Nota para el atleta (opcional):')) || '';
     fetch(API + '/adaptive/coach-reject/' + id, {
       method: 'POST', headers: hdrs, body: JSON.stringify({ note: note })
     }).then(function () { loadCoachQueue(); }).catch(function () {});
