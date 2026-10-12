@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden}
@@ -124,47 +125,47 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <!-- Sport selector -->
 <div id="sport-overlay">
   <div id="sport-picker">
-    <h2>Selecciona deporte</h2>
+    <h2 data-i18n="gps_select_sport">Selecciona deporte</h2>
     <div class="sport-grid">
-      <button class="sport-btn" onclick="selectSport('run')"><span class="ico">🏃</span>Correr</button>
-      <button class="sport-btn" onclick="selectSport('bike')"><span class="ico">🚴</span>Ciclismo</button>
-      <button class="sport-btn" onclick="selectSport('swim')"><span class="ico">🏊</span>Natación</button>
-      <button class="sport-btn" onclick="selectSport('walk')"><span class="ico">🚶</span>Caminar</button>
+      <button class="sport-btn" onclick="selectSport('run')"><span class="ico">🏃</span><span data-i18n="gps_sport_run">Correr</span></button>
+      <button class="sport-btn" onclick="selectSport('bike')"><span class="ico">🚴</span><span data-i18n="gps_sport_bike">Ciclismo</span></button>
+      <button class="sport-btn" onclick="selectSport('swim')"><span class="ico">🏊</span><span data-i18n="gps_sport_swim">Natación</span></button>
+      <button class="sport-btn" onclick="selectSport('walk')"><span class="ico">🚶</span><span data-i18n="gps_sport_walk">Caminar</span></button>
     </div>
   </div>
 </div>
 
 <!-- Top bar -->
 <div id="topbar">
-  <a href="training_plan.html">← Plan</a>
+  <a href="training_plan.html" data-i18n="gps_back_plan">← Plan</a>
   <h1 id="topbar-title">GPS Tracker</h1>
   <span id="rec-badge">● REC</span>
 </div>
 
-<div id="gps-warn">Buscando señal GPS…</div>
+<div id="gps-warn" data-i18n="gps_searching_signal">Buscando señal GPS…</div>
 
 <!-- Map -->
 <div id="map"></div>
 
 <!-- Laps detail (toggle) -->
 <div id="laps-panel">
-  <h3>VUELTAS</h3>
+  <h3 data-i18n="gps_laps_title">VUELTAS</h3>
   <div id="laps-body"></div>
 </div>
 
 <!-- Controls -->
 <div id="controls">
-  <button class="btn btn-start" id="btn-start" onclick="startWorkout()">Iniciar</button>
-  <button class="btn btn-pause" id="btn-pause" onclick="pauseWorkout()" disabled>Pausar</button>
-  <button class="btn btn-lap"   id="btn-lap"   onclick="recordLap()"   disabled>Vuelta</button>
-  <button class="btn btn-stop"  id="btn-stop"  onclick="stopWorkout()"  disabled>Finalizar</button>
+  <button class="btn btn-start" id="btn-start" onclick="startWorkout()" data-i18n="gps_btn_start">Iniciar</button>
+  <button class="btn btn-pause" id="btn-pause" onclick="pauseWorkout()" disabled data-i18n="gps_btn_pause">Pausar</button>
+  <button class="btn btn-lap"   id="btn-lap"   onclick="recordLap()"   disabled data-i18n="gps_btn_lap">Vuelta</button>
+  <button class="btn btn-stop"  id="btn-stop"  onclick="stopWorkout()"  disabled data-i18n="gps_btn_stop">Finalizar</button>
 </div>
 
 <!-- Metrics -->
 <div id="metrics">
   <div class="metric-cell">
     <div class="val hi" id="m-time">00:00:00</div>
-    <div class="lbl">Tiempo</div>
+    <div class="lbl" data-i18n="gps_m_time">Tiempo</div>
   </div>
   <div class="metric-cell">
     <div class="val" id="m-dist">0.00</div>
@@ -184,11 +185,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
   <div class="metric-cell">
     <div class="val" id="m-elev">0</div>
-    <div class="lbl">m desnivel</div>
+    <div class="lbl" data-i18n="gps_m_elev">m desnivel</div>
   </div>
   <div class="metric-cell">
     <div class="val" id="m-cad">--</div>
-    <div class="lbl">vueltas</div>
+    <div class="lbl" data-i18n="gps_m_laps">vueltas</div>
   </div>
   <div class="metric-cell">
     <div class="val" id="m-cal">0</div>
@@ -224,6 +225,8 @@ var _calories  = 0;
 var _watchId   = null;
 var _gpsOk     = false;
 
+function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
+
 // ── Map (Leaflet) ────────────────────────────────────────────────────────────
 var _map, _polyline, _marker, _posCircle;
 
@@ -258,10 +261,13 @@ function updateMap(lat, lng) {
 function selectSport(s) {
   _sport = s;
   document.getElementById('sport-overlay').style.display = 'none';
-  var labels = { run:'Correr', bike:'Ciclismo', swim:'Natación', walk:'Caminar' };
+  var labels = {
+    run:_t('gps_sport_run','Correr'), bike:_t('gps_sport_bike','Ciclismo'),
+    swim:_t('gps_sport_swim','Natación'), walk:_t('gps_sport_walk','Caminar'),
+  };
   document.getElementById('topbar-title').textContent = labels[s] || 'GPS Tracker';
   if (s === 'bike') {
-    document.getElementById('m-pace-lbl').textContent = 'km/h avg';
+    document.getElementById('m-pace-lbl').textContent = _t('gps_pace_avg_bike','km/h avg');
   }
   // Start GPS watch immediately
   startGPSWatch();
@@ -270,11 +276,11 @@ function selectSport(s) {
 // ── GPS Watch ─────────────────────────────────────────────────────────────────
 function startGPSWatch() {
   if (!navigator.geolocation) {
-    showGPSWarn('GPS no disponible en este dispositivo');
+    showGPSWarn(_t('gps_no_gps','GPS no disponible en este dispositivo'));
     return;
   }
   document.getElementById('gps-warn').style.display = 'block';
-  document.getElementById('gps-warn').textContent   = 'Buscando señal GPS…';
+  document.getElementById('gps-warn').textContent   = _t('gps_searching_signal','Buscando señal GPS…');
 
   _watchId = navigator.geolocation.watchPosition(
     onGPSUpdate,
@@ -334,11 +340,11 @@ function onGPSUpdate(pos) {
 
 function onGPSError(err) {
   var msgs = {
-    1: 'Permiso GPS denegado — actívalo en ajustes del navegador',
-    2: 'Señal GPS perdida',
-    3: 'Timeout GPS — verifica que estás al aire libre',
+    1: _t('gps_err_denied','Permiso GPS denegado — actívalo en ajustes del navegador'),
+    2: _t('gps_err_lost','Señal GPS perdida'),
+    3: _t('gps_err_timeout','Timeout GPS — verifica que estás al aire libre'),
   };
-  showGPSWarn(msgs[err.code] || 'Error GPS');
+  showGPSWarn(msgs[err.code] || _t('gps_err_generic','Error GPS'));
 }
 
 function showGPSWarn(msg) {
@@ -369,14 +375,14 @@ function pauseWorkout() {
     _state    = 'paused';
     _pausedAt = Date.now();
     clearInterval(_timerInt);
-    document.getElementById('btn-pause').textContent = 'Reanudar';
+    document.getElementById('btn-pause').textContent = _t('gps_btn_resume','Reanudar');
     document.getElementById('rec-badge').style.display = 'none';
   } else if (_state === 'paused') {
     _state = 'running';
     _elapsed += (Date.now() - _pausedAt);
     _pausedAt = null;
     _timerInt = setInterval(tickTimer, 1000);
-    document.getElementById('btn-pause').textContent = 'Pausar';
+    document.getElementById('btn-pause').textContent = _t('gps_btn_pause','Pausar');
     document.getElementById('rec-badge').style.display = 'block';
   }
 }
@@ -396,7 +402,7 @@ function recordLap() {
 }
 
 function stopWorkout() {
-  if (!confirm('¿Finalizar el entrenamiento?')) return;
+  if (!confirm(_t('gps_confirm_finish','¿Finalizar el entrenamiento?'))) return;
   _state = 'stopped';
   clearInterval(_timerInt);
   stopGPSWatch();
@@ -405,7 +411,7 @@ function stopWorkout() {
   document.getElementById('btn-lap').disabled   = true;
   document.getElementById('btn-stop').disabled  = true;
   document.getElementById('rec-badge').style.display = 'none';
-  document.getElementById('btn-start').textContent = 'Nueva';
+  document.getElementById('btn-start').textContent = _t('gps_btn_new','Nueva');
 
   saveWorkout();
 }
@@ -498,10 +504,10 @@ function saveWorkout() {
         notas:      'GPS Tracker — ' + payload.dist_km + ' km',
         tss:        Math.round(payload.dur_min * 0.8),
       }),
-    }).then(function(r){ if (r.ok) showToast('Entrenamiento guardado ✓'); })
-      .catch(function(){ showToast('Guardado localmente — se sincronizará al conectar'); });
+    }).then(function(r){ if (r.ok) showToast(_t('gps_saved_ok','Entrenamiento guardado ✓')); })
+      .catch(function(){ showToast(_t('gps_saved_local_sync','Guardado localmente — se sincronizará al conectar')); });
   } else {
-    showToast('Sin conexión — guardado localmente');
+    showToast(_t('gps_saved_offline','Sin conexión — guardado localmente'));
   }
 
   // Register background sync (D-05)
