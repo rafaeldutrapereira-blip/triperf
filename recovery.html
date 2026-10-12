@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--amber:#F59E0B;--blue:#1D4ED8;--rc-good:#22D3EE;--rc-moderate:#F0A500;--rc-low:#F59E0B;--rc-critical:#EF4444;}
@@ -164,7 +165,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
      plataforma); viven acá, junto al widget al que afectan. -->
 <div style="display:flex;justify-content:flex-end;align-items:center;gap:.75rem;margin-bottom:1rem">
   <input type="date" id="date-picker" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:.08em">
-  <button class="btn btn-g btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+  <button class="btn btn-g btn-sm" onclick="loadDashboard()" data-i18n="adp_refresh">↻ Actualizar</button>
 </div>
 
 <!-- ══ RECOVERY HERO WIDGET ══ -->
@@ -185,8 +186,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     </div>
     <!-- Info -->
     <div>
-      <div class="rc-label" id="rc-label">Cargando…</div>
-      <div class="rc-rec" id="rc-rec">Sincronizando datos Garmin…</div>
+      <div class="rc-label" id="rc-label" data-i18n="status_loading">Cargando...</div>
+      <div class="rc-rec" id="rc-rec" data-i18n="rcw_syncing">Sincronizando datos Garmin…</div>
       <div class="rc-factors" id="rc-factors"></div>
     </div>
   </div>
@@ -198,17 +199,17 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     <div class="panel-head">
       <span class="panel-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        Análisis de Recuperación
+        <span data-i18n="rcw_title">Análisis de Recuperación</span>
       </span>
       <div class="tabs-bar">
-        <button class="tab-btn on" onclick="switchTab('overview',this)">📊 Resumen</button>
+        <button class="tab-btn on" onclick="switchTab('overview',this)">📊 <span data-i18n="rcw_tab_overview">Resumen</span></button>
         <button class="tab-btn" onclick="switchTab('hrv',this)">🫀 HRV</button>
-        <button class="tab-btn" onclick="switchTab('sleep',this)">🌙 Sueño</button>
-        <button class="tab-btn" onclick="switchTab('wellness',this)">🧘 Bienestar</button>
+        <button class="tab-btn" onclick="switchTab('sleep',this)">🌙 <span data-i18n="kpi_sleep">Sueño</span></button>
+        <button class="tab-btn" onclick="switchTab('wellness',this)">🧘 <span data-i18n="app_factor_wellness">Bienestar</span></button>
         <button class="tab-btn" onclick="switchTab('timeline',this)">📈 Timeline</button>
-        <button class="tab-btn" onclick="switchTab('correlations',this)">🔬 Correlaciones</button>
-        <button class="tab-btn" onclick="switchTab('protocol',this)">📋 Protocolos</button>
-        <button class="tab-btn" onclick="switchTab('coach',this)" id="tab-coach-btn" style="display:none">👥 Coach</button>
+        <button class="tab-btn" onclick="switchTab('correlations',this)">🔬 <span data-i18n="rcw_tab_correlations">Correlaciones</span></button>
+        <button class="tab-btn" onclick="switchTab('protocol',this)">📋 <span data-i18n="rcw_tab_protocols">Protocolos</span></button>
+        <button class="tab-btn" onclick="switchTab('coach',this)" id="tab-coach-btn" style="display:none">👥 <span data-i18n="adp_tab_coach">Coach</span></button>
       </div>
     </div>
     <div style="padding:1.5rem">
@@ -217,23 +218,23 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="tab-pane on" id="tab-overview">
         <div class="g2" style="margin-bottom:1.5rem">
           <div>
-            <div class="sec-h" style="font-size:.78rem">Recomendación del día</div>
+            <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_today_rec">Recomendación del día</div>
             <div id="rec-box-main"></div>
             <div id="rec-alerts"></div>
             <div id="rec-priorities"></div>
           </div>
           <div>
-            <div class="sec-h" style="font-size:.78rem">Detalle Garmin</div>
+            <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_garmin_detail">Detalle Garmin</div>
             <div class="g3" id="garmin-kpis" style="gap:.75rem"></div>
           </div>
         </div>
         <div class="g2">
           <div>
-            <div class="sec-h" style="font-size:.78rem">HRV — últimas 7 noches</div>
+            <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_hrv_last7">HRV — últimas 7 noches</div>
             <div id="hrv-mini-chart"></div>
           </div>
           <div>
-            <div class="sec-h" style="font-size:.78rem">Sueño anoche</div>
+            <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_sleep_last_night">Sueño anoche</div>
             <div id="sleep-mini"></div>
           </div>
         </div>
@@ -243,11 +244,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="tab-pane" id="tab-hrv">
         <div class="g3" id="hrv-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
         <div style="margin-bottom:1rem">
-          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em" data-i18n="rcw_period_label">PERÍODO</label>
           <select id="hrv-days-sel" onchange="loadHrvHistory()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
-            <option value="14">14 días</option>
-            <option value="30" selected>30 días</option>
-            <option value="90">90 días</option>
+            <option value="14" data-i18n="rcw_days_14">14 días</option>
+            <option value="30" selected data-i18n="rcw_days_30">30 días</option>
+            <option value="90" data-i18n="rcw_days_90">90 días</option>
           </select>
         </div>
         <div id="hrv-bars" style="margin-bottom:1.5rem"></div>
@@ -259,12 +260,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="tab-pane" id="tab-sleep">
         <div class="g3" id="sleep-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
         <div style="margin-bottom:1rem">
-          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em" data-i18n="rcw_period_label">PERÍODO</label>
           <select id="sleep-days-sel" onchange="loadSleepHistory()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
-            <option value="1">Hoy</option>
-            <option value="7">Semana</option>
-            <option value="14">14 días</option>
-            <option value="30" selected>30 días</option>
+            <option value="1" data-i18n="app_nav_today">Hoy</option>
+            <option value="7" data-i18n="app_nav_week">Semana</option>
+            <option value="14" data-i18n="rcw_days_14">14 días</option>
+            <option value="30" selected data-i18n="rcw_days_30">30 días</option>
           </select>
         </div>
         <div id="sleep-bars" style="margin-bottom:1.5rem"></div>
@@ -274,46 +275,46 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <!-- ── TAB: BIENESTAR ── -->
       <div class="tab-pane" id="tab-wellness">
         <div style="max-width:500px;margin-bottom:1.5rem">
-          <div class="sec-h" style="font-size:.78rem">¿Cómo te sentís hoy?</div>
+          <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_how_feel_today">¿Cómo te sentís hoy?</div>
           <div class="panel" style="padding:1rem">
             <div id="wellness-form">
               <div class="well-row">
-                <span class="well-label">⚡ Energía general</span>
+                <span class="well-label">⚡ <span data-i18n="rcw_energy">Energía general</span></span>
                 <div class="well-stars" id="ws-energy" data-field="energy"></div>
               </div>
               <div class="well-row">
-                <span class="well-label">😊 Estado de ánimo</span>
+                <span class="well-label">😊 <span data-i18n="rcw_mood">Estado de ánimo</span></span>
                 <div class="well-stars" id="ws-mood" data-field="mood"></div>
               </div>
               <div class="well-row">
-                <span class="well-label">💪 Piernas/Músculos (5=sin dolor)</span>
+                <span class="well-label">💪 <span data-i18n="rcw_soreness">Piernas/Músculos (5=sin dolor)</span></span>
                 <div class="well-stars" id="ws-soreness" data-field="soreness"></div>
               </div>
               <div class="well-row">
-                <span class="well-label">🎯 Motivación para entrenar</span>
+                <span class="well-label">🎯 <span data-i18n="rcw_motivation">Motivación para entrenar</span></span>
                 <div class="well-stars" id="ws-motivation" data-field="motivation"></div>
               </div>
               <div class="well-row">
-                <span class="well-label">🌡️ Estrés externo (5=sin estrés)</span>
+                <span class="well-label">🌡️ <span data-i18n="rcw_stress">Estrés externo (5=sin estrés)</span></span>
                 <div class="well-stars" id="ws-stress" data-field="stress"></div>
               </div>
               <div class="well-row" style="border-bottom:none">
-                <span class="well-label">🌙 Calidad del sueño subjetiva</span>
+                <span class="well-label">🌙 <span data-i18n="rcw_sleep_subj">Calidad del sueño subjetiva</span></span>
                 <div class="well-stars" id="ws-sleep_quality" data-field="sleep_quality"></div>
               </div>
             </div>
             <div style="margin-top:1rem">
-              <input id="well-notes" type="text" placeholder="Nota opcional (ej: estrés laboral, viaje)…"
+              <input id="well-notes" type="text" placeholder="Nota opcional (ej: estrés laboral, viaje)…" data-i18n-placeholder="rcw_notes_ph"
                 style="width:100%;padding:.45rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.82rem">
             </div>
             <div style="margin-top:.75rem;display:flex;gap:.5rem">
-              <button class="btn btn-primary btn-sm" onclick="saveWellness()">Guardar bienestar</button>
+              <button class="btn btn-primary btn-sm" onclick="saveWellness()" data-i18n="rcw_save_wellness">Guardar bienestar</button>
               <span id="wellness-save-msg" style="font-size:.75rem;color:var(--green);align-self:center;opacity:0;transition:opacity .3s"></span>
             </div>
           </div>
         </div>
         <div>
-          <div class="sec-h" style="font-size:.78rem">Historial de bienestar (30d)</div>
+          <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_wellness_history_30d">Historial de bienestar (30d)</div>
           <div id="wellness-history"></div>
         </div>
       </div>
@@ -321,18 +322,18 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <!-- ── TAB: TIMELINE ── -->
       <div class="tab-pane" id="tab-timeline">
         <div style="margin-bottom:1rem">
-          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em">PERÍODO</label>
+          <label style="font-size:.65rem;color:var(--dim);letter-spacing:.1em" data-i18n="rcw_period_label">PERÍODO</label>
           <select id="tl-days-sel" onchange="loadTimeline()" style="margin-left:.5rem;padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
-            <option value="14">14 días</option>
-            <option value="30" selected>30 días</option>
-            <option value="60">60 días</option>
+            <option value="14" data-i18n="rcw_days_14">14 días</option>
+            <option value="30" selected data-i18n="rcw_days_30">30 días</option>
+            <option value="60" data-i18n="rcw_days_60">60 días</option>
           </select>
         </div>
         <div class="sec-h" style="font-size:.78rem">Recovery Score</div>
         <div id="tl-recovery" style="margin-bottom:1.2rem"></div>
         <div class="sec-h" style="font-size:.78rem">HRV (ms)</div>
         <div id="tl-hrv" style="margin-bottom:1.2rem"></div>
-        <div class="sec-h" style="font-size:.78rem">Sueño (Score)</div>
+        <div class="sec-h" style="font-size:.78rem" data-i18n="rcw_sleep_score">Sueño (Score)</div>
         <div id="tl-sleep" style="margin-bottom:1.2rem"></div>
         <div id="tl-windows"></div>
       </div>
@@ -341,9 +342,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="tab-pane" id="tab-correlations">
         <div style="margin-bottom:.75rem;display:flex;gap:.75rem;align-items:center">
           <select id="corr-days-sel" onchange="loadCorrelations()" style="padding:.3rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem">
-            <option value="60">60 días</option>
-            <option value="90" selected>90 días</option>
-            <option value="180">180 días</option>
+            <option value="60" data-i18n="rcw_days_60">60 días</option>
+            <option value="90" selected data-i18n="rcw_days_90">90 días</option>
+            <option value="180" data-i18n="rcw_days_180">180 días</option>
           </select>
         </div>
         <div id="corr-insights" style="margin-bottom:1.2rem"></div>
@@ -353,21 +354,21 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <!-- ── TAB: PROTOCOLOS ── -->
       <div class="tab-pane" id="tab-protocol">
         <div class="proto-tabs">
-          <button class="proto-tab" onclick="loadProtocol('post_sprint',this)">⚡ Post Sprint</button>
-          <button class="proto-tab" onclick="loadProtocol('post_703',this)">🌊 Post 70.3</button>
-          <button class="proto-tab" onclick="loadProtocol('post_ironman',this)">🔥 Post Ironman</button>
-          <button class="proto-tab" onclick="loadProtocol('illness',this)">🤒 Post Enfermedad</button>
-          <button class="proto-tab" onclick="loadProtocol('overtraining',this)">⚠️ Sobreentrenamiento</button>
+          <button class="proto-tab" onclick="loadProtocol('post_sprint',this)">⚡ <span data-i18n="rcw_proto_sprint">Post Sprint</span></button>
+          <button class="proto-tab" onclick="loadProtocol('post_703',this)">🌊 <span data-i18n="rcw_proto_703">Post 70.3</span></button>
+          <button class="proto-tab" onclick="loadProtocol('post_ironman',this)">🔥 <span data-i18n="rcw_proto_ironman">Post Ironman</span></button>
+          <button class="proto-tab" onclick="loadProtocol('illness',this)">🤒 <span data-i18n="rcw_proto_illness">Post Enfermedad</span></button>
+          <button class="proto-tab" onclick="loadProtocol('overtraining',this)">⚠️ <span data-i18n="rcw_proto_overtraining">Sobreentrenamiento</span></button>
         </div>
         <div id="protocol-content">
-          <div style="color:var(--dim);font-size:.82rem">Selecciona un protocolo para ver el plan de recuperación detallado.</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="rcw_select_protocol">Selecciona un protocolo para ver el plan de recuperación detallado.</div>
         </div>
       </div>
 
       <!-- ── TAB: COACH ── -->
       <div class="tab-pane" id="tab-coach">
         <div id="coach-view-content">
-          <div style="color:var(--dim);font-size:.82rem">Cargando vista de atletas…</div>
+          <div style="color:var(--dim);font-size:.82rem" data-i18n="rcw_loading_athletes">Cargando vista de atletas…</div>
         </div>
       </div>
 
@@ -405,6 +406,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   }());
 
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
 
   // ── Date picker setup ─────────────────────────────────────────────────────
   var dp = document.getElementById('date-picker');
@@ -454,8 +456,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         updateDateSub(d.date_iso);
       })
       .catch(function () {
-        document.getElementById('rc-label').textContent = 'Sin datos Garmin para este día';
-        document.getElementById('rc-rec').textContent   = 'Sincroniza tu dispositivo Garmin para ver el score de recuperación.';
+        document.getElementById('rc-label').textContent = _t('rcw_no_garmin_today','Sin datos Garmin para este día');
+        document.getElementById('rc-rec').textContent   = _t('rcw_sync_to_see_score','Sincroniza tu dispositivo Garmin para ver el score de recuperación.');
       });
 
     // Cargar recomendación paralela
@@ -500,11 +502,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var factors = rec.factors || {};
     var factorDefs = [
       { key: 'hrv',          label: 'HRV',         icon: '🫀', color: '#7C3AED' },
-      { key: 'sleep',        label: 'Sueño',        icon: '🌙', color: '#1D4ED8' },
-      { key: 'tsb',          label: 'Carga',        icon: '⚡', color: '#0EA5E9' },
-      { key: 'stress',       label: 'Estrés',       icon: '🧘', color: '#10B981' },
-      { key: 'body_battery', label: 'Batería',      icon: '🔋', color: '#F59E0B' },
-      { key: 'wellness',     label: 'Bienestar',    icon: '❤️', color: '#F43F5E' },
+      { key: 'sleep',        label: _t('kpi_sleep','Sueño'),        icon: '🌙', color: '#1D4ED8' },
+      { key: 'tsb',          label: _t('app_factor_load','Carga'),        icon: '⚡', color: '#0EA5E9' },
+      { key: 'stress',       label: _t('app_factor_stress','Estrés'),       icon: '🧘', color: '#10B981' },
+      { key: 'body_battery', label: _t('app_factor_battery','Batería'),      icon: '🔋', color: '#F59E0B' },
+      { key: 'wellness',     label: _t('app_factor_wellness','Bienestar'),    icon: '❤️', color: '#F43F5E' },
     ];
 
     var html = factorDefs.map(function (f) {
@@ -527,8 +529,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var tl  = d.training_load || {};
     var garminKpis = [
       { label: '🔋 Body Battery', value: g.body_battery_end !== null ? g.body_battery_end + '/100' : '—', color: '#F59E0B' },
-      { label: '💓 FC Reposo',    value: g.resting_hr ? g.resting_hr + ' bpm' : '—',              color: '#F43F5E' },
-      { label: '😤 Estrés Avg',   value: g.avg_stress !== null ? g.avg_stress : '—',              color: '#7C3AED' },
+      { label: '💓 ' + _t('kpi_hr_rest','FC Reposo'),    value: g.resting_hr ? g.resting_hr + ' bpm' : '—',              color: '#F43F5E' },
+      { label: '😤 ' + _t('rcw_stress_avg','Estrés Avg'),   value: g.avg_stress !== null ? g.avg_stress : '—',              color: '#7C3AED' },
       { label: '⚡ TSB',          value: tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: '#0EA5E9' },
       { label: '🎯 CTL',          value: tl.ctl ? Math.round(tl.ctl) : '—',                       color: '#10B981' },
       { label: '😮‍💨 SpO2',        value: g.avg_spo2 ? g.avg_spo2 + '%' : '—',                   color: '#22D3EE' },
@@ -565,10 +567,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       if (light) sleepHtml += '<span style="color:#0EA5E9">● Light ' + light + 'min</span>';
       sleepHtml += '</div>';
       if (sleep.score) {
-        sleepHtml += '<div style="margin-top:.5rem;font-size:.75rem;color:var(--muted)">Score Garmin: <strong style="color:var(--text)">' + sleep.score + '</strong> · ' + (sleep.quality || '') + '</div>';
+        sleepHtml += '<div style="margin-top:.5rem;font-size:.75rem;color:var(--muted)">' + _t('rcw_garmin_score','Score Garmin:') + ' <strong style="color:var(--text)">' + sleep.score + '</strong> · ' + (sleep.quality || '') + '</div>';
       }
     } else {
-      sleepHtml = '<div style="color:var(--dim);font-size:.8rem">Sin datos de sueño Garmin para este día.</div>';
+      sleepHtml = '<div style="color:var(--dim);font-size:.8rem">' + _t('rcw_no_sleep_data','Sin datos de sueño Garmin para este día.') + '</div>';
     }
     document.getElementById('sleep-mini').innerHTML = sleepHtml;
   }
@@ -576,7 +578,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
   function renderMiniChart(elId, points, field, color, unit) {
     var el = document.getElementById(elId);
     if (!points || !points.length) {
-      el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">Sin datos disponibles.</div>';
+      el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">' + _t('rcw_no_data_available','Sin datos disponibles.') + '</div>';
       return;
     }
     var vals = points.map(function (p) { return p[field] || 0; });
@@ -593,7 +595,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     html += '</div>';
     if (points.length) {
       var last = points[points.length - 1];
-      html += '<div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">Último: <strong style="color:' + color + '">' + (last[field] || '—') + '</strong>' + (unit || '') + '</div>';
+      html += '<div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">' + _t('rcw_last_word','Último:') + ' <strong style="color:' + color + '">' + (last[field] || '—') + '</strong>' + (unit || '') + '</div>';
     }
     el.innerHTML = html;
   }
@@ -604,13 +606,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var box   = document.getElementById('rec-box-main');
     if (!box) return;
 
-    var sessionLabels = { full:'Sesión completa', moderate:'Sesión moderada', easy:'Sesión suave / Z1-Z2', rest:'Descanso' };
+    var sessionLabels = { full:_t('rcw_session_full','Sesión completa'), moderate:_t('rcw_session_moderate','Sesión moderada'), easy:_t('rcw_session_easy','Sesión suave / Z1-Z2'), rest:_t('rcw_session_rest','Descanso') };
     var icons = { full:'🟢', moderate:'🟡', easy:'🟠', rest:'🔴' };
 
     box.className = 'rec-box ' + level;
     box.innerHTML = '<div class="rec-title">' + (icons[level] || '') + ' ' + (sessionLabels[level] || level) + '</div>' +
       '<div class="rec-text">' + (d.main_recommendation || '') + '</div>' +
-      (d.recommended_tss ? '<div style="margin-top:.6rem;font-size:.78rem;color:var(--muted)">TSS sugerido: <strong style="color:var(--text)">' + d.recommended_tss + '</strong>' + (d.planned_tss ? ' (plan: ' + d.planned_tss + ')' : '') + '</div>' : '');
+      (d.recommended_tss ? '<div style="margin-top:.6rem;font-size:.78rem;color:var(--muted)">' + _t('rcw_suggested_tss','TSS sugerido:') + ' <strong style="color:var(--text)">' + d.recommended_tss + '</strong>' + (d.planned_tss ? ' (' + _t('rcw_plan_word','plan') + ': ' + d.planned_tss + ')' : '') + '</div>' : '');
 
     // Alerts
     var alertsEl = document.getElementById('rec-alerts');
@@ -623,7 +625,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     // Priorities
     var priEl = document.getElementById('rec-priorities');
     if (priEl && d.recovery_priorities && d.recovery_priorities.length) {
-      priEl.innerHTML = '<div style="margin-top:.75rem;font-size:.75rem;color:var(--dim);font-family:\'Oswald\',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Para esta noche:</div>' +
+      priEl.innerHTML = '<div style="margin-top:.75rem;font-size:.75rem;color:var(--dim);font-family:\'Oswald\',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">' + _t('rcw_for_tonight','Para esta noche:') + '</div>' +
         d.recovery_priorities.map(function (p) {
           return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0">' + p + '</div>';
         }).join('');
@@ -640,9 +642,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (d) {
         // KPIs
         document.getElementById('hrv-kpis').innerHTML = [
-          { label: 'HRV Promedio', value: d.avg_ms ? d.avg_ms + 'ms' : '—',  color: '#7C3AED' },
-          { label: 'Baseline',    value: d.baseline_ms ? d.baseline_ms + 'ms': '—', color: '#A855F7' },
-          { label: 'Tendencia',   value: d.trend_ms_week !== null ? (d.trend_ms_week > 0 ? '+' : '') + d.trend_ms_week + 'ms/sem' : '—',
+          { label: _t('rcw_hrv_avg','HRV Promedio'), value: d.avg_ms ? d.avg_ms + 'ms' : '—',  color: '#7C3AED' },
+          { label: _t('rcw_baseline','Baseline'),    value: d.baseline_ms ? d.baseline_ms + 'ms': '—', color: '#A855F7' },
+          { label: _t('adp_kpi_trend','Tendencia'),   value: d.trend_ms_week !== null ? (d.trend_ms_week > 0 ? '+' : '') + d.trend_ms_week + 'ms/sem' : '—',
             color: d.trend_direction === 'up' ? '#10B981' : (d.trend_direction === 'down' ? '#EF4444' : '#7FB3CC') },
         ].map(function (k) {
           return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
@@ -664,25 +666,25 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         });
         barHtml += '</div>';
         if (base) {
-          barHtml += '<div style="font-size:.7rem;color:#A855F7;margin-top:.35rem">Baseline: ' + base + 'ms · 🟢 ≥baseline 🟣 normal 🔴 bajo</div>';
+          barHtml += '<div style="font-size:.7rem;color:#A855F7;margin-top:.35rem">' + _t('rcw_baseline','Baseline') + ': ' + base + 'ms · 🟢 ≥baseline 🟣 ' + _t('rcw_normal_word','normal') + ' 🔴 ' + _t('rcw_low_word','bajo') + '</div>';
         }
         document.getElementById('hrv-bars').innerHTML = barHtml;
 
         // Zones
         var zp = d.zones_pct || {};
         document.getElementById('hrv-zones').innerHTML =
-          '<div class="sec-h" style="font-size:.78rem">Distribución de zonas</div>' +
+          '<div class="sec-h" style="font-size:.78rem">' + _t('rcw_zones_distrib','Distribución de zonas') + '</div>' +
           '<div style="display:flex;gap:.75rem;flex-wrap:wrap">' +
-          [['optimal','🟢 Óptimo','#10B981'],['normal','🟣 Normal','#7C3AED'],['low','🟡 Bajo','#F59E0B'],['critical','🔴 Crítico','#EF4444']].map(function (z) {
+          [['optimal','🟢 '+_t('rcw_zone_optimal','Óptimo'),'#10B981'],['normal','🟣 '+_t('rcw_normal_word','Normal'),'#7C3AED'],['low','🟡 '+_t('rcw_low_word','Bajo'),'#F59E0B'],['critical','🔴 '+_t('rcw_zone_critical','Crítico'),'#EF4444']].map(function (z) {
             return '<div class="kpi-box" style="min-width:90px"><div class="kpi-n" style="color:' + z[2] + '">' + (zp[z[0]] || 0) + '%</div><div class="kpi-l">' + z[1] + '</div></div>';
           }).join('') + '</div>';
 
         // Insights
         if (d.trend_direction) {
           var trendMsg = {
-            up:     '📈 Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.',
-            down:   '📉 Tendencia bajista — HRV en descenso. Considera reducir carga o revisar recuperación.',
-            stable: '→ HRV estable. Respuesta normal de mantenimiento.',
+            up:     '📈 ' + _t('rcw_hrv_trend_up','Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.'),
+            down:   '📉 ' + _t('rcw_hrv_trend_down','Tendencia bajista — HRV en descenso. Considera reducir carga o revisar recuperación.'),
+            stable: '→ ' + _t('rcw_hrv_trend_stable','HRV estable. Respuesta normal de mantenimiento.'),
           };
           document.getElementById('hrv-insights').innerHTML =
             '<div class="alert-chip info">' + (trendMsg[d.trend_direction] || '') + '</div>';
@@ -701,16 +703,16 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (d) {
         // KPIs
         var kpiList = [
-          { label: 'Promedio horas', value: d.avg_hours ? d.avg_hours + 'h' : '—',  color: '#1D4ED8' },
-          { label: 'Score promedio', value: d.avg_score ? d.avg_score : '—',         color: '#7C3AED' },
-          { label: 'Deuda 7d',       value: d.sleep_debt_7d_h > 0 ? d.sleep_debt_7d_h + 'h' : '✅ 0h', color: d.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
+          { label: _t('rcw_avg_hours','Promedio horas'), value: d.avg_hours ? d.avg_hours + 'h' : '—',  color: '#1D4ED8' },
+          { label: _t('rcw_avg_score','Score promedio'), value: d.avg_score ? d.avg_score : '—',         color: '#7C3AED' },
+          { label: _t('rcw_debt_7d','Deuda 7d'),       value: d.sleep_debt_7d_h > 0 ? d.sleep_debt_7d_h + 'h' : '✅ 0h', color: d.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981' },
         ];
         // Siesta -- solo se muestra si hubo al menos una en los últimos 7d
         // (no todos los usuarios/días tienen). Cuenta para la deuda de
         // arriba (cantidad total de sueño), pero NO para el score/promedio
         // (calidad de fases, distinta arquitectura que el sueño nocturno).
         if (d.nap_h_7d) {
-          kpiList.push({ label: 'Siesta (7d)', value: d.nap_h_7d + 'h', color: '#F0A500' });
+          kpiList.push({ label: _t('rcw_nap_7d','Siesta (7d)'), value: d.nap_h_7d + 'h', color: '#F0A500' });
         }
         document.getElementById('sleep-kpis').innerHTML = kpiList.map(function (k) {
           return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
@@ -725,21 +727,21 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
           var h   = Math.round((p.total_h / 10) * 72);
           var col = p.total_h >= 8 ? '#10B981' : (p.total_h >= 6 ? '#1D4ED8' : '#EF4444');
           var napDot = p.nap_h ? '<div style="width:5px;height:5px;border-radius:50%;background:#F0A500;margin:0 auto 2px"></div>' : '';
-          var title = p.date_iso + ': ' + p.total_h + 'h' + (p.nap_h ? ' + ' + p.nap_h + 'h siesta' : '');
+          var title = p.date_iso + ': ' + p.total_h + 'h' + (p.nap_h ? ' + ' + p.nap_h + 'h ' + _t('rcw_nap_word','siesta') : '');
           barHtml += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:6px;max-width:20px">' + napDot + '<div style="width:100%;height:' + h + 'px;background:' + col + ';border-radius:2px 2px 0 0;opacity:.8" title="' + title + '"></div></div>';
         });
-        barHtml += '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h &nbsp; 🟠 ● con siesta</div>';
+        barHtml += '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">' + _t('rcw_sleep_bar_legend','🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h &nbsp; 🟠 ● con siesta') + '</div>';
         document.getElementById('sleep-bars').innerHTML = barHtml;
 
         // Debt -- si hubo siesta en la semana, se aclara que ya está
         // descontada de la deuda mostrada (evita que el usuario piense
         // que la deuda no la considera).
         var debtEl = document.getElementById('sleep-debt-box');
-        var napNote = d.nap_h_7d ? ' (ya descuenta ' + d.nap_h_7d + 'h de siesta esta semana)' : '';
+        var napNote = d.nap_h_7d ? ' (' + _t('rcw_nap_note','ya descuenta {h}h de siesta esta semana').replace('{h}',d.nap_h_7d) + ')' : '';
         if (d.sleep_debt_7d_h > 1) {
-          debtEl.innerHTML = '<div class="alert-chip ' + (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') + '">💤 Deuda de sueño esta semana: <strong>' + d.sleep_debt_7d_h + 'h</strong>' + napNote + '. Objetivo: ' + d.target_h + 'h/noche. ' + (d.nights_under_6h ? d.nights_under_6h + ' noches con menos de 6h.' : '') + '</div>';
+          debtEl.innerHTML = '<div class="alert-chip ' + (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') + '">💤 ' + _t('rcw_sleep_debt_week','Deuda de sueño esta semana:') + ' <strong>' + d.sleep_debt_7d_h + 'h</strong>' + napNote + '. ' + _t('rcw_target_word','Objetivo:') + ' ' + d.target_h + 'h/noche. ' + (d.nights_under_6h ? d.nights_under_6h + ' ' + _t('rcw_nights_under_6h','noches con menos de 6h.') : '') + '</div>';
         } else {
-          debtEl.innerHTML = '<div class="alert-chip info">✅ Sin deuda de sueño significativa esta semana' + napNote + '.</div>';
+          debtEl.innerHTML = '<div class="alert-chip info">✅ ' + _t('rcw_no_sleep_debt','Sin deuda de sueño significativa esta semana') + napNote + '.</div>';
         }
       }).catch(function () {});
   }
@@ -805,7 +807,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (d) {
         if (d.ok) {
           var msg = document.getElementById('wellness-save-msg');
-          msg.textContent = '✅ Guardado — score recalculado';
+          msg.textContent = _t('rcw_wellness_saved','✅ Guardado — score recalculado');
           msg.style.opacity = 1;
           setTimeout(function () {
             msg.style.opacity = 0;
@@ -820,7 +822,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var avgs = d.avgs || {};
-        var labels = { energy:'⚡ Energía', mood:'😊 Ánimo', soreness:'💪 Piernas', motivation:'🎯 Motivación', stress:'🌡️ Estrés (inv)', sleep_quality:'🌙 Sueño subj.' };
+        var labels = { energy:'⚡ '+_t('rcw_energy_short','Energía'), mood:'😊 '+_t('rcw_mood_short','Ánimo'), soreness:'💪 '+_t('rcw_legs_short','Piernas'), motivation:'🎯 '+_t('rcw_motivation_short','Motivación'), stress:'🌡️ '+_t('rcw_stress_inv_short','Estrés (inv)'), sleep_quality:'🌙 '+_t('rcw_sleep_subj_short','Sueño subj.') };
         var html = '';
         Object.keys(labels).forEach(function (f) {
           var v = avgs[f];
@@ -828,7 +830,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
             '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:800;color:var(--gold)">' + (v !== null && v !== undefined ? v + '/5' : '—') + '</span>' +
             '</div>';
         });
-        document.getElementById('wellness-history').innerHTML = html || '<div style="color:var(--dim);font-size:.8rem">Sin historial de bienestar. Registra tu bienestar diariamente.</div>';
+        document.getElementById('wellness-history').innerHTML = html || '<div style="color:var(--dim);font-size:.8rem">' + _t('rcw_no_wellness_history','Sin historial de bienestar. Registra tu bienestar diariamente.') + '</div>';
       }).catch(function () {});
   }
 
@@ -867,7 +869,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var wins = d.optimal_windows || [];
         var winEl = document.getElementById('tl-windows');
         if (wins.length) {
-          winEl.innerHTML = '<div class="sec-h" style="font-size:.78rem;margin-top:1rem">Ventanas de forma óptima detectadas</div>' +
+          winEl.innerHTML = '<div class="sec-h" style="font-size:.78rem;margin-top:1rem">' + _t('rcw_optimal_windows','Ventanas de forma óptima detectadas') + '</div>' +
             wins.map(function (w) {
               return '<div class="alert-chip info">🟢 ' + w.start + ' — ' + w.label + '</div>';
             }).join('');
@@ -893,7 +895,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
             return '<div class="alert-chip info">🔬 ' + msg + '</div>';
           }).join('');
         } else {
-          insEl.innerHTML = '<div style="color:var(--dim);font-size:.8rem">Sin suficientes datos para análisis de correlación.</div>';
+          insEl.innerHTML = '<div style="color:var(--dim);font-size:.8rem">' + _t('rcw_no_correlation_data','Sin suficientes datos para análisis de correlación.') + '</div>';
         }
 
         // Table
@@ -901,7 +903,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var maxHrv = Math.max.apply(null, corrs.map(function (c) { return c.hrv_ms || 0; })) || 1;
         var tableHtml = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
           '<thead><tr style="border-bottom:1px solid var(--border2)">' +
-          ['Fecha','Deporte','HRV','TSS'].map(function (h) {
+          [_t('rcw_th_date','Fecha'),_t('rcw_th_sport','Deporte'),'HRV','TSS'].map(function (h) {
             return '<th style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--dim);padding:.4rem .6rem;text-align:left">' + h + '</th>';
           }).join('') + '</tr></thead><tbody>';
         corrs.forEach(function (c) {
@@ -938,7 +940,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
         var html = '<div class="panel" style="padding:1.2rem">' +
           '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:.4rem">' + p.name + '</div>' +
-          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Duración estimada: ' + p.duration + '</div>';
+          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">' + _t('rcw_estimated_duration','Duración estimada:') + ' ' + p.duration + '</div>';
 
         if (p.warning) {
           html += '<div class="alert-chip high" style="margin-bottom:1rem">⚠️ ' + p.warning + '</div>';
@@ -959,7 +961,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         html += '<div class="alert-chip info" style="margin-top:1rem">🫀 ' + p.hrv_clearance + '</div>';
 
         if (ctx.recovery_score_today !== null && ctx.recovery_score_today !== undefined) {
-          html += '<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)">Tu Recovery Score hoy: <strong style="color:var(--text)">' + ctx.recovery_score_today + '</strong> · ' + (ctx.recommendation || '') + '</div>';
+          html += '<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)">' + _t('rcw_your_score_today','Tu Recovery Score hoy:') + ' <strong style="color:var(--text)">' + ctx.recovery_score_today + '</strong> · ' + (ctx.recommendation || '') + '</div>';
         }
         html += '</div>';
 
@@ -981,13 +983,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var el       = document.getElementById('coach-view-content');
         var athletes = d.athletes || [];
         if (!athletes.length) {
-          el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">No tienes atletas activos.</div>';
+          el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">' + _t('rcw_no_active_athletes','No tienes atletas activos.') + '</div>';
           return;
         }
 
         var html = '<div style="margin-bottom:.75rem;display:flex;gap:1rem;font-size:.78rem;color:var(--muted)">' +
-          '<span>🔴 Necesitan atención: <strong style="color:var(--red)">' + (d.red_count || 0) + '</strong></span>' +
-          '<span>🟢 Bien: <strong style="color:var(--green)">' + (d.green_count || 0) + '</strong></span></div>';
+          '<span>🔴 ' + _t('rcw_need_attention','Necesitan atención:') + ' <strong style="color:var(--red)">' + (d.red_count || 0) + '</strong></span>' +
+          '<span>🟢 ' + _t('rcw_doing_well','Bien:') + ' <strong style="color:var(--green)">' + (d.green_count || 0) + '</strong></span></div>';
 
         athletes.forEach(function (a) {
           var initials = (a.name || 'X').split(' ').map(function (w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
@@ -1000,7 +1002,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
             '</div>' +
             '<div class="score-pill" style="background:' + scoreCol + '20;color:' + scoreCol + '">' + (a.score !== null ? a.score : '—') + '</div>' +
             '<div style="font-size:.72rem;color:var(--dim);text-align:center">' + (a.factors ? 'HRV<br>' + Math.round(a.factors.hrv || 0) : '') + '</div>' +
-            '<div style="font-size:.72rem;color:var(--dim);text-align:center">' + (a.factors ? 'Sleep<br>' + Math.round(a.factors.sleep || 0) : '') + '</div>' +
+            '<div style="font-size:.72rem;color:var(--dim);text-align:center">' + (a.factors ? _t('kpi_sleep','Sleep') + '<br>' + Math.round(a.factors.sleep || 0) : '') + '</div>' +
             '<div style="font-size:.72rem;color:var(--dim);text-align:center;white-space:nowrap">TSB<br>' + Math.round(a.factors ? (a.factors.tsb || 0) : 0) + '</div>' +
             '</div>';
         });
