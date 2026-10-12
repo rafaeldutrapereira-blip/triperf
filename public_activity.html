@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6}
@@ -42,7 +43,7 @@ a{color:inherit;text-decoration:none}
 <div class="wrap">
   <a class="logo" href="landing.html">LAB<span>X</span></a>
   <div id="content">
-    <div class="empty"><div class="empty-icon">⏳</div>Cargando…</div>
+    <div class="empty"><div class="empty-icon">⏳</div><span data-i18n="status_loading">Cargando...</span></div>
   </div>
 </div>
 
@@ -53,31 +54,33 @@ a{color:inherit;text-decoration:none}
   var token = new URLSearchParams(window.location.search).get('t');
   var content = document.getElementById('content');
 
-  var SPORT_LABEL = {bike:'Ciclismo', run:'Carrera', swim:'Natación', str:'Fuerza', gym:'Fuerza'};
+  function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
+
+  function SPORT_LABEL(){ return {bike:_t('opt_bike','Ciclismo'), run:_t('opt_run','Carrera'), swim:_t('opt_swim','Natación'), str:_t('opt_strength','Fuerza'), gym:_t('opt_strength','Fuerza')}; }
   var SPORT_EMOJI = {bike:'🚴', run:'🏃', swim:'🏊', str:'💪', gym:'💪'};
 
   function empty(msg){
     content.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>' + msg + '</div>';
   }
 
-  if(!token){ empty('Este link no incluye una actividad válida.'); return; }
+  if(!token){ empty(_t('pa_no_token','Este link no incluye una actividad válida.')); return; }
 
   fetch(API + '/public/activities/' + encodeURIComponent(token))
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      if(!d){ empty('Este link no existe o su dueño dejó de compartirlo.'); return; }
+      if(!d){ empty(_t('pa_not_found','Este link no existe o su dueño dejó de compartirlo.')); return; }
 
       var durH = Math.floor((d.dur_min||0)/60), durM = Math.round((d.dur_min||0)%60);
       var durStr = durH ? durH+'h '+(durM?durM+'m':'') : durM+'m';
       var stats = [];
-      if(d.dist_km) stats.push({v: d.dist_km.toFixed(1)+' km', l:'Distancia'});
-      stats.push({v: durStr, l:'Duración'});
-      if(d.avg_hr) stats.push({v: d.avg_hr, l:'FC media (bpm)'});
-      if(d.avg_power) stats.push({v: d.avg_power, l:'Potencia (W)'});
-      if(d.pace_str) stats.push({v: d.pace_str, l:'Ritmo (min/km)'});
-      if(d.swim_pace) stats.push({v: d.swim_pace, l:'Ritmo (100m)'});
+      if(d.dist_km) stats.push({v: d.dist_km.toFixed(1)+' km', l:_t('td_distance','Distancia')});
+      stats.push({v: durStr, l:_t('td_duration','Duración')});
+      if(d.avg_hr) stats.push({v: d.avg_hr, l:_t('pa_stat_avg_hr','FC media (bpm)')});
+      if(d.avg_power) stats.push({v: d.avg_power, l:_t('pa_stat_power','Potencia (W)')});
+      if(d.pace_str) stats.push({v: d.pace_str, l:_t('pa_stat_pace','Ritmo (min/km)')});
+      if(d.swim_pace) stats.push({v: d.swim_pace, l:_t('pa_stat_swim_pace','Ritmo (100m)')});
       if(d.tss) stats.push({v: Math.round(d.tss), l:'TSS'});
-      if(d.elev_m) stats.push({v: Math.round(d.elev_m)+' m', l:'Desnivel'});
+      if(d.elev_m) stats.push({v: Math.round(d.elev_m)+' m', l:_t('pa_stat_elev','Desnivel')});
 
       var avatarHtml = d.owner.avatar_url
         ? '<img src="'+d.owner.avatar_url+'" alt="">'
@@ -91,19 +94,19 @@ a{color:inherit;text-decoration:none}
         '<div class="card">' +
           '<div class="card-head">' +
             '<div class="avatar">'+avatarHtml+'</div>' +
-            '<div><div class="owner-name">'+(d.owner.name||'Atleta LabX')+'</div>' +
+            '<div><div class="owner-name">'+(d.owner.name||_t('pa_athlete_fallback','Atleta LabX'))+'</div>' +
             '<div class="owner-sub">'+(d.date_iso||'')+'</div></div>' +
           '</div>' +
           '<div class="card-body">' +
-            '<div class="act-title">'+(SPORT_EMOJI[d.sport]||'⚡')+' '+(d.name||SPORT_LABEL[d.sport]||'Actividad')+'</div>' +
+            '<div class="act-title">'+(SPORT_EMOJI[d.sport]||'⚡')+' '+(d.name||SPORT_LABEL()[d.sport]||_t('pa_activity_fallback','Actividad'))+'</div>' +
             mapHtml +
             '<div class="stats">' + stats.map(function(s){
               return '<div class="stat"><div class="stat-v">'+s.v+'</div><div class="stat-l">'+s.l+'</div></div>';
             }).join('') + '</div>' +
           '</div>' +
           '<div class="cta">' +
-            '<div class="cta-text">Entrená, analizá y compartí tus actividades de triatlón con LabX.</div>' +
-            '<a class="btn-cta" href="registro.html">Crear cuenta gratis</a>' +
+            '<div class="cta-text">'+_t('pa_cta_text','Entrená, analizá y compartí tus actividades de triatlón con LabX.')+'</div>' +
+            '<a class="btn-cta" href="registro.html">'+_t('pa_cta_btn','Crear cuenta gratis')+'</a>' +
           '</div>' +
         '</div>';
 
@@ -130,7 +133,7 @@ a{color:inherit;text-decoration:none}
         document.head.appendChild(leafletJs);
       }
     })
-    .catch(function(){ empty('No se pudo cargar esta actividad. Intenta de nuevo más tarde.'); });
+    .catch(function(){ empty(_t('pa_load_failed','No se pudo cargar esta actividad. Intenta de nuevo más tarde.')); });
 })();
 </script>
 </body>
