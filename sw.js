@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '159';  // 2026-10-12: i18n Sprint 5f — blood_labs.html (estructura UI)
+var BUILD_VERSION = '160';  // 2026-10-12: landing.html — quitar sección Roles y encabezado de Planes
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
