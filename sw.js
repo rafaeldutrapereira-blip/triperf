@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '151';  // 2026-10-11: i18n Sprint 3b — errores backend por código (AI Coach, fotos, comentarios)
+var BUILD_VERSION = '152';  // 2026-10-12: i18n Sprint 4 — fecha con locale dinámico (dashboard/coach/race_predictor)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
