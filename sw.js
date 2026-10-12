@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '163';  // 2026-10-12: landing.html — quitar sección Testimonios
+var BUILD_VERSION = '164';  // 2026-10-12: landing.html — agregar botón Actualizar Plan
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
