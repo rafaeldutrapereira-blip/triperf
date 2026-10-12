@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
 <script src="i18n.js"></script>
+<script src="routes.config.js"></script>
+<script src="auth.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--radius:14px;}
@@ -329,8 +331,12 @@ footer{background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);borde
       </div>
 
       <div class="nav-cta">
-        <a href="login.html" class="btn btn-ghost" data-i18n="lnd_login">Ingresar</a>
-        <a href="registro.html" class="btn btn-primary" data-i18n="lnd_start_free">Comenzar gratis</a>
+        <button class="btn btn-ghost" id="btn-upgrade" onclick="openUpgrade()" style="display:none;border-color:rgba(168,85,247,.35);color:#C084FC;gap:.4rem" aria-label="Actualizar plan">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span id="btn-upgrade-label">Actualizar Plan</span>
+        </button>
+        <a href="login.html" class="btn btn-ghost" id="nav-login" data-i18n="lnd_login">Ingresar</a>
+        <a href="registro.html" class="btn btn-primary" id="nav-register" data-i18n="lnd_start_free">Comenzar gratis</a>
       </div>
 
       <button class="nav-burger" onclick="toggleMenu(this)" aria-label="Menú">
@@ -342,6 +348,7 @@ footer{background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);borde
     <div class="mobile-menu" id="mobile-menu">
       <a href="#features" onclick="closeMenu()" data-i18n="lnd_nav_features">Funciones</a>
       <a href="#how" onclick="closeMenu()" data-i18n="lnd_nav_how">Cómo funciona</a>
+      <a href="#" id="btn-upgrade-mobile" onclick="closeMenu();openUpgrade()" style="display:none;color:#C084FC">Actualizar Plan</a>
       <a href="login.html" data-i18n="lnd_login">Ingresar</a>
       <a href="registro.html" style="color:var(--orange)" data-i18n="lnd_mobile_start">→ Comenzar gratis</a>
     </div>
@@ -660,6 +667,23 @@ const ro=new IntersectionObserver(entries=>{
   });
 },{threshold:.1,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+// Botón "Actualizar Plan" — mismo criterio que dashboard.html: solo
+// usuarios con sesión activa y plan básico/agegroup (coach/elite ya tienen todo).
+(function(){
+  var s = window.KL && KL.getSession();
+  if(!s || s.plan_nivel === 'elite' || s.plan_nivel === 'coach') return;
+  var label = s.plan_nivel === 'agegroup' ? 'Ir a Elite' : 'Ir a Agegroup';
+  ['btn-upgrade','btn-upgrade-mobile'].forEach(function(id){
+    var btn = document.getElementById(id);
+    if(btn) btn.style.display = (id === 'btn-upgrade') ? 'inline-flex' : 'block';
+  });
+  var lbl = document.getElementById('btn-upgrade-label');
+  if(lbl) lbl.textContent = label;
+  var mobileBtn = document.getElementById('btn-upgrade-mobile');
+  if(mobileBtn) mobileBtn.textContent = label;
+})();
 </script>
+<script src="lx-upgrade.js"></script>
 </body>
 </html>
