@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '167';  // 2026-10-12: landing.html — botón Actualizar Plan ya no exige login
+var BUILD_VERSION = '170';  // 2026-10-16: bump nav.css?v=2 en 21 páginas — Cloudflare servía versión vieja cacheada en ?v=1
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

@@ -2810,14 +2810,15 @@ function _buildWidget(extraClass) {
     {lang:'en', svg:svgUK, title:'English'}
   ].forEach(function(item) {
     var btn = document.createElement('button');
-    btn.className = 'lx-lang-btn' + (_lang === item.lang ? ' active' : ' lx-lang-soon');
+    btn.type = 'button';
+    btn.className = 'lx-lang-btn' + (_lang === item.lang ? ' active' : '');
     btn.setAttribute('data-lang', item.lang);
-    btn.setAttribute('title', item.title + ' — Próximamente');
+    btn.setAttribute('title', item.title);
+    btn.setAttribute('aria-label', item.title);
     btn.innerHTML = item.svg;
-    if (item.lang === 'es') {
-      btn.classList.remove('lx-lang-soon');
-      btn.setAttribute('title', item.title);
-    }
+    btn.addEventListener('click', function() {
+      if (btn.getAttribute('data-lang') !== _lang) _set(item.lang);
+    });
     sw.appendChild(btn);
   });
   return sw;
@@ -2830,14 +2831,13 @@ function _injectStyles() {
   style.textContent = [
     /* ── Widget base (shared) ── */
     '.lx-lang-sw{display:flex;align-items:center;gap:5px;}',
-    '.lx-lang-btn{background:none;border:2px solid transparent;cursor:default;',
+    '.lx-lang-btn{background:none;border:2px solid transparent;cursor:pointer;',
     '  padding:2px;border-radius:4px;opacity:.45;line-height:0;',
     '  transition:opacity .18s,border-color .18s,transform .15s;}',
     '.lx-lang-btn svg{display:block;border-radius:2px;}',
     '.lx-lang-btn.active{opacity:1;border-color:rgba(14,165,233,.75);transform:scale(1.12);cursor:default;}',
-    '.lx-lang-btn:hover{opacity:.45;}',
-    '.lx-lang-soon{opacity:.2;filter:grayscale(60%);}',
-    '.lx-lang-soon:hover{opacity:.25;}',
+    '.lx-lang-btn:hover{opacity:.75;}',
+    '.lx-lang-btn.active:hover{opacity:1;}',
 
     /* ── Sidebar version (desktop) ── */
     '.lx-lang-sw.lx-in-sidebar{',
