@@ -992,9 +992,7 @@ var DT_SPORT_COLORS  = {swim:'#22D3EE', bike:'#FF6535', run:'#10B981', strength:
 function fmtDateLong(iso){
   if(!iso) return '';
   var d=new Date(iso+'T12:00:00');
-  var MO=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var DY=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  return DY[d.getDay()]+' '+d.getDate()+' '+MO[d.getMonth()]+' '+d.getFullYear();
+  return _daysAbbr()[d.getDay()]+' '+d.getDate()+' '+_monthsAbbr()[d.getMonth()]+' '+d.getFullYear();
 }
 
 function pmcAtDateDt(iso){
@@ -1051,10 +1049,24 @@ function calcAvg(a) {
 function idxMax(a) { var b=0; a.forEach(function(p,i){ if(p.value>a[b].value) b=i; }); return b; }
 function idxMin(a) { var b=0; a.forEach(function(p,i){ if(p.value<a[b].value) b=i; }); return b; }
 
-var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+// Meses/días abreviados — se leen en vivo según el idioma elegido (no un
+// array fijo al cargar el script) porque el usuario puede cambiar de idioma
+// sin recargar la página (ver i18n.js _buildWidget()/window.i18n.set()).
+function _monthsAbbr(){
+  var lang = (window.i18n && window.i18n.lang) || 'es';
+  if (lang === 'pt') return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  if (lang === 'en') return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+}
+function _daysAbbr(){
+  var lang = (window.i18n && window.i18n.lang) || 'es';
+  if (lang === 'pt') return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  if (lang === 'en') return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+}
 function fmtDate(iso) {
   var p = iso.split('-');
-  return p[2] + ' ' + MONTHS[parseInt(p[1])-1] + ' ' + p[0];
+  return p[2] + ' ' + _monthsAbbr()[parseInt(p[1])-1] + ' ' + p[0];
 }
 function fmtDateShort(iso) {
   var p = iso.split('-');
@@ -1297,8 +1309,7 @@ function renderChart(d, cfg) {
       for(var fw=1;fw<=13;fw++){
         fd.setDate(fd.getDate()+7);
         var fdiso = fd.toISOString().slice(0,10);
-        var MONTHS_F=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        var lbl = fdiso.slice(8,10)+' '+MONTHS_F[fd.getMonth()];
+        var lbl = fdiso.slice(8,10)+' '+_monthsAbbr()[fd.getMonth()];
         futureEntries.push({dt:fdiso, l:lbl, ctl:null, atl:null, isFuture:true});
       }
     }
@@ -1885,7 +1896,7 @@ function renderWellbeing() {
   var el = document.getElementById('wk-sleep-h');
   if (el) { el.innerHTML = (avgSleepH||'—')+'<span class="wb-kpi-unit">h</span>'; }
   var elsc = document.getElementById('wk-sleep-score');
-  if (elsc) elsc.textContent = avgSleepSc ? 'Score: '+avgSleepSc : 'Score: —';
+  if (elsc) elsc.textContent = avgSleepSc ? _t('dtw_score_prefix','Score:')+' '+avgSleepSc : _t('dtw_score_prefix','Score:')+' —';
   var rngSl = document.getElementById('wb-sleep-range');
   if (rngSl) rngSl.textContent = fmtRange(sleep);
   if (sleep.length < 2) {
@@ -1904,9 +1915,9 @@ function renderWellbeing() {
         data:{
           labels: sleep.map(function(p){return p.dt;}),
           datasets:[
-            { label:'Horas', data:sleep.map(function(p){return p.h;}),
+            { label:_t('dtw_ds_hours','Horas'), data:sleep.map(function(p){return p.h;}),
               backgroundColor:'#6366F188', borderRadius:3, yAxisID:'yH' },
-            { label:'Score', type:'line',
+            { label:_t('dtw_ds_score','Score'), type:'line',
               data:sleep.map(function(p){return p.score;}),
               borderColor:'#22D3EE', backgroundColor:'transparent',
               borderWidth:2, pointRadius:0, tension:0.3, yAxisID:'ySc' }
@@ -1969,7 +1980,7 @@ function renderWellbeing() {
         data:{
           labels: rhr.map(function(p){return p.dt;}),
           datasets:[{
-            label:'FC Reposo', data:rhr.map(function(p){return p.rhr;}),
+            label:_t('dtw_wb_rhr','FC Reposo'), data:rhr.map(function(p){return p.rhr;}),
             borderColor:'#F43F5E', backgroundColor:'#F43F5E18',
             borderWidth:2, pointRadius:0, tension:0.3, fill:true, yAxisID:'y'
           }]
@@ -1984,7 +1995,7 @@ function renderWellbeing() {
     tsb = sliceDt(d.pmc.map(function(p){ return {dt:p.dt, tsb: p.tsb != null ? p.tsb : (p.ctl||0)-(p.atl||0)}; }));
   }
   var lastTsb = lastVal(tsb, 'tsb');
-  var tsbZone = lastTsb === null ? '—' : lastTsb > 10 ? 'Muy fresco' : lastTsb > -5 ? 'Listo' : lastTsb > -20 ? 'Construcción' : lastTsb > -35 ? 'Alta fatiga' : 'Sobrecarga';
+  var tsbZone = lastTsb === null ? '—' : lastTsb > 10 ? _t('dtw_tsb_zone_fresh','Muy fresco') : lastTsb > -5 ? _t('dtw_tsb_zone_ready','Listo') : lastTsb > -20 ? _t('dtw_tsb_zone_building','Construcción') : lastTsb > -35 ? _t('dtw_tsb_zone_fatigue','Alta fatiga') : _t('dtw_tsb_zone_overload','Sobrecarga');
   var tsbColor = lastTsb === null ? '#F0F9FF' : lastTsb > 10 ? '#10B981' : lastTsb > -5 ? '#F0F9FF' : lastTsb > -20 ? '#F0A500' : '#FF6535';
   var elT = document.getElementById('wk-tsb');
   if (elT) { elT.textContent = lastTsb !== null ? (lastTsb >= 0 ? '+' : '') + lastTsb : '—'; elT.style.color = tsbColor; }
@@ -1994,7 +2005,7 @@ function renderWellbeing() {
   var bb = sliceDt(d.bb_history || []);
   var lastBb = lastVal(bb, 'bb');
   var bbColor = lastBb === null ? '#F0F9FF' : lastBb >= 75 ? '#10B981' : lastBb >= 50 ? '#F0F9FF' : lastBb >= 25 ? '#F0A500' : '#FF6535';
-  var bbSub = lastBb === null ? 'Sin datos' : lastBb >= 75 ? 'Alta energía' : lastBb >= 50 ? 'Moderada' : lastBb >= 25 ? 'Baja' : 'Muy baja — descansa';
+  var bbSub = lastBb === null ? _t('dtw_bb_no_data','Sin datos') : lastBb >= 75 ? _t('dtw_bb_high','Alta energía') : lastBb >= 50 ? _t('dtw_bb_moderate','Moderada') : lastBb >= 25 ? _t('dtw_bb_low','Baja') : _t('dtw_bb_very_low','Muy baja — descansa');
   var elBb = document.getElementById('wk-bb');
   if (elBb) { elBb.innerHTML = (lastBb !== null ? lastBb : '—')+'<span class="wb-kpi-unit">/100</span>'; elBb.style.color = bbColor; }
   var elBbS = document.getElementById('wk-bb-sub');
@@ -2018,10 +2029,10 @@ function renderWellbeing() {
         data:{
           labels: allDts,
           datasets:[
-            { label:'Body Battery', data:allDts.map(function(dt){return bbMap[dt]!=null?bbMap[dt]:null;}),
+            { label:_t('dtw_ds_bb','Body Battery'), data:allDts.map(function(dt){return bbMap[dt]!=null?bbMap[dt]:null;}),
               borderColor:'#10B981', backgroundColor:'#10B98118',
               borderWidth:2, pointRadius:0, tension:0.3, fill:true, yAxisID:'yBB' },
-            { label:'TSB (Forma)', data:allDts.map(function(dt){return tsbMap[dt]!=null?tsbMap[dt]:null;}),
+            { label:_t('dtw_ds_tsb_form','TSB (Forma)'), data:allDts.map(function(dt){return tsbMap[dt]!=null?tsbMap[dt]:null;}),
               borderColor:'#F0A500', backgroundColor:'transparent',
               borderWidth:1.5, pointRadius:0, tension:0.3, fill:false, yAxisID:'yTSB',
               borderDash:[4,3] }
@@ -2041,7 +2052,7 @@ function renderWellbeing() {
         type:'line',
         data:{
           labels: tsb.map(function(p){return p.dt;}),
-          datasets:[{ label:'TSB (Forma)', data:tsb.map(function(p){return p.tsb;}),
+          datasets:[{ label:_t('dtw_ds_tsb_form','TSB (Forma)'), data:tsb.map(function(p){return p.tsb;}),
             borderColor:'#F0A500', backgroundColor:'#F0A50018',
             borderWidth:2, pointRadius:0, tension:0.3, fill:true, yAxisID:'y' }]
         },
@@ -2070,11 +2081,11 @@ function acwrPointColor(v) {
 }
 function acwrZoneBadge(zone, value) {
   var map = {
-    danger:  {cls:'b-dn',   label:'⚠ Riesgo alto'},
-    warning: {cls:'b-warn', label:'Carga alta'},
-    optimal: {cls:'b-up',   label:'Óptimo'},
-    low:     {cls:'b-low',  label:'Sub-carga'},
-    no_data: {cls:'b-none', label:'Sin datos'},
+    danger:  {cls:'b-dn',   label:_t('dtw_acwr_badge_danger','⚠ Riesgo alto')},
+    warning: {cls:'b-warn', label:_t('dtw_acwr_badge_warning','Carga alta')},
+    optimal: {cls:'b-up',   label:_t('dtw_acwr_badge_optimal','Óptimo')},
+    low:     {cls:'b-low',  label:_t('dtw_acwr_badge_low','Sub-carga')},
+    no_data: {cls:'b-none', label:_t('dtw_bb_no_data','Sin datos')},
   };
   var m = map[zone] || map.no_data;
   return {cls:m.cls, text: value != null ? (m.label + ' · ' + value.toFixed(2)) : m.label};
@@ -2148,17 +2159,18 @@ function renderAcwrBySport() {
     if (rangeEl) rangeEl.textContent = hist.length ? (fmtDate(hist[0].dt) + ' → ' + fmtDate(hist[hist.length-1].dt)) : '—';
     if (sessEl) {
       if (info.insufficient_data) {
-        sessEl.textContent = 'Solo ' + (info.sessions_28d||0) + ' sesiones en 28 días — datos insuficientes para un ratio confiable';
+        sessEl.textContent = _t('dtw_insufficient_sessions','Solo {n} sesiones en 28 días — datos insuficientes para un ratio confiable').replace('{n}', info.sessions_28d||0);
         sessEl.style.color = 'var(--gold)';
       } else {
         var daysDanger  = hist.filter(function(p){ return p.acwr >= 1.5; }).length;
         var daysWarning = hist.filter(function(p){ return p.acwr >= 1.3 && p.acwr < 1.5; }).length;
+        var dayWord = function(n){ return n === 1 ? _t('dtw_day_singular','día') : _t('dtw_day_plural','días'); };
         var riskTxt = daysDanger
-          ? daysDanger + ' día' + (daysDanger===1?'':'s') + ' en riesgo alto (≥1.5)' + (daysWarning ? ' · ' + daysWarning + ' en alerta (1.3–1.5)' : '')
+          ? daysDanger + ' ' + dayWord(daysDanger) + ' ' + _t('dtw_high_risk_suffix','en riesgo alto (≥1.5)') + (daysWarning ? ' · ' + daysWarning + ' ' + _t('dtw_alert_suffix','en alerta (1.3–1.5)') : '')
           : daysWarning
-            ? daysWarning + ' día' + (daysWarning===1?'':'s') + ' en zona de alerta (1.3–1.5)'
-            : 'sin excesos de carga en el período';
-        sessEl.textContent = (info.sessions_28d||0) + ' sesiones en los últimos 28 días · ' + riskTxt;
+            ? daysWarning + ' ' + dayWord(daysWarning) + ' ' + _t('dtw_warning_zone_suffix','en zona de alerta (1.3–1.5)')
+            : _t('dtw_no_load_excess','sin excesos de carga en el período');
+        sessEl.textContent = (info.sessions_28d||0) + ' ' + _t('dtw_sessions_last_28d','sesiones en los últimos 28 días') + ' · ' + riskTxt;
         sessEl.style.color = daysDanger ? 'var(--red)' : daysWarning ? 'var(--gold)' : 'var(--dim)';
       }
     }
@@ -2414,7 +2426,7 @@ window.loadCycleCompare = function(){
   if(new Set(dates).size !== dates.length){
     resultEl.style.display = 'none';
     emptyEl.style.display = '';
-    emptyEl.textContent = 'Elegí fechas distintas para cada ciclo.';
+    emptyEl.textContent = _t('dtw_cc_diff_dates','Elegí fechas distintas para cada ciclo.');
     return;
   }
   var qs = 'date_a='+encodeURIComponent(dateA.value)+'&date_b='+encodeURIComponent(dateB.value)
@@ -2438,7 +2450,7 @@ function renderCycleCompare(d){
   if(!anyData){
     resultEl.style.display = 'none';
     emptyEl.style.display = '';
-    emptyEl.textContent = 'No hay datos de entrenamiento sincronizados en las semanas previas a estas fechas.';
+    emptyEl.textContent = _t('dtw_cc_no_sync_data','No hay datos de entrenamiento sincronizados en las semanas previas a estas fechas.');
     return;
   }
   emptyEl.style.display = 'none';
@@ -2487,7 +2499,7 @@ function renderCycleCompare(d){
   CC_CHART = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels.map(function(w){ return w===0 ? 'Carrera' : (w+'sem'); }),
+      labels: labels.map(function(w){ return w===0 ? _t('dtw_cc_race_label','Carrera') : (w+_t('dtw_cc_week_suffix','sem')); }),
       datasets: datasets
     },
     options: {
@@ -2495,7 +2507,7 @@ function renderCycleCompare(d){
       plugins: { legend:{ display:false } },
       scales: {
         x: { grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#7FB3CC', font:{size:10} } },
-        y: { grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#7FB3CC', font:{size:10} }, title:{ display:true, text:'CTL (Fitness)', color:'#7FB3CC', font:{size:11} } },
+        y: { grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#7FB3CC', font:{size:10} }, title:{ display:true, text:_t('dtw_cc_ctl_fitness_axis','CTL (Fitness)'), color:'#7FB3CC', font:{size:11} } },
       }
     }
   });
@@ -2511,7 +2523,7 @@ function renderCycleCompare(d){
   renderCycleTable(a, b, c);
 }
 
-var CC_SPORT_LABELS = { swim:'Natación', bike:'Ciclismo', run:'Carrera', gym:'Fuerza', strength:'Fuerza', other:'Otras actividades' };
+var CC_SPORT_LABELS = { swim:_t('dtw_sport_swim','Natación'), bike:_t('dtw_sport_bike','Ciclismo'), run:_t('dtw_sport_run','Trote'), gym:_t('dtw_sport_strength_short','Fuerza'), strength:_t('dtw_sport_strength_short','Fuerza'), other:_t('dtw_sport_other','Otras actividades') };
 
 /** Tabla única y compacta: filas = indicadores, columnas = ciclos.
  *  Reemplaza las dos secciones separadas (tarjetas apiladas) por un
@@ -2553,17 +2565,17 @@ function renderCycleTable(a, b, c){
   }
 
   var rows = [];
-  rows.push(sectionRow('Comparación de indicadores'));
-  rows.push(dataRow('Pico CTL alcanzado',       cols.map(function(col){ return col.v.stats.peak_ctl; }),     true));
-  rows.push(dataRow('CTL el día de referencia', cols.map(function(col){ return col.v.stats.ctl_race_day; }), true));
-  rows.push(dataRow('TSB el día de referencia', cols.map(function(col){ return col.v.stats.tsb_race_day; }), null));
-  rows.push(dataRow('TSS total del bloque',     cols.map(function(col){ return col.v.stats.total_tss; }),    true));
+  rows.push(sectionRow(_t('dtw_cc_section_compare','Comparación de indicadores')));
+  rows.push(dataRow(_t('dtw_cc_row_peak_ctl','Pico CTL alcanzado'),       cols.map(function(col){ return col.v.stats.peak_ctl; }),     true));
+  rows.push(dataRow(_t('dtw_cc_row_ctl_race_day','CTL el día de referencia'), cols.map(function(col){ return col.v.stats.ctl_race_day; }), true));
+  rows.push(dataRow(_t('dtw_cc_row_tsb_race_day','TSB el día de referencia'), cols.map(function(col){ return col.v.stats.tsb_race_day; }), null));
+  rows.push(dataRow(_t('dtw_cc_row_total_tss','TSS total del bloque'),     cols.map(function(col){ return col.v.stats.total_tss; }),    true));
 
-  rows.push(sectionRow('Qué explica la diferencia'));
-  rows.push(dataRow('Horas totales de entrenamiento',     cols.map(function(col){ return col.v.breakdown.total_hours; }), true, 'h'));
-  rows.push(dataRow('Sesiones',                            cols.map(function(col){ return col.v.breakdown.sessions; }), true));
-  rows.push(dataRow('TSS promedio/sesión (intensidad)',    cols.map(function(col){ return col.v.breakdown.avg_tss_per_session; }), null));
-  rows.push(dataRow('Consistencia (semanas activas)',      cols.map(function(col){ return col.v.breakdown.consistency_pct; }), true, '%'));
+  rows.push(sectionRow(_t('dtw_cc_section_explain','Qué explica la diferencia')));
+  rows.push(dataRow(_t('dtw_cc_row_total_hours','Horas totales de entrenamiento'),     cols.map(function(col){ return col.v.breakdown.total_hours; }), true, 'h'));
+  rows.push(dataRow(_t('dtw_cc_row_sessions','Sesiones'),                            cols.map(function(col){ return col.v.breakdown.sessions; }), true));
+  rows.push(dataRow(_t('dtw_cc_row_avg_tss','TSS promedio/sesión (intensidad)'),    cols.map(function(col){ return col.v.breakdown.avg_tss_per_session; }), null));
+  rows.push(dataRow(_t('dtw_cc_row_consistency','Consistencia (semanas activas)'),      cols.map(function(col){ return col.v.breakdown.consistency_pct; }), true, '%'));
 
   var allSports = {};
   cols.forEach(function(col){
@@ -2728,9 +2740,9 @@ function renderCycleTable(a, b, c){
   period = 0;
 
   if(metric === 'vo2' && (VO2_SPORT === 'running' || VO2_SPORT === 'cycling')){
-    var sportLbl = VO2_SPORT === 'cycling' ? 'Ciclismo' : 'Running';
-    MC.vo2.title   = 'VO₂ Max Estimado — ' + sportLbl;
-    MC.vo2.eyebrow = 'Capacidad Aeróbica Máxima (' + sportLbl + ')';
+    var sportLbl = VO2_SPORT === 'cycling' ? _t('dtw_sport_bike','Ciclismo') : _t('dtw_vo2_running','Running');
+    MC.vo2.title   = _t('dtw_vo2_title_sport','VO₂ Max Estimado — {sport}').replace('{sport}', sportLbl);
+    MC.vo2.eyebrow = _t('dtw_vo2_eyebrow_sport','Capacidad Aeróbica Máxima ({sport})').replace('{sport}', sportLbl);
   }
 
   document.querySelectorAll('.ptab').forEach(function(b) {
