@@ -11,6 +11,7 @@
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -173,11 +174,11 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
       <div class="ah-top-row">
         <div class="back-btn" onclick="goBack()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Volver al Plan
+          <span data-i18n="tdw_back_to_plan">Volver al Plan</span>
         </div>
         <button class="share-btn" id="share-btn" style="display:none" onclick="openShareModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
-          Compartir
+          <span data-i18n="tdw_share">Compartir</span>
         </button>
       </div>
       <div class="owner-badge" id="owner-badge" style="display:none"></div>
@@ -195,10 +196,10 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
   <div class="c">
     <div class="no-act">
       <div class="no-act-icon">📊</div>
-      <div class="no-act-title">Selecciona una Actividad</div>
-      <div class="no-act-sub">Haz clic en una sesión desde el Plan de Entrenamiento para ver sus detalles.</div>
+      <div class="no-act-title" data-i18n="tdw_select_activity_title">Selecciona una Actividad</div>
+      <div class="no-act-sub" data-i18n="tdw_select_activity_sub">Haz clic en una sesión desde el Plan de Entrenamiento para ver sus detalles.</div>
       <br>
-      <a href="training_plan.html" style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.1em;color:var(--orange)">← Ir al Plan de Entrenamiento</a>
+      <a href="training_plan.html" style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.1em;color:var(--orange)" data-i18n="tdw_back_to_plan_link">← Ir al Plan de Entrenamiento</a>
     </div>
   </div>
 </div>
@@ -219,27 +220,27 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
          o 30, según la actividad; emparejarlo en columnas con otra cosa
          de alto fijo se veía desbalanceado) -->
     <div class="dt-tabs mt2" id="dt-tabs">
-      <button class="dt-tab-btn active" onclick="switchDetailTab('zones',this)">Distribución de Zonas</button>
-      <button class="dt-tab-btn" onclick="switchDetailTab('charts',this)">Gráficos</button>
-      <button class="dt-tab-btn" onclick="switchDetailTab('splits',this)">Parciales</button>
+      <button class="dt-tab-btn active" onclick="switchDetailTab('zones',this)" data-i18n="tdw_tab_zones">Distribución de Zonas</button>
+      <button class="dt-tab-btn" onclick="switchDetailTab('charts',this)" data-i18n="tdw_tab_charts">Gráficos</button>
+      <button class="dt-tab-btn" onclick="switchDetailTab('splits',this)" data-i18n="tdw_tab_splits">Parciales</button>
     </div>
 
     <div class="panel dt-pane active" id="s-zones">
-      <div class="panel-head"><div class="panel-title" id="zones-title">Distribución de Zonas</div></div>
+      <div class="panel-head"><div class="panel-title" id="zones-title" data-i18n="tdw_tab_zones">Distribución de Zonas</div></div>
       <div class="zone-grid" id="zones-grid"></div>
     </div>
 
     <div class="panel dt-pane" id="s-charts">
       <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
         <div id="compare-status" style="font-size:.78rem;color:var(--dim)"></div>
-        <button class="btn btn-g btn-sm" onclick="openCompareModal()" id="compare-btn">Comparar con otra actividad</button>
+        <button class="btn btn-g btn-sm" onclick="openCompareModal()" id="compare-btn" data-i18n="tdw_compare_btn">Comparar con otra actividad</button>
       </div>
       <div id="charts-inner"></div>
     </div>
 
 
     <div class="panel dt-pane" id="s-splits">
-      <div class="panel-head"><div class="panel-title" id="splits-title">Detalles por Segmento</div></div>
+      <div class="panel-head"><div class="panel-title" id="splits-title" data-i18n="tdw_splits_title">Detalles por Segmento</div></div>
       <div id="splits-inner"></div>
     </div>
 
@@ -253,15 +254,19 @@ a{color:inherit;text-decoration:none}ul{list-style:none}
 (function(){
 'use strict';
 
+function _t(key, fallback) {
+  return (window.i18n && window.i18n.t(key)) || fallback;
+}
+
 // ─────────────────────────────────────────────────────
 // SPORT CONFIG
 // ─────────────────────────────────────────────────────
 var SPORT = {
-  bike: {icon:'🚴', label:'Ciclismo',   color:'var(--orange)', badge:'b-o'},
-  run:  {icon:'🏃', label:'Carrera',    color:'var(--green)',  badge:'b-g'},
-  swim: {icon:'🏊', label:'Natación',   color:'var(--cyan)',   badge:'b-c'},
-  str:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'},
-  gym:  {icon:'💪', label:'Fuerza',     color:'var(--purple)', badge:'b-p'}
+  bike: {icon:'🚴', label:_t('tdw_sport_bike','Ciclismo'),   color:'var(--orange)', badge:'b-o'},
+  run:  {icon:'🏃', label:_t('tdw_sport_run','Carrera'),    color:'var(--green)',  badge:'b-g'},
+  swim: {icon:'🏊', label:_t('tdw_sport_swim','Natación'),   color:'var(--cyan)',   badge:'b-c'},
+  str:  {icon:'💪', label:_t('tdw_sport_str','Fuerza'),     color:'var(--purple)', badge:'b-p'},
+  gym:  {icon:'💪', label:_t('tdw_sport_str','Fuerza'),     color:'var(--purple)', badge:'b-p'}
 };
 var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
@@ -333,10 +338,10 @@ function fmtDate(iso){
 // ─────────────────────────────────────────────────────
 function getActConfig(act){
   var nm = (act.name||'').toLowerCase();
-  if(nm.indexOf('zwift')>=0)    return {type:'zwift', icon:'🖥️', location:'Zwift — Indoor Trainer'};
+  if(nm.indexOf('zwift')>=0)    return {type:'zwift', icon:'🖥️', location:_t('tdw_loc_zwift','Zwift — Indoor Trainer')};
   if(nm.indexOf('piscina')>=0 || act.sport==='swim')
-                                return {type:'pool',   icon:'🏊', location:'Piscina'};
-  if(act.sport==='str'||act.sport==='gym') return {type:'indoor', icon:'🏋️', location:'Gimnasio'};
+                                return {type:'pool',   icon:'🏊', location:_t('tdw_loc_pool','Piscina')};
+  if(act.sport==='str'||act.sport==='gym') return {type:'indoor', icon:'🏋️', location:_t('tdw_loc_gym','Gimnasio')};
   if(nm.indexOf('las condes')>=0 || nm.indexOf('condes')>=0)
     return {type:'outdoor', lat:-33.408, lng:-70.583, location:'Las Condes, Santiago'};
   if(nm.indexOf('colina')>=0)
@@ -356,7 +361,7 @@ var ownerBadge = document.getElementById('owner-badge');
 if(ownerBadge){
   if(ACT.is_own === false && ACT.owner_name){
     ownerBadge.style.display = '';
-    ownerBadge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Actividad de '+ACT.owner_name;
+    ownerBadge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> '+_t('tdw_activity_of','Actividad de')+' '+ACT.owner_name;
   } else {
     ownerBadge.style.display = 'none';
   }
@@ -379,7 +384,7 @@ window.openShareModal = function(){
       document.getElementById('share-url-input').value = fullUrl;
       document.getElementById('share-modal').classList.add('on');
     })
-    .catch(function(){ alert('No se pudo generar el link de compartir'); });
+    .catch(function(){ alert(_t('tdw_err_share_link','No se pudo generar el link de compartir')); });
 };
 window.closeShareModal = function(){
   document.getElementById('share-modal').classList.remove('on');
@@ -395,7 +400,7 @@ window.revokeShareUrl = function(){
   var api = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
   fetch(api+'/athlete/activities/'+ACT.activity_id+'/share', {method:'DELETE', headers:{Authorization:'Bearer '+tok}})
     .then(function(){ closeShareModal(); })
-    .catch(function(){ alert('No se pudo dejar de compartir'); });
+    .catch(function(){ alert(_t('tdw_err_unshare','No se pudo dejar de compartir')); });
 };
 
 function _gearTok(){
@@ -418,10 +423,10 @@ function initShoePicker(){
     var current = res[1];
     if(!shoes.length){
       box.style.display = 'flex';
-      box.innerHTML = '<span class="shoe-picker-icon">👟</span><span class="shoe-picker-status">Agrega zapatillas en <a href="gear.html" style="color:var(--cyan)">Mi Equipo</a> para trackear cuál usaste acá.</span>';
+      box.innerHTML = '<span class="shoe-picker-icon">👟</span><span class="shoe-picker-status">'+_t('tdw_shoe_picker_hint','Agrega zapatillas en <a href="gear.html" style="color:var(--cyan)">Mi Equipo</a> para trackear cuál usaste acá.')+'</span>';
       return;
     }
-    var opts = '<option value="">Sin asignar</option>' + shoes.map(function(s){
+    var opts = '<option value="">'+_t('tdw_shoe_unassigned','Sin asignar')+'</option>' + shoes.map(function(s){
       var sel = current && current.shoe_id===s.id ? ' selected' : '';
       return '<option value="'+s.id+'"'+sel+'>'+s.brand+' '+s.model+(s.nickname?' ('+s.nickname+')':'')+'</option>';
     }).join('');
@@ -432,14 +437,14 @@ function initShoePicker(){
     document.getElementById('shoe-picker-select').addEventListener('change', function(ev){
       var shoeId = ev.target.value || null;
       var statusEl = document.getElementById('shoe-picker-status');
-      statusEl.textContent = 'Guardando…';
+      statusEl.textContent = _t('tdw_shoe_saving','Guardando…');
       fetch(api+'/gear/activities/'+ACT.id+'/shoe', {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
         body: JSON.stringify({shoe_id: shoeId})
       }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-        .then(function(){ statusEl.textContent = '✓ Guardado'; setTimeout(function(){ statusEl.textContent=''; }, 2000); })
-        .catch(function(){ statusEl.textContent = '⚠ Error al guardar'; });
+        .then(function(){ statusEl.textContent = _t('tdw_shoe_saved','✓ Guardado'); setTimeout(function(){ statusEl.textContent=''; }, 2000); })
+        .catch(function(){ statusEl.textContent = _t('tdw_shoe_save_err','⚠ Error al guardar'); });
     });
   }).catch(function(){});
 }
@@ -455,7 +460,7 @@ document.getElementById('act-meta').innerHTML =
   +'<span class="ah-meta-sep">·</span>'
   +'<span>'+durStr+'</span>'
   +(ACT.dist_km?'<span class="ah-meta-sep">·</span><span>'+ACT.dist_km.toFixed(1)+' km</span>':'')
-  +(ACT.avg_hr?'<span class="ah-meta-sep">·</span><span>'+ACT.avg_hr+' bpm avg</span>':'')
+  +(ACT.avg_hr?'<span class="ah-meta-sep">·</span><span>'+ACT.avg_hr+' '+_t('tdw_bpm_avg_suffix','bpm avg')+'</span>':'')
   +'<span class="ah-meta-sep">·</span>'
   +'<span class="badge '+sp.badge+'">'+sp.label+'</span>';
 
@@ -467,19 +472,19 @@ if(ACT.sport==='bike'){
   var tss = ACT.tss || (np ? Math.round((ACT.dur_min*60*np*ifv)/(FTP*3600)*100) : null);
   var spd = ACT.dist_km ? (ACT.dist_km/(ACT.dur_min/60)).toFixed(1) : null;
   kpis = [
-    {lbl:'Potencia NP',    val:np||'—',               unit:'Watts',                  col:'var(--orange)'},
-    {lbl:'IF',             val:ifv||'—',               unit:'FTP '+FTP+'W',           col:'var(--gold)'},
-    {lbl:'FC Media',       val:ACT.avg_hr||'—',        unit:'bpm',                    col:'var(--coral)'},
-    {lbl:'Velocidad Media',val:spd||(ACT.avg_power?Math.round(ACT.avg_power/8):' —'),  unit:'km/h',      col:'var(--aqua)'}
+    {lbl:_t('tdw_kpi_power_np','Potencia NP'),    val:np||'—',               unit:_t('tdw_unit_watts','Watts'),                  col:'var(--orange)'},
+    {lbl:_t('tdw_kpi_if','IF'),             val:ifv||'—',               unit:'FTP '+FTP+'W',           col:'var(--gold)'},
+    {lbl:_t('tdw_kpi_hr_avg','FC Media'),       val:ACT.avg_hr||'—',        unit:_t('tdw_unit_bpm','bpm'),                    col:'var(--coral)'},
+    {lbl:_t('tdw_kpi_speed_avg','Velocidad Media'),val:spd||(ACT.avg_power?Math.round(ACT.avg_power/8):' —'),  unit:_t('tdw_unit_kmh','km/h'),      col:'var(--aqua)'}
   ];
 } else if(ACT.sport==='run'){
   var paceS = ACT.dist_km ? Math.round((ACT.dur_min*60)/ACT.dist_km) : null;
   var cad   = ACT.avg_cadence_spm ? Math.round(ACT.avg_cadence_spm) : null;
   kpis = [
-    {lbl:'Ritmo Medio',    val:paceS?fmtPace(paceS):'—',    unit:'min/km',    col:'var(--green)'},
-    {lbl:'FC Media',       val:ACT.avg_hr||'—',              unit:'bpm',       col:'var(--coral)'},
-    {lbl:'Cadencia',       val:cad||'—',                      unit:'pasos/min', col:'var(--gold)'},
-    {lbl:'Calorías',       val:ACT.calories||'—',             unit:'kcal',      col:'var(--purple)'}
+    {lbl:_t('tdw_kpi_pace_avg','Ritmo Medio'),    val:paceS?fmtPace(paceS):'—',    unit:_t('tdw_unit_min_km','min/km'),    col:'var(--green)'},
+    {lbl:_t('tdw_kpi_hr_avg','FC Media'),       val:ACT.avg_hr||'—',              unit:_t('tdw_unit_bpm','bpm'),       col:'var(--coral)'},
+    {lbl:_t('tdw_kpi_cadence','Cadencia'),       val:cad||'—',                      unit:_t('tdw_unit_steps_min','pasos/min'), col:'var(--gold)'},
+    {lbl:_t('tdw_kpi_calories','Calorías'),       val:ACT.calories||'—',             unit:_t('tdw_unit_kcal','kcal'),      col:'var(--purple)'}
   ];
 } else if(ACT.sport==='swim'){
   var paceSwimS = ACT.swim_pace
@@ -487,18 +492,18 @@ if(ACT.sport==='bike'){
     : (ACT.dur_min && ACT.dist_km ? Math.round((ACT.dur_min*60)/(ACT.dist_km*10)) : null);
   var distM = ACT.dist_km ? Math.round(ACT.dist_km*1000) : null;
   kpis = [
-    {lbl:'Ritmo Medio',    val:paceSwimS?fmtPace100(paceSwimS):'—',  unit:'min/100m',  col:'var(--cyan)'},
-    {lbl:'FC Media',       val:ACT.avg_hr||'—',                        unit:'bpm',       col:'var(--coral)'},
-    {lbl:'Swolf',          val:ACT.swolf||'—',                         unit:ACT.avg_cadence_spm?Math.round(ACT.avg_cadence_spm)+' brazadas/min':'eficiencia', col:'var(--aqua)'},
-    {lbl:'Calorías',       val:ACT.calories||'—',                      unit:'kcal',      col:'var(--green)'}
+    {lbl:_t('tdw_kpi_pace_avg','Ritmo Medio'),    val:paceSwimS?fmtPace100(paceSwimS):'—',  unit:_t('tdw_unit_min_100m','min/100m'),  col:'var(--cyan)'},
+    {lbl:_t('tdw_kpi_hr_avg','FC Media'),       val:ACT.avg_hr||'—',                        unit:_t('tdw_unit_bpm','bpm'),       col:'var(--coral)'},
+    {lbl:_t('tdw_kpi_swolf','Swolf'),          val:ACT.swolf||'—',                         unit:ACT.avg_cadence_spm?Math.round(ACT.avg_cadence_spm)+' '+_t('tdw_unit_strokes_min','brazadas/min'):_t('tdw_unit_efficiency','eficiencia'), col:'var(--aqua)'},
+    {lbl:_t('tdw_kpi_calories','Calorías'),       val:ACT.calories||'—',                      unit:_t('tdw_unit_kcal','kcal'),      col:'var(--green)'}
   ];
 } else {
   // Strength
   kpis = [
-    {lbl:'Duración',       val:durStr,             unit:'sesión completa', col:'var(--purple)'},
-    {lbl:'FC Media',       val:ACT.avg_hr||'—',    unit:'bpm',             col:'var(--coral)'},
-    {lbl:'Calorías',       val:ACT.calories||'—',  unit:'kcal',            col:'var(--green)'},
-    {lbl:'Tipo',           val:'Fuerza',            unit:'Preparación Física', col:'var(--purple)'}
+    {lbl:_t('tdw_kpi_duration','Duración'),       val:durStr,             unit:_t('tdw_unit_full_session','sesión completa'), col:'var(--purple)'},
+    {lbl:_t('tdw_kpi_hr_avg','FC Media'),       val:ACT.avg_hr||'—',    unit:_t('tdw_unit_bpm','bpm'),             col:'var(--coral)'},
+    {lbl:_t('tdw_kpi_calories','Calorías'),       val:ACT.calories||'—',  unit:_t('tdw_unit_kcal','kcal'),            col:'var(--green)'},
+    {lbl:_t('tdw_kpi_type','Tipo'),           val:_t('tdw_sport_str','Fuerza'),            unit:_t('tdw_unit_physical_prep','Preparación Física'), col:'var(--purple)'}
   ];
 }
 
@@ -521,17 +526,17 @@ if(ACT.sport==='run' && ACT.is_own !== false){
 if(ACT.aerobic_te != null){
   var teEl = document.getElementById('act-te');
   var teLabels = {
-    BASE:'Base (Aeróbica baja)', TEMPO:'Tempo (Aeróbica alta)', THRESHOLD:'Umbral',
-    VO2MAX:'VO2 Max', ANAEROBIC_CAPACITY:'Capacidad Anaeróbica', SPRINT:'Sprint',
-    RECOVERY:'Recuperación', NONE:'Sin efecto de entrenamiento'
+    BASE:_t('tdw_te_base','Base (Aeróbica baja)'), TEMPO:_t('tdw_te_tempo','Tempo (Aeróbica alta)'), THRESHOLD:_t('tdw_te_threshold','Umbral'),
+    VO2MAX:_t('tdw_te_vo2max','VO2 Max'), ANAEROBIC_CAPACITY:_t('tdw_te_anaerobic_cap','Capacidad Anaeróbica'), SPRINT:_t('tdw_te_sprint','Sprint'),
+    RECOVERY:_t('tdw_te_recovery','Recuperación'), NONE:_t('tdw_te_none','Sin efecto de entrenamiento')
   };
-  var teName = teLabels[ACT.te_label] || ACT.te_label || 'Efecto de Entrenamiento';
+  var teName = teLabels[ACT.te_label] || ACT.te_label || _t('tdw_te_fallback','Efecto de Entrenamiento');
   teEl.style.display = 'flex';
   teEl.style.cssText = 'display:flex;gap:1.5rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border2)';
   teEl.innerHTML =
       '<div><div class="ah-stat-lbl">'+teName+'</div>'
-    + '<div class="ah-stat-val" style="color:var(--orange);font-size:1.1rem">'+ACT.aerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">Aeróbico</span></div></div>'
-    + (ACT.anaerobic_te != null ? '<div><div class="ah-stat-val" style="color:var(--purple);font-size:1.1rem">'+ACT.anaerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">Anaeróbico</span></div></div>' : '');
+    + '<div class="ah-stat-val" style="color:var(--orange);font-size:1.1rem">'+ACT.aerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">'+_t('tdw_te_aerobic','Aeróbico')+'</span></div></div>'
+    + (ACT.anaerobic_te != null ? '<div><div class="ah-stat-val" style="color:var(--purple);font-size:1.1rem">'+ACT.anaerobic_te.toFixed(1)+' <span style="font-size:.65rem;color:var(--dim)">'+_t('tdw_te_anaerobic','Anaeróbico')+'</span></div></div>' : '');
 }
 
 // ─────────────────────────────────────────────────────
@@ -678,7 +683,7 @@ function renderRealMap(trackData, extraNoteHtml){
     var grp = drawGradientRoute(window._mapEffortSeries);
     poly = L.polyline(route, {opacity:0}).addTo(leafletMap); // solo para fitBounds
     mapWrap.querySelector('#map-leaflet').insertAdjacentHTML('beforeend',
-      '<div class="map-effort-legend">'+(ACT.sport==='bike'?'Potencia':'Velocidad')+': <span style="color:#0EA5E9">menor</span> → <span style="color:#EF4444">mayor</span></div>');
+      '<div class="map-effort-legend">'+(ACT.sport==='bike'?_t('tdw_effort_power','Potencia'):_t('tdw_effort_speed','Velocidad'))+': <span style="color:#0EA5E9">'+_t('tdw_effort_lower','menor')+'</span> → <span style="color:#EF4444">'+_t('tdw_effort_higher','mayor')+'</span></div>');
   } else {
     poly = L.polyline(route, {color:lineColor, weight:3.5, opacity:1}).addTo(leafletMap);
     // Si la telemetría de esfuerzo llega después (fetch más lento que el
@@ -702,9 +707,9 @@ function renderRealMap(trackData, extraNoteHtml){
   }
 
   L.marker(route[0], {icon: circleIcon('#10B981')})
-    .bindPopup('<b>Inicio</b><br>'+cfg.location).addTo(leafletMap);
+    .bindPopup('<b>'+_t('tdw_map_start','Inicio')+'</b><br>'+cfg.location).addTo(leafletMap);
   L.marker(route[route.length-1], {icon: circleIcon('#EF4444')})
-    .bindPopup('<b>Fin</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
+    .bindPopup('<b>'+_t('tdw_map_end','Fin')+'</b><br>'+fmtDur(ACT.dur_min)).addTo(leafletMap);
 
   var markerEvery = ACT.dist_km > 50 ? 20 : ACT.dist_km > 20 ? 10 : ACT.dist_km > 5 ? 5 : 2;
   var stepsPerKm  = route.length / (ACT.dist_km||1);
@@ -729,7 +734,7 @@ function initMap(){
         +'<div class="indoor-icon">'+cfg.icon+'</div>'
         +'<div class="indoor-label">'+cfg.location+'</div>'
         +'<div class="indoor-sub">'+(ACT.name||sp.label)+' · '+durStr+(ACT.dist_km?' · '+ACT.dist_km.toFixed(1)+' km':'')+'</div>'
-        +'<div class="indoor-sub" style="margin-top:.4rem">Sin ruta del mundo virtual sincronizada</div>'
+        +'<div class="indoor-sub" style="margin-top:.4rem">'+_t('tdw_zwift_no_route','Sin ruta del mundo virtual sincronizada')+'</div>'
         +'</div>';
     }
     if(!tok || !ACT.activity_id){ zwiftNoRoute(); return; }
@@ -737,7 +742,7 @@ function initMap(){
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(trackData){
         if(!trackData || !trackData.points || trackData.points.length < 2){ zwiftNoRoute(); return; }
-        renderRealMap(trackData, '<div class="map-zwift-note">Zwift — mundo virtual con coordenadas reales; el trazado es de la sesión, no una ubicación física visitada</div>');
+        renderRealMap(trackData, '<div class="map-zwift-note">'+_t('tdw_zwift_note','Zwift — mundo virtual con coordenadas reales; el trazado es de la sesión, no una ubicación física visitada')+'</div>');
       })
       .catch(function(){ zwiftNoRoute(); });
     return;
@@ -796,7 +801,7 @@ function initMap(){
     svg += '<text x="'+(padX-8)+'" y="'+(padY+laneH/2+4)+'" text-anchor="end" fill="var(--dim)" font-size="9" font-family="Oswald,sans-serif">25m</text>';
     if(ACT.dist_km){
       var totalLaps = Math.round(ACT.dist_km*1000/25);
-      svg += '<text x="'+(padX+laneW/2)+'" y="'+(svgH-8)+'" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Oswald,sans-serif" letter-spacing="1">'+totalLaps+' LARGOS · '+(ACT.dist_km*1000).toFixed(0)+'m TOTAL</text>';
+      svg += '<text x="'+(padX+laneW/2)+'" y="'+(svgH-8)+'" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Oswald,sans-serif" letter-spacing="1">'+totalLaps+' '+_t('tdw_pool_lengths','LARGOS')+' · '+(ACT.dist_km*1000).toFixed(0)+'m '+_t('tdw_pool_total','TOTAL')+'</text>';
     }
     svg += '</svg>';
     mapWrap.innerHTML = '<div class="pool-wrap">'+svg+'</div>';
@@ -808,8 +813,8 @@ function initMap(){
   function noGpsState(){
     mapWrap.innerHTML = '<div class="indoor-card">'
       +'<div class="indoor-icon">📍</div>'
-      +'<div class="indoor-label">Sin datos GPS disponibles</div>'
-      +'<div class="indoor-sub">Esta actividad no tiene track GPS sincronizado desde Garmin</div>'
+      +'<div class="indoor-label">'+_t('tdw_no_gps_title','Sin datos GPS disponibles')+'</div>'
+      +'<div class="indoor-sub">'+_t('tdw_no_gps_sub','Esta actividad no tiene track GPS sincronizado desde Garmin')+'</div>'
       +'</div>';
   }
 
@@ -846,20 +851,20 @@ var chartsInner = document.getElementById('charts-inner');
 var zonesGrid   = document.getElementById('zones-grid');
 
 var HR_ZONE = {
-  z1:{label:'Z1 Recuperación', color:'#0EA5E9'},
-  z2:{label:'Z2 Aeróbico',     color:'#10B981'},
-  z3:{label:'Z3 Tempo',        color:'#F0A500'},
-  z4:{label:'Z4 Umbral',       color:'#FF6535'},
-  z5:{label:'Z5 VO2max',       color:'#EF4444'}
+  z1:{label:_t('tdw_zone_hr_z1','Z1 Recuperación'), color:'#0EA5E9'},
+  z2:{label:_t('tdw_zone_hr_z2','Z2 Aeróbico'),     color:'#10B981'},
+  z3:{label:_t('tdw_zone_hr_z3','Z3 Tempo'),        color:'#F0A500'},
+  z4:{label:_t('tdw_zone_hr_z4','Z4 Umbral'),       color:'#FF6535'},
+  z5:{label:_t('tdw_zone_hr_z5','Z5 VO2max'),       color:'#EF4444'}
 };
 var POWER_ZONE = {
-  z1_active_recovery:{label:'Z1 Recuperación', color:'#0EA5E9'},
-  z2_endurance:      {label:'Z2 Resistencia',  color:'#10B981'},
-  z3_tempo:          {label:'Z3 Tempo',        color:'#F0A500'},
-  z4_threshold:      {label:'Z4 Umbral',       color:'#FF6535'},
-  z5_vo2max:         {label:'Z5 VO2max',       color:'#EF4444'},
-  z6_anaerobic:      {label:'Z6 Anaeróbico',   color:'#A855F7'},
-  z7_neuromuscular:  {label:'Z7 Neuromuscular',color:'#EC4899'}
+  z1_active_recovery:{label:_t('tdw_zone_pwr_z1','Z1 Recuperación'), color:'#0EA5E9'},
+  z2_endurance:      {label:_t('tdw_zone_pwr_z2','Z2 Resistencia'),  color:'#10B981'},
+  z3_tempo:          {label:_t('tdw_zone_pwr_z3','Z3 Tempo'),        color:'#F0A500'},
+  z4_threshold:      {label:_t('tdw_zone_pwr_z4','Z4 Umbral'),       color:'#FF6535'},
+  z5_vo2max:         {label:_t('tdw_zone_pwr_z5','Z5 VO2max'),       color:'#EF4444'},
+  z6_anaerobic:      {label:_t('tdw_zone_pwr_z6','Z6 Anaeróbico'),   color:'#A855F7'},
+  z7_neuromuscular:  {label:_t('tdw_zone_pwr_z7','Z7 Neuromuscular'),color:'#EC4899'}
 };
 
 function _pathFromValues(values, minV, maxV, W, H, pad){
@@ -925,10 +930,10 @@ function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues,
   return '<div class="chart-block">'
     + '<div class="chart-lbl"><div class="chart-name">'+name+'</div>'
     + '<div class="chart-anns">'
-      + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>Prom '+Math.round(avgVal)+' '+unit+'</div>' : '')
-      + '<div class="chart-ann">Máx '+Math.round(res.max)+' '+unit+'</div>'
-      + (hasTarget ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:var(--dim);opacity:.6"></span>'+(typeof _compareActId!=='undefined' && _compareActId ? 'Actividad comparada' : 'Objetivo del plan')+'</div>' : '')
-      + (zoneBounds ? '<div class="chart-ann" style="color:var(--dim)">Bandas = zonas reales (FTP/FCmax)</div>' : '')
+      + (avgVal!=null ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:'+color+'"></span>'+_t('tdw_chart_avg','Prom ')+Math.round(avgVal)+' '+unit+'</div>' : '')
+      + '<div class="chart-ann">'+_t('tdw_chart_max','Máx ')+Math.round(res.max)+' '+unit+'</div>'
+      + (hasTarget ? '<div class="chart-ann"><span class="chart-ann-dot" style="background:var(--dim);opacity:.6"></span>'+(typeof _compareActId!=='undefined' && _compareActId ? _t('tdw_chart_compared_activity','Actividad comparada') : _t('tdw_chart_plan_target','Objetivo del plan'))+'</div>' : '')
+      + (zoneBounds ? '<div class="chart-ann" style="color:var(--dim)">'+_t('tdw_chart_zone_bands','Bandas = zonas reales (FTP/FCmax)')+'</div>' : '')
     + '</div></div>'
     + '<div class="chart-svg-wrap">'
       + '<svg class="chart-svg" id="'+chartId+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
@@ -940,7 +945,7 @@ function renderChartBlock(name, values, tArr, color, unit, avgVal, targetValues,
       + '</svg>'
       + '<div class="chart-tooltip" style="display:none"></div>'
     + '</div>'
-    + '<div class="chart-taxis"><span>Inicio</span><span>Fin</span></div>'
+    + '<div class="chart-taxis"><span>'+_t('tdw_map_start','Inicio')+'</span><span>'+_t('tdw_map_end','Fin')+'</span></div>'
     + '</div>';
 }
 
@@ -1008,14 +1013,14 @@ function renderZonesReal(zonesData, ownerNote){
   if(!zonesGrid) return;
   var cols = [];
   if(zonesData.hr && zonesData.hr.length){
-    cols.push({title:'Frecuencia Cardíaca', rows:zonesData.hr, def:HR_ZONE});
+    cols.push({title:_t('tdw_col_hr','Frecuencia Cardíaca'), rows:zonesData.hr, def:HR_ZONE});
   }
   if(zonesData.power && zonesData.power.length){
-    cols.push({title:'Potencia', rows:zonesData.power, def:POWER_ZONE});
+    cols.push({title:_t('tdw_col_power','Potencia'), rows:zonesData.power, def:POWER_ZONE});
   }
   if(!cols.length){
     zonesGrid.style.gridTemplateColumns = '1fr';
-    zonesGrid.innerHTML = noDataBlock('Sin FC máx / FTP configurados en tu perfil para calcular zonas de esta actividad.');
+    zonesGrid.innerHTML = noDataBlock(_t('tdw_no_zones','Sin FC máx / FTP configurados en tu perfil para calcular zonas de esta actividad.'));
     return;
   }
   zonesGrid.style.gridTemplateColumns = cols.length>1 ? '1fr 1fr' : '1fr';
@@ -1032,7 +1037,7 @@ function renderZonesReal(zonesData, ownerNote){
             + '</div>';
         }).join('')
       + '</div>';
-  }).join('') + (ownerNote ? '<div style="grid-column:1/-1;padding:.6rem 1.4rem;font-size:.68rem;color:var(--dim);border-top:1px solid var(--border2)">Zonas calculadas con el FTP / FC máx configurados por '+ownerNote+', no los tuyos.</div>' : '');
+  }).join('') + (ownerNote ? '<div style="grid-column:1/-1;padding:.6rem 1.4rem;font-size:.68rem;color:var(--dim);border-top:1px solid var(--border2)">'+_t('tdw_zones_owner_note','Zonas calculadas con el FTP / FC máx configurados por {name}, no los tuyos.').replace('{name}', ownerNote)+'</div>' : '');
   // revelar barras ya mismo (no depender solo del IntersectionObserver,
   // que puede haber disparado antes de que este fetch async terminara)
   zonesGrid.querySelectorAll('.zone-bar-f[data-w]').forEach(function(b,i){
@@ -1049,16 +1054,16 @@ function renderSplitsReal(splits, sport, pausedMin){
   // entienda por qué la duración de un parcial no coincide con el reloj
   // de pared si hubo una pausa real sin pausar el dispositivo.
   var pausedNote = (pausedMin && pausedMin > 0)
-    ? '<div style="padding:.6rem 1.4rem;font-size:.76rem;color:var(--gold);background:rgba(240,165,0,.06);border-bottom:1px solid var(--border2)">⏸ Tiempo detenido real: <strong>'+pausedMin.toFixed(1)+' min</strong> — ya excluido del ritmo de los parciales</div>'
+    ? '<div style="padding:.6rem 1.4rem;font-size:.76rem;color:var(--gold);background:rgba(240,165,0,.06);border-bottom:1px solid var(--border2)">'+_t('tdw_paused_note','⏸ Tiempo detenido real: <strong>{min} min</strong> — ya excluido del ritmo de los parciales').replace('{min}', pausedMin.toFixed(1))+'</div>'
     : '';
   if(!splits || !splits.length){
-    inner.innerHTML = pausedNote + noDataBlock('Sin datos de parciales disponibles para esta actividad.');
+    inner.innerHTML = pausedNote + noDataBlock(_t('tdw_no_splits','Sin datos de parciales disponibles para esta actividad.'));
     return;
   }
   var isRun  = sport==='run';
   var isSwim = sport==='swim';
-  var unitLbl = isSwim ? 'Ritmo /100m' : isRun ? 'Ritmo' : 'Vel. Media';
-  var lastCol = isSwim ? 'Largos' : 'Potencia';
+  var unitLbl = isSwim ? _t('tdw_unit_pace_100m','Ritmo /100m') : isRun ? _t('tdw_unit_pace','Ritmo') : _t('tdw_unit_speed_avg','Vel. Media');
+  var lastCol = isSwim ? _t('tdw_col_lengths','Largos') : _t('tdw_col_power_short','Potencia');
 
   // Ritmo óptimo (mejor parcial real) vs. ritmo medio de la actividad —
   // ambos calculados de los mismos parciales reales ya descargados, sin
@@ -1075,7 +1080,7 @@ function renderSplitsReal(splits, sport, pausedMin){
   if(bestPaceVal!=null){
     var fmtFn = isSwim ? fmtPace100 : fmtPace;
     summaryHtml = '<div style="display:flex;gap:1.5rem;padding:.7rem 1.4rem;border-bottom:1px solid var(--border2);font-size:.78rem">'
-      + '<div><span style="color:var(--dim)">Ritmo óptimo&nbsp;</span><strong style="color:var(--green)">'+fmtFn(bestPaceVal)+'</strong></div>'
+      + '<div><span style="color:var(--dim)">'+_t('tdw_best_pace','Ritmo óptimo')+'&nbsp;</span><strong style="color:var(--green)">'+fmtFn(bestPaceVal)+'</strong></div>'
       + '</div>';
   }
 
@@ -1130,10 +1135,10 @@ function renderSplitsReal(splits, sport, pausedMin){
       + '<td>'+(s.avg_hr!=null ? s.avg_hr+' bpm' : '—')+'</td>'
       + '</tr>';
   }).join('');
-  var swolfHead = isSwim ? '<th>Swolf</th>' : '';
-  var blockHead = hasBlocks ? '<th>Bloque</th>' : '';
+  var swolfHead = isSwim ? '<th>'+_t('tdw_col_swolf','Swolf')+'</th>' : '';
+  var blockHead = hasBlocks ? '<th>'+_t('tdw_col_block','Bloque')+'</th>' : '';
   inner.innerHTML = pausedNote + summaryHtml + '<div style="overflow-x:auto"><table class="split-table">'
-    + '<thead><tr><th>#</th>'+blockHead+'<th>Distancia</th><th>Tiempo</th><th>'+unitLbl+'</th><th>'+lastCol+'</th>'+swolfHead+'<th>FC</th></tr></thead>'
+    + '<thead><tr><th>'+_t('tdw_col_num','#')+'</th>'+blockHead+'<th>'+_t('tdw_col_distance','Distancia')+'</th><th>'+_t('tdw_col_time','Tiempo')+'</th><th>'+unitLbl+'</th><th>'+lastCol+'</th>'+swolfHead+'<th>'+_t('tdw_col_hr_short','FC')+'</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
 }
 
@@ -1165,9 +1170,9 @@ function _resampleByPct(arr, n){
 window.openCompareModal = function(){
   document.getElementById('compare-modal').classList.add('on');
   var list = document.getElementById('compare-list');
-  list.innerHTML = 'Cargando actividades reales...';
+  list.innerHTML = _t('tdw_compare_loading','Cargando actividades reales...');
   var tok = _lxToken();
-  if(!tok || !ACT){ list.innerHTML = 'No se pudo cargar.'; return; }
+  if(!tok || !ACT){ list.innerHTML = _t('tdw_compare_err_load','No se pudo cargar.'); return; }
   var end = ACT.date_iso || new Date().toISOString().slice(0,10);
   var start = new Date(new Date(end+'T00:00:00').getTime() - 90*24*3600*1000).toISOString().slice(0,10);
   fetch(_lxApi()+'/athlete/garmin/activities?start='+start+'&end='+end+'&limit=40', {headers:{Authorization:'Bearer '+tok}})
@@ -1177,7 +1182,7 @@ window.openCompareModal = function(){
         return a.sport === ACT.sport && String(a.activity_id) !== String(ACT.activity_id);
       });
       if(!acts.length){
-        list.innerHTML = '<div style="padding:.75rem 0;color:var(--dim);font-size:.82rem">Sin otras actividades reales de este deporte en los últimos 90 días.</div>';
+        list.innerHTML = '<div style="padding:.75rem 0;color:var(--dim);font-size:.82rem">'+_t('tdw_compare_no_activities','Sin otras actividades reales de este deporte en los últimos 90 días.')+'</div>';
         return;
       }
       list.innerHTML = acts.map(function(a){
@@ -1185,12 +1190,12 @@ window.openCompareModal = function(){
         var dur  = a.duration_secs ? Math.round(a.duration_secs/60)+' min' : '';
         return '<div class="compare-item" onclick="selectCompareActivity(\''+a.activity_id+'\')" '
           + 'style="padding:.6rem .3rem;border-bottom:1px solid var(--border2);cursor:pointer">'
-          + '<div style="font-weight:600;font-size:.85rem">'+_escCmp(a.name||'Actividad')+'</div>'
+          + '<div style="font-weight:600;font-size:.85rem">'+_escCmp(a.name||_t('tdw_activity_fallback','Actividad'))+'</div>'
           + '<div style="font-size:.72rem;color:var(--dim)">'+(a.start_time||'')+' · '+dist+dur+'</div>'
           + '</div>';
       }).join('');
     })
-    .catch(function(){ list.innerHTML = 'Error cargando actividades.'; });
+    .catch(function(){ list.innerHTML = _t('tdw_compare_err_generic','Error cargando actividades.'); });
 }
 window.closeCompareModal = function(e){
   if(e) e.stopPropagation();
@@ -1208,13 +1213,13 @@ window.clearCompare = function(){
 
 function renderTelemetry(){
   var titleEl = document.getElementById('splits-title');
-  if(titleEl) titleEl.textContent = (ACT.sport==='str'||ACT.sport==='gym') ? 'Ejercicios de la Sesión' : 'Parciales';
+  if(titleEl) titleEl.textContent = (ACT.sport==='str'||ACT.sport==='gym') ? _t('tdw_exercises_title','Ejercicios de la Sesión') : _t('tdw_tab_splits','Parciales');
 
   function fallbackNoData(){
-    if(chartsInner) chartsInner.innerHTML = noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
-    if(zonesGrid){ zonesGrid.style.gridTemplateColumns='1fr'; zonesGrid.innerHTML = noDataBlock('Sin datos de distribución de zonas disponibles para esta actividad.'); }
+    if(chartsInner) chartsInner.innerHTML = noDataBlock(_t('tdw_no_telemetry','Sin datos de telemetría disponibles para esta actividad.'));
+    if(zonesGrid){ zonesGrid.style.gridTemplateColumns='1fr'; zonesGrid.innerHTML = noDataBlock(_t('tdw_no_zones_dist','Sin datos de distribución de zonas disponibles para esta actividad.')); }
     var inner = document.getElementById('splits-inner');
-    if(inner) inner.innerHTML = noDataBlock('Sin datos de parciales disponibles para esta actividad.');
+    if(inner) inner.innerHTML = noDataBlock(_t('tdw_no_splits','Sin datos de parciales disponibles para esta actividad.'));
   }
 
   var tok = _lxToken();
@@ -1239,7 +1244,7 @@ function renderTelemetry(){
         cmpPower = _resampleByPct(cmp.series.power, n);
         cmpHr    = _resampleByPct(cmp.series.hr, n);
         var cmpEl = document.getElementById('compare-status');
-        if(cmpEl) cmpEl.innerHTML = 'Comparando con: <strong>'+_escCmp(cmp.name||'Actividad')+'</strong> · '+(cmp.date_iso||'')+' <a href="#" onclick="clearCompare();return false" style="color:var(--red);margin-left:.5rem">Quitar</a>';
+        if(cmpEl) cmpEl.innerHTML = _t('tdw_comparing_with','Comparando con:')+' <strong>'+_escCmp(cmp.name||_t('tdw_activity_fallback','Actividad'))+'</strong> · '+(cmp.date_iso||'')+' <a href="#" onclick="clearCompare();return false" style="color:var(--red);margin-left:.5rem">'+_t('tdw_remove','Quitar')+'</a>';
       } else {
         var cmpEl2 = document.getElementById('compare-status');
         if(cmpEl2) cmpEl2.innerHTML = '';
@@ -1258,23 +1263,23 @@ function renderTelemetry(){
       var hrZoneColors = {z1:'#0EA5E9',z2:'#10B981',z3:'#F0A500',z4:'#FF6535',z5:'#EF4444'};
       var pwrZoneColors = {z1_active_recovery:'#0EA5E9',z2_endurance:'#10B981',z3_tempo:'#F0A500',z4_threshold:'#FF6535',z5_vo2max:'#EF4444',z6_anaerobic:'#A855F7',z7_neuromuscular:'#EC4899'};
       var zb = data.zone_bounds || {};
-      if(ACT.sport==='bike') blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, cmpPower || data.target_power, zb.power, pwrZoneColors);
-      blocks += renderChartBlock('Frecuencia Cardíaca', data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr, cmpHr, zb.hr, hrZoneColors);
-      if(ACT.sport==='bike') blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'rpm', null);
+      if(ACT.sport==='bike') blocks += renderChartBlock(_t('tdw_chart_name_power','Potencia'), data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, cmpPower || data.target_power, zb.power, pwrZoneColors);
+      blocks += renderChartBlock(_t('tdw_chart_name_hr','Frecuencia Cardíaca'), data.series.hr, tArr, '#EF4444', 'bpm', ACT.avg_hr, cmpHr, zb.hr, hrZoneColors);
+      if(ACT.sport==='bike') blocks += renderChartBlock(_t('tdw_chart_name_cadence','Cadencia'), data.series.cadence, tArr, '#F0A500', 'rpm', null);
       if(ACT.sport==='run'){
-        blocks += renderChartBlock('Velocidad', data.series.speed, tArr, '#10B981', 'm/s', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_speed','Velocidad'), data.series.speed, tArr, '#10B981', 'm/s', null);
         // Dinámica de carrera + Stamina real de Garmin — cada bloque se
         // omite solo si esta actividad no tiene ese dato cacheado (ver
         // _try_download_telemetry, campos agregados 2026-07-31/08-01).
-        blocks += renderChartBlock('Potencia', data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, cmpPower);
-        blocks += renderChartBlock('Cadencia', data.series.cadence, tArr, '#F0A500', 'ppm', null);
-        blocks += renderChartBlock('Stamina', data.series.stamina, tArr, '#0EA5E9', '%', null);
-        blocks += renderChartBlock('Longitud de Zancada', data.series.stride_length, tArr, '#8B5CF6', 'cm', null);
-        blocks += renderChartBlock('Tiempo de Contacto', data.series.ground_contact_time, tArr, '#F59E0B', 'ms', null);
-        blocks += renderChartBlock('Oscilación Vertical', data.series.vertical_oscillation, tArr, '#EC4899', 'cm', null);
-        blocks += renderChartBlock('Ratio Vertical', data.series.vertical_ratio, tArr, '#EC4899', '%', null);
-        blocks += renderChartBlock('Factor de Carga de Impacto', data.series.impact_load, tArr, '#EF4444', '', null);
-        blocks += renderChartBlock('Frecuencia Respiratoria', data.series.respiration_rate, tArr, '#06B6D4', 'rpm', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_power','Potencia'), data.series.power, tArr, '#FF6535', 'W', ACT.avg_power, cmpPower);
+        blocks += renderChartBlock(_t('tdw_chart_name_cadence','Cadencia'), data.series.cadence, tArr, '#F0A500', 'ppm', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_stamina','Stamina'), data.series.stamina, tArr, '#0EA5E9', '%', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_stride_length','Longitud de Zancada'), data.series.stride_length, tArr, '#8B5CF6', 'cm', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_ground_contact','Tiempo de Contacto'), data.series.ground_contact_time, tArr, '#F59E0B', 'ms', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_vert_osc','Oscilación Vertical'), data.series.vertical_oscillation, tArr, '#EC4899', 'cm', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_vert_ratio','Ratio Vertical'), data.series.vertical_ratio, tArr, '#EC4899', '%', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_impact_load','Factor de Carga de Impacto'), data.series.impact_load, tArr, '#EF4444', '', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_respiration','Frecuencia Respiratoria'), data.series.respiration_rate, tArr, '#06B6D4', 'rpm', null);
       }
       if(ACT.sport==='swim' && data.swim_lengths){
         // Por LARGO individual (25m), no por tiempo — se pasa tArr=null
@@ -1282,12 +1287,12 @@ function renderTelemetry(){
         // que el tooltip solo muestra el valor, sin una hora inventada.
         var sl = data.swim_lengths;
         var paceSec = (sl.pace_s_per_100m||[]).map(function(v){ return v; });
-        blocks += renderChartBlock('Ritmo por Largo', paceSec, null, '#0EA5E9', 's/100m', null);
-        blocks += renderChartBlock('Brazadas por Largo', sl.strokes, null, '#F0A500', '', null);
-        blocks += renderChartBlock('Swolf por Largo', sl.swolf, null, '#10B981', '', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_pace_length','Ritmo por Largo'), paceSec, null, '#0EA5E9', 's/100m', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_strokes_length','Brazadas por Largo'), sl.strokes, null, '#F0A500', '', null);
+        blocks += renderChartBlock(_t('tdw_chart_name_swolf_length','Swolf por Largo'), sl.swolf, null, '#10B981', '', null);
       }
       if(chartsInner){
-        chartsInner.innerHTML = blocks || noDataBlock('Sin datos de telemetría disponibles para esta actividad.');
+        chartsInner.innerHTML = blocks || noDataBlock(_t('tdw_no_telemetry','Sin datos de telemetría disponibles para esta actividad.'));
         wireChartHover();
       }
 
@@ -1374,11 +1379,11 @@ window.switchDetailTab = function(name, btn){
      FC de la actual. Mismo patrón visual que share-modal, arriba. -->
 <div class="share-modal" id="compare-modal" onclick="if(event.target===this)closeCompareModal()">
   <div class="share-modal-card">
-    <div class="share-modal-title">Comparar con otra actividad</div>
-    <div class="share-modal-sub">Elegí una actividad real reciente del mismo deporte — se superpone sobre potencia y FC como línea punteada.</div>
-    <div id="compare-list" style="max-height:50vh;overflow-y:auto">Cargando actividades reales...</div>
+    <div class="share-modal-title" data-i18n="tdw_compare_modal_title">Comparar con otra actividad</div>
+    <div class="share-modal-sub" data-i18n="tdw_compare_modal_sub">Elegí una actividad real reciente del mismo deporte — se superpone sobre potencia y FC como línea punteada.</div>
+    <div id="compare-list" style="max-height:50vh;overflow-y:auto" data-i18n="tdw_compare_loading">Cargando actividades reales...</div>
     <div class="share-modal-actions" style="margin-top:1rem">
-      <button class="btn btn-g btn-sm" onclick="closeCompareModal()">Cerrar</button>
+      <button class="btn btn-g btn-sm" onclick="closeCompareModal()" data-i18n="tdw_close">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1386,15 +1391,15 @@ window.switchDetailTab = function(name, btn){
 <!-- Compartir actividad: link público sin login -->
 <div class="share-modal" id="share-modal" onclick="if(event.target===this)closeShareModal()">
   <div class="share-modal-card">
-    <div class="share-modal-title">Compartir actividad</div>
-    <div class="share-modal-sub">Cualquiera con este link puede ver esta actividad, sin necesidad de iniciar sesión en LabX. Respeta tus preferencias de privacidad de Comunidad (mapa, FC, potencia, ritmo).</div>
+    <div class="share-modal-title" data-i18n="tdw_share_modal_title">Compartir actividad</div>
+    <div class="share-modal-sub" data-i18n="tdw_share_modal_sub">Cualquiera con este link puede ver esta actividad, sin necesidad de iniciar sesión en LabX. Respeta tus preferencias de privacidad de Comunidad (mapa, FC, potencia, ritmo).</div>
     <div class="share-url-row">
       <input class="share-url-input" id="share-url-input" readonly>
-      <button class="btn btn-p btn-sm" onclick="copyShareUrl()">Copiar</button>
+      <button class="btn btn-p btn-sm" onclick="copyShareUrl()" data-i18n="tdw_copy">Copiar</button>
     </div>
     <div class="share-modal-actions">
-      <button class="btn btn-g btn-sm" style="color:var(--red);border-color:var(--red)" onclick="revokeShareUrl()">Dejar de compartir</button>
-      <button class="btn btn-g btn-sm" onclick="closeShareModal()">Cerrar</button>
+      <button class="btn btn-g btn-sm" style="color:var(--red);border-color:var(--red)" onclick="revokeShareUrl()" data-i18n="tdw_stop_sharing">Dejar de compartir</button>
+      <button class="btn btn-g btn-sm" onclick="closeShareModal()" data-i18n="tdw_close">Cerrar</button>
     </div>
   </div>
 </div>
