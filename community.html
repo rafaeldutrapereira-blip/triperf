@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
+<script src="i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--amber:#F59E0B;}
@@ -247,11 +248,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     <div class="cl-profile-name" id="cl-profile-name">—</div>
     <div class="cl-profile-flag" id="cl-profile-flag"></div>
     <div class="cl-profile-stats">
-      <div><div class="cl-profile-n" id="cl-profile-followers">—</div><div class="cl-profile-l">Seguidores</div></div>
-      <div><div class="cl-profile-n" id="cl-profile-following">—</div><div class="cl-profile-l">Siguiendo</div></div>
+      <div><div class="cl-profile-n" id="cl-profile-followers">—</div><div class="cl-profile-l" data-i18n="cmw_followers">Seguidores</div></div>
+      <div><div class="cl-profile-n" id="cl-profile-following">—</div><div class="cl-profile-l" data-i18n="cmw_following">Siguiendo</div></div>
     </div>
     <div class="cl-profile-km" id="cl-profile-km">— km esta temporada</div>
-    <button class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-top:.9rem" onclick="switchTab('profile',document.querySelectorAll('.tab-btn')[4])">Ver mi perfil</button>
+    <button class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-top:.9rem" onclick="switchTab('profile',document.querySelectorAll('.tab-btn')[4])" data-i18n="cmw_view_my_profile">Ver mi perfil</button>
   </div>
 </aside>
 
@@ -260,68 +261,68 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 
 <!-- ══ TABS ══ -->
 <div class="tabs-bar sr" id="tabs-bar">
-  <button class="tab-btn on"  onclick="switchTab('feed',this)">🏃 Feed</button>
-  <button class="tab-btn"     onclick="switchTab('discover',this)">🔍 Descubrir</button>
-  <button class="tab-btn"     onclick="switchTab('clubs',this)">🏆 Clubs</button>
-  <button class="tab-btn"     onclick="switchTab('challenges',this)">⚡ Desafíos</button>
-  <button class="tab-btn"     onclick="switchTab('profile',this)">👤 Mi Perfil</button>
+  <button class="tab-btn on"  onclick="switchTab('feed',this)" data-i18n="cmw_tab_feed">🏃 Feed</button>
+  <button class="tab-btn"     onclick="switchTab('discover',this)" data-i18n="cmw_tab_discover">🔍 Descubrir</button>
+  <button class="tab-btn"     onclick="switchTab('clubs',this)" data-i18n="cmw_tab_clubs">🏆 Clubs</button>
+  <button class="tab-btn"     onclick="switchTab('challenges',this)" data-i18n="cmw_tab_challenges">⚡ Desafíos</button>
+  <button class="tab-btn"     onclick="switchTab('profile',this)" data-i18n="cmw_tab_profile">👤 Mi Perfil</button>
 </div>
 
 <!-- ══ TAB: FEED ══ -->
 <div class="tab-pane on" id="tab-feed">
   <!-- Post form -->
   <div class="post-form sr" id="post-form-wrap">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;margin-bottom:.6rem;color:var(--muted)">COMPARTIR ACTIVIDAD</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;margin-bottom:.6rem;color:var(--muted)" data-i18n="cmw_share_activity">COMPARTIR ACTIVIDAD</div>
     <select class="post-select" id="post-activity-sel">
-      <option value="">— Selecciona una actividad Garmin —</option>
+      <option value="" data-i18n="cmw_select_activity_ph">— Selecciona una actividad Garmin —</option>
     </select>
-    <textarea class="post-caption" id="post-caption" placeholder="¿Cómo fue? (opcional, máx. 280 caracteres)"></textarea>
+    <textarea class="post-caption" id="post-caption" data-i18n-placeholder="cmw_caption_ph" placeholder="¿Cómo fue? (opcional, máx. 280 caracteres)"></textarea>
     <div class="post-row">
       <select class="vis-select" id="post-visibility">
-        <option value="followers">👥 Mis seguidos</option>
-        <option value="public">🌍 Público</option>
-        <option value="private">🔒 Solo yo</option>
+        <option value="followers" data-i18n="cmw_vis_followers">👥 Mis seguidos</option>
+        <option value="public" data-i18n="cmw_vis_public">🌍 Público</option>
+        <option value="private" data-i18n="cmw_vis_private">🔒 Solo yo</option>
       </select>
-      <button class="btn btn-orange btn-sm" onclick="submitPost()">📤 Publicar</button>
+      <button class="btn btn-orange btn-sm" onclick="submitPost()" data-i18n="cmw_publish">📤 Publicar</button>
     </div>
   </div>
   <!-- Feed -->
   <div id="feed-container"></div>
   <div style="text-align:center;margin-top:1rem">
-    <button class="btn btn-g btn-sm" id="load-more-btn" onclick="loadMoreFeed()" style="display:none">Cargar más</button>
+    <button class="btn btn-g btn-sm" id="load-more-btn" onclick="loadMoreFeed()" style="display:none" data-i18n="cmw_load_more">Cargar más</button>
   </div>
 </div>
 
 <!-- ══ TAB: DESCUBRIR ══ -->
 <div class="tab-pane" id="tab-discover">
   <div class="search-bar sr">
-    <input class="search-input" id="search-input" type="text" placeholder="Buscar atletas por nombre o email…" onkeydown="if(event.key==='Enter')doSearch()">
-    <button class="search-submit" onclick="doSearch()">Buscar</button>
+    <input class="search-input" id="search-input" type="text" data-i18n-placeholder="cmw_search_ph" placeholder="Buscar atletas por nombre o email…" onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="search-submit" onclick="doSearch()" data-i18n="cmw_search_btn">Buscar</button>
   </div>
   <div id="search-results"></div>
 
   <!-- Leaderboard -->
   <div class="panel sr mt2" id="leaderboard-panel">
     <div class="panel-head">
-      <span class="panel-title">🏅 Leaderboard LATAM</span>
+      <span class="panel-title" data-i18n="cmw_leaderboard_title">🏅 Leaderboard LATAM</span>
       <div class="lb-controls">
         <select class="lb-sel" id="lb-scope" onchange="onLbScopeChange()">
-          <option value="social">Mis seguidos</option>
-          <option value="club">Mi club</option>
-          <option value="country">Mi país</option>
-          <option value="global">Global</option>
+          <option value="social" data-i18n="cmw_scope_social">Mis seguidos</option>
+          <option value="club" data-i18n="cmw_scope_club">Mi club</option>
+          <option value="country" data-i18n="cmw_scope_country">Mi país</option>
+          <option value="global" data-i18n="cmw_scope_global">Global</option>
         </select>
         <select class="lb-sel" id="lb-club" onchange="loadLeaderboard()" style="display:none"></select>
         <select class="lb-sel" id="lb-metric" onchange="loadLeaderboard()">
           <option value="tss">TSS</option>
           <option value="distance_km">Km</option>
-          <option value="elevation_m">Elevación</option>
-          <option value="duration_h">Horas</option>
+          <option value="elevation_m" data-i18n="cmw_metric_elevation">Elevación</option>
+          <option value="duration_h" data-i18n="cmw_metric_hours">Horas</option>
         </select>
         <select class="lb-sel" id="lb-period" onchange="loadLeaderboard()">
-          <option value="week">Esta semana</option>
-          <option value="month">Este mes</option>
-          <option value="year">Este año</option>
+          <option value="week" data-i18n="cmw_period_week">Esta semana</option>
+          <option value="month" data-i18n="cmw_period_month">Este mes</option>
+          <option value="year" data-i18n="cmw_period_year">Este año</option>
         </select>
       </div>
     </div>
@@ -330,7 +331,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 
   <!-- Suggestions -->
   <div class="sr mt2" id="suggestions-section">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">ATLETAS SUGERIDOS</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem" data-i18n="cmw_suggested_athletes">ATLETAS SUGERIDOS</div>
     <div id="suggestions-grid" class="g2"></div>
   </div>
 </div>
@@ -338,19 +339,19 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <!-- ══ TAB: CLUBS ══ -->
 <div class="tab-pane" id="tab-clubs">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">MIS CLUBS</div>
-    <button class="btn btn-primary btn-sm" onclick="openCreateClub()">+ Crear club</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)" data-i18n="cmw_my_clubs">MIS CLUBS</div>
+    <button class="btn btn-primary btn-sm" onclick="openCreateClub()" data-i18n="cmw_create_club_btn">+ Crear club</button>
   </div>
   <div id="clubs-grid" class="g3"></div>
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 .75rem">DIRECTORIO</div>
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 .75rem" data-i18n="cmw_directory">DIRECTORIO</div>
   <div id="clubs-directory" class="g3"></div>
 </div>
 
 <!-- ══ TAB: DESAFÍOS ══ -->
 <div class="tab-pane" id="tab-challenges">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">DESAFÍOS ACTIVOS</div>
-    <button class="btn btn-primary btn-sm" onclick="openCreateChallenge()">+ Crear desafío</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)" data-i18n="cmw_active_challenges">DESAFÍOS ACTIVOS</div>
+    <button class="btn btn-primary btn-sm" onclick="openCreateChallenge()" data-i18n="cmw_create_challenge_btn">+ Crear desafío</button>
   </div>
   <div id="challenges-grid" class="g2"></div>
 </div>
@@ -360,19 +361,19 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   <div id="my-profile-content"></div>
 
   <div class="panel" style="margin-top:1.25rem">
-    <div class="panel-head"><div class="panel-title">Privacidad de mis actividades</div></div>
+    <div class="panel-head"><div class="panel-title" data-i18n="cmw_privacy_title">Privacidad de mis actividades</div></div>
     <div style="padding:1.25rem">
-      <div class="priv-desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
-      <label class="priv-row"><input type="checkbox" id="priv-details" onchange="_privToggleMaster()"> Permitir que mis seguidores vean el detalle de mis actividades</label>
+      <div class="priv-desc" data-i18n="cmw_privacy_desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
+      <label class="priv-row"><input type="checkbox" id="priv-details" onchange="_privToggleMaster()"> <span data-i18n="cmw_privacy_allow">Permitir que mis seguidores vean el detalle de mis actividades</span></label>
       <div class="priv-sub" id="priv-sub">
-        <label class="priv-row"><input type="checkbox" id="priv-route"> Mapa / recorrido</label>
-        <label class="priv-row"><input type="checkbox" id="priv-hr"> Frecuencia cardíaca</label>
-        <label class="priv-row"><input type="checkbox" id="priv-power"> Potencia / cadencia</label>
-        <label class="priv-row"><input type="checkbox" id="priv-pace"> Ritmo / velocidad / parciales</label>
+        <label class="priv-row"><input type="checkbox" id="priv-route"> <span data-i18n="cmw_priv_route">Mapa / recorrido</span></label>
+        <label class="priv-row"><input type="checkbox" id="priv-hr"> <span data-i18n="cmw_priv_hr">Frecuencia cardíaca</span></label>
+        <label class="priv-row"><input type="checkbox" id="priv-power"> <span data-i18n="cmw_priv_power">Potencia / cadencia</span></label>
+        <label class="priv-row"><input type="checkbox" id="priv-pace"> <span data-i18n="cmw_priv_pace">Ritmo / velocidad / parciales</span></label>
       </div>
       <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem">
-        <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()">Guardar</button>
-        <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem">✓ Guardado</span>
+        <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()" data-i18n="btn_save">Guardar</button>
+        <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem" data-i18n="cmw_saved">✓ Guardado</span>
       </div>
     </div>
   </div>
@@ -384,11 +385,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <!-- ══ RIGHT SIDEBAR: sugerencias + leaderboard ══ -->
 <aside class="cl-side cl-side-right">
   <div class="panel cl-mini-panel">
-    <div class="cl-mini-head">Sugerencias para seguir</div>
+    <div class="cl-mini-head" data-i18n="cmw_suggestions_follow">Sugerencias para seguir</div>
     <div id="cl-suggestions"></div>
   </div>
   <div class="panel cl-mini-panel">
-    <div class="cl-mini-head">Top Semanal · TSS</div>
+    <div class="cl-mini-head" data-i18n="cmw_top_weekly_tss">Top Semanal · TSS</div>
     <div id="cl-mini-leaderboard"></div>
   </div>
 </aside>
@@ -404,21 +405,21 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <!-- CREATE CLUB MODAL -->
 <div id="modal-club" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-club')">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:min(420px,90vw);max-height:90vh;overflow-y:auto">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:1rem">CREAR CLUB</div>
-    <input id="club-name" type="text" placeholder="Nombre del club*" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
-    <textarea id="club-desc" placeholder="Descripción (opcional)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;font-family:'Inter',sans-serif;height:60px;resize:none;margin-bottom:.5rem"></textarea>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:1rem" data-i18n="cmw_create_club_title">CREAR CLUB</div>
+    <input id="club-name" type="text" data-i18n-placeholder="cmw_club_name_ph" placeholder="Nombre del club*" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
+    <textarea id="club-desc" data-i18n-placeholder="cmw_club_desc_ph" placeholder="Descripción (opcional)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;font-family:'Inter',sans-serif;height:60px;resize:none;margin-bottom:.5rem"></textarea>
     <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
       <select id="club-sport" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
-        <option value="triathlon">Triatlón</option><option value="running">Running</option>
-        <option value="cycling">Ciclismo</option><option value="swimming">Natación</option><option value="all">Multi</option>
+        <option value="triathlon" data-i18n="cmw_sport_triathlon">Triatlón</option><option value="running" data-i18n="cmw_sport_running">Running</option>
+        <option value="cycling" data-i18n="opt_bike">Ciclismo</option><option value="swimming" data-i18n="opt_swim">Natación</option><option value="all" data-i18n="cmw_sport_multi">Multi</option>
       </select>
       <select id="club-privacy" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
-        <option value="public">Público</option><option value="private">Privado</option>
+        <option value="public" data-i18n="cmw_privacy_public">Público</option><option value="private" data-i18n="cmw_privacy_private">Privado</option>
       </select>
     </div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-club')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="submitCreateClub()">Crear</button>
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-club')" data-i18n="btn_cancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="submitCreateClub()" data-i18n="cmw_btn_create">Crear</button>
     </div>
   </div>
 </div>
@@ -426,26 +427,26 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 <!-- CREATE CHALLENGE MODAL -->
 <div id="modal-challenge" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-challenge')">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:min(420px,90vw);max-height:90vh;overflow-y:auto">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:1rem">CREAR DESAFÍO</div>
-    <input id="ch-title" type="text" placeholder="Título del desafío*" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:1rem" data-i18n="cmw_create_challenge_title">CREAR DESAFÍO</div>
+    <input id="ch-title" type="text" data-i18n-placeholder="cmw_challenge_title_ph" placeholder="Título del desafío*" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
     <div style="display:flex;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap">
       <select id="ch-sport" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
-        <option value="all">Todos</option><option value="run">Running</option>
-        <option value="bike">Ciclismo</option><option value="swim">Natación</option>
+        <option value="all" data-i18n="opt_all">Todos</option><option value="run" data-i18n="cmw_sport_running">Running</option>
+        <option value="bike" data-i18n="opt_bike">Ciclismo</option><option value="swim" data-i18n="opt_swim">Natación</option>
       </select>
       <select id="ch-metric" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
         <option value="distance_km">Km</option><option value="tss">TSS</option>
-        <option value="elevation_m">Elevación (m)</option><option value="duration_h">Horas</option>
+        <option value="elevation_m" data-i18n="cmw_metric_elevation_m">Elevación (m)</option><option value="duration_h" data-i18n="cmw_metric_hours">Horas</option>
       </select>
     </div>
-    <input id="ch-goal" type="number" placeholder="Meta (ej: 100)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
+    <input id="ch-goal" type="number" data-i18n-placeholder="cmw_goal_ph" placeholder="Meta (ej: 100)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.82rem;margin-bottom:.5rem;font-family:'Inter',sans-serif">
     <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
       <input id="ch-start" type="date" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
       <input id="ch-end" type="date" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .6rem;color:var(--muted);font-size:.75rem;font-family:'Oswald',sans-serif">
     </div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-challenge')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="submitCreateChallenge()">Crear</button>
+      <button class="btn btn-g btn-sm" onclick="closeModal('modal-challenge')" data-i18n="btn_cancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="submitCreateChallenge()" data-i18n="cmw_btn_create">Crear</button>
     </div>
   </div>
 </div>
@@ -480,6 +481,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     } catch (e) { return ''; }
   }
   var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _authTok() };
+
+  function _t(key, fallback) {
+    return (window.i18n && window.i18n.t(key)) || fallback;
+  }
 
   // Pelota de avatar: foto real si el usuario tiene una (avatar_url viene del
   // backend), si no las iniciales de siempre. avatar_url ya es servible sin
@@ -553,11 +558,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var chips = [
-          { label: 'Seguidores', value: d.follower_count,  color: 'var(--cyan)' },
-          { label: 'Siguiendo',  value: d.following_count, color: 'var(--muted)' },
-          { label: 'Kudos rec.', value: d.kudos_received,  color: 'var(--orange)' },
-          { label: 'Clubs',      value: d.clubs_count,     color: 'var(--purple)' },
-          { label: 'Posts',      value: d.posts_count,     color: 'var(--green)' },
+          { label: _t('cmw_followers','Seguidores'), value: d.follower_count,  color: 'var(--cyan)' },
+          { label: _t('cmw_following','Siguiendo'),  value: d.following_count, color: 'var(--muted)' },
+          { label: _t('cmw_kudos_received','Kudos rec.'), value: d.kudos_received,  color: 'var(--orange)' },
+          { label: _t('cmw_clubs_label','Clubs'),      value: d.clubs_count,     color: 'var(--purple)' },
+          { label: _t('cmw_posts_label','Posts'),      value: d.posts_count,     color: 'var(--green)' },
         ];
         document.getElementById('community-stat-chips').innerHTML = chips.map(function (c) {
           return '<div class="stat-chip"><div class="stat-n" style="color:' + c.color + '">' + c.value + '</div><div class="stat-l">' + c.label + '</div></div>';
@@ -599,7 +604,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         _feedLoading = false;
         if (!cards.length && _feedOffset === 0) {
           document.getElementById('feed-container').innerHTML =
-            '<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-msg">Tu feed está vacío.<br>Sigue a otros atletas para ver sus actividades aquí.</div></div>';
+            '<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-msg">' + _t('cmw_feed_empty','Tu feed está vacío.<br>Sigue a otros atletas para ver sus actividades aquí.') + '</div></div>';
         }
       }).catch(function () { _feedLoading = false; });
   }
@@ -685,7 +690,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       var addBtn = c.can_add_photos
         ? '<label class="ac-photo-add" onclick="event.stopPropagation()">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
-          + 'Agregar'
+          + _t('cmw_add','Agregar')
           + '<input type="file" accept="image/*" multiple style="display:none" onchange="uploadActivityPhotos(this,\'' + c.activity_id + '\',\'' + cardId + '\')" onclick="event.stopPropagation()">'
           + '</label>'
         : '';
@@ -735,13 +740,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           '</button>' +
           '<button class="comment-toggle" onclick="toggleComments(\'' + c.id + '\')">' +
             '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-            'Comentar' +
+            _t('cmw_comment_btn','Comentar') +
           '</button>' +
         '</div>' +
         '<div class="comment-section" id="comments-' + c.id + '">' +
           '<div id="comments-list-' + c.id + '"></div>' +
           '<div class="comment-input-row">' +
-            '<input class="comment-input" id="comment-inp-' + c.id + '" placeholder="Escribe un comentario…" onkeydown="if(event.key===\'Enter\')submitComment(\'' + c.id + '\')">' +
+            '<input class="comment-input" id="comment-inp-' + c.id + '" placeholder="' + _t('cmw_comment_ph','Escribe un comentario…') + '" onkeydown="if(event.key===\'Enter\')submitComment(\'' + c.id + '\')">' +
             '<button class="comment-submit" onclick="submitComment(\'' + c.id + '\')">→</button>' +
           '</div>' +
         '</div>' +
@@ -753,7 +758,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   function _photoAddButtonHtml(activityId, cardId) {
     return '<label class="ac-photo-add" onclick="event.stopPropagation()">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
-      + 'Agregar'
+      + _t('cmw_add','Agregar')
       + '<input type="file" accept="image/*" multiple style="display:none" onchange="uploadActivityPhotos(this,\'' + activityId + '\',\'' + cardId + '\')" onclick="event.stopPropagation()">'
       + '</label>';
   }
@@ -794,18 +799,18 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     })
       .then(function (r) { return r.ok ? r.json() : r.json().then(function (e) { return Promise.reject(e); }); })
       .then(function () { inputEl.value = ''; _refreshCardPhotos(cardId, activityId); })
-      .catch(function (e) { alert((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo subir la foto'); });
+      .catch(function (e) { alert((e && e.errors && e.errors[0] && e.errors[0].message) || _t('cmw_err_photo_upload','No se pudo subir la foto')); });
   };
 
   window.deleteActivityPhoto = function (activityId, photoId, cardId) {
-    if (!confirm('¿Borrar esta foto?')) return;
+    if (!confirm(_t('cmw_confirm_delete_photo','¿Borrar esta foto?'))) return;
     fetch(API + '/athlete/activities/' + activityId + '/photos/' + photoId, {
       method: 'DELETE',
       headers: { Authorization: 'Bearer ' + _authTok() },
     })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function () { _refreshCardPhotos(cardId, activityId); })
-      .catch(function () { alert('No se pudo borrar la foto'); });
+      .catch(function () { alert(_t('cmw_err_photo_delete','No se pudo borrar la foto')); });
   };
 
   var KUDO_TYPE = 'fire';
@@ -871,13 +876,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         loadComments(actId);
       })
       .catch(function (e) {
-        alert((e && e.errors && e.errors[0] && e.errors[0].message) || 'No se pudo publicar el comentario');
+        alert((e && e.errors && e.errors[0] && e.errors[0].message) || _t('cmw_err_comment_publish','No se pudo publicar el comentario'));
       });
   };
 
   window.submitPost = function () {
     var actId = document.getElementById('post-activity-sel').value;
-    if (!actId) { alert('Selecciona una actividad'); return; }
+    if (!actId) { alert(_t('cmw_err_select_activity','Selecciona una actividad')); return; }
     var caption    = document.getElementById('post-caption').value.slice(0, 280);
     var visibility = document.getElementById('post-visibility').value;
     fetch(API + '/community/posts', {
@@ -904,9 +909,9 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       .then(function (d) {
         var groups = (d && d.items) || [];
         if (!groups.length) {
-          clubSel.innerHTML = '<option value="">— No perteneces a ningún club —</option>';
+          clubSel.innerHTML = '<option value="">' + _t('cmw_no_club_option','— No perteneces a ningún club —') + '</option>';
           document.getElementById('leaderboard-rows').innerHTML =
-            '<div class="empty-state" style="padding:1.5rem"><div class="empty-msg">No perteneces a ningún club todavía — unite a uno en la pestaña Clubs.</div></div>';
+            '<div class="empty-state" style="padding:1.5rem"><div class="empty-msg">' + _t('cmw_no_club_msg','No perteneces a ningún club todavía — unite a uno en la pestaña Clubs.') + '</div></div>';
           return;
         }
         clubSel.innerHTML = groups.map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
@@ -931,7 +936,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         if (!el) return;
         var rows = d.leaderboard || [];
         if (!rows.length) {
-          el.innerHTML = '<div class="empty-state" style="padding:1.5rem"><div class="empty-msg">Sigue atletas para ver el leaderboard de tu red.</div></div>';
+          el.innerHTML = '<div class="empty-state" style="padding:1.5rem"><div class="empty-msg">' + _t('cmw_lb_empty','Sigue atletas para ver el leaderboard de tu red.') + '</div></div>';
           return;
         }
         var metricSuffix = { tss: '', distance_km: ' km', elevation_m: ' m', duration_h: 'h' };
@@ -944,10 +949,10 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           return '<div class="lb-row' + (r.is_me ? ' lb-me' : '') + '">' +
             '<div class="lb-rank" style="color:' + rankColor + '">' + (r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank-1] : r.rank) + '</div>' +
             _avatarBall('lb-av', r.user) +
-            '<div class="lb-name">' + (r.user.country_flag ? r.user.country_flag + ' ' : '') + r.user.name + (r.is_me ? ' <span style="font-size:.6rem;color:var(--purple);font-family:\'Oswald\',sans-serif;letter-spacing:.06em">(TÚ)</span>' : '') + '</div>' +
+            '<div class="lb-name">' + (r.user.country_flag ? r.user.country_flag + ' ' : '') + r.user.name + (r.is_me ? ' <span style="font-size:.6rem;color:var(--purple);font-family:\'Oswald\',sans-serif;letter-spacing:.06em">' + _t('cmw_you_tag','(TÚ)') + '</span>' : '') + '</div>' +
             '<div class="lb-value-wrap"><div class="lb-value">' + val + suffix + '</div>' +
-              '<div class="lb-hours">' + (r.hours_week || 0).toFixed(1) + 'h/sem</div></div>' +
-            '<div class="lb-acts">' + r.activity_count + ' acts</div>' +
+              '<div class="lb-hours">' + (r.hours_week || 0).toFixed(1) + _t('cmw_hours_week_suffix','h/sem') + '</div></div>' +
+            '<div class="lb-acts">' + r.activity_count + _t('cmw_acts_suffix',' acts') + '</div>' +
             '</div>';
         }).join('');
       }).catch(function () {});
@@ -964,7 +969,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var users = Array.isArray(d) ? d : (d.suggestions || d.users || []);
         var el = document.getElementById('suggestions-grid');
         if (!el) return;
-        if (!users.length) { el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">Ya sigues a todos los atletas sugeridos.</div>'; return; }
+        if (!users.length) { el.innerHTML = '<div style="color:var(--dim);font-size:.78rem">' + _t('cmw_all_followed','Ya sigues a todos los atletas sugeridos.') + '</div>'; return; }
         el.innerHTML = users.slice(0, 6).map(function (u) { return profileCardHtml(u); }).join('');
       }).catch(function () {});
   }
@@ -978,7 +983,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var el = document.getElementById('search-results');
         var users = d.results || [];
         if (!users.length) {
-          el.innerHTML = '<div class="alert-chip info">Sin resultados para "' + q + '".</div>';
+          el.innerHTML = '<div class="alert-chip info">' + _t('cmw_no_results','Sin resultados para "{q}".').replace('{q}', q) + '</div>';
           return;
         }
         el.innerHTML = '<div class="g2" style="margin-bottom:1rem">' + users.map(profileCardHtml).join('') + '</div>';
@@ -1001,7 +1006,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         '<div class="prof-meta">' + meta + '</div>' +
       '</div>' +
       '<button class="follow-btn' + (following ? ' following' : '') + '" id="follow-' + id + '" onclick="toggleFollow(\'' + id + '\')">' +
-        (following ? 'Siguiendo' : '+ Seguir') +
+        (following ? _t('cmw_following_btn','Siguiendo') : _t('cmw_follow_btn','+ Seguir')) +
       '</button>' +
       '</div>';
   }
@@ -1014,7 +1019,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       .then(function () {
         if (btn) {
           btn.classList.toggle('following', !isFollowing);
-          btn.textContent = isFollowing ? '+ Seguir' : 'Siguiendo';
+          btn.textContent = isFollowing ? _t('cmw_follow_btn','+ Seguir') : _t('cmw_following_btn','Siguiendo');
         }
         loadStats();
       }).catch(function () {});
@@ -1033,8 +1038,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var others = groups.filter(function (g) { return !g.is_member; });
         var myEl   = document.getElementById('clubs-grid');
         var dirEl  = document.getElementById('clubs-directory');
-        if (myEl)  myEl.innerHTML  = mine.length  ? mine.map(clubCardHtml).join('')  : '<div style="color:var(--dim);font-size:.78rem">No perteneces a ningún club aún.</div>';
-        if (dirEl) dirEl.innerHTML = others.length ? others.map(clubCardHtml).join('') : '<div style="color:var(--dim);font-size:.78rem">No hay más clubs disponibles.</div>';
+        if (myEl)  myEl.innerHTML  = mine.length  ? mine.map(clubCardHtml).join('')  : '<div style="color:var(--dim);font-size:.78rem">' + _t('cmw_no_clubs_mine','No perteneces a ningún club aún.') + '</div>';
+        if (dirEl) dirEl.innerHTML = others.length ? others.map(clubCardHtml).join('') : '<div style="color:var(--dim);font-size:.78rem">' + _t('cmw_no_clubs_dir','No hay más clubs disponibles.') + '</div>';
       }).catch(function () {});
   }
 
@@ -1045,13 +1050,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     return '<div class="club-card" onclick="viewClub(\'' + g.id + '\')">' +
       '<div class="club-avatar" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + icon + '</div>' +
       '<div class="club-name">' + (g.name || g.group_name || '—') + '</div>' +
-      '<div class="club-meta">' + (g.member_count || 0) + ' miembros · ' + (g.sport_focus || g.sport || 'multi') + '</div>' +
-      (g.is_member ? '<span class="club-badge">Miembro</span>' : '') +
+      '<div class="club-meta">' + (g.member_count || 0) + ' ' + _t('cmw_members_label','miembros') + ' · ' + (g.sport_focus || g.sport || _t('cmw_sport_multi','multi')) + '</div>' +
+      (g.is_member ? '<span class="club-badge">' + _t('cmw_member_badge','Miembro') + '</span>' : '') +
       '</div>';
   }
 
   window.viewClub = function (id) {
-    alert('Club ' + id + ' — Vista de detalle próximamente');
+    alert(_t('cmw_club_detail_soon','Club {id} — Vista de detalle próximamente').replace('{id}', id));
   };
 
   window.submitCreateClub = function () {
@@ -1059,7 +1064,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     var desc    = document.getElementById('club-desc').value.trim();
     var sport   = document.getElementById('club-sport').value;
     var privacy = document.getElementById('club-privacy').value;
-    if (!name) { alert('El nombre es obligatorio'); return; }
+    if (!name) { alert(_t('cmw_name_required','El nombre es obligatorio')); return; }
     fetch(API + '/community/groups', {
       method: 'POST', headers: hdrs,
       body: JSON.stringify({ name: name, description: desc, sport_focus: sport, privacy: privacy })
@@ -1085,13 +1090,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var el  = document.getElementById('challenges-grid');
         if (!el) return;
         if (!chs || !chs.length) {
-          el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-msg">No hay desafíos activos.<br>¡Crea el primero!</div></div>';
+          el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-msg">' + _t('cmw_no_challenges','No hay desafíos activos.<br>¡Crea el primero!') + '</div></div>';
           return;
         }
         el.innerHTML = chs.map(challengeCardHtml).join('');
       }).catch(function () {
         var el = document.getElementById('challenges-grid');
-        if (el) el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-msg">Crea un desafío para empezar.</div></div>';
+        if (el) el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-msg">' + _t('cmw_create_challenge_cta','Crea un desafío para empezar.') + '</div></div>';
       });
   }
 
@@ -1102,11 +1107,11 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     var suffix = metric_suffix[c.metric] || '';
     return '<div class="ch-card">' +
       '<div class="ch-title">' + (c.title || c.name || '—') + '</div>' +
-      '<div class="ch-meta">' + (c.sport || 'todos') + ' · ' + (c.goal_value || 0) + suffix + ' · ' + (c.days_left !== undefined ? c.days_left + 'd restantes' : '') + '</div>' +
+      '<div class="ch-meta">' + (c.sport || _t('cmw_all_lower','todos')) + ' · ' + (c.goal_value || 0) + suffix + ' · ' + (c.days_left !== undefined ? c.days_left + _t('cmw_days_left_suffix','d restantes') : '') + '</div>' +
       (myVal !== null
         ? '<div class="ch-pct">' + Math.round(myVal) + suffix + ' / ' + (c.goal_value || 0) + suffix + ' (' + pct + '%)</div>' +
           '<div class="ch-prog-bar"><div class="ch-prog-fill" style="width:' + pct + '%"></div></div>'
-        : '<button class="btn btn-primary btn-sm" style="margin-top:.4rem" onclick="joinChallenge(\'' + c.id + '\')">Unirse</button>') +
+        : '<button class="btn btn-primary btn-sm" style="margin-top:.4rem" onclick="joinChallenge(\'' + c.id + '\')">' + _t('cmw_join_btn','Unirse') + '</button>') +
       '</div>';
   }
 
@@ -1123,8 +1128,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     var goal   = parseFloat(document.getElementById('ch-goal').value);
     var start  = document.getElementById('ch-start').value;
     var end    = document.getElementById('ch-end').value;
-    if (!title || !goal || !start || !end) { alert('Completa todos los campos'); return; }
-    if (start >= end) { alert('La fecha fin debe ser posterior al inicio'); return; }
+    if (!title || !goal || !start || !end) { alert(_t('cmw_fill_all_fields','Completa todos los campos')); return; }
+    if (start >= end) { alert(_t('cmw_end_after_start','La fecha fin debe ser posterior al inicio')); return; }
     fetch(API + '/community/groups/global/challenges', {
       method: 'POST', headers: hdrs,
       body: JSON.stringify({ title: title, sport: sport, metric: metric, goal_value: goal, start_date: start, end_date: end })
@@ -1162,14 +1167,14 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
           '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900">' + (u.name || '—') + '</div>' +
           '<div style="font-family:\'Oswald\',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.08em;margin:.15rem 0 .75rem">' + (u.country_flag || '') + ' ' + (u.country_code || '') + '</div>' +
           '<div style="display:flex;gap:1.5rem">' +
-          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--cyan)">' + followers + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">SEGUIDORES</div></div>' +
-          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--muted)">' + following + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">SIGUIENDO</div></div>' +
+          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--cyan)">' + followers + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">' + _t('cmw_followers','Seguidores').toUpperCase() + '</div></div>' +
+          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--muted)">' + following + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">' + _t('cmw_following','Siguiendo').toUpperCase() + '</div></div>' +
           '</div></div></div></div>' +
           '<div class="g3" style="padding:0 1.25rem 1.25rem;gap:.75rem">' +
           [
-            { label: 'Km temporada', value: ss.km + ' km',        color: 'var(--cyan)' },
-            { label: 'TSS acumulado', value: Math.round(ss.tss),  color: 'var(--purple)' },
-            { label: 'Horas totales', value: ss.hours + 'h',      color: 'var(--green)' },
+            { label: _t('cmw_stat_km_season','Km temporada'), value: ss.km + ' km',        color: 'var(--cyan)' },
+            { label: _t('cmw_stat_tss_total','TSS acumulado'), value: Math.round(ss.tss),  color: 'var(--purple)' },
+            { label: _t('cmw_stat_hours_total','Horas totales'), value: ss.hours + 'h',      color: 'var(--green)' },
           ].map(function (s) {
             return '<div class="stat-chip"><div class="stat-n" style="color:' + s.color + '">' + (s.value || '—') + '</div><div class="stat-l">' + s.label + '</div></div>';
           }).join('') +
@@ -1179,13 +1184,13 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 
   function renderMyProfileFallback() {
     var el = document.getElementById('my-profile-content');
-    if (el) el.innerHTML = '<div class="alert-chip info">Completa tu perfil en Configuración para mostrar tu página pública.</div>';
+    if (el) el.innerHTML = '<div class="alert-chip info">' + _t('cmw_complete_profile_msg','Completa tu perfil en Configuración para mostrar tu página pública.') + '</div>';
   }
 
   window.uploadMyAvatar = function (input) {
     var file = input.files && input.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { lxToast && lxToast.warn('Solo se aceptan imágenes'); return; }
+    if (!file.type.startsWith('image/')) { lxToast && lxToast.warn(_t('cmw_only_images','Solo se aceptan imágenes')); return; }
     var fd = new FormData();
     fd.append('file', file);
     fetch(API + '/athlete/profile/avatar', {
@@ -1195,12 +1200,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        if (!d) { lxToast && lxToast.warn('No se pudo subir la foto'); return; }
+        if (!d) { lxToast && lxToast.warn(_t('cmw_err_photo_upload','No se pudo subir la foto')); return; }
         input.value = '';
         loadMyProfile();      // refresca la card grande de "Mi Perfil"
         loadSidebarProfile(); // y la mini-card de la sidebar
       })
-      .catch(function () { lxToast && lxToast.warn('No se pudo subir la foto'); });
+      .catch(function () { lxToast && lxToast.warn(_t('cmw_err_photo_upload','No se pudo subir la foto')); });
   };
 
   window._privToggleMaster = function () {
@@ -1263,7 +1268,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var fg = document.getElementById('cl-profile-following');
         if (fg) fg.textContent = d.following_count || 0;
         var km = document.getElementById('cl-profile-km');
-        if (km) km.textContent = (ss.km || 0) + ' km esta temporada';
+        if (km) km.textContent = (ss.km || 0) + ' ' + _t('cmw_km_season_suffix','km esta temporada');
       }).catch(function () {});
   }
 
@@ -1275,7 +1280,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         var el = document.getElementById('cl-suggestions');
         if (!el) return;
         if (!users.length) {
-          el.innerHTML = '<div class="cl-empty">No hay sugerencias por ahora — probá buscar atletas en Descubrir.</div>';
+          el.innerHTML = '<div class="cl-empty">' + _t('cmw_no_suggestions','No hay sugerencias por ahora — probá buscar atletas en Descubrir.') + '</div>';
           return;
         }
         el.innerHTML = users.slice(0, 4).map(function (u) {
@@ -1300,7 +1305,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
         if (!el) return;
         var rows = d.leaderboard || [];
         if (!rows.length) {
-          el.innerHTML = '<div class="cl-empty">Seguí atletas para ver el ranking semanal.</div>';
+          el.innerHTML = '<div class="cl-empty">' + _t('cmw_no_ranking','Seguí atletas para ver el ranking semanal.') + '</div>';
           return;
         }
         el.innerHTML = rows.map(function (r) {
