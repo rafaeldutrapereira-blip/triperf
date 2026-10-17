@@ -15,6 +15,8 @@ function esc(s){
   });
 }
 
+function _nt(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
+function _fmt(str,o){ return String(str).replace(/\{(\w+)\}/g,function(_,n){ return o[n]!=null?o[n]:''; }); }
 function apiBase(){
   // Sprint 55: dentro del shell nativo de Capacitor, window.location.origin
   // es 'http://localhost' (o similar), NO la URL real de producción — hay
@@ -47,8 +49,8 @@ function pageLabel(){
   try{
     var pageName = window.location.pathname.split('/').pop() || 'dashboard.html';
     var mod = window.LX_ROUTES && window.LX_ROUTES.byFile[pageName];
-    return (mod && mod.label) ? mod.label : 'Dashboard';
-  }catch(e){ return 'Dashboard'; }
+    return (mod && mod.labelI18n) ? _nt(mod.labelI18n, mod.label) : ((mod && mod.label) ? mod.label : _nt('nav_dashboard','Dashboard'));
+  }catch(e){ return _nt('nav_dashboard','Dashboard'); }
 }
 
 function injectCSS(){
@@ -122,31 +124,31 @@ function buildHTML(){
     +   '<div class="dhx-c">'
     +     '<div class="dhx-inner">'
     +       '<div>'
-    +         '<div class="dhx-eye" id="dhx-date-lbl">Cargando...</div>'
-    +         '<h1 class="dhx-h1"><span id="dhx-greeting-txt">Buenos días</span>, <em id="dhx-greeting-name">Atleta</em></h1>'
+    +         '<div class="dhx-eye" id="dhx-date-lbl">' + esc(_nt('dh_loading','Cargando...')) + '</div>'
+    +         '<h1 class="dhx-h1"><span id="dhx-greeting-txt">Buenos días</span>, <em id="dhx-greeting-name">' + esc(_nt('dh_athlete','Atleta')) + '</em></h1>'
     +       '</div>'
     +       '<div class="dhx-right">'
     +         '<div class="dhx-chip-row" role="status" aria-live="polite">'
-    +           '<div class="dhx-chip"><span class="dhx-dot dhx-dot-g"></span>Readiness <strong id="dhx-readiness-val">— / 100</strong></div>'
+    +           '<div class="dhx-chip"><span class="dhx-dot dhx-dot-g"></span>' + esc(_nt('dh_readiness','Readiness')) + ' <strong id="dhx-readiness-val">— / 100</strong></div>'
     +           '<div class="dhx-chip" style="border-color:rgba(34,211,238,.22)"><span class="dhx-dot dhx-dot-c"></span><span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span><span id="dhx-garmin-chip">—</span></div>'
     +         '</div>'
     +         '<div class="dhx-bell-wrap">'
-    +           '<button class="dhx-bell-btn" id="dhx-bell-btn" aria-label="Notificaciones" onclick="window.__dhxToggleBell && window.__dhxToggleBell()">'
+    +           '<button class="dhx-bell-btn" id="dhx-bell-btn" aria-label="' + esc(_nt('dh_notifications','Notificaciones')) + '" onclick="window.__dhxToggleBell && window.__dhxToggleBell()">'
     +             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
     +             '<span class="dhx-bell-badge" id="dhx-bell-badge">0</span>'
     +           '</button>'
     +           '<div class="dhx-bell-panel" id="dhx-bell-panel">'
-    +             '<div class="dhx-bell-head"><span class="dhx-bell-title">Notificaciones</span><button class="dhx-bell-mark" onclick="window.__dhxMarkRead && window.__dhxMarkRead()">Marcar leídas</button></div>'
-    +             '<div id="dhx-bell-list"><div class="dhx-bell-empty">Cargando...</div></div>'
+    +             '<div class="dhx-bell-head"><span class="dhx-bell-title">' + esc(_nt('dh_notifications','Notificaciones')) + '</span><button class="dhx-bell-mark" onclick="window.__dhxMarkRead && window.__dhxMarkRead()">' + esc(_nt('dh_mark_read','Marcar leídas')) + '</button></div>'
+    +             '<div id="dhx-bell-list"><div class="dhx-bell-empty">' + esc(_nt('dh_loading','Cargando...')) + '</div></div>'
     +           '</div>'
     +         '</div>'
-    +         '<a href="athlete_profile.html" class="dhx-btn" aria-label="Ir al Perfil del Atleta">'
+    +         '<a href="athlete_profile.html" class="dhx-btn" aria-label="' + esc(_nt('dh_go_profile','Ir al Perfil del Atleta')) + '">'
     +           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>'
-    +           'Perfil del Atleta'
+    +           _nt('dh_profile_btn','Perfil del Atleta')
     +         '</a>'
     +         '<button class="dhx-btn" id="dhx-btn-upgrade" style="border-color:rgba(168,85,247,.35);color:#C084FC;display:none" aria-label="Actualizar plan">'
     +           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
-    +           '<span id="dhx-btn-upgrade-label">Actualizar Plan</span>'
+    +           '<span id="dhx-btn-upgrade-label">' + esc(_nt('dh_update_plan','Actualizar Plan')) + '</span>'
     +         '</button>'
     +       '</div>'
     +     '</div>'
@@ -184,11 +186,12 @@ function mount(){
 }
 
 function updateDateGreeting(){
-  var D = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  var M = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var n = new Date(), d = n.getDate(), mo = n.getMonth(), y = n.getFullYear();
+  var n = new Date();
+  var lang = (window.i18n && window.i18n.lang) || 'es';
+  var locale = lang==='pt' ? 'pt-BR' : lang==='en' ? 'en-US' : 'es-CL';
+  var dateTxt = new Intl.DateTimeFormat(locale, {weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(n);
   var lbl = document.getElementById('dhx-date-lbl');
-  if(lbl) lbl.textContent = D[n.getDay()] + ', ' + d + ' ' + M[mo] + ' ' + y + ' · LabX ' + pageLabel();
+  if(lbl) lbl.textContent = dateTxt + ' · LabX ' + pageLabel();
 
   var h = n.getHours();
   var gKey = h >= 5 && h < 12 ? 'app_greet_morning' : h >= 12 && h < 19 ? 'app_greet_afternoon' : 'app_greet_evening';
@@ -231,9 +234,9 @@ function loadGarminSync(){
     .then(function(d){
       if(!d || !d.last_sync){ el.textContent = 'sin sync'; return; }
       var diff = Math.round((Date.now() - new Date(d.last_sync).getTime()) / 60000);
-      var label = diff < 1 ? 'ahora' : diff < 60 ? 'hace ' + diff + 'min' : diff < 1440 ? 'hace ' + Math.round(diff/60) + 'h' : 'hace ' + Math.round(diff/1440) + 'd';
+      var label = diff < 1 ? _nt('dh_now','ahora') : diff < 60 ? _fmt(_nt('dh_ago_min','hace {n}min'),{n:diff}) : diff < 1440 ? _fmt(_nt('dh_ago_h','hace {n}h'),{n:Math.round(diff/60)}) : _fmt(_nt('dh_ago_d','hace {n}d'),{n:Math.round(diff/1440)});
       el.textContent = label;
-      el.title = 'Último sync: ' + d.last_sync + ' · ' + (d.activities_total || 0) + ' actividades';
+      el.title = _nt('dh_last_sync','Último sync:') + ' ' + d.last_sync + ' · ' + (d.activities_total || 0) + ' ' + _nt('dh_activities','actividades');
     })
     .catch(function(){ el.textContent = '—'; });
 }
@@ -246,7 +249,7 @@ function setupUpgradeBtn(){
   if(sess && plan !== 'elite' && plan !== 'coach'){
     btn.style.display = 'flex';
     var lbl = document.getElementById('dhx-btn-upgrade-label');
-    if(lbl) lbl.textContent = plan === 'agegroup' ? 'Ir a Elite' : 'Actualizar Plan';
+    if(lbl) lbl.textContent = plan === 'agegroup' ? _nt('dh_go_elite','Ir a Elite') : _nt('dh_update_plan','Actualizar Plan');
   }
   btn.addEventListener('click', function(){
     // Cada página con su propio modal interactivo de planes (dashboard.html)
@@ -270,11 +273,11 @@ function _dhxRelTime(iso){
 function _dhxNotifText(n){
   var actor = '<strong>' + esc(n.actor) + '</strong>';
   if(n.notif_type === 'kudo')      return actor + ' le dio kudo a tu actividad';
-  if(n.notif_type === 'comment')   return actor + ' comentó tu actividad' + (n.body ? ': "' + esc(n.body) + '"' : '');
-  if(n.notif_type === 'follow')    return actor + ' empezó a seguirte';
-  if(n.notif_type === 'challenge') return actor + ' ' + esc(n.body || 'te invitó a un desafío');
-  if(n.notif_type === 'mention')   return actor + ' te mencionó' + (n.body ? ': "' + esc(n.body) + '"' : '');
-  return esc(n.body || 'Nueva notificación');
+  if(n.notif_type === 'comment')   return _fmt(_nt('dh_notif_comment','{actor} comentó tu actividad'),{actor:actor}) + (n.body ? ': "' + esc(n.body) + '"' : '');
+  if(n.notif_type === 'follow')    return _fmt(_nt('dh_notif_follow','{actor} empezó a seguirte'),{actor:actor});
+  if(n.notif_type === 'challenge') return _fmt(_nt('dh_notif_challenge','{actor} {body}'),{actor:actor,body:esc(n.body || _nt('dh_challenge_default','te invitó a un desafío'))});
+  if(n.notif_type === 'mention')   return _fmt(_nt('dh_notif_mention','{actor} te mencionó'),{actor:actor}) + (n.body ? ': "' + esc(n.body) + '"' : '');
+  return esc(n.body || _nt('dh_new_notification','Nueva notificación'));
 }
 function loadNotifCount(){
   var badge = document.getElementById('dhx-bell-badge');
@@ -298,7 +301,7 @@ function loadNotifList(){
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
       var items = d && d.items || [];
-      if(!items.length){ list.innerHTML = '<div class="dhx-bell-empty">Sin notificaciones todavía</div>'; return; }
+      if(!items.length){ list.innerHTML = '<div class="dhx-bell-empty">' + esc(_nt('dh_no_notifications','Sin notificaciones todavía')) + '</div>'; return; }
       list.innerHTML = items.map(function(n){
         return '<div class="dhx-bell-item' + (n.read ? '' : ' unread') + '" onclick="window.location.href=\'community.html\'">'
           + '<div class="dhx-bell-ico">' + (_DHX_NOTIF_ICO[n.type] || '🔔') + '</div>'
