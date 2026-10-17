@@ -8,7 +8,8 @@
 (function(){
 'use strict';
 
-var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function _nt(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
+function _fmt(str,o){ return String(str).replace(/\{(\w+)\}/g,function(_,n){ return o[n]!=null?o[n]:''; }); }
 
 function injectCSS(){
   if(document.getElementById('lx-foot-css')) return;
@@ -35,16 +36,18 @@ function buildHTML(dateStr){
     +         '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange,#FF6535)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
     +         'Lab<span>X</span>'
     +       '</div>'
-    +       '<p class="lx-foot-info">Dashboard v1.0 &middot; ' + dateStr + ' &middot; Datos Garmin Connect</p>'
-    +       '<p class="lx-foot-kona">Plataforma privada de rendimiento atlético</p>'
+    +       '<p class="lx-foot-info">' + _fmt(_nt('footer_info','Dashboard v1.0 · {date} · Datos Garmin Connect'),{date:dateStr}) + '</p>'
+    +       '<p class="lx-foot-kona">' + _nt('footer_tagline','Plataforma privada de rendimiento atlético') + '</p>'
     +     '</div>'
     +   '</div>'
     + '</footer>';
 }
 
 function todayLabel(){
-  var n = new Date(), d = n.getDate(), mo = n.getMonth(), y = n.getFullYear();
-  return d + ' ' + MONTHS[mo] + ' ' + y;
+  var n = new Date();
+  var lang = (window.i18n && window.i18n.lang) || 'es';
+  var locale = lang==='pt' ? 'pt-BR' : lang==='en' ? 'en-US' : 'es-CL';
+  return new Intl.DateTimeFormat(locale, {day:'numeric', month:'short', year:'numeric'}).format(n);
 }
 
 function mount(){
