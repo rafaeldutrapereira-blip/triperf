@@ -375,6 +375,7 @@ function getGearToken() {
   } catch(e) { return null; }
 }
 
+function _gearErr(e){ console.warn(e && e.message); return _t('gear_err_server','No se pudo completar la acción. Intenta de nuevo.'); }
 function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
 
 function gearFetch(path, opts) {
@@ -496,21 +497,21 @@ function submitShoe() {
     document.getElementById('shoe-nickname').value = '';
     document.getElementById('shoe-target').value = '';
     loadShoes();
-  }).catch(function(e){ alert(e.message); });
+  }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function setDefaultShoe(id) {
   gearFetch('/gear/shoes/' + id + '/set-default', { method: 'POST', body: { workout_subtype: 'rodaje' } })
-    .then(loadShoes).catch(function(e){ alert(e.message); });
+    .then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function retireShoe(id) {
   if (!confirm(_t('app_gear_confirm_retire_shoe','¿Retirar esta zapatilla? El historial de km se conserva.'))) return;
-  gearFetch('/gear/shoes/' + id, { method: 'DELETE' }).then(loadShoes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/shoes/' + id, { method: 'DELETE' }).then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function reactivateShoe(id) {
-  gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function openEditShoeModal(shoeId) {
@@ -542,7 +543,7 @@ function submitEditShoe() {
   gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: body }).then(function(){
     closeModal('modal-edit-shoe');
     loadShoes();
-  }).catch(function(e){ alert(e.message); });
+  }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function openScheduleModal(shoeId) {
@@ -585,7 +586,7 @@ function saveSchedule() {
         if (result.added_count) parts.push(result.added_count + ' ' + _t('gear_added_unassigned_suffix','carrera(s) sin asignar sumada(s)') + ' (+' + result.added_km.toFixed(1) + ' km)');
         alert(_t('gear_schedule_saved_recalc_prefix','Horario guardado. Recalculado automáticamente: ') + parts.join(', ') + '.');
       }
-    }).catch(function(e){ alert(e.message); });
+    }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function runBackfill() {
@@ -607,7 +608,7 @@ function runBackfill() {
       alert(parts.length ? _t('gear_backfill_done_prefix','Listo: ') + parts.join(', ') + '.' : _t('gear_backfill_none','No se encontraron carreras para recalcular en ese rango.'));
       closeModal('modal-schedule');
       loadShoes();
-    }).catch(function(e){ alert(e.message); });
+    }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 // ── BICICLETAS ──────────────────────────────────────────────
@@ -685,20 +686,20 @@ function submitBike() {
     document.getElementById('bike-brand').value = '';
     document.getElementById('bike-model').value = '';
     loadBikes();
-  }).catch(function(e){ alert(e.message); });
+  }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function setDefaultBike(id) {
-  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { is_default: true } }).then(loadBikes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { is_default: true } }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function retireBike(id) {
   if (!confirm(_t('app_gear_confirm_retire_bike','¿Retirar esta bicicleta?'))) return;
-  gearFetch('/gear/bikes/' + id, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/bikes/' + id, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function reactivateBike(id) {
-  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadBikes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function onCompTypeChange() {
@@ -734,12 +735,12 @@ function submitComponent() {
   gearFetch('/gear/bikes/' + bikeId + '/components', { method: 'POST', body: body }).then(function(){
     closeModal('modal-component');
     loadBikes();
-  }).catch(function(e){ alert(e.message); });
+  }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function removeComponent(bikeId, compId) {
   if (!confirm(_t('app_gear_confirm_remove_component','¿Quitar este componente del seguimiento?'))) return;
-  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(e.message); });
+  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function promptChargeUpdate(bikeId, compId, current) {
@@ -748,7 +749,7 @@ function promptChargeUpdate(bikeId, compId, current) {
   var pct = parseInt(val);
   if (isNaN(pct) || pct < 0 || pct > 100) { alert(_t('app_gear_valid_pct_range','Ingresa un valor entre 0 y 100')); return; }
   gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'PATCH', body: { charge_pct: pct } })
-    .then(loadBikes).catch(function(e){ alert(e.message); });
+    .then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
 }
 
 function openServiceModal(bikeId, compId) {
@@ -775,7 +776,7 @@ function submitService() {
   gearFetch('/gear/bikes/' + bikeId + '/components/' + compId + '/service', { method: 'POST', body: body }).then(function(){
     closeModal('modal-service');
     loadBikes();
-  }).catch(function(e){ alert(e.message); });
+  }).catch(function(e){ alert(_gearErr(e)); });
 }
 
 // ── RESUMEN / ALERTAS ──────────────────────────────────────────
