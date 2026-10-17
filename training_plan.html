@@ -1679,8 +1679,8 @@ document.getElementById('btn-next').addEventListener('click',function(){
 window.applyPeriod = function(){
   var ps = document.getElementById('p-start').value;
   var pe = document.getElementById('p-end').value;
-  if(!ps||!pe){ alert('Selecciona fecha de inicio y fin'); return; }
-  if(ps>pe){ alert('La fecha de inicio debe ser anterior al fin'); return; }
+  if(!ps||!pe){ alert(_t('tp_alert_dates_required','Selecciona fecha de inicio y fin')); return; }
+  if(ps>pe){ alert(_t('tp_alert_dates_order','La fecha de inicio debe ser anterior al fin')); return; }
   S.pStart = new Date(ps+'T12:00:00');
   S.pEnd   = new Date(pe+'T12:00:00');
   render();
@@ -1776,9 +1776,9 @@ window.saveSession = function(){
   var name  = document.getElementById('f-name').value.trim();
   var date  = document.getElementById('f-date').value;
   var dur   = parseInt(document.getElementById('f-dur').value)||0;
-  if(!name){ alert('Ingresa un nombre para la sesión'); return; }
-  if(!date){ alert('Selecciona una fecha'); return; }
-  if(!dur)  { alert('Ingresa la duración en minutos'); return; }
+  if(!name){ alert(_t('tp_alert_session_name','Ingresa un nombre para la sesión')); return; }
+  if(!date){ alert(_t('tp_alert_date_required','Selecciona una fecha')); return; }
+  if(!dur)  { alert(_t('tp_alert_duration_required','Ingresa la duración en minutos')); return; }
 
   var fields = {
     sport:    document.getElementById('f-sport').value,
@@ -2342,8 +2342,8 @@ window._tpRender = render;  // expuesto para el bridge API
 window.tpDownloadZwo = function(blocksJson, name, dateIso){
   var blocks;
   try{ blocks = typeof blocksJson==='string' ? JSON.parse(blocksJson) : blocksJson; }
-  catch(e){ alert('Error al leer los bloques del workout'); return; }
-  if(!blocks||!blocks.length){ alert('Este workout no tiene estructura de bloques.'); return; }
+  catch(e){ alert(_t('tp_alert_workout_read_error','Error al leer los bloques del workout')); return; }
+  if(!blocks||!blocks.length){ alert(_t('tp_alert_workout_no_blocks','Este workout no tiene estructura de bloques.')); return; }
 
   function xEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -2750,7 +2750,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <script src="dash-header.js"></script>
 <script src="lx-upgrade.js"></script>
 
-<script src="i18n.js"></script>
+<script src="i18n.js"></script><script>function _t(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }</script>
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
 </body>
