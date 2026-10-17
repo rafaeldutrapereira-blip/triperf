@@ -329,7 +329,13 @@
   /* Plan mínimo requerido (como label legible) para el upgrade wall */
   function requiredPlanLabel(moduleId) {
     var mod = _byId[moduleId];
-    if (!mod || !mod.minPlan) return 'Pro';
+    if (!mod) return 'Pro';
+    /* Módulo solo para coach/admin: el bloqueo es por rol, no por plan */
+    if (mod.roles && mod.roles.length > 0 &&
+        mod.roles.every(function(r){ return r === 'coach' || r === 'admin'; })) {
+      return 'Solo coach';
+    }
+    if (!mod.minPlan) return 'Pro';
     return PLAN_META[mod.minPlan] ? PLAN_META[mod.minPlan].label : 'Pro';
   }
 

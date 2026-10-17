@@ -447,12 +447,23 @@ var TIMELINE        = null;
 var CORR            = [];
 var STAT_CORR       = null;
 var FEATURE_LOCKED  = false;
+var EXAMS_LOAD_ERROR = null;
 var CH = {};
 
 function loadMarkersCatalog(){ return apiGet('/labs/markers').then(function(d){ MARKERS_CATALOG = d||{}; }); }
 function loadExamsList(){
+  EXAMS_LOAD_ERROR = null;
   return apiGet('/labs/exams').then(function(d){ EXAMS = d||[]; })
-    .catch(function(status){ if(status===403) FEATURE_LOCKED = true; EXAMS=[]; });
+    .catch(function(status){
+      EXAMS = [];
+      if(status===403) { FEATURE_LOCKED = true; return; }
+      EXAMS_LOAD_ERROR = (typeof status === 'number') ? status : 'network';
+    });
+}
+function examsErrorMessage(err){
+  if(err===401) return _t('bl_err_session','Tu sesión expiró o no es válida. Vuelve a iniciar sesión.');
+  if(err==='network') return _t('bl_err_network','No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
+  return _t('bl_err_server','El servidor respondió con error {status}. Intenta de nuevo en unos minutos.').replace('{status}', err);
 }
 function loadExamDetail(id){
   if(EXAM_DETAIL[id]) return Promise.resolve(EXAM_DETAIL[id]);
@@ -513,6 +524,11 @@ function renderAll() {
   var content    = document.getElementById('resumen-content');
   if(FEATURE_LOCKED){
     emptyState.innerHTML = '<p style="color:var(--dim);padding:2rem">'+_t('bl_feature_locked','Blood Labs Intelligence es una función del plan Elite. Actualiza tu plan para acceder.')+'</p>';
+    emptyState.style.display = ''; content.style.display = 'none';
+    return;
+  }
+  if(EXAMS_LOAD_ERROR!==null){
+    emptyState.innerHTML = '<p style="color:var(--red);padding:2rem">'+esc(examsErrorMessage(EXAMS_LOAD_ERROR))+'</p>';
     emptyState.style.display = ''; content.style.display = 'none';
     return;
   }

@@ -177,7 +177,7 @@
       } else {
         /* Locked: sin href, click → upgrade wall */
         links += '<a class="' + cls + '" data-kl-module="' + m.id + '"' +
-                 ' title="Requiere plan ' + _escH(reqPlan) + '"' +
+                 ' title="' + _escH(reqPlan === 'Solo coach' ? 'Solo coach' : 'Requiere plan ' + reqPlan) + '"' +
                  ' onclick="showUpgradeWall(\'' + _escH(reqPlan) + '\',\'' + m.id + '\')">' +
                  icon + m.label + lockEl + '</a>';
       }
@@ -402,21 +402,26 @@
       year_in_review:'Year in Review',community:'Comunidad',
       recovery:'Recuperaci\xf3n &amp; HRV',mental:'Rendimiento Mental',
       race_day:'Race Day Intelligence',ai_coach:'AI Coach',
-      adaptive:'Plan Adaptativo',indoor_workout:'Indoor Workout'
+      adaptive:'Plan Adaptativo',indoor_workout:'Indoor Workout',coach:'Coach'
     };
     var modLabel=modLabels[modName]||'este m\xf3dulo';
+    var roleOnly=(reqPlan==='Solo coach');
     var wall=document.createElement('div'); wall.id='lx-upgrade-wall';
     wall.innerHTML=
       '<div class="lx-uw-box">'+
         '<div class="lx-uw-lock">&#x1F512;</div>'+
-        '<div class="lx-uw-plan-badge">Requiere Plan '+_escH(reqPlan)+'</div>'+
-        '<div class="lx-uw-title">M\xf3dulo Premium</div>'+
-        '<div class="lx-uw-sub"><strong>'+modLabel+'</strong> no est\xe1 incluido en tu plan actual.<br>'+
-        'Actualiza a <strong>'+_escH(reqPlan)+'</strong> para desbloquear este y m\xe1s m\xf3dulos.</div>'+
-        '<a href="landing.html#planes" class="lx-uw-upgrade">'+
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'+
-          'Ver Planes'+
-        '</a>'+
+        (roleOnly
+          ? '<div class="lx-uw-plan-badge">Solo coach</div>'+
+            '<div class="lx-uw-title">Acceso restringido</div>'+
+            '<div class="lx-uw-sub"><strong>'+modLabel+'</strong> es exclusivo para cuentas de coach.</div>'
+          : '<div class="lx-uw-plan-badge">Requiere Plan '+_escH(reqPlan)+'</div>'+
+            '<div class="lx-uw-title">M\xf3dulo Premium</div>'+
+            '<div class="lx-uw-sub"><strong>'+modLabel+'</strong> no est\xe1 incluido en tu plan actual.<br>'+
+            'Actualiza a <strong>'+_escH(reqPlan)+'</strong> para desbloquear este y m\xe1s m\xf3dulos.</div>'+
+            '<a href="landing.html#planes" class="lx-uw-upgrade">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'+
+              'Ver Planes'+
+            '</a>')+
         '<a href="dashboard.html" class="lx-uw-back">← Volver al Dashboard</a>'+
       '</div>';
     document.body.appendChild(wall);
