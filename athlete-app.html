@@ -16,6 +16,8 @@
      recorrido/parciales que training_detail.html, igual Strava). -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="i18n.js"></script>
+<script src="lx-backend-i18n.js"></script>
+<script>(function(){function _ti(){var v=window.i18n?window.i18n.t('aa_page_title'):null;if(v&&v!=='aa_page_title')document.title=v;}_ti();document.addEventListener('lx:i18nready',_ti);document.addEventListener('lx:langchange',_ti);})();</script>
 <style>
 :root {
   --bg:     #0B0F1A;
@@ -2169,7 +2171,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     </button>
     <button class="nav-btn" onclick="goScreen('screen-wellness')" id="nav-wellness">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      Recovery
+      <span data-i18n="nav_recovery">Recovery</span>
     </button>
     <button class="nav-btn" onclick="goScreen('screen-community')" id="nav-community">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -2263,6 +2265,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
    locales `t` que ya existen en varias funciones (template de un
    entrenamiento). Sprint 2b. */
 function _t(key, fallback){ var v = window.i18n ? window.i18n.t(key) : null; return (v && v !== key) ? v : fallback; }
+function _protoTxt(p, f, fb){ return _t('mp_'+p.id+'_'+f, null) || fb; }
 
 /* Mapea códigos de error semánticos del backend (Sprint 3a, ver
    api/routes/auth_routes.py) a claves de i18n.js. No se reusa _t() de
@@ -3266,7 +3269,7 @@ function renderInsightMobile(ins, readiness, readinessCompleteness, readinessWar
     '<div class="insight-mob-top"><span class="insight-mob-title">'+_t('dash_insight_title','Insight del día')+'</span>'
     +'<div style="display:flex;align-items:center;gap:.4rem">'
       + readinessHtml
-      +'<span class="insight-mob-sev" style="background:'+sevCol+'22;color:'+sevCol+';border:1px solid '+sevCol+'55">'+(ins.headline||'')+'</span>'
+      +'<span class="insight-mob-sev" style="background:'+sevCol+'22;color:'+sevCol+';border:1px solid '+sevCol+'55">'+(window.lxBeT ? window.lxBeT(ins.headline||'') : (ins.headline||''))+'</span>'
     +'</div></div>'
     + msgHtml
     + whyHtml
@@ -3477,7 +3480,7 @@ function renderStatusHealth(d){
       ['swim','bike','run','gym'].forEach(function(sp){
         var info = d.acwr_by_sport[sp] || {};
         var insufficient = info.insufficient_data || info.acwr == null;
-        var spZ = insufficient ? {label:'Sin datos', color:'#3D6880'} : (acwrZones[info.zone] || {label:'Sin datos', color:'#3D6880'});
+        var spZ = insufficient ? {label:_t('status_no_data','Sin datos'), color:'#3D6880'} : (acwrZones[info.zone] || {label:_t('status_no_data','Sin datos'), color:'#3D6880'});
         var spVal = insufficient ? '—' : info.acwr;
         rows += '<div class="mkc-row mkc-row-child tap" onclick="openMetricDetail(\'acwr\',\''+sp+'\')">'+_mkcLbl('ACWR — '+acwrSportLbl[sp],'acwr','mv-acwr-'+sp)+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr-'+sp+'" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr-'+sp+'" style="color:'+spZ.color+'">'+spVal+'</span><span class="mkc-pill" style="background:'+spZ.color+'22;color:'+spZ.color+'">'+spZ.label+'</span></span></div>';
       });
@@ -3748,7 +3751,7 @@ function _mdRender(){
 
   if(!d.length){
     document.getElementById('md-hero-val').textContent = '—';
-    document.getElementById('md-hero-sub').textContent = 'Sin datos disponibles';
+    document.getElementById('md-hero-sub').textContent = _t('aa_no_data_avail','Sin datos disponibles');
     chartWrap.style.display = 'none';
     statsEl.style.display   = 'none';
     emptyEl.style.display   = 'block';
@@ -5219,7 +5222,7 @@ function renderMentalScore(d){
 
   if(d.suggested_protocol){
     var sp = d.suggested_protocol;
-    html += '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.9rem">'+_t('app_suggested_label','💡 Sugerido:')+' <strong>'+_escCm(sp.name)+'</strong> ('+sp.duration_min+' min) — '+_escCm(sp.description)+'</div>';
+    html += '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.9rem">'+_t('app_suggested_label','💡 Sugerido:')+' <strong>'+_escCm(_protoTxt(sp,'n',sp.name))+'</strong> ('+sp.duration_min+' min) — '+_escCm(_protoTxt(sp,'d',sp.description))+'</div>';
   }
   if(d.race && d.race.days_to_race != null){
     html += '<div class="rc-mob-rec" style="margin-top:.6rem">🏁 '+d.race.days_to_race+' '+_t('app_days_to_race_suffix','días para')+' '+_escCm(d.race.race_name||_t('app_your_race_default','tu carrera'))+'</div>';
@@ -7105,7 +7108,7 @@ function _communityCardHtml(c, idx){
   +'</div>';
 }
 
-function _escCm(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _escCm(s){ return String(window.lxBeT ? window.lxBeT(s==null?'':String(s)) : (s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ── Fotos en el feed de Comunidad (Strava auto + subidas manuales) ──
    Mismo backend que ya usa community.html en la web
