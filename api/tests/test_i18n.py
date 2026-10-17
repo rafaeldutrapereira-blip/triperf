@@ -282,6 +282,35 @@ def test_i18n_script_tag_has_no_query_string():
     )
 
 
+def test_auth_js_script_tag_has_no_query_string():
+    """
+    Mismo bug que test_i18n_script_tag_has_no_query_string, encontrado de
+    nuevo en vivo (2026-10-16, Sprint 5 de i18n): dashboard.html (y otras
+    22 páginas) cargaban <script src="auth.js?v=1">, una cache-key de
+    Cloudflare DISTINTA de "auth.js" sin query -- un fix real en auth.js
+    (el listener de 'lx:langchange' que sincroniza el idioma al backend)
+    quedó invisible para cualquier página con ese query string, aunque
+    `curl .../auth.js` sin query sí mostraba el fix. Mismo remedio: ningún
+    script "core" compartido (i18n.js, auth.js) debe llevar query string
+    propio -- si una página necesita invalidar caché, es BUILD_VERSION en
+    sw.js lo que debe subir, no un query string ad-hoc por página.
+    """
+    offenders = []
+    for f in sorted(REPO_ROOT.glob("*.html")):
+        text = f.read_text(encoding="utf-8", errors="ignore")
+        if "auth.js" not in text:
+            continue
+        for m in re.finditer(r'<script[^>]+src="(auth\.js[^"]*)"', text):
+            src = m.group(1)
+            if src != "auth.js":
+                offenders.append(f"{f.name}: src=\"{src}\"")
+
+    assert not offenders, (
+        "Página(s) cargando auth.js con un query string distinto al resto "
+        "del sitio -- mismo riesgo de caché stale que i18n.js:\n" + "\n".join(offenders)
+    )
+
+
 def test_lang_is_not_hardcoded():
     text = I18N_JS.read_text(encoding="utf-8")
     assert "var _lang = 'es';" not in text.replace(" ", "") or \

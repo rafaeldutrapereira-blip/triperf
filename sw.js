@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '176';  // 2026-10-16: i18n Sprint 5 — emails transaccionales ES/PT/EN + User.lang persistido
+var BUILD_VERSION = '177';  // 2026-10-16: fix auth.js?v=1 cacheado stale en 23 páginas (bloqueaba sync de idioma al backend)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
