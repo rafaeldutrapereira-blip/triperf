@@ -278,8 +278,8 @@ def compute_correlations(user_id: str, db: Session) -> dict:
         "markers_status": markers_status,
         "exam_count":     len(exams),
         "date_range":     {
-            "from": exams[0].exam_date  if exams else None,
-            "to":   exams[-1].exam_date if exams else None,
+            "from": exams[0].date_iso  if exams else None,
+            "to":   exams[-1].date_iso if exams else None,
         },
     }
 

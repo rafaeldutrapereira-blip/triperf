@@ -181,6 +181,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         <select id="sel-comp" onchange="switchExam()"></select>
       </span>
       <span class="exam-ctx" id="exam-ctx-lbl"></span>
+      <button class="btn btn-g btn-sm" id="btn-delete-exam" style="display:none" onclick="deleteCurrentExam()">🗑 <span data-i18n="bl_delete_exam">Eliminar</span></button>
       <button class="btn btn-g btn-sm" onclick="switchTab('import',document.querySelector('[data-tab=import]'))">+ <span data-i18n="bl_register_exam">Registrar Examen</span></button>
     </div>
   </div>
@@ -192,7 +193,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     <div class="ph-inner">
       <div>
         <div class="ph-chips" id="ph-chips">
-          <span class="chip chip-g"><span data-i18n="bl_chip_score">Performance Score:</span> <strong id="chip-score">—</strong></span>
+          <span class="chip chip-g"><span data-i18n="bl_chip_trs">TRS:</span> <strong id="chip-score">—</strong></span>
           <span class="chip chip-a" id="chip-alerts" style="display:none"><span data-i18n="bl_chip_alerts">Alertas:</span> <strong id="chip-alert-n">0</strong></span>
           <span class="chip"><span data-i18n="bl_chip_exams">Exámenes:</span> <strong id="chip-exams">—</strong></span>
         </div>
@@ -222,31 +223,31 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
 <div id="resumen-content">
 
-  <!-- KPI 3 cards -->
+  <!-- TRS + discipline chips -->
   <div class="g3 sr" id="kpi-section">
-    <div class="kpi" id="kpi-muscle">
-      <div class="kpi-icon">💪</div>
-      <div class="kpi-label" data-i18n="bl_kpi_muscle">Recuperación Muscular</div>
-      <div class="kpi-score" id="kpi-m-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-m-bar"></div></div>
-      <div class="kpi-grade" id="kpi-m-grade"></div>
-      <div class="kpi-detail" id="kpi-m-detail"></div>
+    <div class="kpi" id="kpi-trs">
+      <div class="kpi-icon">🏥</div>
+      <div class="kpi-label" data-i18n="bl_kpi_trs">Training Restriction Score</div>
+      <div class="kpi-score" id="kpi-trs-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-trs-bar"></div></div>
+      <div class="kpi-grade" id="kpi-trs-grade"></div>
+      <div class="kpi-detail" id="kpi-trs-detail"></div>
     </div>
-    <div class="kpi" id="kpi-o2">
-      <div class="kpi-icon">🫀</div>
-      <div class="kpi-label" data-i18n="bl_kpi_o2">Transporte de Oxígeno</div>
-      <div class="kpi-score" id="kpi-o-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-o-bar"></div></div>
-      <div class="kpi-grade" id="kpi-o-grade"></div>
-      <div class="kpi-detail" id="kpi-o-detail"></div>
-    </div>
-    <div class="kpi" id="kpi-micro">
+    <div class="kpi" id="kpi-markers">
       <div class="kpi-icon">🧬</div>
-      <div class="kpi-label" data-i18n="bl_kpi_micro">Micronutrientes & Hormonal</div>
-      <div class="kpi-score" id="kpi-n-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-n-bar"></div></div>
-      <div class="kpi-grade" id="kpi-n-grade"></div>
-      <div class="kpi-detail" id="kpi-n-detail"></div>
+      <div class="kpi-label" data-i18n="bl_kpi_markers">Marcadores Analizados</div>
+      <div class="kpi-score" id="kpi-markers-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-markers-bar"></div></div>
+      <div class="kpi-grade" id="kpi-markers-grade"></div>
+      <div class="kpi-detail" id="kpi-markers-detail"></div>
+    </div>
+    <div class="kpi" id="kpi-next">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-label" data-i18n="bl_kpi_next">Próximo Control</div>
+      <div class="kpi-score" id="kpi-next-score">—</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-next-bar"></div></div>
+      <div class="kpi-grade" id="kpi-next-grade"></div>
+      <div class="kpi-detail" id="kpi-next-detail"></div>
     </div>
   </div>
 
@@ -258,11 +259,20 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
     </div>
     <div>
-      <div class="sec-h"><span data-i18n="bl_notable_changes">Variaciones Notables</span> <span id="alerts-date-label"></span></div>
+      <div class="sec-h"><span data-i18n="bl_notable_changes">Alertas Activas</span> <span id="alerts-date-label"></span></div>
       <div id="alerts-container"></div>
-      <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">Interpretación Clínica</div>
+      <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">Impacto en Entrenamiento</div>
       <div id="clinical-summary" style="font-size:.8rem;color:var(--muted);line-height:1.7"></div>
     </div>
+  </div>
+
+  <!-- Interpretación IA -->
+  <div class="sr mt3">
+    <div class="sec-h" style="display:flex;align-items:center;justify-content:space-between">
+      <span data-i18n="bl_ai_interpretation">Interpretación con IA</span>
+      <button class="btn btn-g btn-sm" id="btn-ai-analyze" onclick="runAiAnalysis()">✨ <span data-i18n="bl_ai_run">Generar interpretación</span></button>
+    </div>
+    <div class="panel"><div class="panel-body" id="ai-interpretation-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">—</div></div>
   </div>
 
   <!-- Full biomarker table -->
@@ -276,15 +286,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
 <!-- ══ TAB 2: TENDENCIAS ══ -->
 <div class="tab-pane" id="tab-trends">
-  <div class="stabs-bar">
-    <button class="stab-btn on" data-stab="hemo" onclick="switchStab('hemo',this)">🩸 <span data-i18n="bl_cat_hemo">Hemograma</span></button>
-    <button class="stab-btn" data-stab="musc" onclick="switchStab('musc',this)">💪 <span data-i18n="bl_cat_musc">Muscular</span></button>
-    <button class="stab-btn" data-stab="lipid" onclick="switchStab('lipid',this)">🫀 <span data-i18n="bl_cat_lipid">Lípidos</span></button>
-    <button class="stab-btn" data-stab="vit" onclick="switchStab('vit',this)">🌟 <span data-i18n="bl_cat_vit">Vitaminas</span></button>
-    <button class="stab-btn" data-stab="renal" onclick="switchStab('renal',this)">🫘 <span data-i18n="bl_cat_renal">Renal</span></button>
-    <button class="stab-btn" data-stab="horm" onclick="switchStab('horm',this)">🧪 <span data-i18n="bl_cat_horm">Hormonal</span></button>
-    <button class="stab-btn" data-stab="elec" onclick="switchStab('elec',this)">⚡ <span data-i18n="bl_cat_elec">Electrolitos</span></button>
-  </div>
+  <div class="stabs-bar" id="trends-stabs-bar"></div>
   <div id="trend-content"></div>
 </div>
 
@@ -292,58 +294,21 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 <div class="tab-pane" id="tab-garmin">
   <p style="font-size:.8rem;color:var(--dim);margin-bottom:1.5rem" data-i18n="bl_garmin_intro">Superposición de biomarcadores con métricas de entrenamiento · Datos Garmin</p>
 
-  <!-- CK/LDH vs Training Load -->
   <div class="sr">
-    <div class="sec-h">💪 <span data-i18n="bl_musc_vs_load">Marcadores Musculares vs Carga de Entrenamiento</span></div>
-    <div class="g2">
-      <div class="ch-box">
-        <div class="ch-title">CK & LDH — Evolución temporal</div>
-        <div class="ch-sub">Referencia atleta: CK 80–250 U/L · LDH 150–220 U/L</div>
-        <div class="ch-inner"><canvas id="ch-ck-ldh"></canvas></div>
-      </div>
-      <div>
-        <div id="ck-interpretation" class="fick-card"></div>
-      </div>
+    <div class="sec-h">🔗 <span data-i18n="bl_ctl_vs_labs">Carga de Entrenamiento (CTL/ATL/TSB) en cada examen</span></div>
+    <div class="ch-box">
+      <div class="ch-title">CTL / ATL / TSB — por fecha de examen</div>
+      <div class="ch-sub" data-i18n="bl_ctl_overlay_sub">Útil para ver si un examen se tomó en una semana de carga alta o de descanso</div>
+      <div class="ch-inner-lg"><canvas id="ch-ctl-overlay"></canvas></div>
     </div>
   </div>
 
-  <!-- Hb/Hct vs VO2 -->
   <div class="sr mt3">
-    <div class="sec-h">🫀 <span data-i18n="bl_hb_hct_title">Hemoglobina & Hematocrito — Transporte de O₂</span></div>
-    <div class="g2">
-      <div class="ch-box">
-        <div class="ch-title">Hb / Hct — Tendencia</div>
-        <div class="ch-sub">Óptimo resistencia: Hb >15.5 g/dL · Hct 45-52%</div>
-        <div class="ch-inner"><canvas id="ch-hb-hct"></canvas></div>
-      </div>
-      <div>
-        <div id="hb-vo2-card" class="fick-card"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Vit D -->
-  <div class="sr mt3">
-    <div class="sec-h">🌟 <span data-i18n="bl_vitd_title">Vitamina D vs Recuperación</span></div>
-    <div class="g2">
-      <div class="ch-box">
-        <div class="ch-title">Vitamina D — Evolución</div>
-        <div class="ch-sub">Óptimo atleta: 40-70 ng/mL · Mínimo: 30 ng/mL</div>
-        <div class="ch-inner"><canvas id="ch-vitd"></canvas></div>
-      </div>
-      <div>
-        <div id="vitd-card" class="fick-card"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Correlations reference table -->
-  <div class="sr mt3">
-    <div class="sec-h" data-i18n="bl_corr_framework">Marco de Correlaciones Bioquímicas × Rendimiento</div>
+    <div class="sec-h" data-i18n="bl_key_markers_per_exam">Marcadores Clave por Examen</div>
     <div class="panel">
       <div class="panel-body">
         <table class="corr-t" id="corr-table">
-          <thead><tr><th data-i18n="bl_th_biomarker">Biomarcador</th><th data-i18n="bl_th_signal">Señal de Entrenamiento</th><th data-i18n="bl_th_expected_corr">Correlación esperada</th><th data-i18n="bl_th_action">Acción si correlaciona</th></tr></thead>
+          <thead><tr id="corr-thead"></tr></thead>
           <tbody id="corr-tbody"></tbody>
         </table>
       </div>
@@ -396,159 +361,104 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="data/blood_labs_data.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
-// CONSTANTS
+// HELPERS
 // ══════════════════════════════════════════════════════════════
-function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
-
-var CAT_ORDER  = ['hemograma','muscular','lipidos','enzimas','renal','bioquimica','vitaminas','electrolitos','hormonal'];
-function CAT_LABELS(){ return {
-  hemograma:'🩸 '+_t('bl_cat_hemo','Hemograma'), muscular:'💪 '+_t('bl_cat_musc','Muscular'), lipidos:'🫀 '+_t('bl_cat_lipidperfil','Perfil Lipídico'),
-  enzimas:'⚗️ '+_t('bl_cat_enzimas','Enzimas'), renal:'🫘 '+_t('bl_cat_renalfunc','Función Renal'), bioquimica:'🔬 '+_t('bl_cat_bioquimica','Bioquímica'),
-  vitaminas:'🌟 '+_t('bl_cat_vit','Vitaminas'), electrolitos:'⚡ '+_t('bl_cat_elec','Electrolitos'), hormonal:'🧪 '+_t('bl_cat_horm','Hormonal')
-}; }
-
-var TREND_GROUPS = {
-  hemo: {label:'🩸 Hemograma', groups:[
-    {title:'Hemoglobina & Hematocrito', keys:['hemoglobina','hematocrito']},
-    {title:'Series Celulares', keys:['eritrocitos','leucocitos','plaquetas']},
-    {title:'Índices Eritrocitarios', keys:['vcm','hcm','chcm']},
-    {title:'Sedimentación (Inflamación)', keys:['sedimentacion']}
-  ]},
-  musc: {label:'💪 Muscular', groups:[
-    {title:'CK & LDH — Marcadores Musculares', keys:['ck','ldh']},
-    {title:'Enzimas Hepáticas & Musculares', keys:['got_ast','gpt_alt','ggt','fosfatasas_alc']}
-  ]},
-  lipid:{label:'🫀 Lípidos', groups:[
-    {title:'Perfil de Colesterol', keys:['colesterol_total','hdl','ldl']},
-    {title:'Triglicéridos & Ácido Úrico', keys:['trigliceridos','ac_urico']}
-  ]},
-  vit:  {label:'🌟 Vitaminas', groups:[
-    {title:'Vitaminas D & B12', keys:['vitamina_d','vitamina_b12']}
-  ]},
-  renal:{label:'🫘 Renal', groups:[
-    {title:'Creatinina & TFGe', keys:['creatinina','tfge']},
-    {title:'Nitrógeno Ureico & Urea', keys:['nitrogeno_ureico','urea']}
-  ]},
-  horm: {label:'🧪 Hormonal', groups:[
-    {title:'Tiroides — TSH & FT4', keys:['tsh','ft4']},
-    {title:'PSA Total', keys:['psa_total']}
-  ]},
-  elec: {label:'⚡ Electrolitos', groups:[
-    {title:'Sodio, Potasio & Cloro', keys:['na','k','cl']},
-    {title:'Calcio & Fósforo', keys:['calcio','fosforo']}
-  ]}
-};
-
-var CORR_DATA = [
-  {bm:'CK (Creatinquinasa)', signal:'Carga Aguda (ATL)',
-   corr:'CK sube 24–48h post-esfuerzo intenso (ATL alto). Basal <200 = buena recuperación.',
-   action:'CK > 400 con ATL > 60 por >5 días → reducir carga inmediatamente'},
-  {bm:'LDH', signal:'Forma (TSB)',
-   corr:'LDH elevado con TSB muy negativo indica fatiga acumulada sistémica.',
-   action:'TSB < −20 + LDH > 260 → semana de recuperación activa'},
-  {bm:'Hemoglobina / Hematocrito', signal:'VO₂max estimado',
-   corr:'R ≈ 0.7–0.85. Cada +1 g/dL Hb ≈ +2–3% VO₂max. Capacidad aeróbica directa.',
-   action:'Hb < 14.5 con plateau VO₂max → revisar hierro sérico + ferritina'},
-  {bm:'Vitamina D', signal:'Sleep Score / Body Battery',
-   corr:'VitD bajo (<30) se asocia a peor calidad de sueño y Body Battery reducida.',
-   action:'VitD < 30 + Sleep < 65 → suplementación 2000–4000 UI/d D3+K2'},
-  {bm:'TSH / FT4 (Tiroides)', signal:'HR en reposo / HRV',
-   corr:'Hipotiroidismo → RHR elevada, HRV baja. Hipertiroidismo → RHR > 70 en reposo.',
-   action:'TSH > 3.5 + RHR elevada persistente → evaluación médica endocrinológica'},
-  {bm:'Ácido Úrico', signal:'TSS semanal total',
-   corr:'Se eleva con semanas de TSS > 600. Catabolismo celular intenso por volumen.',
-   action:'Ácido Úrico > 6.5 en período de alta carga → hidratación ++ y descanso'},
-  {bm:'GOT/AST & GPT/ALT', signal:'Carga por deporte',
-   corr:'Se elevan normalmente 24–48h post-entrenamiento muscular intenso.',
-   action:'AST/ALT cronicamente elevados sin esfuerzo reciente → evaluación hepática'},
-  {bm:'Ferritina / Hierro sérico', signal:'Fatiga & Rendimiento en calor',
-   corr:'Ferritina baja → anemia funcional. Correlaciona con caída de potencia y FCmax.',
-   action:'Ferritina < 30 µg/L → suplementación de hierro oral + control en 8 semanas'},
-];
-
-// ══════════════════════════════════════════════════════════════
-// SCORING ENGINE (port of app.py)
-// ══════════════════════════════════════════════════════════════
-var BM   = (window.KL_BLOOD||{}).biomarkers || {};
-var EXAMS = (window.KL_BLOOD||{}).exams || [];
-EXAMS = EXAMS.slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
-
-function score(val, key) {
-  if(val==null || !(key in BM)) return null;
-  var bm = BM[key];
-  var lo = bm.ref_low, hi = bm.ref_high, d = bm.direction||'range';
-  if(d==='lower'){
-    if(val <= hi*0.50) return 96;
-    if(val <= hi*0.75) return 86;
-    if(val <= hi)      return 72;
-    if(val <= hi*1.25) return 45;
-    return 20;
-  } else if(d==='higher'){
-    if(val >= lo*1.30) return 96;
-    if(val >= lo*1.15) return 88;
-    if(val >= lo)      return 72;
-    if(val >= lo*0.85) return 50;
-    return 28;
-  } else {
-    var mid=(lo+hi)/2, half=(hi-lo)/2||1;
-    if(val>=lo && val<=hi) return Math.max(80, Math.round(100 - Math.abs(val-mid)/half*20));
-    if(val < lo) return Math.max(0, Math.round(70 - (lo-val)/half*55));
-    return Math.max(0, Math.round(70 - (val-hi)/half*55));
-  }
-}
-
-function gradeScore(s) {
-  if(s==null) return {label:_t('status_no_data','Sin datos'), color:var_css('--dim')};
-  if(s>=88)   return {label:_t('bl_grade_excellent','Excelente'), color:var_css('--green')};
-  if(s>=74)   return {label:_t('bl_grade_good','Bueno'),     color:var_css('--blue')};
-  if(s>=58)   return {label:_t('bl_grade_monitor','Monitorear'),color:var_css('--amber')};
-  if(s>=42)   return {label:_t('bl_grade_attention','Atención'),  color:'#F97316'};
-  return             {label:_t('bl_grade_alert','Alerta'),    color:var_css('--red')};
+function _t(key, fallback){
+  // window.i18n.t() devuelve la CLAVE CRUDA (no null/undefined) cuando falta
+  // la traducción — varias claves nuevas de esta página todavía no están en
+  // el diccionario i18n.js, así que hay que detectar ese caso explícitamente
+  // para caer al fallback en español en vez de mostrar "bl_algo_sin_traducir".
+  var v = window.i18n ? window.i18n.t(key) : null;
+  return (v && v !== key) ? v : fallback;
 }
 function var_css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
 
-function avgScores(keys, vals) {
-  var sc = keys.map(function(k){ return score(vals[k], k); }).filter(function(s){ return s!=null; });
-  return sc.length ? Math.round(sc.reduce(function(a,b){ return a+b; },0)/sc.length) : null;
+var CAT_ORDER = ['hematologico','vitaminas','minerales','hormonal','inflamacion','metabolico','renal','hepatico'];
+function catMeta(){ return {
+  hematologico: {icon:'🩸', label:_t('bl_cat_hematologico','Hematológico')},
+  vitaminas:    {icon:'🌟', label:_t('bl_cat_vit','Vitaminas')},
+  minerales:    {icon:'🧂', label:_t('bl_cat_minerales','Minerales')},
+  hormonal:     {icon:'🧪', label:_t('bl_cat_horm','Hormonal')},
+  inflamacion:  {icon:'🔥', label:_t('bl_cat_inflamacion','Inflamación')},
+  metabolico:   {icon:'🔬', label:_t('bl_cat_metabolico','Metabólico')},
+  renal:        {icon:'🫘', label:_t('bl_cat_renalfunc','Renal')},
+  hepatico:     {icon:'🫀', label:_t('bl_cat_hepatico','Hepático')},
+}; }
+
+function statusGrade(status){
+  if(status==='ok')       return {label:_t('bl_badge_normal','Normal'),      color:var_css('--green'), badge:'b-ok',   icon:'✅'};
+  if(status==='warning')  return {label:_t('bl_grade_monitor','Monitorear'), color:var_css('--amber'), badge:'b-warn', icon:'🟡'};
+  if(status==='critical') return {label:_t('bl_grade_alert','Alerta'),      color:var_css('--red'),   badge:'b-bad',  icon:'🔴'};
+  return {label:_t('status_no_data','Sin datos'), color:var_css('--dim'), badge:'b-na', icon:'—'};
 }
 
-function refLabel(key) {
-  var bm=BM[key]; if(!bm) return '—';
-  var lo=bm.ref_low, hi=bm.ref_high, d=bm.direction||'range';
-  if(d==='lower')  return '< '+hi;
-  if(d==='higher') return '> '+lo;
-  var los=lo===Math.floor(lo)?String(lo):String(lo);
-  var his=hi===Math.floor(hi)?String(hi):String(hi);
-  return los+' – '+his;
+// ══════════════════════════════════════════════════════════════
+// API — /api/labs/* (blood_lab_routes.py, motor nuevo de análisis)
+// ══════════════════════════════════════════════════════════════
+function apiBase(){ return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api'; }
+function apiToken(){
+  var tok = localStorage.getItem('lx_co_token');
+  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
+  return tok;
 }
-
-function statusBadge(val, key) {
-  if(val==null) return '<span class="badge b-na">—</span>';
-  var bm=BM[key], lo=bm.ref_low, hi=bm.ref_high, d=bm.direction||'range';
-  if(d==='lower'){
-    if(val>hi)         return '<span class="badge b-bad">🔴 '+_t('bl_badge_high','Alto')+'</span>';
-    if(val>hi*0.85)    return '<span class="badge b-warn">🟡 '+_t('bl_badge_limit','Límite')+'</span>';
-    return '<span class="badge b-ok">✅ OK</span>';
-  } else if(d==='higher'){
-    if(val<lo)         return '<span class="badge b-bad">🔴 '+_t('bl_badge_low','Bajo')+'</span>';
-    if(val<lo*1.10)    return '<span class="badge b-warn">🟡 '+_t('bl_badge_limit','Límite')+'</span>';
-    return '<span class="badge b-ok">✅ OK</span>';
-  } else {
-    if(val<lo||val>hi) return '<span class="badge b-bad">🔴 '+_t('bl_badge_outofrange','Fuera rango')+'</span>';
-    if(val<lo*1.08||val>hi*0.92) return '<span class="badge b-warn">🟡 '+_t('bl_badge_limit','Límite')+'</span>';
-    return '<span class="badge b-ok">✅ '+_t('bl_badge_normal','Normal')+'</span>';
-  }
+function authHeaders(extra){
+  var h = {Authorization:'Bearer '+apiToken()};
+  if(extra) for(var k in extra) h[k]=extra[k];
+  return h;
+}
+function apiGet(path){
+  return fetch(apiBase()+path, {headers:authHeaders()})
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
+}
+function apiPost(path, body){
+  return fetch(apiBase()+path, {method:'POST', headers:authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(body||{})})
+    .then(function(r){ return r.json().then(function(data){ return r.ok ? data : Promise.reject(data); }); });
+}
+function apiDelete(path){
+  return fetch(apiBase()+path, {method:'DELETE', headers:authHeaders()})
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
+}
+function apiPatch(path, body){
+  return fetch(apiBase()+path, {method:'PATCH', headers:authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(body||{})})
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
 }
 
 // ══════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════
-var EXAM_IDX  = EXAMS.length - 1; // latest
-var COMP_IDX  = EXAMS.length - 2; // previous
+var MARKERS_CATALOG = {};   // key -> {key,name,unit,cat}
+var EXAMS           = [];   // GET /labs/exams — más recientes primero
+var EXAM_DETAIL     = {};   // id -> detalle completo (cache)
+var CUR_EXAM_ID     = null;
+var CUR_COMP_ID     = null;
+var SUMMARY         = null;
+var TRAINING_IMPACT = null;
+var ALERTS          = [];
+var TIMELINE        = null;
+var CORR            = [];
+var FEATURE_LOCKED  = false;
 var CH = {};
+
+function loadMarkersCatalog(){ return apiGet('/labs/markers').then(function(d){ MARKERS_CATALOG = d||{}; }); }
+function loadExamsList(){
+  return apiGet('/labs/exams').then(function(d){ EXAMS = d||[]; })
+    .catch(function(status){ if(status===403) FEATURE_LOCKED = true; EXAMS=[]; });
+}
+function loadExamDetail(id){
+  if(EXAM_DETAIL[id]) return Promise.resolve(EXAM_DETAIL[id]);
+  return apiGet('/labs/exams/'+id).then(function(d){ EXAM_DETAIL[id]=d; return d; });
+}
+function loadSummary(){ return apiGet('/labs/summary').then(function(d){ SUMMARY=d; }).catch(function(){ SUMMARY=null; }); }
+function loadAlertsList(){ return apiGet('/labs/alerts').then(function(d){ ALERTS=d||[]; }).catch(function(){ ALERTS=[]; }); }
+function loadTrainingImpact(){ return apiGet('/labs/training-impact').then(function(d){ TRAINING_IMPACT=d; }).catch(function(){ TRAINING_IMPACT=null; }); }
+function loadTimeline(){ return apiGet('/labs/timeline').then(function(d){ TIMELINE=d; }).catch(function(){ TIMELINE=null; }); }
+function loadCorrelationOverlay(){ return apiGet('/labs/correlation').then(function(d){ CORR=d||[]; }).catch(function(){ CORR=[]; }); }
+function refreshAfterChange(){
+  return Promise.all([loadExamsList(), loadSummary(), loadTrainingImpact(), loadAlertsList(), loadTimeline(), loadCorrelationOverlay()]);
+}
 
 // ══════════════════════════════════════════════════════════════
 // EXAM SELECTOR
@@ -556,19 +466,35 @@ var CH = {};
 function buildExamSelectors() {
   var sel = document.getElementById('sel-exam');
   var cmp = document.getElementById('sel-comp');
-  sel.innerHTML = ''; cmp.innerHTML = '<option value="-1">'+_t('bl_none','Ninguno')+'</option>';
-  EXAMS.forEach(function(e,i){
-    var o = '<option value="'+i+'">'+e.date+'</option>';
+  sel.innerHTML = ''; cmp.innerHTML = '<option value="">'+_t('bl_none','Ninguno')+'</option>';
+  EXAMS.forEach(function(e){
+    var o = '<option value="'+e.id+'">'+e.date_iso+'</option>';
     sel.innerHTML += o; cmp.innerHTML += o;
   });
-  sel.value = EXAM_IDX;
-  if(COMP_IDX >= 0){ document.getElementById('comp-label').style.display='flex'; cmp.value=COMP_IDX; }
+  if(CUR_EXAM_ID) sel.value = CUR_EXAM_ID;
+  if(CUR_COMP_ID){ document.getElementById('comp-label').style.display='flex'; cmp.value=CUR_COMP_ID; }
+  else { document.getElementById('comp-label').style.display='none'; }
+  document.getElementById('btn-delete-exam').style.display = EXAMS.length ? '' : 'none';
 }
 
 function switchExam() {
-  EXAM_IDX = parseInt(document.getElementById('sel-exam').value);
-  COMP_IDX = parseInt(document.getElementById('sel-comp').value);
-  renderAll();
+  CUR_EXAM_ID = document.getElementById('sel-exam').value || null;
+  CUR_COMP_ID = document.getElementById('sel-comp').value || null;
+  renderExamDependent();
+}
+
+function deleteCurrentExam() {
+  if(!CUR_EXAM_ID) return;
+  if(!confirm(_t('bl_confirm_delete','¿Eliminar este examen? Esta acción no se puede deshacer.'))) return;
+  apiDelete('/labs/exams/'+CUR_EXAM_ID).then(function(){
+    delete EXAM_DETAIL[CUR_EXAM_ID];
+    return refreshAfterChange();
+  }).then(function(){
+    CUR_EXAM_ID = EXAMS.length ? EXAMS[0].id : null;
+    CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+    buildExamSelectors();
+    return renderAll();
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -577,227 +503,191 @@ function switchExam() {
 function renderAll() {
   var emptyState = document.getElementById('resumen-empty-state');
   var content    = document.getElementById('resumen-content');
-  if(!EXAMS.length){
-    if(emptyState) emptyState.style.display = '';
-    if(content)    content.style.display    = 'none';
+  if(FEATURE_LOCKED){
+    emptyState.innerHTML = '<p style="color:var(--dim);padding:2rem">'+_t('bl_feature_locked','Blood Labs Intelligence es una función del plan Elite. Actualiza tu plan para acceder.')+'</p>';
+    emptyState.style.display = ''; content.style.display = 'none';
     return;
   }
-  if(emptyState) emptyState.style.display = 'none';
-  if(content)    content.style.display    = '';
-  var latest = EXAMS[EXAM_IDX];
-  var prev   = COMP_IDX >= 0 && COMP_IDX !== EXAM_IDX ? EXAMS[COMP_IDX] : null;
-  var lv = latest.values;
+  if(!EXAMS.length){
+    emptyState.style.display = ''; content.style.display = 'none';
+    return;
+  }
+  emptyState.style.display = 'none'; content.style.display = '';
 
-  // Exam context label
-  document.getElementById('exam-ctx-lbl').textContent = latest.lab + ' · ' + (latest.context||'');
+  renderSummaryChips();
+  renderAlertsPanel();
+  renderTrainingImpactCards();
+  renderTrendsTab();
+  renderGarminTab();
+  return renderExamDependent();
+}
 
-  // KPIs
-  var mScore = avgScores(['ck','ldh'], lv);
-  var oScore = avgScores(['hemoglobina','hematocrito','eritrocitos'], lv);
-  var nScore = avgScores(['vitamina_d','vitamina_b12','tsh'], lv);
-  var allScore = [mScore,oScore,nScore].filter(function(s){ return s!=null; });
-  var globalScore = allScore.length ? Math.round(allScore.reduce(function(a,b){return a+b;},0)/allScore.length) : null;
-
-  renderKpi('m', mScore, _t('bl_kpi_muscle','Recuperación Muscular'),
-    'CK: '+(lv.ck||'—')+' U/L  ·  LDH: '+(lv.ldh||'—')+' U/L<br>CK refleja daño muscular post-esfuerzo');
-  renderKpi('o', oScore, _t('bl_kpi_o2','Transporte de O₂'),
-    'Hb: '+(lv.hemoglobina||'—')+' g/dL  ·  Hct: '+(lv.hematocrito||'—')+'%<br>Eritrocitos: '+(lv.eritrocitos||'—')+' ×10⁶/µL');
-  renderKpi('n', nScore, _t('bl_kpi_micro2','Micronutrientes'),
-    'Vit D: '+(lv.vitamina_d||'—')+' ng/mL  ·  B12: '+(lv.vitamina_b12||'—')+' pg/mL<br>TSH: '+(lv.tsh||'—')+' uU/mL');
-
-  // Header chips
-  var g = gradeScore(globalScore);
-  document.getElementById('chip-score').textContent = globalScore != null ? globalScore+'/100 — '+g.label : '—';
+function renderSummaryChips() {
   document.getElementById('chip-exams').textContent = EXAMS.length;
-
-  // Alerts
-  var alerts = buildAlerts(latest, prev);
-  document.getElementById('chip-alerts').style.display = alerts.length ? 'inline-flex' : 'none';
-  document.getElementById('chip-alert-n').textContent  = alerts.length;
-  renderAlerts(alerts, latest, prev);
-
-  // Clinical summary
-  renderClinicalSummary(lv, mScore, oScore, nScore);
-
-  // Radar
-  renderRadar(lv);
-
-  // BM table
-  renderBMTable(latest, prev);
-
-  // Garmin tab
-  renderGarminTab(lv, prev);
-
-  // Correlation table
-  renderCorrTable();
-}
-
-function renderKpi(id, s, title, detail) {
-  var g = gradeScore(s);
-  document.getElementById('kpi-'+id+'-score').textContent = s != null ? s+'/100' : '—';
-  document.getElementById('kpi-'+id+'-grade').textContent = g.label;
-  document.getElementById('kpi-'+id+'-grade').style.color = g.color;
-  document.getElementById('kpi-'+id+'-detail').innerHTML  = detail;
-  document.getElementById('kpi-'+id+'-bar').style.width   = (s||0)+'%';
-  document.getElementById('kpi-'+id+'-bar').style.background = g.color;
-  document.getElementById('kpi-'+id+'-score').style.color = g.color;
+  var trs = TRAINING_IMPACT && TRAINING_IMPACT.has_labs ? TRAINING_IMPACT.trs : null;
+  document.getElementById('chip-score').textContent = trs!=null ? trs+'/100' : '—';
+  document.getElementById('chip-alerts').style.display = ALERTS.length ? 'inline-flex' : 'none';
+  document.getElementById('chip-alert-n').textContent  = ALERTS.length;
 }
 
 // ══════════════════════════════════════════════════════════════
-// ALERTS
+// ALERTS (GET /labs/alerts + PATCH dismiss)
 // ══════════════════════════════════════════════════════════════
-function buildAlerts(latest, prev) {
-  if(!prev) return [];
-  var alerts = [];
-  var lv = latest.values, pv = prev.values;
-  Object.keys(BM).forEach(function(k){
-    var vn = lv[k], vo = pv[k];
-    if(vn==null||vo==null||vo===0) return;
-    var dp = (vn-vo)/Math.abs(vo)*100;
-    if(Math.abs(dp) <= 12) return;
-    var bmd = BM[k];
-    var concern = (bmd.direction==='higher' && dp<0) ||
-                  (bmd.direction==='lower'  && dp>0) ||
-                  (bmd.direction==='range'  && Math.abs(dp)>18);
-    alerts.push({key:k, label:bmd.label, old:vo, val:vn, dp:dp,
-                 concern:concern, unit:bmd.unit, icon:dp>0?'📈':'📉'});
-  });
-  alerts.sort(function(a,b){ return Math.abs(b.dp)-Math.abs(a.dp); });
-  return alerts;
-}
-
-function renderAlerts(alerts, latest, prev) {
+function renderAlertsPanel() {
   var el = document.getElementById('alerts-container');
-  if(!prev){ el.innerHTML='<p style="font-size:.78rem;color:var(--dim)">'+_t('bl_only_one_exam','Solo hay un examen registrado. Los cambios se mostrarán tras registrar el segundo examen.')+'</p>'; return; }
-  document.getElementById('alerts-date-label').textContent = '· Δ vs '+prev.date;
-  if(!alerts.length){ el.innerHTML='<div class="alert-box alert-ok"><div class="alert-title">✅ '+_t('bl_no_significant_changes','Sin variaciones significativas')+'</div><p style="font-size:.78rem;color:var(--muted)">'+_t('bl_all_markers_lt12','Todos los marcadores con cambio &lt;12% respecto al examen anterior.')+'</p></div>'; return; }
-  var concern  = alerts.filter(function(a){ return a.concern; });
-  var positive = alerts.filter(function(a){ return !a.concern; });
-  var html='';
-  if(concern.length) html += '<div class="alert-box alert-warn"><div class="alert-title">⚠️ '+_t('bl_needs_attention','Requiere atención')+'</div>'+
-    concern.slice(0,4).map(function(a){
-      return '<div style="font-size:.78rem;margin-bottom:.2rem"><strong>'+a.label+'</strong> '+a.icon+' '+a.old+' → <strong>'+a.val+'</strong> '+a.unit+' ('+a.dp.toFixed(1)+'%)</div>';
-    }).join('')+'</div>';
-  if(positive.length) html += '<div class="alert-box alert-ok"><div class="alert-title">✅ '+_t('bl_improvements_recorded','Mejoras registradas')+'</div>'+
-    positive.slice(0,4).map(function(a){
-      return '<div style="font-size:.78rem;margin-bottom:.2rem"><strong>'+a.label+'</strong> '+a.icon+' '+a.old+' → <strong>'+a.val+'</strong> '+a.unit+' ('+a.dp.toFixed(1)+'%)</div>';
-    }).join('')+'</div>';
-  el.innerHTML = html;
+  if(!ALERTS.length){
+    el.innerHTML = '<div class="alert-box alert-ok"><div class="alert-title">✅ '+_t('bl_no_significant_changes','Sin alertas activas')+'</div></div>';
+    return;
+  }
+  var critical = ALERTS.filter(function(a){ return a.severity==='critical'; });
+  var warning  = ALERTS.filter(function(a){ return a.severity!=='critical'; });
+  function group(list, title){
+    if(!list.length) return '';
+    return '<div class="alert-box alert-warn"><div class="alert-title">'+title+'</div>'+
+      list.map(function(a){
+        return '<div style="font-size:.78rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'+
+          '<span><strong>'+esc(a.title)+'</strong>'+(a.correlation_note?'<br><span style="color:var(--dim)">'+esc(a.correlation_note)+'</span>':'')+'</span>'+
+          '<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="dismissAlertRow(\''+a.id+'\')">✕</button></div>';
+      }).join('')+'</div>';
+  }
+  el.innerHTML = group(critical, '🔴 '+_t('bl_needs_attention','Requiere atención')) +
+                 group(warning,  '🟡 '+_t('bl_grade_monitor','Monitorear'));
+}
+function dismissAlertRow(id) {
+  apiPatch('/labs/alerts/'+id+'/dismiss', {}).then(function(){
+    ALERTS = ALERTS.filter(function(a){ return a.id!==id; });
+    renderAlertsPanel();
+    renderSummaryChips();
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
-// CLINICAL SUMMARY
+// TRS + IMPACTO EN ENTRENAMIENTO (GET /labs/training-impact + /labs/summary)
 // ══════════════════════════════════════════════════════════════
-function renderClinicalSummary(lv, mScore, oScore, nScore) {
+function setKpi(id, scoreText, gradeText, gradeColor, barPct, barColor, detail) {
+  document.getElementById('kpi-'+id+'-score').textContent = scoreText;
+  document.getElementById('kpi-'+id+'-score').style.color = gradeColor||'';
+  document.getElementById('kpi-'+id+'-grade').textContent = gradeText||'';
+  document.getElementById('kpi-'+id+'-grade').style.color = gradeColor||'';
+  document.getElementById('kpi-'+id+'-bar').style.width = (barPct||0)+'%';
+  document.getElementById('kpi-'+id+'-bar').style.background = barColor||'';
+  document.getElementById('kpi-'+id+'-detail').textContent = detail||'';
+}
+
+function renderTrainingImpactCards() {
+  var ti = TRAINING_IMPACT, sm = SUMMARY;
+  if(!ti || !ti.has_labs) {
+    setKpi('trs', '—');
+    setKpi('markers', '—');
+    setKpi('next', '—');
+    document.getElementById('clinical-summary').innerHTML = '<span style="color:var(--dim)">'+_t('bl_load_first_exam','Registra tu primer examen para ver el impacto en tu entrenamiento.')+'</span>';
+    return;
+  }
+  setKpi('trs', ti.trs+'/100', ti.trs_label, ti.trs_color, ti.trs, ti.trs_color,
+    (ti.primary_limiters&&ti.primary_limiters.length) ? ti.primary_limiters.join(', ') : _t('bl_no_limiters','Sin limitantes activos'));
+
+  var okN = sm ? sm.markers_ok : 0, totalN = sm ? sm.total_markers : 0;
+  setKpi('markers', totalN||'—', sm?(sm.markers_critical+' '+_t('bl_critical_label','críticos')+' · '+sm.markers_warning+' '+_t('bl_badge_limit','límite')):'', '',
+    totalN ? Math.round(okN/totalN*100) : 0, 'var(--green)',
+    sm ? (sm.markers_ok+' '+_t('bl_markers_optimal','en rango óptimo')) : '');
+
+  var nextDays = sm ? sm.next_recommended_in_days : null;
+  var overdue  = nextDays!=null && nextDays<=0;
+  setKpi('next', nextDays!=null ? nextDays+'d' : '—',
+    overdue ? _t('bl_overdue','Vencido') : _t('bl_on_track','En plazo'),
+    overdue ? 'var(--red)' : 'var(--green)',
+    nextDays!=null ? Math.max(0,Math.min(100, 100-(nextDays/90*100))) : 0, 'var(--cyan)',
+    sm ? (_t('bl_last_exam_on','Último examen:')+' '+sm.latest_date) : '');
+
   var lines = [];
-  var hb = lv.hemoglobina, ck = lv.ck, vitd = lv.vitamina_d, tsh = lv.tsh;
-
-  if(hb){ if(hb>=15.5) lines.push('🩸 <strong>Hb '+hb+' g/dL</strong> — nivel élite para triatlón. Capacidad aeróbica óptima.');
-         else if(hb>=13.5) lines.push('🩸 <strong>Hb '+hb+' g/dL</strong> — rango normal pero subóptimo para resistencia. Objetivo >15.5 g/dL.');
-         else lines.push('⚠️ <strong>Hb '+hb+' g/dL</strong> — por debajo del rango óptimo. Revisar hierro sérico, ferritina y folatos.'); }
-  if(ck){ if(ck<=250) lines.push('💪 <strong>CK '+ck+' U/L</strong> — basal atleta dentro de rango. Recuperación muscular completa.');
-         else if(ck<=500) lines.push('💪 <strong>CK '+ck+' U/L</strong> — elevada post-esfuerzo. Normal si último entrenamiento fue hace <48h. Monitorear.');
-         else lines.push('⚠️ <strong>CK '+ck+' U/L</strong> — crónicamente elevada. Señal de sobreentrenamiento o recuperación incompleta. Reducir carga.'); }
-  if(vitd){ if(vitd>=40) lines.push('☀️ <strong>Vitamina D '+vitd+' ng/mL</strong> — nivel óptimo para atleta. Inmunidad y fuerza muscular protegidas.');
-            else if(vitd>=30) lines.push('☀️ <strong>Vitamina D '+vitd+' ng/mL</strong> — suficiente pero subóptimo. Considerar 1000–2000 UI/d D3+K2.');
-            else lines.push('⚠️ <strong>Vitamina D '+vitd+' ng/mL</strong> — insuficiente. Suplementar 2000–4000 UI/d D3+K2 y controlar en 3 meses.'); }
-  if(tsh){ if(tsh>=0.4&&tsh<=2.5) lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — función tiroidea óptima. Metabolismo basal estable.');
-           else if(tsh>2.5&&tsh<=4.0) lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — en rango pero en límite superior. Monitorear RHR y HRV.');
-           else lines.push('🧪 <strong>TSH '+tsh+' uU/mL</strong> — fuera de rango. Consultar endocrinología.'); }
-
-  document.getElementById('clinical-summary').innerHTML = lines.length ? lines.join('<br>') : '<span style="color:var(--dim)">'+_t('bl_load_first_exam','Carga el primer examen para ver el resumen clínico.')+'</span>';
+  lines.push('<strong style="color:var(--text)">'+_t('bl_disciplines','Disciplinas')+':</strong> ' +
+    (ti.disciplines||[]).map(function(d){ return esc(d.discipline)+' '+(d.allowed?'✅':'⛔')+(d.notes?' — '+esc(d.notes):''); }).join(' · '));
+  if(ti.supplements && ti.supplements.length) lines.push('<strong style="color:var(--text)">'+_t('bl_supplements','Suplementación')+':</strong> '+ti.supplements.map(esc).join(', '));
+  if(ti.key_actions && ti.key_actions.length) lines.push('<strong style="color:var(--text)">'+_t('bl_key_actions','Acciones clave')+':</strong><br>'+ti.key_actions.map(function(a){ return '• '+esc(a); }).join('<br>'));
+  if(ti.medical_referral) lines.push('<span style="color:var(--red)">⚠️ '+esc(ti.medical_reason||_t('bl_medical_referral','Se recomienda evaluación médica.'))+'</span>');
+  document.getElementById('clinical-summary').innerHTML = lines.join('<br><br>');
 }
 
 // ══════════════════════════════════════════════════════════════
-// RADAR CHART
+// EXAMEN SELECCIONADO: radar + tabla + interpretación IA
+// (GET /labs/exams/{id} — análisis por marcador ya calculado server-side)
 // ══════════════════════════════════════════════════════════════
-function renderRadar(lv) {
-  var axes = [
-    {label:'O₂ Transport', keys:['hemoglobina','hematocrito','eritrocitos']},
-    {label:'Recuperación', keys:['ck','ldh']},
-    {label:'Vitaminas',    keys:['vitamina_d','vitamina_b12']},
-    {label:'Metabolismo',  keys:['glucosa','proteinas_totales','albumina']},
-    {label:'Lípidos',      keys:['hdl','trigliceridos','colesterol_total']},
-    {label:'Renal',        keys:['creatinina','tfge']},
-    {label:'Hormonal',     keys:['tsh','ft4']},
-    {label:'Electrolitos', keys:['na','k','cl']},
-  ];
-  var data = axes.map(function(a){ return avgScores(a.keys, lv) || 0; });
+function renderExamDependent() {
+  if(!CUR_EXAM_ID) return Promise.resolve();
+  var tasks = [loadExamDetail(CUR_EXAM_ID)];
+  if(CUR_COMP_ID) tasks.push(loadExamDetail(CUR_COMP_ID));
+  return Promise.all(tasks).then(function(results){
+    var cur = results[0], comp = results[1]||null;
+    document.getElementById('exam-ctx-lbl').textContent = (cur.lab_name||'') + ' · ' + (cur.context||'');
+    var aiBox = document.getElementById('ai-interpretation-box');
+    aiBox.textContent = (cur.ai_interpretation && cur.ai_interpretation.text) ? cur.ai_interpretation.text : '—';
+    renderRadar(cur);
+    renderBMTable(cur, comp);
+  });
+}
 
-  if(CH.radar){ CH.radar.destroy(); }
+function renderRadar(exam) {
+  var cm = catMeta();
+  var byCat = {}; CAT_ORDER.forEach(function(c){ byCat[c]=[]; });
+  Object.keys(exam.markers||{}).forEach(function(k){
+    var m = exam.markers[k];
+    if(m.cat && byCat[m.cat]) byCat[m.cat].push(m.pct!=null?m.pct:50);
+  });
+  var labels=[], data=[];
+  CAT_ORDER.forEach(function(c){
+    if(!byCat[c].length) return;
+    labels.push(cm[c].icon+' '+cm[c].label);
+    data.push(Math.round(byCat[c].reduce(function(a,b){return a+b;},0)/byCat[c].length));
+  });
+  if(CH.radar) CH.radar.destroy();
+  if(!labels.length) return;
   CH.radar = new Chart(document.getElementById('ch-radar'), {
     type:'radar',
-    data:{
-      labels: axes.map(function(a){ return a.label; }),
-      datasets:[{
-        label:'Score bioquímico',
-        data: data,
-        backgroundColor:'rgba(14,165,233,.12)',
-        borderColor:'rgba(14,165,233,.7)',
-        borderWidth:2.5,
-        pointBackgroundColor:'#0EA5E9',
-        pointBorderColor:'#fff',
-        pointRadius:4,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},
-                 grid:{color:'rgba(8,116,174,.18)'},
-                 pointLabels:{color:'#7FB3CC',font:{family:'Oswald',size:11,weight:'600'}},
-                 angleLines:{color:'rgba(8,116,174,.12)'}}},
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(c){ return c.label+': '+c.raw+'/100'; }}}}
+    data:{ labels:labels, datasets:[{ label:_t('bl_biochem_score','Score bioquímico'), data:data,
+      backgroundColor:'rgba(14,165,233,.12)', borderColor:'rgba(14,165,233,.7)', borderWidth:2.5,
+      pointBackgroundColor:'#0EA5E9', pointBorderColor:'#fff', pointRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ min:0, max:100, ticks:{display:false,stepSize:25}, grid:{color:'rgba(8,116,174,.18)'},
+        pointLabels:{color:'#7FB3CC', font:{family:'Oswald', size:11, weight:'600'}}, angleLines:{color:'rgba(8,116,174,.12)'} } },
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){ return c.label+': '+c.raw+'/100'; }}} }
     }
   });
 }
 
-// ══════════════════════════════════════════════════════════════
-// BIOMARKER TABLE
-// ══════════════════════════════════════════════════════════════
-function renderBMTable(latest, prev) {
-  var lv = latest.values;
-  var pv = prev ? prev.values : {};
+function renderBMTable(cur, comp) {
+  var cm = catMeta();
+  var curM  = cur.markers||{};
+  var compM = comp ? (comp.markers||{}) : {};
   var html = '';
   CAT_ORDER.forEach(function(cat){
-    var keys = Object.keys(BM).filter(function(k){ return BM[k].category===cat; });
-    var rows = keys.filter(function(k){ return lv[k]!=null||pv[k]!=null; });
-    if(!rows.length) return;
+    var keys = Object.keys(curM).filter(function(k){ return curM[k].cat===cat; });
+    if(!keys.length) return;
     html += '<div class="bm-category panel">';
-    html += '<div class="bm-cat-head" onclick="toggleCat(this)">';
-    html += CAT_LABELS()[cat]||cat;
-    html += ' <span style="margin-left:auto;opacity:.5;font-size:.85em;font-weight:400">▾</span></div>';
+    html += '<div class="bm-cat-head" onclick="toggleCat(this)">'+cm[cat].icon+' '+cm[cat].label+' <span style="margin-left:auto;opacity:.5;font-size:.85em;font-weight:400">▾</span></div>';
     html += '<div class="bm-cat-body">';
-    html += '<table class="bm-t"><thead><tr><th>'+_t('bl_th_marker','Marcador')+'</th><th>'+_t('bl_th_reference','Referencia')+'</th>';
-    if(prev) html += '<th>'+prev.date+'</th>';
-    html += '<th>'+latest.date+'</th><th>Δ</th><th>'+_t('bl_th_status','Estado')+'</th></tr></thead><tbody>';
-    rows.forEach(function(k){
-      var bmd = BM[k];
-      var vn  = lv[k], vo = pv[k];
-      var delta='<span class="delta-no">—</span>';
-      if(vn!=null && vo!=null && vo!==0){
-        var dp=(vn-vo)/Math.abs(vo)*100;
-        var arrow=dp>0?'▲':'▼';
-        var cls=dp>0?'delta-up':'delta-dn';
-        delta='<span class="bm-delta '+cls+'">'+arrow+' '+Math.abs(dp).toFixed(1)+'%</span>';
+    html += '<table class="bm-t"><thead><tr><th>'+_t('bl_th_marker','Marcador')+'</th>';
+    if(comp) html += '<th>'+comp.date_iso+'</th>';
+    html += '<th>'+cur.date_iso+'</th><th>Δ</th><th>'+_t('bl_th_status','Estado')+'</th></tr></thead><tbody>';
+    keys.forEach(function(k){
+      var m = curM[k], cv = compM[k];
+      var delta = '<span class="delta-no">—</span>';
+      if(cv && cv.value!=null && m.value!=null && cv.value!==0){
+        var dp = (m.value-cv.value)/Math.abs(cv.value)*100;
+        delta = '<span class="bm-delta '+(dp>0?'delta-up':'delta-dn')+'">'+(dp>0?'▲':'▼')+' '+Math.abs(dp).toFixed(1)+'%</span>';
       }
-      var sc = score(vn, k);
-      var g  = gradeScore(sc);
+      var sg = statusGrade(m.status);
       html += '<tr>';
-      html += '<td><div class="bm-name">'+bmd.label+'</div><div class="bm-unit">'+bmd.unit+'</div></td>';
-      html += '<td class="bm-ref">'+refLabel(k)+'</td>';
-      if(prev) html += '<td class="bm-val" style="color:var(--dim)">'+(vo!=null?vo:'—')+'</td>';
-      html += '<td class="bm-val" style="color:'+g.color+'">'+(vn!=null?vn:'—')+'</td>';
+      html += '<td><div class="bm-name">'+esc(m.name)+'</div><div class="bm-unit">'+esc(m.unit)+'</div></td>';
+      if(comp) html += '<td class="bm-val" style="color:var(--dim)">'+(cv&&cv.value!=null?cv.value:'—')+'</td>';
+      html += '<td class="bm-val" style="color:'+sg.color+'">'+(m.value!=null?m.value:'—')+'</td>';
       html += '<td>'+delta+'</td>';
-      html += '<td>'+statusBadge(vn,k)+'</td>';
+      html += '<td><span class="badge '+sg.badge+'">'+sg.icon+' '+sg.label+'</span></td>';
       html += '</tr>';
-      if(bmd.athlete_note){
-        html += '<tr><td colspan="'+(prev?6:5)+'" class="bm-note">📋 '+bmd.athlete_note+'</td></tr>';
-      }
+      if(m.tip) html += '<tr><td colspan="'+(comp?5:4)+'" class="bm-note">📋 '+esc(m.tip)+'</td></tr>';
     });
     html += '</tbody></table></div></div>';
   });
-  document.getElementById('bm-table-container').innerHTML = html;
+  document.getElementById('bm-table-container').innerHTML = html || '<p style="color:var(--dim);font-size:.8rem">'+_t('bl_no_markers','Sin marcadores en este examen.')+'</p>';
 }
 
 function toggleCat(head) {
@@ -808,301 +698,176 @@ function toggleCat(head) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TRENDS TAB
+// INTERPRETACIÓN IA (POST /labs/exams/{id}/analyze)
 // ══════════════════════════════════════════════════════════════
-var CUR_STAB = 'hemo';
-function switchStab(id, btn) {
-  document.querySelectorAll('.stab-btn').forEach(function(b){ b.classList.remove('on'); });
-  btn.classList.add('on');
-  CUR_STAB = id;
-  renderTrends(id);
+function runAiAnalysis() {
+  if(!CUR_EXAM_ID) return;
+  var btn = document.getElementById('btn-ai-analyze');
+  var box = document.getElementById('ai-interpretation-box');
+  btn.disabled = true; btn.style.opacity = .6;
+  box.textContent = _t('bl_ai_loading','Generando interpretación con IA — puede tomar unos segundos…');
+  apiPost('/labs/exams/'+CUR_EXAM_ID+'/analyze', {}).then(function(d){
+    box.textContent = d.interpretation || '—';
+    delete EXAM_DETAIL[CUR_EXAM_ID];
+  }).catch(function(err){
+    box.textContent = '⚠️ '+_t('bl_ai_failed','No se pudo generar la interpretación.')+(err&&err.errors&&err.errors[0]?(' '+err.errors[0].message):'');
+  }).then(function(){ btn.disabled=false; btn.style.opacity=1; });
 }
 
-function renderTrends(groupId) {
-  var group = TREND_GROUPS[groupId];
-  if(!group) return;
+// ══════════════════════════════════════════════════════════════
+// TENDENCIAS (GET /labs/timeline)
+// ══════════════════════════════════════════════════════════════
+var TIMELINE_MARKERS = {
+  ferritin:  {label:'Ferritina',    unit:'ng/mL'},
+  hemoglobin:{label:'Hemoglobina',  unit:'g/dL'},
+  cortisol:  {label:'Cortisol',     unit:'μg/dL'},
+  vitamin_d: {label:'Vitamina D',   unit:'ng/mL'},
+  ck:        {label:'CK',           unit:'U/L'},
+  hba1c:     {label:'HbA1c',        unit:'%'},
+  urea:      {label:'Urea',         unit:'mmol/L'},
+};
+
+function renderTrendsTab() {
+  var info = document.getElementById('trends-stabs-bar');
   var container = document.getElementById('trend-content');
+  var tl = TIMELINE && TIMELINE.timeline ? TIMELINE.timeline : [];
+  Object.keys(CH).filter(function(k){ return k.indexOf('tr-')===0; }).forEach(function(k){ CH[k].destroy(); delete CH[k]; });
 
-  // Build date series
-  var dates = EXAMS.map(function(e){ return e.date; });
+  if(tl.length < 2){
+    info.innerHTML = '';
+    container.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+_t('bl_no_data_category','Sin suficientes exámenes para ver tendencias (mínimo 2).')+'</p>';
+    return;
+  }
+  var dr = TIMELINE.date_range || {};
+  info.innerHTML = '<span style="font-size:.72rem;color:var(--dim);padding:.3rem .6rem">'+tl.length+' '+_t('bl_exams_label','exámenes')+' · '+(dr.from||'')+' → '+(dr.to||'')+'</span>';
 
-  var html = '';
-  group.groups.forEach(function(g, gi){ html += '<div class="sec-h" style="margin-top:'+(gi?'1.5rem':'0')+'">'+ g.title +'</div><div id="tg-'+gi+'" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem;margin-bottom:1.2rem"></div>'; });
-  container.innerHTML = html;
+  var dates = tl.map(function(t){ return t.exam_date; });
+  var available = Object.keys(TIMELINE_MARKERS).filter(function(k){ return tl.some(function(t){ return t[k]!=null; }); });
+  if(!available.length){ container.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+_t('bl_no_data_category','Sin datos para graficar.')+'</p>'; return; }
 
-  Object.keys(CH).filter(function(k){ return k.startsWith('tr-'); }).forEach(function(k){ if(CH[k]){ CH[k].destroy(); delete CH[k]; } });
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem">' +
+    available.map(function(k){
+      return '<div class="ch-box"><div class="ch-title">'+TIMELINE_MARKERS[k].label+'</div><div class="ch-sub">'+TIMELINE_MARKERS[k].unit+'</div>'+
+        '<div style="position:relative;height:160px"><canvas id="trend-'+k+'"></canvas></div></div>';
+    }).join('') + '</div>';
 
-  group.groups.forEach(function(g, gi){
-    var available = g.keys.filter(function(k){ return EXAMS.some(function(e){ return e.values[k]!=null; }); });
-    if(!available.length){ document.getElementById('tg-'+gi).innerHTML='<p style="font-size:.78rem;color:var(--dim)">'+_t('bl_no_data_category','Sin datos para esta categoría.')+'</p>'; return; }
-    available.forEach(function(key){
-      var bmd = BM[key]||{label:key, unit:''};
-      var vals = EXAMS.map(function(e){ return e.values[key]!=null ? e.values[key] : null; });
-      var colors = vals.map(function(v){ var s=score(v,key), g=gradeScore(s); return g.color; });
-      var cid = 'trend-'+gi+'-'+key;
-      var box = document.createElement('div');
-      box.className = 'ch-box';
-      box.innerHTML = '<div class="ch-title">'+bmd.label+'</div><div class="ch-sub">Referencia: '+refLabel(key)+' '+bmd.unit+'</div><div style="position:relative;height:160px"><canvas id="'+cid+'"></canvas></div>';
-      document.getElementById('tg-'+gi).appendChild(box);
-
-      var latest = vals[vals.length-1], oldest = vals[0];
-      var trend = (latest!=null&&oldest!=null&&oldest!==0) ? (latest-oldest)/Math.abs(oldest) : 0;
-      var lineColor = trend >= 0 ? '#10B981' : '#EF4444';
-
-      CH['tr-'+cid] = new Chart(document.getElementById(cid), {
-        type:'line',
-        data:{
-          labels: dates,
-          datasets:[{
-            label: bmd.label,
-            data: vals,
-            borderColor: lineColor,
-            backgroundColor: 'rgba(14,165,233,.06)',
-            pointBackgroundColor: colors,
-            pointBorderColor: '#fff',
-            pointRadius: 8,
-            pointBorderWidth: 2,
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.3,
-            spanGaps: true,
-          }]
-        },
-        options:{
-          responsive:true,maintainAspectRatio:false,
-          plugins:{
-            legend:{display:false},
-            tooltip:{callbacks:{label:function(c){ return c.parsed.y+' '+bmd.unit; }}}
-          },
-          scales:{
-            x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
-            y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'}}
-          }
-        }
-      });
+  available.forEach(function(k){
+    var vals = tl.map(function(t){ return t[k]!=null?t[k]:null; });
+    var canvas = document.getElementById('trend-'+k);
+    if(!canvas) return;
+    CH['tr-'+k] = new Chart(canvas, {
+      type:'line',
+      data:{ labels:dates, datasets:[{ label:TIMELINE_MARKERS[k].label, data:vals,
+        borderColor:'#0EA5E9', backgroundColor:'rgba(14,165,233,.06)', pointBackgroundColor:'#0EA5E9',
+        pointBorderColor:'#fff', pointRadius:6, borderWidth:2.5, fill:false, tension:.3, spanGaps:true }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){ return c.parsed.y+' '+TIMELINE_MARKERS[k].unit; }}} },
+        scales:{ x:{ticks:{color:'#3D6880',font:{size:9}}, grid:{color:'rgba(8,116,174,.06)'}},
+                 y:{ticks:{color:'#3D6880',font:{size:9}}, grid:{color:'rgba(8,116,174,.08)'}} }
+      }
     });
   });
 }
 
 // ══════════════════════════════════════════════════════════════
-// GARMIN TAB
+// CORRELACIÓN GARMIN (GET /labs/correlation)
 // ══════════════════════════════════════════════════════════════
-function renderGarminTab(lv, prev) {
-  // CK / LDH trend
-  if(CH.ckldh){ CH.ckldh.destroy(); }
-  var dates = EXAMS.map(function(e){ return e.date; });
-  var ckVals  = EXAMS.map(function(e){ return e.values.ck||null; });
-  var ldhVals = EXAMS.map(function(e){ return e.values.ldh||null; });
-  CH.ckldh = new Chart(document.getElementById('ch-ck-ldh'), {
-    type:'line',
-    data:{labels:dates, datasets:[
-      {label:'CK (U/L)', data:ckVals, borderColor:'#A855F7',
-       backgroundColor:'rgba(168,85,247,.08)', pointBackgroundColor:'#A855F7',
-       pointBorderColor:'#fff', pointRadius:8, borderWidth:2.5, fill:false, tension:.3, spanGaps:true},
-      {label:'LDH (U/L)', data:ldhVals, borderColor:'#F59E0B',
-       backgroundColor:'rgba(245,158,11,.08)', pointBackgroundColor:'#F59E0B',
-       pointBorderColor:'#fff', pointRadius:8, borderWidth:2.5, fill:false, tension:.3, spanGaps:true, borderDash:[6,3]}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
-              y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'},
-                 title:{display:true,text:'U/L',color:'#3D6880',font:{size:10}}}},
-      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}},
-        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+' U/L';}}},
-        annotation:{annotations:{ck_zone:{type:'box',yMin:80,yMax:250,backgroundColor:'rgba(16,185,129,.05)',borderColor:'rgba(16,185,129,.3)',borderWidth:1}}}}
-    }
-  });
+function renderGarminTab() {
+  var rows = CORR||[];
+  if(CH.ctlOverlay){ CH.ctlOverlay.destroy(); CH.ctlOverlay=null; }
+  var canvas = document.getElementById('ch-ctl-overlay');
+  if(!rows.length){
+    if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  } else if(canvas){
+    var dates = rows.map(function(r){ return r.date_iso; });
+    CH.ctlOverlay = new Chart(canvas, {
+      type:'line',
+      data:{ labels:dates, datasets:[
+        {label:'CTL', data:rows.map(function(r){return r.ctl;}),  borderColor:'#10B981', pointRadius:6, borderWidth:2.5, fill:false, tension:.3, spanGaps:true},
+        {label:'ATL', data:rows.map(function(r){return r.atl;}),  borderColor:'#FF6535', pointRadius:6, borderWidth:2,   fill:false, tension:.3, spanGaps:true, borderDash:[5,3]},
+        {label:'TSB', data:rows.map(function(r){return r.tsb;}),  borderColor:'#F0A500', pointRadius:6, borderWidth:2,   fill:false, tension:.3, spanGaps:true, borderDash:[2,2]},
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}} },
+        scales:{ x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
+                 y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'}} }
+      }
+    });
+  }
 
-  var ck = lv.ck||0, ldh = lv.ldh||0;
-  document.getElementById('ck-interpretation').innerHTML =
-    '<h4>Interpretación Muscular</h4>'+
-    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(ck<=250?'var(--green)':ck<=500?'var(--amber)':'var(--red)')+'">'+ck+' U/L</div><div class="metric-mini-l">CK (Creatinquinasa)</div><div class="metric-mini-d">'+(ck<=250?'✅ Basal atleta — recuperación completa':ck<=500?'🟡 Elevado post-esfuerzo — normal si <48h':'⚠️ Crónicamente elevado — reducir carga')+'</div></div>'+
-    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(ldh<=220?'var(--green)':ldh<=280?'var(--amber)':'var(--red)')+'">'+ldh+' U/L</div><div class="metric-mini-l">LDH</div><div class="metric-mini-d">'+(ldh<=220?'✅ Nivel óptimo de atleta':ldh<=280?'🟡 En límite superior':'⚠️ Elevado — fatiga sistémica')+'</div></div>'+
-    '<p style="font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:.6rem"><strong style="color:var(--text)">Contexto deportivo:</strong> CK sube 24–48h post-sesión intensa y regresa al basal en 3–5d. CK basal &gt;500 U/L de forma crónica indica sobreentrenamiento o recuperación incompleta.</p>';
-
-  // Hb / Hct
-  if(CH.hbhct){ CH.hbhct.destroy(); }
-  var hbVals  = EXAMS.map(function(e){ return e.values.hemoglobina||null; });
-  var hctVals = EXAMS.map(function(e){ return e.values.hematocrito||null; });
-  CH.hbhct = new Chart(document.getElementById('ch-hb-hct'), {
-    type:'line',
-    data:{labels:dates, datasets:[
-      {label:'Hemoglobina (g/dL)', data:hbVals, borderColor:'#EF4444',
-       pointBackgroundColor:'#EF4444', pointBorderColor:'#fff', pointRadius:8,
-       borderWidth:2.5, fill:false, tension:.3, spanGaps:true, yAxisID:'y'},
-      {label:'Hematocrito (%)', data:hctVals, borderColor:'#F59E0B',
-       pointBackgroundColor:'#F59E0B', pointBorderColor:'#fff', pointRadius:8,
-       borderWidth:2, fill:false, tension:.3, spanGaps:true, borderDash:[5,3], yAxisID:'y2'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{
-        x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
-        y:{ticks:{color:'#3D6880',font:{size:10}},title:{display:true,text:'g/dL',color:'#3D6880',font:{size:10}},
-           grid:{color:'rgba(8,116,174,.08)'},min:13,max:19},
-        y2:{position:'right',ticks:{color:'#F59E0B',font:{size:10}},title:{display:true,text:'%',color:'#F59E0B',font:{size:10}},
-            grid:{display:false},min:38,max:56}
-      },
-      plugins:{legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}}}
-    }
-  });
-
-  var hb = lv.hemoglobina||0, hct = lv.hematocrito||0;
-  var athProfile = JSON.parse(localStorage.getItem('kl_athlete_data')||'{}');
-  var vo2r = athProfile.vo2max || 57;
-  var hbFactor = hb ? Math.round((hb-15.5)/15.5*100*10)/10 : 0;
-  document.getElementById('hb-vo2-card').innerHTML =
-    '<h4>Ecuación de Fick & VO₂max</h4>'+
-    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(hb>=15.5?'var(--green)':hb>=13.5?'var(--amber)':'var(--red)')+'">'+hb+' g/dL</div><div class="metric-mini-l">Hemoglobina actual</div><div class="metric-mini-d">Óptimo resistencia: &gt;15.5 g/dL</div></div>'+
-    '<div class="metric-mini"><div class="metric-mini-n" style="color:var(--cyan)">'+vo2r+'</div><div class="metric-mini-l">VO₂max estimado (Garmin)</div><div class="metric-mini-d">Hb factor: '+(hbFactor>=0?'+':'')+hbFactor+'% impacto teórico</div></div>'+
-    '<p style="font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:.6rem"><strong style="color:var(--text)">Ecuación de Fick:</strong> VO₂max = CO × (CaO₂ − CvO₂)<br>donde CaO₂ ∝ [Hb]. Cada +1 g/dL Hb ≈ <strong>+2–3% en VO₂max</strong>.</p>'+
-    '<ul style="font-size:.7rem;color:var(--dim);margin:.4rem 0 0 1rem;line-height:1.6">'+
-    '<li>Hct 45–52% = óptimo para resistencia</li>'+
-    '<li>Hct &gt;52% sin causas claras → investigar</li>'+
-    '<li>Hb &lt;14.5 con VO₂ plateau → revisar Fe + ferritina</li>'+
-    '</ul>';
-
-  // Vit D
-  if(CH.vitd){ CH.vitd.destroy(); }
-  var vdVals = EXAMS.map(function(e){ return e.values.vitamina_d||null; });
-  CH.vitd = new Chart(document.getElementById('ch-vitd'), {
-    type:'line',
-    data:{labels:dates, datasets:[{
-      label:'Vitamina D (ng/mL)', data:vdVals,
-      borderColor:'#F59E0B', backgroundColor:'rgba(245,158,11,.06)',
-      pointBackgroundColor:vdVals.map(function(v){ return v>=40?'#10B981':v>=30?'#F59E0B':'#EF4444'; }),
-      pointBorderColor:'#fff', pointRadius:10, borderWidth:3, fill:true, tension:.3, spanGaps:true
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{
-        x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
-        y:{ticks:{color:'#3D6880',font:{size:10}},title:{display:true,text:'ng/mL',color:'#3D6880',font:{size:10}},
-           grid:{color:'rgba(8,116,174,.08)'},min:0}
-      },
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(c){return 'Vit D: '+c.parsed.y+' ng/mL';}}}}
-    }
-  });
-
-  var vd = lv.vitamina_d||0;
-  var vdStatus = vd>=40?'✅ Óptimo para atleta (40–70 ng/mL)':vd>=30?'🟡 Subóptimo — considera suplementar':'🔴 Insuficiente — suplementar urgente';
-  document.getElementById('vitd-card').innerHTML =
-    '<h4>Vitamina D & Rendimiento</h4>'+
-    '<div class="metric-mini"><div class="metric-mini-n" style="color:'+(vd>=40?'var(--green)':vd>=30?'var(--amber)':'var(--red)')+'">'+vd+' ng/mL</div><div class="metric-mini-l">Vitamina D actual</div><div class="metric-mini-d">'+vdStatus+'</div></div>'+
-    '<ul style="font-size:.72rem;color:var(--dim);margin:.5rem 0 0 1rem;line-height:1.7">'+
-    '<li><strong style="color:var(--text)">Fuerza muscular:</strong> ↓VitD → ↓contractilidad y potencia</li>'+
-    '<li><strong style="color:var(--text)">Inmunidad:</strong> ↓VitD → mayor riesgo ITRS post-esfuerzo</li>'+
-    '<li><strong style="color:var(--text)">Hueso:</strong> Estrés repetitivo run+bike — protección ósea</li>'+
-    '<li><strong style="color:var(--text)">Sueño:</strong> Receptores VDR en hipocampo (calidad sueño)</li>'+
-    '</ul>'+
-    (vd<40?'<p style="font-size:.72rem;color:var(--amber);margin-top:.6rem">💊 Recomendación: <strong>2000–4000 UI/d D3 + K2</strong> · Control en 3 meses</p>':'');
+  var allKeys = {};
+  rows.forEach(function(r){ Object.keys(r.values||{}).forEach(function(k){ allKeys[k]=true; }); });
+  var keys = Object.keys(allKeys);
+  document.getElementById('corr-thead').innerHTML = '<th>'+_t('bl_th_date','Fecha')+'</th>'+
+    keys.map(function(k){ return '<th>'+esc((MARKERS_CATALOG[k]&&MARKERS_CATALOG[k].name)||k)+'</th>'; }).join('')+'<th>CTL</th>';
+  document.getElementById('corr-tbody').innerHTML = rows.length ? rows.map(function(r){
+    return '<tr><td class="corr-bm">'+r.date_iso+'</td>'+
+      keys.map(function(k){ var v=(r.values||{})[k]; return '<td>'+(v!=null?v:'—')+'</td>'; }).join('')+
+      '<td>'+(r.ctl!=null?r.ctl:'—')+'</td></tr>';
+  }).join('') : '<tr><td colspan="99" style="color:var(--dim)">'+_t('bl_no_exams','Sin exámenes.')+'</td></tr>';
 }
 
 // ══════════════════════════════════════════════════════════════
-// CORRELATION TABLE
+// REGISTRAR EXAMEN (GET /labs/markers → form dinámico, POST /labs/exams)
 // ══════════════════════════════════════════════════════════════
-function renderCorrTable() {
-  var html = CORR_DATA.map(function(r){
-    return '<tr><td class="corr-bm">'+r.bm+'</td><td style="color:var(--muted)">'+r.signal+'</td><td style="color:var(--muted)">'+r.corr+'</td><td class="corr-action">'+r.action+'</td></tr>';
-  }).join('');
-  document.getElementById('corr-tbody').innerHTML = html;
-}
-
-// ══════════════════════════════════════════════════════════════
-// IMPORT EXAM FORM
-// ══════════════════════════════════════════════════════════════
-function FORM_CATS(){ var L = CAT_LABELS(); return [
-  {label:L.hemograma, keys:['hemoglobina','hematocrito','eritrocitos','vcm','hcm','chcm','leucocitos','plaquetas','sedimentacion']},
-  {label:L.muscular, keys:['ck','ldh']},
-  {label:'🫀 '+_t('bl_cat_lipid','Lípidos'), keys:['colesterol_total','hdl','ldl','trigliceridos','ac_urico']},
-  {label:L.enzimas, keys:['got_ast','gpt_alt','ggt','fosfatasas_alc','bilirrubina_total']},
-  {label:'🫘 '+_t('bl_cat_renal','Renal'), keys:['creatinina','tfge','nitrogeno_ureico','urea']},
-  {label:L.bioquimica, keys:['glucosa','proteinas_totales','albumina','globulinas']},
-  {label:L.vitaminas, keys:['vitamina_d','vitamina_b12']},
-  {label:L.electrolitos, keys:['na','k','cl','calcio','fosforo']},
-  {label:L.hormonal, keys:['tsh','ft4','psa_total']},
-]; }
-
 function buildForm() {
-  var html = '';
-  FORM_CATS().forEach(function(cat){
-    html += '<div class="form-cat-head">'+cat.label+'</div><div class="form-grid">';
-    cat.keys.forEach(function(k){
-      var bmd = BM[k]||{label:k,unit:'',ref_low:0,ref_high:0};
-      html += '<div class="form-field"><label class="form-label">'+bmd.label+' ('+bmd.unit+')</label>'+
-        '<input type="number" step="any" class="form-input" id="fi-'+k+'" placeholder="'+refLabel(k)+'">'+
-        '<div class="form-note">'+(bmd.athlete_note||'')+'</div></div>';
+  var cm = catMeta();
+  var byCat = {}; CAT_ORDER.forEach(function(c){ byCat[c]=[]; });
+  Object.keys(MARKERS_CATALOG).forEach(function(k){
+    var m = MARKERS_CATALOG[k];
+    if(byCat[m.cat]) byCat[m.cat].push(m);
+  });
+  var html = '', guide = '';
+  CAT_ORDER.forEach(function(cat){
+    var markers = byCat[cat];
+    if(!markers.length) return;
+    html  += '<div class="form-cat-head">'+cm[cat].icon+' '+cm[cat].label+'</div><div class="form-grid">';
+    guide += '<p style="font-family:\'Oswald\',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.9rem 0 .3rem">'+cm[cat].icon+' '+cm[cat].label+'</p>';
+    markers.forEach(function(m){
+      html  += '<div class="form-field"><label class="form-label">'+esc(m.name)+' ('+esc(m.unit)+')</label>'+
+        '<input type="number" step="any" class="form-input" id="fi-'+m.key+'"></div>';
+      guide += '<p><strong style="color:var(--text)">'+esc(m.name)+'</strong> ('+esc(m.unit)+')</p>';
     });
     html += '</div>';
   });
   document.getElementById('form-cats-container').innerHTML = html;
-
-  // Set today's date
-  var today = new Date().toISOString().slice(0,10);
-  document.getElementById('inp-date').value = today;
-
-  // Guide panel
-  var guide = '';
-  CAT_ORDER.forEach(function(cat){
-    var keys = Object.keys(BM).filter(function(k){ return BM[k].category===cat; });
-    if(!keys.length) return;
-    guide += '<p style="font-family:\'Oswald\',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.9rem 0 .3rem">'+CAT_LABELS()[cat]+'</p>';
-    keys.forEach(function(k){
-      var bmd=BM[k];
-      guide += '<p><strong style="color:var(--text)">'+bmd.label+'</strong> ('+bmd.unit+') — Ref: '+refLabel(k)+' · '+bmd.athlete_note+'</p>';
-    });
-  });
   document.getElementById('guide-panel').innerHTML = guide;
+  document.getElementById('inp-date').value = new Date().toISOString().slice(0,10);
 }
 
 function saveExam() {
   var dateVal = document.getElementById('inp-date').value;
   if(!dateVal){ showSaveMsg('⚠️ '+_t('bl_select_date','Selecciona la fecha del examen'),'err'); return; }
   var values = {};
-  FORM_CATS().forEach(function(cat){
-    cat.keys.forEach(function(k){
-      var el = document.getElementById('fi-'+k);
-      if(el && el.value !== '') values[k] = parseFloat(el.value);
-    });
+  Object.keys(MARKERS_CATALOG).forEach(function(k){
+    var el = document.getElementById('fi-'+k);
+    if(el && el.value !== '') values[k] = parseFloat(el.value);
   });
   if(!Object.keys(values).length){ showSaveMsg('⚠️ '+_t('bl_enter_one_value','Ingresa al menos un valor de marcador'),'err'); return; }
 
-  var newExam = {
-    date: dateVal,
-    lab: document.getElementById('inp-lab').value || _t('bl_clinical_lab_default','Laboratorio Clínico'),
-    context: document.getElementById('inp-ctx').value || '',
-    values: values
-  };
-
-  var tok = _blApiToken();
-  if(!tok){ showSaveMsg('⚠️ '+_t('bl_session_expired','Sesión expirada — volvé a iniciar sesión para guardar.'),'err'); return; }
-
-  fetch(_blApiBase()+'/athlete/blood-labs', {
-    method: 'POST', headers: {'Content-Type':'application/json', Authorization:'Bearer '+tok},
-    body: JSON.stringify({
-      date_iso: newExam.date, lab_name: newExam.lab, context: newExam.context,
-      values_json: JSON.stringify(values)
-    })
-  }).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(row){
-      var savedExam = _examFromRow(row);
-      var idx = EXAMS.findIndex(function(e){ return e.date === dateVal; });
-      if(idx >= 0){ EXAMS[idx] = savedExam; }
-      else { EXAMS.push(savedExam); EXAMS.sort(function(a,b){ return a.date<b.date?-1:1; }); }
-
-      EXAM_IDX = EXAMS.length-1;
-      COMP_IDX = EXAMS.length-2;
+  apiPost('/labs/exams', {
+    date_iso: dateVal,
+    values:   values,
+    lab_name: document.getElementById('inp-lab').value || null,
+    context:  document.getElementById('inp-ctx').value || null,
+  }).then(function(resp){
+    return refreshAfterChange().then(function(){
+      CUR_EXAM_ID = resp.exam_id;
+      CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
       buildExamSelectors();
-      renderAll();
-      showSaveMsg('✅ '+_t('bl_exam_saved','Examen del {date} guardado con {n} marcadores.').replace('{date}',dateVal).replace('{n}',Object.keys(values).length),'ok');
-    })
-    .catch(function(){
-      showSaveMsg('⚠️ '+_t('bl_save_failed','No se pudo guardar el examen — revisá tu conexión e intentá de nuevo.'),'err');
+      return renderAll();
     });
+  }).then(function(){
+    showSaveMsg('✅ '+_t('bl_exam_saved','Examen del {date} guardado con {n} marcadores.').replace('{date}',dateVal).replace('{n}',Object.keys(values).length),'ok');
+  }).catch(function(){
+    showSaveMsg('⚠️ '+_t('bl_save_failed','No se pudo guardar el examen — revisá tu conexión e intentá de nuevo.'),'err');
+  });
 }
 
 function clearForm() {
-  FORM_CATS().forEach(function(cat){ cat.keys.forEach(function(k){ var el=document.getElementById('fi-'+k); if(el) el.value=''; }); });
-  document.getElementById('inp-ctx').value='';
+  Object.keys(MARKERS_CATALOG).forEach(function(k){ var el=document.getElementById('fi-'+k); if(el) el.value=''; });
+  document.getElementById('inp-lab').value = '';
+  document.getElementById('inp-ctx').value = '';
   document.getElementById('save-msg').style.display='none';
 }
 
@@ -1114,61 +879,44 @@ function showSaveMsg(msg, type) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TABS
+// TABS + SCROLL ANIMATIONS
 // ══════════════════════════════════════════════════════════════
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('on'); });
   document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('on'); });
   btn.classList.add('on');
   document.getElementById('tab-'+id).classList.add('on');
-  if(id==='trends' && CUR_STAB) renderTrends(CUR_STAB);
 }
 
-// ══════════════════════════════════════════════════════════════
-// SCROLL ANIMATIONS
-// ══════════════════════════════════════════════════════════════
 var io = new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('vis');});},{threshold:.08});
 document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
-
-// ══════════════════════════════════════════════════════════════
-// API — datos reales de /athlete/blood-labs (BloodLabExam en la BD)
-// ══════════════════════════════════════════════════════════════
-function _blApiToken(){
-  var tok = localStorage.getItem('lx_co_token');
-  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
-  return tok;
-}
-function _blApiBase(){
-  return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
-}
-function _examFromRow(row){
-  var values = {};
-  try{ values = JSON.parse(row.values_json||'{}'); }catch(e){}
-  return { id: row.id, date: row.date_iso, lab: row.lab_name || _t('bl_clinical_lab_default','Laboratorio Clínico'), context: row.context || '', values: values };
-}
 
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 (function init(){
-  buildExamSelectors();
-  buildForm();
-  renderAll();
-
-  var tok = _blApiToken();
+  var tok = apiToken();
   if(!tok) return;
-  fetch(_blApiBase()+'/athlete/blood-labs', {headers:{Authorization:'Bearer '+tok}})
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(rows){
-      if(!rows) return; // sin conexión/permiso: se queda con lo que ya había en pantalla (vacío por defecto)
-      EXAMS.splice(0, EXAMS.length);
-      rows.map(_examFromRow).sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(e){ EXAMS.push(e); });
-      EXAM_IDX = EXAMS.length-1;
-      COMP_IDX = EXAMS.length-2;
-      buildExamSelectors();
-      renderAll();
-    })
-    .catch(function(){});
+
+  Promise.all([
+    loadMarkersCatalog(),
+    loadExamsList(),
+    loadSummary(),
+    loadAlertsList(),
+    loadTrainingImpact(),
+    loadTimeline(),
+    loadCorrelationOverlay(),
+  ]).then(function(){
+    buildForm();
+    if(EXAMS.length){
+      CUR_EXAM_ID = EXAMS[0].id;
+      CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+    }
+    buildExamSelectors();
+    return renderAll();
+  }).catch(function(e){
+    console.error('blood_labs init error', e);
+  });
 })();
 </script>
 <script src="auth.js"></script>
