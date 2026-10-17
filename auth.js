@@ -13,13 +13,6 @@
     'demo':   'demo@labx.com'
   };
 
-  /* Fallback hardcoded (cuando API no disponible) */
-  var USERS = {
-    rafael:   { pw:'labx2026',    name:'Rafael Dutra',    initials:'RD', role:'Ironman 70.3', plan:'elite' },
-    demo:     { pw:'demo123',     name:'Coach Demo',      initials:'CD', role:'Triatleta',    plan:'basic' },
-    agegroup: { pw:'agegroup2026',name:'Usuario Agegroup',initials:'UA', role:'Ironman 70.3', plan:'agegroup' }
-  };
-
   /* plan_nivel API → plan key local */
   var PLAN_MAP = { elite:'elite', agegroup:'agegroup', basico:'basic' };
 
@@ -95,7 +88,7 @@
     return name.split(' ').slice(0,2).map(function(w){ return w[0] || ''; }).join('').toUpperCase();
   }
 
-  /* ── Auth — API primero, hardcoded de respaldo ───────────── */
+  /* ── Auth — falla cerrado: sin backend no hay login ───────── */
   function login(usernameOrEmail, password, remember) {
     var input = (usernameOrEmail || '').toLowerCase().trim();
     var email = USER_EMAIL[input] || input; /* si ya es email, úsalo directo */
@@ -142,21 +135,10 @@
       return { ok: true, session: sess };
     })
     .catch(function() {
-      /* API no disponible o creds incorrectas — intentar fallback hardcoded */
-      var u = USERS[input];
-      if (u && u.pw === password) {
-        var fallback = {
-          username: input,
-          name:     u.name,
-          initials: _initials(u.name),
-          role:     u.role,
-          plan:     u.plan,
-          api_rol:  'offline',
-          ts:       Date.now()
-        };
-        saveSession(fallback, remember);
-        return { ok: true, session: fallback, offline: true };
-      }
+      /* Falla cerrado: si el backend no responde o rechaza las
+         credenciales, el login falla. Nunca hubo (ni debe haber) una
+         autenticación local de respaldo con contraseñas embebidas en el
+         cliente — eso era un bypass total del backend. */
       return { ok: false };
     });
   }
