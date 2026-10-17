@@ -705,14 +705,16 @@ def athlete_dashboard(
                 "tss": round(r.tss, 1),
                 "tsb": round(r.tsb, 1),
             })
-            # ACWR at this date: 7-day avg / 28-day avg TSS
-            slice28 = load_list[max(0, idx-27):idx+1]
-            slice7  = load_list[max(0, idx-6):idx+1]
-            if len(slice7) >= 4:
-                chronic28 = sum(x.tss for x in slice28) / len(slice28) if slice28 else 0
-                acute7    = sum(x.tss for x in slice7)  / len(slice7)
-                acwr_val  = round(acute7 / chronic28, 2) if chronic28 > 1 else 0.0
-                acwr_history.append({"dt": r.date_iso, "acwr": acwr_val})
+            # ACWR at this date: leído directo de GarminTrainingLoad.acwr —
+            # ya lo calcula training_service.compute_acwr (única fuente,
+            # Sprint 4 auditoría 2026-10-17) en cada sync, vía
+            # garmin_pull_service._enrich_load_with_acwr. Antes este bloque
+            # reimplementaba el mismo cálculo desde cero con un guard más
+            # laxo (len(slice7)>=4 en vez de 7 reales, chronic>1 en vez de
+            # >=1, sin piso de acute) — dos fuentes del mismo número que
+            # podían divergir.
+            if r.acwr is not None:
+                acwr_history.append({"dt": r.date_iso, "acwr": r.acwr})
 
     # TSS Semanal (suma real de los 7 días de cada semana calendario) —
     # independiente del muestreo de "pmc" de arriba. "pmc" solo trae 1 fila

@@ -5,6 +5,65 @@ Estos cálculos son médicamente relevantes — un bug aquí afecta la salud del
 import pytest
 
 
+class TestEnrichLoadWithAcwrCharacterization:
+    """
+    Caracterización del comportamiento ACTUAL de _enrich_load_with_acwr
+    (ventana rodante día a día) — red de seguridad antes de considerar
+    migrarla a training_service.compute_acwr (ver auditoría 2026-10-17).
+    NO valida que la fórmula sea "correcta" — fija los valores exactos que
+    produce hoy, para detectar cualquier cambio de comportamiento durante
+    una futura migración.
+    """
+
+    def _rows(self, tss_values, start="2026-01-01"):
+        from datetime import date, timedelta
+        d0 = date.fromisoformat(start)
+        return [{"date_iso": (d0 + timedelta(days=i)).isoformat(), "tss": float(t)}
+                for i, t in enumerate(tss_values)]
+
+    def test_first_six_rows_are_none_insufficient_history(self):
+        from api.garmin_pull_service import _enrich_load_with_acwr
+        out = _enrich_load_with_acwr(self._rows([50.0] * 10))
+        assert [r["acwr"] for r in out[:6]] == [None] * 6
+
+    def test_constant_tss_gives_acwr_one(self):
+        from api.garmin_pull_service import _enrich_load_with_acwr
+        out = _enrich_load_with_acwr(self._rows([50.0] * 10))
+        assert [r["acwr"] for r in out[6:]] == [1.0, 1.0, 1.0, 1.0]
+        assert [r["monotony"] for r in out[6:]] == [0.0, 0.0, 0.0, 0.0]
+        assert [r["strain"] for r in out[6:]] == [0.0, 0.0, 0.0, 0.0]
+
+    def test_variable_tss_exact_values(self):
+        """Fija los valores exactos de un patrón variable real (0/40/0/60/0/80/0 repetido)."""
+        from api.garmin_pull_service import _enrich_load_with_acwr
+        pattern = [0, 40, 0, 60, 0, 80, 0] * 5
+        out = _enrich_load_with_acwr(self._rows(pattern))
+        acwr_from_i6 = [r["acwr"] for r in out[6:14]]
+        assert acwr_from_i6 == [1.0, 1.14, 1.05, 1.17, 1.01, 1.1, 0.93, 1.0]
+
+    def test_chronic_below_1_returns_none_even_with_7_rows(self):
+        """chronic < 1 (safe_minimum implícito) → None, aunque i>=6."""
+        from api.garmin_pull_service import _enrich_load_with_acwr
+        rows = self._rows([0, 0, 0, 0, 0, 0, 5.0])  # chronic = 5/7 ≈ 0.71 < 1
+        out = _enrich_load_with_acwr(rows)
+        assert out[-1]["acwr"] is None
+
+    def test_acute_floor_matches_compute_acwr_post_migration(self):
+        """
+        Sprint 4 (2026-10-17): _enrich_load_with_acwr ahora delega en
+        training_service.compute_acwr, que SÍ exige acute>=1 (no solo
+        chronic>=1) — antes de este cambio, un acute muy bajo con chronic
+        saludable daba un acwr numérico; ahora es None ("no_data"), igual
+        que en el resto del backend. Este test reemplaza
+        test_no_acute_floor_unlike_compute_acwr (comportamiento viejo).
+        """
+        from api.garmin_pull_service import _enrich_load_with_acwr
+        # 21 días de carga normal (chronic sano) + últimos 7 días casi en reposo
+        rows = self._rows([50.0] * 21 + [0, 0, 0, 0, 0, 0, 0.5])
+        out = _enrich_load_with_acwr(rows)
+        assert out[-1]["acwr"] is None
+
+
 class TestCTLATLCalculations:
     """Verifica que los cálculos de carga de entrenamiento son correctos."""
 

@@ -252,6 +252,60 @@ def test_compliance_trend_is_integer_or_none(client, auth_headers):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# acwr_history (pmc) — Sprint 4 (2026-10-17): este bloque dejó de recalcular
+# ACWR desde cero (guard laxo propio, divergente del resto del backend) y
+# ahora lee directo GarminTrainingLoad.acwr, ya calculado por
+# training_service.compute_acwr vía garmin_pull_service._enrich_load_with_
+# acwr en cada sync — única fuente de verdad. Estos tests ya no fijan un
+# comportamiento "viejo": verifican que pmc expone tal cual lo persistido,
+# filtrando solo los None (historial insuficiente, <7 días reales).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_acwr_history_reads_persisted_column_variable_pattern(client, db, athlete_user, auth_headers):
+    from ..models import GarminTrainingLoad
+    from api.garmin_pull_service import _enrich_load_with_acwr
+    today = date.today()
+    pattern = [0, 40, 0, 60, 0, 80, 0] * 3  # 21 días
+    start = today - timedelta(days=len(pattern) - 1)
+    raw = [{"date_iso": (start + timedelta(days=i)).isoformat(), "tss": float(t)}
+           for i, t in enumerate(pattern)]
+    enriched = _enrich_load_with_acwr(raw)  # misma fuente que usa el sync real
+    for r in enriched:
+        db.add(GarminTrainingLoad(
+            user_id=athlete_user.id, date_iso=r["date_iso"],
+            ctl=50.0, atl=50.0, tsb=0.0, tss=r["tss"], acwr=r["acwr"],
+        ))
+    db.commit()
+
+    resp = client.get("/api/athlete/dashboard", headers=auth_headers)
+    assert resp.status_code == 200
+    history = resp.json()["acwr_history"]
+    values = [h["acwr"] for h in history]
+    # Primeros 6 días sin acwr persistido (None) quedan excluidos de
+    # acwr_history; de ahí en adelante, pmc expone tal cual la columna.
+    assert values == [1.0, 1.14, 1.05, 1.17, 1.01, 1.1, 0.93,
+                       1.0, 1.07, 1.03, 1.09, 1.01, 1.06, 0.95, 1.0]
+
+
+def test_acwr_history_excludes_rows_with_null_acwr(client, db, athlete_user, auth_headers):
+    """acwr=None persistido (historial insuficiente) → el día no entra a acwr_history."""
+    from ..models import GarminTrainingLoad
+    today = date.today()
+    for i in range(5):
+        db.add(GarminTrainingLoad(
+            user_id=athlete_user.id,
+            date_iso=(today - timedelta(days=4 - i)).isoformat(),
+            ctl=50.0, atl=50.0, tsb=0.0, tss=50.0, acwr=None,
+        ))
+    db.commit()
+
+    resp = client.get("/api/athlete/dashboard", headers=auth_headers)
+    assert resp.status_code == 200
+    history = resp.json()["acwr_history"]
+    assert history == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Fase 2 Sprint D (2026-08-11): Panel de Salud 360° — GET /athlete/health-360
 # Cero motor de cálculo nuevo: reusa get_athlete_intelligence() (el mismo
 # agregador que ya usa el Panel 360° del coach) + una lectura directa de

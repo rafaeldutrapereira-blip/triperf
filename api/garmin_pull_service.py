@@ -744,22 +744,28 @@ def _enrich_load_with_acwr(load_rows: list[dict]) -> list[dict]:
     """
     Agrega acwr, monotony y strain a cada fila del historial de carga.
     Requiere al menos 7 filas para ACWR y 7 para monotonía (std desviación).
+
+    ACWR delega en training_service.compute_acwr (Sprint 4, auditoría
+    2026-10-17) — única fuente de verdad del cálculo 7:28 real, en vez de
+    reimplementarlo acá con un guard más laxo (antes solo exigía chronic>=1,
+    sin piso de acute; ver api/tests/test_training_load.py::
+    TestEnrichLoadWithAcwrCharacterization para el comportamiento viejo
+    fijado como referencia antes de este cambio).
     """
     import statistics
+    from types import SimpleNamespace
+    from .services.training_service import compute_acwr
 
     enriched = []
     for i, row in enumerate(load_rows):
         new_row = dict(row)
 
-        # ACWR — 7 días agudos / 28 días crónicos
-        if i >= 6:
-            window28 = load_rows[max(0, i - 27): i + 1]
-            window7  = load_rows[i - 6: i + 1]
-            chronic  = sum(r["tss"] for r in window28) / len(window28)
-            acute    = sum(r["tss"] for r in window7)  / len(window7)
-            new_row["acwr"] = round(acute / chronic, 2) if chronic >= 1 else None
-        else:
-            new_row["acwr"] = None
+        # ACWR — 7 días agudos / 28 días crónicos (compute_acwr ya maneja
+        # internamente el caso de historial insuficiente, devolviendo
+        # "no_data"; no hace falta el chequeo `if i >= 6` previo).
+        window = load_rows[max(0, i - 27): i + 1]
+        acwr_val, acwr_zone = compute_acwr([SimpleNamespace(tss=r["tss"]) for r in window])
+        new_row["acwr"] = None if acwr_zone == "no_data" else acwr_val
 
         # Monotonía y strain — últimos 7 días
         if i >= 6:
