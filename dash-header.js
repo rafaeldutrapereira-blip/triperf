@@ -265,14 +265,14 @@ var _DHX_NOTIF_ICO = { kudo:'🔥', comment:'💬', follow:'➕', challenge:'�
 function _dhxRelTime(iso){
   if(!iso) return '';
   var diff = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if(diff < 1) return 'ahora';
-  if(diff < 60) return 'hace ' + diff + 'min';
-  if(diff < 1440) return 'hace ' + Math.round(diff/60) + 'h';
-  return 'hace ' + Math.round(diff/1440) + 'd';
+  if(diff < 1) return _nt('dh_now','ahora');
+  if(diff < 60) return _fmt(_nt('dh_ago_min','hace {n}min'),{n:diff});
+  if(diff < 1440) return _fmt(_nt('dh_ago_h','hace {n}h'),{n:Math.round(diff/60)});
+  return _fmt(_nt('dh_ago_d','hace {n}d'),{n:Math.round(diff/1440)});
 }
 function _dhxNotifText(n){
   var actor = '<strong>' + esc(n.actor) + '</strong>';
-  if(n.notif_type === 'kudo')      return actor + ' le dio kudo a tu actividad';
+  if(n.notif_type === 'kudo')      return _fmt(_nt('dh_notif_kudo','{actor} le dio kudo a tu actividad'),{actor:actor});
   if(n.notif_type === 'comment')   return _fmt(_nt('dh_notif_comment','{actor} comentó tu actividad'),{actor:actor}) + (n.body ? ': "' + esc(n.body) + '"' : '');
   if(n.notif_type === 'follow')    return _fmt(_nt('dh_notif_follow','{actor} empezó a seguirte'),{actor:actor});
   if(n.notif_type === 'challenge') return _fmt(_nt('dh_notif_challenge','{actor} {body}'),{actor:actor,body:esc(n.body || _nt('dh_challenge_default','te invitó a un desafío'))});
