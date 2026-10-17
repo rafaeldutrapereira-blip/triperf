@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '192';  // 2026-10-17: fix Blood Labs (/labs/team y /labs/timeline)
+var BUILD_VERSION = '193';  // 2026-10-17: gating por rol (Solo coach) y error real en Blood Labs
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
