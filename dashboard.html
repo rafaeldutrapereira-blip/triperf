@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><script src="routes.config.js?v=1"></script><meta name="google" content="notranslate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><span data-i18n="dash_page_title">LabX — Dashboard del Atleta</span></title>
+<title>LabX — Dashboard del Atleta</title>
 <script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -899,7 +899,7 @@ ul { list-style: none; }
         </div>
         <a href="athlete_profile.html" class="ed-btn-header" aria-label="Ir al Perfil del Atleta" data-i18n-aria="dh_go_profile">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          Perfil del Atleta
+          <span data-i18n="dh_profile_btn">Perfil del Atleta</span>
         </a>
         <button class="ed-btn-header" id="btn-upgrade" onclick="openUpgrade()" style="border-color:rgba(168,85,247,.35);color:#C084FC;display:none" aria-label="Actualizar plan" data-i18n-aria="dash_aria_update_plan">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -995,7 +995,7 @@ ul { list-style: none; }
         </div>
         <div style="flex:1"></div>
         <div class="kc-hint" style="cursor:pointer">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>Editar en Perfil
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg><span data-i18n="dash_edit_profile">Editar en Perfil</span>
         </div>
       </div>
 
@@ -1202,6 +1202,8 @@ window._dashLoc = function(){ var l=(window.i18n&&window.i18n.lang)||'es'; retur
 window._dayAbbrs = function(){ var out=[]; for(var i=0;i<7;i++){ out.push(new Intl.DateTimeFormat(_dashLoc(),{weekday:'short'}).format(new Date(2024,0,7+i)).replace('.','')); } return out; };
 window._monthAbbrs = function(){ var out=[]; for(var i=0;i<12;i++){ out.push(new Intl.DateTimeFormat(_dashLoc(),{month:'short'}).format(new Date(2024,i,1)).replace('.','')); } return out; };
 window._dashDate = function(n,kind){ var o = kind==='short' ? {weekday:'short',day:'numeric',month:'short'} : {weekday:'long',day:'numeric',month:'long',year:'numeric'}; return new Intl.DateTimeFormat(_dashLoc(),o).format(n).replace(/\.$/,''); };
+window._drLoc = function(s){ return String(s||'').replace(/Por confirmar|por confirmar/g, function(m){ return m==='Por confirmar' ? _t('dash_tbc','Por confirmar') : _t('dash_tbc_lc','por confirmar'); }); };
+window._drType = function(r){ return r.typeClass==='olimpico' ? _t('nutr_olympic','Olímpico') : r.type; };
 window._dateLabelFor = function(r){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(r.date||''); if(!m) return r.dateLabel||''; return new Intl.DateTimeFormat(_dashLoc(),{day:'2-digit',month:'short',year:'numeric'}).format(new Date(+m[1],+m[2]-1,+m[3])).replace(/\./g,'').toLocaleUpperCase(); };
 window._monthYearFor = function(r){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(r.date||''); if(!m) return r.monthYear||''; var t=new Intl.DateTimeFormat(_dashLoc(),{month:'long',year:'numeric'}).format(new Date(+m[1],+m[2]-1,1)); return t.charAt(0).toUpperCase()+t.slice(1); };
 /* -- Date labels -- */
@@ -1535,11 +1537,11 @@ function updateClusterPills(d){
     reduce:  {cls:'sev-reduce',  label:'Reducir carga'},
     caution: {cls:'sev-caution', label:_t('dash_sev_caution','Precaución')},
     good:    {cls:'sev-good',    label:_t('dash_val_optimal','Óptimo')},
-    neutral: {cls:'sev-neutral', label:'En rango'},
+    neutral: {cls:'sev-neutral', label:_t('dash_in_range','En rango')},
   };
 
   // Card "Carga": mismos umbrales de ACWR/TSB que ya usa el resto del dashboard
-  var carga = {cls:'sev-good', label:'En rango'};
+  var carga = {cls:'sev-good', label:_t('dash_in_range','En rango')};
   if(d.acwr_zone === 'danger' || (d.tsb != null && d.tsb < -20)) carga = {cls:'sev-reduce', label:'Riesgo alto'};
   else if(d.acwr_zone === 'warning' || (d.tsb != null && d.tsb < -8)) carga = {cls:'sev-caution', label:_t('dash_sev_caution','Precaución')};
   else if(d.acwr_zone === 'no_data') carga = {cls:'sev-neutral', label:_t('dash_no_data','Sin datos')};
@@ -1569,7 +1571,7 @@ function toggleInsightWhy(){
    del fetch de /athlete/dashboard sin ningún try/catch, así que el
    insight nunca terminaba de renderizar el toggle "Ver por qué" y
    tampoco loggeaba nada visible en consola de un usuario real. */
-function _escInsight(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _escInsight(s){ return String(window.lxBeT ? window.lxBeT(s==null?'':String(s)) : (s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function renderInsight(ins){
   if(!ins) return;
@@ -1577,7 +1579,7 @@ function renderInsight(ins){
   var sevEl = document.getElementById('insight-severity');
   var sevClass = {reduce:'sev-reduce', caution:'sev-caution', good:'sev-good', neutral:'sev-neutral'}[ins.severity] || 'sev-neutral';
   sevEl.className = 'insight-severity ' + sevClass;
-  document.getElementById('insight-headline').textContent = ins.headline || '';
+  document.getElementById('insight-headline').textContent = window.lxBeT ? window.lxBeT(ins.headline || '') : (ins.headline || '');
   /* message_bullets: mensaje PRINCIPAL en bullets (pedido explícito del
      usuario 2026-08-13, mismo día que el fix del "ver por qué") — se
      acepta también ins.message suelto por robustez ante un despliegue
@@ -1612,14 +1614,14 @@ function renderInsight(ins){
     var toneCls = dr.tone && dr.tone !== 'neutral' ? ' dr-' + dr.tone : '';
     var deltaHtml = dr.delta ? '<small>' + dr.delta + '</small>' : '';
     return '<div class="insight-driver">'
-      + '<span class="insight-driver-lbl">' + dr.label + '</span>'
-      + '<span class="insight-driver-val' + toneCls + '">' + dr.value + deltaHtml + '</span>'
+      + '<span class="insight-driver-lbl">' + _escInsight(dr.label) + '</span>'
+      + '<span class="insight-driver-val' + toneCls + '">' + _escInsight(dr.value) + (dr.delta ? '<small>' + _escInsight(dr.delta) + '</small>' : '') + '</span>'
       + '</div>';
   }).join('');
 
   var ctaEl = document.getElementById('insight-cta');
   if(ins.cta_label){
-    document.getElementById('insight-cta-label').textContent = ins.cta_label;
+    document.getElementById('insight-cta-label').textContent = window.lxBeT ? window.lxBeT(ins.cta_label) : ins.cta_label;
     ctaEl.style.display = 'inline-flex';
     ctaEl.href = ins.cta_href || 'detalle.html?metric=ctl';
   } else {
@@ -2672,15 +2674,21 @@ function _showSyncBanner(secsTotal){
     var chipEl = document.getElementById('garmin-sync-chip');
     if (!chipEl) return;
     var API2 = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
+    var _gsData = null;
+    /* Se repinta al cambiar idioma: si el fetch llega antes que i18n, el texto no debe quedar en el idioma por defecto */
+    function _gsRender(){
+      if (!chipEl || _gsData === null) return;
+      if (!_gsData.last_sync) { chipEl.textContent = _t('dash_no_sync','sin sync'); return; }
+      var diff = Math.round((Date.now() - new Date(_gsData.last_sync).getTime()) / 60000);
+      var label = diff < 1 ? _t('dh_now','ahora') : diff < 60 ? _fmt(_t('dh_ago_min','hace {n}min'),{n:diff}) : diff < 1440 ? _fmt(_t('dh_ago_h','hace {n}h'),{n:Math.round(diff/60)}) : _fmt(_t('dh_ago_d','hace {n}d'),{n:Math.round(diff/1440)});
+      chipEl.textContent = label;
+      chipEl.title = _t('dh_last_sync','Último sync:') + ' ' + _gsData.last_sync + ' · ' + (_gsData.activities_total || 0) + ' ' + _t('dh_activities','actividades');
+    }
+    window.addEventListener('lx:i18nready', _gsRender);
+    window.addEventListener('lx:langchange', _gsRender);
     fetch(API2 + '/athlete/garmin/sync-status', { headers: { Authorization: 'Bearer ' + tok }, credentials: 'include' })
       .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(d){
-        if (!d || !d.last_sync) { chipEl.textContent = 'sin sync'; return; }
-        var diff = Math.round((Date.now() - new Date(d.last_sync).getTime()) / 60000);
-        var label = diff < 1 ? 'ahora' : diff < 60 ? 'hace ' + diff + 'min' : diff < 1440 ? 'hace ' + Math.round(diff/60) + 'h' : 'hace ' + Math.round(diff/1440) + 'd';
-        chipEl.textContent = label;
-        chipEl.title = _t('dh_last_sync','Último sync:') + ' ' + d.last_sync + ' · ' + (d.activities_total || 0) + ' ' + _t('dh_activities','actividades');
-      })
+      .then(function(d){ _gsData = d || {}; _gsRender(); })
       .catch(function(){ chipEl.textContent = '—'; });
   })();
 
@@ -3078,7 +3086,7 @@ function applyAthleteData(d){
     var dot = vo2str.indexOf('.');
     v.innerHTML = dot >= 0 ? vo2str.slice(0,dot)+'<span class="u">'+vo2str.slice(dot)+'</span>' : vo2str+'<span class="u"></span>';
     var bVo2 = document.getElementById('badge-vo2');
-    if(bVo2){ bVo2.className='badge b-up'; bVo2.textContent='Del perfil'; }
+    if(bVo2){ bVo2.className='badge b-up'; bVo2.textContent=_t('dash_from_profile','Del perfil'); }
   }
   var f = document.getElementById('kl-ftp-val');
   if(f && d.ftp != null && d.ftp !== '—') f.textContent = d.ftp+'W';
@@ -3176,6 +3184,7 @@ function drClearSearch(){
   drFilterRender();
 }
 
+window.addEventListener('load', function(){ if(document.getElementById('dr-results-count')) drFilterRender(); });
 function drFilterRender(){
   var q = _drSearch.toLowerCase().trim();
   var addedIds = _myRaces.map(function(r){ return r.id; });
@@ -3187,7 +3196,7 @@ function drFilterRender(){
   });
   drRenderGrid(list);
   var cntEl = document.getElementById('dr-results-count');
-  if(cntEl) cntEl.textContent = list.length + (list.length===1 ? ' carrera' : ' carreras');
+  if(cntEl) cntEl.textContent = _fmt(list.length===1 ? _t('dash_races_one','{n} carrera') : _t('dash_races_many','{n} carreras'), {n: list.length});
 }
 
 function drRenderMyRaces(){
@@ -3206,7 +3215,7 @@ function drRenderMyRaces(){
       '<span class="dr-my-flag">'+r.flag+'</span>' +
       '<div class="dr-my-info">' +
         '<div class="dr-my-name">'+r.name+'</div>' +
-        '<div class="dr-my-sub">'+r.dateLabel+' · '+r.location+'</div>' +
+        '<div class="dr-my-sub">'+_dateLabelFor(r)+' · '+_drLoc(r.location)+'</div>' +
       '</div>' +
       '<button class="dr-my-remove" onclick="drRemoveRace(\'' + r.id + '\')" aria-label="Quitar">' +
         '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
@@ -3228,14 +3237,14 @@ function drRenderGrid(list){
         '<span class="dr-rc-flag">'+r.flag+'</span>' +
         '<button class="dr-rc-add" onclick="drAddRace(\'' + r.id + '\')">'+
           '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+
-          'Agregar'+
+          _t('dash_add','Agregar')+
         '</button>'+
       '</div>' +
       '<div class="dr-rc-name">'+r.name+'</div>' +
-      '<div class="dr-rc-date">'+r.dateLabel+'</div>' +
-      '<div class="dr-rc-loc">'+r.location+'</div>' +
+      '<div class="dr-rc-date">'+_dateLabelFor(r)+'</div>' +
+      '<div class="dr-rc-loc">'+_drLoc(r.location)+'</div>' +
       '<div class="dr-rc-footer">' +
-        '<span class="dr-rc-badge '+r.typeClass+'">'+r.type+'</span>' +
+        '<span class="dr-rc-badge '+r.typeClass+'">'+_drType(r)+'</span>' +
         (r.org ? '<span class="dr-rc-org">'+r.org+'</span>' : '') +
       '</div>' +
     '</div>';
@@ -3306,7 +3315,7 @@ function renderMyRacesWidget(){
         '<span class="nr-item-flag">'+r.flag+'</span>' +
         '<div class="nr-item-info">' +
           '<div class="nr-item-name">'+r.name+'</div>' +
-          '<div class="nr-item-sub">'+r.dateLabel+'</div>' +
+          '<div class="nr-item-sub">'+_dateLabelFor(r)+'</div>' +
         '</div>' +
         '<div class="nr-item-days">'+dStr+'</div>' +
       '</div>';
@@ -3469,7 +3478,7 @@ window.addEventListener('click', function(e){
 
     <!-- Results info -->
     <div class="dr-results-bar">
-      <span id="dr-results-count">32 carreras</span>
+      <span id="dr-results-count"></span>
       <span class="dr-results-orgs">Ironman · Challenge · FTECH · PTO · WT</span>
     </div>
 
@@ -3720,6 +3729,8 @@ window.addEventListener('click', function(e){
 <script src="footer.js"></script>
 
 <script src="i18n.js"></script>
+<script src="lx-backend-i18n.js"></script>
+<script>(function(){function _ti(){var v=window.i18n?window.i18n.t('dash_page_title'):null;if(v&&v!=='dash_page_title')document.title=v;}_ti();document.addEventListener('lx:i18nready',_ti);document.addEventListener('lx:langchange',_ti);})();</script>
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
 
