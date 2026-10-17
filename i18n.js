@@ -448,6 +448,49 @@ var DICT = {
     iw_toast_need_real_ftp: 'Configurá tu FTP real en tu Perfil antes de enviar', iw_sending: 'Enviando…',
     iw_toast_sent_garmin_prefix: '✓ Enviado a tu Garmin — programado para',
     iw_err_send_garmin: 'No se pudo enviar a Garmin',
+    iw_zwift_path: 'Documentos\\Zwift\\Workouts\\',
+    prof_ph_your_name: 'Tu nombre', prof_ph_race_example: 'Ej: IRONMAN 70.3 Pucón',
+    prof_ph_event_example: 'Ej: Ironman 70.3, 10K, 400m…', prof_ph_place_example: 'Ej: Pucón, Chile',
+    prof_aria_race_date: 'Fecha de la carrera objetivo', prof_aria_record_date: 'Fecha del record',
+    mentmsg_mfs_peak: 'Estado mental óptimo. Excelente día para entrenamiento de calidad o competencia.',
+    mentmsg_mfs_good: 'Buen estado mental. Entrena con confianza.',
+    mentmsg_mfs_moderate: 'Fatiga mental moderada. Considera reducir la intensidad o acortar la sesión.',
+    mentmsg_mfs_low: 'Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.',
+    mentmsg_mfs_critical: 'Fatiga mental crítica. El rendimiento y la toma de decisiones están comprometidos. Descansa.',
+    mentmsg_need_checkin: 'Completa el check-in para obtener tu Mental Fatigue Score.',
+    mentmsg_need_checkin_daily: 'Completa el check-in diario para calcular tu Mental Fatigue Score.',
+    mentmsg_corr_pos: 'Mayor Mental Fatigue Score se correlaciona positivamente con mayor TSS alcanzado.',
+    mentmsg_corr_none: 'Sin correlación significativa todavía — necesitas más datos (mín. 14 días).',
+    mentmsg_no_race: 'Sin carrera objetivo registrada. Agrega tu próxima carrera en Perfil.',
+    mentmsg_race_day: 'Es el día de carrera. Confía en tu preparación. 🏁',
+    mentmsg_prerace_days: 'A {n} días de la carrera. Sigue el protocolo mental del día.',
+    mp_breath_478_n: 'Respiración 4-7-8', mp_breath_478_d: 'Inhala 4s, retén 7s, exhala 8s. Activa el sistema parasimpático en minutos.', mp_breath_478_s: 'Siéntate derecho.|Inhala por la nariz 4 segundos.|Retén el aire 7 segundos.|Exhala lentamente por la boca 8 segundos.|Repite 4 veces.',
+    mp_breath_box_n: 'Respiración en Caja', mp_breath_box_d: 'Técnica usada por Navy SEALs. 4-4-4-4. Calma el sistema nervioso antes de esfuerzo intenso.', mp_breath_box_s: 'Exhala completamente.|Inhala 4s.|Retén 4s.|Exhala 4s.|Retén 4s.|Repite 5 ciclos.',
+    mp_breath_physiological_n: 'Suspiro Fisiológico', mp_breath_physiological_d: 'La técnica más rápida para bajar estrés. Doble inhalación nasal + exhalación larga.', mp_breath_physiological_s: 'Inhala profundo por la nariz.|Sin exhalar, inhala un poco más (doble inhalación).|Exhala lentamente por la boca durante 8-10s.|Repite 3 veces.',
+    mp_breath_resonance_n: 'Respiración de Resonancia', mp_breath_resonance_d: '5.5 respiraciones/minuto. Maximiza HRV y coherencia cardíaca.', mp_breath_resonance_s: 'Inhala 5.5 segundos.|Exhala 5.5 segundos.|Mantén ritmo constante 10 minutos.|Ideal antes de entrenamientos de calidad.',
+    mp_breath_wim_hof_n: 'Método Wim Hof Básico', mp_breath_wim_hof_d: 'Hiperventilación controlada + retención. Aumenta oxigenación y alcalinidad. NO usar en agua.', mp_breath_wim_hof_s: '30 respiraciones profundas y rápidas.|Exhala y retén sin aire.|Cuando necesites, inhala y retén 15s.|Exhala. 3 rondas.',
+    mp_viz_race_day_n: 'Visualización Día de Carrera', mp_viz_race_day_d: 'Recorre mentalmente toda tu carrera. Activa los mismos circuitos neuronales que el rendimiento real.', mp_viz_race_day_s: 'Cierra los ojos. Respira profundo.|Visualiza despertarte el día de carrera. Calmo.|Recorre la transición T1 con detalle.|Visualiza el swim fuerte y controlado.|El bike en tu power target.|El run: fuerte al final.|Cruzando la meta. Emoción.',
+    mp_viz_interval_n: 'Visualización Pre-Intervalos', mp_viz_interval_d: 'Programa tu cerebro para la sesión de calidad antes de comenzar.', mp_viz_interval_s: 'Cierra los ojos 5 minutos antes.|Visualiza cada intervalo con perfección técnica.|Siente el esfuerzo pero también el control.|Abre los ojos. Listo.',
+    mp_viz_body_scan_n: 'Body Scan Deportivo', mp_viz_body_scan_d: 'Recorre mentalmente cada parte del cuerpo enviando relajación. Ideal post-entrenamiento.', mp_viz_body_scan_s: 'Acuéstate.|Enfoca en los pies. Relaja.|Sube a las piernas.|Pelvis, abdomen.|Pecho, brazos.|Cuello, cara.',
+    mp_viz_confidence_n: 'Anclaje de Confianza', mp_viz_confidence_d: 'Revive tu mejor entrenamiento para activar el estado de confianza.', mp_viz_confidence_s: 'Cierra los ojos.|Recuerda tu mejor entrenamiento.|Siente las sensaciones físicas y emocionales.|Asocia ese estado con un gesto físico (puño cerrado).|Usa el gesto en momentos de duda.',
+    mp_mind_5min_n: 'Mindfulness 5 Minutos', mp_mind_5min_d: 'Presencia plena. Reduce ruido mental antes del entrenamiento.', mp_mind_5min_s: 'Siéntate cómodamente.|Enfoca en tu respiración natural.|Cuando la mente se vaya, vuelve sin juicio.|5 minutos de presencia pura.',
+    mp_mind_pre_race_n: 'Mindfulness Pre-Carrera', mp_mind_pre_race_d: 'Acepta el nerviosismo sin luchar contra él. El estrés pre-carrera es energía.', mp_mind_pre_race_s: 'Siéntate en transición 10 min antes.|Observa los nervios sin juzgarlos.|Respira profundo. Los nervios son energía.|Enfócate en el proceso, no en el resultado.|Repite: “Estoy preparado.”',
+    mp_mind_open_focus_n: 'Foco Abierto', mp_mind_open_focus_d: 'Expande tu conciencia para incluir todo el entorno. Reduce hiperenfoque en el dolor.', mp_mind_open_focus_s: 'Foco en un punto 1 min.|Expande lentamente a visión periférica.|Incluye sonidos.|Incluye sensaciones corporales.|Todo a la vez, nada en particular.',
+    mp_cog_self_talk_n: 'Auto-Diálogo Positivo', mp_cog_self_talk_d: 'Reprograma el diálogo interno. Los atletas de élite usan esto consistentemente.', mp_cog_self_talk_s: 'Identifica tu frase negativa recurrente.|Crea la versión positiva opuesta.|Repítela 10 veces en voz alta.|Úsala durante el entrenamiento cuando la duda aparece.',
+    mp_cog_process_goals_n: 'Objetivos de Proceso', mp_cog_process_goals_d: 'Define 3 cosas que controlas hoy. Elimina la ansiedad del resultado.', mp_cog_process_goals_s: 'Escribe 3 objetivos de proceso para hoy.|Ej: cadencia 88rpm, ritmo cardiaco Z2, hidratación cada 15min.|NO escribas objetivos de resultado.|Evalúa solo estos 3 al terminar.',
+    mp_cog_pre_mortem_n: 'Pre-Mortem Mental', mp_cog_pre_mortem_d: 'Anticipa problemas antes de la carrera para no ser sorprendido. Reduce ansiedad de lo desconocido.', mp_cog_pre_mortem_s: 'Lista 5 cosas que podrían salir mal.|Para cada una: ¿cuál es tu plan B?|Ahora sabes que tienes respuesta para todo.|La ansiedad baja cuando tienes respuestas.',
+    mp_cog_mantras_n: 'Mantras de Rendimiento', mp_cog_mantras_d: 'Frases cortas, poderosas, que tu mente puede sostener en los momentos de más esfuerzo.', mp_cog_mantras_s: 'Elige 1-3 mantras personales.|Ej: “Soy fuerte”, “Uno a la vez”, “Proceso”.|Sincroniza con la respiración durante el esfuerzo.|Repite automáticamente cuando el dolor aparece.',
+    mp_act_power_pose_n: 'Power Pose 2 minutos', mp_act_power_pose_d: 'Postura expansiva 2 min eleva testosterona ~20%, reduce cortisol ~25% (Harvard). Ideal pre-carrera.', mp_act_power_pose_s: 'Parado, pies separados.|Manos en las caderas o brazos arriba (V de la victoria).|Mantén 2 minutos.|Respira profundo. Siente el poder.',
+    mp_act_cold_water_n: 'Estimulación Nervio Vago', mp_act_cold_water_d: 'Agua fría en cara activa el nervio vago → baja FC y ansiedad en segundos.', mp_act_cold_water_s: 'Agua fría (no helada) en un recipiente.|Sumerge la cara 30 segundos.|Repite 3 veces.|O hielo en nuca 1 minuto.',
+    mp_act_progressive_relax_n: 'Relajación Muscular Progresiva', mp_act_progressive_relax_d: 'Tensión y relajación muscular sistemática. Libera tensión acumulada.', mp_act_progressive_relax_s: 'Pies: tensa 5s, relaja.|Pantorrillas: tensa 5s, relaja.|Muslos.|Abdomen.|Hombros.|Cara.|Todo el cuerpo relajado.',
+    mp_race_7day_n: 'Protocolo −7 días', mp_race_7day_d: 'Una semana antes: logística, visualización, confianza.', mp_race_7day_s: 'Confirma logística (hotel, número, gear).|Visualización completa de carrera.|Revisa tu plan de carrera.|Duerme 8h+.|Journaling: lista tus fortalezas.',
+    mp_race_3day_n: 'Protocolo −3 días', mp_race_3day_d: '3 días antes: simplifica, descansa, confía en el entrenamiento.', mp_race_3day_s: 'Para de analizar datos. El entrenamiento está hecho.|Visualización corta (10min).|Respiración 4-7-8 mañana y noche.|Sin noticias negativas.|Prepara gear. Todo listo.',
+    mp_race_1day_n: 'Protocolo −1 día', mp_race_1day_d: 'La noche antes: ritual de confianza, no de preparación.', mp_race_1day_s: 'Gear preparado. NO revisar más.|Cena habitual (nada nuevo).|Visualización 10min.|Escribe 3 razones por las que estás listo.|Duerme temprano.',
+    mp_race_morning_n: 'Mañana de Carrera', mp_race_morning_d: 'El ritual final. Transforma nerviosismo en energía.', mp_race_morning_s: 'Despierta sin alarma si es posible.|Respiración en caja 5min.|Desayuno ritual (siempre el mismo).|Power Pose 2min en la ducha.|Mantras mientras preparas el gear.|Último chequeo. Sale.',
+    mp_race_transition_n: 'Transición Mental', mp_race_transition_d: 'En transición antes del disparo: 3 minutos de presencia total.', mp_race_transition_s: 'Cierra los ojos.|3 respiraciones profundas.|Siente el cuerpo.|Visualiza los primeros 100m del swim.|Abre los ojos. Modo carrera activado.',
+    mp_rec_debrief_n: 'Debrief Post-Carrera', mp_rec_debrief_d: 'Procesa la carrera antes de que el ego distorsione la memoria.', mp_rec_debrief_s: '24-48h después.|¿Qué salió bien? (lista exhaustiva).|¿Qué cambiarías? (sin juicio).|¿Qué aprendiste?|Una cosa a mejorar para la próxima.',
+    mp_rec_gratitude_n: 'Diario de Gratitud Deportivo', mp_rec_gratitude_d: '3 cosas de hoy que agradeces en tu entrenamiento. Recalibra el foco hacia el progreso.', mp_rec_gratitude_s: 'Cada noche, 5 minutos.|Escribe 3 cosas específicas del entrenamiento de hoy.|No genéricas — específicas.|Ej: “Aguanté el último intervalo”, “La técnica de nado mejoró”.',
+    mp_rec_flow_journal_n: 'Diario de Estado de Flow', mp_rec_flow_journal_d: 'Documenta los entrenamientos donde entraste en flow. Identifica las condiciones que lo activan.', mp_rec_flow_journal_s: '¿Cuándo fue tu último flow?|¿Qué condiciones lo activaron?|¿Temperatura? ¿Música? ¿Horario? ¿Compañero?|Replica esas condiciones.|El flow es reproducible.',
     /* Labels */
     lbl_week: 'Semana', lbl_3months: '3 Meses', lbl_6months: '6 Meses',
     lbl_1year: '1 Año', lbl_all_time: 'Todo',
@@ -1826,6 +1869,49 @@ var DICT = {
     iw_toast_need_real_ftp: 'Configure seu FTP real no seu Perfil antes de enviar', iw_sending: 'Enviando…',
     iw_toast_sent_garmin_prefix: '✓ Enviado para o seu Garmin — agendado para',
     iw_err_send_garmin: 'Não foi possível enviar para o Garmin',
+    iw_zwift_path: 'Documentos\\Zwift\\Workouts\\',
+    prof_ph_your_name: 'Seu nome', prof_ph_race_example: 'Ex: IRONMAN 70.3 Pucón',
+    prof_ph_event_example: 'Ex: Ironman 70.3, 10K, 400m…', prof_ph_place_example: 'Ex: Pucón, Chile',
+    prof_aria_race_date: 'Data da prova objetivo', prof_aria_record_date: 'Data do record',
+    mentmsg_mfs_peak: 'Estado mental ótimo. Excelente dia para treino de qualidade ou competição.',
+    mentmsg_mfs_good: 'Bom estado mental. Treine com confiança.',
+    mentmsg_mfs_moderate: 'Fadiga mental moderada. Considere reduzir a intensidade ou encurtar a sessão.',
+    mentmsg_mfs_low: 'Fadiga mental alta. Priorize descanso mental — um treino leve ou dia de recuperação.',
+    mentmsg_mfs_critical: 'Fadiga mental crítica. O desempenho e a tomada de decisão estão comprometidos. Descanse.',
+    mentmsg_need_checkin: 'Complete o check-in para obter seu Mental Fatigue Score.',
+    mentmsg_need_checkin_daily: 'Complete o check-in diário para calcular seu Mental Fatigue Score.',
+    mentmsg_corr_pos: 'Maior Mental Fatigue Score se correlaciona positivamente com maior TSS alcançado.',
+    mentmsg_corr_none: 'Ainda sem correlação significativa — você precisa de mais dados (mín. 14 dias).',
+    mentmsg_no_race: 'Nenhuma prova objetivo registrada. Adicione sua próxima prova no Perfil.',
+    mentmsg_race_day: 'É o dia da prova. Confie na sua preparação. 🏁',
+    mentmsg_prerace_days: 'Faltam {n} dias para a prova. Siga o protocolo mental do dia.',
+    mp_breath_478_n: 'Respiração 4-7-8', mp_breath_478_d: 'Inspire 4s, segure 7s, expire 8s. Ativa o sistema parassimpático em minutos.', mp_breath_478_s: 'Sente-se com a coluna ereta.|Inspire pelo nariz durante 4 segundos.|Segure o ar por 7 segundos.|Expire lentamente pela boca por 8 segundos.|Repita 4 vezes.',
+    mp_breath_box_n: 'Respiração em Caixa', mp_breath_box_d: 'Técnica usada pelos Navy SEALs. 4-4-4-4. Acalma o sistema nervoso antes de um esforço intenso.', mp_breath_box_s: 'Expire completamente.|Inspire por 4s.|Segure por 4s.|Expire por 4s.|Segure por 4s.|Repita 5 ciclos.',
+    mp_breath_physiological_n: 'Suspiro Fisiológico', mp_breath_physiological_d: 'A técnica mais rápida para reduzir o estresse. Dupla inspiração nasal + expiração longa.', mp_breath_physiological_s: 'Inspire fundo pelo nariz.|Sem expirar, inspire um pouco mais (dupla inspiração).|Expire lentamente pela boca por 8-10s.|Repita 3 vezes.',
+    mp_breath_resonance_n: 'Respiração de Ressonância', mp_breath_resonance_d: '5,5 respirações por minuto. Maximiza a HRV e a coerência cardíaca.', mp_breath_resonance_s: 'Inspire por 5,5 segundos.|Expire por 5,5 segundos.|Mantenha o ritmo constante por 10 minutos.|Ideal antes de treinos de qualidade.',
+    mp_breath_wim_hof_n: 'Método Wim Hof Básico', mp_breath_wim_hof_d: 'Hiperventilação controlada + retenção. Aumenta a oxigenação e a alcalinidade. NÃO usar na água.', mp_breath_wim_hof_s: '30 respirações profundas e rápidas.|Expire e segure sem ar.|Quando precisar, inspire e segure por 15s.|Expire. 3 rodadas.',
+    mp_viz_race_day_n: 'Visualização do Dia de Prova', mp_viz_race_day_d: 'Percorra mentalmente toda a sua prova. Ativa os mesmos circuitos neurais do desempenho real.', mp_viz_race_day_s: 'Feche os olhos. Respire fundo.|Visualize acordando no dia da prova. Calmo.|Percorra a transição T1 em detalhe.|Visualize a natação forte e controlada.|A bike no seu power target.|A corrida: forte no final.|Cruzando a linha de chegada. Emoção.',
+    mp_viz_interval_n: 'Visualização Pré-Intervalos', mp_viz_interval_d: 'Programe seu cérebro para a sessão de qualidade antes de começar.', mp_viz_interval_s: 'Feche os olhos 5 minutos antes.|Visualize cada intervalo com perfeição técnica.|Sinta o esforço, mas também o controle.|Abra os olhos. Pronto.',
+    mp_viz_body_scan_n: 'Body Scan Esportivo', mp_viz_body_scan_d: 'Percorra mentalmente cada parte do corpo enviando relaxamento. Ideal pós-treino.', mp_viz_body_scan_s: 'Deite-se.|Foque nos pés. Relaxe.|Suba para as pernas.|Pelve, abdômen.|Peito, braços.|Pescoço, rosto.',
+    mp_viz_confidence_n: 'Ancoragem de Confiança', mp_viz_confidence_d: 'Reviva seu melhor treino para ativar o estado de confiança.', mp_viz_confidence_s: 'Feche os olhos.|Lembre do seu melhor treino.|Sinta as sensações físicas e emocionais.|Associe esse estado a um gesto físico (punho fechado).|Use o gesto em momentos de dúvida.',
+    mp_mind_5min_n: 'Mindfulness de 5 Minutos', mp_mind_5min_d: 'Presença plena. Reduz o ruído mental antes do treino.', mp_mind_5min_s: 'Sente-se confortavelmente.|Foque na sua respiração natural.|Quando a mente se dispersar, volte sem julgamento.|5 minutos de presença pura.',
+    mp_mind_pre_race_n: 'Mindfulness Pré-Prova', mp_mind_pre_race_d: 'Aceite o nervosismo sem lutar contra ele. O estresse pré-prova é energia.', mp_mind_pre_race_s: 'Sente-se na transição 10 min antes.|Observe os nervos sem julgá-los.|Respire fundo. Os nervos são energia.|Foque no processo, não no resultado.|Repita: “Estou preparado.”',
+    mp_mind_open_focus_n: 'Foco Aberto', mp_mind_open_focus_d: 'Expanda sua consciência para incluir todo o ambiente. Reduz o hiperfoco na dor.', mp_mind_open_focus_s: 'Foque em um ponto por 1 min.|Expanda lentamente para a visão periférica.|Inclua os sons.|Inclua as sensações corporais.|Tudo ao mesmo tempo, nada em particular.',
+    mp_cog_self_talk_n: 'Autodiálogo Positivo', mp_cog_self_talk_d: 'Reprograme o diálogo interno. Atletas de elite usam isso com consistência.', mp_cog_self_talk_s: 'Identifique sua frase negativa recorrente.|Crie a versão positiva oposta.|Repita-a 10 vezes em voz alta.|Use-a durante o treino quando a dúvida aparecer.',
+    mp_cog_process_goals_n: 'Metas de Processo', mp_cog_process_goals_d: 'Defina 3 coisas que você controla hoje. Elimina a ansiedade do resultado.', mp_cog_process_goals_s: 'Escreva 3 metas de processo para hoje.|Ex: cadência 88rpm, FC na Z2, hidratação a cada 15min.|NÃO escreva metas de resultado.|Avalie só estes 3 ao terminar.',
+    mp_cog_pre_mortem_n: 'Pré-Mortem Mental', mp_cog_pre_mortem_d: 'Antecipe problemas antes da prova para não ser pego de surpresa. Reduz a ansiedade do desconhecido.', mp_cog_pre_mortem_s: 'Liste 5 coisas que poderiam dar errado.|Para cada uma: qual é seu plano B?|Agora você sabe que tem resposta para tudo.|A ansiedade diminui quando você tem respostas.',
+    mp_cog_mantras_n: 'Mantras de Desempenho', mp_cog_mantras_d: 'Frases curtas e poderosas, que sua mente consegue sustentar nos momentos de maior esforço.', mp_cog_mantras_s: 'Escolha 1-3 mantras pessoais.|Ex: “Sou forte”, “Um de cada vez”, “Processo”.|Sincronize com a respiração durante o esforço.|Repita automaticamente quando a dor aparecer.',
+    mp_act_power_pose_n: 'Power Pose de 2 minutos', mp_act_power_pose_d: 'Postura expansiva por 2 min eleva a testosterona ~20% e reduz o cortisol ~25% (Harvard). Ideal pré-prova.', mp_act_power_pose_s: 'Em pé, pés afastados.|Mãos na cintura ou braços para cima (V da vitória).|Mantenha por 2 minutos.|Respire fundo. Sinta o poder.',
+    mp_act_cold_water_n: 'Estímulo do Nervo Vago', mp_act_cold_water_d: 'Água fria no rosto ativa o nervo vago → reduz a FC e a ansiedade em segundos.', mp_act_cold_water_s: 'Água fria (não gelada) em um recipiente.|Mergulhe o rosto por 30 segundos.|Repita 3 vezes.|Ou gelo na nuca por 1 minuto.',
+    mp_act_progressive_relax_n: 'Relaxamento Muscular Progressivo', mp_act_progressive_relax_d: 'Tensão e relaxamento muscular sistemático. Libera a tensão acumulada.', mp_act_progressive_relax_s: 'Pés: contraia por 5s, relaxe.|Panturrilhas: contraia por 5s, relaxe.|Coxas.|Abdômen.|Ombros.|Rosto.|Corpo todo relaxado.',
+    mp_race_7day_n: 'Protocolo −7 dias', mp_race_7day_d: 'Uma semana antes: logística, visualização, confiança.', mp_race_7day_s: 'Confirme a logística (hotel, número, equipamento).|Visualização completa da prova.|Revise seu plano de prova.|Durma 8h+.|Diário: liste seus pontos fortes.',
+    mp_race_3day_n: 'Protocolo −3 dias', mp_race_3day_d: '3 dias antes: simplifique, descanse, confie no treinamento.', mp_race_3day_s: 'Pare de analisar dados. O treino já está feito.|Visualização curta (10min).|Respiração 4-7-8 de manhã e à noite.|Sem notícias negativas.|Prepare o equipamento. Tudo pronto.',
+    mp_race_1day_n: 'Protocolo −1 dia', mp_race_1day_d: 'Na véspera: ritual de confiança, não de preparação.', mp_race_1day_s: 'Equipamento pronto. NÃO revise mais nada.|Jantar habitual (nada novo).|Visualização de 10min.|Escreva 3 motivos pelos quais você está pronto.|Durma cedo.',
+    mp_race_morning_n: 'Manhã da Prova', mp_race_morning_d: 'O ritual final. Transforma nervosismo em energia.', mp_race_morning_s: 'Acorde sem alarme, se possível.|Respiração em caixa por 5min.|Café da manhã ritual (sempre o mesmo).|Power Pose de 2min no banho.|Mantras enquanto prepara o equipamento.|Última checagem. Vai.',
+    mp_race_transition_n: 'Transição Mental', mp_race_transition_d: 'Na transição antes do tiro de largada: 3 minutos de presença total.', mp_race_transition_s: 'Feche os olhos.|3 respirações profundas.|Sinta o corpo.|Visualize os primeiros 100m da natação.|Abra os olhos. Modo prova ativado.',
+    mp_rec_debrief_n: 'Debrief Pós-Prova', mp_rec_debrief_d: 'Processe a prova antes que o ego distorça a memória.', mp_rec_debrief_s: '24-48h depois.|O que deu certo? (lista completa).|O que você mudaria? (sem julgamento).|O que você aprendeu?|Uma coisa para melhorar na próxima.',
+    mp_rec_gratitude_n: 'Diário de Gratidão Esportivo', mp_rec_gratitude_d: '3 coisas de hoje pelas quais você é grato no seu treino. Reajusta o foco para o progresso.', mp_rec_gratitude_s: 'Todas as noites, 5 minutos.|Escreva 3 coisas específicas do treino de hoje.|Nada genérico — específico.|Ex: “Aguentei o último intervalo”, “A técnica de nado melhorou”.',
+    mp_rec_flow_journal_n: 'Diário do Estado de Flow', mp_rec_flow_journal_d: 'Registre os treinos em que você entrou em flow. Identifique as condições que o ativam.', mp_rec_flow_journal_s: 'Quando foi seu último flow?|Quais condições o ativaram?|Temperatura? Música? Horário? Companheiro?|Reproduza essas condições.|O flow é reproduzível.',
     lbl_week: 'Semana', lbl_3months: '3 Meses', lbl_6months: '6 Meses',
     lbl_1year: '1 Ano', lbl_all_time: 'Tudo',
     lbl_from: 'De', lbl_to: 'Até',
@@ -3180,7 +3266,7 @@ var DICT = {
     iw_exp_erg_fmt: '.ERG format', iw_btn_download_erg: 'Download .ERG',
     iw_exp_erg_note: 'Compatible with TrainerRoad, Wahoo RGT, GoldenCheetah, Rouvy',
     iw_exp_mrc_fmt: '.MRC format', iw_btn_download_mrc: 'Download .MRC',
-    iw_exp_mrc_note: 'Compatible with GarminConnect, perfecto Bike Indoor, CycleOps PowerBeam',
+    iw_exp_mrc_note: 'Compatible with GarminConnect, perfect Bike Indoor, CycleOps PowerBeam',
     iw_ph_name_example: 'E.g: Threshold 4×8min', iw_ph_desc_example: 'E.g: Threshold series with active recovery',
     iw_title_move_up: 'Move up', iw_title_move_down: 'Move down', iw_title_delete: 'Delete',
     iw_fld_reps: 'Repeats', iw_fld_dur_work: 'Work duration', iw_fld_pct_work: '% FTP work',
@@ -3200,6 +3286,49 @@ var DICT = {
     iw_toast_need_real_ftp: 'Set your real FTP in your Profile before sending', iw_sending: 'Sending…',
     iw_toast_sent_garmin_prefix: '✓ Sent to your Garmin — scheduled for',
     iw_err_send_garmin: 'Could not send to Garmin',
+    iw_zwift_path: 'Documents\\Zwift\\Workouts\\',
+    prof_ph_your_name: 'Your name', prof_ph_race_example: 'E.g.: IRONMAN 70.3 Pucón',
+    prof_ph_event_example: 'E.g.: Ironman 70.3, 10K, 400m…', prof_ph_place_example: 'E.g.: Pucón, Chile',
+    prof_aria_race_date: 'Target race date', prof_aria_record_date: 'Record date',
+    mentmsg_mfs_peak: 'Optimal mental state. Excellent day for quality training or competition.',
+    mentmsg_mfs_good: 'Good mental state. Train with confidence.',
+    mentmsg_mfs_moderate: 'Moderate mental fatigue. Consider reducing intensity or shortening the session.',
+    mentmsg_mfs_low: 'High mental fatigue. Prioritize mental rest — an easy session or a recovery day.',
+    mentmsg_mfs_critical: 'Critical mental fatigue. Performance and decision-making are compromised. Rest.',
+    mentmsg_need_checkin: 'Complete the check-in to get your Mental Fatigue Score.',
+    mentmsg_need_checkin_daily: 'Complete the daily check-in to calculate your Mental Fatigue Score.',
+    mentmsg_corr_pos: 'A higher Mental Fatigue Score correlates positively with higher TSS achieved.',
+    mentmsg_corr_none: 'No significant correlation yet — you need more data (min. 14 days).',
+    mentmsg_no_race: 'No target race registered. Add your next race in your Profile.',
+    mentmsg_race_day: 'It is race day. Trust your preparation. 🏁',
+    mentmsg_prerace_days: '{n} days until the race. Follow today’s mental protocol.',
+    mp_breath_478_n: '4-7-8 Breathing', mp_breath_478_d: 'Inhale 4s, hold 7s, exhale 8s. Activates the parasympathetic system within minutes.', mp_breath_478_s: 'Sit up straight.|Inhale through your nose for 4 seconds.|Hold the air for 7 seconds.|Exhale slowly through your mouth for 8 seconds.|Repeat 4 times.',
+    mp_breath_box_n: 'Box Breathing', mp_breath_box_d: 'Technique used by Navy SEALs. 4-4-4-4. Calms the nervous system before intense effort.', mp_breath_box_s: 'Exhale completely.|Inhale for 4s.|Hold for 4s.|Exhale for 4s.|Hold for 4s.|Repeat 5 cycles.',
+    mp_breath_physiological_n: 'Physiological Sigh', mp_breath_physiological_d: 'The fastest technique to lower stress. Double nasal inhale + long exhale.', mp_breath_physiological_s: 'Inhale deeply through your nose.|Without exhaling, take one more small inhale (double inhale).|Exhale slowly through your mouth for 8-10s.|Repeat 3 times.',
+    mp_breath_resonance_n: 'Resonance Breathing', mp_breath_resonance_d: '5.5 breaths per minute. Maximizes HRV and heart coherence.', mp_breath_resonance_s: 'Inhale for 5.5 seconds.|Exhale for 5.5 seconds.|Keep a steady rhythm for 10 minutes.|Ideal before quality sessions.',
+    mp_breath_wim_hof_n: 'Basic Wim Hof Method', mp_breath_wim_hof_d: 'Controlled hyperventilation + retention. Increases oxygenation and alkalinity. Do NOT use in water.', mp_breath_wim_hof_s: '30 deep, fast breaths.|Exhale and hold without air.|When you need to, inhale and hold for 15s.|Exhale. 3 rounds.',
+    mp_viz_race_day_n: 'Race Day Visualization', mp_viz_race_day_d: 'Mentally run through your entire race. Activates the same neural circuits as real performance.', mp_viz_race_day_s: 'Close your eyes. Breathe deeply.|Visualize waking up on race day. Calm.|Go through T1 in detail.|Visualize a strong, controlled swim.|The bike at your power target.|The run: strong at the end.|Crossing the finish line. Emotion.',
+    mp_viz_interval_n: 'Pre-Intervals Visualization', mp_viz_interval_d: 'Program your brain for the quality session before starting.', mp_viz_interval_s: 'Close your eyes 5 minutes before.|Visualize each interval with technical perfection.|Feel the effort but also the control.|Open your eyes. Ready.',
+    mp_viz_body_scan_n: 'Sports Body Scan', mp_viz_body_scan_d: 'Mentally go through each part of your body sending relaxation. Ideal after training.', mp_viz_body_scan_s: 'Lie down.|Focus on your feet. Relax.|Move up to your legs.|Pelvis, abdomen.|Chest, arms.|Neck, face.',
+    mp_viz_confidence_n: 'Confidence Anchor', mp_viz_confidence_d: 'Relive your best training session to activate the state of confidence.', mp_viz_confidence_s: 'Close your eyes.|Remember your best training session.|Feel the physical and emotional sensations.|Associate that state with a physical gesture (closed fist).|Use the gesture in moments of doubt.',
+    mp_mind_5min_n: '5-Minute Mindfulness', mp_mind_5min_d: 'Full presence. Reduces mental noise before training.', mp_mind_5min_s: 'Sit comfortably.|Focus on your natural breathing.|When your mind wanders, come back without judgment.|5 minutes of pure presence.',
+    mp_mind_pre_race_n: 'Pre-Race Mindfulness', mp_mind_pre_race_d: 'Accept the nerves without fighting them. Pre-race stress is energy.', mp_mind_pre_race_s: 'Sit in transition 10 min before.|Observe the nerves without judging them.|Breathe deeply. Nerves are energy.|Focus on the process, not the outcome.|Repeat: “I am ready.”',
+    mp_mind_open_focus_n: 'Open Focus', mp_mind_open_focus_d: 'Expand your awareness to include the whole environment. Reduces hyper-focus on pain.', mp_mind_open_focus_s: 'Focus on one point for 1 min.|Slowly expand to peripheral vision.|Include sounds.|Include body sensations.|Everything at once, nothing in particular.',
+    mp_cog_self_talk_n: 'Positive Self-Talk', mp_cog_self_talk_d: 'Reprogram your inner dialogue. Elite athletes use this consistently.', mp_cog_self_talk_s: 'Identify your recurring negative phrase.|Create the positive opposite version.|Repeat it 10 times out loud.|Use it during training when doubt appears.',
+    mp_cog_process_goals_n: 'Process Goals', mp_cog_process_goals_d: 'Define 3 things you control today. Removes anxiety about the outcome.', mp_cog_process_goals_s: 'Write 3 process goals for today.|E.g.: cadence 88rpm, Z2 heart rate, hydration every 15min.|Do NOT write outcome goals.|Evaluate only these 3 when you finish.',
+    mp_cog_pre_mortem_n: 'Mental Pre-Mortem', mp_cog_pre_mortem_d: 'Anticipate problems before the race so you are not caught off guard. Reduces anxiety about the unknown.', mp_cog_pre_mortem_s: 'List 5 things that could go wrong.|For each one: what is your plan B?|Now you know you have an answer for everything.|Anxiety drops when you have answers.',
+    mp_cog_mantras_n: 'Performance Mantras', mp_cog_mantras_d: 'Short, powerful phrases your mind can hold in the moments of greatest effort.', mp_cog_mantras_s: 'Choose 1-3 personal mantras.|E.g.: “I am strong”, “One at a time”, “Process”.|Sync with your breathing during effort.|Repeat automatically when pain appears.',
+    mp_act_power_pose_n: '2-Minute Power Pose', mp_act_power_pose_d: 'Expansive posture for 2 min raises testosterone ~20% and lowers cortisol ~25% (Harvard). Ideal pre-race.', mp_act_power_pose_s: 'Stand with feet apart.|Hands on hips or arms up (victory V).|Hold for 2 minutes.|Breathe deeply. Feel the power.',
+    mp_act_cold_water_n: 'Vagus Nerve Stimulation', mp_act_cold_water_d: 'Cold water on the face activates the vagus nerve → lowers HR and anxiety within seconds.', mp_act_cold_water_s: 'Cold (not icy) water in a bowl.|Submerge your face for 30 seconds.|Repeat 3 times.|Or ice on the back of the neck for 1 minute.',
+    mp_act_progressive_relax_n: 'Progressive Muscle Relaxation', mp_act_progressive_relax_d: 'Systematic muscle tension and release. Releases accumulated tension.', mp_act_progressive_relax_s: 'Feet: tense for 5s, relax.|Calves: tense for 5s, relax.|Thighs.|Abdomen.|Shoulders.|Face.|Whole body relaxed.',
+    mp_race_7day_n: 'Protocol −7 days', mp_race_7day_d: 'One week before: logistics, visualization, confidence.', mp_race_7day_s: 'Confirm logistics (hotel, bib, gear).|Full race visualization.|Review your race plan.|Sleep 8h+.|Journaling: list your strengths.',
+    mp_race_3day_n: 'Protocol −3 days', mp_race_3day_d: '3 days before: simplify, rest, trust your training.', mp_race_3day_s: 'Stop analyzing data. The training is done.|Short visualization (10min).|4-7-8 breathing morning and night.|No negative news.|Prepare gear. All set.',
+    mp_race_1day_n: 'Protocol −1 day', mp_race_1day_d: 'The night before: a ritual of confidence, not of preparation.', mp_race_1day_s: 'Gear ready. Do NOT check anything else.|Usual dinner (nothing new).|10-min visualization.|Write 3 reasons why you are ready.|Sleep early.',
+    mp_race_morning_n: 'Race Morning', mp_race_morning_d: 'The final ritual. Turns nerves into energy.', mp_race_morning_s: 'Wake up without an alarm if possible.|Box breathing for 5min.|Ritual breakfast (always the same).|2-min power pose in the shower.|Mantras while preparing your gear.|Final check. Go.',
+    mp_race_transition_n: 'Mental Transition', mp_race_transition_d: 'In transition before the start: 3 minutes of total presence.', mp_race_transition_s: 'Close your eyes.|3 deep breaths.|Feel your body.|Visualize the first 100m of the swim.|Open your eyes. Race mode on.',
+    mp_rec_debrief_n: 'Post-Race Debrief', mp_rec_debrief_d: 'Process the race before ego distorts your memory.', mp_rec_debrief_s: '24-48h later.|What went well? (full list).|What would you change? (without judgment).|What did you learn?|One thing to improve for next time.',
+    mp_rec_gratitude_n: 'Sports Gratitude Journal', mp_rec_gratitude_d: '3 things from today you are grateful for in your training. Refocuses on progress.', mp_rec_gratitude_s: 'Every night, 5 minutes.|Write 3 specific things from today’s training.|Not generic — specific.|E.g.: “I held the last interval”, “My swim technique improved”.',
+    mp_rec_flow_journal_n: 'Flow State Journal', mp_rec_flow_journal_d: 'Log the workouts where you got into flow. Identify the conditions that trigger it.', mp_rec_flow_journal_s: 'When was your last flow?|What conditions triggered it?|Temperature? Music? Time of day? Training partner?|Replicate those conditions.|Flow is repeatable.',
     lbl_week: 'Week', lbl_3months: '3 Months', lbl_6months: '6 Months',
     lbl_1year: '1 Year', lbl_all_time: 'All',
     lbl_from: 'From', lbl_to: 'To',
@@ -4207,6 +4336,11 @@ function _applyDOM(lang) {
     if (d[k] !== undefined) el.placeholder = d[k];
   });
 
+  document.querySelectorAll('[data-i18n-aria]').forEach(function(el) {
+    var k = el.getAttribute('data-i18n-aria');
+    if (d[k] !== undefined) el.setAttribute('aria-label', d[k]);
+  });
+
   document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
     var k = el.getAttribute('data-i18n-title');
     if (d[k] !== undefined) el.title = d[k];
@@ -4290,7 +4424,7 @@ function _buildWidget(extraClass) {
     btn.setAttribute('aria-label', item.title);
     btn.innerHTML = item.svg;
     btn.addEventListener('click', function() {
-      if (btn.getAttribute('data-lang') !== _lang) _set(item.lang);
+      if (btn.getAttribute('data-lang') !== _lang) { _set(item.lang); location.reload(); }
     });
     sw.appendChild(btn);
   });
@@ -4386,6 +4520,24 @@ function _init() {
   _injectWidget();
   _applyDOM(_lang);
   if (Object.keys(_chartRegistry).length) _applyCharts(_lang);
+  _syncLangFromProfile();
+}
+
+function _syncLangFromProfile() {
+  try {
+    if (localStorage.getItem('lx_lang')) return;
+    var tok = localStorage.getItem('lx_co_token');
+    if (!tok) return;
+    var base = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
+    fetch(base + '/athlete/profile', { headers: { Authorization: 'Bearer ' + tok } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(p){
+        if (!p || !p.lang || !DICT[p.lang]) return;
+        localStorage.setItem('lx_lang', p.lang);
+        if (p.lang !== _lang) location.reload();
+      })
+      .catch(function(){});
+  } catch(e) {}
 }
 
 if (document.readyState === 'loading') {

@@ -3032,13 +3032,18 @@ initPmcTooltip();
 /* -- Apply athlete data from kl_athlete_data on load -- */
 function updateGreeting(){
   var h = new Date().getHours();
-  var txt = h >= 5 && h < 12 ? 'Buenos días'
+  var gKey = h >= 5 && h < 12 ? 'app_greet_morning'
+           : h >= 12 && h < 19 ? 'app_greet_afternoon'
+           : 'app_greet_evening';
+  var gFb = h >= 5 && h < 12 ? 'Buenos días'
           : h >= 12 && h < 19 ? 'Buenas tardes'
           : 'Buenas noches';
+  var gv = window.i18n ? window.i18n.t(gKey) : null;
   var el = document.getElementById('kl-greeting-txt');
-  if(el) el.textContent = txt;
+  if(el) el.textContent = (gv && gv !== gKey) ? gv : gFb;
 }
 updateGreeting();
+document.addEventListener('DOMContentLoaded', updateGreeting);
 
 /* ── Upgrade wall para ?locked= redirect ── */
 (function(){

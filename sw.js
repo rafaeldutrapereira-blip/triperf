@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '180';  // 2026-10-17: i18n batch 0 — sync User.lang al login, dedup app_kpi_trend
+var BUILD_VERSION = '190';  // 2026-10-17: despliegue i18n — reload al cambiar idioma, sync lang desde perfil
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

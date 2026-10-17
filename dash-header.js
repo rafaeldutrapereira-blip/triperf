@@ -191,7 +191,10 @@ function updateDateGreeting(){
   if(lbl) lbl.textContent = D[n.getDay()] + ', ' + d + ' ' + M[mo] + ' ' + y + ' · LabX ' + pageLabel();
 
   var h = n.getHours();
-  var txt = h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  var gKey = h >= 5 && h < 12 ? 'app_greet_morning' : h >= 12 && h < 19 ? 'app_greet_afternoon' : 'app_greet_evening';
+  var gFb  = h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  var gv   = window.i18n ? window.i18n.t(gKey) : null;
+  var txt  = (gv && gv !== gKey) ? gv : gFb;
   var g = document.getElementById('dhx-greeting-txt');
   if(g) g.textContent = txt;
 

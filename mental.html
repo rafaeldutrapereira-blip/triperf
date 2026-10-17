@@ -465,6 +465,39 @@ function _t(key, fallback) {
 }
 
 // ─── TABS ───────────────────────────────────────────────────────────────────
+function _protoT(p) {
+  var k = 'mp_' + p.id;
+  var s = _t(k + '_s', '');
+  return {
+    name:        _t(k + '_n', p.name),
+    description: _t(k + '_d', p.description),
+    steps:       s ? s.split('|') : (p.steps || [])
+  };
+}
+
+var _MSG_KEYS = {
+  'Estado mental óptimo. Excelente día para entrenamiento de calidad o competencia.': 'mentmsg_mfs_peak',
+  'Buen estado mental. Entrena con confianza.': 'mentmsg_mfs_good',
+  'Fatiga mental moderada. Considera reducir la intensidad o acortar la sesión.': 'mentmsg_mfs_moderate',
+  'Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.': 'mentmsg_mfs_low',
+  'Fatiga mental crítica. El rendimiento y la toma de decisiones están comprometidos. Descansa.': 'mentmsg_mfs_critical',
+  'Completa el check-in para obtener tu Mental Fatigue Score.': 'mentmsg_need_checkin',
+  'Completa el check-in diario para calcular tu Mental Fatigue Score.': 'mentmsg_need_checkin_daily',
+  'Mayor Mental Fatigue Score se correlaciona positivamente con mayor TSS alcanzado.': 'mentmsg_corr_pos',
+  'Sin correlación significativa todavía — necesitas más datos (mín. 14 días).': 'mentmsg_corr_none',
+  'Sin carrera objetivo registrada. Agrega tu próxima carrera en Perfil.': 'mentmsg_no_race',
+  'Es el día de carrera. Confía en tu preparación. 🏁': 'mentmsg_race_day',
+  'Tu carrera': 'ment_your_race'
+};
+
+function _msgT(text) {
+  if (!text) return text || '';
+  if (_MSG_KEYS[text]) return _t(_MSG_KEYS[text], text);
+  var m = /^A (\d+) días de la carrera\. Sigue el protocolo mental del día\.$/.exec(text);
+  if (m) return _t('mentmsg_prerace_days', text).replace('{n}', m[1]);
+  return text;
+}
+
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -521,7 +554,7 @@ function renderMFS(today) {
   badge.style.background = color + '22';
   badge.style.color = color;
 
-  document.getElementById('mfs-rec').textContent = today.recommendation || '';
+  document.getElementById('mfs-rec').textContent = _msgT(today.recommendation || '');
 
   var sigCls = {train:'signal-train', reduce:'signal-reduce', rest:'signal-rest'};
   var sigTxt = {
@@ -660,6 +693,7 @@ function renderProtocols(protocols) {
   };
   var doneLbl = escHtml(_t('ment_done_this_week','✓ Esta semana'));
   grid.innerHTML = protocols.map(function(p) {
+    p = Object.assign({}, p, _protoT(p));
     var done = p.completed_this_week ? ' done' : '';
     return '<div class="proto-card' + done + '" onclick="openProtoModal(\'' + p.id + '\')">' +
       '<div class="proto-header"><div class="proto-name">' + escHtml(p.name) + '</div>' +
@@ -667,7 +701,7 @@ function renderProtocols(protocols) {
       '<span class="proto-cat cat-' + p.category + '">' + (catLabels[p.category] || p.category) + '</span>' +
       '<div class="proto-desc">' + escHtml(p.description) + '</div>' +
       '<div class="proto-footer">' +
-      '<span class="goal-tag">' + escHtml(p.goal) + '</span>' +
+      '<span class="goal-tag">' + escHtml(_t('ment_goal_' + p.goal, p.goal)) + '</span>' +
       '<span class="diff-badge diff-' + p.difficulty + '">' + (diffLabels[p.difficulty] || p.difficulty) + '</span>' +
       (done ? '<span class="done-badge">' + doneLbl + '</span>' : '') +
       '</div></div>';
@@ -680,9 +714,10 @@ function openProtoModal(id) {
   fetch(API + '/mental/protocols/' + id, {credentials:'include', headers:_authHeaders()})
     .then(function(r){ return r.json(); })
     .then(function(p) {
+      p = Object.assign({}, p, _protoT(p));
       document.getElementById('proto-modal-title').textContent = p.name;
       document.getElementById('proto-modal-cat').textContent =
-        (p.category || '') + ' · ' + p.duration_min + ' min';
+        _t('ment_cat_' + (p.category || ''), p.category || '') + ' · ' + p.duration_min + ' min';
       document.getElementById('proto-modal-desc').textContent = p.description;
       var stepsHtml = (p.steps || []).map(function(s) {
         return '<li>' + escHtml(s) + '</li>';
@@ -843,7 +878,7 @@ function renderCorrelations(d) {
     '<div class="corr-insight" style="margin-bottom:16px">' +
       '<div style="font-size:.8rem;color:var(--sub);margin-bottom:4px">' + escHtml(_t('ment_corr_mfs_tss','Correlación MFS × TSS')) + ' (' + (d.days_analyzed || 30) + ' ' + escHtml(_t('ment_days','días')) + ')</div>' +
       '<div class="corr-num">' + corrDisplay + '</div>' +
-      '<div style="font-size:.85rem;color:var(--sub);margin-top:4px">' + escHtml(d.insight || '') + '</div>' +
+      '<div style="font-size:.85rem;color:var(--sub);margin-top:4px">' + escHtml(_msgT(d.insight || '')) + '</div>' +
       '<div style="font-size:.75rem;color:var(--sub);margin-top:6px">' + (d.data_points_count || 0) + ' ' + escHtml(_t('ment_trainings_analyzed','entrenamientos analizados')) + '</div>' +
     '</div>' +
 
@@ -873,7 +908,7 @@ function loadPreRace() {
 function renderPreRace(d) {
   var container = document.getElementById('prerace-content');
   if (!d.protocol) {
-    container.innerHTML = '<div class="card"><div class="empty-state">' + escHtml(d.message) + '</div></div>';
+    container.innerHTML = '<div class="card"><div class="empty-state">' + escHtml(_msgT(d.message)) + '</div></div>';
     return;
   }
   var race = d.race || {};
@@ -882,8 +917,8 @@ function renderPreRace(d) {
   var raceSec = '<div class="card" style="margin-bottom:16px"><div class="race-countdown">' +
     '<div class="race-days">' + (race.days_to_race !== null ? race.days_to_race : '—') + '</div>' +
     '<div style="font-size:.75rem;color:var(--sub)">' + escHtml(_t('ment_days_to_race','días para la carrera')) + '</div>' +
-    '<div class="race-name">' + escHtml(race.name || _t('ment_your_race','Tu carrera')) + ' · ' + (race.date || '') + '</div>' +
-    '<div style="margin-top:10px;font-size:.85rem;color:var(--sub)">' + escHtml(d.message || '') + '</div>' +
+    '<div class="race-name">' + escHtml(_msgT(race.name || 'Tu carrera')) + ' · ' + (race.date || '') + '</div>' +
+    '<div style="margin-top:10px;font-size:.85rem;color:var(--sub)">' + escHtml(_msgT(d.message || '')) + '</div>' +
     '</div></div>';
 
   var mfsSec = d.mfs_today
@@ -894,6 +929,7 @@ function renderPreRace(d) {
   var protosSec = protos.length
     ? '<div class="card"><div class="card-title">' + escHtml(_t('ment_card_protocols_today','Protocolos de hoy')) + '</div>' +
       protos.map(function(p) {
+        p = Object.assign({}, p, _protoT(p));
         return '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)55">' +
           '<div style="font-weight:600;margin-bottom:4px;cursor:pointer;color:var(--acc)" onclick="openProtoModal(\'' + escHtml(p.id) + '\')">' + escHtml(p.name) + ' → ' + p.duration_min + ' min</div>' +
           '<div style="font-size:.82rem;color:var(--sub)">' + escHtml(p.description) + '</div>' +

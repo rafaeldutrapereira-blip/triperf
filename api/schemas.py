@@ -105,6 +105,7 @@ class UserOut(BaseModel):
     totp_enabled:              bool            = False
     sports:                    Optional[str]   = None
     onboarding_completed_at:   Optional[datetime] = None
+    lang:                      Optional[str] = "es"
 
     model_config = {"from_attributes": True}
 
