@@ -3016,7 +3016,12 @@ window.loadAthleteGarmin = async function(){
 };
 
 // ── Helpers ───────────────────────────────────────────────────
-function esc(s){ if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// esc() vive en el segundo <script> de esta página (fuera de este IIFE,
+// ver comentario allá) — acá no se redeclara: al no haber un `esc` local,
+// las llamadas dentro de este IIFE resuelven por scope chain hacia la
+// versión global. Mantenerla en un solo lugar evita que quede una copia
+// desactualizada (pasó con el fix de XSS de 2026-10-17: existían 2 copias
+// idénticas y solo una recordaba actualizarse).
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function addDays(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function sportCls(s){ return {swim:'sp-swim',bike:'sp-bike',run:'sp-run',str:'sp-str'}[s]||''; }
@@ -3788,13 +3793,32 @@ window.addEventListener('load', init);
 </script>
 
 <script>
-// Este bloque <script> es independiente del principal (arriba) — 'API'
-// y 'esc' se declaraban solo allá, así que cualquier uso acá tiraba
-// ReferenceError. Se redeclaran localmente para que todo el código de
-// este bloque (Vista Equipo, alertas, sync Garmin) las tenga disponibles
-// igual que el resto de la página.
+// Este bloque <script> es independiente del principal (arriba, envuelto en
+// un IIFE) — 'API' y 'esc' se declaraban solo allá, dentro del closure del
+// IIFE, así que cualquier uso acá tiraba ReferenceError. Se declaran acá
+// (fuera de cualquier IIFE → quedan en scope global real) y el bloque
+// principal las resuelve por scope chain sin redeclararlas — única fuente,
+// ver comentario allá.
 var API = (window.location.protocol==='file:') ? 'http://localhost:8000/api' : window.location.origin+'/api';
-function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// esc() se usa tanto para texto visible como, en varios lugares de esta
+// página, DENTRO de literales JS de un solo quote embebidos en atributos
+// onclick (ej. onclick="fn('"+esc(u.nombre)+"')"). Antes solo escapaba
+// entidades HTML (&<>") — una comilla simple en el valor rompía el string
+// JS del onclick e inyectaba código (XSS confirmado con el payload real
+// <img src=x onerror=alert('XSS')> encontrado en una cuenta de producción,
+// ver auditoría 2026-10-17). Escapar la comilla como entidad HTML (&#39;)
+// NO sirve: el parser HTML la decodifica de vuelta a ' ANTES de que el
+// motor JS lea el atributo onclick como código. Por eso se escapa como
+// \' (escape de string JS), después de escapar primero cualquier barra
+// invertida literal para no generar una secuencia ambigua.
+function esc(s){
+  if(s==null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/\\/g,'\\\\')
+    .replace(/'/g,"\\'");
+}
 
 // P5 — Sync Garmin por-atleta desde coach
 window.syncAthleteGarmin = async function(athleteId, nombre, btn){
