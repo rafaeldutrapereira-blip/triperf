@@ -314,6 +314,12 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
       </div>
     </div>
   </div>
+
+  <!-- Correlaciones estadísticas (GET /labs/correlations) -->
+  <div class="sr mt3">
+    <div class="sec-h" data-i18n="bl_stat_correlations">Correlaciones Estadísticas</div>
+    <div id="stat-corr-content"></div>
+  </div>
 </div>
 
 <!-- ══ TAB 4: REGISTRAR EXAMEN ══ -->
@@ -439,6 +445,7 @@ var TRAINING_IMPACT = null;
 var ALERTS          = [];
 var TIMELINE        = null;
 var CORR            = [];
+var STAT_CORR       = null;
 var FEATURE_LOCKED  = false;
 var CH = {};
 
@@ -456,8 +463,9 @@ function loadAlertsList(){ return apiGet('/labs/alerts').then(function(d){ ALERT
 function loadTrainingImpact(){ return apiGet('/labs/training-impact').then(function(d){ TRAINING_IMPACT=d; }).catch(function(){ TRAINING_IMPACT=null; }); }
 function loadTimeline(){ return apiGet('/labs/timeline').then(function(d){ TIMELINE=d; }).catch(function(){ TIMELINE=null; }); }
 function loadCorrelationOverlay(){ return apiGet('/labs/correlation').then(function(d){ CORR=d||[]; }).catch(function(){ CORR=[]; }); }
+function loadStatCorrelations(){ return apiGet('/labs/correlations').then(function(d){ STAT_CORR=d; }).catch(function(){ STAT_CORR=null; }); }
 function refreshAfterChange(){
-  return Promise.all([loadExamsList(), loadSummary(), loadTrainingImpact(), loadAlertsList(), loadTimeline(), loadCorrelationOverlay()]);
+  return Promise.all([loadExamsList(), loadSummary(), loadTrainingImpact(), loadAlertsList(), loadTimeline(), loadCorrelationOverlay(), loadStatCorrelations()]);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -805,6 +813,60 @@ function renderGarminTab() {
       keys.map(function(k){ var v=(r.values||{})[k]; return '<td>'+(v!=null?v:'—')+'</td>'; }).join('')+
       '<td>'+(r.ctl!=null?r.ctl:'—')+'</td></tr>';
   }).join('') : '<tr><td colspan="99" style="color:var(--dim)">'+_t('bl_no_exams','Sin exámenes.')+'</td></tr>';
+
+  renderStatCorrelations();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CORRELACIONES ESTADÍSTICAS (GET /labs/correlations + IA)
+// ══════════════════════════════════════════════════════════════
+function renderStatCorrelations() {
+  var el = document.getElementById('stat-corr-content');
+  var sc = STAT_CORR;
+  if(!sc || sc.message){
+    el.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+(sc&&sc.message?esc(sc.message):_t('bl_no_data_category','Sin suficientes exámenes para calcular correlaciones (mínimo 3).'))+'</p>';
+    return;
+  }
+  var html = '';
+
+  if(sc.insights && sc.insights.length){
+    html += '<div class="alert-box alert-ok" style="margin-bottom:1rem"><div class="alert-title">💡 '+_t('bl_insights','Insights')+'</div>'+
+      sc.insights.map(function(i){ return '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">'+esc(i)+'</p>'; }).join('')+'</div>';
+  }
+
+  if(sc.correlations && sc.correlations.length){
+    html += '<div class="panel" style="margin-bottom:1rem"><div class="panel-body">'+
+      '<table class="corr-t"><thead><tr><th>'+_t('bl_th_biomarker','Biomarcador')+'</th><th>'+_t('bl_th_signal','Métrica')+'</th><th>r</th><th>'+_t('bl_th_expected_corr','Interpretación')+'</th></tr></thead><tbody>'+
+      sc.correlations.map(function(c){
+        var color = c.abs_r>=0.7 ? 'var(--red)' : 'var(--amber)';
+        return '<tr><td class="corr-bm">'+esc(c.marker_label)+'</td><td style="color:var(--muted)">'+esc(c.metric_label)+'</td>'+
+          '<td style="color:'+color+';font-weight:700">'+c.r.toFixed(2)+'</td>'+
+          '<td style="color:var(--muted)">'+esc(c.interpretation)+'</td></tr>';
+      }).join('')+'</tbody></table></div></div>';
+  } else {
+    html += '<p style="font-size:.8rem;color:var(--dim);margin-bottom:1rem">'+_t('bl_no_strong_correlations','No se detectaron correlaciones estadísticamente significativas todavía (requiere más historial).')+'</p>';
+  }
+
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">'+
+    '<button class="btn btn-g btn-sm" id="btn-stat-ai" onclick="runStatCorrelationAi()">✨ '+_t('bl_ai_run','Generar interpretación')+'</button></div>'+
+    '<div class="panel"><div class="panel-body" id="stat-ai-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">'+
+    (sc.ai_narrative ? esc(sc.ai_narrative) : '—') + '</div></div>';
+
+  el.innerHTML = html;
+}
+
+function runStatCorrelationAi() {
+  var btn = document.getElementById('btn-stat-ai');
+  var box = document.getElementById('stat-ai-box');
+  if(!btn || !box) return;
+  btn.disabled = true; btn.style.opacity = .6;
+  box.textContent = _t('bl_ai_loading','Generando interpretación con IA — puede tomar unos segundos…');
+  apiPost('/labs/correlations/ai-interpretation', {}).then(function(d){
+    STAT_CORR = d;
+    box.textContent = d.ai_narrative || '—';
+  }).catch(function(){
+    box.textContent = '⚠️ '+_t('bl_ai_failed','No se pudo generar la interpretación.');
+  }).then(function(){ btn.disabled=false; btn.style.opacity=1; });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -906,6 +968,7 @@ document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
     loadTrainingImpact(),
     loadTimeline(),
     loadCorrelationOverlay(),
+    loadStatCorrelations(),
   ]).then(function(){
     buildForm();
     if(EXAMS.length){

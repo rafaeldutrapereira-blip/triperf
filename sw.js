@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '178';  // 2026-10-17: Blood Labs — blood_labs.html reescrito sobre /api/labs/*, fix bug timeline backend
+var BUILD_VERSION = '179';  // 2026-10-17: Blood Labs Fase 2c — correlaciones estadísticas + IA
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
