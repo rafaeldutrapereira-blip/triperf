@@ -194,7 +194,7 @@
         '<a href="landing.html" class="sb-logo">Lab' + _FLOWER_36 + '<span>X</span></a>' +
         '<div class="sb-tagline" data-i18n="app_tagline">Where Champions Are Built</div>' +
       '</div>' +
-      '<nav class="sb-nav" aria-label="M&#xF3;dulos">' +
+      '<nav class="sb-nav" aria-label="'+_escH(_nt('nav_modules','Módulos'))+'">' +
         links +
       '</nav>' +
       '<div class="sb-sep"></div>' +
