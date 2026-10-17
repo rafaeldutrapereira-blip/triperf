@@ -39,73 +39,6 @@ logger = logging.getLogger("labx.context_engine")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# LabX Readiness Score
-# ─────────────────────────────────────────────────────────────────────────────
-
-def compute_readiness_score(
-    hrv_last: Optional[float],
-    hrv_baseline_avg: Optional[float],
-    sleep_score: Optional[int],
-    body_battery: Optional[int],
-    tsb: Optional[float],
-    wellness_score: Optional[float],
-) -> tuple[int, dict]:
-    """
-    LabX Readiness Score — combina 5 factores fisiológicos en un score 0-100.
-
-    Pesos:
-      HRV vs baseline    30%
-      Calidad de sueño   25%
-      TSB (forma)        20%
-      Body Battery       15%
-      Bienestar subj.    10%
-
-    Retorna (score: int, factors: dict con desglose).
-    """
-    factors = {}
-
-    # 1. HRV vs baseline personal (30%)
-    if hrv_last and hrv_baseline_avg and hrv_baseline_avg > 0:
-        hrv_ratio = hrv_last / hrv_baseline_avg
-        hrv_score = min(100, max(0, hrv_ratio * 100))
-    elif hrv_last:
-        hrv_score = 65  # sin baseline: asume neutro
-    else:
-        hrv_score = 65  # sin dato: neutro
-    factors["hrv"] = round(hrv_score)
-
-    # 2. Sleep score Garmin (25%)
-    sleep_s = min(100, max(0, sleep_score)) if sleep_score else 65
-    factors["sleep"] = sleep_s
-
-    # 3. TSB — Forma (20%)
-    # TSB de -30 a +20 se mapea a 0-100
-    if tsb is not None:
-        tsb_score = min(100, max(0, (tsb + 30) / 50 * 100))
-    else:
-        tsb_score = 50
-    factors["tsb"] = round(tsb_score)
-
-    # 4. Body Battery mañana (15%)
-    bb_score = min(100, max(0, body_battery)) if body_battery is not None else 65
-    factors["body_battery"] = bb_score
-
-    # 5. Bienestar subjetivo (10%)
-    well_s = min(100, max(0, wellness_score)) if wellness_score else 65
-    factors["wellness"] = round(well_s)
-
-    # Weighted average
-    score = (
-        factors["hrv"]          * 0.30 +
-        factors["sleep"]        * 0.25 +
-        factors["tsb"]          * 0.20 +
-        factors["body_battery"] * 0.15 +
-        factors["wellness"]     * 0.10
-    )
-    return int(round(score)), factors
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Injury Risk Score
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -263,14 +196,28 @@ def build_athlete_context(user_id: str, db: Session) -> dict:
         wellness_soreness = wellness.soreness
 
     # ── 5. LabX Readiness Score ───────────────────────────────────────────────
-    readiness_score, readiness_factors = compute_readiness_score(
-        hrv_last       = hrv_last_night,
-        hrv_baseline_avg = hrv_baseline,
-        sleep_score    = sleep_score,
-        body_battery   = body_battery,
-        tsb            = tsb,
-        wellness_score = wellness_score_raw,
-    )
+    # Única fuente de verdad: el DRS oficial (readiness_service), la misma que
+    # usan /readiness/daily, dashboards y coach. Antes este bloque tenía su
+    # propio motor paralelo (compute_readiness_score, pesos HRV/sueño/TSB/BB/
+    # wellness) cuyo resultado terminaba sobreescribiendo el DRS oficial ya
+    # persistido por garmin_pull_service._update_readiness en cada sync — una
+    # carrera de escritura donde el motor legado siempre ganaba por ejecutar
+    # después (ver bug de dashboard.html, commit 3beb70b). Al calcular acá el
+    # mismo DRS oficial, ambos escritores quedan consistentes sin importar el
+    # orden.
+    from .readiness_service import compute_daily_readiness_for_user
+    _drs_report = compute_daily_readiness_for_user(user_id, db)
+    readiness_score   = _drs_report.drs
+    readiness_factors = {
+        "label":             _drs_report.drs_label,
+        "primary_limiter":   _drs_report.primary_limiter,
+        "data_completeness": _drs_report.data_completeness,
+        "computed_from":     _drs_report.computed_from,
+        "dimensions": [
+            {"name": d.name, "score": round(d.score) if d.score is not None else None, "available": d.available}
+            for d in _drs_report.dimensions
+        ],
+    }
 
     # ── 6. Injury Risk ────────────────────────────────────────────────────────
     injury_risk = compute_injury_risk(
@@ -456,14 +403,9 @@ def refresh_athlete_context(user_id: str, db: Session) -> Optional[dict]:
         readiness = context.get("readiness", {})
         race      = context.get("race", {})
 
-        # DRS real (readiness_service) — misma fuente que /readiness/daily y el resto de la app.
-        # No usar readiness["labx_score"] aquí: es el motor legado (solo alimenta el prompt del AI Coach)
-        # y da números distintos al DRS oficial (ver bug de dashboard.html, commit 3beb70b).
-        try:
-            from .readiness_service import compute_daily_readiness_for_user
-            current_readiness = compute_daily_readiness_for_user(user_id, db).drs
-        except Exception:
-            current_readiness = readiness.get("labx_score")
+        # readiness["labx_score"] YA es el DRS oficial (calculado en build_athlete_context,
+        # misma fuente que /readiness/daily y el resto de la app) — no hace falta recalcularlo.
+        current_readiness = readiness.get("labx_score")
 
         row = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == user_id).first()
         if row:
@@ -625,11 +567,16 @@ def _format_context_for_prompt(ctx: dict) -> str:
     rs = readiness.get("labx_score")
     if rs is not None:
         risk   = readiness.get("injury_risk_level", "low")
-        lines.append(f"\nLABX READINESS: {rs}/100 · Riesgo lesión: {risk.upper()}")
-        fac = readiness.get("factors", {})
-        if fac:
-            fac_str = " · ".join(f"{k}={v}" for k, v in fac.items())
-            lines.append(f"  Factores: {fac_str}")
+        lines.append(f"\nLABX READINESS: {rs}/100 ({readiness.get('label','')}) · Riesgo lesión: {risk.upper()}")
+        dims = readiness.get("factors", {}).get("dimensions", [])
+        dims_str = " · ".join(
+            f"{d['name']}={d['score']}" for d in dims if d.get("available") and d.get("score") is not None
+        )
+        if dims_str:
+            lines.append(f"  Dimensiones: {dims_str}")
+        limiter = readiness.get("factors", {}).get("primary_limiter")
+        if limiter:
+            lines.append(f"  Factor limitante: {limiter}")
 
     # Carrera objetivo
     rn = race.get("name")

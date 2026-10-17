@@ -17,7 +17,11 @@ Diferenciador vs competidores:
   - LabX: 4 dimensiones integradas con biomarcadores — único en el mercado LATAM
 
 Fallback estratégico:
-  Si alguna dimensión no tiene datos, se imputa con el promedio de las otras.
+  Si alguna dimensión no tiene datos, se renormalizan los pesos entre las
+  dimensiones disponibles (weighted_sum / total_weight) y se aplica una
+  penalización explícita de -2.5 puntos por dimensión faltante (hasta -7.5
+  con 3 de 4 ausentes) — un dato incompleto nunca debe producir un score más
+  optimista que uno completo, por eso se penaliza en vez de solo promediar.
   Si hay 0 dimensiones, se devuelve DRS=70 (neutral) para no bloquear el UX.
 """
 from __future__ import annotations

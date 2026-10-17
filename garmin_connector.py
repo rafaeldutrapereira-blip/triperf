@@ -7,6 +7,7 @@ Uses the unofficial garminconnect library by cyberjunky.
 import os
 import json
 import logging
+import math
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -705,11 +706,19 @@ def build_training_load(df_activities: pd.DataFrame, ftp: float, threshold_run_s
         pd.date_range(daily["date"].min(), daily["date"].max(), freq="D"), fill_value=0
     ).reset_index().rename(columns={"index": "date"})
 
-    # Exponential weighted averages (Coggan's ATL/CTL model)
-    # CTL τ=42 days, ATL τ=7 days
-    daily["ctl"] = daily["tss"].ewm(span=42, adjust=False).mean()
-    daily["atl"] = daily["tss"].ewm(span=7,  adjust=False).mean()
+    # Exponential weighted averages (Coggan's ATL/CTL model).
+    # α fisiológico real: 1 - e^(-1/τ), NO 2/(span+1) (lo que pandas usa con
+    # `span=`) — ese span daba un α ~2x más agresivo que el modelo de Coggan/
+    # Banister real (p.ej. span=42 → α≈0.047 vs. el correcto α≈0.024).
+    CTL_ALPHA = 1 - math.exp(-1 / 42)
+    ATL_ALPHA = 1 - math.exp(-1 / 7)
+    daily["ctl"] = daily["tss"].ewm(alpha=CTL_ALPHA, adjust=False).mean()
+    daily["atl"] = daily["tss"].ewm(alpha=ATL_ALPHA, adjust=False).mean()
     daily["tsb"] = daily["ctl"] - daily["atl"]   # Training Stress Balance (Form)
-    daily["acwr"] = daily["atl"] / (daily["ctl"] + 1e-9)
+    # ACWR real = carga aguda (7d) / crónica (28d), no ATL/CTL (ventanas de 7/42
+    # días que no corresponden al estándar 7:28 usado en el resto del backend).
+    acute7   = daily["tss"].rolling(7,  min_periods=1).mean()
+    chronic28 = daily["tss"].rolling(28, min_periods=1).mean()
+    daily["acwr"] = acute7 / (chronic28 + 1e-9)
 
     return daily

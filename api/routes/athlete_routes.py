@@ -1039,6 +1039,11 @@ def athlete_dashboard(
         "acwr_zone":    acwr_zone,
         "acwr_by_sport": acwr_by_sport,
         "readiness":    readiness_score,
+        # Completitud de datos del DRS (0-1) + avisos técnicos — permite a la
+        # UI marcar cuando el Readiness se calculó con fallbacks/datos
+        # incompletos en vez de mostrar el número como si fuera pleno.
+        "readiness_completeness": _drs_report.data_completeness,
+        "readiness_warnings":     _drs_report.warnings,
         # Salud Garmin (Sprint 1)
         "hrv_last_night":   hrv_last_night,
         "hrv_7d_avg":       hrv_7d_avg,

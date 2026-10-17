@@ -3203,7 +3203,7 @@ function _sevLabel(sev){ return {reduce:'Riesgo alto', caution:'Precaución', go
    dashboard.html, adaptada a una card angosta de celular. d.insight ya
    viene en la respuesta de /athlete/dashboard (build_daily_insight en
    el backend); simplemente nunca se había renderizado en la app móvil. */
-function renderInsightMobile(ins, readiness){
+function renderInsightMobile(ins, readiness, readinessCompleteness, readinessWarnings){
   var strip = document.getElementById('insight-strip');
   if(!ins || !ins.headline){ strip.style.display = 'none'; return; }
   var sevCol = _sevColorInsight(ins.severity);
@@ -3215,8 +3215,17 @@ function renderInsightMobile(ins, readiness){
      fusiona con el severity badge: son 2 sistemas de cálculo distintos
      (mismo cuidado que ya tuvo training_readiness_garmin para no repetir
      la confusión "¿por qué hay 2 números?" que ya reportó el usuario). */
+  /* Marca visual cuando el DRS vino con dimensiones faltantes (fallback/
+     penalización por datos incompletos) — mismo criterio que dashboard.html. */
+  var incompleteHtml = '';
+  if(readinessCompleteness != null && readinessCompleteness < 1){
+    var pct = Math.round(readinessCompleteness * 100);
+    var warnMsg = 'Readiness calculado con ' + pct + '% de datos disponibles.';
+    if(readinessWarnings && readinessWarnings.length) warnMsg += ' ' + readinessWarnings.join(' ');
+    incompleteHtml = '<span style="color:var(--orange,#F97316);font-size:.68rem;margin-left:4px;cursor:help" title="'+_escCm(warnMsg)+'">⚠</span>';
+  }
   var readinessHtml = readiness != null
-    ? '<span class="insight-mob-readiness" title="Readiness Score de LabX (combina carga, HRV, sueño y fatiga mental) — distinto del Recovery Score de Recuperación y del Training Readiness nativo de Garmin">Readiness LabX <strong>'+Math.round(readiness)+'</strong>/100</span>'
+    ? '<span class="insight-mob-readiness" title="Readiness Score de LabX (combina carga, HRV, sueño y fatiga mental) — distinto del Recovery Score de Recuperación y del Training Readiness nativo de Garmin">Readiness LabX <strong>'+Math.round(readiness)+'</strong>/100'+incompleteHtml+'</span>'
     : '';
 
   var driversHtml = (ins.drivers||[]).map(function(dr){
@@ -3420,7 +3429,7 @@ function updateMobileSparklines(d){
 }
 
 function renderStatusHealth(d){
-  renderInsightMobile(d.insight, d.readiness);
+  renderInsightMobile(d.insight, d.readiness, d.readiness_completeness, d.readiness_warnings);
   // ── Card "¿Cómo va mi carga?" — mismas 3 tarjetas del dashboard de
   // escritorio, adaptadas a una columna (en mobile no entran 3 lado a
   // lado) y con las tarjetas de título/badge que pidió el usuario en vez

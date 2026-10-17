@@ -933,6 +933,7 @@ ul { list-style: none; }
                    2 números?" que ya reportó el usuario una vez. -->
               <span class="insight-readiness-pill" id="insight-readiness-pill" title="Readiness Score de LabX (combina carga, HRV, sueño y fatiga mental) — distinto del Recovery Score de Recuperación y del Training Readiness nativo de Garmin">
                 <span class="irp-label">Readiness LabX</span><strong id="insight-readiness-val">—</strong><span class="irp-max">/100</span>
+                <span id="insight-readiness-incomplete" style="display:none;color:var(--orange,#F97316);font-size:.68rem;margin-left:4px;cursor:help">⚠</span>
               </span>
               <span class="insight-severity sev-neutral" id="insight-severity">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
@@ -1620,7 +1621,7 @@ function renderInsight(ins){
    usuario). El Readiness Score ahora es una pill chica en el header
    de "Insight del día"; sigue animándose con count-up para no perder
    el efecto, solo que sobre un número simple, no un arco SVG. */
-function setInsightReadinessPill(score){
+function setInsightReadinessPill(score, completeness, warnings){
   var el = document.getElementById('insight-readiness-val');
   if(!el || score == null) return;
   var st = null, dur = 900;
@@ -1630,6 +1631,21 @@ function setInsightReadinessPill(score){
     el.textContent = Math.round(e*score);
     if(p < 1) requestAnimationFrame(step);
   });
+  /* Marca visual cuando el DRS se calculó con dimensiones faltantes
+     (completeness < 1) — evita mostrar el número como si fuera pleno
+     cuando en realidad vino con fallback/penalización por datos ausentes. */
+  var warnEl = document.getElementById('insight-readiness-incomplete');
+  if(warnEl){
+    if(completeness != null && completeness < 1){
+      warnEl.style.display = 'inline';
+      var pct = Math.round(completeness * 100);
+      var msg = 'Readiness calculado con ' + pct + '% de datos disponibles.';
+      if(warnings && warnings.length) msg += ' ' + warnings.join(' ');
+      warnEl.title = msg;
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
 }
 
 /* ── ADHERENCIA SEMANAL ─────────────────────────────────────────────────── */
@@ -2276,7 +2292,7 @@ function patchData(){
   }
 
   // Readiness Score — pill chica en el header de Insight del día
-  if(d.readiness != null){ window._gaugeScore = d.readiness; setInsightReadinessPill(d.readiness); }
+  if(d.readiness != null){ window._gaugeScore = d.readiness; setInsightReadinessPill(d.readiness, d.readiness_completeness, d.readiness_warnings); }
 
   // Insight del día
   renderInsight(d.insight);
