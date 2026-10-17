@@ -1,0 +1,673 @@
+/* lx-backend-i18n.js — traduccion de textos que el backend genera en espanol.
+   El backend (training_service, recovery_routes, readiness_service,
+   injury_risk_service, performance_analytics_service) devuelve estas frases
+   en espanol. lxBeT() las traduce por coincidencia exacta o por plantilla
+   ({marcador}). Si el texto no esta en el mapa, lo devuelve sin cambios.
+   Mantener en sincronia con api/tests/test_backend_i18n_mapping.py. */
+var LX_BE_ENTRIES = [
+ [
+  "Todo en rango normal",
+  "be_001"
+ ],
+ [
+  "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy.",
+  "be_002"
+ ],
+ [
+  "Recomendación: seguí tu plan con normalidad.",
+  "be_003"
+ ],
+ [
+  "Ningún indicador de fatiga o mala recuperación está activo",
+  "be_004"
+ ],
+ [
+  "Ninguno de tus indicadores de carga o recuperación está fuera de rango",
+  "be_005"
+ ],
+ [
+  "Estás en tu mejor momento de forma y tu recuperación se ve estable.",
+  "be_006"
+ ],
+ [
+  "Recomendación: buen día para una sesión de calidad o un test.",
+  "be_007"
+ ],
+ [
+  "Buen momento para exigir",
+  "be_008"
+ ],
+ [
+  "Fresco, pero por baja carga",
+  "be_009"
+ ],
+ [
+  "Recomendación: retomá el plan gradualmente",
+  "be_010"
+ ],
+ [
+  "Recomendación: retomá el plan gradualmente en vez de forzar una sesión muy exigente hoy.",
+  "be_011"
+ ],
+ [
+  "Ver tu plan de la semana",
+  "be_012"
+ ],
+ [
+  "Sin datos suficientes para ACWR",
+  "be_013"
+ ],
+ [
+  "Necesitas al menos 7 días de actividad para calcular tu ratio de carga.",
+  "be_014"
+ ],
+ [
+  "⚠️ Alto riesgo de lesión",
+  "be_015"
+ ],
+ [
+  "Riesgo de lesión",
+  "be_016"
+ ],
+ [
+  "Recomendación: bajale el volumen o la intensidad hoy para reducir el riesgo de lesión.",
+  "be_017"
+ ],
+ [
+  "Carga semanal muy por encima de tu promedio de 28 días",
+  "be_018"
+ ],
+ [
+  "Recomendación: reducí volumen o intensidad hoy",
+  "be_019"
+ ],
+ [
+  "Ver ACWR por disciplina",
+  "be_020"
+ ],
+ [
+  "Ver detalle de riesgo de lesión",
+  "be_021"
+ ],
+ [
+  "Recomendación: priorizá recuperación antes de sumar más intensidad.",
+  "be_022"
+ ],
+ [
+  "Recomendación: priorizá recuperación antes de sumar más intensidad",
+  "be_023"
+ ],
+ [
+  "Venís acumulando cansancio por varios días seguidos de entrenamiento exigente.",
+  "be_024"
+ ],
+ [
+  "Recomendación: mantené la intensidad baja y priorizá el descanso esta semana.",
+  "be_025"
+ ],
+ [
+  "Recomendación: intensidad baja y priorizá descanso esta semana para no entrar en sobreentrenamiento",
+  "be_026"
+ ],
+ [
+  "Compone: ACWR 35% · HRV 30% · Monotonía de entrenamiento 20% · Marcadores de sangre 15%",
+  "be_027"
+ ],
+ [
+  "ACWR aislado hoy: {acwr} — se ve en rango por sí solo",
+  "be_028"
+ ],
+ [
+  "Recomendación: monitoreá cómo te sentís antes de una sesión exigente",
+  "be_029"
+ ],
+ [
+  "Presta atención a tu recuperación",
+  "be_030"
+ ],
+ [
+  "Recomendación: sesión suave o descanso hoy — evitá los intervalos de alta intensidad.",
+  "be_031"
+ ],
+ [
+  "Tu cuerpo no se recuperó bien anoche y venís acumulando cansancio de varios días.",
+  "be_032"
+ ],
+ [
+  "Recomendación: sesión aeróbica suave o descanso — evitá intervalos de alta intensidad",
+  "be_033"
+ ],
+ [
+  "Sueño anoche: por debajo de lo habitual",
+  "be_034"
+ ],
+ [
+  "Ver protocolo de recuperación sugerido",
+  "be_035"
+ ],
+ [
+  "Subiste tu carga de entrenamiento muy rápido esta semana respecto a tus semanas previas.",
+  "be_036"
+ ],
+ [
+  "Recomendación: bajale el ritmo en {label} esta semana.",
+  "be_037"
+ ],
+ [
+  "Riesgo de lesión en {label}",
+  "be_038"
+ ],
+ [
+  "ACWR general: {acwr} ({zona}) — en rango",
+  "be_039"
+ ],
+ [
+  "ACWR {label}: {acwr} (zona de riesgo, >1.5)",
+  "be_040"
+ ],
+ [
+  "Carga física: TSB {tsb}, ACWR {acwr} — en rango razonable",
+  "be_041"
+ ],
+ [
+  "Carga de entrenamiento: TSB {tsb}, ACWR {acwr} — todavía en rango razonable",
+  "be_042"
+ ],
+ [
+  "TSB {tsb} y ACWR {acwr} — ambos en rango saludable",
+  "be_043"
+ ],
+ [
+  "TSB +{tsb} — por encima del umbral de forma óptima (+15)",
+  "be_044"
+ ],
+ [
+  "ACWR {acwr} — dentro del rango seguro (0.8–1.3), no viene de entrenar de menos",
+  "be_045"
+ ],
+ [
+  "TSB {tsb} — dentro del rango normal (-8 a +15): ni fatiga excesiva ni forma pico",
+  "be_046"
+ ],
+ [
+  "ACWR {acwr} — dentro del rango seguro (0.8–1.3)",
+  "be_047"
+ ],
+ [
+  "HRV de anoche: {hrv}ms — estable",
+  "be_048"
+ ],
+ [
+  "HRV de anoche: {hrv}ms — bajó",
+  "be_049"
+ ],
+ [
+  "FC en reposo: {rhr}bpm — subió",
+  "be_050"
+ ],
+ [
+  "tu recuperación nocturna bajó",
+  "be_051"
+ ],
+ [
+  "dormiste menos de lo habitual",
+  "be_052"
+ ],
+ [
+  "tu frecuencia cardíaca en reposo subió",
+  "be_053"
+ ],
+ [
+  "Mental Fatigue Score: {score}/100 (check-in de mental.html)",
+  "be_054"
+ ],
+ [
+  "Cumplimiento del plan esta semana: {pct}%",
+  "be_055"
+ ],
+ [
+  "TSB (forma): {tsb} — nivel de fatiga alto",
+  "be_056"
+ ],
+ [
+  "ATL (carga aguda): {atl} — varios días de carga sostenida",
+  "be_057"
+ ],
+ [
+  "TSB (forma): {tsb} — con fatiga acumulada (ATL {atl})",
+  "be_058"
+ ],
+ [
+  "Fatiga acumulada",
+  "be_059"
+ ],
+ [
+  "Carga elevada",
+  "be_060"
+ ],
+ [
+  "Carga por debajo de lo óptimo",
+  "be_061"
+ ],
+ [
+  "Estado de forma óptimo",
+  "be_062"
+ ],
+ [
+  "Reducir carga hoy",
+  "be_063"
+ ],
+ [
+  "Ver histórico de carga",
+  "be_064"
+ ],
+ [
+  "Ver histórico PMC",
+  "be_065"
+ ],
+ [
+  "Fatiga mental (check-in)",
+  "be_066"
+ ],
+ [
+  "Sueño anoche",
+  "be_067"
+ ],
+ [
+  "HRV anoche",
+  "be_068"
+ ],
+ [
+  "TSB {tsb} indica fatiga acumulada severa. Descanso obligatorio.",
+  "be_069"
+ ],
+ [
+  "Tu TSB ({tsb}) indica fatiga acumulada severa. Descanso obligatorio.",
+  "be_070"
+ ],
+ [
+  "TSB {tsb}. Mantén intensidad pero reduce volumen esta semana.",
+  "be_071"
+ ],
+ [
+  "TSB {tsb} — estás fresco y en buena forma. Ideal para competir o testear.",
+  "be_072"
+ ],
+ [
+  "TSB {tsb} — fatiga acumulada muy alta. Riesgo de sobreentrenamiento activo.",
+  "be_073"
+ ],
+ [
+  "TSB {tsb}: programa al menos 4-5 días de taper antes del próximo estímulo duro.",
+  "be_074"
+ ],
+ [
+  "Fatiga acumulada alta (TSB {tsb}). Considera 2-3 días de carga reducida.",
+  "be_075"
+ ],
+ [
+  "TSB {tsb} — bloque de fatiga severa. Considera reducir carga 3-5 días.",
+  "be_076"
+ ],
+ [
+  "Monotonía {monotony} — las sesiones son muy similares entre sí. Agrega variedad.",
+  "be_077"
+ ],
+ [
+  "Monotonía de entrenamiento {monotony} (>2.5 = sobreentrenamiento silencioso).",
+  "be_078"
+ ],
+ [
+  "Varía el tipo y duración de sesiones. Incluye 1 día de descanso completo esta semana.",
+  "be_079"
+ ],
+ [
+  "Tu ACWR es bajo. Puedes aumentar volumen o intensidad gradualmente.",
+  "be_080"
+ ],
+ [
+  "HRV {hrv_drop}% por debajo del promedio 7 días. Señal de fatiga sistémica.",
+  "be_081"
+ ],
+ [
+  "HRV levemente deprimido ({hrv_drop}% bajo promedio). Monitorear mañana.",
+  "be_082"
+ ],
+ [
+  "Tu ACWR ({acwr}) indica sobrecarga moderada. Prioriza recuperación.",
+  "be_083"
+ ],
+ [
+  "ACWR {acwr} — carga aguda muy elevada vs crónica. Zona de alto riesgo de lesión.",
+  "be_084"
+ ],
+ [
+  "Reduce el volumen de entrenamiento los próximos 3-5 días al 60-70% del habitual.",
+  "be_085"
+ ],
+ [
+  "ACWR {acwr} — zona de riesgo elevado. No aumentes carga esta semana.",
+  "be_086"
+ ],
+ [
+  "Mantén la carga estable esta semana. Evita sesiones de volumen alto.",
+  "be_087"
+ ],
+ [
+  "Prioriza recuperación hoy: sueño 8h+, hidratación, sesión suave máximo Z2.",
+  "be_088"
+ ],
+ [
+  "Reduce intensidad y volumen al 70% esta semana. Prioriza sueño y nutrición.",
+  "be_089"
+ ],
+ [
+  "✓ Carga bien gestionada. Puedes continuar con el plan habitual.",
+  "be_090"
+ ],
+ [
+  "⛔ RIESGO CRÍTICO: Descansa hoy. Consulta con tu coach antes de entrenar mañana.",
+  "be_091"
+ ],
+ [
+  "CRÍTICO",
+  "be_092"
+ ],
+ [
+  "Sin datos fisiológicos disponibles — DRS neutral (70)",
+  "be_093"
+ ],
+ [
+  "Recuperación",
+  "be_094"
+ ],
+ [
+  "HRV + Sueño",
+  "be_095"
+ ],
+ [
+  "Estado Mental",
+  "be_096"
+ ],
+ [
+  "Fatiga Neurocognitiva",
+  "be_097"
+ ],
+ [
+  "Bioquímica",
+  "be_098"
+ ],
+ [
+  "Óptimo",
+  "be_099"
+ ],
+ [
+  "Crítico",
+  "be_100"
+ ],
+ [
+  "Condiciones fisiológicas ideales. Aprovecha para sesiones de calidad.",
+  "be_101"
+ ],
+ [
+  "Sesión de alta intensidad o largo endurance según plan",
+  "be_102"
+ ],
+ [
+  "Buena disposición para entrenar. Ejecuta el plan con normalidad.",
+  "be_103"
+ ],
+ [
+  "Sigue el plan — intensidad moderada a alta según programa",
+  "be_104"
+ ],
+ [
+  "Readiness moderada. Ajusta la intensidad si sientes fatiga.",
+  "be_105"
+ ],
+ [
+  "Preferir Zona 2 — evitar series VO2 hoy",
+  "be_106"
+ ],
+ [
+  "Señales de fatiga acumulada. Considera reducir volumen o descansar.",
+  "be_107"
+ ],
+ [
+  "Solo Zona 1 o descanso activo (movilidad, natación suave)",
+  "be_108"
+ ],
+ [
+  "Cuerpo en estado de recuperación. El entrenamiento duro hoy puede lesionar.",
+  "be_109"
+ ],
+ [
+  "Descanso completo o recuperación activa muy suave",
+  "be_110"
+ ],
+ [
+  "🟢 Forma óptima",
+  "be_111"
+ ],
+ [
+  "🟡 Recuperación moderada",
+  "be_112"
+ ],
+ [
+  "🟡 Carga pendiente",
+  "be_113"
+ ],
+ [
+  "🔴 Recuperación insuficiente",
+  "be_114"
+ ],
+ [
+  "Recuperación óptima. Sistema nervioso listo para alta intensidad.",
+  "be_115"
+ ],
+ [
+  "Ventana ideal para trabajo de calidad: VO2max, umbrales o bloque de fuerza.",
+  "be_116"
+ ],
+ [
+  "Buenas condiciones. Puedes entrenar con intensidad normal.",
+  "be_117"
+ ],
+ [
+  "Monitora la respuesta — si el esfuerzo percibido supera lo esperado, modera.",
+  "be_118"
+ ],
+ [
+  "Recuperación moderada. Sesión a intensidad controlada recomendada.",
+  "be_119"
+ ],
+ [
+  "Carga de entrenamiento acumulada detectada (TSB bajo). No añadas intensidad extra hoy.",
+  "be_120"
+ ],
+ [
+  "HRV bajo baseline. El sistema nervioso no está completamente recuperado.",
+  "be_121"
+ ],
+ [
+  "Fatiga acumulada significativa. Sesión técnica suave o descanso activo.",
+  "be_122"
+ ],
+ [
+  "Prioriza dormir bien esta noche — un buen sueño puede revertir el score mañana.",
+  "be_123"
+ ],
+ [
+  "Recuperación insuficiente. El riesgo de lesión o sobreentrenamiento es alto.",
+  "be_124"
+ ],
+ [
+  "Descanso completo o movilidad suave. No ignores esta señal.",
+  "be_125"
+ ],
+ [
+  "HRV {delta}% bajo tu baseline ({base}ms). Recuperación neuro comprometida.",
+  "be_126"
+ ],
+ [
+  "HRV {delta}% sobre tu baseline. Forma potencialmente óptima.",
+  "be_127"
+ ],
+ [
+  "Sesión completa según plan. Alta intensidad disponible.",
+  "be_128"
+ ],
+ [
+  "Sesión moderada. Reduce intensidad al 75-80% del plan.",
+  "be_129"
+ ],
+ [
+  "Solo Z1-Z2. Técnica o recuperación activa. TSS ≤ 50.",
+  "be_130"
+ ],
+ [
+  "Descanso completo o stretching suave. Cero carga.",
+  "be_131"
+ ],
+ [
+  "HRV muy bajo. El sistema nervioso autónomo no está recuperado. Riesgo de sobreentrenamiento.",
+  "be_132"
+ ],
+ [
+  "Sueño insuficiente. El 75% de la hormona de crecimiento se libera en sueño profundo.",
+  "be_133"
+ ],
+ [
+  "🌙 Prioriza dormir 8h esta noche",
+  "be_134"
+ ],
+ [
+  "🧘 Estrés alto detectado — técnicas de relajación o meditación",
+  "be_135"
+ ],
+ [
+  "🫀 HRV bajo — protocolo de recuperación neuro (Z1, baño frío, respiración)",
+  "be_136"
+ ],
+ [
+  "Fatiga Moderada",
+  "be_137"
+ ],
+ [
+  "Fatiga Alta",
+  "be_138"
+ ],
+ [
+  "Sin datos",
+  "be_139"
+ ],
+ [
+  "Bajo (infracarga)",
+  "be_140"
+ ],
+ [
+  "Faltan al menos 7 días de carga registrada para calcular el ACWR.",
+  "be_141"
+ ],
+ [
+  "Aumenta la carga gradualmente para mantener adaptación.",
+  "be_142"
+ ],
+ [
+  "Zona óptima de carga. Mantén el patrón actual.",
+  "be_143"
+ ],
+ [
+  "Reduce la intensidad o volumen esta semana para consolidar.",
+  "be_144"
+ ],
+ [
+  "Riesgo real de lesión por sobrecarga. Prioriza recuperación.",
+  "be_145"
+ ],
+ [
+  "Análisis de sangre pendiente",
+  "be_146"
+ ],
+ [
+  "No tienes análisis de laboratorio en los últimos 90 días. Para atletas en carga, se recomienda cada trimestre.",
+  "be_147"
+ ],
+ [
+  "Solicita análisis completo: hemograma, ferritina, vitamina D, cortisol, testosterona, TSH.",
+  "be_148"
+ ],
+ [
+  "Semana de baja carga",
+  "be_149"
+ ],
+ [
+  "Si es semana de recuperación planificada, continúa. Si no, suma al menos 2 sesiones de calidad.",
+  "be_150"
+ ],
+ [
+  "Fatiga mental acumulada",
+  "be_151"
+ ],
+ [
+  "Reduce la carga cognitiva antes de sesiones clave. Prueba los protocolos de mindfulness en el módulo Mental.",
+  "be_152"
+ ],
+ [
+  "Valores estimados desde actividades recientes. Confirmar con test formal para mayor precisión.",
+  "be_153"
+ ],
+ [
+  "Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.",
+  "mentmsg_mfs_low"
+ ]
+];
+(function(){
+  var FIXED = {}, TEMPL = [];
+  function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  LX_BE_ENTRIES.forEach(function(e){
+    var es = e[0], key = e[1];
+    if(es.indexOf('{') === -1){ FIXED[es] = key; return; }
+    var names = [], parts = es.split(/\{(\w+)\}/), src = '';
+    for(var i = 0; i < parts.length; i++){
+      if(i % 2 === 0){ src += escRe(parts[i]); }
+      else { names.push(parts[i]); src += '(.+?)'; }
+    }
+    TEMPL.push({ re: new RegExp('^' + src + '$'), key: key, names: names });
+  });
+  function tr(key, vars){
+    var v = window.i18n ? window.i18n.t(key) : null;
+    if(!v || v === key) return null;
+    if(vars) Object.keys(vars).forEach(function(n){ v = v.split('{' + n + '}').join(vars[n]); });
+    return v;
+  }
+  function one(text){
+    if(Object.prototype.hasOwnProperty.call(FIXED, text)){ return tr(FIXED[text]) || text; }
+    for(var i = 0; i < TEMPL.length; i++){
+      var m = TEMPL[i].re.exec(text);
+      if(m){
+        var vars = {};
+        TEMPL[i].names.forEach(function(n, j){ vars[n] = m[j + 1]; });
+        return tr(TEMPL[i].key, vars) || text;
+      }
+    }
+    return text;
+  }
+  /* El backend une varias oraciones con espacio (p.ej. recomendaciones): se traduce cada una. */
+  window.lxBeT = function(text){
+    if(typeof text !== 'string' || !text) return text;
+    var t = one(text);
+    if(t !== text) return t;
+    var parts = text.split(/(?<=[.!?])\s+/), out = [], i = 0;
+    if(parts.length < 2) return text;
+    while(i < parts.length){
+      var hit = false;
+      for(var j = parts.length; j > i; j--){
+        var seg = parts.slice(i, j).join(' '), r = one(seg);
+        if(r !== seg || j === i + 1){ out.push(r); i = j; hit = true; break; }
+      }
+      if(!hit){ out.push(parts[i]); i++; }
+    }
+    return out.join(' ');
+  };
+})();
