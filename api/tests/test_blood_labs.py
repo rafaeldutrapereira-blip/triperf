@@ -112,8 +112,13 @@ def auth_headers(client, db, athlete_user):
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_markers_catalog_no_auth(client):
+def test_markers_catalog_requires_auth(client):
     resp = client.get("/api/labs/markers")
+    assert resp.status_code == 401
+
+
+def test_markers_catalog_authenticated(client, auth_headers):
+    resp = client.get("/api/labs/markers", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert "hb" in data

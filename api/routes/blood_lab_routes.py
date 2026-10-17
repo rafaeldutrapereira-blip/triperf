@@ -372,7 +372,7 @@ def _audit_lab_access(user_id: str, action: str, exam_id: str | None, db: Sessio
 
 
 @router.get("/markers")
-def get_markers_catalog():
+def get_markers_catalog(me: User = Depends(get_current_user)):
     """
     Retorna el catálogo completo de marcadores con rangos deportivos.
     Útil para renderizar el formulario de ingreso y la leyenda del dashboard.
