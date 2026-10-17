@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '191';  // 2026-10-17: despliegue i18n — reload al cambiar idioma, sync lang desde perfil
+var BUILD_VERSION = '192';  // 2026-10-17: fix Blood Labs (/labs/team y /labs/timeline)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
