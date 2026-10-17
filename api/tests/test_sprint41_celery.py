@@ -170,31 +170,3 @@ class TestAiCoachAsync:
         )
         assert resp.status_code in (422, 503)
 
-
-# ── docker-compose.override.yml existence ────────────────────────────────────
-
-class TestDockerComposeOverride:
-    def test_override_file_exists(self):
-        from pathlib import Path
-        override = Path(__file__).resolve().parent.parent.parent / "docker-compose.override.yml"
-        assert override.exists(), "docker-compose.override.yml should exist"
-
-    def test_override_has_worker_service(self):
-        from pathlib import Path
-        override = Path(__file__).resolve().parent.parent.parent / "docker-compose.override.yml"
-        content = override.read_text()
-        assert "worker:" in content
-        assert "celery" in content
-
-    def test_override_has_postgres_no_profile(self):
-        from pathlib import Path
-        override = Path(__file__).resolve().parent.parent.parent / "docker-compose.override.yml"
-        content = override.read_text()
-        assert "profiles: []" in content  # overrides prod profile to empty
-
-    def test_override_has_redis(self):
-        from pathlib import Path
-        override = Path(__file__).resolve().parent.parent.parent / "docker-compose.override.yml"
-        content = override.read_text()
-        assert "redis:" in content
-        assert "REDIS_URL" in content

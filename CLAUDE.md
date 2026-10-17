@@ -10,7 +10,7 @@ LabX es una plataforma de coaching y análisis de rendimiento para triatletas/co
 
 ## Stack y arquitectura
 
-- **Backend:** FastAPI + SQLAlchemy + Alembic + SQLite (`api/coach_main.py` es el entrypoint real). JWT en cookies HttpOnly (`lx_co_token` es la cookie real — páginas que leen `lx_token` o `kl_s.token` están usando claves que NO existen y van a fallar con 401 silencioso).
+- **Backend:** FastAPI + SQLAlchemy + Alembic + SQLite (`api/coach_main.py` es el entrypoint real). **Dos tokens coexisten:** `lx_access_token` es la cookie HttpOnly real que setea `/auth/login` (JS no puede leerla, pero viaja sola con `credentials:'include'`); `lx_co_token` es el bearer token en `localStorage` que la mayoría de páginas HTML usan vía header `Authorization` (auth.js lo guarda ahí, no es una cookie). Páginas que leen `lx_token` o `kl_s.token` están usando claves que NO existen y van a fallar con 401 silencioso.
 - **Frontend:** HTML/JS estático servido por el mismo backend, sin build step para la web. Sidebar de navegación estándar vía `nav.js` + `routes.config.js` (cache-busting importante — bump de versión en el query string cuando se toca).
 - **App móvil:** Capacitor. Build real con `scripts/build_www.py` (nunca copiar archivos a mano al directorio `www/`). El entry point real es `index.html`, no `athlete-app.html`. Dominio real: **labxperformanceapp.com** (no existe `beta.labx.app`).
 - **PWA / Service Worker:** `sw.js`, cache-first para estáticos. Cada deploy que toque un archivo precacheado **debe** incrementar `BUILD_VERSION` en `sw.js`, si no los usuarios quedan con versión vieja indefinidamente (hay que cerrar la PWA por completo, no minimizar, para forzar la actualización del Service Worker).

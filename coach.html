@@ -3005,14 +3005,19 @@ window.loadReport = async function(){
   try{
     var r = await apiGet('/coach/report/athlete/'+uid+'?start='+start+'&end='+end);
     var wellness = [], bloodLabs = [], nutritionPlan = null;
-    try{ wellness     = await apiGet('/athlete/wellness/coach/'+uid+'?days=60'); }catch(e2){}
-    try{ bloodLabs    = await apiGet('/athlete/blood-labs/coach/'+uid); }catch(e2){}
-    try{ nutritionPlan = await apiGet('/athlete/nutrition-plan/coach/'+uid); }catch(e2){}
-    renderReport(r, el, wellness, bloodLabs, nutritionPlan);
+    // Secciones opcionales del reporte: si fallan (403 por plan del atleta,
+    // 404 sin datos, etc.) el reporte sigue mostrando el resto, pero antes
+    // esto quedaba completamente silencioso — el coach veía un reporte
+    // "completo" sin forma de saber que faltaban secciones enteras.
+    var partialErrors = [];
+    try{ wellness      = await apiGet('/athlete/wellness/coach/'+uid+'?days=60'); }catch(e2){ partialErrors.push('Bienestar'); }
+    try{ bloodLabs     = await apiGet('/athlete/blood-labs/coach/'+uid); }catch(e2){ partialErrors.push('Exámenes de sangre'); }
+    try{ nutritionPlan = await apiGet('/athlete/nutrition-plan/coach/'+uid); }catch(e2){ partialErrors.push('Plan de nutrición'); }
+    renderReport(r, el, wellness, bloodLabs, nutritionPlan, partialErrors);
   }catch(e){ el.innerHTML='<div class="empty" style="color:var(--red)">Error: '+esc(e.message)+'</div>'; }
 };
 
-function renderReport(r, el, wellness, bloodLabs, nutritionPlan){
+function renderReport(r, el, wellness, bloodLabs, nutritionPlan, partialErrors){
   var pctColor = r.compliance_pct>=80?'var(--green)':r.compliance_pct>=50?'var(--gold)':'var(--red)';
   var tsbColor = !r.tsb?'var(--muted)':r.tsb>5?'var(--green)':r.tsb>-10?'var(--gold)':'var(--red)';
   var tsbLabel = !r.tsb?'—':r.tsb>5?'Fresco':r.tsb>-10?'Neutro':'Fatigado';
@@ -3230,8 +3235,15 @@ function renderReport(r, el, wellness, bloodLabs, nutritionPlan){
     +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>'
     +'Imprimir / PDF</button></div>';
 
+  var partialWarning = (partialErrors && partialErrors.length)
+    ? '<div style="margin-bottom:.75rem;padding:.6rem .8rem;border-radius:var(--radius-sm);background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.3);font-size:.78rem;color:var(--gold)">'
+      + '⚠ No se pudieron cargar estas secciones: ' + esc(partialErrors.join(', ')) + '. El resto del reporte es real.'
+      + '</div>'
+    : '';
+
   el.innerHTML = pdfBtn
     + '<div style="margin-bottom:.75rem;font-size:.82rem;color:var(--muted)">Reporte de <strong style="color:var(--text)">'+esc(r.athlete_nombre)+'</strong> &nbsp;·&nbsp; '+r.period_start+' → '+r.period_end+'</div>'
+    + partialWarning
     + garminNote + kpis + pmc + wellnessBlock + bloodBlock + nutBlock + weekChart + sportTable;
 }
 

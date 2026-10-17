@@ -244,8 +244,12 @@ const data = {
 };
 
 function getToken() {
-  const m = document.cookie.match(/lx_access_token=([^;]+)/);
-  return m ? m[1] : (localStorage.getItem('lx_token') || '');
+  // lx_access_token es HttpOnly (viaja sola vía credentials:'include' en
+  // cada fetch de esta página, no hace falta leerla acá — document.cookie
+  // nunca la va a devolver). lx_co_token es el bearer token real en
+  // localStorage que el backend acepta como alternativa a la cookie (antes
+  // esto buscaba 'lx_token', una clave que nunca existió).
+  return localStorage.getItem('lx_co_token') || '';
 }
 
 function authH() {

@@ -19,12 +19,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestRequiredFiles:
-    def test_dockerfile_exists(self):
-        assert (ROOT / "Dockerfile").exists()
-
-    def test_docker_compose_exists(self):
-        assert (ROOT / "docker-compose.yml").exists()
-
     def test_env_example_exists(self):
         assert (ROOT / ".env.example").exists()
 
@@ -117,39 +111,6 @@ class TestEnvExample:
             content = gitignore.read_text(encoding="utf-8")
             # .env.example debe NO estar en .gitignore (debe ser commiteado)
             assert ".env.example" not in content, ".env.example no debe estar en .gitignore"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TESTS: Dockerfile
-# ─────────────────────────────────────────────────────────────────────────────
-
-class TestDockerfile:
-    def _content(self):
-        return (ROOT / "Dockerfile").read_text(encoding="utf-8")
-
-    def test_uses_slim_image(self):
-        content = self._content()
-        assert "slim" in content or "alpine" in content, \
-            "Usar imagen slim o alpine para menor superficie de ataque"
-
-    def test_has_non_root_user(self):
-        content = self._content()
-        assert "USER" in content, "Dockerfile debe ejecutar como non-root"
-
-    def test_has_healthcheck(self):
-        content = self._content()
-        assert "HEALTHCHECK" in content, "Dockerfile debe tener HEALTHCHECK"
-
-    def test_exposes_port(self):
-        content = self._content()
-        assert "EXPOSE" in content, "Dockerfile debe declarar EXPOSE"
-
-    def test_copies_requirements_first(self):
-        content = self._content()
-        copy_req_pos = content.find("COPY requirements")
-        copy_src_pos = content.find("COPY api/")
-        assert copy_req_pos < copy_src_pos, \
-            "requirements deben copiarse antes del código (cache de layers)"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

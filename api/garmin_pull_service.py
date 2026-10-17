@@ -647,23 +647,6 @@ def _compute_training_load(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ACWR (razón aguda:crónica, 7:28 días)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _compute_acwr(load_rows: list[dict]) -> float:
-    """Últimas 28 filas → ACWR = promedio últimas 7 / promedio últimas 28."""
-    if len(load_rows) < 7:
-        return 0.0
-    last28 = load_rows[-28:]
-    last7  = load_rows[-7:]
-    chronic = sum(r["tss"] for r in last28) / len(last28)
-    acute   = sum(r["tss"] for r in last7)  / len(last7)
-    if chronic < 1:
-        return 0.0
-    return round(acute / chronic, 2)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # PARSE de activities Garmin → formato interno
 # ─────────────────────────────────────────────────────────────────────────────
 

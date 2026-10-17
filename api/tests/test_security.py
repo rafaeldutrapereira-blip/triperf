@@ -110,7 +110,7 @@ class TestContentTypeMiddleware:
 class TestJWTAudience:
     def test_token_with_wrong_audience_rejected(self, client, athlete_user):
         """QW-08: Token con audience incorrecto debe ser rechazado."""
-        from jose import jwt
+        import jwt
         bad_token = jwt.encode(
             {"sub": athlete_user.id, "rol": "athlete", "nombre": "Test",
              "gen": 1, "aud": "wrong-audience"},

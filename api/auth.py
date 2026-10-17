@@ -12,7 +12,7 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
 import bcrypt as _bcrypt
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy.orm import Session
 
 from .database import get_db
@@ -82,7 +82,7 @@ def decode_token(token: str) -> dict:
         if _token_hash(token) in _revoked_hashes:
             raise HTTPException(status_code=401, detail="Token revocado")
         return payload
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido o expirado",
