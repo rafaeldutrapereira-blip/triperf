@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '193';  // 2026-10-17: gating por rol (Solo coach) y error real en Blood Labs
+var BUILD_VERSION = '194';  // 2026-10-17: i18n completo ES/PT/EN (dashboard, shell, analytics, athlete-app, huella, gear, training plan)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
