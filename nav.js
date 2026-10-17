@@ -64,6 +64,11 @@
   var PLAN_COLORS = { basic:'#0EA5E9', agegroup:'#A855F7', elite:'#F0A500' };
 
   function _escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _nt(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
+  function _fmt(str,o){ return String(str).replace(/\{(\w+)\}/g,function(_,n){ return o[n]!=null?o[n]:''; }); }
+  function modLbl(m){ return '<span data-i18n="'+_escH(m.labelI18n||'')+'">'+_escH(_nt(m.labelI18n||'',m.label||''))+'</span>'; }
+  function _planNameFromLabel(l){ var m={'Básico':'shell_plan_basic','Agegroup':'shell_plan_agegroup','Élite':'shell_plan_elite','Elite':'shell_plan_elite'}; return m[l]?_nt(m[l],l):l; }
+  function _planLabel(p){ return p==='agegroup'?_nt('shell_plan_agegroup','Agegroup'):p==='elite'?_nt('shell_plan_elite','Élite'):_nt('shell_plan_basic','Básico'); }
 
   /* ═══════════════════════════════════════════════════════════════
      3.  SVG CONSTANTS
@@ -126,12 +131,12 @@
     var apiRol = (sess && sess.api_rol)|| '';
     var name   = (sess && (sess.name || sess.username)) || 'Usuario';
     var init   = (sess && (sess.initials || (sess.name ? sess.name[0].toUpperCase() : 'U'))) || '?';
-    var label  = PLAN_LABELS[plan] || 'Básico';
+    var label  = _planLabel(plan);
     var color  = PLAN_COLORS[plan] || '#0EA5E9';
 
     var roleText = label;
-    if(apiRol === 'admin')      roleText = 'Élite · Admin';
-    else if(apiRol === 'coach') roleText = label + ' · Coach';
+    if(apiRol === 'admin')      roleText = _nt('shell_role_admin','Élite · Admin');
+    else if(apiRol === 'coach') roleText = _fmt(_nt('shell_role_coach','{plan} · Coach'),{plan:label});
 
     /* ── Construir links desde routesConfig ─── */
     var R     = _routes();
@@ -173,13 +178,13 @@
 
       if(allowed){
         links += '<a href="' + _escH(m.file) + '" class="' + cls + '" data-kl-module="' + m.id + '">' +
-                 icon + m.label + '</a>';
+                 icon + modLbl(m) + '</a>';
       } else {
         /* Locked: sin href, click → upgrade wall */
         links += '<a class="' + cls + '" data-kl-module="' + m.id + '"' +
-                 ' title="' + _escH(reqPlan === 'Solo coach' ? 'Solo coach' : 'Requiere plan ' + reqPlan) + '"' +
+                 ' title="' + _escH(reqPlan === 'Solo coach' ? _nt('shell_only_coach','Solo coach') : _fmt(_nt('shell_req_plan_tip','Requiere plan {plan}'),{plan:_planNameFromLabel(reqPlan)})) + '"' +
                  ' onclick="showUpgradeWall(\'' + _escH(reqPlan) + '\',\'' + m.id + '\')">' +
-                 icon + m.label + lockEl + '</a>';
+                 icon + modLbl(m) + lockEl + '</a>';
       }
     });
 
@@ -201,7 +206,7 @@
             '<div class="sb-urole" id="kl-sb-urole">' + _escH(roleText) + '</div>' +
           '</div>' +
         '</div>' +
-        '<button onclick="KL.logout()" class="sb-logout" title="Salir" aria-label="Salir">' + _LOGOUT_SVG + '</button>' +
+        '<button onclick="KL.logout()" class="sb-logout" title="' + _escH(_nt('shell_logout','Salir')) + '" aria-label="' + _escH(_nt('shell_logout','Salir')) + '">' + _LOGOUT_SVG + '</button>' +
       '</div>';
 
     /* ── Topbar mobile ─── */
@@ -223,13 +228,13 @@
   ═══════════════════════════════════════════════════════════════ */
   function _syncGarmin(btn){
     var tok = localStorage.getItem('lx_co_token');
-    if(!tok){ lxToast && lxToast.warn('Sesión no disponible'); return; }
+    if(!tok){ lxToast && lxToast.warn(_nt('shell_session_unavailable','Sesión no disponible')); return; }
     if(btn){ btn.disabled=true; btn.classList.add('spin'); }
     var API = (window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api');
     fetch(API+'/personal/sync', { method:'POST', headers:{Authorization:'Bearer '+tok} })
       .then(function(r){ return r.json(); })
-      .then(function(){ if(btn){ btn.textContent='Sync ✓'; setTimeout(function(){ btn.innerHTML=_SYNC_SVG+'Sync Garmin'; btn.disabled=false; btn.classList.remove('spin'); },4000); } })
-      .catch(function(){ if(btn){ btn.textContent='Error'; setTimeout(function(){ btn.innerHTML=_SYNC_SVG+'Sync Garmin'; btn.disabled=false; btn.classList.remove('spin'); },2000); } });
+      .then(function(){ if(btn){ btn.textContent=_nt('shell_sync_done','Sync ✓'); setTimeout(function(){ btn.innerHTML=_SYNC_SVG+_nt('shell_sync_garmin','Sync Garmin'); btn.disabled=false; btn.classList.remove('spin'); },4000); } })
+      .catch(function(){ if(btn){ btn.textContent=_nt('shell_sync_error','Error'); setTimeout(function(){ btn.innerHTML=_SYNC_SVG+_nt('shell_sync_garmin','Sync Garmin'); btn.disabled=false; btn.classList.remove('spin'); },2000); } });
   }
   window.syncGarmin = _syncGarmin; /* compatibilidad con onclicks existentes */
 
@@ -272,6 +277,19 @@
 
   /* nav.js está al final del <body>: el <aside id="sidebar"> ya existe en el DOM.
      Llamar _onReady() directo en sincrónico. No usar DOMContentLoaded. */
+  function _refreshI18n(){
+    var sv=null; try{ sv=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); }catch(e){}
+    renderSidebar(sv);
+    document.querySelectorAll('#sidebar [data-i18n], header.sb-topbar [data-i18n]').forEach(function(el){ var v=_nt(el.getAttribute('data-i18n'),''); if(v) el.textContent=v; });
+    var t=document.querySelector('#lx-ai-panel .lx-ai-title');
+    if(t) t.innerHTML='&#x26A1; '+_escH(_nt('shell_ai_title','Coach IA · LabX'));
+    var w=document.querySelector('#lx-ai-msgs > .lx-ai-msg.ai');
+    if(w) w.textContent=_nt('shell_ai_welcome','Hola! Soy tu Coach IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.');
+    var inp=document.getElementById('lx-ai-inp');
+    if(inp) inp.placeholder=_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…');
+  }
+  document.addEventListener('lx:i18nready', _refreshI18n);
+
   _onReady();
 
   /* ═══════════════════════════════════════════════════════════════
@@ -326,7 +344,7 @@
       btn.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.95 9.95 0 0 1-4.77-1.21L2 22l1.21-5.23A9.95 9.95 0 0 1 2 12 10 10 0 0 1 12 2z"/><path d="M8 12h8M8 8h5"/></svg>';
       btn.onclick=togglePanel;
       var panel=document.createElement('div'); panel.id='lx-ai-panel';
-      panel.innerHTML='<div id="lx-ai-head"><span class="lx-ai-title">&#x26A1; Coach IA &middot; LabX</span><button class="lx-ai-close" onclick="document.getElementById(\'lx-ai-panel\').classList.remove(\'open\')">&#x2715;</button></div><div id="lx-ai-msgs"><div class="lx-ai-msg ai">Hola! Soy tu Coach IA. Preg&uacute;ntame sobre tu entrenamiento, carga, nutrici&oacute;n o estrategia de carrera.</div></div><form id="lx-ai-form" onsubmit="return false;"><textarea id="lx-ai-inp" rows="2" placeholder="Pregunta algo sobre tu entrenamiento&hellip;" onkeydown="lxAiKey(event)"></textarea><button id="lx-ai-send" type="button" onclick="lxAiSend()">&#x2192;</button></form>';
+      panel.innerHTML='<div id="lx-ai-head"><span class="lx-ai-title">&#x26A1; '+_escH(_nt('shell_ai_title','Coach IA · LabX'))+'</span><button class="lx-ai-close" onclick="document.getElementById(\'lx-ai-panel\').classList.remove(\'open\')">&#x2715;</button></div><div id="lx-ai-msgs"><div class="lx-ai-msg ai">'+_escH(_nt('shell_ai_welcome','Hola! Soy tu Coach IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.'))+'</div></div><form id="lx-ai-form" onsubmit="return false;"><textarea id="lx-ai-inp" rows="2" placeholder="'+_escH(_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…'))+'" onkeydown="lxAiKey(event)"></textarea><button id="lx-ai-send" type="button" onclick="lxAiSend()">&#x2192;</button></form>';
       document.body.appendChild(btn); document.body.appendChild(panel);
     }
 
@@ -340,13 +358,13 @@
       var msg=(inp.value||'').trim(); if(!msg) return;
       inp.value=''; btn.disabled=true;
       var uDiv=document.createElement('div'); uDiv.className='lx-ai-msg user'; uDiv.textContent=msg; msgs.appendChild(uDiv);
-      var loading=document.createElement('div'); loading.className='lx-ai-msg ai loading'; loading.textContent='Pensando…'; msgs.appendChild(loading);
+      var loading=document.createElement('div'); loading.className='lx-ai-msg ai loading'; loading.textContent=_nt('shell_ai_thinking','Pensando…'); msgs.appendChild(loading);
       msgs.scrollTop=msgs.scrollHeight;
       var t=tok();
       fetch(API+'/ai/coach-suggest',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},t?{'Authorization':'Bearer '+t}:{}),credentials:'include',body:JSON.stringify({message:msg,history:hist})})
         .then(function(r){return r.json();})
-        .then(function(d){ loading.remove(); var aDiv=document.createElement('div'); aDiv.className='lx-ai-msg ai'; aDiv.textContent=d.answer||d.detail||'Sin respuesta.'; msgs.appendChild(aDiv); msgs.scrollTop=msgs.scrollHeight; hist.push({role:'user',content:msg}); hist.push({role:'assistant',content:d.answer||''}); if(hist.length>20)hist=hist.slice(-20); })
-        .catch(function(){ loading.textContent='Error de conexi\xf3n. Intenta de nuevo.'; loading.style.color='#FCA5A5'; })
+        .then(function(d){ loading.remove(); var aDiv=document.createElement('div'); aDiv.className='lx-ai-msg ai'; aDiv.textContent=d.answer||d.detail||_nt('shell_ai_no_answer','Sin respuesta.'); msgs.appendChild(aDiv); msgs.scrollTop=msgs.scrollHeight; hist.push({role:'user',content:msg}); hist.push({role:'assistant',content:d.answer||''}); if(hist.length>20)hist=hist.slice(-20); })
+        .catch(function(){ loading.textContent=_nt('shell_ai_conn_error','Error de conexi\xf3n. Intenta de nuevo.'); loading.style.color='#FCA5A5'; })
         .finally(function(){ btn.disabled=false; inp.focus(); });
     };
     injectWidget();
@@ -377,14 +395,14 @@
   window.lxUI=(function(){
     var SP='<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="rgba(8,116,174,.25)" stroke-width="3"/><path d="M16 4a12 12 0 0 1 12 12" stroke="#0EA5E9" stroke-width="3" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur=".8s" repeatCount="indefinite"/></path></svg>';
     function wrap(content){ return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;color:#7FB3CC;font-size:.85rem">'+content+'</div>'; }
-    function setLoading(el,msg){ if(el) el.innerHTML=wrap(SP+'<span>'+_escH(msg||'Cargando…')+'</span>'); }
+    function setLoading(el,msg){ if(el) el.innerHTML=wrap(SP+'<span>'+_escH(msg||_nt('shell_loading','Cargando…'))+'</span>'); }
     function setError(el,msg,retry){
       if(!el) return;
       var bid='lx-rt-'+Math.random().toString(36).slice(2);
-      el.innerHTML=wrap('<span style="font-size:28px">&#x26A0;&#xFE0F;</span><span>'+_escH(msg||'Error al cargar datos')+'</span>'+(retry?'<button id="'+_escH(bid)+'" style="margin-top:4px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);color:#0EA5E9;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:.82rem">Reintentar</button>':''));
+      el.innerHTML=wrap('<span style="font-size:28px">&#x26A0;&#xFE0F;</span><span>'+_escH(msg||_nt('shell_error_load','Error al cargar datos'))+'</span>'+(retry?'<button id="'+_escH(bid)+'" style="margin-top:4px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);color:#0EA5E9;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:.82rem">Reintentar</button>':''));
       if(retry){ var b=el.querySelector('#'+bid); if(b) b.addEventListener('click',retry); }
     }
-    function setEmpty(el,msg,icon){ if(el) el.innerHTML=wrap('<span style="font-size:32px">'+_escH(icon||'&#x1F4CB;')+'</span><span>'+_escH(msg||'Sin datos a\xfan')+'</span>'); }
+    function setEmpty(el,msg,icon){ if(el) el.innerHTML=wrap('<span style="font-size:32px">'+_escH(icon||'&#x1F4CB;')+'</span><span>'+_escH(msg||_nt('shell_empty','Sin datos a\xfan'))+'</span>'); }
     function clear(el){ if(el) el.innerHTML=''; }
     return { loading:setLoading, error:setError, empty:setEmpty, clear:clear };
   })();
@@ -395,37 +413,34 @@
   window.showUpgradeWall=function(reqPlan, modName){
     if(document.getElementById('lx-upgrade-wall')) return;
     if(!reqPlan) reqPlan=_reqPlanLabel(modName);
-    var modLabels={
-      training_plan:'Plan de Entrenamiento',nutrition:'Nutrici\xf3n Inteligente',
-      analytics:'Analytics Avanzado',blood_labs:'Blood Labs',
-      training_detail:'Detalle de Sesi\xf3n',race_predictor:'Predictor de Carrera',
-      year_in_review:'Year in Review',community:'Comunidad',
-      recovery:'Recuperaci\xf3n &amp; HRV',mental:'Rendimiento Mental',
-      race_day:'Race Day Intelligence',ai_coach:'AI Coach',
-      adaptive:'Plan Adaptativo',indoor_workout:'Indoor Workout',coach:'Coach'
-    };
-    var modLabel=modLabels[modName]||'este m\xf3dulo';
+    var R=_routes();
+    var mod=(R&&R.modules)?R.modules.filter(function(m){ return m.id===modName; })[0]:null;
+    var modLabel=mod?_nt(mod.labelI18n||'',mod.label||''):_nt('shell_mod_this','este módulo');
     var roleOnly=(reqPlan==='Solo coach');
+    var planName=_planNameFromLabel(reqPlan);
+    var badge=roleOnly
+      ? _nt('shell_only_coach','Solo coach')
+      : _fmt(_nt('shell_wall_req_plan','Requiere Plan {plan}'),{plan:planName});
     var wall=document.createElement('div'); wall.id='lx-upgrade-wall';
     wall.innerHTML=
       '<div class="lx-uw-box">'+
         '<div class="lx-uw-lock">&#x1F512;</div>'+
+        '<div class="lx-uw-plan-badge">'+_escH(badge)+'</div>'+
         (roleOnly
-          ? '<div class="lx-uw-plan-badge">Solo coach</div>'+
-            '<div class="lx-uw-title">Acceso restringido</div>'+
-            '<div class="lx-uw-sub"><strong>'+modLabel+'</strong> es exclusivo para cuentas de coach.</div>'
-          : '<div class="lx-uw-plan-badge">Requiere Plan '+_escH(reqPlan)+'</div>'+
-            '<div class="lx-uw-title">M\xf3dulo Premium</div>'+
-            '<div class="lx-uw-sub"><strong>'+modLabel+'</strong> no est\xe1 incluido en tu plan actual.<br>'+
-            'Actualiza a <strong>'+_escH(reqPlan)+'</strong> para desbloquear este y m\xe1s m\xf3dulos.</div>'+
+          ? '<div class="lx-uw-title">'+_escH(_nt('shell_wall_restricted','Acceso restringido'))+'</div>'+
+            '<div class="lx-uw-sub">'+_escH(_fmt(_nt('shell_wall_coach_only_msg','{mod} es exclusivo para cuentas de coach.'),{mod:modLabel}))+'</div>'
+          : '<div class="lx-uw-title">'+_escH(_nt('shell_wall_premium','Módulo Premium'))+'</div>'+
+            '<div class="lx-uw-sub">'+_escH(_fmt(_nt('shell_wall_not_included','{mod} no está incluido en tu plan actual.'),{mod:modLabel}))+'<br>'+
+            _escH(_fmt(_nt('shell_wall_upgrade','Actualiza a {plan} para desbloquear este y más módulos.'),{plan:planName}))+'</div>'+
             '<a href="landing.html#planes" class="lx-uw-upgrade">'+
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'+
-              'Ver Planes'+
+              _escH(_nt('shell_wall_see_plans','Ver Planes'))+
             '</a>')+
-        '<a href="dashboard.html" class="lx-uw-back">← Volver al Dashboard</a>'+
+        '<a href="dashboard.html" class="lx-uw-back">'+_escH(_nt('shell_wall_back','← Volver al Dashboard'))+'</a>'+
       '</div>';
     document.body.appendChild(wall);
   };
+
 
   /* ═══════════════════════════════════════════════════════════════
      12. SESSION IDLE TIMEOUT (30 min)
@@ -433,7 +448,7 @@
   (function(){
     var IDLE=30*60*1000, WARN=60*1000, _t=null, _w=false;
     function reset(){ clearTimeout(_t); _w=false; _t=setTimeout(onIdle, IDLE-WARN); }
-    function onIdle(){ if(!_w){ _w=true; lxToast.warn('Tu sesi\xf3n expirará en 1 minuto por inactividad.'); _t=setTimeout(doOut,WARN); return; } doOut(); }
+    function onIdle(){ if(!_w){ _w=true; lxToast.warn(_nt('shell_idle_warn','Tu sesi\xf3n expirará en 1 minuto por inactividad.')); _t=setTimeout(doOut,WARN); return; } doOut(); }
     function doOut(){
       var API=(window.location.protocol==='file:'?'http://localhost:8000':'')+'/api';
       var tok=localStorage.getItem('lx_co_token')||'';
