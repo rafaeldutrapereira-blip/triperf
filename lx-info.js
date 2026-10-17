@@ -1,3 +1,4 @@
+function _lxInfoT(k,fb){ var v = window.i18n ? window.i18n.t(k) : null; return (v && v !== k) ? v : fb; }
 /**
  * lx-info.js — Sistema universal de tooltips informativos para LabX
  * Panel lateral contextual con definición + rango + interpretación del valor actual.
@@ -846,8 +847,8 @@ window.lxInfo = {
       var btn   = document.createElement('button');
       btn.type  = 'button';
       btn.className = 'lx-info-btn';
-      btn.title = '¿Qué es esto?';
-      btn.setAttribute('aria-label','Más información');
+      btn.title = _lxInfoT('lx_info_what','¿Qué es esto?');
+      btn.setAttribute('aria-label', _lxInfoT('lx_info_more','Más información'));
       if(card){
         btn.style.cssText = 'position:absolute;top:.4rem;right:.45rem;z-index:3;margin:0;width:14px;height:14px;flex-shrink:0;background:transparent;border-radius:50%;border:1px solid rgba(127,179,204,.35);color:rgba(127,179,204,.7);padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;outline:none;box-shadow:none;-webkit-appearance:none;appearance:none';
         btn.onmouseenter = function(){ this.style.background='rgba(14,165,233,.15)'; this.style.borderColor='rgba(14,165,233,.55)'; this.style.color='#7DD3FC'; };
