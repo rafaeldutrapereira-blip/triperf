@@ -291,6 +291,14 @@ tr:hover td{background:rgba(14,165,233,.04)}
       </div>
       <div id="ov-wellness-list"><div class="empty"><p>Sin alertas</p></div></div>
     </div>
+    <!-- Blood Labs del equipo -->
+    <div class="card" style="margin-top:1.25rem" id="ov-labs-card">
+      <div class="card-hd">
+        <h3>&#129514; Blood Labs del Equipo</h3>
+        <span style="font-size:.72rem;color:var(--dim)" id="ov-labs-sub">cargando...</span>
+      </div>
+      <div id="ov-labs-list"><div class="empty"><p>Sin datos</p></div></div>
+    </div>
   </div>
 
   <!-- TAB: ATHLETES -->
@@ -1237,7 +1245,47 @@ async function loadOverview(){
     // Wellness alerts
     loadOverviewWellness();
 
+    // Blood Labs del equipo
+    loadOverviewBloodLabs();
+
   }catch(e){ toast('Error cargando resumen','err'); }
+}
+
+
+async function loadOverviewBloodLabs(){
+  var list=document.getElementById('ov-labs-list');
+  var sub=document.getElementById('ov-labs-sub');
+  try{
+    var data=await apiGet('/labs/team');
+    var count = data.athletes_count!=null ? data.athletes_count : (data.critical_athletes.length+data.warning_athletes.length+data.ok_athletes.length);
+    if(!count){
+      sub.textContent = data.message || 'Sin atletas con exámenes registrados';
+      list.innerHTML = '<div class="empty"><p>Sin datos de laboratorio en el equipo aún</p></div>';
+      return;
+    }
+    sub.textContent = count+' atleta'+(count!==1?'s':'')+' · TRS promedio '+data.team_avg_trs+'/100';
+    var rows = (data.critical_athletes||[]).concat(data.warning_athletes||[]);
+    if(!rows.length){
+      list.innerHTML = '<div class="empty"><p>Todo el equipo en TRS óptimo ✅</p></div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(a){
+      var color = a.trs_color || (a.trs<40?'#ef4444':'#f59e0b');
+      var limiters = (a.limiters||[]).slice(0,2).join(', ');
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border)">'
+        +'<div>'
+        +'<strong>'+esc(a.name)+'</strong>'
+        +'<span style="font-size:.72rem;color:var(--dim);margin-left:.4rem">'+esc(a.exam_date||'')+'</span>'
+        +(limiters?'<div style="font-size:.72rem;color:var(--dim);margin-top:.2rem">'+esc(limiters)+'</div>':'')
+        +(a.medical_referral?'<div style="font-size:.7rem;color:var(--red);margin-top:.15rem">⚠ Evaluación médica recomendada</div>':'')
+        +'</div>'
+        +'<span class="badge" style="background:'+color+'22;color:'+color+';border:1px solid '+color+'55">TRS '+a.trs+'/100</span>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    sub.textContent = '';
+    list.innerHTML = '<div class="empty"><p>No se pudo cargar Blood Labs del equipo</p></div>';
+  }
 }
 
 
