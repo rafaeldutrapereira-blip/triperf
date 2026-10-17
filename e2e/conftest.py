@@ -10,6 +10,7 @@ import time
 import pytest
 import requests
 from typing import Generator
+from urllib.parse import urlparse
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
@@ -17,6 +18,66 @@ from typing import Generator
 
 BASE_URL = os.getenv("E2E_BASE_URL", "http://localhost:8000")
 API_URL  = f"{BASE_URL}/api"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Guardrail contra producción (auditoría 2026-10-17): el suite registra
+# cuentas reales vía POST /auth/register contra lo que sea que apunte
+# E2E_BASE_URL — nunca hubo nada que impidiera apuntarlo a producción.
+# Encontramos 77 cuentas e2e_*/onb_*/qa_* acumuladas en labxperformanceapp.com
+# desde julio, incluida una con un payload XSS real (CVE interno, ya
+# corregido en coach.html). Esto bloquea la corrida entera salvo --allow-prod
+# explícito. No existe un entorno de "staging" separado en este proyecto —
+# la única excepción segura por defecto es localhost/127.0.0.1.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_ALLOWED_HOSTS_BY_DEFAULT = {"localhost", "127.0.0.1", "0.0.0.0", "[::1]"}
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--allow-prod",
+        action="store_true",
+        default=False,
+        help=(
+            "Permite correr el suite E2E contra un E2E_BASE_URL que no sea "
+            "localhost (incluida producción). Sin este flag, el suite se "
+            "niega a arrancar si detecta un host no-local. Úsalo solo si "
+            "sabés exactamente lo que estás haciendo: el suite registra "
+            "cuentas reales vía /auth/register y, si falla a mitad de "
+            "camino, puede dejarlas sin limpiar pese al teardown (ver "
+            "_cleanup_test_users más abajo)."
+        ),
+    )
+
+
+def pytest_configure(config):
+    """
+    Corre antes de recolectar un solo test. Si E2E_BASE_URL apunta a un host
+    que no sea local y no se pasó --allow-prod, aborta todo el suite de
+    inmediato (no solo salta tests individuales).
+    """
+    host = (urlparse(BASE_URL).hostname or "").lower()
+    if host in _ALLOWED_HOSTS_BY_DEFAULT:
+        return
+    if config.getoption("--allow-prod"):
+        print(
+            f"\n[AVISO] E2E_BASE_URL={BASE_URL} (host no-local) — "
+            f"corriendo de todas formas por --allow-prod.\n"
+        )
+        return
+    pytest.exit(
+        f"\n❌ E2E_BASE_URL={BASE_URL} apunta a un host no-local ('{host}').\n"
+        f"   Este suite registra cuentas REALES vía /auth/register — correrlo\n"
+        f"   contra ese host dejaría datos de test persistidos ahí.\n"
+        f"   Si es intencional (staging dedicado, nunca producción), volvé a\n"
+        f"   correr con --allow-prod. Si no, corré sin E2E_BASE_URL (usa\n"
+        f"   http://localhost:8000 por defecto) o apuntalo a tu servidor local.\n",
+        returncode=1,
+    )
+
+# Cuentas creadas durante la sesión (vía APIClient.register) — se limpian
+# todas al final en pytest_sessionfinish, pase lo que pase con los tests.
+_CREATED_TEST_USER_IDS: set[str] = set()
 
 # Shared test accounts (created once per session)
 TEST_COACH = {
@@ -73,10 +134,28 @@ class APIClient:
         self.session = requests.Session()
 
     def register(self, email: str, password: str, nombre: str, rol: str = "atleta") -> dict:
-        r = self.session.post(f"{self.base}/auth/register", json={
-            "email": email, "password": password, "nombre": nombre, "rol": rol
-        })
-        return r.json()
+        return self.register_raw(email, password, nombre, rol).json()
+
+    def register_raw(self, email: str, password: str = None, nombre: str = None,
+                      rol: str = "atleta", **extra_json) -> requests.Response:
+        """Como register(), pero devuelve la Response completa (para tests que
+        necesitan inspeccionar status_code, ej. validación de campos
+        obligatorios) y sigue trackeando el user_id si la cuenta se creó."""
+        body = {"email": email, "rol": rol, **extra_json}
+        if password is not None:
+            body["password"] = password
+        if nombre is not None:
+            body["nombre"] = nombre
+        r = self.session.post(f"{self.base}/auth/register", json=body)
+        # Registrar el user_id para el teardown de fin de sesión — incluso
+        # si el test que la creó falla después, esta cuenta debe limpiarse.
+        try:
+            uid = r.json().get("user_id")
+            if uid:
+                _CREATED_TEST_USER_IDS.add(uid)
+        except Exception:
+            pass
+        return r
 
     def login(self, email: str, password: str) -> str:
         r = self.session.post(f"{self.base}/auth/login", json={
@@ -97,6 +176,105 @@ class APIClient:
 
     def delete(self, path: str, **kwargs) -> requests.Response:
         return self.session.delete(f"{self.base}{path}", headers=self.auth_headers(), **kwargs)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Teardown de cuentas de test (auditoría 2026-10-17)
+# ─────────────────────────────────────────────────────────────────────────────
+# El endpoint de auto-borrado (DELETE /auth/account, "GDPR Art. 17") NO limpia
+# todas las tablas con FK a users.id (solo 5 de ~77) — no sirve para garantizar
+# que no quede rastro. Se borra directo por DB, con la misma lista de tablas
+# usada en la limpieza manual de producción de esta sesión, para que el
+# teardown deje la base exactamente como estaba antes de correr el suite.
+_USER_FK_TABLE_COLUMNS = [
+    ("groups", "coach_id"), ("group_members", "athlete_id"),
+    ("coach_athletes", "coach_id"), ("coach_athletes", "athlete_id"),
+    ("workout_templates", "coach_id"), ("assigned_workouts", "athlete_id"),
+    ("workout_logs", "user_id"), ("wellness_logs", "user_id"),
+    ("week_templates", "coach_id"), ("athlete_notes", "coach_id"), ("athlete_notes", "athlete_id"),
+    ("macrocycles", "coach_id"), ("blood_lab_exams", "user_id"), ("race_events", "user_id"),
+    ("blood_lab_alerts", "user_id"), ("drip_logs", "user_id"), ("food_diary_entries", "user_id"),
+    ("training_plans", "coach_id"), ("training_plans", "athlete_id"), ("plan_sessions", "athlete_id"),
+    ("injury_risk_snapshots", "user_id"), ("nutrition_plans", "user_id"),
+    ("social_follows", "follower_id"), ("social_follows", "following_id"),
+    ("social_kudos", "user_id"), ("social_comments", "author_id"),
+    ("garmin_activities", "user_id"), ("activity_photos", "user_id"),
+    ("garmin_training_load", "user_id"), ("garmin_sync_status", "user_id"),
+    ("password_reset_tokens", "user_id"), ("audit_logs", "user_id"),
+    ("messages", "from_user_id"), ("messages", "to_user_id"), ("personal_records", "user_id"),
+    ("garmin_health_daily", "user_id"), ("garmin_sleep_sessions", "user_id"),
+    ("ai_sessions", "user_id"), ("ai_insights", "user_id"), ("ai_athlete_context", "user_id"),
+    ("follows", "follower_id"), ("follows", "followed_id"),
+    ("community_posts", "user_id"), ("community_posts", "flagged_by"),
+    ("kudos", "user_id"), ("comments", "user_id"),
+    ("community_groups", "owner_id"), ("community_group_members", "user_id"),
+    ("challenges", "creator_id"), ("challenge_entries", "user_id"),
+    ("community_notifications", "user_id"), ("community_notifications", "actor_id"),
+    ("hydration_logs", "user_id"), ("weight_logs", "user_id"), ("supplement_logs", "user_id"),
+    ("custom_foods", "user_id"), ("favorite_foods", "user_id"), ("nutrition_insights", "user_id"),
+    ("recovery_scores", "user_id"), ("plan_adaptations", "user_id"),
+    ("weekly_plan_snapshots", "user_id"), ("mental_checkins", "user_id"),
+    ("mental_fatigue_scores", "user_id"), ("mental_protocol_sessions", "user_id"),
+    ("race_results", "user_id"), ("race_plans", "user_id"),
+    ("workout_prescriptions", "coach_id"), ("workout_prescriptions", "athlete_id"),
+    ("prescription_feedbacks", "athlete_id"),
+    ("training_phases", "coach_id"), ("training_phases", "athlete_id"),
+    ("performance_benchmarks", "athlete_id"), ("performance_benchmarks", "coach_id"),
+    ("plan_templates", "coach_id"), ("garmin_planned_workouts", "user_id"),
+    ("running_shoes", "user_id"), ("bikes", "user_id"),
+]
+
+
+def _cleanup_test_users(user_ids: set[str]) -> None:
+    """Borra por completo las cuentas creadas en esta sesión (y todo lo que
+    referencie su user_id), directo por DB — corre siempre en
+    pytest_sessionfinish, incluso si el suite terminó con tests fallidos."""
+    if not user_ids:
+        return
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    try:
+        from api.database import engine
+        from sqlalchemy import text
+    except Exception as e:
+        print(f"\n[AVISO] Teardown de cuentas E2E omitido — no se pudo importar api.database: {e}")
+        return
+
+    ids = list(user_ids)
+    placeholders = ",".join(f":id{i}" for i in range(len(ids)))
+    params = {f"id{i}": v for i, v in enumerate(ids)}
+
+    with engine.connect() as conn:
+        for tbl, col in _USER_FK_TABLE_COLUMNS:
+            try:
+                conn.execute(text(f"DELETE FROM {tbl} WHERE {col} IN ({placeholders})"), params)
+            except Exception:
+                pass  # tabla sin esa columna en este deploy, o no existe — no bloquea el resto
+        conn.execute(text(f"DELETE FROM users WHERE id IN ({placeholders})"), params)
+        conn.commit()
+    print(f"\n[TEARDOWN E2E] {len(ids)} cuenta(s) de test eliminada(s) (y sus datos asociados).")
+
+
+def track_account_for_cleanup(email: str, password: str) -> None:
+    """Para cuentas creadas por un camino que NO pasa por APIClient (ej. un
+    formulario de registro real llenado con Playwright) — hace login una vez
+    para obtener el user_id y lo registra para el teardown de fin de sesión.
+    Si el login falla (la cuenta nunca se creó realmente, ej. un test
+    negativo o el formulario no envió), no hace nada — no es un error."""
+    try:
+        r = requests.post(f"{API_URL}/auth/login", json={"email": email, "password": password}, timeout=5)
+        if r.status_code == 200:
+            uid = r.json().get("user_id")
+            if uid:
+                _CREATED_TEST_USER_IDS.add(uid)
+    except Exception:
+        pass
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Hook de pytest — corre al final de TODA la sesión, independientemente
+    de si los tests pasaron, fallaron, o hubo errores de colección."""
+    _cleanup_test_users(_CREATED_TEST_USER_IDS)
 
 
 @pytest.fixture(scope="session")

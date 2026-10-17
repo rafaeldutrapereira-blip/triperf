@@ -21,21 +21,7 @@ import uuid
 import pytest
 import requests
 
-from e2e.conftest import BASE_URL, API_URL, TEST_ATHLETE
-
-
-def _register_new_user():
-    """Register a fresh user for onboarding tests."""
-    uid = uuid.uuid4().hex[:8]
-    email = f"onb_{uid}@test.com"
-    r = requests.post(f"{API_URL}/auth/register", json={
-        "nombre": "Onboarding Test",
-        "email": email,
-        "password": "Onboard_2026!",
-    })
-    if r.status_code not in (200, 201):
-        return None, None
-    return email, r.json().get("access_token") or r.json().get("token")
+from e2e.conftest import BASE_URL, API_URL, TEST_ATHLETE, track_account_for_cleanup
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -190,31 +176,31 @@ def test_onboarding_completo_redirect(page, athlete_api):
 # TC-ONB-007 — Validación campos obligatorios en registro
 # ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.athlete
-def test_validacion_campos_registro():
+def test_validacion_campos_registro(api):
     """
     Acceptance:
       POST /api/auth/register without required fields → 422
       Error details in response identify missing fields
+
+    Nota (auditoría 2026-10-17): usa api.register_raw() en vez de requests
+    directo — trackea el user_id para el teardown de fin de sesión si algún
+    caso llega a crear una cuenta real (el de "falta nombre" sí puede,
+    porque nombre resultó ser opcional; antes usaba el email hardcodeado
+    "test@test.com" sin limpiar nunca, encontrado en el inventario de
+    cuentas huérfanas en producción).
     """
+    uid = uuid.uuid4().hex[:8]
+
     # Missing email
-    r1 = requests.post(f"{API_URL}/auth/register", json={
-        "nombre": "Test",
-        "password": "Pass_2026!"
-    }, timeout=5)
+    r1 = api.register_raw(email=None, password="Pass_2026!", nombre="Test")
     assert r1.status_code == 422, f"Missing email should be 422: {r1.status_code}"
 
     # Missing password
-    r2 = requests.post(f"{API_URL}/auth/register", json={
-        "nombre": "Test",
-        "email": "test@test.com"
-    }, timeout=5)
+    r2 = api.register_raw(email=f"onb_valfields_{uid}_2@test.com", password=None, nombre="Test")
     assert r2.status_code == 422, f"Missing password should be 422: {r2.status_code}"
 
     # Missing nombre
-    r3 = requests.post(f"{API_URL}/auth/register", json={
-        "email": "test@test.com",
-        "password": "Pass_2026!"
-    }, timeout=5)
+    r3 = api.register_raw(email=f"onb_valfields_{uid}_3@test.com", password="Pass_2026!", nombre=None)
     assert r3.status_code in (200, 201, 422), \
         f"Missing nombre: {r3.status_code}"  # nombre may be optional
 
@@ -262,34 +248,43 @@ def test_nuevo_registro_onboarding_flow(page):
     """
     uid = uuid.uuid4().hex[:6]
     new_email = f"onb_flow_{uid}@test.com"
+    new_password = "OnbTest_2026!"
 
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
 
-    # Register
-    page.goto(f"{BASE_URL}/registro.html")
-    page.wait_for_load_state("networkidle")
-
-    # Fill registration form
     try:
-        page.fill("#nombre", "Test Onb")
-        page.fill("#email", new_email)
-        page.fill("#password", "OnbTest_2026!")
-        page.fill("#confirm_password, #confirmPassword, #password2", "OnbTest_2026!")
-    except Exception:
-        pytest.skip("Registration form fields not found in expected DOM structure")
+        # Register
+        page.goto(f"{BASE_URL}/registro.html")
+        page.wait_for_load_state("networkidle")
 
-    page.click("button[type='submit'], button:has-text('Registrar'), button:has-text('Crear')")
-    page.wait_for_timeout(3000)
+        # Fill registration form
+        try:
+            page.fill("#nombre", "Test Onb")
+            page.fill("#email", new_email)
+            page.fill("#password", new_password)
+            page.fill("#confirm_password, #confirmPassword, #password2", new_password)
+        except Exception:
+            pytest.skip("Registration form fields not found in expected DOM structure")
 
-    # Should be somewhere useful (not stuck on registro.html with errors)
-    current = page.url
-    body = page.locator("body").inner_text().lower()
-    print(f"\nPost-registration URL: {current}")
+        page.click("button[type='submit'], button:has-text('Registrar'), button:has-text('Crear')")
+        page.wait_for_timeout(3000)
 
-    # Either onboarding, dashboard, or login (to re-enter)
-    assert any(p in current for p in ["onboarding", "dashboard", "login", "athlete", "home"]) or \
-           len(body) > 100, "After registration: page appears blank or stuck"
+        # Should be somewhere useful (not stuck on registro.html with errors)
+        current = page.url
+        body = page.locator("body").inner_text().lower()
+        print(f"\nPost-registration URL: {current}")
+
+        # Either onboarding, dashboard, or login (to re-enter)
+        assert any(p in current for p in ["onboarding", "dashboard", "login", "athlete", "home"]) or \
+               len(body) > 100, "After registration: page appears blank or stuck"
+    finally:
+        # auditoría 2026-10-17: esta cuenta se crea vía formulario real, no
+        # vía APIClient — sin esto, el teardown de conftest.py nunca se
+        # entera de que existe. El login (no el registro) es lo que permite
+        # resolver el user_id. Va en finally: si el fill/click de arriba
+        # falló a medio camino la cuenta puede haberse creado igual.
+        track_account_for_cleanup(new_email, new_password)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
