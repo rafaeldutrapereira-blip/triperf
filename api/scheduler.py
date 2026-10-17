@@ -47,7 +47,7 @@ def _send_drip_emails() -> None:
             # Drip day3: enviar entre el día 3 y 4 (ventana de 24h para evitar duplicados)
             if age_days == 3 and not _drip_sent(u.id, "day3"):
                 try:
-                    send_day3_drip(u.email, u.nombre, app_url)
+                    send_day3_drip(u.email, u.nombre, app_url, u.lang or "es")
                     _mark_drip(u.id, "day3", db)
                     logger.info("Drip day3 enviado → %s", u.email)
                 except Exception as e:
@@ -55,7 +55,7 @@ def _send_drip_emails() -> None:
             # Drip day7
             elif age_days == 7 and not _drip_sent(u.id, "day7"):
                 try:
-                    send_day7_drip(u.email, u.nombre, app_url)
+                    send_day7_drip(u.email, u.nombre, app_url, u.lang or "es")
                     _mark_drip(u.id, "day7", db)
                     logger.info("Drip day7 enviado → %s", u.email)
                 except Exception as e:

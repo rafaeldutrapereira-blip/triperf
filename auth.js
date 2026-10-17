@@ -263,6 +263,23 @@
     }, 4000);
   }
 
+  /* Sincroniza el idioma elegido al backend — i18n.js solo lo guarda en
+     localStorage (cliente), pero los emails transaccionales (bienvenida,
+     drips, alertas) se generan en background sin contexto de request, así
+     que necesitan el idioma persistido en el User (ver User.lang,
+     migración o1p2q3r4s5t6). Fire-and-forget: si falla, el usuario sigue
+     viendo la UI traducida igual (localStorage ya tiene la verdad), solo
+     los emails quedarían en el idioma anterior hasta el próximo cambio. */
+  document.addEventListener('lx:langchange', function(e){
+    var tok = localStorage.getItem('lx_co_token');
+    if(!tok || !e.detail || !e.detail.lang) return;
+    fetch(API_BASE + '/athlete/profile', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+tok},
+      body: JSON.stringify({lang: e.detail.lang})
+    }).catch(function(){});
+  });
+
   /* ── Public API ───────────────────────────────────────────── */
   w.KL = {
     login:       login,

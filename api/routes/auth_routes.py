@@ -225,7 +225,7 @@ def login(
 
     # I-04: Enviar alerta de login desde dispositivo nuevo (best-effort)
     if is_new_device:
-        background_tasks.add_task(send_login_alert, user.email, user.nombre, ip, ua)
+        background_tasks.add_task(send_login_alert, user.email, user.nombre, ip, ua, user.lang or "es")
 
     # Setear HttpOnly cookie (más segura que localStorage)
     response.set_cookie(
@@ -424,6 +424,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
             rol           = "atleta",
             plan_nivel    = "basico",
             activo        = True,
+            lang          = body.lang if body.lang in ("es", "pt", "en") else "es",
         )
         db.add(user)
         db.commit()
@@ -432,7 +433,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
 
     # Enviar email de bienvenida (best-effort, no bloquea)
     try:
-        send_welcome(email, user.nombre)
+        send_welcome(email, user.nombre, lang=user.lang or "es")
     except Exception as e:
         logger.warning("Email bienvenida falló para %s: %s", email, e)
 

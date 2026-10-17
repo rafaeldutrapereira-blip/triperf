@@ -287,6 +287,7 @@ def update_profile(
     if body.css       is not None: me.css       = body.css or None
     if body.run_pace  is not None: me.run_pace  = body.run_pace or None
     if body.sports    is not None: me.sports    = body.sports or None
+    if body.lang      is not None and body.lang in ("es", "pt", "en"): me.lang = body.lang
     if body.onboarding_done:
         from datetime import datetime, timezone
         if not me.onboarding_completed_at:

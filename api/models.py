@@ -92,6 +92,13 @@ class User(Base):
     # Foto de perfil (avatar) — key en el storage backend (ver api/storage.py).
     # None = sin foto, se muestra la pelota con iniciales (_avatar_initials()).
     avatar_photo_path      = Column(String,   nullable=True)
+    # Idioma preferido ("es"|"pt"|"en") — persistido server-side para poder
+    # traducir emails transaccionales (bienvenida, drips, alertas), que se
+    # generan en background sin contexto de request/localStorage del
+    # navegador. Se sincroniza desde el frontend cuando el usuario cambia
+    # de idioma con el selector de banderas (ver i18n.js window.i18n.set()
+    # + el listener del evento 'lx:langchange' en auth.js).
+    lang                    = Column(String,   nullable=True, default="es", server_default="es")
 
     # relations
     groups_coached = relationship("Group",       back_populates="coach",   foreign_keys="Group.coach_id")

@@ -133,79 +133,211 @@ def send_email(
         return False
 
 
-def send_welcome(email: str, nombre: str, app_url: str = "") -> None:
+_WELCOME_TXT = {
+    "es": dict(
+        subject="Bienvenido a LabX — Su plataforma de rendimiento ya está lista",
+        greeting="Estimado/a",
+        intro1="En nombre de todo el equipo de <strong style=\"color:#F0F9FF\">LabX</strong>, le damos la más cordial bienvenida y le agradecemos la confianza depositada en nuestra plataforma.",
+        intro2="LabX es una plataforma de entrenamiento diseñada para deportistas de resistencia — running, ciclismo, natación y triatlón. Sincronizamos sus datos reales de dispositivos como Garmin y Strava para calcular su carga de entrenamiento (CTL/ATL/TSB), su estado de recuperación diario, y ofrecerle herramientas como nuestro Predictor de Carrera y un Coach con inteligencia artificial, para acompañarle en cada etapa de su preparación.",
+        access_title="Acceso a la plataforma",
+        access_web_label="Plataforma web:",
+        access_web="ingrese en",
+        access_web_suffix="con su correo y contraseña registrados.",
+        access_mobile_label="Aplicación móvil:",
+        access_mobile="LabX está disponible como aplicación web progresiva — desde su celular, abra el sitio en su navegador y seleccione \"Agregar a pantalla de inicio\" para instalarla como una app.",
+        steps_title="Primeros pasos recomendados",
+        step1="Complete su perfil — datos personales, objetivos deportivos y parámetros de entrenamiento (FTP, umbrales).",
+        step2="Conecte su dispositivo (Garmin o Strava) para que su carga de entrenamiento se calcule automáticamente con datos reales.",
+        step3="Explore su Dashboard y defina su próximo objetivo de carrera en el Predictor.",
+        cta="Acceder a mi cuenta →",
+        help_title="¿Necesita ayuda?",
+        help_body="Ante cualquier consulta, escríbanos a",
+        help_suffix="— con gusto le asistiremos.",
+        closing="Quedamos atentos a acompañarle en esta nueva etapa.",
+    ),
+    "pt": dict(
+        subject="Bem-vindo ao LabX — Sua plataforma de performance já está pronta",
+        greeting="Prezado(a)",
+        intro1="Em nome de toda a equipe do <strong style=\"color:#F0F9FF\">LabX</strong>, damos as boas-vindas e agradecemos a confiança depositada em nossa plataforma.",
+        intro2="O LabX é uma plataforma de treino desenhada para atletas de resistência — corrida, ciclismo, natação e triatlo. Sincronizamos seus dados reais de dispositivos como Garmin e Strava para calcular sua carga de treino (CTL/ATL/TSB), seu estado de recuperação diário, e oferecer ferramentas como nosso Preditor de Prova e um Coach com inteligência artificial, para acompanhá-lo em cada etapa da sua preparação.",
+        access_title="Acesso à plataforma",
+        access_web_label="Plataforma web:",
+        access_web="acesse em",
+        access_web_suffix="com seu email e senha cadastrados.",
+        access_mobile_label="Aplicativo móvel:",
+        access_mobile="O LabX está disponível como aplicativo web progressivo — pelo celular, abra o site no navegador e selecione \"Adicionar à tela inicial\" para instalá-lo como um app.",
+        steps_title="Primeiros passos recomendados",
+        step1="Complete seu perfil — dados pessoais, objetivos esportivos e parâmetros de treino (FTP, limiares).",
+        step2="Conecte seu dispositivo (Garmin ou Strava) para que sua carga de treino seja calculada automaticamente com dados reais.",
+        step3="Explore seu Dashboard e defina seu próximo objetivo de prova no Preditor.",
+        cta="Acessar minha conta →",
+        help_title="Precisa de ajuda?",
+        help_body="Para qualquer dúvida, escreva para",
+        help_suffix="— teremos prazer em ajudar.",
+        closing="Estamos à disposição para acompanhá-lo nesta nova etapa.",
+    ),
+    "en": dict(
+        subject="Welcome to LabX — Your performance platform is ready",
+        greeting="Dear",
+        intro1="On behalf of the entire <strong style=\"color:#F0F9FF\">LabX</strong> team, we warmly welcome you and thank you for your trust in our platform.",
+        intro2="LabX is a training platform designed for endurance athletes — running, cycling, swimming and triathlon. We sync your real data from devices like Garmin and Strava to calculate your training load (CTL/ATL/TSB), your daily recovery status, and offer tools like our Race Predictor and an AI Coach, to support you at every stage of your preparation.",
+        access_title="Accessing the platform",
+        access_web_label="Web platform:",
+        access_web="sign in at",
+        access_web_suffix="with your registered email and password.",
+        access_mobile_label="Mobile app:",
+        access_mobile="LabX is available as a progressive web app — from your phone, open the site in your browser and select \"Add to Home Screen\" to install it as an app.",
+        steps_title="Recommended first steps",
+        step1="Complete your profile — personal data, sport goals and training parameters (FTP, thresholds).",
+        step2="Connect your device (Garmin or Strava) so your training load is calculated automatically from real data.",
+        step3="Explore your Dashboard and set your next race goal in the Predictor.",
+        cta="Access my account →",
+        help_title="Need help?",
+        help_body="For any question, write to us at",
+        help_suffix="— we'll be happy to help.",
+        closing="We look forward to being part of this new stage with you.",
+    ),
+}
+
+
+def send_welcome(email: str, nombre: str, app_url: str = "", lang: str = "es") -> None:
     """Correo de bienvenida institucional (2026-08-22, pedido explícito del
     usuario -- tono formal/corporativo en vez del casual con emojis que
     tenía antes). No se linkea a App Store/Google Play: la app nativa
     (Capacitor, Sprint 55) todavía no está compilada ni publicada en
     ninguna tienda -- se indica instalación PWA real, que sí funciona hoy."""
     app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    t = _WELCOME_TXT.get(lang, _WELCOME_TXT["es"])
     inner = f"""
-      <p style="margin:0 0 16px">Estimado/a <strong>{nombre}</strong>,</p>
-      <p style="color:#7FB3CC;margin:0 0 16px">En nombre de todo el equipo de <strong style="color:#F0F9FF">LabX</strong>, le damos la más cordial bienvenida y le agradecemos la confianza depositada en nuestra plataforma.</p>
-      <p style="color:#7FB3CC;margin:0 0 20px">LabX es una plataforma de entrenamiento diseñada para deportistas de resistencia — running, ciclismo, natación y triatlón. Sincronizamos sus datos reales de dispositivos como Garmin y Strava para calcular su carga de entrenamiento (CTL/ATL/TSB), su estado de recuperación diario, y ofrecerle herramientas como nuestro Predictor de Carrera y un Coach con inteligencia artificial, para acompañarle en cada etapa de su preparación.</p>
+      <p style="margin:0 0 16px">{t['greeting']} <strong>{nombre}</strong>,</p>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['intro1']}</p>
+      <p style="color:#7FB3CC;margin:0 0 20px">{t['intro2']}</p>
 
-      <p style="margin:0 0 6px"><strong>Acceso a la plataforma</strong></p>
+      <p style="margin:0 0 6px"><strong>{t['access_title']}</strong></p>
       <ul style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
-        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">Plataforma web:</strong> ingrese en <a href="{app_url}" style="color:#0EA5E9">{app_url}</a> con su correo y contraseña registrados.</li>
-        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">Aplicación móvil:</strong> LabX está disponible como aplicación web progresiva — desde su celular, abra el sitio en su navegador y seleccione "Agregar a pantalla de inicio" para instalarla como una app.</li>
+        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">{t['access_web_label']}</strong> {t['access_web']} <a href="{app_url}" style="color:#0EA5E9">{app_url}</a> {t['access_web_suffix']}</li>
+        <li style="margin-bottom:8px"><strong style="color:#F0F9FF">{t['access_mobile_label']}</strong> {t['access_mobile']}</li>
       </ul>
 
-      <p style="margin:0 0 6px"><strong>Primeros pasos recomendados</strong></p>
+      <p style="margin:0 0 6px"><strong>{t['steps_title']}</strong></p>
       <ol style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
-        <li style="margin-bottom:8px">Complete su perfil — datos personales, objetivos deportivos y parámetros de entrenamiento (FTP, umbrales).</li>
-        <li style="margin-bottom:8px">Conecte su dispositivo (Garmin o Strava) para que su carga de entrenamiento se calcule automáticamente con datos reales.</li>
-        <li style="margin-bottom:8px">Explore su Dashboard y defina su próximo objetivo de carrera en el Predictor.</li>
+        <li style="margin-bottom:8px">{t['step1']}</li>
+        <li style="margin-bottom:8px">{t['step2']}</li>
+        <li style="margin-bottom:8px">{t['step3']}</li>
       </ol>
 
       <div style="text-align:center;margin-bottom:20px">
         <a href="{app_url}/onboarding.html" style="display:inline-block;background:linear-gradient(135deg,#FF6535,#E8490A);color:#fff;font-weight:800;font-size:13pt;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 32px;border-radius:10px">
-          Acceder a mi cuenta →
+          {t['cta']}
         </a>
       </div>
 
-      <p style="margin:0 0 6px"><strong>¿Necesita ayuda?</strong></p>
-      <p style="color:#7FB3CC;margin:0 0 16px">Ante cualquier consulta, escríbanos a <a href="mailto:partnerships@labxperformanceapp.com" style="color:#0EA5E9">partnerships@labxperformanceapp.com</a> — con gusto le asistiremos.</p>
+      <p style="margin:0 0 6px"><strong>{t['help_title']}</strong></p>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['help_body']} <a href="mailto:partnerships@labxperformanceapp.com" style="color:#0EA5E9">partnerships@labxperformanceapp.com</a> {t['help_suffix']}</p>
 
-      <p style="color:#7FB3CC;margin:0">Quedamos atentos a acompañarle en esta nueva etapa.</p>
+      <p style="color:#7FB3CC;margin:0">{t['closing']}</p>
     """
-    send_email(email, f"Bienvenido a LabX — Su plataforma de rendimiento ya está lista", _wrap_email_body(inner), tags=["welcome"])
+    send_email(email, t["subject"], _wrap_email_body(inner), tags=["welcome"])
 
 
-def send_day3_drip(email: str, nombre: str, app_url: str = "") -> None:
+_DAY3_TXT = {
+    "es": dict(
+        subject_fmt="{nombre}, desbloquea tu potencial completo en LabX 🚀",
+        title_fmt="Hola {nombre}, ¿cómo va el entrenamiento? 💪",
+        intro="Llevas 3 días con LabX. ¿Sabías que con el plan <strong style=\"color:#FF6535\">Pro</strong> puedes:",
+        f1="📈 Ver tu curva de fitness PMC (ATL / CTL / TSB) completa",
+        f2="🔄 Sync automático con Garmin Connect",
+        f3="🏁 Predecir tiempos en Ironman, 70.3 y Olímpico",
+        f4="🧬 Análisis de laboratorio y planes de nutrición",
+        cta="Actualizar a Pro — $19/mes →",
+    ),
+    "pt": dict(
+        subject_fmt="{nombre}, desbloqueie todo o seu potencial no LabX 🚀",
+        title_fmt="Olá {nombre}, como está indo o treino? 💪",
+        intro="Você já tem 3 dias com o LabX. Sabia que com o plano <strong style=\"color:#FF6535\">Pro</strong> você pode:",
+        f1="📈 Ver sua curva de fitness PMC (ATL / CTL / TSB) completa",
+        f2="🔄 Sincronização automática com Garmin Connect",
+        f3="🏁 Prever tempos no Ironman, 70.3 e Olímpico",
+        f4="🧬 Análises laboratoriais e planos de nutrição",
+        cta="Fazer upgrade para Pro — $19/mês →",
+    ),
+    "en": dict(
+        subject_fmt="{nombre}, unlock your full potential on LabX 🚀",
+        title_fmt="Hi {nombre}, how's training going? 💪",
+        intro="You've been with LabX for 3 days. Did you know that with the <strong style=\"color:#FF6535\">Pro</strong> plan you can:",
+        f1="📈 See your full PMC fitness curve (ATL / CTL / TSB)",
+        f2="🔄 Automatic sync with Garmin Connect",
+        f3="🏁 Predict times for Ironman, 70.3 and Olympic distance",
+        f4="🧬 Lab analysis and nutrition plans",
+        cta="Upgrade to Pro — $19/mo →",
+    ),
+}
+
+
+def send_day3_drip(email: str, nombre: str, app_url: str = "", lang: str = "es") -> None:
     app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    t = _DAY3_TXT.get(lang, _DAY3_TXT["es"])
     inner = f"""
-      <h1 style="font-size:17px;margin:0 0 8px">Hola {nombre}, ¿cómo va el entrenamiento? 💪</h1>
-      <p style="color:#7FB3CC;margin:0 0 16px">Llevas 3 días con LabX. ¿Sabías que con el plan <strong style="color:#FF6535">Pro</strong> puedes:</p>
+      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['intro']}</p>
       <ul style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
-        <li style="margin-bottom:8px">📈 Ver tu curva de fitness PMC (ATL / CTL / TSB) completa</li>
-        <li style="margin-bottom:8px">🔄 Sync automático con Garmin Connect</li>
-        <li style="margin-bottom:8px">🏁 Predecir tiempos en Ironman, 70.3 y Olímpico</li>
-        <li style="margin-bottom:8px">🧬 Análisis de laboratorio y planes de nutrición</li>
+        <li style="margin-bottom:8px">{t['f1']}</li>
+        <li style="margin-bottom:8px">{t['f2']}</li>
+        <li style="margin-bottom:8px">{t['f3']}</li>
+        <li style="margin-bottom:8px">{t['f4']}</li>
       </ul>
       <div style="text-align:center;margin-bottom:8px">
         <a href="{app_url}/dashboard.html?upgrade=1" style="display:inline-block;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;font-weight:800;font-size:13pt;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 32px;border-radius:10px">
-          Actualizar a Pro — $19/mes →
+          {t['cta']}
         </a>
       </div>
     """
-    send_email(email, f"{nombre}, desbloquea tu potencial completo en LabX 🚀", _wrap_email_body(inner), tags=["drip", "day3"])
+    send_email(email, t["subject_fmt"].format(nombre=nombre), _wrap_email_body(inner), tags=["drip", "day3"])
 
 
-def send_day7_drip(email: str, nombre: str, app_url: str = "") -> None:
+_DAY7_TXT = {
+    "es": dict(
+        subject_fmt="Una semana con LabX — ¿tienes coach, {nombre}? 🧑‍💼",
+        title_fmt="¡Una semana entrenando con LabX, {nombre}! 🎯",
+        intro1="¿Tienes un coach que te guía? Con LabX <strong style=\"color:#F0A500\">Coach Platform</strong> puedes gestionar hasta 50+ atletas, asignar sesiones y ver reportes en tiempo real.",
+        intro2="¿O prefieres tener un coach que te asesore? Contáctanos y te conectamos.",
+        cta="Quiero saber más →",
+        unsub="Cancelar suscripción a estos emails",
+    ),
+    "pt": dict(
+        subject_fmt="Uma semana com o LabX — você tem coach, {nombre}? 🧑‍💼",
+        title_fmt="Uma semana treinando com o LabX, {nombre}! 🎯",
+        intro1="Você tem um coach que te orienta? Com o LabX <strong style=\"color:#F0A500\">Coach Platform</strong> você pode gerenciar até 50+ atletas, atribuir sessões e ver relatórios em tempo real.",
+        intro2="Ou prefere ter um coach que te oriente? Entre em contato e nós te conectamos.",
+        cta="Quero saber mais →",
+        unsub="Cancelar inscrição nestes emails",
+    ),
+    "en": dict(
+        subject_fmt="One week with LabX — do you have a coach, {nombre}? 🧑‍💼",
+        title_fmt="One week training with LabX, {nombre}! 🎯",
+        intro1="Do you have a coach guiding you? With LabX <strong style=\"color:#F0A500\">Coach Platform</strong> you can manage up to 50+ athletes, assign sessions and see real-time reports.",
+        intro2="Or would you rather have a coach advising you? Contact us and we'll connect you.",
+        cta="I want to know more →",
+        unsub="Unsubscribe from these emails",
+    ),
+}
+
+
+def send_day7_drip(email: str, nombre: str, app_url: str = "", lang: str = "es") -> None:
     app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    t = _DAY7_TXT.get(lang, _DAY7_TXT["es"])
     inner = f"""
-      <h1 style="font-size:17px;margin:0 0 8px">¡Una semana entrenando con LabX, {nombre}! 🎯</h1>
-      <p style="color:#7FB3CC;margin:0 0 16px">¿Tienes un coach que te guía? Con LabX <strong style="color:#F0A500">Coach Platform</strong> puedes gestionar hasta 50+ atletas, asignar sesiones y ver reportes en tiempo real.</p>
-      <p style="color:#7FB3CC;margin:0 0 20px">¿O prefieres tener un coach que te asesore? Contáctanos y te conectamos.</p>
+      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['intro1']}</p>
+      <p style="color:#7FB3CC;margin:0 0 20px">{t['intro2']}</p>
       <div style="text-align:center;margin-bottom:8px">
         <a href="{app_url}/landing.html#contact" style="display:inline-block;background:linear-gradient(135deg,#F0A500,#FF6535);color:#000;font-weight:800;font-size:13pt;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 32px;border-radius:10px">
-          Quiero saber más →
+          {t['cta']}
         </a>
       </div>
-      <p style="text-align:center;margin:12px 0 0"><a href="{app_url}/unsubscribe" style="color:#3D6880;font-size:10pt">Cancelar suscripción a estos emails</a></p>
+      <p style="text-align:center;margin:12px 0 0"><a href="{app_url}/unsubscribe" style="color:#3D6880;font-size:10pt">{t['unsub']}</a></p>
     """
-    send_email(email, f"Una semana con LabX — ¿tienes coach, {nombre}? 🧑‍💼", _wrap_email_body(inner), tags=["drip", "day7"])
+    send_email(email, t["subject_fmt"].format(nombre=nombre), _wrap_email_body(inner), tags=["drip", "day7"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -274,70 +406,139 @@ def _geolocate_ip(ip: str) -> str | None:
     return None
 
 
-def send_login_alert(email: str, nombre: str, ip: str, ua: str) -> None:
+_LOGIN_ALERT_TXT = {
+    "es": dict(
+        subject="LabX — Nuevo inicio de sesión detectado en su cuenta",
+        greeting="Hola",
+        intro="Se registró un nuevo acceso a su cuenta en <strong style=\"color:#F0F9FF\">LabX</strong> desde un dispositivo o ubicación que no reconocíamos.",
+        row_datetime="Fecha y hora", row_device="Dispositivo", row_ip="Dirección IP", row_location="Ubicación estimada",
+        no_data="No disponible",
+        was_you="Si fue usted quien inició esta sesión, puede ignorar este mensaje.",
+        not_you_title="¿No fue usted?",
+        report_btn="Reportar acceso no autorizado",
+        report_subject="Acceso no autorizado a mi cuenta LabX",
+        report_body="Detecté un inicio de sesión que no reconozco:\nFecha: {when}\nDispositivo: {device}\nIP: {ip}",
+    ),
+    "pt": dict(
+        subject="LabX — Novo login detectado na sua conta",
+        greeting="Olá",
+        intro="Foi registrado um novo acesso à sua conta no <strong style=\"color:#F0F9FF\">LabX</strong> a partir de um dispositivo ou local que não reconhecíamos.",
+        row_datetime="Data e hora", row_device="Dispositivo", row_ip="Endereço IP", row_location="Localização estimada",
+        no_data="Não disponível",
+        was_you="Se foi você quem iniciou esta sessão, pode ignorar esta mensagem.",
+        not_you_title="Não foi você?",
+        report_btn="Reportar acesso não autorizado",
+        report_subject="Acesso não autorizado à minha conta LabX",
+        report_body="Detectei um login que não reconheço:\nData: {when}\nDispositivo: {device}\nIP: {ip}",
+    ),
+    "en": dict(
+        subject="LabX — New sign-in detected on your account",
+        greeting="Hi",
+        intro="A new sign-in to your <strong style=\"color:#F0F9FF\">LabX</strong> account was detected from a device or location we didn't recognize.",
+        row_datetime="Date and time", row_device="Device", row_ip="IP address", row_location="Estimated location",
+        no_data="Not available",
+        was_you="If this was you, you can ignore this message.",
+        not_you_title="Wasn't you?",
+        report_btn="Report unauthorized access",
+        report_subject="Unauthorized access to my LabX account",
+        report_body="I detected a sign-in I don't recognize:\nDate: {when}\nDevice: {device}\nIP: {ip}",
+    ),
+}
+
+
+def send_login_alert(email: str, nombre: str, ip: str, ua: str, lang: str = "es") -> None:
     """Notifica un login desde un dispositivo/IP no reconocido previamente
     (disparado por auth_routes.py::login solo cuando is_new_device es True,
     no en cada inicio de sesión)."""
     from datetime import datetime as _dt
     from urllib.parse import quote as _urlquote
+    t = _LOGIN_ALERT_TXT.get(lang, _LOGIN_ALERT_TXT["es"])
     when = _dt.now().strftime("%d/%m/%Y %H:%M")
     device = _parse_device(ua)
-    location = _geolocate_ip(ip) or "No disponible"
+    location = _geolocate_ip(ip) or t["no_data"]
     # Los valores interpolados (when/device/ip) pueden traer espacios y
     # acentos -- deben ir URL-encoded o el body del mailto se corta/rompe
     # en varios clientes de correo apenas encuentran el primer espacio sin codificar.
-    report_body = _urlquote(
-        f"Detecté un inicio de sesión que no reconozco:\n"
-        f"Fecha: {when}\nDispositivo: {device}\nIP: {ip}"
-    )
+    report_body = _urlquote(t["report_body"].format(when=when, device=device, ip=ip))
     report_url = (
         "mailto:partnerships@labxperformanceapp.com"
-        f"?subject={_urlquote('Acceso no autorizado a mi cuenta LabX')}"
+        f"?subject={_urlquote(t['report_subject'])}"
         f"&body={report_body}"
     )
     inner = f"""
-      <p style="margin:0 0 16px">Hola <strong>{nombre}</strong>,</p>
-      <p style="color:#7FB3CC;margin:0 0 16px">Se registró un nuevo acceso a su cuenta en <strong style="color:#F0F9FF">LabX</strong> desde un dispositivo o ubicación que no reconocíamos.</p>
+      <p style="margin:0 0 16px">{t['greeting']} <strong>{nombre}</strong>,</p>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['intro']}</p>
 
       <table style="width:100%;border-collapse:collapse;font-size:11pt;color:#7FB3CC;margin:0 0 20px;background:#060E1C;border-radius:8px;overflow:hidden">
-        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Fecha y hora</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{when}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Dispositivo</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{device}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">Dirección IP</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{ip}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF">Ubicación estimada</td><td style="padding:10px 14px">{location}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_datetime']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{when}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_device']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{device}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_ip']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{ip}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF">{t['row_location']}</td><td style="padding:10px 14px">{location}</td></tr>
       </table>
 
-      <p style="color:#7FB3CC;margin:0 0 16px">Si fue usted quien inició esta sesión, puede ignorar este mensaje.</p>
+      <p style="color:#7FB3CC;margin:0 0 16px">{t['was_you']}</p>
 
       <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:16px;text-align:center;margin-bottom:8px">
-        <p style="color:#EF4444;font-weight:700;margin:0 0 12px">¿No fue usted?</p>
+        <p style="color:#EF4444;font-weight:700;margin:0 0 12px">{t['not_you_title']}</p>
         <a href="{report_url}" style="display:inline-block;background:#EF4444;color:#fff;font-weight:800;font-size:12pt;text-decoration:none;padding:12px 28px;border-radius:10px">
-          Reportar acceso no autorizado
+          {t['report_btn']}
         </a>
       </div>
     """
-    send_email(email, "LabX — Nuevo inicio de sesión detectado en su cuenta", _wrap_email_body(inner), tags=["security", "login-alert"])
+    send_email(email, t["subject"], _wrap_email_body(inner), tags=["security", "login-alert"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ALERTA DE VIDA ÚTIL DE EQUIPAMIENTO (Sprint 4 — Gestión de Equipamiento)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_GEAR_ALERT_TXT = {
+    "es": dict(
+        title_100="{icon} {label} llegó al 100% de su vida útil",
+        title_pct="{icon} {label} está al {pct:.0f}% de su vida útil",
+        msg_100="Ya cumplió el kilometraje recomendado por el fabricante. Seguir usándolo aumenta el riesgo de lesión o falla del componente.",
+        msg_pct="Se acerca al kilometraje recomendado por el fabricante. Es un buen momento para planear su reemplazo.",
+        greeting_fmt="Hola {nombre},",
+        cta="Ver mi equipo",
+    ),
+    "pt": dict(
+        title_100="{icon} {label} chegou a 100% da sua vida útil",
+        title_pct="{icon} {label} está em {pct:.0f}% da sua vida útil",
+        msg_100="Já atingiu a quilometragem recomendada pelo fabricante. Continuar usando aumenta o risco de lesão ou falha do componente.",
+        msg_pct="Está se aproximando da quilometragem recomendada pelo fabricante. É um bom momento para planejar a substituição.",
+        greeting_fmt="Olá {nombre},",
+        cta="Ver meu equipamento",
+    ),
+    "en": dict(
+        title_100="{icon} {label} reached 100% of its useful life",
+        title_pct="{icon} {label} is at {pct:.0f}% of its useful life",
+        msg_100="It has already reached the mileage recommended by the manufacturer. Continuing to use it increases the risk of injury or component failure.",
+        msg_pct="It's approaching the mileage recommended by the manufacturer. A good time to plan its replacement.",
+        greeting_fmt="Hi {nombre},",
+        cta="View my gear",
+    ),
+}
+
+
 def send_gear_alert(email: str, nombre: str, gear_label: str, gear_kind: str,
-                     life_pct: float, threshold: int, app_url: str = "") -> None:
+                     life_pct: float, threshold: int, app_url: str = "", lang: str = "es") -> None:
     """gear_kind: 'shoe' | 'component'. threshold: 80 o 100 (% de vida útil)."""
     app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    t = _GEAR_ALERT_TXT.get(lang, _GEAR_ALERT_TXT["es"])
     icon = "👟" if gear_kind == "shoe" else "🚲"
     if threshold >= 100:
-        color, title = "#EF4444", f"{icon} {gear_label} llegó al 100% de su vida útil"
-        message = "Ya cumplió el kilometraje recomendado por el fabricante. Seguir usándolo aumenta el riesgo de lesión o falla del componente."
+        color = "#EF4444"
+        title = t["title_100"].format(icon=icon, label=gear_label)
+        message = t["msg_100"]
     else:
-        color, title = "#F0A500", f"{icon} {gear_label} está al {life_pct:.0f}% de su vida útil"
-        message = "Se acerca al kilometraje recomendado por el fabricante. Es un buen momento para planear su reemplazo."
+        color = "#F0A500"
+        title = t["title_pct"].format(icon=icon, label=gear_label, pct=life_pct)
+        message = t["msg_pct"]
     inner = f"""
       <h1 style="font-size:16px;margin:0 0 8px;color:{color}">{title}</h1>
-      <p style="color:#7FB3CC;margin:0 0 20px">Hola {nombre}, {message}</p>
+      <p style="color:#7FB3CC;margin:0 0 20px">{t['greeting_fmt'].format(nombre=nombre)} {message}</p>
       <a href="{app_url}/gear.html" style="display:inline-block;background:{color};color:#fff;font-weight:800;font-size:12pt;text-decoration:none;padding:12px 28px;border-radius:10px">
-        Ver mi equipo
+        {t['cta']}
       </a>
     """
     send_email(email, title, _wrap_email_body(inner), tags=["gear", f"threshold-{threshold}"])

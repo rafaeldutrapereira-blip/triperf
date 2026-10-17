@@ -70,6 +70,7 @@ class UserCreate(BaseModel):
     password:   str
     rol:        str = "atleta"
     plan_nivel: str = "basico"
+    lang:       Optional[str] = None  # "es"|"pt"|"en" — idioma elegido en registro.html al momento de crear la cuenta
 
 class AthleteInvite(BaseModel):
     """Coach invita a un atleta — sin contraseña: el coach nunca la define
@@ -292,6 +293,7 @@ class AthleteProfileUpdate(BaseModel):
     run_pace:       Optional[str]   = None
     sports:         Optional[str]   = None  # comma-separated: "swim,bike,run"
     onboarding_done: Optional[bool] = None  # True → stamps onboarding_completed_at
+    lang:           Optional[str]   = None  # "es"|"pt"|"en" — para traducir emails transaccionales
 
 
 # ─────────────────────────────────────────────

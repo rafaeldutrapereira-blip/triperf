@@ -66,7 +66,7 @@ def _notify_gear_threshold(db: Session, user_id: str, gear_kind: str, label: str
 
     user = db.query(User).filter(User.id == user_id).first()
     if user and user.email:
-        mailer.send_gear_alert(user.email, user.nombre or "", label, gear_kind, pct, threshold)
+        mailer.send_gear_alert(user.email, user.nombre or "", label, gear_kind, pct, threshold, lang=user.lang or "es")
     send_push_to_user(user_id, push_gear_alert_payload(label, gear_kind, pct, threshold), db)
 
 
