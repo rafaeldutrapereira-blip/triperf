@@ -59,6 +59,7 @@ class TokenResponse(BaseModel):
     plan_nivel:   str = "basico"
     needs_2fa:    bool = False
     onboarding_done: bool = True
+    lang:         str = "es"
 
 
 # ─────────────────────────────────────────────

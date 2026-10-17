@@ -152,6 +152,7 @@ def login(
                 user_id      = user.id,
                 plan_nivel   = user.plan_nivel or "basico",
                 needs_2fa    = True,
+                lang         = user.lang or "es",
             )
         try:
             import pyotp
@@ -259,6 +260,7 @@ def login(
         user_id      = user.id,
         plan_nivel   = user.plan_nivel or "basico",
         onboarding_done = (user.rol != "atleta") or (user.onboarding_completed_at is not None),
+        lang         = user.lang or "es",
     )
 
 
@@ -445,6 +447,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
         user_id      = user.id,
         plan_nivel   = user.plan_nivel,
         onboarding_done = user.rol != "atleta",
+        lang         = user.lang or "es",
     )
 
 

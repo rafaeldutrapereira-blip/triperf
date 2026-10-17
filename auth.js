@@ -119,6 +119,17 @@
       localStorage.setItem('lx_co_rol',    data.rol);
       localStorage.setItem('lx_co_nombre', data.nombre);
 
+      /* El idioma solo se guardaba cliente→servidor (PATCH en 'lx:langchange',
+         ver abajo). Nunca se releía servidor→cliente, así que un usuario que
+         cambiaba de dispositivo o borraba localStorage perdía su preferencia
+         aunque el backend la tuviera guardada en user.lang. */
+      try {
+        if (data.lang && window.i18n && typeof window.i18n.set === 'function' &&
+            window.i18n.lang !== data.lang) {
+          window.i18n.set(data.lang);
+        }
+      } catch (e) {}
+
       var plan = PLAN_MAP[data.plan_nivel] || 'basic';
       var sess = {
         username: input,

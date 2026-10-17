@@ -2380,6 +2380,12 @@ async function doLogin(){
     localStorage.setItem('lx_co_token', data.access_token);
     localStorage.setItem('lx_co_rol',   data.rol);
     localStorage.setItem('lx_co_nombre',data.nombre);
+    try{
+      if (data.lang && window.i18n && typeof window.i18n.set === 'function' &&
+          window.i18n.lang !== data.lang) {
+        window.i18n.set(data.lang);
+      }
+    } catch(e){}
     initApp(data.access_token);
   } catch(e){
     err.textContent = e.message || t('app_login_conn_error', 'Error de conexión. Probá de nuevo.');
