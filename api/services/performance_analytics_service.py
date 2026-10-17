@@ -26,6 +26,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from ..models import GarminActivity, GarminHealthDaily, GarminTrainingLoad, User
+from .training_service import compute_acwr as _compute_acwr
 
 logger = logging.getLogger("labx.performance_analytics")
 
@@ -984,9 +985,17 @@ def compute_ramp_rate_risk(
     acute_avg   = acute_tss  / 7.0
     chronic_avg = chronic_tss / 28.0
 
-    acwr = round(acute_avg / chronic_avg, 2) if chronic_avg > 0 else 1.0
+    # ACWR real (BP-03, misma fuente que el resto del backend): antes este
+    # bloque reinventaba el cálculo y usaba 1.0 ("Seguro") como default
+    # cuando no había carga crónica suficiente, disfrazando falta de datos
+    # de riesgo bajo. `compute_acwr` ya tiene el guard correcto → "no_data".
+    acwr, _acwr_zone = _compute_acwr(loads)
 
-    if acwr < 0.8:
+    if _acwr_zone == "no_data":
+        risk_level = "Sin datos"
+        risk_color = "#6b7280"
+        risk_action = "Faltan al menos 7 días de carga registrada para calcular el ACWR."
+    elif acwr < 0.8:
         risk_level = "Bajo (infracarga)"
         risk_color = "#22d3ee"
         risk_action = "Aumenta la carga gradualmente para mantener adaptación."

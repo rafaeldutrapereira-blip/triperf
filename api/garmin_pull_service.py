@@ -383,6 +383,13 @@ def _parse_mmss(val: str | None) -> int | None:
 # typeKey original (yoga, hiit, strength_training, etc.) aunque todo se
 # normaliza a sport="gym". Un HIIT y una clase de yoga no imponen el mismo
 # estrés sistémico aunque duren lo mismo, así que no pueden compartir tasa.
+# Nota (Sprint 3, auditoría de precisión): estos valores son una estimación
+# empírica de orden de magnitud relativo entre subtipos (yoga << fuerza <<
+# HIIT), no están tomados de un estudio o fórmula publicada — se calibraron
+# para que el ranking entre actividades tenga sentido, no para que el número
+# absoluto de TSS sea exacto. Si se quiere mayor precisión, la vía real es
+# que Garmin reporte `activityTrainingLoad` (ver arriba, se usa cuando está
+# disponible) en vez de ajustar estos números a ciegas.
 _GYM_TSS_PER_HOUR = {
     "yoga":               12.0,
     "pilates":            15.0,
@@ -476,7 +483,13 @@ def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,
     def _sane(result: float) -> float:
         if math.isnan(result) or math.isinf(result) or result < 0:
             return 0.0
-        return round(min(result, 600.0), 1)  # cap en 600 TSS (sesión de 24h de IM es ~1000)
+        # Cap en 600 (no ~1000, el techo teórico de un IM de 24h citado arriba):
+        # 600 es deliberadamente más conservador que el máximo teórico — actúa
+        # como red de seguridad contra fórmulas con datos de sensor corruptos
+        # (ej. distancia/duración mal reportada por Garmin) dando TSS de miles,
+        # no como un límite que un atleta real deba alcanzar. Un IM real
+        # raramente supera ~450-500 TSS en la práctica.
+        return round(min(result, 600.0), 1)
 
     # Nivel 2: esfuerzo real (potencia/ritmo) — más preciso que FC porque
     # no depende de deriva cardíaca, calor, cafeína, etc.
@@ -507,15 +520,37 @@ def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,
         intensity = css_s_100m / pace_s_100m
 
     if intensity is not None:
+        # Clamp 0.3–1.3: protege la fórmula cuadrática (intensity**2) de
+        # ratios absurdos por datos de sensor erróneos (potencia/ritmo mal
+        # leído, FTP/umbral desactualizado) — 0.3 es "muy por debajo de
+        # cualquier esfuerzo real" y 1.3 es por encima del umbral anaeróbico
+        # sostenido (zona 6-7 de Coggan), ambos límites empíricos, no de una
+        # fórmula publicada. Sin el clamp, un outlier (ej. potenciómetro
+        # descalibrado dando 3x FTP) produce un TSS desproporcionado que
+        # ensucia CTL/ATL de los días siguientes.
         intensity = max(0.3, min(1.3, intensity))
         return _sane(intensity ** 2 * dur_h * 100)
 
     # Nivel 3: fallback por %FCmax — solo si no hubo potencia/ritmo real
     avg_hr   = _safe_float(act.get("averageHR"))
+    # 190 es el último recurso cuando el atleta no configuró su fcmax real
+    # (ver docstring arriba) — no un valor fisiológico universal, solo evita
+    # dividir por FC=0. Decisión del Sprint 3: mantenerlo (no bloquear el
+    # cálculo exigiendo fcmax) porque la UI ya debería pedir ese dato en
+    # onboarding; convertirlo en un error duro rompería el dashboard de
+    # cualquier atleta que aún no lo configuró, a cambio de un TSS sin FC
+    # real que de todas formas sería menos preciso que este fallback.
     max_hr   = fcmax if fcmax and fcmax > 0 else 190.0
+    # 0.7 = ~70% FCmax como intensidad "típica" cuando ni siquiera hay HR
+    # promedio de la actividad (dato faltante, no solo fcmax faltante) —
+    # valor neutro empírico, no derivado de una tabla publicada.
     hrr_frac = (avg_hr / max_hr) if avg_hr > 0 else 0.7
 
-    # IF estimado desde %HRmax (Karvonen simplificado)
+    # IF estimado desde %HRmax (Karvonen simplificado). 0.95 es un factor de
+    # corrección empírico: %HRmax tiende a sobreestimar el %FTP/IF real
+    # (la relación HR-potencia no es 1:1 lineal, sobre todo en zonas altas),
+    # así que se escala levemente hacia abajo en vez de usar hrr_frac tal
+    # cual. No viene de una fórmula publicada de Karvonen estándar.
     IF_est = hrr_frac * 0.95
 
     if sport in ("bike", "run", "swim"):
@@ -543,6 +578,11 @@ def _extract_tss(act: dict, ftp: int = 250, fcmax: float | None = None,
         base_rate = _GYM_TSS_PER_HOUR.get(type_key.lower(), _GYM_TSS_DEFAULT)
         hr_mod = 1.0
         if avg_hr > 0:
+            # 80 bpm como referencia "neutra" de HR promedio de gym (ni muy
+            # suave ni muy intenso) y clamp ±25% para que el HR solo matice
+            # la tasa base, sin dominarla — ambos empíricos, no de una tabla
+            # publicada. Evita que una sesión con HR anómalo (sensor mal
+            # puesto, pico puntual) duplique o reduzca a la mitad el TSS.
             hr_mod = max(0.75, min(1.25, avg_hr / 80.0))
         return round(dur_h * base_rate * hr_mod, 1)
 

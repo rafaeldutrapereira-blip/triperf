@@ -39,6 +39,11 @@ def _mock_tl(ctl=60.0, atl=65.0, tsb=None, tss_day=70.0, date_iso=None):
     obj.ctl     = ctl
     obj.atl     = atl
     obj.tsb     = tsb if tsb is not None else (ctl - atl)
+    # El modelo real tiene la columna `tss` + la propiedad de solo lectura
+    # `tss_day` (alias de compatibilidad, ver api/models.py) — ambos deben
+    # quedar seteados acá o un consumidor que lea `.tss` directo (como
+    # training_service.compute_acwr) rompe contra este mock.
+    obj.tss     = tss_day
     obj.tss_day = tss_day
     obj.date_iso = date_iso or date.today().isoformat()
     return obj
@@ -211,6 +216,7 @@ class TestRampRateAcwr:
             tss = acute_tss_per_day if i <= 7 else chronic_tss_per_day
             obj = MagicMock()
             obj.date_iso = d.isoformat()
+            obj.tss      = tss
             obj.tss_day  = tss
             obj.ctl      = 60.0
             obj.atl      = 65.0

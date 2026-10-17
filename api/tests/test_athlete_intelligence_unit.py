@@ -183,7 +183,10 @@ class TestTrainingSnapshot:
         result = _training_snapshot("ath-1", db)
         assert result["ctl"] == 0.0
         assert result["tsb"] == 0.0
-        assert result["acwr"] == 1.0
+        # BP-03: sin carga crónica real, "no_data" explícito en vez de 1.0
+        # ("zona segura") disfrazando la ausencia de datos.
+        assert result["acwr"] == 0.0
+        assert result["acwr_risk"] == "no_data"
 
     def test_single_load_uses_latest(self):
         today = _today_iso()

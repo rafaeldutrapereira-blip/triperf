@@ -26,6 +26,7 @@ from ..models import (
     WorkoutPrescription,
     WellnessLog,
 )
+from .training_service import compute_acwr as _compute_acwr
 
 _CTL_TAU = 42
 _ATL_TAU = 7
@@ -50,10 +51,11 @@ def _tsb_form_label(tsb: float) -> str:
     return "Sobrecarga"
 
 
-def _acwr_risk(acwr: float) -> tuple[str, str]:
-    if acwr < 0.8:   return "undertrained", "#6b7280"
-    if acwr <= 1.3:  return "safe",         "#10b981"
-    if acwr <= 1.5:  return "moderate",     "#f59e0b"
+def _acwr_risk(acwr: float, zone: str = "") -> tuple[str, str]:
+    if zone == "no_data": return "no_data",    "#6b7280"
+    if acwr < 0.8:         return "undertrained", "#6b7280"
+    if acwr <= 1.3:        return "safe",         "#10b981"
+    if acwr <= 1.5:        return "moderate",     "#f59e0b"
     return "elevated", "#ef4444"
 
 
@@ -83,10 +85,12 @@ def _training_snapshot(athlete_id: str, db: Session) -> dict:
     tss_7d  = sum(l.tss for l in loads if l.date_iso >= cutoff_7d)
     tss_28d = sum(l.tss for l in loads if l.date_iso >= cutoff_28d)
 
-    acute_avg   = tss_7d / 7.0
-    chronic_avg = tss_28d / 28.0
-    acwr = round(acute_avg / chronic_avg, 2) if chronic_avg > 0 else 1.0
-    acwr_level, acwr_color = _acwr_risk(acwr)
+    # ACWR real (BP-03, misma fuente que el resto del backend): antes este
+    # bloque reinventaba el cálculo y usaba 1.0 ("zona segura") como default
+    # cuando no había carga crónica suficiente, disfrazando falta de datos
+    # de riesgo bajo. `compute_acwr` ya tiene el guard correcto → "no_data".
+    acwr, acwr_zone = _compute_acwr(list(reversed(loads)))
+    acwr_level, acwr_color = _acwr_risk(acwr, acwr_zone)
 
     trend_7d = [
         {"date_iso": l.date_iso, "ctl": round(l.ctl, 1), "tsb": round(l.tsb, 1), "tss": round(l.tss, 1)}

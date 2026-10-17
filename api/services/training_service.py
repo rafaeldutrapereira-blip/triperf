@@ -30,14 +30,20 @@ _ALPHA_ATL = 1 - math.exp(-1 / _ATL_TC)
 # ─── Zonas de entrenamiento ───────────────────────────────────
 
 def hr_zones(fcmax: int) -> dict:
-    """Zonas FC según modelo 5-zonas (adaptado para triatlón)."""
-    return {
-        "z1": (round(fcmax * 0.50), round(fcmax * 0.60)),
-        "z2": (round(fcmax * 0.60), round(fcmax * 0.70)),
-        "z3": (round(fcmax * 0.70), round(fcmax * 0.80)),
-        "z4": (round(fcmax * 0.80), round(fcmax * 0.90)),
-        "z5": (round(fcmax * 0.90), fcmax),
-    }
+    """
+    Zonas FC según modelo 5-zonas (adaptado para triatlón).
+    Delega los cortes de % a zones_service.hr_zones (única fuente real de los
+    porcentajes) y los reempaqueta en el formato dict-de-tuplas que ya
+    consumen los callers de esta función (_bucket_time_in_zone, athlete_zones).
+    Antes esta función tenía su propia tabla de % duplicada y además con un
+    bug real: Z1 arrancaba en 50% FCmax (no en 0%), así que cualquier
+    actividad muy suave (caminata, calentamiento) quedaba sin zona asignada.
+    """
+    from .zones_service import hr_zones as _hr_zones_pct
+    out = {}
+    for z in _hr_zones_pct(fcmax):
+        out[f"z{z['zone']}"] = (z["min_bpm"], z["max_bpm"])
+    return out
 
 
 def ftp_zones(ftp: int) -> dict:
