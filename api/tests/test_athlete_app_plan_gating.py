@@ -50,3 +50,8 @@ def test_modulos_ocultos_son_agegroup_en_la_web(module_id):
 def test_visibilidad_usa_canaccess_de_la_web():
     assert "LX_ROUTES.canAccess(sess, it.mod)" in APP
     assert "_applyPlanVisibility(p.plan_nivel)" in APP
+
+
+def test_barra_inferior_ajusta_columnas_a_botones_visibles():
+    assert "getElementById('bottom-nav')" in APP
+    assert "repeat(' + visibles + ', 1fr)" in APP

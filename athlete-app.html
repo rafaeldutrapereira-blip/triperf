@@ -2467,6 +2467,13 @@ function _applyPlanVisibility(plan){
     var node = document.getElementById(it.el);
     if(node) node.style.display = LX_ROUTES.canAccess(sess, it.mod) ? '' : 'none';
   });
+  /* La barra es un grid de 5 columnas: con items ocultos, usar tantas columnas
+     como botones visibles (5 normal, 4 para Básico) para no dejar un hueco. */
+  var bar = document.getElementById('bottom-nav');
+  if(bar){
+    var visibles = Array.prototype.filter.call(bar.querySelectorAll('.nav-btn'), function(b){ return b.style.display !== 'none'; }).length;
+    bar.style.gridTemplateColumns = 'repeat(' + visibles + ', 1fr)';
+  }
 }
 
 function openMenuSheet(){
