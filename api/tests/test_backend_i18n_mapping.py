@@ -186,3 +186,56 @@ def test_frontend_keys_exist_in_all_languages():
             if key not in dic[lang]:
                 problems.append("%s falta en %s" % (key, lang))
     assert not problems, "\n".join(problems)
+
+
+INSIGHT_KEYS_FRONT = [
+    "info_insight_nombre", "info_insight_definicion", "info_insight_formula", "info_insight_tip",
+    "info_tu_insight", "info_detalle_tecnico", "info_senales", "info_tu_estado",
+    "info_desglose", "info_guia_hoy", "info_del_total", "info_limitante",
+]
+
+
+def _insight_block():
+    src = LX_INFO_JS.read_text(encoding="utf-8")
+    i = src.index("  insight: {")
+    j = src.index("\n  },", i)
+    return src[i:j]
+
+
+def test_lx_info_insight_keys_match_source_text():
+    blk = _insight_block()
+    str_re = r"'((?:[^'\\]|\\.)*)'"
+    dic = _load_dict()
+    problems = []
+    for field, key in [("nombre", "info_insight_nombre"), ("definicion", "info_insight_definicion"),
+                       ("formula", "info_insight_formula"), ("pro_tip", "info_insight_tip")]:
+        m = re.search(field + r": " + str_re, blk)
+        if not m:
+            problems.append("campo %s no encontrado en insight" % field)
+            continue
+        if key not in dic["es"]:
+            problems.append("%s falta en es" % key)
+        elif dic["es"][key] != m.group(1):
+            problems.append("%s: ES de i18n no coincide con lx-info.js" % key)
+        for lang in ("pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+    assert not problems, "\n".join(problems)
+
+
+def test_insight_panel_routes_backend_text_through_lxbe():
+    # El panel del insight debe traducir su texto del backend (titular, mensaje,
+    # bullets tecnicos y drivers). Si alguien lo cambia, vuelve a verse en espanol.
+    src = LX_INFO_JS.read_text(encoding="utf-8")
+    for needle in ("_lxBe(inData.headline", "_lxBe(inData.message", "tech.map(_lxBe)", "_lxBe(dr.label)"):
+        assert needle in src, "el panel del insight ya no llama a lxBeT: falta %s" % needle
+
+
+def test_insight_panel_frontend_keys_exist_in_all_languages():
+    dic = _load_dict()
+    problems = []
+    for key in INSIGHT_KEYS_FRONT:
+        for lang in ("es", "pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+    assert not problems, "\n".join(problems)
