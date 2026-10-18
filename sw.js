@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '202';  // 2026-10-18: traduccion final de coach, nutrition, dashboard, detalle, athlete-app, mental, privacy y tos (i18n.js)
+var BUILD_VERSION = '203';  // 2026-10-18: blood labs (nombres, notas, lab guardado, urea) y readiness DRS traducidos (i18n.js, dashboard.html)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
