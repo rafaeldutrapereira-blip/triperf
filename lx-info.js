@@ -511,6 +511,7 @@ function _findRange(m, val){
 
 /* ── Render HTML del panel ───────────────────────────────────────────── */
 function _render(metricId, currentValue){
+  var _li = function(f, fb){ return _lxInfoT('info_' + metricId + '_' + f, fb); };
   var m = METRICS[metricId];
   if(!m) return '<p style="color:#9CA3AF">Métrica no encontrada: '+metricId+'</p>';
 
@@ -537,8 +538,8 @@ function _render(metricId, currentValue){
   var html = '';
 
   // Título
-  html += '<h2>'+m.emoji+' '+m.nombre+'</h2>';
-  if(m.unidad) html += '<span class="li-unit">Unidad: '+m.unidad+'</span>';
+  html += '<h2>'+m.emoji+' '+_li('nombre', m.nombre)+'</h2>';
+  if(m.unidad) html += '<span class="li-unit">'+_lxInfoT('info_unidad','Unidad')+': '+_li('unidad', m.unidad)+'</span>';
 
   if(pmcData){
     var pcol = activeRange ? activeRange.color : '#F9FAFB';
@@ -626,19 +627,19 @@ function _render(metricId, currentValue){
   } else if(currentValue != null && currentValue !== ''){
     var col = activeRange ? activeRange.color : '#F9FAFB';
     html += '<div class="li-current-box" style="background:'+col+'12;border-color:'+col+'33">'
-      +'<div class="li-cb-label">Tu valor actual</div>'
+      +'<div class="li-cb-label">'+_lxInfoT('info_tu_valor','Tu valor actual')+'</div>'
       +'<div class="li-cb-val" style="color:'+col+'">'+currentValue+(m.unidad&&m.unidad.indexOf('puntos')>-1?'':'')+' <span style="font-size:1rem;font-weight:400;color:#6B7280">'+m.unidad+'</span></div>'
       +(activeRange?'<div class="li-cb-interp"><strong style="color:'+col+'">'+activeRange.label+'</strong>'+(activeRange.advice?' — '+activeRange.advice:'')+'</div>':'')
       +'</div>';
   }
 
   // Definición
-  html += '<div class="li-section-title">Qué mide</div>';
-  html += '<div class="li-def">'+m.definicion+'</div>';
+  html += '<div class="li-section-title">'+_lxInfoT('info_que_mide','Qué mide')+'</div>';
+  html += '<div class="li-def">'+_li('definicion', m.definicion)+'</div>';
 
   // Fórmula / método
   if(m.formula){
-    html += '<div class="li-section-title">Cómo se calcula</div>';
+    html += '<div class="li-section-title">'+_lxInfoT('info_como_calcula','Cómo se calcula')+'</div>';
     html += '<div class="li-formula">'+m.formula+'</div>';
   }
 
@@ -656,17 +657,17 @@ function _render(metricId, currentValue){
 
   // Rangos
   if(m.rangos && m.rangos.length){
-    html += '<div class="li-section-title">Rangos de referencia</div>';
+    html += '<div class="li-section-title">'+_lxInfoT('info_rangos_ref','Rangos de referencia')+'</div>';
     html += '<div class="li-range-bar">';
-    m.rangos.forEach(function(r){
+    m.rangos.forEach(function(r, ridx){
       var isActive = activeRange === r;
       html += '<div class="li-range-row'+(isActive?' active':'')+'">'
         +'<div class="li-range-dot" style="background:'+r.color+'"></div>'
         +'<div>'
         +'<div class="li-range-label" style="color:'+r.color+'">'
-        +(isActive?'▶ ':'')+r.label+' <span style="font-size:.65rem;font-weight:400;color:#6B7280">('+r.min+' – '+(r.max===999?'∞':r.max)+')</span>'
+        +(isActive?'▶ ':'')+_li('r'+ridx+'_label', r.label)+' <span style="font-size:.65rem;font-weight:400;color:#6B7280">('+r.min+' – '+(r.max===999?'∞':r.max)+')</span>'
         +'</div>'
-        +(r.advice?'<div class="li-range-advice">'+r.advice+'</div>':'')
+        +(r.advice?'<div class="li-range-advice">'+_li('r'+ridx+'_adv', r.advice)+'</div>':'')
         +'</div></div>';
     });
     html += '</div>';
@@ -674,8 +675,8 @@ function _render(metricId, currentValue){
 
   // Meta triatlón / semana
   if(m.meta_triathlon){
-    html += '<div class="li-section-title">Referencia triatlón</div>';
-    html += '<div class="li-def" style="font-size:.78rem">'+m.meta_triathlon+'</div>';
+    html += '<div class="li-section-title">'+_lxInfoT('info_ref_triatlon','Referencia triatlón')+'</div>';
+    html += '<div class="li-def" style="font-size:.78rem">'+_li('meta', m.meta_triathlon)+'</div>';
   }
   if(m.meta_semana){
     html += '<div class="li-section-title">Meta semanal</div>';
@@ -684,7 +685,7 @@ function _render(metricId, currentValue){
 
   // Pro tip
   if(m.pro_tip){
-    html += '<div class="li-pro-tip">'+m.pro_tip+'</div>';
+    html += '<div class="li-pro-tip">'+_li('tip', m.pro_tip)+'</div>';
   }
 
   return html;
