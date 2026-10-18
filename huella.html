@@ -127,7 +127,7 @@ a{color:inherit;text-decoration:none}
       <div class="hu-period-btns" id="hu-period-btns">
         <button class="hu-period-btn" data-period="week"><span data-i18n="hu_week">Semana</span></button>
         <button class="hu-period-btn" data-period="month"><span data-i18n="hu_month">Mes</span></button>
-        <button class="hu-period-btn" data-period="year">Año</button>
+        <button class="hu-period-btn" data-period="year"><span data-i18n="hu_year_btn">Año</span></button>
         <button class="hu-period-btn on" data-period="all"><span data-i18n="hu_all">Todo</span></button>
       </div>
     </div>
@@ -150,7 +150,7 @@ a{color:inherit;text-decoration:none}
 
   <div id="yr-loading" class="yr-loading">
     <div class="yr-spinner"></div>
-    Construyendo tu resumen&#8230;
+    <span data-i18n="hu_building">Construyendo tu resumen&#8230;</span>
   </div>
 
   <div id="yr-content" style="display:none">
@@ -203,6 +203,8 @@ a{color:inherit;text-decoration:none}
 
 <script src="dashboard-alt-data.js"></script>
 <script>
+function _t(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
+function _hLoc(){ var l=(window.i18n&&window.i18n.lang)||'es'; return l==='pt'?'pt-BR':l==='en'?'en-US':'es-CL'; }
 (function () {
   'use strict';
 
@@ -219,8 +221,8 @@ a{color:inherit;text-decoration:none}
   var MODES = {
     days: {
       centerKey: 'days_connected',
-      centerLabel: 'DÍAS CONECTADO',
-      fmt: function (v) { return Math.round(v).toLocaleString('es-CL'); },
+      get centerLabel(){ return _t('hu_days_connected','DÍAS CONECTADO'); },
+      fmt: function (v) { return Math.round(v).toLocaleString(_hLoc()); },
       cats: [
         { key: 'activities',         name: 'Actividades',  color: '#FF6535', x: 252, y: 200 },
         { key: 'training_load_days', name: 'Carga (PMC)',  color: '#0EA5E9', x: 226, y: 155 },
@@ -232,8 +234,8 @@ a{color:inherit;text-decoration:none}
     },
     km: {
       centerKey: 'total_km',
-      centerLabel: 'KM TOTAL',
-      fmt: function (v) { return v.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' km'; },
+      get centerLabel(){ return _t('hu_km_total_center','KM TOTAL'); },
+      fmt: function (v) { return v.toLocaleString(_hLoc(), { maximumFractionDigits: 1 }) + ' km'; },
       cats: [
         { key: 'swim_km', name: 'Natación', color: '#22D3EE', x: 252, y: 200 }, // derecha
         { key: 'bike_km', name: 'Ciclismo', color: '#FF6535', x: 174, y: 155 }, // arriba-izquierda
@@ -376,7 +378,7 @@ a{color:inherit;text-decoration:none}
       .then(function (d) { state.data = d; render(d, state.mode); })
       .catch(function (err) {
         console.error('[huella] error', err);
-        document.getElementById('hu-wrap').innerHTML = '<div class="hu-empty" style="grid-column:1/-1">No se pudo cargar tu huella de datos. Intenta recargar.</div>';
+        document.getElementById('hu-wrap').innerHTML = '<div class="hu-empty" style="grid-column:1/-1">'+_t('hu_load_error','No se pudo cargar tu huella de datos. Intenta recargar.')+'</div>';
       });
   }
 
@@ -470,10 +472,10 @@ a{color:inherit;text-decoration:none}
   function _renderStats(d){
     var grid = _g('yr-stat-grid');
     var items = [
-      {num: d.total_activities, unit:'actividades', label:'Total actividades', ac:'var(--orange)'},
-      {num: d.total_hours+'h',  unit:'',            label:'Horas entrenadas',  ac:'var(--cyan)'},
-      {num: d.total_km+'km',    unit:'',            label:'Kilómetros totales', ac:'var(--green)'},
-      {num: Math.round(d.total_tss), unit:'TSS',   label:'Carga total',        ac:'var(--purple)'},
+      {num: d.total_activities, unit:_t('hu_unit_activities','actividades'), label:_t('hu_total_activities','Total actividades'), ac:'var(--orange)'},
+      {num: d.total_hours+'h',  unit:'',            label:_t('hu_hours_trained','Horas entrenadas'),  ac:'var(--cyan)'},
+      {num: d.total_km+'km',    unit:'',            label:_t('hu_km_total','Kilómetros totales'), ac:'var(--green)'},
+      {num: Math.round(d.total_tss), unit:'TSS',   label:_t('hu_load_total','Carga total'),        ac:'var(--purple)'},
     ];
     grid.innerHTML = items.map(function(i){
       return '<div class="stat-card" style="--ac:'+i.ac+'">'
@@ -555,17 +557,17 @@ a{color:inherit;text-decoration:none}
 
   function _renderCtl(d){
     var row = _g('yr-ctl-row');
-    if(!d.ctl_start && !d.ctl_end){ row.innerHTML = '<div style="color:var(--dim);font-size:.8rem">Sin datos de CTL</div>'; return; }
+    if(!d.ctl_start && !d.ctl_end){ row.innerHTML = '<div style="color:var(--dim);font-size:.8rem">'+_t('hu_no_ctl','Sin datos de CTL')+'</div>'; return; }
 
     var color = (d.ctl_improvement||0) >= 0 ? 'var(--green)' : 'var(--orange)';
     var arrow = (d.ctl_improvement||0) >= 0 ? '↑' : '↓';
     var sign  = (d.ctl_improvement||0) > 0 ? '+' : '';
 
     row.innerHTML = ''
-      +'<div class="ctl-box"><div class="ctl-lbl">Inicio del año</div><div class="ctl-num" style="color:var(--muted)">'+(d.ctl_start||'—')+'</div></div>'
+      +'<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_start','Inicio del año')+'</div><div class="ctl-num" style="color:var(--muted)">'+(d.ctl_start||'—')+'</div></div>'
       +'<div class="ctl-arrow">'+arrow+'</div>'
-      +'<div class="ctl-box" style="border-color:'+color+'44"><div class="ctl-lbl">Fin del año</div><div class="ctl-num" style="color:'+color+'">'+(d.ctl_end||'—')+'</div></div>'
-      +(d.ctl_peak ? '<div class="ctl-box"><div class="ctl-lbl">Pico del año</div><div class="ctl-num" style="color:var(--gold)">'+d.ctl_peak.value+'</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">'+d.ctl_peak.date_iso.slice(5)+'</div></div>' : '')
+      +'<div class="ctl-box" style="border-color:'+color+'44"><div class="ctl-lbl">'+_t('hu_year_end','Fin del año')+'</div><div class="ctl-num" style="color:'+color+'">'+(d.ctl_end||'—')+'</div></div>'
+      +(d.ctl_peak ? '<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_peak','Pico del año')+'</div><div class="ctl-num" style="color:var(--gold)">'+d.ctl_peak.value+'</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">'+d.ctl_peak.date_iso.slice(5)+'</div></div>' : '')
       +(d.ctl_improvement !== null ? '<div style="text-align:center"><div style="font-size:.65rem;color:var(--dim);margin-bottom:.3rem">Mejora total</div><div style="font-family:Oswald,sans-serif;font-size:1.6rem;font-weight:700;color:'+color+'">'+sign+d.ctl_improvement+'</div></div>' : '');
   }
 

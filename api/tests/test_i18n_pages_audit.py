@@ -91,6 +91,10 @@ _FORBIDDEN_LITERALS = [
     ("dashboard-alt.html", "label: 'TSS Semana'"),
     ("dashboard-alt.html", "zoneLabel = 'Óptimo';"),
     ("dashboard-alt.html", "var DOW = ['Lun'"),
+    # huella.html (2026-10-18)
+    ("huella.html", "toLocaleString('es-CL')"),
+    ("huella.html", "label:'Carga total'"),
+    ("huella.html", "<div class=\"ctl-lbl\">Inicio del año"),
 ]
 
 

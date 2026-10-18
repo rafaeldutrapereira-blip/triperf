@@ -2118,6 +2118,21 @@ var DICT = {
     dba_dow_5: 'Vie',
     dba_dow_6: 'Sáb',
     dba_dow_7: 'Dom',
+    /* huella.html (auditoria 2026-10-18) */
+    hu_year_btn: 'Año',
+    hu_building: 'Construyendo tu resumen…',
+    hu_days_connected: 'DÍAS CONECTADO',
+    hu_km_total_center: 'KM TOTAL',
+    hu_load_error: 'No se pudo cargar tu huella de datos. Intenta recargar.',
+    hu_unit_activities: 'actividades',
+    hu_total_activities: 'Total actividades',
+    hu_hours_trained: 'Horas entrenadas',
+    hu_km_total: 'Kilómetros totales',
+    hu_load_total: 'Carga total',
+    hu_no_ctl: 'Sin datos de CTL',
+    hu_year_start: 'Inicio del año',
+    hu_year_end: 'Fin del año',
+    hu_year_peak: 'Pico del año',
   },
 
   pt: {
@@ -4195,6 +4210,21 @@ var DICT = {
     dba_dow_5: 'Sex',
     dba_dow_6: 'Sáb',
     dba_dow_7: 'Dom',
+    /* huella.html (auditoria 2026-10-18) */
+    hu_year_btn: 'Ano',
+    hu_building: 'Montando seu resumo…',
+    hu_days_connected: 'DIAS CONECTADO',
+    hu_km_total_center: 'KM TOTAL',
+    hu_load_error: 'Não foi possível carregar sua pegada de dados. Tente recarregar.',
+    hu_unit_activities: 'atividades',
+    hu_total_activities: 'Total de atividades',
+    hu_hours_trained: 'Horas treinadas',
+    hu_km_total: 'Quilômetros totais',
+    hu_load_total: 'Carga total',
+    hu_no_ctl: 'Sem dados de CTL',
+    hu_year_start: 'Início do ano',
+    hu_year_end: 'Fim do ano',
+    hu_year_peak: 'Pico do ano',
   },
 
   en: {
@@ -6272,6 +6302,21 @@ var DICT = {
     dba_dow_5: 'Fri',
     dba_dow_6: 'Sat',
     dba_dow_7: 'Sun',
+    /* huella.html (auditoria 2026-10-18) */
+    hu_year_btn: 'Year',
+    hu_building: 'Building your summary…',
+    hu_days_connected: 'DAYS CONNECTED',
+    hu_km_total_center: 'TOTAL KM',
+    hu_load_error: 'Could not load your data footprint. Try reloading.',
+    hu_unit_activities: 'activities',
+    hu_total_activities: 'Total activities',
+    hu_hours_trained: 'Hours trained',
+    hu_km_total: 'Total kilometers',
+    hu_load_total: 'Total load',
+    hu_no_ctl: 'No CTL data',
+    hu_year_start: 'Start of year',
+    hu_year_end: 'End of year',
+    hu_year_peak: 'Year peak',
   }
 };
 
