@@ -5642,6 +5642,8 @@ if (document.readyState === 'loading') {
 /* ─────────────────────────── API PÚBLICA ─────────────────────────── */
 window.i18n = {
   set: _set,
+  /* nav.js re-renderiza #sidebar/.sb-topbar en lx:i18nready y borra el selector: lo vuelve a montar */
+  mountWidget: _injectWidget,
   t:   _t,
   get lang() { return _lang; },
   /* Registra un Chart.js instance para traducción automática.

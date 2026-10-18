@@ -280,6 +280,7 @@
   function _refreshI18n(){
     var sv=null; try{ sv=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); }catch(e){}
     renderSidebar(sv);
+    if(window.i18n&&window.i18n.mountWidget) window.i18n.mountWidget();
     document.querySelectorAll('#sidebar [data-i18n], header.sb-topbar [data-i18n]').forEach(function(el){ var v=_nt(el.getAttribute('data-i18n'),''); if(v) el.textContent=v; });
     var t=document.querySelector('#lx-ai-panel .lx-ai-title');
     if(t) t.innerHTML='&#x26A1; '+_escH(_nt('shell_ai_title','Coach IA · LabX'));
