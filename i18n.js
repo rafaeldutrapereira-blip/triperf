@@ -14,6 +14,8 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    ov_labs_alert_referral: 'Derivación médica recomendada',
+    ov_labs_alert_critical: 'Riesgo crítico',
     /* Navegación */
     ath_portal: 'Portal Atleta',
     ath_activities: 'Actividades Garmin',
@@ -2243,6 +2245,8 @@ var DICT = {
   },
 
   pt: {
+    ov_labs_alert_referral: 'Encaminhamento médico recomendado',
+    ov_labs_alert_critical: 'Risco crítico',
     /* Navegação */
     ath_portal: 'Portal Atleta',
     ath_activities: 'Atividades Garmin',
@@ -4442,6 +4446,8 @@ var DICT = {
   },
 
   en: {
+    ov_labs_alert_referral: 'Medical referral recommended',
+    ov_labs_alert_critical: 'Critical risk',
     /* Navigation */
     ath_portal: 'Athlete Portal',
     ath_activities: 'Garmin Activities',

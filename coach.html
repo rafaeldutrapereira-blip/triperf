@@ -1258,6 +1258,9 @@ async function loadOverview(){
 }
 
 
+function _lxBe(s){ return (window.lxBeT && typeof s==='string') ? window.lxBeT(s) : s; }
+function _lxBeList(a){ return (a||[]).map(_lxBe); }
+
 async function loadOverviewBloodLabs(){
   var list=document.getElementById('ov-labs-list');
   var sub=document.getElementById('ov-labs-sub');
@@ -1275,9 +1278,16 @@ async function loadOverviewBloodLabs(){
       list.innerHTML = '<div class="empty"><p>' + _t('ov_labs_all_optimal','Todo el equipo en TRS óptimo ✅') + '</p></div>';
       return;
     }
-    list.innerHTML = rows.map(function(a){
+    var alertsHtml = (data.alerts||[]).map(function(al){
+      var label = al.code==='medical_referral'
+        ? _t('ov_labs_alert_referral','Derivación médica recomendada')
+        : _t('ov_labs_alert_critical','Riesgo crítico');
+      var c = al.code==='medical_referral' ? 'var(--red)' : '#f59e0b';
+      return '<div style="font-size:.78rem;color:'+c+';padding:.3rem 0">⚠ <strong>'+esc(al.athlete)+'</strong> — '+esc(label)+' — TRS '+al.trs+'/100</div>';
+    }).join('');
+    list.innerHTML = (alertsHtml?'<div style="margin-bottom:.4rem">'+alertsHtml+'</div>':'') + rows.map(function(a){
       var color = a.trs_color || (a.trs<40?'#ef4444':'#f59e0b');
-      var limiters = (a.limiters||[]).slice(0,2).join(', ');
+      var limiters = _lxBeList(a.limiters).slice(0,2).join(', ');
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border)">'
         +'<div>'
         +'<strong>'+esc(a.name)+'</strong>'

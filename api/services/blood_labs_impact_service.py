@@ -577,16 +577,20 @@ def compute_team_labs_status(athletes_data: list[dict]) -> dict:
     for r in critical:
         alerts.append({
             "severity": "critical",
+            "code":     "critical",
             "athlete":  r["name"],
             "user_id":  r["user_id"],
+            "trs":      r["trs"],
             "message":  f"TRS {r['trs']}/100 — {', '.join(r['limiters'][:2]) or 'marcadores críticos'}",
         })
     for r in warning:
         if r.get("medical_referral"):
             alerts.append({
                 "severity": "warning",
+                "code":     "medical_referral",
                 "athlete":  r["name"],
                 "user_id":  r["user_id"],
+                "trs":      r["trs"],
                 "message":  f"Derivación médica recomendada — TRS {r['trs']}/100",
             })
 
