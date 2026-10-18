@@ -27,6 +27,7 @@ BACKEND_FILES = [
     REPO / "api" / "services" / "insight_texts.py",
     REPO / "api" / "services" / "blood_labs_impact_service.py",
     REPO / "api" / "services" / "blood_labs_correlation_service.py",
+    REPO / "api" / "routes" / "blood_lab_routes.py",
 ]
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -300,3 +301,21 @@ def test_lxbet_translates_blood_labs_templates_and_names():
     assert en[6].startswith("Your Ferritin is low (12)") and "Chronic fitness" in en[6]
     pt = _run_lxbet("pt", es)
     assert pt[4] == "verde" and pt[0].startswith("URGENTE: consultar um médico")
+
+
+def test_lxbet_translates_blood_lab_alert_title_and_correlation_notes():
+    """Titulo y notas de correlacion de blood_lab_routes.py (2026-10-18)."""
+    es = [
+        "Ferritina fuera de rango óptimo",
+        "CTL actual de 45: la carga alta pudo acelerar el consumo de reservas de hierro.",
+        "CTL 62: cortisol elevado + carga alta = riesgo de overreaching.",
+        "CK elevada con CTL 58: el plan de esta semana debería ser de recuperación activa.",
+    ]
+    en = _run_lxbet("en", es)
+    assert en[0] == "Ferritin out of optimal range"  # el nombre del marcador tambien se traduce
+    assert en[1] == "Current CTL of 45: high load may have accelerated iron stores depletion."
+    assert en[2] == "CTL 62: high cortisol + high load = overreaching risk."
+    assert en[3] == "High CK with CTL 58: this week's plan should focus on active recovery."
+    pt = _run_lxbet("pt", es)
+    assert pt[0] == "Ferritina fora da faixa ótima"
+    assert pt[2] == "CTL 62: cortisol elevado + carga alta = risco de overreaching."

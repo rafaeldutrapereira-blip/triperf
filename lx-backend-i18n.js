@@ -990,6 +990,22 @@ var LX_BE_ENTRIES = [
  [
   "Sin actividades en el período",
   "be_306"
+ ],
+ [
+  "{name} fuera de rango óptimo",
+  "be_307"
+ ],
+ [
+  "CTL actual de {ctl}: la carga alta pudo acelerar el consumo de reservas de hierro.",
+  "be_308"
+ ],
+ [
+  "CTL {ctl}: cortisol elevado + carga alta = riesgo de overreaching.",
+  "be_309"
+ ],
+ [
+  "CK elevada con CTL {ctl}: el plan de esta semana debería ser de recuperación activa.",
+  "be_310"
  ]
 ];
 /* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */
