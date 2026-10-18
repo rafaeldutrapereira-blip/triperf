@@ -16,6 +16,7 @@ from __future__ import annotations
 from fastapi import Depends, HTTPException
 
 from .auth import get_current_user
+from .free_limits import free_limits_enabled
 from .models import User
 
 _PLAN_FEATURES: dict[str, set[str]] = {
@@ -24,11 +25,13 @@ _PLAN_FEATURES: dict[str, set[str]] = {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
         "race_day", "race_predictor", "community", "community_write", "year_in_review", "gear",
+        "calendar", "periodization",
     },
     "elite": {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
         "race_day", "race_predictor", "community", "community_write", "year_in_review", "gear",
+        "calendar", "periodization",
         "blood_labs", "training_detail", "adaptive", "ai_coach", "indoor_workout",
     },
 }
@@ -50,6 +53,9 @@ def has_feature(user: User, feature: str) -> bool:
         return True
     plan = normalize_plan(user.plan_nivel)
     allowed = _PLAN_FEATURES.get(plan, _PLAN_FEATURES["basico"])
+    # B11 (flag): Free accede al plan de entrenamiento, limitado a la semana actual.
+    if feature == "training_plan" and plan == "basico" and free_limits_enabled():
+        return True
     return feature in allowed
 
 

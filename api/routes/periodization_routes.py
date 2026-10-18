@@ -176,7 +176,7 @@ def delete_phase(
 
 # ── Athlete router ────────────────────────────────────────────────────────────
 
-athlete_router = APIRouter(prefix="/athlete", tags=["periodization"], dependencies=[Depends(require_feature("training_plan"))])
+athlete_router = APIRouter(prefix="/athlete", tags=["periodization"], dependencies=[Depends(require_feature("periodization"))])
 
 
 @athlete_router.get("/phases")

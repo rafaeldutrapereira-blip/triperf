@@ -25,7 +25,7 @@ from ..services.calendar_service import (
     get_upcoming_workouts,
 )
 
-router = APIRouter(prefix="/calendar", tags=["calendar"], dependencies=[Depends(require_feature("training_plan"))])
+router = APIRouter(prefix="/calendar", tags=["calendar"], dependencies=[Depends(require_feature("calendar"))])
 
 
 @router.get("/monthly")

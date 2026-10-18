@@ -23,6 +23,7 @@ from pydantic import BaseModel, field_validator
 from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
 from ..plan_features import require_feature
+from ..free_limits import applies_to as _free_applies, clip_range as _free_clip_range, clip_history as _free_clip_history
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember, Follow, CoachAthlete
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
@@ -118,6 +119,9 @@ def my_plan(
     me: User = Depends(get_current_user)
 ):
     """Entrenos asignados al atleta autenticado, con filtro de fechas opcional."""
+    if _free_applies(me):
+        from datetime import date as _d
+        start, end = _free_clip_range(start, end, _d.today())
     q = db.query(AssignedWorkout).filter(
         AssignedWorkout.athlete_id == me.id,
         AssignedWorkout.deleted_at.is_(None),
@@ -602,6 +606,19 @@ def coach_get_nutrition_plan(
 # DASHBOARD — datos históricos Garmin para el atleta autenticado
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _free_clip_dashboard(data, me):
+    """Free (flag B11): recorta el historial de PMC/ACWR a 28 días. El cálculo no cambia."""
+    if not _free_applies(me):
+        return data
+    from datetime import date as _d
+    out = dict(data)
+    if "pmc" in out:
+        out["pmc"] = _free_clip_history(out["pmc"], _d.today())
+    if "acwr_history" in out:
+        out["acwr_history"] = _free_clip_history(out["acwr_history"], _d.today())
+    return out
+
+
 @router.get("/dashboard")
 def athlete_dashboard(
     db:    Session = Depends(get_db),
@@ -622,7 +639,7 @@ def athlete_dashboard(
     if not fresh:
         cached = cache_get(cache_key)
         if cached:
-            return cached
+            return _free_clip_dashboard(cached, me)
 
     today_iso = _date_.today().isoformat()
 
@@ -1129,7 +1146,7 @@ def athlete_dashboard(
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo
     }
     cache_set(cache_key, result, ttl_seconds=300)
-    return result
+    return _free_clip_dashboard(result, me)
 
 
 @router.get("/health-360")
@@ -1252,6 +1269,9 @@ def get_planned_workouts_range(
     "Cumplimiento" en las vistas Mes/Período, no solo la semana actual (que es lo
     único que cubre planned_workouts dentro de /athlete/dashboard).
     """
+    if _free_applies(me):
+        from datetime import date as _d
+        start, end = _free_clip_range(start, end, _d.today())
     return _get_planned_range(db, me.id, start, end)
 
 
