@@ -1196,7 +1196,7 @@ function renderPeriodCal(){
       wSun.getDate()+' '+monthsS()[wSun.getMonth()]+'</span>';
     if(wDone.length){
       html += '<span class="period-wk-stats">';
-      html += wDone.length+' sesión(es)';
+      html += wDone.length+' '+_t('tp_sessions_unit','sesión(es)');
       if(wMin)  html += ' · '+fmtDur(Math.round(wMin));
       if(wTss)  html += ' · '+Math.round(wTss)+' TSS';
       html += '</span>';
@@ -1355,7 +1355,7 @@ function renderSummary(){
       +'<span class="sum-pct" style="color:'+c.color+'">'+pct+'%</span>'
       +'</div>'
       +'<div class="sum-main" style="color:'+c.color+'">'+c.fmt(v)+'</div>'
-      +'<div class="sum-sub">de '+c.fmt(tgt)+' objetivo</div>'
+      +'<div class="sum-sub">'+_t('tp_of_word','de')+' '+c.fmt(tgt)+' '+_t('tp_target_word','objetivo')+'</div>'
       +'<div class="bar-bg"><div class="bar-f" style="width:'+pct+'%;background:'+c.color+'"></div></div>'
       +'<div class="sum-sessions">'+sarr.length+' sesiones · '+fmtDur(Math.round(tmin))+'</div>'
       +'</div>';
@@ -2256,7 +2256,7 @@ window._tpRender = render;  // expuesto para el bridge API
   pullAssignments();
 
   // RPE labels
-  var RPE_LABELS = ['','Muy fácil','Fácil','Moderado-suave','Moderado','Moderado-duro','Duro','Muy duro','Extremo','Máximo','Límite absoluto'];
+  function rpeLabels(){ return ['',_t('tp_rpe_1','Muy fácil'),_t('tp_rpe_2','Fácil'),_t('tp_rpe_3','Moderado-suave'),_t('tp_rpe_4','Moderado'),_t('tp_rpe_5','Moderado-duro'),_t('tp_rpe_6','Duro'),_t('tp_rpe_7','Muy duro'),_t('tp_rpe_8','Extremo'),_t('tp_rpe_9','Máximo'),_t('tp_rpe_10','Límite absoluto')]; }
   var RPE_COLORS = ['','#10B981','#10B981','#22D3EE','#0EA5E9','#F0A500','#F0A500','#FF6535','#EF4444','#EF4444','#7C3AED'];
 
   // Log modal
@@ -2271,7 +2271,7 @@ window._tpRender = render;  // expuesto para el bridge API
     document.getElementById('log-dur').value  = s.dur_min || '';
     document.getElementById('log-rpe').value  = 5;
     document.getElementById('log-rpe-val').textContent = 5;
-    document.getElementById('log-rpe-label').textContent = RPE_LABELS[5];
+    document.getElementById('log-rpe-label').textContent = rpeLabels()[5];
     document.getElementById('log-rpe-label').style.color = RPE_COLORS[5];
     document.getElementById('log-notas').value = '';
     closeModal('modal-detail');
@@ -2285,7 +2285,7 @@ window._tpRender = render;  // expuesto para el bridge API
         var v = parseInt(this.value);
         document.getElementById('log-rpe-val').textContent = v;
         document.getElementById('log-rpe-val').style.color = RPE_COLORS[v]||'var(--orange)';
-        document.getElementById('log-rpe-label').textContent = RPE_LABELS[v]||'';
+        document.getElementById('log-rpe-label').textContent = rpeLabels()[v]||'';
         document.getElementById('log-rpe-label').style.color = RPE_COLORS[v]||'var(--muted)';
       });
     }
@@ -2336,7 +2336,7 @@ window._tpRender = render;  // expuesto para el bridge API
       var t=document.getElementById('t-rs-msg'); if(t) t.textContent='Registrado en Coach';
       var el=document.getElementById('toast-rs'); if(el){el.style.display='flex';setTimeout(function(){el.style.display='none';},2800);}
     }).catch(function(){
-      var t=document.getElementById('t-rs-msg'); if(t) t.textContent='Sin conexión Coach API';
+      var t=document.getElementById('t-rs-msg'); if(t) t.textContent=_t('tp_no_coach_api','Sin conexión Coach API');
       var el=document.getElementById('toast-rs'); if(el){el.style.display='flex';setTimeout(function(){el.style.display='none';},2800);}
     });
   };
@@ -2398,7 +2398,7 @@ window.tpDownloadZwo = function(blocksJson, name, dateIso){
   /* Toast instrucciones */
   var msg = document.createElement('div');
   msg.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:#0C1D30;border:1px solid rgba(255,101,53,.4);color:#FF6535;font-family:Oswald,sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em;padding:.6rem 1.2rem;border-radius:20px;text-align:center;max-width:420px;pointer-events:none';
-  msg.innerHTML = '\u{1F4E5} '+fname+' descargado<br><span style="font-size:.65rem;color:#7FB3CC;font-weight:400">Cópialo a <strong>Documentos\Zwift\Workouts\</strong> → aparece en Training → My Workouts</span>';
+  msg.innerHTML = '\u{1F4E5} '+fname+' '+_t('tp_downloaded','descargado')+'<br><span style="font-size:.65rem;color:#7FB3CC;font-weight:400">'+_t('tp_zwift_copy','Cópialo a <strong>Documentos\\Zwift\\Workouts\\</strong> → aparece en Training → My Workouts')+'</span>';
   document.body.appendChild(msg);
   setTimeout(function(){ if(msg.parentNode) msg.parentNode.removeChild(msg); }, 6000);
 };
@@ -2714,7 +2714,7 @@ window._wpDefaultIdx    = 0;
     _wpHighlight(+idx);
 
     ttEl.innerHTML =
-      '<div class="wp-tooltip-wk">Semana del ' + wk.label + '</div>' +
+      '<div class="wp-tooltip-wk">' + _t('tp_week_of','Semana del') + ' ' + wk.label + '</div>' +
       '<div class="wp-tooltip-row"><span>Distancia</span>' + wk.dist.toFixed(1) + ' km</div>' +
       '<div class="wp-tooltip-row"><span>Tiempo</span>' + fmtDur(wk.dur) + '</div>' +
       '<div class="wp-tooltip-row"><span>Sesiones</span>' + wk.count + '</div>';
