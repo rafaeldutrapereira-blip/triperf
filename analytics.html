@@ -303,7 +303,7 @@ function renderPowerCurve(d){
   var canvas = document.getElementById('cp-canvas');
 
   if(!d.curve || !d.curve.length){
-    msg.textContent = _be(d.message) || 'Sin actividades de ciclismo con datos de potencia.';
+    msg.textContent = _be(d.message) || _t('an_no_bike_power','Sin actividades de ciclismo con datos de potencia.');
     msg.style.display = 'block';
     canvas.style.display = 'none';
     return;
@@ -317,9 +317,9 @@ function renderPowerCurve(d){
   var noteEl = document.getElementById('cp-telemetry-note');
   if(noteEl){
     if(d.n_with_telemetry){
-      noteEl.textContent = d.n_with_telemetry+' de '+d.n_activities+' actividades con potencia real segundo-a-segundo · el resto es una aproximación desde el promedio de la sesión.';
+      noteEl.textContent = d.n_with_telemetry+' '+_t('an_of','de')+' '+d.n_activities+' '+_t('an_power_note','actividades con potencia real segundo-a-segundo · el resto es una aproximación desde el promedio de la sesión.');
     } else {
-      noteEl.textContent = 'Curva aproximada desde el promedio de cada sesión — ninguna actividad tiene telemetría segundo-a-segundo sincronizada todavía.';
+      noteEl.textContent = _t('an_curve_approx','Curva aproximada desde el promedio de cada sesión — ninguna actividad tiene telemetría segundo-a-segundo sincronizada todavía.');
     }
   }
   if(d.cp_model){
@@ -446,18 +446,18 @@ function renderVo2max(d){
   var sources = document.getElementById('vo2-sources');
 
   val.textContent = d.vo2max_current ? d.vo2max_current : '—';
-  cls.textContent = d.classification  || 'Sin datos';
+  cls.textContent = d.classification  || _t('an_no_data','Sin datos');
 
   if(d.trend_delta){
     var sign = d.trend_delta > 0 ? '+' : '';
-    trend.textContent = sign + d.trend_delta + ' vs período anterior';
+    trend.textContent = sign + d.trend_delta + ' ' + _t('an_vs_prev','vs período anterior');
     trend.style.color = d.trend_delta > 0 ? '#10B981' : '#EF4444';
   }
 
   sources.textContent = (d.garmin_readings||0)+' lecturas Garmin, '+(d.estimated_readings||0)+' estimados';
 
   if(!d.timeline || !d.timeline.length){
-    msg.textContent = 'Sin actividades de running o datos Garmin para calcular VO2max.';
+    msg.textContent = _t('an_no_vo2','Sin actividades de running o datos Garmin para calcular VO2max.');
     msg.style.display = 'block';
     return;
   }
@@ -546,7 +546,7 @@ function renderRecords(d){
 
   var sports = Object.keys(d.records||{});
   if(!sports.length){
-    msg.textContent='Sin actividades con distancias estándar registradas.';
+    msg.textContent=_t('an_no_std_dist','Sin actividades con distancias estándar registradas.');
     msg.style.display='block';
     tabs.innerHTML=''; panes.innerHTML='';
     return;
@@ -654,10 +654,10 @@ function renderDistrib(d){
   var pol = document.getElementById('dist-pol');
   pol.innerHTML = '<div style="font-size:1.2rem;font-weight:800;font-family:Oswald,sans-serif;color:#0EA5E9;margin-bottom:.35rem">'
     +(d.polarization_index||'—')+'</div>'
-    +'<div style="font-size:.72rem;color:var(--text);margin-bottom:.5rem">Índice de Polarizaci&#243;n</div>'
+    +'<div style="font-size:.72rem;color:var(--text);margin-bottom:.5rem">'+_t('an_polar_idx','Índice de Polarización')+'</div>'
     +'<div style="font-size:.72rem;color:var(--muted);line-height:1.6">'+esc(d.polarization_label||'')+'</div>'
     +'<div style="font-size:.65rem;color:var(--dim);margin-top:.5rem">'
-    +Math.round(d.total_hours||0)+'h &#183; '+(d.total_acts||0)+' actividades &#183; '+Math.round(d.total_tss||0)+' TSS total</div>';
+    +Math.round(d.total_hours||0)+'h &#183; '+(d.total_acts||0)+' '+_t('an_acts_word','actividades')+' &#183; '+Math.round(d.total_tss||0)+' TSS total</div>';
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -683,7 +683,7 @@ function renderZones(d){
     var c = d.cycling;
     cc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#0EA5E9;margin-bottom:.15rem">'
       +c.ftp_watts+'W'+(c.ftp_wkg?'<span style="font-size:.75rem;font-weight:400;color:var(--dim);margin-left:.4rem">'+c.ftp_wkg+'w/kg</span>':'')+'</div>'
-      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">FTP desde '+esc(c.source)+'</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">'+_t('an_ftp_from','FTP desde')+' '+esc(c.source)+'</div>'
       +_zoneTable(c.zones);
   }
 
@@ -693,7 +693,7 @@ function renderZones(d){
     var r = d.running;
     rc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#10B981;margin-bottom:.15rem">'
       +esc(r.pace_fmt)+'/km</div>'
-      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">Umbral desde '+esc(r.source)+'</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">'+_t('an_thr_from','Umbral desde')+' '+esc(r.source)+'</div>'
       +_zoneTable(r.zones);
   }
 
@@ -703,7 +703,7 @@ function renderZones(d){
     var sw = d.swimming;
     sc.innerHTML = '<div style="font-size:1.6rem;font-weight:800;font-family:Oswald,sans-serif;color:#A855F7;margin-bottom:.15rem">'
       +esc(sw.css_fmt)+'/100m</div>'
-      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">CSS desde '+esc(sw.source)+'</div>'
+      +'<div style="font-size:.6rem;color:var(--dim);margin-bottom:.9rem">'+_t('an_css_from','CSS desde')+' '+esc(sw.source)+'</div>'
       +_zoneTable(sw.zones);
   }
 

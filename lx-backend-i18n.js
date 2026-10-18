@@ -1003,6 +1003,8 @@ var LX_BE_SPORT = {
  "fuerza / prep. física": "sp_strength",
  "prep. física": "aa_prep_fisica"
 };
+/* codigos de deporte que manda el backend (ej. analytics: "Sin actividades de bike ...") */
+var LX_BE_SPORT_CODE = {"swim": "opt_swim", "bike": "opt_bike", "run": "opt_run", "str": "opt_strength"};
 (function(){
   var FIXED = {}, TEMPL = [];
   function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -1023,7 +1025,8 @@ var LX_BE_SPORT = {
     return v;
   }
   function sportName(v){
-    var k = LX_BE_SPORT[String(v).toLowerCase()];
+    var lc = String(v).toLowerCase();
+    var k = LX_BE_SPORT[lc] || LX_BE_SPORT_CODE[lc];
     var t = k ? tr(k) : null;
     if(!t) return v;
     /* conserva la minuscula inicial si el original la traia (p.ej. .lower() en el backend) */
