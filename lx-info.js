@@ -449,7 +449,7 @@ function _ensurePanel(){
   div.innerHTML = [
     '<div id="lx-info-overlay" onclick="lxInfo.hide()"></div>',
     '<div id="lx-info-drawer">',
-    '  <button id="lx-info-close" onclick="lxInfo.hide()" aria-label="Cerrar">✕</button>',
+    '  <button id="lx-info-close" onclick="lxInfo.hide()" aria-label="'+_lxInfoT('btn_close','Cerrar')+'">✕</button>',
     '  <div id="lx-info-body"></div>',
     '</div>',
   ].join('');
