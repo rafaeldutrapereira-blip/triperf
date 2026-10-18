@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
 <script src="i18n.js"></script>
+<script src="lx-backend-i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--amber:#F59E0B;--blue:#3B82F6;--s-green:rgba(16,185,129,.12);--s-blue:rgba(59,130,246,.12);--s-amber:rgba(245,158,11,.12);--s-red:rgba(239,68,68,.12);}
@@ -380,6 +381,9 @@ function _t(key, fallback){
   return (v && v !== key) ? v : fallback;
 }
 function var_css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+// Traduce textos que el backend genera en español (lx-backend-i18n.js); sin mapa devuelve el original
+function _lxBe(s){ return (window.lxBeT && typeof s==='string') ? window.lxBeT(s) : s; }
+function _lxBeList(a){ return (a||[]).map(_lxBe); }
 function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
 
 var CAT_ORDER = ['hematologico','vitaminas','minerales','hormonal','inflamacion','metabolico','renal','hepatico'];
@@ -598,6 +602,21 @@ function setKpi(id, scoreText, gradeText, gradeColor, barPct, barColor, detail) 
   document.getElementById('kpi-'+id+'-detail').textContent = detail||'';
 }
 
+// disciplina del backend (swim|bike|run|strength) → etiqueta traducida
+function discLabel(k){
+  var m = {swim:['dtw_sport_swim','Natación'], bike:['dtw_sport_bike','Ciclismo'], run:['dtw_sport_run','Trote'], strength:['dtw_sport_gym','Fuerza / Prep. física']}[k];
+  return m ? _t(m[0], m[1]) : k;
+}
+// El backend manda {marker, severity, recommendation, priority}; se acepta también {name, dose} (comentario del dataclass)
+function suppLabel(x){
+  if(x==null) return '';
+  if(typeof x==='string') return _lxBe(x);
+  var base = x.recommendation ? _lxBe(x.recommendation) : _lxBe(x.name||'');
+  if(x.marker) base = _lxBe(x.marker)+': '+base;
+  if(!x.recommendation && x.dose) base += ' ('+x.dose+')';
+  return base;
+}
+
 function renderTrainingImpactCards() {
   var ti = TRAINING_IMPACT, sm = SUMMARY;
   if(!ti || !ti.has_labs) {
@@ -607,8 +626,8 @@ function renderTrainingImpactCards() {
     document.getElementById('clinical-summary').innerHTML = '<span style="color:var(--dim)">'+_t('bl_load_first_exam','Registra tu primer examen para ver el impacto en tu entrenamiento.')+'</span>';
     return;
   }
-  setKpi('trs', ti.trs+'/100', ti.trs_label, ti.trs_color, ti.trs, ti.trs_color,
-    (ti.primary_limiters&&ti.primary_limiters.length) ? ti.primary_limiters.join(', ') : _t('bl_no_limiters','Sin limitantes activos'));
+  setKpi('trs', ti.trs+'/100', _lxBe(ti.trs_label), ti.trs_color, ti.trs, ti.trs_color,
+    (ti.primary_limiters&&ti.primary_limiters.length) ? _lxBeList(ti.primary_limiters).join(', ') : _t('bl_no_limiters','Sin limitantes activos'));
 
   var okN = sm ? sm.markers_ok : 0, totalN = sm ? sm.total_markers : 0;
   setKpi('markers', totalN||'—', sm?(sm.markers_critical+' '+_t('bl_critical_label','críticos')+' · '+sm.markers_warning+' '+_t('bl_badge_limit','límite')):'', '',
@@ -625,10 +644,10 @@ function renderTrainingImpactCards() {
 
   var lines = [];
   lines.push('<strong style="color:var(--text)">'+_t('bl_disciplines','Disciplinas')+':</strong> ' +
-    (ti.disciplines||[]).map(function(d){ return esc(d.discipline)+' '+(d.allowed?'✅':'⛔')+(d.notes?' — '+esc(d.notes):''); }).join(' · '));
-  if(ti.supplements && ti.supplements.length) lines.push('<strong style="color:var(--text)">'+_t('bl_supplements','Suplementación')+':</strong> '+ti.supplements.map(esc).join(', '));
-  if(ti.key_actions && ti.key_actions.length) lines.push('<strong style="color:var(--text)">'+_t('bl_key_actions','Acciones clave')+':</strong><br>'+ti.key_actions.map(function(a){ return '• '+esc(a); }).join('<br>'));
-  if(ti.medical_referral) lines.push('<span style="color:var(--red)">⚠️ '+esc(ti.medical_reason||_t('bl_medical_referral','Se recomienda evaluación médica.'))+'</span>');
+    (ti.disciplines||[]).map(function(d){ var nt=_lxBeList(d.notes).join('; '); return esc(discLabel(d.discipline))+' '+(d.allowed?'✅':'⛔')+(nt?' — '+esc(nt):''); }).join(' · '));
+  if(ti.supplements && ti.supplements.length) lines.push('<strong style="color:var(--text)">'+_t('bl_supplements','Suplementación')+':</strong> '+ti.supplements.map(function(x){ return esc(suppLabel(x)); }).join(', '));
+  if(ti.key_actions && ti.key_actions.length) lines.push('<strong style="color:var(--text)">'+_t('bl_key_actions','Acciones clave')+':</strong><br>'+ti.key_actions.map(function(a){ return '• '+esc(_lxBe(a)); }).join('<br>'));
+  if(ti.medical_referral) lines.push('<span style="color:var(--red)">⚠️ '+esc(_lxBe(ti.medical_reason)||_t('bl_medical_referral','Se recomienda evaluación médica.'))+'</span>');
   document.getElementById('clinical-summary').innerHTML = lines.join('<br><br>');
 }
 
@@ -840,14 +859,14 @@ function renderStatCorrelations() {
   var el = document.getElementById('stat-corr-content');
   var sc = STAT_CORR;
   if(!sc || sc.message){
-    el.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+(sc&&sc.message?esc(sc.message):_t('bl_no_data_category','Sin suficientes exámenes para calcular correlaciones (mínimo 3).'))+'</p>';
+    el.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+(sc&&sc.message?esc(_lxBe(sc.message)):_t('bl_no_data_category','Sin suficientes exámenes para calcular correlaciones (mínimo 3).'))+'</p>';
     return;
   }
   var html = '';
 
   if(sc.insights && sc.insights.length){
     html += '<div class="alert-box alert-ok" style="margin-bottom:1rem"><div class="alert-title">💡 '+_t('bl_insights','Insights')+'</div>'+
-      sc.insights.map(function(i){ return '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">'+esc(i)+'</p>'; }).join('')+'</div>';
+      sc.insights.map(function(i){ return '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">'+esc(_lxBe(i))+'</p>'; }).join('')+'</div>';
   }
 
   if(sc.correlations && sc.correlations.length){
@@ -855,9 +874,9 @@ function renderStatCorrelations() {
       '<table class="corr-t"><thead><tr><th>'+_t('bl_th_biomarker','Biomarcador')+'</th><th>'+_t('bl_th_signal','Métrica')+'</th><th>r</th><th>'+_t('bl_th_expected_corr','Interpretación')+'</th></tr></thead><tbody>'+
       sc.correlations.map(function(c){
         var color = c.abs_r>=0.7 ? 'var(--red)' : 'var(--amber)';
-        return '<tr><td class="corr-bm">'+esc(c.marker_label)+'</td><td style="color:var(--muted)">'+esc(c.metric_label)+'</td>'+
+        return '<tr><td class="corr-bm">'+esc(_lxBe(c.marker_label))+'</td><td style="color:var(--muted)">'+esc(_lxBe(c.metric_label))+'</td>'+
           '<td style="color:'+color+';font-weight:700">'+c.r.toFixed(2)+'</td>'+
-          '<td style="color:var(--muted)">'+esc(c.interpretation)+'</td></tr>';
+          '<td style="color:var(--muted)">'+esc(_lxBe(c.interpretation))+'</td></tr>';
       }).join('')+'</tbody></table></div></div>';
   } else {
     html += '<p style="font-size:.8rem;color:var(--dim);margin-bottom:1rem">'+_t('bl_no_strong_correlations','No se detectaron correlaciones estadísticamente significativas todavía (requiere más historial).')+'</p>';
