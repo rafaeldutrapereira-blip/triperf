@@ -15,6 +15,8 @@
     {
       group:   'daily',
       id:      'dashboard',
+      tier:    'core',
+      addonId: null,
       file:    'dashboard.html',
       label:   'Dashboard',
       labelI18n: 'nav_dashboard',
@@ -27,6 +29,8 @@
     {
       group:   'daily',
       id:      'training_plan',
+      tier:    'core',
+      addonId: null,
       file:    'training_plan.html',
       label:   'Plan',
       labelI18n: 'nav_plan',
@@ -39,6 +43,8 @@
     {
       group:   'daily',
       id:      'ai_coach',
+      tier:    'addon',
+      addonId: 'asistente_ia',
       file:    'ai_coach.html',
       label:   'AI Coach',
       labelI18n: 'nav_ai_coach',
@@ -52,6 +58,8 @@
     {
       group:   'health',
       id:      'recovery',
+      tier:    'core',
+      addonId: null,
       file:    'recovery.html',
       label:   'Recuperación',
       labelI18n: 'nav_recovery',
@@ -64,6 +72,8 @@
     {
       group:   'health',
       id:      'mental',
+      tier:    'core',
+      addonId: null,
       file:    'mental.html',
       label:   'Mental',
       labelI18n: 'nav_mental',
@@ -76,6 +86,8 @@
     {
       group:   'health',
       id:      'nutrition',
+      tier:    'core',
+      addonId: null,
       file:    'nutrition.html',
       label:   'Nutrición',
       labelI18n: 'nav_nutrition',
@@ -88,6 +100,8 @@
     {
       group:   'health',
       id:      'blood_labs',
+      tier:    'addon',
+      addonId: 'labs',
       file:    'blood_labs.html',
       label:   'Labs',
       labelI18n: 'nav_labs',
@@ -100,6 +114,8 @@
     {
       group:   'health',
       id:      'training_detail',
+      tier:    'core',
+      addonId: null,
       file:    'training_detail.html',
       label:   'Sesión',
       labelI18n: 'nav_session',
@@ -113,6 +129,8 @@
     {
       group:   'goal',
       id:      'race_day',
+      tier:    'core',
+      addonId: null,
       file:    'race_day.html',
       label:   'Race Day',
       labelI18n: 'nav_race_day',
@@ -127,6 +145,8 @@
     {
       group:   'goal',
       id:      'huella',
+      tier:    'addon',
+      addonId: 'retrospectiva',
       file:    'huella.html',
       label:   'Mi Huella',
       labelI18n: 'nav_huella',
@@ -140,6 +160,8 @@
     {
       group:   'goal',
       id:      'community',
+      tier:    'core',
+      addonId: null,
       file:    'community.html',
       label:   'Comunidad',
       labelI18n: 'nav_community',
@@ -156,6 +178,8 @@
          Nutrición/Labs. */
       group:   'goal',
       id:      'analytics',
+      tier:    'core',
+      addonId: null,
       file:    'analytics.html',
       label:   'Analytics',
       labelI18n: 'nav_analytics',
@@ -174,6 +198,8 @@
          'goal' 2026-08-14, junto con Analytics. */
       group:   'goal',
       id:      'performance',
+      tier:    'core',
+      addonId: null,
       file:    'detalle.html?metric=pmc',
       label:   'Performance',
       labelI18n: 'nav_performance',
@@ -187,6 +213,8 @@
     {
       group:   'tools',
       id:      'adaptive',
+      tier:    'addon',
+      addonId: 'ajustes_adaptativos',
       file:    'adaptive.html',
       label:   'Adaptativo',
       labelI18n: 'nav_adaptive',
@@ -199,6 +227,8 @@
     {
       group:   'tools',
       id:      'indoor_workout',
+      tier:    'addon',
+      addonId: 'indoor',
       file:    'indoor_workout.html',
       label:   'Indoor',
       labelI18n: 'nav_indoor',
@@ -211,6 +241,8 @@
     {
       group:   'tools',
       id:      'gear',
+      tier:    'core',
+      addonId: null,
       file:    'gear.html',
       label:   'Mi Equipo',
       labelI18n: 'nav_gear',
@@ -224,6 +256,8 @@
     {
       group:   'account',
       id:      'athlete_profile',
+      tier:    'core',
+      addonId: null,
       file:    'athlete_profile.html',
       label:   'Perfil',
       labelI18n: 'nav_profile',
@@ -236,6 +270,8 @@
     {
       group:   'account',
       id:      'athlete_app',
+      tier:    'core',
+      addonId: null,
       file:    'athlete-app.html',
       label:   'App Móvil',
       labelI18n: 'nav_mobile_app',
@@ -249,6 +285,8 @@
     {
       group:   'account',
       id:      'coach',
+      tier:    'role',
+      addonId: null,
       file:    'coach.html',
       label:   'Coach',
       labelI18n: 'nav_coach',
