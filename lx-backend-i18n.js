@@ -1010,6 +1010,422 @@ var LX_BE_ENTRIES = [
  [
   "Laboratorio Clínico",
   "bl_clinical_lab_default"
+ ],
+ [
+  "Hematocrito",
+  "be_311"
+ ],
+ [
+  "Hierro sérico",
+  "be_312"
+ ],
+ [
+  "Saturación de transferrina",
+  "be_313"
+ ],
+ [
+  "Eritrocitos (GR)",
+  "be_314"
+ ],
+ [
+  "Reticulocitos",
+  "be_315"
+ ],
+ [
+  "Vitamina D (25-OH)",
+  "be_316"
+ ],
+ [
+  "Ácido Fólico (B9)",
+  "be_317"
+ ],
+ [
+  "Magnesio",
+  "be_318"
+ ],
+ [
+  "Zinc",
+  "be_319"
+ ],
+ [
+  "Cortisol (mañana)",
+  "be_320"
+ ],
+ [
+  "Testosterona total",
+  "be_321"
+ ],
+ [
+  "Ratio Testosterona/Cortisol",
+  "be_322"
+ ],
+ [
+  "IGF-1 (Hormona crecimiento)",
+  "be_323"
+ ],
+ [
+  "Proteína C Reactiva (PCR)",
+  "be_324"
+ ],
+ [
+  "Creatinkinasa (CK)",
+  "be_325"
+ ],
+ [
+  "Glucosa en ayunas",
+  "be_326"
+ ],
+ [
+  "Hemoglobina Glicosilada (HbA1c)",
+  "be_327"
+ ],
+ [
+  "Colesterol total",
+  "be_328"
+ ],
+ [
+  "LDL (colesterol malo)",
+  "be_329"
+ ],
+ [
+  "HDL (colesterol bueno)",
+  "be_330"
+ ],
+ [
+  "Triglicéridos",
+  "be_331"
+ ],
+ [
+  "Creatinina sérica",
+  "be_332"
+ ],
+ [
+  "Urea (BUN)",
+  "be_333"
+ ],
+ [
+  "ALT (Transaminasa)",
+  "be_334"
+ ],
+ [
+  "Hemoglobina baja reduce el transporte de O₂ y el VO₂max. Revisar ferritina e ingesta de hierro.",
+  "be_335"
+ ],
+ [
+  "Hemoglobina en rango óptimo para rendimiento aeróbico.",
+  "be_336"
+ ],
+ [
+  "Hemoglobina muy elevada puede indicar deshidratación. Monitorear.",
+  "be_337"
+ ],
+ [
+  "Hematocrito bajo: posible anemia o hemodilusión por entrenamiento intenso.",
+  "be_338"
+ ],
+ [
+  "Hematocrito óptimo para transporte de oxígeno.",
+  "be_339"
+ ],
+ [
+  "Hematocrito >52% (hombres): potencial riesgo cardiovascular. Consultar médico.",
+  "be_340"
+ ],
+ [
+  "Ferritina <30 ng/mL → deplección de reservas de hierro. Fatiga crónica y reducción de VO₂max inminentes. Suplementar con supervisión médica.",
+  "be_341"
+ ],
+ [
+  "Ferritina entre 30-50: subóptima para atletas de resistencia. Revisar dieta (carnes rojas, legumbres + vitamina C).",
+  "be_342"
+ ],
+ [
+  "Ferritina óptima para rendimiento endurance.",
+  "be_343"
+ ],
+ [
+  "Ferritina elevada puede indicar inflamación o hemocromatosis. Consultar médico.",
+  "be_344"
+ ],
+ [
+  "Hierro sérico bajo. Considerar suplementación con guía médica.",
+  "be_345"
+ ],
+ [
+  "Hierro sérico en rango normal.",
+  "be_346"
+ ],
+ [
+  "Hierro sérico elevado. Puede indicar suplementación excesiva.",
+  "be_347"
+ ],
+ [
+  "Saturación baja indica deficiencia funcional de hierro.",
+  "be_348"
+ ],
+ [
+  "Saturación de transferrina en rango normal.",
+  "be_349"
+ ],
+ [
+  "Saturación elevada: posible sobrecarga de hierro.",
+  "be_350"
+ ],
+ [
+  "Recuento eritrocitario bajo. Puede acompañar anemia.",
+  "be_351"
+ ],
+ [
+  "Recuento de glóbulos rojos normal.",
+  "be_352"
+ ],
+ [
+  "Policitemia: consultar médico.",
+  "be_353"
+ ],
+ [
+  "Reticulocitos bajos: médula ósea sin respuesta adecuada. Investigar causa.",
+  "be_354"
+ ],
+ [
+  "Eritropoyesis activa normal.",
+  "be_355"
+ ],
+ [
+  "Reticulocitos altos: puede indicar hemólisis o respuesta a anemia.",
+  "be_356"
+ ],
+ [
+  "Déficit severo de Vitamina D (<20 ng/mL). Aumenta riesgo de lesiones óseas y musculares. Suplementar 2000-4000 UI/día bajo supervisión.",
+  "be_357"
+ ],
+ [
+  "Vitamina D insuficiente (20-30 ng/mL). Suplementar y maximizar exposición solar.",
+  "be_358"
+ ],
+ [
+  "Vitamina D óptima. Mantener con exposición solar y/o suplementación.",
+  "be_359"
+ ],
+ [
+  "Vitamina D muy elevada. Pausar suplementación y consultar médico.",
+  "be_360"
+ ],
+ [
+  "B12 baja: fatiga, anemia megaloblástica. Suplementar, especialmente atletas vegetarianos.",
+  "be_361"
+ ],
+ [
+  "Vitamina B12 en rango normal.",
+  "be_362"
+ ],
+ [
+  "B12 muy elevada: puede indicar suplementación excesiva o patología hepática.",
+  "be_363"
+ ],
+ [
+  "Folato bajo: riesgo de anemia megaloblástica. Aumentar vegetales de hoja verde.",
+  "be_364"
+ ],
+ [
+  "Ácido fólico en rango óptimo.",
+  "be_365"
+ ],
+ [
+  "Folato muy elevado: generalmente inofensivo, pero revisar suplementación.",
+  "be_366"
+ ],
+ [
+  "Magnesio bajo: calambres, mala recuperación muscular, alteraciones del sueño. Aumentar ingesta (frutos secos, legumbres) o suplementar 300-400 mg/día.",
+  "be_367"
+ ],
+ [
+  "Magnesio en rango óptimo para función muscular y neurológica.",
+  "be_368"
+ ],
+ [
+  "Magnesio elevado: generalmente por suplementación excesiva.",
+  "be_369"
+ ],
+ [
+  "Déficit de zinc: inmunodeficiencia, lenta cicatrización, mayor tiempo de recuperación.",
+  "be_370"
+ ],
+ [
+  "Zinc en rango óptimo.",
+  "be_371"
+ ],
+ [
+  "Zinc muy elevado: revisar suplementación.",
+  "be_372"
+ ],
+ [
+  "Cortisol muy bajo por la mañana puede indicar insuficiencia suprarrenal o adaptación al estrés crónico. Consultar médico.",
+  "be_373"
+ ],
+ [
+  "Cortisol matutino en rango normal.",
+  "be_374"
+ ],
+ [
+  "Cortisol elevado + carga alta de entrenamiento = señal de overreaching. Reducir volumen e intensidad esta semana.",
+  "be_375"
+ ],
+ [
+  "Testosterona baja: mayor fatiga, menor recuperación muscular, libido reducida. Revisar carga de entrenamiento y calidad de sueño.",
+  "be_376"
+ ],
+ [
+  "Testosterona en rango óptimo para atletas.",
+  "be_377"
+ ],
+ [
+  "Testosterona muy elevada. Consultar médico endocrinólogo.",
+  "be_378"
+ ],
+ [
+  "Ratio T/C bajo: marcador de overreaching. El atleta puede estar en estado catabólico. Priorizar recuperación.",
+  "be_379"
+ ],
+ [
+  "Ratio T/C óptimo: balance anabolismo/catabolismo favorable.",
+  "be_380"
+ ],
+ [
+  "Ratio T/C muy alto: monitorear.",
+  "be_381"
+ ],
+ [
+  "TSH bajo: posible hipertiroidismo. Puede causar pérdida de peso y taquicardia.",
+  "be_382"
+ ],
+ [
+  "TSH en rango óptimo para atletas.",
+  "be_383"
+ ],
+ [
+  "TSH elevado: posible hipotiroidismo. Fatiga crónica y dificultad para bajar de peso.",
+  "be_384"
+ ],
+ [
+  "IGF-1 bajo: menor anabolismo, recuperación muscular más lenta.",
+  "be_385"
+ ],
+ [
+  "IGF-1 en rango óptimo para recuperación y adaptación al entrenamiento.",
+  "be_386"
+ ],
+ [
+  "IGF-1 elevado. Consultar médico.",
+  "be_387"
+ ],
+ [
+  "PCR en rango óptimo. Inflamación sistémica bajo control.",
+  "be_388"
+ ],
+ [
+  "PCR entre 1-3 mg/L: riesgo cardiovascular moderado. Revisar entrenamiento y dieta.",
+  "be_389"
+ ],
+ [
+  "PCR >3 mg/L: inflamación significativa. Descartar infección o patología antes de entrenar intenso.",
+  "be_390"
+ ],
+ [
+  "CK en reposo normal. Sin daño muscular residual.",
+  "be_391"
+ ],
+ [
+  "CK elevada en reposo: daño muscular activo. Reducir carga de entrenamiento hasta normalizar.",
+  "be_392"
+ ],
+ [
+  "CK >1000 U/L en reposo: riesgo de rabdomiólisis. Reposo obligatorio y consulta médica.",
+  "be_393"
+ ],
+ [
+  "Hipoglucemia en ayunas: revisar alimentación pre-análisis y buscar causas metabólicas.",
+  "be_394"
+ ],
+ [
+  "Glucemia en ayunas óptima.",
+  "be_395"
+ ],
+ [
+  "Glucemia alterada en ayunas (100-125 mg/dL): riesgo de prediabetes. Optimizar dieta y consultar médico.",
+  "be_396"
+ ],
+ [
+  "HbA1c óptima: buen control glucémico a largo plazo.",
+  "be_397"
+ ],
+ [
+  "HbA1c entre 5.7-6.4%: prediabetes. Ajustar dieta y consultar médico.",
+  "be_398"
+ ],
+ [
+  "Colesterol total en rango óptimo.",
+  "be_399"
+ ],
+ [
+  "Colesterol limítrofe (200-239 mg/dL): revisar LDL/HDL y dieta.",
+  "be_400"
+ ],
+ [
+  "LDL en rango óptimo para atletas de resistencia.",
+  "be_401"
+ ],
+ [
+  "LDL elevado: reducir grasas saturadas y trans. Consultar médico.",
+  "be_402"
+ ],
+ [
+  "HDL bajo: factor de riesgo cardiovascular. El entrenamiento aeróbico debería subirlo.",
+  "be_403"
+ ],
+ [
+  "HDL alto: protector cardiovascular. Buen indicador de actividad aeróbica regular.",
+  "be_404"
+ ],
+ [
+  "HDL muy elevado: generalmente beneficioso en atletas. Monitorear.",
+  "be_405"
+ ],
+ [
+  "Triglicéridos en rango óptimo.",
+  "be_406"
+ ],
+ [
+  "Triglicéridos elevados: reducir azúcares simples y alcohol. El entrenamiento aeróbico los baja.",
+  "be_407"
+ ],
+ [
+  "Creatinina sérica normal. Función renal adecuada.",
+  "be_408"
+ ],
+ [
+  "Creatinina elevada: puede indicar estrés renal por deshidratación o sobreentrenamiento. Aumentar hidratación.",
+  "be_409"
+ ],
+ [
+  "Urea muy baja: posible dieta hiperproteica insuficiente.",
+  "be_410"
+ ],
+ [
+  "Urea en rango normal.",
+  "be_411"
+ ],
+ [
+  "Urea elevada post-entrenamiento: normal si transitoria. Persistente = estrés renal.",
+  "be_412"
+ ],
+ [
+  "ALT en rango normal. Sin daño hepático.",
+  "be_413"
+ ],
+ [
+  "ALT elevada: puede indicar daño hepático o muscular severo. Descartar esfuerzo extremo reciente.",
+  "be_414"
  ]
 ];
 /* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */

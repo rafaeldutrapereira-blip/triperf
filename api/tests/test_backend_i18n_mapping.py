@@ -335,3 +335,43 @@ def test_lxbet_translates_stored_default_lab_name():
 def test_blood_labs_routes_stored_lab_name_through_lxbe():
     src = (REPO / "blood_labs.html").read_text(encoding="utf-8")
     assert "_lxBe(cur.lab_name)" in src, "exam-ctx-lbl ya no traduce el lab_name guardado"
+
+
+def test_lxbet_translates_marker_names_and_notes_en_pt():
+    """Nombres y notas de biomarcadores que blood_lab_routes genera en vivo (MARKERS)."""
+    es = [
+        "HDL (colesterol bueno)",
+        "LDL (colesterol malo)",
+        "TSH (Tiroides)",
+        "TSH en rango óptimo para atletas.",
+        "HDL bajo: factor de riesgo cardiovascular. El entrenamiento aeróbico debería subirlo.",
+        "Urea muy baja: posible dieta hiperproteica insuficiente.",
+    ]
+    assert _run_lxbet("en", es) == [
+        "HDL (good cholesterol)",
+        "LDL (bad cholesterol)",
+        "TSH (Thyroid)",
+        "TSH in optimal range for athletes.",
+        "Low HDL: cardiovascular risk factor. Aerobic training should raise it.",
+        "Very low urea: possibly an insufficient high-protein diet.",
+    ]
+    pt = _run_lxbet("pt", es)
+    assert pt[0] == "HDL (colesterol bom)"
+    assert pt[2] == "TSH (Tireoide)"
+    assert pt[3] == "TSH na faixa ótima para atletas."
+
+
+def test_every_marker_name_and_note_in_catalog_is_mapped():
+    """Cada nombre y nota de MARKERS debe tener traduccion: un marcador nuevo sin mapear falla aqui."""
+    src = (REPO / "api" / "routes" / "blood_lab_routes.py").read_text(encoding="utf-8")
+    texts = re.findall(r'"(?:name|tip_\w+)": "([^"]+)"', src)
+    assert len(texts) > 100
+    mapped = {e[0] for e in _entries()}
+    missing = sorted({t for t in texts if t not in mapped})
+    assert not missing, "nombres/notas de MARKERS sin traduccion:\n" + "\n".join(missing)
+
+
+def test_blood_labs_marker_table_routes_names_and_notes_through_lxbe():
+    src = (REPO / "blood_labs.html").read_text(encoding="utf-8")
+    for needle in ("_lxBe(m.name)", "_lxBe(m.tip)"):
+        assert needle in src, "la tabla de biomarcadores ya no traduce: falta %s" % needle
