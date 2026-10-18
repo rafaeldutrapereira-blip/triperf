@@ -129,3 +129,10 @@ def test_nutrition_html_lee_de_race_day_y_no_guarda():
     assert "/races/nutrition/latest" in html
     assert "saveNutritionPlanToAPI" not in html
     assert "method: 'POST'" not in html.split("function loadNutritionPlanFromAPI")[1][:1200]
+
+
+def test_nutrition_html_sin_simulador():
+    html = (ROOT / "nutrition.html").read_text(encoding="utf-8")
+    for resto in ("nutCalc", "setRace", 'id="sel-sweat"', "chart.umd", 'class="race-tabs"'):
+        assert resto not in html, resto
+    assert 'href="race_day.html"' in html
