@@ -2063,6 +2063,10 @@ var DICT = {
     tp_mol_12: 'Diciembre',
     /* training_plan.html: contador de sesiones extra */
     tp_more: 'más',
+    /* gear.html: unidades de seguimiento de componentes */
+    gear_unit_km: 'km',
+    gear_unit_h: 'h',
+    gear_unit_mo: 'meses',
   },
 
   pt: {
@@ -4085,6 +4089,10 @@ var DICT = {
     tp_mol_12: 'Dezembro',
     /* training_plan.html: contador de sesiones extra */
     tp_more: 'mais',
+    /* gear.html: unidades de seguimiento de componentes */
+    gear_unit_km: 'km',
+    gear_unit_h: 'h',
+    gear_unit_mo: 'meses',
   },
 
   en: {
@@ -6107,6 +6115,10 @@ var DICT = {
     tp_mol_12: 'December',
     /* training_plan.html: contador de sesiones extra */
     tp_more: 'more',
+    /* gear.html: unidades de seguimiento de componentes */
+    gear_unit_km: 'km',
+    gear_unit_h: 'h',
+    gear_unit_mo: 'months',
   }
 };
 

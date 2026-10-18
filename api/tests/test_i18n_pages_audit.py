@@ -79,6 +79,10 @@ _FORBIDDEN_LITERALS = [
     ("training_plan.html", "label:'Sesión'"),
     ("training_plan.html", "MONTHS_L[") ,
     ("training_plan.html", "DAYS_SHORT["),
+    # gear.html (2026-10-18): codigos del backend se muestran traducidos
+    ("gear.html", "s.shoe_type + '</div>'"),
+    ("gear.html", "+ b.bike_type + '</div></div>'"),
+    ("gear.html", "' ' + c.tracking_unit + '</div></div>'"),
 ]
 
 

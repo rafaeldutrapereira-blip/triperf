@@ -428,6 +428,11 @@ function COMP_LABELS(){ return {
   sellante_tubeless:_t('app_gear_comp_tubeless','Sellante tubeless'), otro:_t('app_gear_comp_other','Otro'),
 }; }
 
+// Codigos del backend (shoe_type, bike_type, tracking_unit) -> texto del idioma activo; si no se reconoce se muestra tal cual
+function shoeTypeLbl(v){ var m={rodaje:['app_gear_type_rodaje','Rodaje'],series:['app_gear_type_series','Series'],competicion:['app_gear_type_comp','Competición'],trail:['app_gear_type_trail','Trail'],otro:['app_gear_type_other','Otro']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
+function bikeTypeLbl(v){ var m={ruta:['app_gear_bike_type_road','Ruta'],tt_triatlon:['app_gear_bike_type_tt','TT / Triatlón'],mtb:['app_gear_bike_type_mtb','MTB'],gravel:['app_gear_bike_type_gravel','Gravel']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
+function unitLbl(v){ var m={km:['gear_unit_km','km'],horas:['gear_unit_h','h'],meses:['gear_unit_mo','meses']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
+
 // ── ZAPATILLAS ──────────────────────────────────────────────
 
 function loadShoes() {
@@ -453,13 +458,13 @@ function renderShoes() {
   var DAY_LABELS = {mon:_t('app_day_mon','Lun'),tue:_t('app_day_tue','Mar'),wed:_t('app_day_wed','Mié'),thu:_t('app_day_thu','Jue'),fri:_t('app_day_fri','Vie'),sat:_t('app_day_sat','Sáb'),sun:_t('app_day_sun','Dom')};
   grid.innerHTML = ST.shoes.map(function(s){
     var color = lifeColor(s.life_pct);
-    var badges = (s.default_for || []).map(function(t){ return '<span class="gc-badge">★ ' + t + '</span>'; }).join('');
+    var badges = (s.default_for || []).map(function(t){ return '<span class="gc-badge">★ ' + shoeTypeLbl(t) + '</span>'; }).join('');
     var dayBadges = (s.schedule_days || []).map(function(d){ return '<span class="gc-badge">' + (DAY_LABELS[d]||d) + '</span>'; }).join('');
     return '<div class="gear-card">' +
       '<div class="gc-head">' +
         '<div class="gear-icon">👟</div>' +
         '<div style="flex:1"><div class="gc-name">' + esc(s.brand) + ' ' + esc(s.model) + '</div>' +
-        '<div class="gc-sub">' + (s.nickname ? esc(s.nickname) + ' · ' : '') + s.shoe_type + '</div>' +
+        '<div class="gc-sub">' + (s.nickname ? esc(s.nickname) + ' · ' : '') + shoeTypeLbl(s.shoe_type) + '</div>' +
         '<div class="gc-badges">' + badges + dayBadges + '</div></div>' +
       '</div>' +
       '<div class="prog-wrap"><div class="prog-fill" style="width:' + Math.min(100, s.life_pct) + '%;background:' + color + '"></div></div>' +
@@ -651,7 +656,7 @@ function renderBikes() {
         '<div class="comp-icon">' + (COMP_ICONS[c.component_type] || '⚙️') + '</div>' +
         '<div class="comp-body"><div class="comp-name">' + esc(c.label || compLbl[c.component_type]) + '</div>' +
         '<div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:' + Math.min(100,c.life_pct) + '%;background:' + color + '"></div></div>' +
-        '<div class="comp-val"><b style="color:' + color + '">' + c.life_pct + '%</b> · ' + c.accumulated_value.toFixed(0) + ' / ' + c.target_value.toFixed(0) + ' ' + c.tracking_unit + '</div></div>' +
+        '<div class="comp-val"><b style="color:' + color + '">' + c.life_pct + '%</b> · ' + c.accumulated_value.toFixed(0) + ' / ' + c.target_value.toFixed(0) + ' ' + unitLbl(c.tracking_unit) + '</div></div>' +
         '<div class="comp-actions">' +
           '<button class="icon-btn" title="' + _t('app_gear_service_title','Registrar mantenimiento') + '" onclick="openServiceModal(\'' + b.id + '\',\'' + c.id + '\')">🔧</button>' +
           '<button class="icon-btn" title="✕" onclick="removeComponent(\'' + b.id + '\',\'' + c.id + '\')">✕</button>' +
@@ -662,7 +667,7 @@ function renderBikes() {
       '<div class="gc-head">' +
         '<div class="gear-icon">🚲</div>' +
         '<div style="flex:1"><div class="gc-name">' + esc(b.brand) + ' ' + esc(b.model) + (b.is_default ? ' <span class="gc-badge">★ ' + _t('gear_default_badge','predeterminada') + '</span>' : '') + '</div>' +
-        '<div class="gc-sub">' + b.bike_type + '</div></div>' +
+        '<div class="gc-sub">' + bikeTypeLbl(b.bike_type) + '</div></div>' +
       '</div>' +
       '<div class="gc-comps">' + (compsHtml || '<div class="comp-val" style="padding:.4rem 0">' + _t('app_gear_no_components','Sin componentes.') + '</div>') + '</div>' +
       '<div class="gc-actions">' +
