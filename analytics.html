@@ -303,7 +303,7 @@ function renderPowerCurve(d){
   var canvas = document.getElementById('cp-canvas');
 
   if(!d.curve || !d.curve.length){
-    msg.textContent = d.message || 'Sin actividades de ciclismo con datos de potencia.';
+    msg.textContent = _be(d.message) || 'Sin actividades de ciclismo con datos de potencia.';
     msg.style.display = 'block';
     canvas.style.display = 'none';
     return;
@@ -606,10 +606,12 @@ function loadDistrib(){
     }).catch(function(){});
 }
 
+// textos que genera el backend en español → idioma activo (lx-backend-i18n.js)
+function _be(s){ return (window.lxBeT && typeof s === 'string') ? window.lxBeT(s) : s; }
 function renderDistrib(d){
   var msg = document.getElementById('dist-message');
   if(d.message){
-    msg.textContent=d.message; msg.style.display='block'; return;
+    msg.textContent=_be(d.message); msg.style.display='block'; return;
   }
   msg.style.display='none';
 
@@ -706,7 +708,7 @@ function renderZones(d){
   }
 
   if(d.note){
-    document.getElementById('zone-note').textContent = d.note;
+    document.getElementById('zone-note').textContent = _be(d.note);
   }
 }
 
@@ -737,6 +739,7 @@ window.addEventListener('resize', function(){
 <script src="dash-header.js"></script>
 <script src="lx-upgrade.js"></script>
 <script src="i18n.js"></script>
+<script src="lx-backend-i18n.js"></script>
 <script>(function(){function _ti(){var v=window.i18n?window.i18n.t('an_title'):null;if(v&&v!=='an_title')document.title=v;}_ti();document.addEventListener('lx:i18nready',_ti);document.addEventListener('lx:langchange',_ti);})();</script>
 <script>
 document.getElementById('yr') && (document.getElementById('yr').textContent = new Date().getFullYear());
