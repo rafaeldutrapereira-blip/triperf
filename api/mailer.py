@@ -29,7 +29,7 @@ from pathlib import Path
 
 logger = logging.getLogger("labx.mailer")
 
-_FROM = os.getenv("EMAIL_FROM", "LabX <noreply@labx.app>")
+_FROM = os.getenv("EMAIL_FROM", "LabX <partnerships@labxperformanceapp.com>")
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent
 _FONT_STACK = "'Calibri Light', Calibri, 'Segoe UI', Tahoma, Geneva, sans-serif"

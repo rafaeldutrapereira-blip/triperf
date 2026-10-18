@@ -25,7 +25,7 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
 VAPID_PUBLIC_KEY  = os.getenv("VAPID_PUBLIC_KEY",  "")
-VAPID_SUBJECT     = os.getenv("VAPID_SUBJECT",      "mailto:admin@labx.app")
+VAPID_SUBJECT     = os.getenv("VAPID_SUBJECT",      "mailto:partnerships@labxperformanceapp.com")
 
 
 # ── Modelo de suscripción ──────────────────────────────────────

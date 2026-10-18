@@ -89,14 +89,14 @@ FLOWER_PASSWORD=${FLOWER_PASSWORD}
 SENTRY_DSN=<COMPLETAR: https://<id>@o<org>.ingest.sentry.io/<project>>
 
 # ── Admin seed ────────────────────────────────────────
-ADMIN_EMAIL=admin@labx.app
+ADMIN_EMAIL=partnerships@labxperformanceapp.com
 ADMIN_PASS=<COMPLETAR: contraseña segura para el admin>
 ADMIN_NOMBRE=Admin
 
 # ── Push Notifications (VAPID) ────────────────────────
 VAPID_PUBLIC_KEY=${VAPID_PUBLIC}
 VAPID_PRIVATE_KEY=${VAPID_PRIVATE}
-VAPID_SUBJECT=mailto:admin@labx.app
+VAPID_SUBJECT=mailto:partnerships@labxperformanceapp.com
 
 # ── Redis ─────────────────────────────────────────────
 REDIS_URL=redis://redis:6379/0
@@ -116,7 +116,7 @@ BACKUP_KEEP_DAYS=30
 
 # ── Email (Resend) ────────────────────────────────────
 RESEND_API_KEY=<COMPLETAR: re_xxxx — obtener en resend.com>
-EMAIL_FROM=noreply@labx.app
+EMAIL_FROM=partnerships@labxperformanceapp.com
 
 # ── Stripe ────────────────────────────────────────────
 STRIPE_SECRET_KEY=<COMPLETAR: sk_live_xxxx o sk_test_xxxx>
