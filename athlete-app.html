@@ -2357,7 +2357,7 @@ async function doLogin(){
   var err   = document.getElementById('login-err');
   var t = function(k, fb){ return window.i18n ? window.i18n.t(k) : fb; };
   err.style.display = 'none';
-  if(!email || !pw){ err.textContent = t('app_login_need_fields', 'Completá email y contraseña.'); err.style.display=''; return; }
+  if(!email || !pw){ err.textContent = t('app_login_need_fields', _t('ath_fill_email_pw', 'Completá email y contraseña.')); err.style.display=''; return; }
 
   btn.disabled = true;
   btn.textContent = t('login_verifying', 'Verificando...');
@@ -2377,7 +2377,7 @@ async function doLogin(){
       body: JSON.stringify({email: email, password: pw, remember_me: true}),
     });
     var data = await res.json();
-    if(!res.ok) throw new Error(_errMsg(data, t('login_wrong_creds', 'Email o contraseña incorrectos.')));
+    if(!res.ok) throw new Error(_errMsg(data, t('login_wrong_creds', _t('ath_bad_credentials', 'Email o contraseña incorrectos.'))));
 
     localStorage.setItem('lxapp_token', data.access_token);
     localStorage.setItem('lx_co_token', data.access_token);
@@ -2391,7 +2391,7 @@ async function doLogin(){
     } catch(e){}
     initApp(data.access_token);
   } catch(e){
-    err.textContent = e.message || t('app_login_conn_error', 'Error de conexión. Probá de nuevo.');
+    err.textContent = e.message || t('app_login_conn_error', _t('ath_conn_error', 'Error de conexión. Probá de nuevo.'));
     err.style.display = '';
     btn.disabled = false;
     btn.textContent = t('app_login_btn', 'Entrar →');
@@ -3229,7 +3229,7 @@ function renderInsightMobile(ins, readiness, readinessCompleteness, readinessWar
   var incompleteHtml = '';
   if(readinessCompleteness != null && readinessCompleteness < 1){
     var pct = Math.round(readinessCompleteness * 100);
-    var warnMsg = 'Readiness calculado con ' + pct + '% de datos disponibles.';
+    var warnMsg = _t('dash_readiness_calc', 'Readiness calculado con ') + pct + _t('dash_readiness_data', '% de datos disponibles.');
     if(readinessWarnings && readinessWarnings.length) warnMsg += ' ' + readinessWarnings.join(' ');
     incompleteHtml = '<span style="color:var(--orange,#F97316);font-size:.68rem;margin-left:4px;cursor:help" title="'+_escCm(warnMsg)+'">⚠</span>';
   }
@@ -3564,7 +3564,7 @@ function renderStatusHealth(d){
   // (mismo criterio que la 3ª card del dashboard de escritorio). ──
   var gItems = '';
   if(d.tss_week != null){
-    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')">'+_mkcLbl('TSS Semana','tss','mv-tss')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tss" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
+    gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')">'+_mkcLbl(_t('kpi_tss_week', 'TSS Semana'),'tss','mv-tss')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tss" style="color:var(--purple)">'+Math.round(d.tss_week)+'</span></span></div>';
   }
   if(d.vo2max_running_garmin != null){
     gItems += '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'running\')">'+_mkcLbl(_t('aa_vo2_running','VO2 Max Running'),'vo2max','mv-vo2run')+'<span class="mkc-right"><svg class="mkc-spark" id="mspark-vo2-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-vo2run" style="color:#22D3EE">'+d.vo2max_running_garmin+'</span></span></div>';
@@ -3612,7 +3612,7 @@ function renderStatusHealth(d){
       +'</div>'
       +'<div class="race-card-mini-name" id="rcm-name">'+d.race_goal_name+'</div>'
       +'<div class="race-card-mini-date">'+dt.getDate()+' '+MS_ES[dt.getMonth()]+' '+dt.getFullYear()+'</div>'
-      +'<div class="race-card-mini-cta" id="rcm-cta">Ver Race Day →</div>';
+      +_t('ath_rc_cta', '<div class="race-card-mini-cta" id="rcm-cta">Ver Race Day →</div>');
     rc.style.display = 'block';
     rc.style.cursor = 'pointer';
     rc.onclick = function(){ goScreen('screen-raceday'); };
@@ -3644,7 +3644,7 @@ var MD_MC = {
   tsb:  { title:_t('dash_tsb_label','TSB — Forma'),              sub:_t('aa_sub_tsb','CTL − ATL · Balance de estrés atlético'),                       color:'#F0A500', unit:'',           chartType:'line' },
   acwr: { title:_t('aa_title_acwr','ACWR — Carga Aguda:Crónica'), sub:_t('aa_sub_acwr','Ratio 7:28 días · Zona óptima 0.8–1.3'),                      color:'#F0A500', unit:'',           chartType:'line' },
   hrv:  { title:_t('dtw_mc_hrv_title','HRV — Variabilidad Cardíaca'), sub:_t('aa_sub_hrv','Promedio ponderado 7 días · Medición matutina en reposo'),   color:'#22D3EE', unit:'ms',         chartType:'line' },
-  tss:  { title:'TSS — Carga Semanal',      sub:'Suma semanal normalizada por zonas e intensidad',              color:'#A855F7', unit:'',           chartType:'bar'  },
+  tss:  { title:'TSS — Carga Semanal',      sub:_t('ath_weekly_sum', 'Suma semanal normalizada por zonas e intensidad'),              color:'#A855F7', unit:'',           chartType:'bar'  },
   vo2:  { title:_t('dtw_mc_vo2_title','VO₂ Max Estimado'),         sub:_t('aa_sub_vo2','ml/kg/min · Estimación Garmin FirstBeat Analytics'),            color:'#0EA5E9', unit:'ml/kg/min',  chartType:'line' },
 };
 
@@ -5002,7 +5002,7 @@ function _wpMobShowTooltip(idx, clientX, clientY){
   var ttEl = document.getElementById('wp-mob-tooltip');
   var wrapEl = document.querySelector('.wp-mob-chart-wrap');
   ttEl.innerHTML =
-    '<div class="wp-mob-tooltip-wk">Semana del '+wk.label+'</div>'
+    _t('ath_week_of', '<div class="wp-mob-tooltip-wk">Semana del ')+wk.label+'</div>'
     +'<div class="wp-mob-tooltip-row"><span>Distancia</span>'+wk.dist.toFixed(1)+' km</div>'
     +'<div class="wp-mob-tooltip-row"><span>Tiempo</span>'+_wpMobFmtDur(wk.dur)+'</div>'
     +'<div class="wp-mob-tooltip-row"><span>Sesiones</span>'+wk.count+'</div>';
@@ -5110,11 +5110,11 @@ function submitWellness(){
       /* /recovery/wellness está gateado por plan (require_feature
          "recovery" — básico no lo incluye, ver plan_features.py). El
          endpoint viejo /athlete/wellness NO tenía ningún gate, así que
-         sin este manejo un atleta básico vería "Error al guardar" sin
+         sin este manejo un atleta básico vería _t('ath_err_save', "Error al guardar") sin
          entender por qué, cuando antes sí podía guardar su check-in. */
-      if(r.status === 403){ toast('Tu plan no incluye el check-in de bienestar — actualizalo en Mi Perfil',''); return; }
+      if(r.status === 403){ toast(_t('ath_plan_no_checkin', 'Tu plan no incluye el check-in de bienestar — actualizalo en Mi Perfil'),''); return; }
       if(r.ok || r.status===201){ toast('Check-in guardado ✓ — score recalculado','ok'); }
-      else { toast(_t('prof_toast_profile_save_err','Error al guardar'),''); }
+      else { toast(_t('prof_toast_profile_save_err',_t('ath_err_save', 'Error al guardar')),''); }
     }).catch(function(){ toast(_t('aa_offline_save','Sin conexión — no se pudo guardar'),''); });
 }
 
@@ -5606,55 +5606,55 @@ function rdBuildPlan(raceKey, pred, sweatMl, heatF){
 
   if(raceKey==='sprint'){
     rows=[
-      cp(ss.swim,'swim',_t('opt_swim','Natación'),0,0,0,_t('aa_nut_01','Sin ingesta. Hidrata bien en los 10min previos.'),_t('aa_nut_31','200ml agua T-10min')),
-      cp(ss.t1,'t1','T1',0,0,0,_t('aa_nut_02','Transición rápida. No comas en T1.'),'—'),
-      cp(ss.bike+bk*0.5,'bike',_t('aa_bike_approx','Bici ~')+Math.round(ss.bike+bk*0.5)+'min',22,300,100,_t('aa_nut_03','Único gel en bici + botella isotónica. No esperes a tener sed.'),_t('aa_nut_32','1 gel GU/Maurten · 300ml Gatorade')),
-      cp(ss.t2,'t2','T2',0,100,0,_t('aa_nut_04','Pequeño sorbo. No gel en T2.'),_t('aa_nut_33','100ml agua')),
-      cp(ss.run+rn*0.5,'run','Run ~'+Math.round(ss.run+rn*0.5)+'min',0,200,50,'Agua en los puestos de avituallamiento cada 1km.','200ml agua'),
-      cp(tot,'run',_t('aa_meta','META 🏁'),0,200,100,_t('aa_nut_05','Hidratación y CHO de recuperación inmediata.'),_t('aa_nut_34','Plátano + 500ml isotónico'))
+      cp(ss.swim,'swim',_t('opt_swim','Natación'),0,0,0,_t('aa_nut_01',_t('nutr_pl_002', 'Sin ingesta. Hidrata bien en los 10min previos.')),_t('aa_nut_31','200ml agua T-10min')),
+      cp(ss.t1,'t1','T1',0,0,0,_t('aa_nut_02',_t('nutr_pl_003', 'Transición rápida. No comas en T1.')),'—'),
+      cp(ss.bike+bk*0.5,'bike',_t('aa_bike_approx','Bici ~')+Math.round(ss.bike+bk*0.5)+'min',22,300,100,_t('aa_nut_03',_t('nutr_pl_004', 'Único gel en bici + botella isotónica. No esperes a tener sed.')),_t('aa_nut_32','1 gel GU/Maurten · 300ml Gatorade')),
+      cp(ss.t2,'t2','T2',0,100,0,_t('aa_nut_04',_t('nutr_pl_005', 'Pequeño sorbo. No gel en T2.')),_t('aa_nut_33','100ml agua')),
+      cp(ss.run+rn*0.5,'run','Run ~'+Math.round(ss.run+rn*0.5)+'min',0,200,50,_t('nutr_pl_006', 'Agua en los puestos de avituallamiento cada 1km.'),'200ml agua'),
+      cp(tot,'run',_t('aa_meta','META 🏁'),0,200,100,_t('aa_nut_05',_t('nutr_pl_007', 'Hidratación y CHO de recuperación inmediata.')),_t('aa_nut_34',_t('nutr_pl_008', 'Plátano + 500ml isotónico')))
     ];
   } else if(raceKey==='olympic'){
     rows=[
-      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_06','No es posible consumir nada. Nadar relajado los primeros 200m.'),'—'),
-      cp(ss.t1,'t1','T1',22,150,100,_t('aa_nut_07','Gel al salir del agua + pequeño sorbo de isotónico mientras te cambias.'),_t('aa_nut_35','1 gel · 150ml Maurten/Gatorade')),
-      cp(ss.bike+bk*0.33,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.33/1000),35,400,200,_t('aa_nut_08','Primer bloque bici. Gel + botella isotónica completa.'),_t('aa_nut_36','1 gel + 400ml isotónico')),
-      cp(ss.bike+bk*0.66,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.66/1000),30,350,200,_t('aa_nut_09','Segunda botella o recarga de hidratación. ½ barra energética.'),_t('aa_nut_37','½ barra Clif/Powerbar + 350ml agua')),
-      cp(ss.t2,'t2','T2',22,100,0,_t('aa_nut_10','Gel rápido al bajar de la bici.'),_t('aa_nut_54','1 gel')),
-      cp(ss.run+rn*0.35,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.35/1000),22,250,150,'Gel en el primer avituallamiento (~km 3.5).','1 gel + 250ml agua'),
-      cp(ss.run+rn*0.70,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.7/1000),0,200,100,'Solo agua. El gel anterior sigue activo.','200ml agua'),
-      cp(tot,'run',_t('aa_meta','META 🏁'),0,300,200,_t('aa_nut_11','Recuperación inmediata. CHO + proteína en 30min.'),_t('aa_nut_38','Plátano + isotónico + barrita proteína'))
+      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_06',_t('nutr_pl_009', 'No es posible consumir nada. Nadar relajado los primeros 200m.')),'—'),
+      cp(ss.t1,'t1','T1',22,150,100,_t('aa_nut_07',_t('nutr_pl_010', 'Gel al salir del agua + pequeño sorbo de isotónico mientras te cambias.')),_t('aa_nut_35','1 gel · 150ml Maurten/Gatorade')),
+      cp(ss.bike+bk*0.33,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.33/1000),35,400,200,_t('aa_nut_08',_t('nutr_pl_011', 'Primer bloque bici. Gel + botella isotónica completa.')),_t('aa_nut_36',_t('nutr_pl_012', '1 gel + 400ml isotónico'))),
+      cp(ss.bike+bk*0.66,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.66/1000),30,350,200,_t('aa_nut_09',_t('nutr_pl_013', 'Segunda botella o recarga de hidratación. ½ barra energética.')),_t('aa_nut_37','½ barra Clif/Powerbar + 350ml agua')),
+      cp(ss.t2,'t2','T2',22,100,0,_t('aa_nut_10',_t('nutr_pl_014', 'Gel rápido al bajar de la bici.')),_t('aa_nut_54','1 gel')),
+      cp(ss.run+rn*0.35,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.35/1000),22,250,150,_t('nutr_pl_015', 'Gel en el primer avituallamiento (~km 3.5).'),'1 gel + 250ml agua'),
+      cp(ss.run+rn*0.70,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.7/1000),0,200,100,_t('nutr_pl_016', 'Solo agua. El gel anterior sigue activo.'),'200ml agua'),
+      cp(tot,'run',_t('aa_meta','META 🏁'),0,300,200,_t('aa_nut_11',_t('nutr_pl_017', 'Recuperación inmediata. CHO + proteína en 30min.')),_t('aa_nut_38',_t('nutr_pl_018', 'Plátano + isotónico + barrita proteína')))
     ];
   } else if(raceKey==='703'){
     rows=[
-      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_12','Sin ingesta. Usa traje adecuado y nada en calma los 400m iniciales.'),'—'),
-      cp(ss.t1,'t1','T1',22,200,150,_t('aa_nut_13','Gel + sorbo de isotónico. Bolsillo especial bike ya cargado.'),_t('aa_nut_39','1 gel · 200ml isotónico')),
-      cp(ss.bike+bk*0.20,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.2/1000),hf(70),hf(700),hf(700),_t('aa_nut_14','Primer bloque. Ritmo moderado, activa la ingesta temprano.'),_t('aa_nut_40','2 geles + 700ml isotónico')),
-      cp(ss.bike+bk*0.40,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.4/1000),hf(70),hf(700),hf(700),_t('aa_nut_15','Barra sólida si toleras bien. Mantén cadencia de ingesta.'),_t('aa_nut_41','1 barra Clif + 1 gel + 700ml isotónico')),
-      cp(ss.bike+bk*0.60,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.6/1000),hf(70),hf(700),hf(700),_t('aa_nut_16','Mitad de la bici. Mantén el plan aunque no tengas apetito.'),_t('aa_nut_40','2 geles + 700ml isotónico')),
-      cp(ss.bike+bk*0.80,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.8/1000),hf(60),hf(600),hf(600),_t('aa_nut_17','Último bloque bici. Reduce sólidos, prioriza geles fluidos.'),_t('aa_nut_42','2 geles + 600ml agua+electrolitos')),
-      cp(ss.t2,'t2','T2',22,200,200,_t('aa_nut_18','Gel + cola si la hubiera. Prepárate para el run.'),_t('aa_nut_43','1 gel · 200ml cola')),
-      cp(ss.run+rn*0.25,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.25/1000),hf(50),hf(500),hf(600),'Inicia run con suavidad. 2 geles primeros 30min + agua cada puesto.','2 geles + 500ml agua'),
-      cp(ss.run+rn*0.55,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.55/1000),hf(40),hf(450),hf(600),'Cola en puestos de avituallamiento + gel. Gestiona el calor.','1 gel + cola + 450ml agua'),
-      cp(ss.run+rn*0.80,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.8/1000),hf(25),hf(350),hf(400),_t('aa_nut_19','Últimos km. Solo lo que toleras: gel, agua, cola.'),_t('aa_nut_44','1 gel o cola + agua')),
-      cp(tot,'run',_t('aa_meta','META 🏁'),0,400,500,_t('aa_nut_20','Recuperación: CHO + proteína + sal en <30min post-meta.'),_t('aa_nut_45','Isotónico + plátano + proteína'))
+      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_12',_t('nutr_pl_019', 'Sin ingesta. Usa traje adecuado y nada en calma los 400m iniciales.')),'—'),
+      cp(ss.t1,'t1','T1',22,200,150,_t('aa_nut_13',_t('nutr_pl_020', 'Gel + sorbo de isotónico. Bolsillo especial bike ya cargado.')),_t('aa_nut_39',_t('nutr_pl_021', '1 gel · 200ml isotónico'))),
+      cp(ss.bike+bk*0.20,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.2/1000),hf(70),hf(700),hf(700),_t('aa_nut_14',_t('nutr_pl_022', 'Primer bloque. Ritmo moderado, activa la ingesta temprano.')),_t('aa_nut_40',_t('nutr_pl_023', '2 geles + 700ml isotónico'))),
+      cp(ss.bike+bk*0.40,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.4/1000),hf(70),hf(700),hf(700),_t('aa_nut_15',_t('nutr_pl_024', 'Barra sólida si toleras bien. Mantén cadencia de ingesta.')),_t('aa_nut_41',_t('nutr_pl_025', '1 barra Clif + 1 gel + 700ml isotónico'))),
+      cp(ss.bike+bk*0.60,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.6/1000),hf(70),hf(700),hf(700),_t('aa_nut_16',_t('nutr_pl_026', 'Mitad de la bici. Mantén el plan aunque no tengas apetito.')),_t('aa_nut_40',_t('nutr_pl_023', '2 geles + 700ml isotónico'))),
+      cp(ss.bike+bk*0.80,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.8/1000),hf(60),hf(600),hf(600),_t('aa_nut_17',_t('nutr_pl_027', 'Último bloque bici. Reduce sólidos, prioriza geles fluidos.')),_t('aa_nut_42','2 geles + 600ml agua+electrolitos')),
+      cp(ss.t2,'t2','T2',22,200,200,_t('aa_nut_18',_t('nutr_pl_028', 'Gel + cola si la hubiera. Prepárate para el run.')),_t('aa_nut_43','1 gel · 200ml cola')),
+      cp(ss.run+rn*0.25,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.25/1000),hf(50),hf(500),hf(600),_t('nutr_pl_029', 'Inicia run con suavidad. 2 geles primeros 30min + agua cada puesto.'),'2 geles + 500ml agua'),
+      cp(ss.run+rn*0.55,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.55/1000),hf(40),hf(450),hf(600),_t('nutr_pl_030', 'Cola en puestos de avituallamiento + gel. Gestiona el calor.'),'1 gel + cola + 450ml agua'),
+      cp(ss.run+rn*0.80,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.8/1000),hf(25),hf(350),hf(400),_t('aa_nut_19',_t('nutr_pl_031', 'Últimos km. Solo lo que toleras: gel, agua, cola.')),_t('aa_nut_44','1 gel o cola + agua')),
+      cp(tot,'run',_t('aa_meta','META 🏁'),0,400,500,_t('aa_nut_20',_t('nutr_pl_032', 'Recuperación: CHO + proteína + sal en <30min post-meta.')),_t('aa_nut_45',_t('nutr_pl_033', 'Isotónico + plátano + proteína')))
     ];
   } else {
     rows=[
-      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_21','Sin ingesta. Arranca suave los primeros 500m. Ahorra glucógeno.'),'—'),
-      cp(ss.t1,'t1','T1',25,300,200,_t('aa_nut_22','Gel + banana en T1. Empieza isotónico. Bolsos especiales ya preparados.'),_t('aa_nut_46','1 gel + ½ banana · 300ml isotónico')),
-      cp(ss.bike+bk*0.12,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.12/1000),hf(65),hf(700),hf(800),_t('aa_nut_23','Inicio bici: ritmo conservador, activa ingesta temprano.'),_t('aa_nut_47','2 geles + 700ml isotónico Maurten 320')),
-      cp(ss.bike+bk*0.25,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.25/1000),hf(80),hf(800),hf(900),_t('aa_nut_24','Hora 2 de bici. Alterna geles y sólidos según tolerancia.'),_t('aa_nut_48','1 barra + 1 gel + 800ml isotónico')),
-      cp(ss.bike+bk*0.38,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.38/1000),hf(80),hf(800),hf(900),_t('aa_nut_25','Mantén ritmo de ingesta. Puesto especial de avituallamiento.'),_t('aa_nut_49','2 geles + 800ml isotónico · bolso especial')),
-      cp(ss.bike+bk*0.50,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.5/1000),hf(80),hf(800),hf(900),'Mitad del Ironman. Come aunque no tengas hambre.','Rice balls / banana + geles + 800ml agua+electrolitos'),
-      cp(ss.bike+bk*0.63,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.63/1000),hf(80),hf(800),hf(900),_t('aa_nut_26','Hora 5. Máxima ingesta antes de transición a run.'),_t('aa_nut_50','2 geles + 800ml isotónico')),
-      cp(ss.bike+bk*0.80,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.8/1000),hf(70),hf(700),hf(800),_t('aa_nut_27','Reduce sólidos. Solo geles fluidos y bebida.'),_t('aa_nut_40','2 geles + 700ml isotónico')),
+      cp(ss.swim,'swim',_t('opt_swim',_t('opt_swim','Natación'))+' ('+Math.round(sw)+'min)',0,0,0,_t('aa_nut_21',_t('nutr_pl_034', 'Sin ingesta. Arranca suave los primeros 500m. Ahorra glucógeno.')),'—'),
+      cp(ss.t1,'t1','T1',25,300,200,_t('aa_nut_22',_t('nutr_pl_035', 'Gel + banana en T1. Empieza isotónico. Bolsos especiales ya preparados.')),_t('aa_nut_46',_t('nutr_pl_036', '1 gel + ½ banana · 300ml isotónico'))),
+      cp(ss.bike+bk*0.12,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.12/1000),hf(65),hf(700),hf(800),_t('aa_nut_23','Inicio bici: ritmo conservador, activa ingesta temprano.'),_t('aa_nut_47',_t('nutr_pl_037', '2 geles + 700ml isotónico Maurten 320'))),
+      cp(ss.bike+bk*0.25,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.25/1000),hf(80),hf(800),hf(900),_t('aa_nut_24',_t('nutr_pl_038', 'Hora 2 de bici. Alterna geles y sólidos según tolerancia.')),_t('aa_nut_48',_t('nutr_pl_039', '1 barra + 1 gel + 800ml isotónico'))),
+      cp(ss.bike+bk*0.38,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.38/1000),hf(80),hf(800),hf(900),_t('aa_nut_25',_t('nutr_pl_040', 'Mantén ritmo de ingesta. Puesto especial de avituallamiento.')),_t('aa_nut_49',_t('nutr_pl_041', '2 geles + 800ml isotónico · bolso especial'))),
+      cp(ss.bike+bk*0.50,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.5/1000),hf(80),hf(800),hf(900),_t('nutr_pl_042', 'Mitad del Ironman. Come aunque no tengas hambre.'),'Rice balls / banana + geles + 800ml agua+electrolitos'),
+      cp(ss.bike+bk*0.63,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.63/1000),hf(80),hf(800),hf(900),_t('aa_nut_26',_t('nutr_pl_043', 'Hora 5. Máxima ingesta antes de transición a run.')),_t('aa_nut_50',_t('nutr_pl_044', '2 geles + 800ml isotónico'))),
+      cp(ss.bike+bk*0.80,'bike',_t('aa_bike_km','Bici km~')+Math.floor(d.bike*0.8/1000),hf(70),hf(700),hf(800),_t('aa_nut_27',_t('nutr_pl_045', 'Reduce sólidos. Solo geles fluidos y bebida.')),_t('aa_nut_40',_t('nutr_pl_023', '2 geles + 700ml isotónico'))),
       cp(ss.t2,'t2','T2',30,300,300,'Gel + cola en T2. Ajusta medias si hay ampollas.','1 gel · 300ml cola'),
       cp(ss.run+rn*0.14,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.14/1000),hf(45),hf(500),hf(700),'Inicio run muy conservador. Geles + cola en cada puesto.','2 geles + 500ml agua + cola'),
-      cp(ss.run+rn*0.30,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.3/1000),hf(40),hf(500),hf(700),'Cola es tu mejor aliada a esta altura. Mezcla agua.','1 gel + 300ml cola + 200ml agua'),
-      cp(ss.run+rn*0.50,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.5/1000),hf(35),hf(450),hf(700),_t('aa_nut_28','Mitad del run. Alterna cola, agua y sal. Electrolitos si tienes calambres.'),_t('aa_nut_51','Cola + sal + agua · pretzels si los tolerás')),
-      cp(ss.run+rn*0.70,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.7/1000),hf(30),hf(400),hf(700),'Modo supervivencia. Caldo de pollo si disponible. Cola + agua.','Caldo pollo + cola + 400ml agua'),
-      cp(ss.run+rn*0.88,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.88/1000),hf(20),hf(300),hf(400),_t('aa_nut_29','Últimos km. Cola para el sprint final. Cero sólidos.'),_t('aa_nut_52','300ml cola')),
-      cp(tot,'run',_t('aa_meta','META 🏁'),0,500,500,_t('aa_nut_30','FINISH LINE. Recuperación: isotónico + proteína + sal inmediato.'),_t('aa_nut_53','Isotónico + plátano + batido proteína'))
+      cp(ss.run+rn*0.30,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.3/1000),hf(40),hf(500),hf(700),_t('nutr_pl_046', 'Cola es tu mejor aliada a esta altura. Mezcla agua.'),'1 gel + 300ml cola + 200ml agua'),
+      cp(ss.run+rn*0.50,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.5/1000),hf(35),hf(450),hf(700),_t('aa_nut_28',_t('nutr_pl_047', 'Mitad del run. Alterna cola, agua y sal. Electrolitos si tienes calambres.')),_t('aa_nut_51',_t('nutr_pl_048', 'Cola + sal + agua · pretzels si los tolerás'))),
+      cp(ss.run+rn*0.70,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.7/1000),hf(30),hf(400),hf(700),_t('nutr_pl_049', 'Modo supervivencia. Caldo de pollo si disponible. Cola + agua.'),'Caldo pollo + cola + 400ml agua'),
+      cp(ss.run+rn*0.88,'run',_t('aa_run_km','Run km~')+Math.floor(d.run*0.88/1000),hf(20),hf(300),hf(400),_t('aa_nut_29',_t('nutr_pl_050', 'Últimos km. Cola para el sprint final. Cero sólidos.')),_t('aa_nut_52','300ml cola')),
+      cp(tot,'run',_t('aa_meta','META 🏁'),0,500,500,_t('aa_nut_30',_t('nutr_pl_051', 'FINISH LINE. Recuperación: isotónico + proteína + sal inmediato.')),_t('aa_nut_53',_t('nutr_pl_052', 'Isotónico + plátano + batido proteína')))
     ];
   }
 
@@ -6027,7 +6027,7 @@ function loadProgressZones(){
     .catch(function(e){ if(e !== 'gated') card.innerHTML = '<div class="cm-empty">'+_t('app_offline_error','Sin conexión — no se pudo cargar')+'</div>'; });
 }
 
-function PGR_ZONE_SPORT_LABEL(){ return { cycling:_t('app_zone_sport_cycling','🚴 Ciclismo'), running:_t('app_zone_sport_running','🏃 Running'), swimming:_t('app_zone_sport_swimming','🏊 Natación') }; }
+function PGR_ZONE_SPORT_LABEL(){ return { cycling:_t('app_zone_sport_cycling','🚴 Ciclismo'), running:_t('app_zone_sport_running','🏃 Running'), swimming:_t('app_zone_sport_swimming',_t('nutr_pl_123', '🏊 Natación')) }; }
 function renderProgressZones(d){
   var card = document.getElementById('pgr-zones-card');
   var sports = ['cycling','running','swimming'].filter(function(s){ return d[s]; });
@@ -6722,7 +6722,7 @@ function renderProtocolMobile(d){
   }).join('');
   if(p.hrv_clearance) html += '<div class="rec-mob-alert rec-mob-alert-info">🫀 '+_escCm(p.hrv_clearance)+'</div>';
   if(ctx.recovery_score_today != null){
-    html += '<div class="rc-mob-rec" style="margin-top:.6rem">Tu Recovery Score hoy: <strong style="color:var(--text)">'+ctx.recovery_score_today+'</strong>'+(ctx.recommendation ? ' · '+_escCm(ctx.recommendation) : '')+'</div>';
+    html += _t('ath_rec_score_today', '<div class="rc-mob-rec" style="margin-top:.6rem">Tu Recovery Score hoy: <strong style="color:var(--text)">')+ctx.recovery_score_today+'</strong>'+(ctx.recommendation ? ' · '+_escCm(ctx.recommendation) : '')+'</div>';
   }
   html += '</div>';
   el.innerHTML = html;
@@ -7460,9 +7460,9 @@ function _dtSplitsHtml(splits, sport, pausedMin){
   // de cada parcial (ver _compute_activity_splits en athlete_routes.py),
   // solo informativo para que el atleta/coach entienda la duración real.
   var pausedNote = (pausedMin && pausedMin > 0)
-    ? '<div style="padding:.5rem .7rem;margin-bottom:.5rem;font-size:.72rem;color:var(--gold);background:rgba(240,165,0,.08);border-radius:8px">⏸ Tiempo detenido real: <strong>'+pausedMin.toFixed(1)+' min</strong> — ya excluido del ritmo</div>'
+    ? '<div style="padding:.5rem .7rem;margin-bottom:.5rem;font-size:.72rem;color:var(--gold);background:rgba(240,165,0,.08);border-radius:8px">⏸ Tiempo detenido real: <strong>'+pausedMin.toFixed(1)+_t('ath_excluded_pace', ' min</strong> — ya excluido del ritmo</div>')
     : '';
-  if(!splits || !splits.length) return pausedNote + '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>';
+  if(!splits || !splits.length) return pausedNote + _t('ath_no_splits', '<div class="cm-detail-empty">Sin parciales disponibles para esta actividad</div>');
   var isSwim = sport === 'swim';
   var hasBlocks = splits.some(function(s){ return s.intensity_type; });
   var blockColors = {Calentamiento:'#0EA5E9', Serie:'#FF6535', Descanso:'#7FB3CC', Enfriamiento:'#0EA5E9'};
@@ -7597,8 +7597,8 @@ function _dtChartsHtml(sport, tel){
     // solo si esta actividad no tiene ese dato cacheado (telemetría
     // descargada antes de que se agregaran estos campos, 2026-07-31/08-01).
     blocks += _dtChartBlock('Stamina', series.stamina, '#0EA5E9', '%', avg(series.stamina));
-    blocks += _dtChartBlock('Longitud de Zancada', series.stride_length, '#8B5CF6', 'cm', avg(series.stride_length));
-    blocks += _dtChartBlock('Tiempo de Contacto', series.ground_contact_time, '#F59E0B', 'ms', avg(series.ground_contact_time));
+    blocks += _dtChartBlock(_t('ath_stride_len', 'Longitud de Zancada'), series.stride_length, '#8B5CF6', 'cm', avg(series.stride_length));
+    blocks += _dtChartBlock(_t('ath_contact_time', 'Tiempo de Contacto'), series.ground_contact_time, '#F59E0B', 'ms', avg(series.ground_contact_time));
     blocks += _dtChartBlock(_t('aa_zone_title_vert','Oscilación Vertical'), series.vertical_oscillation, '#EC4899', 'cm', avg(series.vertical_oscillation));
     blocks += _dtChartBlock('Ratio Vertical', series.vertical_ratio, '#EC4899', '%', avg(series.vertical_ratio));
     blocks += _dtChartBlock(_t('tdw_chart_name_impact_load','Factor de Carga de Impacto'), series.impact_load, '#EF4444', '', avg(series.impact_load));
@@ -7619,7 +7619,7 @@ function _dtChartsHtml(sport, tel){
     blocks += _dtChartBlock(_t('tdw_chart_name_swolf_length','Swolf por Largo'), sl.swolf, '#10B981', '', avg(sl.swolf));
   }
 
-  return blocks || '<div class="cm-detail-empty">Sin series suficientes para graficar esta actividad.</div>';
+  return blocks || _t('ath_no_series', '<div class="cm-detail-empty">Sin series suficientes para graficar esta actividad.</div>');
 }
 
 /* Tabs Zonas/Gráficos/Parciales — click + swipe horizontal (pedido
@@ -7679,7 +7679,7 @@ function _loadActivityDetail(activityId, sport, mapWrapId, tabsWrapId){
           var col = sport==='run' ? '#EF4444' : sport==='bike' ? '#EC4899' : '#0EA5E9';
           _cmDetailMap = L.map(mapElId, {zoomControl:true, attributionControl:true, scrollWheelZoom:false});
           L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap',
+            attribution: _t('ath_map_attr', '&copy; <a href="https://carto.com/attributions">CARTO</a> — datos: OpenStreetMap'),
             subdomains: 'abcd', maxZoom: 20,
           }).addTo(_cmDetailMap);
           L.polyline(route, {color:'#ffffff', weight:6, opacity:.9}).addTo(_cmDetailMap);
@@ -7687,7 +7687,7 @@ function _loadActivityDetail(activityId, sport, mapWrapId, tabsWrapId){
           _cmDetailMap.fitBounds(poly.getBounds(), {padding:[20,20]});
         });
       } else {
-        mapWrap.innerHTML = '<div class="cm-detail-empty">📡 Sin recorrido GPS disponible para esta actividad</div>';
+        mapWrap.innerHTML = _t('ath_no_gps', '<div class="cm-detail-empty">📡 Sin recorrido GPS disponible para esta actividad</div>');
       }
     }
 
@@ -7843,7 +7843,7 @@ function saveCommunityPrivacy(){
   apiFetch('/athlete/community-privacy', { method:'PUT', body: JSON.stringify(body) })
     .then(function(r){
       if(r.ok){ toast('Privacidad guardada ✓','ok'); closeCommunityPrivacy(); }
-      else { toast(_t('prof_toast_profile_save_err','Error al guardar'),''); }
+      else { toast(_t('prof_toast_profile_save_err',_t('ath_err_save', 'Error al guardar')),''); }
     })
     .catch(function(){ toast(_t('aa_offline_save','Sin conexión — no se pudo guardar'),''); });
 }
@@ -7907,7 +7907,7 @@ function refreshGarminSync(){
             if(status && status.status === 'needs_reauth'){
               toast(_t('aa_garmin_reconnect','Garmin pide reconectar tu cuenta — entrá a Mi Perfil desde la web'),'');
             } else if(status && status.status === 'error'){
-              toast('No se pudo sincronizar con Garmin','');
+              toast(_t('ath_garmin_sync_err', 'No se pudo sincronizar con Garmin'),'');
             } else {
               toast('Actualizado ✓','ok');
             }
