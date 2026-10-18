@@ -616,7 +616,8 @@ def athlete_dashboard(
     from datetime import date as _date_, timedelta as _td
     from ..redis_client import cache_get, cache_set
 
-    cache_key = f"dashboard:{me.id}"
+    # el idioma va en la clave: la narrativa del insight cambia con el idioma
+    cache_key = f"dashboard:{me.id}:{(me.lang or 'es')}"
     if not fresh:
         cached = cache_get(cache_key)
         if cached:
@@ -1121,6 +1122,7 @@ def athlete_dashboard(
             acwr_by_sport=acwr_by_sport, mental_score=mental_score,
             injury_risk=injury_risk, compliance_week=compliance_week,
             gear_alerts=get_active_gear_alerts(db, me.id),
+            lang=me.lang or "es",
         ),
         # Entrenamientos planificados (Training Peaks → Garmin → LabX)
         "planned_workouts": _get_planned_week(db, me.id),  # ver _get_planned_range() abajo

@@ -10,6 +10,8 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from .insight_texts import norm_lang, sport_t, tr, SPORT_KEYS
+
 from ..models import GarminActivity, GarminTrainingLoad, User
 
 ACWR_SPORT_LABELS = {
@@ -298,6 +300,7 @@ def build_daily_insight(
     injury_risk: Optional[dict] = None,
     compliance_week: Optional[float] = None,
     gear_alerts: Optional[list] = None,
+    lang: str = "es",
 ) -> dict:
     """
     Combina TSB/ACWR (carga) + HRV/sueño/FC reposo (recuperación) en UNA sola
@@ -306,6 +309,7 @@ def build_daily_insight(
     extremos), después combinaciones de fatiga+mala recuperación, y solo si
     nada de eso aplica, el caso positivo o el neutral por falta de datos.
     """
+    L = norm_lang(lang)
     poor_sleep = (sleep_total_h is not None and sleep_total_h < 6.5) or (sleep_trend is not None and sleep_trend < -0.5)
     hrv_down   = hrv_trend is not None and hrv_trend <= -4
     hrv_up     = hrv_trend is not None and hrv_trend > 0
@@ -324,30 +328,30 @@ def build_daily_insight(
     if gear_alerts:
         worst_gear = max(gear_alerts, key=lambda g: g["life_pct"])
         drivers.append({
-            "label": "Equipo", "value": f"{len(gear_alerts)} alerta" + ("s" if len(gear_alerts) != 1 else ""),
+            "label": tr("d_gear", L), "value": tr("alerts_n", L, n=len(gear_alerts)) if len(gear_alerts) != 1 else tr("alerts_1", L),
             "tone": "bad" if worst_gear["life_pct"] >= 100 else "caution", "delta": None,
         })
     if hrv_last_night is not None:
         hrv_tone = "bad" if hrv_down else "good" if hrv_up else "neutral"
         hrv_delta = f"↓ {abs(hrv_pct)}%" if hrv_pct else (f"↑ {hrv_trend:.0f}ms" if hrv_up else None)
         drivers.append({
-            "label": "HRV anoche", "value": f"{round(hrv_last_night)}ms",
+            "label": tr("d_hrv", L), "value": f"{round(hrv_last_night)}ms",
             "tone": hrv_tone, "delta": hrv_delta,
         })
     tsb_tone = "bad" if tsb < -20 else "caution" if tsb < -8 else "good" if tsb > 15 else "neutral"
     drivers.append({
-        "label": "TSB (forma)", "value": f"{tsb:+.0f}".replace("+-", "-"),
+        "label": tr("d_tsb", L), "value": f"{tsb:+.0f}".replace("+-", "-"),
         "tone": tsb_tone, "delta": None,
     })
     if sleep_total_h is not None:
         h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
         sleep_tone = "bad" if poor_sleep else "good" if (sleep_trend or 0) > 0 else "neutral"
         drivers.append({
-            "label": "Sueño anoche", "value": f"{h}h {m:02d}m",
+            "label": tr("d_sleep", L), "value": f"{h}h {m:02d}m",
             "tone": sleep_tone, "delta": None,
         })
 
-    def _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h):
+    def _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h, L):
         """Bullets extra para el 'ver por qué' de los casos good/neutral,
         confirmando explícitamente que HRV/sueño SÍ se revisaron y están
         bien — sin esto, el detalle técnico hablaba solo de TSB/ACWR aunque
@@ -356,13 +360,13 @@ def build_daily_insight(
         dato real (nunca se inventa)."""
         bits = []
         if hrv_last_night is not None and not hrv_down:
-            bits.append(f"HRV de anoche: {round(hrv_last_night)}ms — estable")
+            bits.append(tr("t_hrv_stable", L, hrv=round(hrv_last_night)))
         if sleep_total_h is not None and not poor_sleep:
             h = int(sleep_total_h); m = round((sleep_total_h - h) * 60)
-            bits.append(f"Sueño anoche: {h}h {m:02d}m")
+            bits.append(tr("t_sleep_hm", L, hm=f"{h}h {m:02d}m"))
         return bits
 
-    def _gear_alert_bullets(gear_alerts):
+    def _gear_alert_bullets(gear_alerts, L):
         """Bullet de equipo próximo a fin de vida útil (>=80%) para los
         casos good/neutral -- solo ahí, porque cuando ya hay una señal más
         urgente (fatiga/lesión) esa es la prioridad del día, no el
@@ -372,8 +376,8 @@ def build_daily_insight(
             return []
         worst = max(gear_alerts, key=lambda g: g["life_pct"])
         if len(gear_alerts) == 1:
-            return [f"Equipo: {worst['label']} al {worst['life_pct']:.0f}% de su vida útil — revisalo en Mi Equipo"]
-        return [f"Equipo: {len(gear_alerts)} ítems por encima del 80% de vida útil (el más avanzado: {worst['label']} {worst['life_pct']:.0f}%) — revisalos en Mi Equipo"]
+            return [tr("t_gear_one", L, label=worst["label"], pct=f"{worst['life_pct']:.0f}")]
+        return [tr("t_gear_many", L, n=len(gear_alerts), label=worst["label"], pct=f"{worst['life_pct']:.0f}")]
 
     def _base(severity, headline, message_bullets, message_technical=None, cta=None, cta_href=None):
         # message_bullets: 2 bullets en lenguaje llano, sin jerga ni números
@@ -400,37 +404,37 @@ def build_daily_insight(
 
     # 1. Combinación crítica: mala recuperación (HRV/sueño) + carga ya alta
     if hrv_down and poor_sleep and (tsb < -8 or acwr_zone in ("warning", "danger")):
-        hrv_pct_txt = f" ({hrv_pct}%)" if hrv_pct else ""
+        hrv_pct_txt = tr("t_pct", L, pct=hrv_pct) if hrv_pct else ""
         return _base(
-            "reduce", "Reducir carga hoy",
+            "reduce", tr("h_reduce_now", L),
             [
-                "Tu cuerpo no se recuperó bien anoche y venís acumulando cansancio de varios días.",
-                "Recomendación: sesión suave o descanso hoy — evitá los intervalos de alta intensidad.",
+                tr("b_c1_1", L),
+                tr("b_c1_2", L),
             ],
             [
-                f"HRV de anoche: {round(hrv_last_night)}ms — bajó{hrv_pct_txt}",
-                f"TSB (forma): {tsb:.0f} — con fatiga acumulada (ATL {atl:.0f})",
-                "Sueño anoche: por debajo de lo habitual",
-                "Recomendación: sesión aeróbica suave o descanso — evitá intervalos de alta intensidad",
+                tr("t_hrv_down", L, hrv=round(hrv_last_night), pct_txt=hrv_pct_txt),
+                tr("t_tsb_fatigue", L, tsb=f"{tsb:.0f}", atl=f"{atl:.0f}"),
+                tr("t_sleep_low", L),
+                tr("t_aerobic_rec", L),
             ],
-            "Ver protocolo de recuperación sugerido",
+            tr("cta_recovery_protocol", L),
             "recovery.html",
         )
 
     # 2. ACWR en zona de riesgo — prioridad de seguridad
     if acwr_zone == "danger":
         return _base(
-            "reduce", "Riesgo de lesión",
+            "reduce", tr("h_risk", L),
             [
-                "Subiste tu carga de entrenamiento muy rápido esta semana respecto a tus semanas previas.",
-                "Recomendación: bajale el volumen o la intensidad hoy para reducir el riesgo de lesión.",
+                tr("b_danger_1", L),
+                tr("b_danger_2", L),
             ],
             [
-                f"ACWR actual: {acwr:.2f} (rango seguro: 0.8–1.3)",
-                "Carga semanal muy por encima de tu promedio de 28 días",
-                "Recomendación: reducí volumen o intensidad hoy",
+                tr("t_acwr_current", L, acwr=f"{acwr:.2f}"),
+                tr("t_load_28", L),
+                tr("t_reduce_now", L),
             ],
-            "Ver histórico de carga",
+            tr("cta_load_history", L),
             "detalle.html?metric=acwr",
         )
 
@@ -446,23 +450,22 @@ def build_daily_insight(
         if risky_sports:
             worst = max(risky_sports, key=lambda s: s["acwr"])
             drivers.append({
-                "label": "ACWR " + worst["label"], "value": f"{worst['acwr']:.2f}",
+                "label": tr("d_acwr_sport", L, sport=sport_t(worst["label"], L)), "value": f"{worst['acwr']:.2f}",
                 "tone": "bad", "delta": None,
             })
             return _base(
-                "reduce", f"Riesgo de lesión en {worst['label']}",
+                "reduce", tr("h_risk_sport", L, sport=sport_t(worst["label"], L)),
                 [
-                    f"Tu carga general se ve bien, pero en {worst['label'].lower()} subiste el volumen mucho más "
-                    f"rápido que en el resto de tu entrenamiento.",
-                    f"Recomendación: bajale el ritmo en {worst['label'].lower()} esta semana.",
+                    tr("b_sport_1", L, sport=sport_t(worst["label"], L, lower=True)),
+                    tr("b_sport_2", L, sport=sport_t(worst["label"], L, lower=True)),
                 ],
                 [
-                    f"ACWR {worst['label']}: {worst['acwr']:.2f} (zona de riesgo, >1.5)",
-                    f"ACWR general: {acwr:.2f} ({acwr_zone}) — en rango",
-                    "Las lesiones por sobreuso son específicas de tejido: un pico aislado no se compensa con el resto",
-                    f"Recomendación: bajale el ritmo en {worst['label'].lower()} esta semana",
+                    tr("t_sport_acwr", L, label=sport_t(worst["label"], L), acwr=f"{worst['acwr']:.2f}"),
+                    tr("t_acwr_general", L, acwr=f"{acwr:.2f}", zona=acwr_zone),
+                    tr("t_overuse", L),
+                    tr("t_sport_rec", L, sport=sport_t(worst["label"], L, lower=True)),
                 ],
-                "Ver ACWR por disciplina",
+                tr("cta_acwr_discipline", L),
                 "detalle.html?metric=acwr",
             )
 
@@ -475,42 +478,41 @@ def build_daily_insight(
     # en su propia card del dashboard) pero nunca influían en el insight.
     if injury_risk and injury_risk.get("level") in ("high", "critical") and injury_risk.get("score") is not None:
         drivers.append({
-            "label": "Riesgo de lesión", "value": f"{round(injury_risk['score'])}/100",
+            "label": tr("d_risk", L), "value": f"{round(injury_risk['score'])}/100",
             "tone": "bad" if injury_risk["level"] == "critical" else "caution", "delta": None,
         })
         critical = injury_risk["level"] == "critical"
         return _base(
             "reduce" if critical else "caution",
-            "Riesgo de lesión " + ("crítico" if critical else "alto"),
+            tr("h_risk_crit" if critical else "h_risk_high", L),
             [
-                "Tu score de riesgo de lesión — que combina tu carga, HRV, monotonía de entrenamiento y tus "
-                "últimos exámenes de sangre — está elevado, aunque tu carga de hoy por sí sola no lo muestre.",
-                "Recomendación: priorizá recuperación antes de sumar más intensidad.",
+                tr("b_inj_1", L),
+                tr("b_inj_2", L),
             ],
             [
-                f"Injury Risk Score: {round(injury_risk['score'])}/100 ({injury_risk['level']})",
-                "Compone: ACWR 35% · HRV 30% · Monotonía de entrenamiento 20% · Marcadores de sangre 15%",
-                f"ACWR aislado hoy: {acwr:.2f} — se ve en rango por sí solo",
-                "Recomendación: priorizá recuperación antes de sumar más intensidad",
+                tr("t_inj_score", L, score=round(injury_risk['score']), nivel=tr("lv_critical" if injury_risk["level"] == "critical" else "lv_high", L)),
+                tr("t_inj_compose", L),
+                tr("t_acwr_isolated", L, acwr=f"{acwr:.2f}"),
+                tr("t_inj_rec", L),
             ],
-            "Ver detalle de riesgo de lesión",
+            tr("cta_inj_detail", L),
             "ai_coach.html",
         )
 
     # 3. Fatiga acumulada profunda (TSB muy negativo) aunque HRV/sueño no acompañen datos
     if tsb < -20:
         return _base(
-            "caution", "Fatiga acumulada",
+            "caution", tr("h_fatigue", L),
             [
-                "Venís acumulando cansancio por varios días seguidos de entrenamiento exigente.",
-                "Recomendación: mantené la intensidad baja y priorizá el descanso esta semana.",
+                tr("b_fat_1", L),
+                tr("b_fat_2", L),
             ],
             [
-                f"TSB (forma): {tsb:.0f} — nivel de fatiga alto",
-                f"ATL (carga aguda): {atl:.0f} — varios días de carga sostenida",
-                "Recomendación: intensidad baja y priorizá descanso esta semana para no entrar en sobreentrenamiento",
+                tr("t_fat_tsb", L, tsb=f"{tsb:.0f}"),
+                tr("t_fat_atl", L, atl=f"{atl:.0f}"),
+                tr("t_fat_rec", L),
             ],
-            "Ver histórico PMC",
+            tr("cta_pmc", L),
             "detalle.html?metric=ctl",
         )
 
@@ -525,27 +527,25 @@ def build_daily_insight(
     # Solo se activa si hizo el check-in (mental_score no es None); nunca
     # se inventa el dato.
     if mental_score is not None and mental_score < 55:
-        mfs_label = "crítica" if mental_score < 40 else "alta"
+        mfs_label = tr("lv_mental_crit", L) if mental_score < 40 else tr("lv_mental_high", L)
         drivers.append({
-            "label": "Fatiga mental (check-in)", "value": f"{round(mental_score)}/100",
+            "label": tr("d_mental", L), "value": f"{round(mental_score)}/100",
             "tone": "bad" if mental_score < 40 else "caution", "delta": None,
         })
         return _base(
             "caution" if mental_score >= 40 else "reduce",
-            "Fatiga mental " + mfs_label,
+            tr("h_mental_crit" if mental_score < 40 else "h_mental_high", L),
             [
-                "Tu carga y tu recuperación física se ven bien, pero tu check-in mental de hoy muestra fatiga "
-                + mfs_label + ".",
-                "Recomendación: considerá acortar la sesión o priorizar descanso mental — el rendimiento no es "
-                "solo físico.",
+                tr("b_mental_1", L, nivel=mfs_label),
+                tr("b_mental_2", L),
             ],
             [
-                f"Mental Fatigue Score: {round(mental_score)}/100 (check-in de mental.html)",
-                f"Carga física: TSB {tsb:.0f}, ACWR {acwr:.2f} — en rango razonable",
-                "La fatiga viene del lado subjetivo, no del entrenamiento físico",
-                "Recomendación: acortá la sesión o priorizá descanso mental",
+                tr("t_mental_score", L, score=round(mental_score)),
+                tr("t_phys_ok", L, tsb=f"{tsb:.0f}", acwr=f"{acwr:.2f}"),
+                tr("t_subj", L),
+                tr("t_mental_rec", L),
             ],
-            "Ver protocolos de recuperación mental",
+            tr("cta_mental", L),
             "mental.html",
         )
 
@@ -554,22 +554,21 @@ def build_daily_insight(
         tech_bullets = []
         parts_plain = []
         if hrv_down:
-            tech_bullets.append(f"HRV de anoche: {round(hrv_last_night)}ms — bajó")
-            parts_plain.append("tu recuperación nocturna bajó")
+            tech_bullets.append(tr("t_hrv_down0", L, hrv=round(hrv_last_night)))
+            parts_plain.append(tr("p_hrv", L))
         if poor_sleep:
-            tech_bullets.append("Sueño anoche: por debajo de lo habitual")
-            parts_plain.append("dormiste menos de lo habitual")
+            tech_bullets.append(tr("t_sleep_low", L))
+            parts_plain.append(tr("p_sleep", L))
         if rhr_up:
-            tech_bullets.append(f"FC en reposo: {rhr_trend:+.0f}bpm — subió")
-            parts_plain.append("tu frecuencia cardíaca en reposo subió")
-        tech_bullets.append(f"Carga de entrenamiento: TSB {tsb:.0f}, ACWR {acwr:.2f} — todavía en rango razonable")
-        tech_bullets.append("Recomendación: monitoreá cómo te sentís antes de una sesión exigente")
+            tech_bullets.append(tr("t_fc_up", L, rhr=f"{rhr_trend:+.0f}"))
+            parts_plain.append(tr("p_rhr", L))
+        tech_bullets.append(tr("t_carga_todavia", L, tsb=f"{tsb:.0f}", acwr=f"{acwr:.2f}"))
+        tech_bullets.append(tr("t_monitor", L))
         return _base(
-            "caution", "Presta atención a tu recuperación",
+            "caution", tr("h_attention", L),
             [
-                f"Hoy {', '.join(parts_plain)}.",
-                "Recomendación: tu entrenamiento sigue en nivel razonable, pero prestá atención a cómo te sentís "
-                "antes de una sesión exigente.",
+                tr("b_hoy", L, parts=", ".join(parts_plain)),
+                tr("b_att_2", L),
             ],
             tech_bullets,
         )
@@ -584,23 +583,22 @@ def build_daily_insight(
         low_compliance = compliance_week is not None and compliance_week < 60
         if low_compliance:
             drivers.append({
-                "label": "Cumplimiento semanal", "value": f"{round(compliance_week)}%",
+                "label": tr("d_compliance", L), "value": f"{round(compliance_week)}%",
                 "tone": "caution", "delta": None,
             })
             return _base(
-                "caution", "Fresco, pero por baja carga",
+                "caution", tr("h_fresh_low", L),
                 [
-                    "Tu forma se ve muy bien, pero es porque entrenaste menos de lo planificado esta semana — "
-                    "no necesariamente por una mejora real.",
-                    "Recomendación: retomá el plan gradualmente en vez de forzar una sesión muy exigente hoy.",
+                    tr("b_fresh_1", L),
+                    tr("b_fresh_2", L),
                 ],
                 [
-                    f"TSB {tsb:.0f} y ACWR {acwr:.2f} — ambos en rango saludable",
-                    f"Cumplimiento del plan esta semana: {round(compliance_week)}%",
-                    "El TSB alto puede reflejar menos carga acumulada, no necesariamente una mejora real de forma",
-                    "Recomendación: retomá el plan gradualmente",
+                    tr("t_tsb_acwr_ok", L, tsb=f"{tsb:.0f}", acwr=f"{acwr:.2f}"),
+                    tr("t_compliance", L, pct=round(compliance_week)),
+                    tr("t_tsb_plan_nota", L),
+                    tr("t_rec_plan", L),
                 ],
-                "Ver tu plan de la semana",
+                tr("cta_plan", L),
                 "training_plan.html",
             )
         # Mensaje llano Y "ver por qué" en bullets ejecutivos — antes el
@@ -608,32 +606,32 @@ def build_daily_insight(
         # (reportado por el usuario 2026-08-13, y pedido explícito de
         # formato en bullets para AMBOS ese mismo día).
         return _base(
-            "good", "Buen momento para exigir",
+            "good", tr("h_good", L),
             [
-                "Estás en tu mejor momento de forma y tu recuperación se ve estable.",
-                "Recomendación: buen día para una sesión de calidad o un test.",
+                tr("b_good_1", L),
+                tr("b_good_2", L),
             ],
             [
-                f"TSB +{tsb:.0f} — por encima del umbral de forma óptima (+15)",
-                f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3), no viene de entrenar de menos",
-            ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
-                "Ningún indicador de fatiga o mala recuperación está activo",
-            ] + _gear_alert_bullets(gear_alerts),
+                tr("t_tsb_plus", L, tsb=f"{tsb:.0f}"),
+                tr("t_acwr_no_less", L, acwr=f"{acwr:.2f}"),
+            ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h, L) + [
+                tr("t_no_indicator", L),
+            ] + _gear_alert_bullets(gear_alerts, L),
         )
 
     # 6. Neutral — todo en rango normal, sin señal fuerte en ninguna dirección
     return _base(
-        "neutral", "Todo en rango normal",
+        "neutral", tr("h_neutral", L),
         [
-            "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy.",
-            "Recomendación: seguí tu plan con normalidad.",
+            tr("b_neutral_1", L),
+            tr("b_neutral_2", L),
         ],
         [
-            f"TSB {tsb:+.0f} — dentro del rango normal (-8 a +15): ni fatiga excesiva ni forma pico",
-            f"ACWR {acwr:.2f} — dentro del rango seguro (0.8–1.3)",
-        ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h) + [
-            "Ninguno de tus indicadores de carga o recuperación está fuera de rango",
-        ] + _gear_alert_bullets(gear_alerts),
+            tr("t_tsb_range", L, tsb=f"{tsb:+.0f}"),
+            tr("t_acwr_range", L, acwr=f"{acwr:.2f}"),
+        ] + _insight_recovery_bullets(hrv_down, hrv_last_night, poor_sleep, sleep_total_h, L) + [
+            tr("t_none_out", L),
+        ] + _gear_alert_bullets(gear_alerts, L),
     )
 
 
