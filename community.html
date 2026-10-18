@@ -252,7 +252,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
       <div><div class="cl-profile-n" id="cl-profile-following">—</div><div class="cl-profile-l" data-i18n="cmw_following">Siguiendo</div></div>
     </div>
     <div class="cl-profile-km" id="cl-profile-km">— km esta temporada</div>
-    <button class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-top:.9rem" onclick="switchTab('profile',document.querySelectorAll('.tab-btn')[4])" data-i18n="cmw_view_my_profile">Ver mi perfil</button>
+    <button class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-top:.9rem" onclick="location.href='athlete_profile.html'" data-i18n="cmw_view_my_profile">Ver mi perfil</button>
   </div>
 </aside>
 
@@ -265,7 +265,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   <button class="tab-btn"     onclick="switchTab('discover',this)" data-i18n="cmw_tab_discover">🔍 Descubrir</button>
   <button class="tab-btn"     onclick="switchTab('clubs',this)" data-i18n="cmw_tab_clubs">🏆 Clubs</button>
   <button class="tab-btn"     onclick="switchTab('challenges',this)" data-i18n="cmw_tab_challenges">⚡ Desafíos</button>
-  <button class="tab-btn"     onclick="switchTab('profile',this)" data-i18n="cmw_tab_profile">👤 Mi Perfil</button>
 </div>
 
 <!-- ══ TAB: FEED ══ -->
@@ -357,27 +356,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
 </div>
 
 <!-- ══ TAB: MI PERFIL ══ -->
-<div class="tab-pane" id="tab-profile">
-  <div id="my-profile-content"></div>
-
-  <div class="panel" style="margin-top:1.25rem">
-    <div class="panel-head"><div class="panel-title" data-i18n="cmw_privacy_title">Privacidad de mis actividades</div></div>
-    <div style="padding:1.25rem">
-      <div class="priv-desc" data-i18n="cmw_privacy_desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
-      <label class="priv-row"><input type="checkbox" id="priv-details" onchange="_privToggleMaster()"> <span data-i18n="cmw_privacy_allow">Permitir que mis seguidores vean el detalle de mis actividades</span></label>
-      <div class="priv-sub" id="priv-sub">
-        <label class="priv-row"><input type="checkbox" id="priv-route"> <span data-i18n="cmw_priv_route">Mapa / recorrido</span></label>
-        <label class="priv-row"><input type="checkbox" id="priv-hr"> <span data-i18n="cmw_priv_hr">Frecuencia cardíaca</span></label>
-        <label class="priv-row"><input type="checkbox" id="priv-power"> <span data-i18n="cmw_priv_power">Potencia / cadencia</span></label>
-        <label class="priv-row"><input type="checkbox" id="priv-pace"> <span data-i18n="cmw_priv_pace">Ritmo / velocidad / parciales</span></label>
-      </div>
-      <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem">
-        <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()" data-i18n="btn_save">Guardar</button>
-        <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem" data-i18n="cmw_saved">✓ Guardado</span>
-      </div>
-    </div>
-  </div>
-</div>
 
 </div>
 <!-- fin .cl-center -->
@@ -534,7 +512,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
     if (id === 'discover') { loadLeaderboard(); loadSuggestions(); }
     else if (id === 'clubs') loadClubs();
     else if (id === 'challenges') loadChallenges();
-    else if (id === 'profile') loadMyProfile();
   };
 
   // ── Modal helpers ────────────────────────────────────────────────────────
@@ -1142,109 +1119,6 @@ footer div{font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--dim);let
   // ═════════════════════════════════════════════════════════════════════════
   // MY PUBLIC PROFILE
   // ═════════════════════════════════════════════════════════════════════════
-
-  function loadMyProfile() {
-    fetch(API + '/community/profile/me', { headers: hdrs })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) { renderMyProfileFallback(); return; }
-        var el = document.getElementById('my-profile-content');
-        var u  = d.user || {};
-        var ss = d.season_stats || {};
-        var followers = d.follower_count || 0;
-        var following = d.following_count || 0;
-        el.innerHTML =
-          '<div class="panel" style="margin-bottom:1.25rem">' +
-          '<div style="padding:1.5rem;display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">' +
-          '<div style="position:relative;flex-shrink:0;width:60px;height:60px">' +
-          _avatarBall('prof-av', u, 'width:60px;height:60px;font-size:1.6rem', true) +
-          '<label class="avatar-edit-btn" title="Cambiar foto de perfil">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>' +
-            '<input type="file" accept="image/*" style="display:none" onchange="uploadMyAvatar(this)">' +
-          '</label>' +
-          '</div>' +
-          '<div style="flex:1">' +
-          '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900">' + (u.name || '—') + '</div>' +
-          '<div style="font-family:\'Oswald\',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.08em;margin:.15rem 0 .75rem">' + (u.country_flag || '') + ' ' + (u.country_code || '') + '</div>' +
-          '<div style="display:flex;gap:1.5rem">' +
-          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--cyan)">' + followers + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">' + _t('cmw_followers','Seguidores').toUpperCase() + '</div></div>' +
-          '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--muted)">' + following + '</div><div style="font-family:\'Oswald\',sans-serif;font-size:.58rem;color:var(--dim)">' + _t('cmw_following','Siguiendo').toUpperCase() + '</div></div>' +
-          '</div></div></div></div>' +
-          '<div class="g3" style="padding:0 1.25rem 1.25rem;gap:.75rem">' +
-          [
-            { label: _t('cmw_stat_km_season','Km temporada'), value: ss.km + ' km',        color: 'var(--cyan)' },
-            { label: _t('cmw_stat_tss_total','TSS acumulado'), value: Math.round(ss.tss),  color: 'var(--purple)' },
-            { label: _t('cmw_stat_hours_total','Horas totales'), value: ss.hours + 'h',      color: 'var(--green)' },
-          ].map(function (s) {
-            return '<div class="stat-chip"><div class="stat-n" style="color:' + s.color + '">' + (s.value || '—') + '</div><div class="stat-l">' + s.label + '</div></div>';
-          }).join('') +
-          '</div></div>';
-      }).catch(function () { renderMyProfileFallback(); });
-  }
-
-  function renderMyProfileFallback() {
-    var el = document.getElementById('my-profile-content');
-    if (el) el.innerHTML = '<div class="alert-chip info">' + _t('cmw_complete_profile_msg','Completa tu perfil en Configuración para mostrar tu página pública.') + '</div>';
-  }
-
-  window.uploadMyAvatar = function (input) {
-    var file = input.files && input.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { lxToast && lxToast.warn(_t('cmw_only_images','Solo se aceptan imágenes')); return; }
-    var fd = new FormData();
-    fd.append('file', file);
-    fetch(API + '/athlete/profile/avatar', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + _authTok() }, // sin Content-Type: FormData lo setea con el boundary correcto
-      body: fd,
-    })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) { lxToast && lxToast.warn(_t('cmw_err_photo_upload','No se pudo subir la foto')); return; }
-        input.value = '';
-        loadMyProfile();      // refresca la card grande de "Mi Perfil"
-        loadSidebarProfile(); // y la mini-card de la sidebar
-      })
-      .catch(function () { lxToast && lxToast.warn(_t('cmw_err_photo_upload','No se pudo subir la foto')); });
-  };
-
-  window._privToggleMaster = function () {
-    var on = document.getElementById('priv-details').checked;
-    document.getElementById('priv-sub').classList.toggle('off', !on);
-  };
-
-  function loadPrivacyPrefs() {
-    fetch(API + '/athlete/community-privacy', { headers: hdrs })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        var p = (d && d.prefs) || {};
-        document.getElementById('priv-details').checked = p.share_details !== false;
-        document.getElementById('priv-route').checked   = p.share_route  !== false;
-        document.getElementById('priv-hr').checked       = p.share_hr     !== false;
-        document.getElementById('priv-power').checked    = p.share_power  !== false;
-        document.getElementById('priv-pace').checked     = p.share_pace   !== false;
-        _privToggleMaster();
-      }).catch(function () {});
-  }
-
-  window.savePrivacyPrefs = function () {
-    var body = {
-      share_details: document.getElementById('priv-details').checked,
-      share_route:   document.getElementById('priv-route').checked,
-      share_hr:      document.getElementById('priv-hr').checked,
-      share_power:   document.getElementById('priv-power').checked,
-      share_pace:    document.getElementById('priv-pace').checked,
-    };
-    fetch(API + '/athlete/community-privacy', { method: 'PUT', headers: hdrs, body: JSON.stringify(body) })
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function () {
-        var msg = document.getElementById('priv-saved-msg');
-        msg.style.display = '';
-        setTimeout(function () { msg.style.display = 'none'; }, 2200);
-      }).catch(function () {});
-  };
-
-  loadPrivacyPrefs();
 
   // ═════════════════════════════════════════════════════════════════════════
   // SIDEBAR: mini perfil + sugerencias + leaderboard (layout 3 columnas)

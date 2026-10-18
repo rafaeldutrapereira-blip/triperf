@@ -181,6 +181,31 @@
 
     <!-- ════════════════════ TAB: PERFIL ════════════════════════ -->
     <div id="tab-perfil" class="tab-pane active">
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-head"><div class="card-title" data-i18n="prof_card_avatar">Foto de perfil</div></div>
+        <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <img id="pf-avatar-img" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;background:var(--bg3)" onerror="this.style.visibility='hidden'">
+          <label class="btn btn-secondary" style="cursor:pointer" data-i18n="prof_btn_avatar_change">Cambiar foto<input type="file" accept="image/*" style="display:none" onchange="uploadAvatarPerfil(this)"></label>
+          <button class="btn btn-secondary" onclick="deleteAvatarPerfil()" data-i18n="prof_btn_avatar_remove">Quitar</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-head"><div class="card-title" data-i18n="cmw_privacy_title">Privacidad de mis actividades</div></div>
+        <div class="card-body">
+          <div class="priv-desc" data-i18n="cmw_privacy_desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
+          <label class="priv-row"><input type="checkbox" id="priv-details" onchange="privToggleMaster()"> <span data-i18n="cmw_privacy_allow">Permitir que mis seguidores vean el detalle de mis actividades</span></label>
+          <div class="priv-sub" id="priv-sub">
+            <label class="priv-row"><input type="checkbox" id="priv-route"> <span data-i18n="cmw_priv_route">Mapa / recorrido</span></label>
+            <label class="priv-row"><input type="checkbox" id="priv-hr"> <span data-i18n="cmw_priv_hr">Frecuencia cardíaca</span></label>
+            <label class="priv-row"><input type="checkbox" id="priv-power"> <span data-i18n="cmw_priv_power">Potencia / cadencia</span></label>
+            <label class="priv-row"><input type="checkbox" id="priv-pace"> <span data-i18n="cmw_priv_pace">Ritmo / velocidad / parciales</span></label>
+          </div>
+          <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem">
+            <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()" data-i18n="btn_save">Guardar</button>
+            <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem" data-i18n="cmw_saved">✓ Guardado</span>
+          </div>
+        </div>
+      </div>
 
       <div class="card">
         <div class="card-head">
@@ -673,6 +698,8 @@ function loadProfile() {
     .then(function(p) {
       _profile = p;
       _has2FA  = !!p.totp_enabled;
+      loadAvatarPerfil(p.id);
+      loadPrivacyPrefs();
       var name = p.nombre || p.name || '';
       document.getElementById('p-nombre').value    = name;
       document.getElementById('p-email').value     = p.email || '';
@@ -943,6 +970,71 @@ function stravaSync() {
     .then(function(d){ toast(d.message || _t('prof_toast_strava_sync_done', 'Sync Strava completado ✓')); loadStravaStatus(); })
     .catch(function(){ toast(_t('prof_toast_strava_sync_err', 'Error sync Strava'), 'err'); })
     .finally(function(){ btn.disabled = false; });
+}
+
+/* ── Foto de perfil (movida desde Comunidad › Mi Perfil) ─────── */
+function loadAvatarPerfil(userId){
+  var img = document.getElementById('pf-avatar-img');
+  if(img && userId) img.src = API + '/athlete/profile/avatar/' + userId + '?t=' + Date.now();
+}
+function uploadAvatarPerfil(input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast(_t('cmw_only_images','Solo se aceptan imágenes'),'err'); return; }
+  var fd = new FormData();
+  fd.append('file', file);
+  fetch(API + '/athlete/profile/avatar', { method:'POST', credentials:'include', headers: authH(false), body: fd })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      input.value = '';
+      if(!d){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); return; }
+      toast(_t('prof_toast_avatar_ok','Foto actualizada ✓'));
+      if(_profile && _profile.id) loadAvatarPerfil(_profile.id);
+    })
+    .catch(function(){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); });
+}
+function deleteAvatarPerfil(){
+  fetch(API + '/athlete/profile/avatar', { method:'DELETE', credentials:'include', headers: authH(false) })
+    .then(function(){
+      toast(_t('prof_toast_avatar_removed','Foto quitada'));
+      var img = document.getElementById('pf-avatar-img'); if(img) img.style.visibility = 'hidden';
+    })
+    .catch(function(){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); });
+}
+
+/* ── Privacidad de actividades (movida desde Comunidad › Mi Perfil) ── */
+function privToggleMaster(){
+  var on = document.getElementById('priv-details').checked;
+  document.getElementById('priv-sub').classList.toggle('off', !on);
+}
+function loadPrivacyPrefs(){
+  fetch(API + '/athlete/community-privacy', { credentials:'include', headers: authH(false) })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var p = (d && d.prefs) || {};
+      document.getElementById('priv-details').checked = p.share_details !== false;
+      document.getElementById('priv-route').checked   = p.share_route  !== false;
+      document.getElementById('priv-hr').checked       = p.share_hr     !== false;
+      document.getElementById('priv-power').checked    = p.share_power  !== false;
+      document.getElementById('priv-pace').checked     = p.share_pace   !== false;
+      privToggleMaster();
+    }).catch(function(){});
+}
+function savePrivacyPrefs(){
+  var body = {
+    share_details: document.getElementById('priv-details').checked,
+    share_route:   document.getElementById('priv-route').checked,
+    share_hr:      document.getElementById('priv-hr').checked,
+    share_power:   document.getElementById('priv-power').checked,
+    share_pace:    document.getElementById('priv-pace').checked,
+  };
+  fetch(API + '/athlete/community-privacy', { method:'PUT', credentials:'include', headers: authH(), body: JSON.stringify(body) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(){
+      var msg = document.getElementById('priv-saved-msg');
+      msg.style.display = '';
+      setTimeout(function(){ msg.style.display = 'none'; }, 2200);
+    }).catch(function(){});
 }
 
 /* ── Personal Records ─────────────────────────────────────────── */
