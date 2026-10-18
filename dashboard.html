@@ -1143,7 +1143,7 @@ ul { list-style: none; }
           <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-val">—<span class="u"></span></span><span id="badge-vo2" class="badge" style="color:var(--dim)"><span data-i18n="nav_profile">Perfil</span></span></span>
         </div>
         <div class="kcr" onclick="goMetric('vo2','cycling')" role="button" tabindex="0" aria-label="Ver histórico VO2 Max Ciclismo" data-i18n-aria="dash_aria_vo2_bike">
-          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-cycling-val">VO2 Max Ciclismo</span><span class="kcr-sub"><span data-i18n="dash_vo2_unit">ml/kg/min · estimado</span></span></span>
+          <span class="kcr-label"><span class="kcr-label-main" data-lx-info="vo2max" data-lx-info-val="#kl-vo2max-cycling-val" id="kl-vo2-cycling-name">VO2 Max Ciclismo</span><span class="kcr-sub"><span data-i18n="dash_vo2_unit">ml/kg/min · estimado</span></span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-vo2-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val" id="kl-vo2max-cycling-val">—<span class="u"></span></span><span id="badge-vo2-cycling" class="badge" style="color:var(--dim)">—</span></span>
         </div>
         <!-- CTL Proyectado y Fitness objetivo — pedido explícito del
@@ -2215,7 +2215,7 @@ function patchData(){
 
   if(d.tsb != null){
     var fatPct = Math.min(100, Math.max(0, Math.round(50 - d.tsb)));
-    var fatLabel = fatPct < 25 ? 'Baja' : fatPct < 50 ? 'Moderada' : fatPct < 75 ? 'Media' : 'Alta';
+    var fatLabel = fatPct < 25 ? _t('aa_lvl_low','Baja') : fatPct < 50 ? _t('aa_lvl_mod','Moderada') : fatPct < 75 ? _t('aa_lvl_med','Media') : _t('aa_lvl_high','Alta');
     var fatVal = document.getElementById('w-fat-val');
     if(fatVal) fatVal.textContent = fatLabel;
   }
@@ -2230,7 +2230,7 @@ function patchData(){
       danger:  {label:_t('dash_risk_high','⚠ Alto riesgo'), color:'#EF4444', tip:_t('dash_tip_danger','ACWR >1.5 — reduce carga esta semana')},
       warning: {label:_t('dash_load_high','Carga alta'), color:'#F0A500', tip:_t('dash_tip_warning','ACWR 1.3–1.5 — monitorea recuperación')},
       optimal: {label:_t('dash_val_optimal','Óptimo'), color:'#10B981', tip:_t('dash_tip_optimal','Zona óptima de entrenamiento (0.8–1.3)')},
-      low:     {label:'Sub-carga',     color:'#0EA5E9', tip:'ACWR <0.8 — puedes incrementar volumen'},
+      low:     {label:_t('dtw_acwr_badge_low','Sub-carga'),     color:'#0EA5E9', tip:'ACWR <0.8 — puedes incrementar volumen'},
       // BP-03: sin 7 días de actividad el backend no puede calcular ACWR real
       // (devuelve 0.0) — antes caía al fallback "Óptimo" en verde, mostrando
       // una zona que no corresponde a ningún cálculo real.
@@ -2255,9 +2255,9 @@ function patchData(){
   if(d.acwr_by_sport){
     var acwrZones = {
       danger:  {label:_t('dash_risk_high','⚠ Alto riesgo'), color:'#EF4444'},
-      warning: {label:'Carga alta',    color:'#F0A500'},
+      warning: {label:_t('dash_load_high','Carga alta'),    color:'#F0A500'},
       optimal: {label:_t('dash_val_optimal','Óptimo'), color:'#10B981'},
-      low:     {label:'Sub-carga',     color:'#0EA5E9'},
+      low:     {label:_t('dtw_acwr_badge_low','Sub-carga'),     color:'#0EA5E9'},
       no_data: {label:_t('dash_no_data','Sin datos'), color:'#3D6880'},
     };
     ['swim','bike','run','gym'].forEach(function(sp){
@@ -2516,7 +2516,7 @@ function _showSyncBanner(secsTotal){
   var secs = secsTotal;
   banner.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10B981;display:inline-block;animation:pulse 1s infinite"></span>'
     + ' <span>' + _t('dash_sync_refresh','Sincronizando Garmin… refresca en') + ' <strong id="_sync-secs">'+secs+'s</strong></span>'
-    + '<button onclick="location.href=location.pathname+\'?fresh=1\'" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6EE7B7;padding:.2rem .55rem;border-radius:5px;font-size:.68rem;cursor:pointer;margin-left:.3rem">Recargar ahora</button>'
+    + '<button onclick="location.href=location.pathname+\'?fresh=1\'" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6EE7B7;padding:.2rem .55rem;border-radius:5px;font-size:.68rem;cursor:pointer;margin-left:.3rem">'+_t('dash_reload_now','Recargar ahora')+'</button>'
     + '<button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(110,231,183,.5);cursor:pointer;font-size:.8rem;margin-left:.2rem">✕</button>';
   document.body.prepend(banner);
   var iv = setInterval(function(){
@@ -3734,6 +3734,18 @@ window.addEventListener('click', function(e){
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
 
+<script>
+(function(){
+  function _vo2Sport(){
+    var el = document.getElementById('kl-vo2-cycling-name'); if(!el) return;
+    var n = window.lxSport ? window.lxSport('Ciclismo') : 'Ciclismo';
+    el.textContent = _t('dash_vo2_sport','VO2 Max {sport}').split('{sport}').join(n);
+  }
+  _vo2Sport();
+  document.addEventListener('lx:i18nready', _vo2Sport);
+  document.addEventListener('lx:langchange', _vo2Sport);
+})();
+</script>
 </body>
 </html>
 
