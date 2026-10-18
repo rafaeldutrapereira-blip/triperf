@@ -14,6 +14,8 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    ment_breath_box_label: "Respiración en Caja",
+    ment_breath_phys_label: "Suspiro Fisiológico",
     ath_fill_email_pw: "Completá email y contraseña.",
     ath_bad_credentials: "Email o contraseña incorrectos.",
     ath_conn_error: "Error de conexión. Probá de nuevo.",
@@ -2521,6 +2523,8 @@ var DICT = {
   },
 
   pt: {
+    ment_breath_box_label: "Respiração em Caixa",
+    ment_breath_phys_label: "Suspiro Fisiológico",
     ath_fill_email_pw: "Preencha e-mail e senha.",
     ath_bad_credentials: "E-mail ou senha incorretos.",
     ath_conn_error: "Erro de conexão. Tente novamente.",
@@ -4998,6 +5002,8 @@ var DICT = {
   },
 
   en: {
+    ment_breath_box_label: "Box Breathing",
+    ment_breath_phys_label: "Physiological Sigh",
     ath_fill_email_pw: "Fill in your email and password.",
     ath_bad_credentials: "Incorrect email or password.",
     ath_conn_error: "Connection error. Try again.",
