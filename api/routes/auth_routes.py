@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from ..database import get_db
+from ..database import Base, get_db
 from ..models import User, CoachAthlete, GroupMember
 from ..schemas import LoginRequest, TokenResponse, UserCreate, UserOut
 from ..auth import (
@@ -276,6 +276,34 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db),
     return {"ok": True}
 
 
+def _purge_user_dependents(db: Session, user_id: str) -> dict:
+    """Borra o desvincula TODAS las filas que referencian a users.id.
+
+    Recorre el metadata de SQLAlchemy (no una lista fija), así cubre las ~77
+    columnas con FK a users. Hijos antes que padres.
+    - Columna NOT NULL: se borran las filas (son datos del propio usuario).
+    - Columna nullable (p. ej. actor_id de una notificación enviada a otro):
+      se pone NULL, para no borrar contenido de terceros.
+    Así no quedan filas huérfanas y el DELETE de users no falla por NOT NULL.
+    """
+    from sqlalchemy import delete, update
+
+    purged = {}
+    for table in reversed(Base.metadata.sorted_tables):
+        for fk in table.foreign_keys:
+            if fk.column.table.name != "users":
+                continue
+            col = fk.parent
+            if col.nullable:
+                stmt = update(table).where(col == user_id).values({col.name: None})
+            else:
+                stmt = delete(table).where(col == user_id)
+            n = db.execute(stmt).rowcount or 0
+            if n:
+                purged[f"{table.name}.{col.name}"] = n
+    return purged
+
+
 @router.delete("/account")
 def delete_account(
     request: Request,
@@ -301,6 +329,8 @@ def delete_account(
     db.query(GarminActivity).filter(GarminActivity.user_id == user_id).delete()
     db.query(GarminTrainingLoad).filter(GarminTrainingLoad.user_id == user_id).delete()
     db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == user_id).delete()
+    purged = _purge_user_dependents(db, user_id)
+    logger.info("Dependientes limpiados user_id=%s: %s", user_id, purged)
     db.delete(me)
     db.commit()
     logger.info("Cuenta eliminada user_id=%s", user_id)
