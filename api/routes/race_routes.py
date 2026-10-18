@@ -1725,6 +1725,34 @@ def record_race_result(
     }
 
 
+# B6: fuente única de nutrición de carrera = Race Day.
+def nearest_race_for(db: Session, user_id: str, today_iso: str):
+    """Carrera más próxima (hoy o futura); si no hay ninguna futura, la más reciente."""
+    upcoming = (db.query(RaceEvent)
+                .filter(RaceEvent.user_id == user_id, RaceEvent.date_iso >= today_iso)
+                .order_by(RaceEvent.date_iso.asc()).first())
+    if upcoming:
+        return upcoming
+    return (db.query(RaceEvent)
+            .filter(RaceEvent.user_id == user_id)
+            .order_by(RaceEvent.date_iso.desc()).first())
+
+
+@router.get("/nutrition/latest")
+def get_latest_race_nutrition(
+    weight_kg: float = Query(70.0, ge=30, le=150),
+    sweat_l_h: float = Query(0.8, ge=0.3, le=2.5),
+    db:   Session = Depends(get_db),
+    me:   User    = Depends(get_current_user),
+):
+    """Nutrición de la carrera más próxima (o la última si no hay futuras)."""
+    race = nearest_race_for(db, me.id, date.today().isoformat())
+    if not race:
+        raise HTTPException(404, "Sin carreras registradas")
+    data = get_nutrition_plan(race.id, weight_kg, sweat_l_h, db, me)
+    return {"race_id": race.id, "race_name": race.name, "race_date": race.date_iso, **data}
+
+
 @router.get("/nutrition/{race_id}")
 def get_nutrition_plan(
     race_id: str,

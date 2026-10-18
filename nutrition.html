@@ -1327,64 +1327,31 @@ function _showNutSaveStatus(ok) {
   el._t = setTimeout(function(){ el.style.opacity='0'; }, 2400);
 }
 
-function saveNutritionPlanToAPI(payload) {
-  var tok = getNutToken();
-  if (!tok) return;
-  fetch(NUT_API_BASE + '/athlete/nutrition-plan', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
-    body: JSON.stringify(payload)
-  }).then(function(r){ _showNutSaveStatus(r.ok); })
-    .catch(function(){ _showNutSaveStatus(false); });
-}
-
 function loadNutritionPlanFromAPI() {
+  /* B6: fuente única = Race Day. Se muestra el plan de la carrera más próxima;
+     esta página ya no guarda un plan propio. */
   var tok = getNutToken();
   if (!tok) return;
-  fetch(NUT_API_BASE + '/athlete/nutrition-plan', {
-    headers: { 'Authorization': 'Bearer ' + tok }
-  }).then(function(r){ return r.ok ? r.json() : null; })
-  .then(function(plan){
-    if (!plan || !plan.race_dist) return;
-    // Restore race selection
-    var rk = plan.race_dist;
-    if (['sprint','olympic','70.3','ironman'].indexOf(rk) >= 0) {
-      document.querySelectorAll('.rt').forEach(function(b){
-        b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+rk+"'") >= 0);
-      });
-      ST.race = rk;
-    }
-    // Restore sweat/heat if saved
-    if (plan.params_json) {
-      try {
-        var p = JSON.parse(plan.params_json);
-        if (p.sweat) document.getElementById('sel-sweat').value = p.sweat;
-      } catch(e){}
-    }
-    nutCalc();
-  }).catch(function(){});
+  fetch(NUT_API_BASE + '/races/nutrition/latest', { headers: { 'Authorization': 'Bearer ' + tok } })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.nutrition || !d.nutrition.strategy) return;
+      var s = d.nutrition.strategy;
+      var esc = function(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+      var card = '<div class="panel" id="race-src-card" style="padding:1rem 1.2rem;margin-bottom:1rem">' +
+        '<div style="font-weight:700">' + _t('nut_race_src_title','Plan de carrera (Race Day)') + ': ' + esc(d.race_name) + ' · ' + esc(d.race_date) + '</div>' +
+        '<div style="font-size:.8rem;color:var(--dim);margin-top:.3rem">' +
+          _t('nut_race_src_carb','Carbohidratos') + ' ' + esc(s.carb_g_h) + ' g/h · ' + _t('nut_race_src_total','total') + ' ' + esc(s.total_carb_g) + ' g · ' +
+          _t('nut_race_src_fluid','fluidos') + ' ' + esc(s.total_fluid_l) + ' L · ' + esc(s.calories_estimate) + ' kcal' +
+        '</div>' +
+        '<div style="font-size:.72rem;margin-top:.4rem"><a href="race_day.html">' + _t('nut_race_src_edit','Editar en Race Day →') + '</a></div>' +
+        '</div>';
+      var host = document.querySelector('.tabs-bar');
+      if (host && !document.getElementById('race-src-card')) host.insertAdjacentHTML('beforebegin', card);
+    }).catch(function(){});
 }
 
-// Patch nutCalc to auto-save after render
-var _origNutCalc = nutCalc;
-nutCalc = function() {
-  _origNutCalc();
-  // Async save to API
-  var rk = ST.race;
-  var sweat = document.getElementById('sel-sweat') ? document.getElementById('sel-sweat').value : '600';
-  var heat  = getHeatFactor();
-  var totKcalEl = document.getElementById('ch-energy');
-  var choTotEl  = document.getElementById('cho-tot');
-  var fluidEl   = document.getElementById('fl-tot');
-  var sodEl     = document.getElementById('na-tot');
-  var payload = {
-    race_dist:  rk,
-    race_name:  (typeof KL_DATA !== 'undefined' && KL_DATA.meta && KL_DATA.meta.race_goal) || null,
-    params_json: JSON.stringify({ sweat: sweat, heat: heat })
-  };
-  if (totKcalEl) payload.total_kcal = parseInt((totKcalEl.textContent||'').replace(/\D/g,''))||null;
-  saveNutritionPlanToAPI(payload);
-};
+// B6: nutCalc ya no guarda un plan propio (la fuente es Race Day).
 
 loadIFOverrides();
 loadCourseOverrides();
