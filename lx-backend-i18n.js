@@ -1,9 +1,11 @@
 /* lx-backend-i18n.js — traduccion de textos que el backend genera en espanol.
    El backend (training_service, recovery_routes, readiness_service,
-   injury_risk_service, performance_analytics_service) devuelve estas frases
-   en espanol. lxBeT() las traduce por coincidencia exacta o por plantilla
-   ({marcador}). Si el texto no esta en el mapa, lo devuelve sin cambios.
-   Mantener en sincronia con api/tests/test_backend_i18n_mapping.py. */
+   injury_risk_service, performance_analytics_service, race_routes) devuelve
+   estas frases en espanol. lxBeT() las traduce por coincidencia exacta o por
+   plantilla ({marcador}); los nombres de deporte dentro de las plantillas
+   ({sport}, {label}) se traducen con LX_BE_SPORT. Si el texto no esta en el
+   mapa, lo devuelve sin cambios. Mantener en sincronia con
+   api/tests/test_backend_i18n_mapping.py. */
 var LX_BE_ENTRIES = [
  [
   "Todo en rango normal",
@@ -618,10 +620,27 @@ var LX_BE_ENTRIES = [
   "be_153"
  ],
  [
+  "ACWR {sport}",
+  "be_154"
+ ],
+ [
+  "Objetivo: {carb_g_h}g carbohidratos/hora durante las partes activas.",
+  "be_155"
+ ],
+ [
   "Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.",
   "mentmsg_mfs_low"
  ]
 ];
+var LX_BE_SPORT = {
+ "natación": "opt_swim",
+ "ciclismo": "opt_bike",
+ "trote": "dash_sport_run",
+ "carrera": "sp_run",
+ "fuerza": "sp_force",
+ "fuerza / prep. física": "sp_strength",
+ "prep. física": "aa_prep_fisica"
+};
 (function(){
   var FIXED = {}, TEMPL = [];
   function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -641,19 +660,31 @@ var LX_BE_ENTRIES = [
     if(vars) Object.keys(vars).forEach(function(n){ v = v.split('{' + n + '}').join(vars[n]); });
     return v;
   }
+  function sportName(v){
+    var k = LX_BE_SPORT[String(v).toLowerCase()];
+    var t = k ? tr(k) : null;
+    if(!t) return v;
+    /* conserva la minuscula inicial si el original la traia (p.ej. .lower() en el backend) */
+    if(v.charAt(0) === v.charAt(0).toLowerCase() && t.charAt(0) !== t.charAt(0).toLowerCase()){
+      t = t.charAt(0).toLowerCase() + t.slice(1);
+    }
+    return t;
+  }
   function one(text){
     if(Object.prototype.hasOwnProperty.call(FIXED, text)){ return tr(FIXED[text]) || text; }
     for(var i = 0; i < TEMPL.length; i++){
       var m = TEMPL[i].re.exec(text);
       if(m){
         var vars = {};
-        TEMPL[i].names.forEach(function(n, j){ vars[n] = m[j + 1]; });
+        TEMPL[i].names.forEach(function(n, j){
+          vars[n] = (n === 'sport' || n === 'label') ? sportName(m[j + 1]) : m[j + 1];
+        });
         return tr(TEMPL[i].key, vars) || text;
       }
     }
     return text;
   }
-  /* El backend une varias oraciones con espacio (p.ej. recomendaciones): se traduce cada una. */
+  /* El backend une varias oraciones con espacio: se traduce cada una (la combinacion mas larga que coincida). */
   window.lxBeT = function(text){
     if(typeof text !== 'string' || !text) return text;
     var t = one(text);

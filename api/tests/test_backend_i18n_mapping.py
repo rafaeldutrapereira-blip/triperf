@@ -22,6 +22,7 @@ BACKEND_FILES = [
     REPO / "api" / "services" / "injury_risk_service.py",
     REPO / "api" / "services" / "performance_analytics_service.py",
     REPO / "api" / "routes" / "mental_routes.py",
+    REPO / "api" / "routes" / "race_routes.py",
 ]
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -94,3 +95,29 @@ def test_no_duplicate_or_orphan_keys():
     be_keys = {k for k in dic["es"] if k.startswith("be_")}
     mapped_be = {k for k in key_list if k.startswith("be_")}
     assert be_keys == mapped_be, "claves be_* huerfanas o sin mapear: %s" % sorted(be_keys ^ mapped_be)
+
+
+def _load_sport_map():
+    src = BE_JS.read_text(encoding="utf-8")
+    m = re.search(r"var LX_BE_SPORT = (\{.*?\});", src, re.S)
+    assert m, "LX_BE_SPORT no encontrado en lx-backend-i18n.js"
+    return json.loads(m.group(1))
+
+
+def test_sport_map_keys_exist_with_matching_spanish_names():
+    dic = _load_dict()
+    problems = []
+    for name, key in _load_sport_map().items():
+        for lang in ("es", "pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+        if key in dic["es"] and dic["es"][key].lower() != name:
+            problems.append("%s: ES '%s' no coincide con '%s'" % (key, dic["es"][key], name))
+    assert not problems, "\n".join(problems)
+
+
+def test_backend_sport_labels_exist_in_backend():
+    # Los nombres de deporte que el backend emite en driver labels y plantillas
+    src = (REPO / "api" / "services" / "training_service.py").read_text(encoding="utf-8")
+    for name in ("Natación", "Ciclismo", "Trote", "Fuerza / Prep. física"):
+        assert '"%s"' % name in src, "deporte del backend ya no existe: %s" % name
