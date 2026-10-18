@@ -178,3 +178,10 @@ def test_year_in_review_athlete_name_present(client, auth_headers):
     assert resp.status_code == 200
     name = resp.json()["athlete_name"]
     assert isinstance(name, str) and len(name) > 0
+
+
+@pytest.fixture(autouse=True)
+def _athlete_plan_agegroup(db, athlete_user):
+    # B1: estos endpoints exigen plan agegroup+; el fixture base es basico.
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()

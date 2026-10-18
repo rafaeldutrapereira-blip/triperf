@@ -7,6 +7,7 @@ comentarios) para no dejar sin probar el campo n_comments nuevo, ni la
 forma real de photos/can_add_photos que ya usaba community.html (web) y
 la app nunca leía.
 """
+import pytest
 from datetime import date, timedelta
 
 from .conftest import login, auth_headers
@@ -187,3 +188,10 @@ class TestLeaderboardClubScope:
         assert len(rows) == 1
         assert rows[0]["user"]["id"] == athlete_user.id
         assert rows[0]["is_me"] is True
+
+
+@pytest.fixture(autouse=True)
+def _athlete_plan_agegroup(db, athlete_user):
+    # B1: estos endpoints exigen plan agegroup+; el fixture base es basico.
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()

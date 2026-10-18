@@ -256,3 +256,10 @@ def test_create_race_requires_date(client, auth_headers):
         "distance": "703",
     }, headers=auth_headers)
     assert resp.status_code == 422
+
+
+@pytest.fixture(autouse=True)
+def _athlete_plan_agegroup(db, athlete_user):
+    # B1: estos endpoints exigen plan agegroup+; el fixture base es basico.
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()

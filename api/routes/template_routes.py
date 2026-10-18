@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
 from ..auth import get_current_user, require_role
+from ..plan_features import require_feature
 from ..permissions import assert_coach_owns_athlete
 from ..services.template_service import (
     VALID_SPORTS,
@@ -227,7 +228,7 @@ def squad_compliance_trend(
 
 # ── Athlete router ────────────────────────────────────────────────────────────
 
-athlete_router = APIRouter(prefix="/athlete", tags=["templates"])
+athlete_router = APIRouter(prefix="/athlete", tags=["templates"], dependencies=[Depends(require_feature("training_plan"))])
 
 
 @athlete_router.get("/compliance-trend")

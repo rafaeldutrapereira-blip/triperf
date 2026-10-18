@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..plan_features import require_feature
 from ..database import get_db
 from ..models import (
     User, CoachAthlete, RunningShoe, Bike, BikeComponent, MaintenanceLog,
@@ -23,7 +24,7 @@ from ..models import (
 )
 from ..services.gear_service import life_pct as _life_pct, reassign_shoe, backfill_shoe
 
-router = APIRouter(prefix="/gear", tags=["gear"])
+router = APIRouter(prefix="/gear", tags=["gear"], dependencies=[Depends(require_feature("gear"))])
 
 _SHOE_TYPES = {"rodaje", "series", "competicion", "trail", "otro"}
 _BIKE_TYPES = {"ruta", "tt_triatlon", "mtb", "gravel"}

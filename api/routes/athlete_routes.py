@@ -22,6 +22,7 @@ from ..schemas import (
 from pydantic import BaseModel, field_validator
 from datetime import date as _date
 from ..auth import get_current_user, hash_password, require_role
+from ..plan_features import require_feature
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..models import Group, GroupMember, Follow, CoachAthlete
 from ..services.training_service import compute_acwr, compute_acwr_by_sport, build_training_alerts as _svc_alerts, build_daily_insight
@@ -1933,7 +1934,7 @@ def _blocks_total_duration_sec(blocks: list) -> int:
     return total
 
 
-@router.post("/indoor-workout/send-to-garmin")
+@router.post("/indoor-workout/send-to-garmin", dependencies=[Depends(require_feature("indoor_workout"))])
 def send_indoor_workout_to_garmin(
     body: _SendToGarminIn,
     db: Session = Depends(get_db),
@@ -3100,7 +3101,7 @@ def get_activity_telemetry(
     }
 
 
-@router.get("/year-in-review")
+@router.get("/year-in-review", dependencies=[Depends(require_feature("year_in_review"))])
 def year_in_review(
     year: int       = Query(None),
     db:   Session   = Depends(get_db),

@@ -117,7 +117,7 @@ class TestSocialPushIntegration:
         other = User(
             email="other@test.com", nombre="Other Athlete",
             password_hash=hash_password("OtherPass123"),
-            rol="athlete", activo=True,
+            rol="athlete", activo=True, plan_nivel="agegroup",
         )
         db.add(other)
         db.commit()
@@ -158,3 +158,10 @@ class TestSocialPushIntegration:
                 json={"kudo_type": "power"}, headers=auth_headers(token))
             time.sleep(0.2)
         assert mock_push.call_count == 0
+
+
+@pytest.fixture(autouse=True)
+def _athlete_plan_agegroup(db, athlete_user):
+    # B1: estos endpoints exigen plan agegroup+; el fixture base es basico.
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()

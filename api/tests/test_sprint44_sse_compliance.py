@@ -37,6 +37,15 @@ def _auth(token):
     return {"Authorization": f"Bearer {token}"}
 
 
+def _set_plan(db, email: str, plan: str) -> None:
+    # B1: el atleta se registra como basico por defecto; los endpoints de
+    # compliance de plan (training_plan) exigen agegroup.
+    from api.models import User
+    u = db.query(User).filter(User.email == email).one()
+    u.plan_nivel = plan
+    db.commit()
+
+
 def _create_coach(db, email="coach44@test.com", nombre="Coach 44") -> "User":
     """Create a coach user directly via DB (registration API hardcodes rol=atleta)."""
     from api.models import User
@@ -380,6 +389,7 @@ class TestEventsRoutes:
 class TestAthleteComplianceTrend:
     def test_trend_default_8_weeks(self, client, db):
         tok = _reg_login(client, "ctrend1@test.com")
+        _set_plan(db, "ctrend1@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend", headers=_auth(tok))
         assert r.status_code == 200
         data = r.json()
@@ -388,12 +398,14 @@ class TestAthleteComplianceTrend:
 
     def test_trend_custom_weeks(self, client, db):
         tok = _reg_login(client, "ctrend2@test.com")
+        _set_plan(db, "ctrend2@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=4", headers=_auth(tok))
         assert r.status_code == 200
         assert len(r.json()) == 4
 
     def test_trend_no_prescriptions_returns_null_pct(self, client, db):
         tok = _reg_login(client, "ctrend3@test.com")
+        _set_plan(db, "ctrend3@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=2", headers=_auth(tok))
         assert r.status_code == 200
         trend = r.json()
@@ -403,6 +415,7 @@ class TestAthleteComplianceTrend:
 
     def test_trend_week_structure(self, client, db):
         tok = _reg_login(client, "ctrend4@test.com")
+        _set_plan(db, "ctrend4@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=1", headers=_auth(tok))
         assert r.status_code == 200
         w = r.json()[0]
@@ -418,17 +431,20 @@ class TestAthleteComplianceTrend:
 
     def test_trend_weeks_max_52(self, client, db):
         tok = _reg_login(client, "ctrend6@test.com")
+        _set_plan(db, "ctrend6@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=52", headers=_auth(tok))
         assert r.status_code == 200
         assert len(r.json()) == 52
 
     def test_trend_weeks_too_large_rejected(self, client, db):
         tok = _reg_login(client, "ctrend7@test.com")
+        _set_plan(db, "ctrend7@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=100", headers=_auth(tok))
         assert r.status_code == 422
 
     def test_trend_week_dates_in_order(self, client, db):
         tok = _reg_login(client, "ctrend8@test.com")
+        _set_plan(db, "ctrend8@test.com", "agegroup")
         r = client.get("/api/athlete/compliance-trend?weeks=4", headers=_auth(tok))
         assert r.status_code == 200
         starts = [w["week_start"] for w in r.json()]

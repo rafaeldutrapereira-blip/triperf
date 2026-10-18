@@ -56,6 +56,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_user
+from ..plan_features import require_feature
 from ..models import (
     User,
     Follow,
@@ -75,7 +76,7 @@ from ..models import (
 
 logger = logging.getLogger("labx.community")
 
-router = APIRouter(prefix="/community", tags=["community"])
+router = APIRouter(prefix="/community", tags=["community"], dependencies=[Depends(require_feature("community"))])
 
 KUDO_TYPES = {"power", "fire", "trophy", "epic", "love"}
 VISIBILITY  = {"public", "followers", "coach_only", "private"}

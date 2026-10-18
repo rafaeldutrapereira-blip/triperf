@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_user, require_role
+from ..plan_features import require_feature
 from ..models import User
 from ..permissions import assert_coach_owns_athlete
 from ..services.calendar_service import (
@@ -24,7 +25,7 @@ from ..services.calendar_service import (
     get_upcoming_workouts,
 )
 
-router = APIRouter(prefix="/calendar", tags=["calendar"])
+router = APIRouter(prefix="/calendar", tags=["calendar"], dependencies=[Depends(require_feature("training_plan"))])
 
 
 @router.get("/monthly")

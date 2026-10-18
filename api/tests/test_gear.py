@@ -3,6 +3,7 @@ Tests — Gestión de Equipamiento y Mantenimiento (zapatillas, bicicletas,
 componentes). Todo contra la BD real de test (SQLite in-memory) vía
 TestClient real -- sin mocks de la capa de negocio.
 """
+import pytest
 from .conftest import login, auth_headers
 
 from ..models import CoachAthlete
@@ -580,3 +581,10 @@ class TestManualActivityShoeAssignment:
         h_coach = auth_headers(token_coach)
         r = client.get(f"/api/gear/activities/{act.id}/shoe", headers=h_coach)
         assert r.status_code == 404
+
+
+@pytest.fixture(autouse=True)
+def _athlete_plan_agegroup(db, athlete_user):
+    # B1: estos endpoints exigen plan agegroup+; el fixture base es basico.
+    athlete_user.plan_nivel = "agegroup"
+    db.commit()

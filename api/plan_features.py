@@ -23,12 +23,12 @@ _PLAN_FEATURES: dict[str, set[str]] = {
     "agegroup": {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
-        "race_day", "race_predictor", "community", "year_in_review",
+        "race_day", "race_predictor", "community", "year_in_review", "gear",
     },
     "elite": {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
-        "race_day", "race_predictor", "community", "year_in_review",
+        "race_day", "race_predictor", "community", "year_in_review", "gear",
         "blood_labs", "training_detail", "adaptive", "ai_coach", "indoor_workout",
     },
 }
@@ -38,11 +38,17 @@ _PLAN_FEATURES: dict[str, set[str]] = {
 _PLAN_FEATURES["coach"] = _PLAN_FEATURES["elite"] | {"coach_platform", "athlete_management"}
 
 
+def normalize_plan(plan: str | None) -> str:
+    """Nombre canónico del plan en BD. El cliente usa 'basic'; la BD guarda 'basico'."""
+    p = (plan or "basico").lower()
+    return "basico" if p == "basic" else p
+
+
 def has_feature(user: User, feature: str) -> bool:
     """Verifica si el usuario tiene acceso a una feature según su plan."""
     if user.rol in ("coach", "admin"):
         return True
-    plan = (user.plan_nivel or "basico").lower()
+    plan = normalize_plan(user.plan_nivel)
     allowed = _PLAN_FEATURES.get(plan, _PLAN_FEATURES["basico"])
     return feature in allowed
 

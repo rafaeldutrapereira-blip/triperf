@@ -42,9 +42,10 @@ from ..models import (
     RaceEvent, User,
 )
 from ..auth import get_current_user
+from ..plan_features import require_feature
 
 logger = logging.getLogger("labx.race")
-router = APIRouter(prefix="/races", tags=["race_intelligence"])
+router = APIRouter(prefix="/races", tags=["race_intelligence"], dependencies=[Depends(require_feature("race_day"))])
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # ConfiguraciÃ³n de distancias

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import TrainingPhase, User
 from ..auth import get_current_user, require_role
+from ..plan_features import require_feature
 from ..permissions import assert_coach_owns_athlete
 from ..services.periodization_service import (
     validate_no_overlap,
@@ -175,7 +176,7 @@ def delete_phase(
 
 # ── Athlete router ────────────────────────────────────────────────────────────
 
-athlete_router = APIRouter(prefix="/athlete", tags=["periodization"])
+athlete_router = APIRouter(prefix="/athlete", tags=["periodization"], dependencies=[Depends(require_feature("training_plan"))])
 
 
 @athlete_router.get("/phases")
