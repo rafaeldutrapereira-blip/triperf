@@ -2630,19 +2630,133 @@ function renderProfileConnections(garmin, strava){
   var gOn = !!(garmin && garmin.has_credentials && garmin.status === 'ok');
   var sOn = !!(strava && strava.connected);
 
+  var garminBtns = gOn
+    ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">'+_t('app_sync_btn','Sincronizar')+'</button>'
+      +' <button class="pf-conn-sync-btn" onclick="pfGarminDisconnect()">'+_t('app_conn_garmin_disconnect','Desconectar')+'</button>'
+    : '<button class="pf-conn-sync-btn" onclick="pfGarminToggleForm()">'+_t('app_conn_garmin_connect','Conectar')+'</button>';
+
   var html = '<div class="pf-conn-row">'
     +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(gOn?'on':'off')+'"></span>Garmin Connect</div>'
     +'<div class="pf-conn-meta">'+(gOn ? _t('app_last_sync','Última sync:')+' '+_escCm(garmin.last_sync||'—')+' · '+(garmin.activities_total||0)+' '+_t('app_activities_count','actividades') : (garmin && garmin.has_credentials ? _t('app_sync_error','Error de sincronización') : _t('app_not_connected','No conectado')))+'</div></div>'
-    +(gOn ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">'+_t('app_sync_btn','Sincronizar')+'</button>' : '')
+    +'<div>'+garminBtns+'</div>'
+  +'</div>';
+
+  html += '<div id="pf-garmin-form" style="display:none;padding:.4rem 0 .8rem">'
+    +'<div id="pf-g-step-creds">'
+      +'<input id="pf-g-email" class="pw-input" type="email" autocomplete="username" placeholder="'+_t('app_conn_garmin_email','Email de Garmin Connect')+'" style="margin-bottom:.45rem">'
+      +'<input id="pf-g-pass" class="pw-input" type="password" autocomplete="current-password" placeholder="'+_t('app_conn_garmin_pass','Contraseña de Garmin')+'" style="margin-bottom:.45rem">'
+      +'<div style="display:flex;gap:.5rem"><button class="pf-conn-sync-btn" id="pf-g-save" onclick="pfGarminSave()">'+_t('app_conn_garmin_save','Guardar y conectar')+'</button>'
+      +'<button class="pf-conn-sync-btn" onclick="pfGarminToggleForm()">'+_t('app_conn_cancel','Cancelar')+'</button></div>'
+    +'</div>'
+    +'<div id="pf-g-step-mfa" style="display:none">'
+      +'<div class="pf-conn-meta" style="margin-bottom:.45rem">'+_t('app_conn_garmin_mfa_label','Código de verificación (email o SMS)')+'</div>'
+      +'<input id="pf-g-mfa-code" class="pw-input" inputmode="numeric" autocomplete="one-time-code" style="margin-bottom:.45rem">'
+      +'<div style="display:flex;gap:.5rem"><button class="pf-conn-sync-btn" onclick="pfGarminMfa()">'+_t('app_conn_garmin_mfa_btn','Verificar')+'</button>'
+      +'<button class="pf-conn-sync-btn" onclick="pfGarminToggleForm()">'+_t('app_conn_cancel','Cancelar')+'</button></div>'
+    +'</div>'
   +'</div>';
 
   html += '<div class="pf-conn-row">'
     +'<div><div class="pf-conn-name"><span class="pf-conn-dot '+(sOn?'on':'off')+'"></span>Strava</div>'
     +'<div class="pf-conn-meta">'+(sOn ? _t('app_connected','Conectado')+(strava.token_expires?' · '+_t('app_expires','vence')+' '+_escCm(strava.token_expires.slice(0,10)):'') : _t('app_not_connected','No conectado'))+'</div></div>'
+    +(sOn ? '' : '<div><button class="pf-conn-sync-btn" onclick="stravaConnectMobile()">'+_t('app_conn_strava_connect','Conectar con Strava')+'</button></div>')
   +'</div>';
 
-  html += '<div class="rc-mob-rec" style="margin-top:.7rem">'+_t('app_connections_hint','Para conectar, desconectar o resolver problemas de autenticación, hacelo desde la web en Mi Perfil → Conexiones.')+'</div>';
   box.innerHTML = html;
+}
+
+/* Garmin: mismo flujo que saveGarminCreds()/garminMfa de athlete_profile.html
+   (POST /athlete/garmin-credentials → needs_mfa → POST /athlete/garmin/reauth/mfa). */
+function pfGarminToggleForm(){
+  var f = document.getElementById('pf-garmin-form');
+  if(!f) return;
+  var show = f.style.display === 'none';
+  f.style.display = show ? '' : 'none';
+  document.getElementById('pf-g-step-creds').style.display = '';
+  document.getElementById('pf-g-step-mfa').style.display = 'none';
+}
+function pfGarminSave(){
+  var email = document.getElementById('pf-g-email').value.trim();
+  var pass  = document.getElementById('pf-g-pass').value;
+  if(!email || !pass){ toast(_t('app_conn_fields_err','Completá email y contraseña de Garmin'),'err'); return; }
+  var btn = document.getElementById('pf-g-save');
+  btn.disabled = true; btn.textContent = _t('app_conn_connecting','Conectando…');
+  apiFetch('/athlete/garmin-credentials', { method:'POST', body: JSON.stringify({ garmin_email: email, garmin_password: pass }) })
+    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(res){
+      if(!res.ok){ throw new Error((res.d && res.d.errors && res.d.errors[0] && res.d.errors[0].message) || 'Error'); }
+      if(res.d.needs_mfa){
+        document.getElementById('pf-g-step-creds').style.display = 'none';
+        document.getElementById('pf-g-step-mfa').style.display = '';
+        document.getElementById('pf-g-mfa-code').focus();
+        toast(_t('app_conn_mfa_sent','Revisá tu email o SMS: Garmin envió un código'),'');
+      } else {
+        toast(_t('app_conn_garmin_ok','Garmin conectado ✓'));
+        pfGarminFinish();
+      }
+    })
+    .catch(function(e){ toast(_t('app_conn_garmin_err','Error conectando Garmin')+' ('+(e.message||'')+')','err'); })
+    .finally(function(){ btn.disabled = false; btn.textContent = _t('app_conn_garmin_save','Guardar y conectar'); });
+}
+function pfGarminMfa(){
+  var code = document.getElementById('pf-g-mfa-code').value.trim();
+  if(!code) return;
+  apiFetch('/athlete/garmin/reauth/mfa', { method:'POST', body: JSON.stringify({ code: code }) })
+    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(res){
+      if(res.ok && res.d && res.d.ok){
+        toast(_t('app_conn_garmin_ok','Garmin conectado ✓'));
+        pfGarminFinish();
+      } else {
+        toast(_t('app_conn_code_wrong','Código incorrecto, intentá de nuevo'),'err');
+      }
+    })
+    .catch(function(){ toast(_t('app_conn_garmin_err','Error conectando Garmin'),'err'); });
+}
+function pfGarminFinish(){
+  var f = document.getElementById('pf-garmin-form');
+  if(f) f.style.display = 'none';
+  loadProfileConnections();
+}
+function pfGarminDisconnect(){
+  if(!confirm(_t('app_conn_garmin_disc_confirm','¿Desconectar Garmin? Se eliminarán las credenciales guardadas.'))) return;
+  apiFetch('/athlete/garmin-credentials', { method:'DELETE' })
+    .then(function(){ toast(_t('app_conn_garmin_disc_ok','Garmin desconectado')); loadProfileConnections(); })
+    .catch(function(){ toast(_t('app_conn_garmin_err','Error conectando Garmin'),'err'); });
+}
+
+/* Strava: mismo flujo que stravaConnect() de athlete_profile.html, con
+   ?client=mobile para que el callback vuelva a esta página. */
+function stravaConnectMobile(){
+  apiFetch('/strava/connect?client=mobile', { redirect:'manual' })
+    .then(function(r){
+      if(r.type === 'opaqueredirect' || r.status === 0){
+        window.location.href = API + '/strava/connect?client=mobile';
+        return;
+      }
+      return r.json().then(function(d){
+        var msg = (d.errors && d.errors[0] && d.errors[0].message) || _t('app_conn_strava_unavail','Strava no está disponible en este momento.');
+        toast(msg,'err');
+      });
+    })
+    .catch(function(){ toast(_t('app_conn_strava_err','No se pudo conectar con Strava'),'err'); });
+}
+
+/* Vuelta del OAuth de Strava: el backend redirige a athlete-app.html?strava=…
+   Muestra el toast y limpia el parámetro de la URL. */
+function _handleStravaReturn(){
+  var url = new URL(window.location.href);
+  var s = url.searchParams.get('strava');
+  if(!s) return;
+  var msgs = {
+    connected: ['app_conn_strava_ok','Strava conectado ✓',''],
+    denied:    ['app_conn_strava_denied','Strava: autorización cancelada','err'],
+    error:     ['app_conn_strava_err','No se pudo conectar con Strava','err']
+  };
+  var m = msgs[s];
+  if(m) toast(_t(m[0], m[1]), m[2]);
+  url.searchParams.delete('strava');
+  window.history.replaceState(null, '', url.pathname + (url.search || '') + url.hash);
 }
 
 function saveProfileMobile(){
@@ -7958,6 +8072,7 @@ function refreshGarminSync(){
 
 /* ── Boot ────────────────────────────────────────────────── */
 (function(){
+  _handleStravaReturn();
   var tok = getToken();
   if(tok){
     initApp(tok);
