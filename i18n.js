@@ -14,6 +14,13 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    dash_readiness_calc: "Readiness calculado con ",
+    dash_readiness_data: "% de datos disponibles.",
+    dash_no_plan_tag: " <small style=\"color:var(--dim)\">sin plan</small>",
+    dash_km_no_plan: "km <small style=\"color:var(--dim)\">sin plan</small>",
+    dash_compliance_week: "Adherencia semana",
+    dash_no_workouts_week: "<div class=\"cp-empty\">No hay entrenamientos asignados esta semana</div>",
+    dash_no_notifs_html: "<div class=\"dhx-bell-empty\">Sin notificaciones todavía</div>",
     dtw_range_label: "Rango del período: <em>",
     dtw_ctl_growth: "</em>. La mejora sostenida de CTL requiere incrementos del 5-8% semanal sin superar ATL × 1.3.",
     dtw_ctl_hold: "Mantén esta carga base durante al menos 6-8 semanas antes de iniciar el bloque específico de carrera.",
@@ -2325,6 +2332,13 @@ var DICT = {
   },
 
   pt: {
+    dash_readiness_calc: "Prontidão calculada com ",
+    dash_readiness_data: "% dos dados disponíveis.",
+    dash_no_plan_tag: " <small style=\"color:var(--dim)\">sem plano</small>",
+    dash_km_no_plan: "km <small style=\"color:var(--dim)\">sem plano</small>",
+    dash_compliance_week: "Aderência semana",
+    dash_no_workouts_week: "<div class=\"cp-empty\">Não há treinos atribuídos nesta semana</div>",
+    dash_no_notifs_html: "<div class=\"dhx-bell-empty\">Sem notificações por enquanto</div>",
     dtw_range_label: "Intervalo do período: <em>",
     dtw_ctl_growth: "</em>. A melhora sustentada do CTL exige aumentos de 5-8% por semana sem superar ATL × 1.3.",
     dtw_ctl_hold: "Mantenha esta carga base por pelo menos 6-8 semanas antes de iniciar o bloco específico de prova.",
@@ -4606,6 +4620,13 @@ var DICT = {
   },
 
   en: {
+    dash_readiness_calc: "Readiness calculated from ",
+    dash_readiness_data: "% of data available.",
+    dash_no_plan_tag: " <small style=\"color:var(--dim)\">no plan</small>",
+    dash_km_no_plan: "km <small style=\"color:var(--dim)\">no plan</small>",
+    dash_compliance_week: "Weekly adherence",
+    dash_no_workouts_week: "<div class=\"cp-empty\">No workouts assigned this week</div>",
+    dash_no_notifs_html: "<div class=\"dhx-bell-empty\">No notifications yet</div>",
     dtw_range_label: "Period range: <em>",
     dtw_ctl_growth: "</em>. Sustained CTL gains need 5-8% weekly increases without exceeding ATL × 1.3.",
     dtw_ctl_hold: "Hold this base load for at least 6-8 weeks before starting the race-specific block.",
