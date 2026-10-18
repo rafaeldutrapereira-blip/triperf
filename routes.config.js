@@ -13,7 +13,7 @@
   var MODULES = [
     /* ── Uso diario ───────────────────────────────────── */
     {
-      group:   'daily',
+      group:   'entrenar',
       id:      'dashboard',
       tier:    'core',
       addonId: null,
@@ -27,7 +27,7 @@
       public:  false
     },
     {
-      group:   'daily',
+      group:   'entrenar',
       id:      'training_plan',
       tier:    'core',
       addonId: null,
@@ -41,7 +41,21 @@
       public:  false
     },
     {
-      group:   'daily',
+      group:   'entrenar',
+      id:      'indoor_workout',
+      tier:    'addon',
+      addonId: 'indoor',
+      file:    'indoor_workout.html',
+      label:   'Indoor',
+      labelI18n: 'nav_indoor',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      minPlan: 'elite',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      group:   'entrenar',
       id:      'ai_coach',
       tier:    'addon',
       addonId: 'asistente_ia',
@@ -54,9 +68,8 @@
       sidebar: true,
       public:  false
     },
-    /* ── Seguimiento y salud ──────────────────────────── */
     {
-      group:   'health',
+      group:   'recuperar',
       id:      'recovery',
       tier:    'core',
       addonId: null,
@@ -70,7 +83,7 @@
       public:  false
     },
     {
-      group:   'health',
+      group:   'recuperar',
       id:      'mental',
       tier:    'core',
       addonId: null,
@@ -84,7 +97,7 @@
       public:  false
     },
     {
-      group:   'health',
+      group:   'recuperar',
       id:      'nutrition',
       tier:    'core',
       addonId: null,
@@ -98,7 +111,7 @@
       public:  false
     },
     {
-      group:   'health',
+      group:   'recuperar',
       id:      'blood_labs',
       tier:    'addon',
       addonId: 'labs',
@@ -112,22 +125,7 @@
       public:  false
     },
     {
-      group:   'health',
-      id:      'training_detail',
-      tier:    'core',
-      addonId: null,
-      file:    'training_detail.html',
-      label:   'Sesión',
-      labelI18n: 'nav_session',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-      minPlan: 'elite',
-      roles:   ['athlete','coach','admin'],
-      sidebar: false,
-      public:  false
-    },
-    /* ── Objetivo y comunidad ─────────────────────────── */
-    {
-      group:   'goal',
+      group:   'planear',
       id:      'race_day',
       tier:    'core',
       addonId: null,
@@ -140,10 +138,8 @@
       sidebar: true,
       public:  false
     },
-    /* race_predictor.html fusionado en race_day.html (Generar Plan: confianza+rango,
-       meta vs predicción, condición de agua) — ver [[project-labx-huella-yir-merge]] */
     {
-      group:   'goal',
+      group:   'planear',
       id:      'huella',
       tier:    'addon',
       addonId: 'retrospectiva',
@@ -156,27 +152,12 @@
       sidebar: true,
       public:  false
     },
-    /* year_in_review.html fusionado en huella.html (Mi Huella) — ver [[project-labx-huella-yir-merge]] */
-    {
-      group:   'goal',
-      id:      'community',
-      tier:    'core',
-      addonId: null,
-      file:    'community.html',
-      label:   'Comunidad',
-      labelI18n: 'nav_community',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
-      minPlan: 'basic',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
     {
       /* Movido de 'health' a 'goal' 2026-08-14, pedido explícito del
          usuario: Analytics/Performance encajan mejor junto a
          Race Day/Mi Huella/Comunidad que junto a Recuperación/Mental/
          Nutrición/Labs. */
-      group:   'goal',
+      group:   'analizar',
       id:      'analytics',
       tier:    'core',
       addonId: null,
@@ -196,7 +177,7 @@
          detalle.html?metric=pmc ya es la versión completa/dedicada del
          mismo gráfico, no hacía falta duplicarlo. Movido de 'health' a
          'goal' 2026-08-14, junto con Analytics. */
-      group:   'goal',
+      group:   'analizar',
       id:      'performance',
       tier:    'core',
       addonId: null,
@@ -209,52 +190,8 @@
       sidebar: false,
       public:  false
     },
-    /* ── Herramientas puntuales ───────────────────────── */
     {
-      group:   'tools',
-      id:      'adaptive',
-      tier:    'addon',
-      addonId: 'ajustes_adaptativos',
-      file:    'adaptive.html',
-      label:   'Adaptativo',
-      labelI18n: 'nav_adaptive',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-      minPlan: 'elite',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      group:   'tools',
-      id:      'indoor_workout',
-      tier:    'addon',
-      addonId: 'indoor',
-      file:    'indoor_workout.html',
-      label:   'Indoor',
-      labelI18n: 'nav_indoor',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-      minPlan: 'elite',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    {
-      group:   'tools',
-      id:      'gear',
-      tier:    'core',
-      addonId: null,
-      file:    'gear.html',
-      label:   'Mi Equipo',
-      labelI18n: 'nav_gear',
-      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
-      minPlan: 'basic',
-      roles:   ['athlete','coach','admin'],
-      sidebar: true,
-      public:  false
-    },
-    /* ── Cuenta ────────────────────────────────────────── */
-    {
-      group:   'account',
+      group:   'cuenta',
       id:      'athlete_profile',
       tier:    'core',
       addonId: null,
@@ -268,7 +205,35 @@
       public:  false
     },
     {
-      group:   'account',
+      group:   'cuenta',
+      id:      'gear',
+      tier:    'core',
+      addonId: null,
+      file:    'gear.html',
+      label:   'Mi Equipo',
+      labelI18n: 'nav_gear',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
+      minPlan: 'basic',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      group:   'cuenta',
+      id:      'community',
+      tier:    'core',
+      addonId: null,
+      file:    'community.html',
+      label:   'Comunidad',
+      labelI18n: 'nav_community',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
+      minPlan: 'basic',
+      roles:   ['athlete','coach','admin'],
+      sidebar: true,
+      public:  false
+    },
+    {
+      group:   'cuenta',
       id:      'athlete_app',
       tier:    'core',
       addonId: null,
@@ -281,9 +246,8 @@
       sidebar: false,
       public:  false
     },
-    /* ── Solo Coach / Admin ──────────────────────────── */
     {
-      group:   'account',
+      group:   'coach',
       id:      'coach',
       tier:    'role',
       addonId: null,
@@ -296,6 +260,42 @@
       sidebar: true,
       public:  false
     },
+    {
+      group:   'entrenar',
+      id:      'adaptive',
+      tier:    'addon',
+      addonId: 'ajustes_adaptativos',
+      file:    'adaptive.html',
+      label:   'Adaptativo',
+      labelI18n: 'nav_adaptive',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+      minPlan: 'elite',
+      roles:   ['athlete','coach','admin'],
+      sidebar: false,
+      public:  false
+    },
+    {
+      group:   'recuperar',
+      id:      'training_detail',
+      tier:    'core',
+      addonId: null,
+      file:    'training_detail.html',
+      label:   'Sesión',
+      labelI18n: 'nav_session',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+      minPlan: 'elite',
+      roles:   ['athlete','coach','admin'],
+      sidebar: false,
+      public:  false
+    },
+    /* ── Seguimiento y salud ──────────────────────────── */
+    /* ── Objetivo y comunidad ─────────────────────────── */
+    /* race_predictor.html fusionado en race_day.html (Generar Plan: confianza+rango,
+       meta vs predicción, condición de agua) — ver [[project-labx-huella-yir-merge]] */
+    /* year_in_review.html fusionado en huella.html (Mi Huella) — ver [[project-labx-huella-yir-merge]] */
+    /* ── Herramientas puntuales ───────────────────────── */
+    /* ── Cuenta ────────────────────────────────────────── */
+    /* ── Solo Coach / Admin ──────────────────────────── */
     /* ── Páginas sin sidebar (públicas o utilitarias) ───── */
     { id:'landing',    file:'landing.html',    sidebar:false, public:true  },
     { id:'login',      file:'login.html',      sidebar:false, public:true  },

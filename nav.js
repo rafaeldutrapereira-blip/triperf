@@ -147,11 +147,12 @@
        primer ítem VISIBLE de cada grupo (si un grupo entero quedara oculto
        para este rol, no deja un divisor "flotando" sin ítems debajo). */
     var GROUP_LABELS = {
-      daily:   { i18n: 'nav_group_daily',   label: 'Uso diario' },
-      health:  { i18n: 'nav_group_health',  label: 'Seguimiento y salud' },
-      goal:    { i18n: 'nav_group_goal',    label: 'Objetivo y comunidad' },
-      tools:   { i18n: 'nav_group_tools',   label: 'Herramientas' },
-      account: { i18n: 'nav_group_account', label: 'Cuenta' }
+      entrenar:  { i18n: 'nav_group_entrenar',  label: 'Entrenar' },
+      recuperar: { i18n: 'nav_group_recuperar', label: 'Recuperar' },
+      planear:   { i18n: 'nav_group_planear',   label: 'Planear' },
+      analizar:  { i18n: 'nav_group_analizar',  label: 'Analizar' },
+      cuenta:    { i18n: 'nav_group_account',   label: 'Cuenta' },
+      coach:     { i18n: 'nav_group_coach',     label: 'Coach' }
     };
     var lastGroup = null;
 
