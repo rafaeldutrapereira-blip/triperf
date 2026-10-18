@@ -8,54 +8,6 @@
    api/tests/test_backend_i18n_mapping.py. */
 var LX_BE_ENTRIES = [
  [
-  "Todo en rango normal",
-  "be_001"
- ],
- [
-  "Tu entrenamiento y tu recuperación están dentro de lo esperado hoy.",
-  "be_002"
- ],
- [
-  "Recomendación: seguí tu plan con normalidad.",
-  "be_003"
- ],
- [
-  "Ningún indicador de fatiga o mala recuperación está activo",
-  "be_004"
- ],
- [
-  "Ninguno de tus indicadores de carga o recuperación está fuera de rango",
-  "be_005"
- ],
- [
-  "Estás en tu mejor momento de forma y tu recuperación se ve estable.",
-  "be_006"
- ],
- [
-  "Recomendación: buen día para una sesión de calidad o un test.",
-  "be_007"
- ],
- [
-  "Buen momento para exigir",
-  "be_008"
- ],
- [
-  "Fresco, pero por baja carga",
-  "be_009"
- ],
- [
-  "Recomendación: retomá el plan gradualmente",
-  "be_010"
- ],
- [
-  "Recomendación: retomá el plan gradualmente en vez de forzar una sesión muy exigente hoy.",
-  "be_011"
- ],
- [
-  "Ver tu plan de la semana",
-  "be_012"
- ],
- [
   "Sin datos suficientes para ACWR",
   "be_013"
  ],
@@ -66,178 +18,6 @@ var LX_BE_ENTRIES = [
  [
   "⚠️ Alto riesgo de lesión",
   "be_015"
- ],
- [
-  "Riesgo de lesión",
-  "be_016"
- ],
- [
-  "Recomendación: bajale el volumen o la intensidad hoy para reducir el riesgo de lesión.",
-  "be_017"
- ],
- [
-  "Carga semanal muy por encima de tu promedio de 28 días",
-  "be_018"
- ],
- [
-  "Recomendación: reducí volumen o intensidad hoy",
-  "be_019"
- ],
- [
-  "Ver ACWR por disciplina",
-  "be_020"
- ],
- [
-  "Ver detalle de riesgo de lesión",
-  "be_021"
- ],
- [
-  "Recomendación: priorizá recuperación antes de sumar más intensidad.",
-  "be_022"
- ],
- [
-  "Recomendación: priorizá recuperación antes de sumar más intensidad",
-  "be_023"
- ],
- [
-  "Venís acumulando cansancio por varios días seguidos de entrenamiento exigente.",
-  "be_024"
- ],
- [
-  "Recomendación: mantené la intensidad baja y priorizá el descanso esta semana.",
-  "be_025"
- ],
- [
-  "Recomendación: intensidad baja y priorizá descanso esta semana para no entrar en sobreentrenamiento",
-  "be_026"
- ],
- [
-  "Compone: ACWR 35% · HRV 30% · Monotonía de entrenamiento 20% · Marcadores de sangre 15%",
-  "be_027"
- ],
- [
-  "ACWR aislado hoy: {acwr} — se ve en rango por sí solo",
-  "be_028"
- ],
- [
-  "Recomendación: monitoreá cómo te sentís antes de una sesión exigente",
-  "be_029"
- ],
- [
-  "Presta atención a tu recuperación",
-  "be_030"
- ],
- [
-  "Recomendación: sesión suave o descanso hoy — evitá los intervalos de alta intensidad.",
-  "be_031"
- ],
- [
-  "Tu cuerpo no se recuperó bien anoche y venís acumulando cansancio de varios días.",
-  "be_032"
- ],
- [
-  "Recomendación: sesión aeróbica suave o descanso — evitá intervalos de alta intensidad",
-  "be_033"
- ],
- [
-  "Sueño anoche: por debajo de lo habitual",
-  "be_034"
- ],
- [
-  "Ver protocolo de recuperación sugerido",
-  "be_035"
- ],
- [
-  "Subiste tu carga de entrenamiento muy rápido esta semana respecto a tus semanas previas.",
-  "be_036"
- ],
- [
-  "Recomendación: bajale el ritmo en {label} esta semana.",
-  "be_037"
- ],
- [
-  "Riesgo de lesión en {label}",
-  "be_038"
- ],
- [
-  "ACWR general: {acwr} ({zona}) — en rango",
-  "be_039"
- ],
- [
-  "ACWR {label}: {acwr} (zona de riesgo, >1.5)",
-  "be_040"
- ],
- [
-  "Carga física: TSB {tsb}, ACWR {acwr} — en rango razonable",
-  "be_041"
- ],
- [
-  "Carga de entrenamiento: TSB {tsb}, ACWR {acwr} — todavía en rango razonable",
-  "be_042"
- ],
- [
-  "TSB {tsb} y ACWR {acwr} — ambos en rango saludable",
-  "be_043"
- ],
- [
-  "TSB +{tsb} — por encima del umbral de forma óptima (+15)",
-  "be_044"
- ],
- [
-  "ACWR {acwr} — dentro del rango seguro (0.8–1.3), no viene de entrenar de menos",
-  "be_045"
- ],
- [
-  "TSB {tsb} — dentro del rango normal (-8 a +15): ni fatiga excesiva ni forma pico",
-  "be_046"
- ],
- [
-  "ACWR {acwr} — dentro del rango seguro (0.8–1.3)",
-  "be_047"
- ],
- [
-  "HRV de anoche: {hrv}ms — estable",
-  "be_048"
- ],
- [
-  "HRV de anoche: {hrv}ms — bajó",
-  "be_049"
- ],
- [
-  "FC en reposo: {rhr}bpm — subió",
-  "be_050"
- ],
- [
-  "tu recuperación nocturna bajó",
-  "be_051"
- ],
- [
-  "dormiste menos de lo habitual",
-  "be_052"
- ],
- [
-  "tu frecuencia cardíaca en reposo subió",
-  "be_053"
- ],
- [
-  "Mental Fatigue Score: {score}/100 (check-in de mental.html)",
-  "be_054"
- ],
- [
-  "Cumplimiento del plan esta semana: {pct}%",
-  "be_055"
- ],
- [
-  "TSB (forma): {tsb} — nivel de fatiga alto",
-  "be_056"
- ],
- [
-  "ATL (carga aguda): {atl} — varios días de carga sostenida",
-  "be_057"
- ],
- [
-  "TSB (forma): {tsb} — con fatiga acumulada (ATL {atl})",
-  "be_058"
  ],
  [
   "Fatiga acumulada",
@@ -254,30 +34,6 @@ var LX_BE_ENTRIES = [
  [
   "Estado de forma óptimo",
   "be_062"
- ],
- [
-  "Reducir carga hoy",
-  "be_063"
- ],
- [
-  "Ver histórico de carga",
-  "be_064"
- ],
- [
-  "Ver histórico PMC",
-  "be_065"
- ],
- [
-  "Fatiga mental (check-in)",
-  "be_066"
- ],
- [
-  "Sueño anoche",
-  "be_067"
- ],
- [
-  "HRV anoche",
-  "be_068"
  ],
  [
   "TSB {tsb} indica fatiga acumulada severa. Descanso obligatorio.",
@@ -626,10 +382,6 @@ var LX_BE_ENTRIES = [
  [
   "Objetivo: {carb_g_h}g carbohidratos/hora durante las partes activas.",
   "be_155"
- ],
- [
-  "TSB (forma)",
-  "be_156"
  ],
  [
   "Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.",
