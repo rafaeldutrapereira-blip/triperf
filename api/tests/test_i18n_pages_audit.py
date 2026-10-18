@@ -87,10 +87,6 @@ _FORBIDDEN_LITERALS = [
     ("reset-password.html", "msg.textContent = ex.message;"),
     ("reset-password.html", "msg.textContent='Las contraseñas no coinciden.'"),
     ("reset-password.html", '<div class="card-sub">Elige una'),
-    # dashboard-alt.html (2026-10-18)
-    ("dashboard-alt.html", "label: 'TSS Semana'"),
-    ("dashboard-alt.html", "zoneLabel = 'Óptimo';"),
-    ("dashboard-alt.html", "var DOW = ['Lun'"),
     # huella.html (2026-10-18)
     ("huella.html", "toLocaleString('es-CL')"),
     ("huella.html", "label:'Carga total'"),
@@ -109,8 +105,8 @@ def test_audited_pages_have_no_hardcoded_spanish_literal(page, fragment):
 
 # Paginas ya auditadas: ningun caracter U+FFFD (mojibake) fuera de comentarios.
 _MOJIBAKE_CLEAN_PAGES = [
-    "training_plan.html", "gear.html", "reset-password.html", "dashboard-alt.html",
-    "huella.html", "analytics.html", "year_in_review.html", "race_predictor.html",
+    "training_plan.html", "gear.html", "reset-password.html",
+    "huella.html", "analytics.html",
 ]
 
 

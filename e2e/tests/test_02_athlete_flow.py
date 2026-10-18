@@ -279,7 +279,7 @@ def test_year_in_review_carga(page: Page, athlete_api):
     page.goto(f"{BASE_URL}/login.html")
     _inject_auth(page, athlete_api._token)
 
-    page.goto(f"{BASE_URL}/year_in_review.html")
+    page.goto(f"{BASE_URL}/huella.html")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -356,13 +356,13 @@ def test_race_predictor_carga(page: Page, athlete_api):
     page.goto(f"{BASE_URL}/login.html")
     _inject_auth(page, athlete_api._token)
 
-    page.goto(f"{BASE_URL}/race_predictor.html")
+    page.goto(f"{BASE_URL}/race_day.html")
     page.wait_for_load_state("networkidle")
 
     page.wait_for_load_state("networkidle", timeout=8000)
     body_text = page.locator("body").inner_text()
     assert any(kw in body_text for kw in ["predictor", "Predictor", "carrera", "Carrera", "race", "Race", "año", "Año"]), \
-        f"Race predictor page seems empty. Body: {body_text[:300]}"
+        f"Race day page seems empty. Body: {body_text[:300]}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

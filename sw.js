@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '208';  // 2026-10-18: B1 gating de plan (routes.config.js: normPlan basico/basic, sidebar:false sí se valida, detalle con plan)
+var BUILD_VERSION = '209';  // 2026-10-18: B1 gating de plan (routes.config.js: normPlan basico/basic, sidebar:false sí se valida, detalle con plan)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -16,7 +16,6 @@ var PRECACHE = [
   '/nav.js',
   '/login.html',
   '/dashboard.html',
-  '/year_in_review.html',
   '/analytics.html',
   '/training_plan.html',
   '/auth.js',
