@@ -105,3 +105,21 @@ def test_audited_pages_have_no_hardcoded_spanish_literal(page, fragment):
         f"{page} todavia contiene el literal en espanol {fragment!r}; "
         "debe pasar por _t('clave', 'fallback') o data-i18n."
     )
+
+
+# Paginas ya auditadas: ningun caracter U+FFFD (mojibake) fuera de comentarios.
+_MOJIBAKE_CLEAN_PAGES = [
+    "training_plan.html", "gear.html", "reset-password.html", "dashboard-alt.html",
+    "huella.html", "analytics.html", "year_in_review.html", "race_predictor.html",
+]
+
+
+@pytest.mark.parametrize("page", _MOJIBAKE_CLEAN_PAGES)
+def test_audited_pages_have_no_mojibake_outside_comments(page):
+    comment_start = re.compile(r"\s*(//|/\*|<!--|\*)")
+    bad = [
+        (i + 1, line.strip()[:100])
+        for i, line in enumerate((REPO_ROOT / page).read_text(encoding="utf-8").split("\n"))
+        if "�" in line and not comment_start.match(line)
+    ]
+    assert not bad, f"{page} tiene U+FFFD (mojibake) en codigo visible: {bad}"
