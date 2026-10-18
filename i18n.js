@@ -14,6 +14,12 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    dh_mark_read: "Marcar leídas",
+    dash_week_plan: "Plan de la Semana",
+    dash_unlock_your: "Desbloquea tu",
+    dash_feat_squad: "Squad Overview — riesgo de tus atletas",
+    dash_feat_prescribe: "Prescripción de entrenamientos",
+    dash_feat_messages: "Mensajería con tus atletas",
     dtw_chart_evolution: "Evolución",
     dtw_ctl_now: "CTL actual de ",
     dtw_ctl_base: "base aeróbica",
@@ -2275,6 +2281,12 @@ var DICT = {
   },
 
   pt: {
+    dh_mark_read: "Marcar como lidas",
+    dash_week_plan: "Plano da Semana",
+    dash_unlock_your: "Desbloqueie seu",
+    dash_feat_squad: "Squad Overview — risco dos seus atletas",
+    dash_feat_prescribe: "Prescrição de treinos",
+    dash_feat_messages: "Mensagens com seus atletas",
     dtw_chart_evolution: "Evolução",
     dtw_ctl_now: "CTL atual de ",
     dtw_ctl_base: "base aeróbica",
@@ -4506,6 +4518,12 @@ var DICT = {
   },
 
   en: {
+    dh_mark_read: "Mark as read",
+    dash_week_plan: "Week Plan",
+    dash_unlock_your: "Unlock your",
+    dash_feat_squad: "Squad Overview — risk for your athletes",
+    dash_feat_prescribe: "Workout prescription",
+    dash_feat_messages: "Messaging with your athletes",
     dtw_chart_evolution: "Trend",
     dtw_ctl_now: "Current CTL of ",
     dtw_ctl_base: "aerobic base",
