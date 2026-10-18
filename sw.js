@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '197';  // 2026-10-18: etiquetas de nivel del backend y panel ACWR traducidos
+var BUILD_VERSION = '198';  // 2026-10-18: panel del insight traducido (titular, detalle, drivers, encabezados)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
