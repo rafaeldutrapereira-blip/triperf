@@ -1,4 +1,5 @@
 function _lxInfoT(k,fb){ var v = window.i18n ? window.i18n.t(k) : null; return (v && v !== k) ? v : fb; }
+function _lxBe(t){ return window.lxBeT ? window.lxBeT(t) : t; }
 /**
  * lx-info.js — Sistema universal de tooltips informativos para LabX
  * Panel lateral contextual con definición + rango + interpretación del valor actual.
@@ -544,7 +545,7 @@ function _render(metricId, currentValue){
   if(pmcData){
     var pcol = activeRange ? activeRange.color : '#F9FAFB';
     html += '<div class="li-current-box" style="background:'+pcol+'12;border-color:'+pcol+'33">'
-      +'<div class="li-cb-label">Tu estado actual</div>'
+      +'<div class="li-cb-label">'+_lxInfoT('info_tu_estado','Tu estado actual')+'</div>'
       +'<div style="display:flex;gap:1.2rem;margin:.35rem 0 .6rem">'
         +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">CTL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#10B981">'+(pmcData.ctl!=null?Math.round(pmcData.ctl):'—')+'</div></div>'
         +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">ATL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#FF6535">'+(pmcData.atl!=null?Math.round(pmcData.atl):'—')+'</div></div>'
@@ -562,13 +563,13 @@ function _render(metricId, currentValue){
   } else if(rdData){
     var rcol = rdData.drs_color || (activeRange ? activeRange.color : '#F9FAFB');
     html += '<div class="li-current-box" style="background:'+rcol+'12;border-color:'+rcol+'33">'
-      +'<div class="li-cb-label">Tu estado actual</div>'
+      +'<div class="li-cb-label">'+_lxInfoT('info_tu_estado','Tu estado actual')+'</div>'
       +'<div class="li-cb-val" style="color:'+rcol+'">'+(rdData.drs!=null?Math.round(rdData.drs):'—')+' <span style="font-size:1rem;font-weight:400;color:#6B7280">/ 100</span></div>'
       +'<div class="li-cb-interp"><strong style="color:'+rcol+'">'+(rdData.drs_emoji?rdData.drs_emoji+' ':'')+(rdData.drs_label||(activeRange?activeRange.label:''))+'</strong>'+(rdData.recommendation?' — '+rdData.recommendation:'')+'</div>'
       +'</div>';
 
     if(rdData.dimensions && rdData.dimensions.length){
-      html += '<div class="li-section-title">Desglose de tus 4 dimensiones</div>';
+      html += '<div class="li-section-title">'+_lxInfoT('info_desglose','Desglose de tus 4 dimensiones')+'</div>';
       html += '<div class="li-range-bar">';
       rdData.dimensions.forEach(function(d){
         var isLimiter = rdData.primary_limiter && d.name === rdData.primary_limiter;
@@ -576,38 +577,38 @@ function _render(metricId, currentValue){
           +'<div class="li-range-dot" style="background:'+d.color+'"></div>'
           +'<div style="flex:1">'
           +'<div class="li-range-label" style="color:'+d.color+';display:flex;justify-content:space-between;gap:.5rem">'
-          +'<span>'+(isLimiter?'▶ ':'')+d.name+' <span style="font-size:.65rem;font-weight:400;color:#6B7280">('+d.weight_pct+'% del total)</span></span>'
-          +'<span>'+(d.available ? Math.round(d.score) : 'Sin datos')+'</span>'
+          +'<span>'+(isLimiter?'▶ ':'')+d.name+' <span style="font-size:.65rem;font-weight:400;color:#6B7280">('+d.weight_pct+'% '+_lxInfoT('info_del_total','del total')+')</span></span>'
+          +'<span>'+(d.available ? Math.round(d.score) : _lxInfoT('status_no_data','Sin datos'))+'</span>'
           +'</div>'
-          +'<div class="li-range-advice">'+d.label+(isLimiter?' — tu limitante principal hoy':'')+'</div>'
+          +'<div class="li-range-advice">'+d.label+(isLimiter?' — '+_lxInfoT('info_limitante','tu limitante principal hoy'):'')+'</div>'
           +'</div></div>';
       });
       html += '</div>';
     }
     if(rdData.training_guidance){
-      html += '<div class="li-section-title">Guía para hoy</div>';
+      html += '<div class="li-section-title">'+_lxInfoT('info_guia_hoy','Guía para hoy')+'</div>';
       html += '<div class="li-def" style="font-size:.8rem">'+rdData.training_guidance+'</div>';
     }
   } else if(inData){
     var sevColors = {reduce:'#EF4444', caution:'#F59E0B', good:'#10B981', neutral:'#6B7280'};
     var icol = sevColors[inData.severity] || sevColors.neutral;
     html += '<div class="li-current-box" style="background:'+icol+'12;border-color:'+icol+'33">'
-      +'<div class="li-cb-label">Tu insight de hoy</div>'
-      +'<div class="li-cb-interp"><strong style="color:'+icol+'">'+(inData.headline||'')+'</strong></div>'
-      +'<div class="li-def" style="font-size:.8rem;margin-top:.4rem">'+(inData.message||'')+'</div>'
+      +'<div class="li-cb-label">'+_lxInfoT('info_tu_insight','Tu insight de hoy')+'</div>'
+      +'<div class="li-cb-interp"><strong style="color:'+icol+'">'+_lxBe(inData.headline||'')+'</strong></div>'
+      +'<div class="li-def" style="font-size:.8rem;margin-top:.4rem">'+_lxBe(inData.message||'')+'</div>'
       +(function(){
         // message_technical es una lista de bullets (antes era un string
         // suelto) — se compacta acá con " · " porque este popup es chico,
         // no vale la pena una lista <ul> completa como en el card grande.
         var tech = inData.message_technical;
-        var techStr = Array.isArray(tech) ? tech.join(' · ') : (tech || '');
+        var techStr = Array.isArray(tech) ? tech.map(_lxBe).join(' · ') : _lxBe(tech || '');
         if(!techStr || techStr === inData.message) return '';
-        return '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>Detalle técnico:</strong> '+techStr+'</div>';
+        return '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>'+_lxInfoT('info_detalle_tecnico','Detalle técnico:')+'</strong> '+techStr+'</div>';
       })()
       +'</div>';
 
     if(inData.drivers && inData.drivers.length){
-      html += '<div class="li-section-title">Señales que se cruzaron para esta recomendación</div>';
+      html += '<div class="li-section-title">'+_lxInfoT('info_senales','Señales que se cruzaron para esta recomendación')+'</div>';
       html += '<div class="li-range-bar">';
       var toneColors = {bad:'#EF4444', caution:'#F59E0B', good:'#10B981', neutral:'#6B7280'};
       inData.drivers.forEach(function(dr){
@@ -616,7 +617,7 @@ function _render(metricId, currentValue){
           +'<div class="li-range-dot" style="background:'+dcol+'"></div>'
           +'<div style="flex:1">'
           +'<div class="li-range-label" style="color:'+dcol+';display:flex;justify-content:space-between;gap:.5rem">'
-          +'<span>'+dr.label+'</span><span>'+dr.value+(dr.delta?' '+dr.delta:'')+'</span>'
+          +'<span>'+_lxBe(dr.label)+'</span><span>'+dr.value+(dr.delta?' '+dr.delta:'')+'</span>'
           +'</div>'
           +'</div></div>';
       });
@@ -640,7 +641,7 @@ function _render(metricId, currentValue){
   // Fórmula / método
   if(m.formula){
     html += '<div class="li-section-title">'+_lxInfoT('info_como_calcula','Cómo se calcula')+'</div>';
-    html += '<div class="li-formula">'+m.formula+'</div>';
+    html += '<div class="li-formula">'+_li('formula', m.formula)+'</div>';
   }
 
   // Cruces de líneas (específico de PMC)
