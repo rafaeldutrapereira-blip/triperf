@@ -264,7 +264,7 @@
     { id:'registro',   file:'registro.html',   sidebar:false, public:true  },
     { id:'onboarding', file:'onboarding.html', sidebar:false, public:false },
     { id:'gps_tracker',file:'gps_tracker.html',sidebar:false, public:false },
-    { id:'detalle',    file:'detalle.html',    sidebar:false, public:false },
+    { id:'detalle',    file:'detalle.html',    minPlan:'basic', sidebar:false, public:false },
     { id:'privacy',    file:'privacy.html',    sidebar:false, public:true  },
     { id:'tos',        file:'tos.html',        sidebar:false, public:true  }
   ];
@@ -293,9 +293,16 @@
   var _byFile = {};
   MODULES.forEach(function(m){ if(m.file) _byFile[m.file] = m; });
 
+  /* La BD (y el servidor) guardan 'basico'; el catálogo usa 'basic'.
+     Se normaliza en un solo punto para no depender del fallback. */
+  function normPlan(plan) {
+    var p = String(plan || '').toLowerCase();
+    return p === 'basico' ? 'basic' : p;
+  }
+
   /* Lista de módulos permitidos para un plan (incluye herencia) */
   function allowedForPlan(plan) {
-    var planIdx = PLAN_HIERARCHY.indexOf(plan);
+    var planIdx = PLAN_HIERARCHY.indexOf(normPlan(plan));
     if (planIdx === -1) planIdx = 0; /* fallback a basic */
     return MODULES.filter(function(m) {
       if (!m.minPlan) return true;
@@ -322,7 +329,7 @@
 
     /* Para todos los demás módulos: verificar plan únicamente.
        La API puede devolver 'atleta' o 'athlete' — ambos son atletas. */
-    var plan = session.plan || 'basic';
+    var plan = normPlan(session.plan || 'basic');
     return allowedForPlan(plan).indexOf(moduleId) !== -1;
   }
 
@@ -372,7 +379,7 @@
     }
 
     /* Verificar acceso al módulo */
-    if (mod.sidebar !== false && mod.id && !canAccess(sess, mod.id)) {
+    if (mod.id && !canAccess(sess, mod.id)) {
       /* Evitar loop: si YA estamos en dashboard, no redirigir de nuevo */
       if (pageName === 'dashboard.html') return;
       window.location.replace('dashboard.html?locked=' + encodeURIComponent(mod.id));
@@ -390,6 +397,7 @@
     byId:             _byId,
     byFile:           _byFile,
     allowedForPlan:   allowedForPlan,
+    normPlan:         normPlan,
     canAccess:        canAccess,
     requiredPlanLabel: requiredPlanLabel,
     guard:            guard
