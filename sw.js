@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '198';  // 2026-10-18: panel del insight traducido (titular, detalle, drivers, encabezados)
+var BUILD_VERSION = '200';  // 2026-10-18: sync completo del backend, narrativa del insight nativa ES/PT/EN, merge de Alembic
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
