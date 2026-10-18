@@ -40,17 +40,12 @@ GATED = [
 
     ("GET",  "/api/races/goal-countdown", None, "agegroup"),
 
-    ("GET",  "/api/community/feed", None, "agegroup"),
 
-    ("GET",  "/api/community/groups", None, "agegroup"),
 
-    ("GET",  "/api/community/notifications/count", None, "agegroup"),
 
-    ("GET",  "/api/gear/shoes", None, "agegroup"),
 
     ("GET",  "/api/gear/bikes", None, "agegroup"),
 
-    ("GET",  "/api/gear/summary", None, "agegroup"),
 
     ("GET",  "/api/calendar/upcoming", None, "agegroup"),
 

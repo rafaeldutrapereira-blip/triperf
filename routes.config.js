@@ -166,7 +166,7 @@
       label:   'Comunidad',
       labelI18n: 'nav_community',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>',
-      minPlan: 'agegroup',
+      minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false
@@ -247,7 +247,7 @@
       label:   'Mi Equipo',
       labelI18n: 'nav_gear',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
-      minPlan: 'agegroup',
+      minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
       sidebar: true,
       public:  false

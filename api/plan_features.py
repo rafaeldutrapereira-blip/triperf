@@ -23,12 +23,12 @@ _PLAN_FEATURES: dict[str, set[str]] = {
     "agegroup": {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
-        "race_day", "race_predictor", "community", "year_in_review", "gear",
+        "race_day", "race_predictor", "community", "community_write", "year_in_review", "gear",
     },
     "elite": {
         "dashboard", "athlete_profile",
         "training_plan", "nutrition", "analytics", "recovery", "mental",
-        "race_day", "race_predictor", "community", "year_in_review", "gear",
+        "race_day", "race_predictor", "community", "community_write", "year_in_review", "gear",
         "blood_labs", "training_detail", "adaptive", "ai_coach", "indoor_workout",
     },
 }

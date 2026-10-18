@@ -76,7 +76,9 @@ from ..models import (
 
 logger = logging.getLogger("labx.community")
 
-router = APIRouter(prefix="/community", tags=["community"], dependencies=[Depends(require_feature("community"))])
+router = APIRouter(prefix="/community", tags=["community"])
+# Básico: lectura de Comunidad. Escrituras (posts, kudos, follows, grupos, retos, flags) requieren agegroup+.
+_COMMUNITY_WRITE = [Depends(require_feature("community_write"))]
 
 KUDO_TYPES = {"power", "fire", "trophy", "epic", "love"}
 VISIBILITY  = {"public", "followers", "coach_only", "private"}
@@ -255,7 +257,7 @@ def _serialize_group(g: CommunityGroup, viewer_id: str, db: Session) -> dict:
 # § FOLLOW SYSTEM
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.post("/follow/{target_user_id}", status_code=201)
+@router.post("/follow/{target_user_id}", dependencies=_COMMUNITY_WRITE, status_code=201)
 def follow_user(
     target_user_id: str,
     db: Session = Depends(get_db),
@@ -283,7 +285,7 @@ def follow_user(
     return {"ok": True, "following": target_user_id}
 
 
-@router.delete("/follow/{target_user_id}")
+@router.delete("/follow/{target_user_id}", dependencies=_COMMUNITY_WRITE)
 def unfollow_user(
     target_user_id: str,
     db: Session = Depends(get_db),
@@ -388,7 +390,7 @@ class _PostIn(BaseModel):
         return v
 
 
-@router.post("/posts", status_code=201)
+@router.post("/posts", dependencies=_COMMUNITY_WRITE, status_code=201)
 def create_post(
     body: _PostIn,
     db:   Session = Depends(get_db),
@@ -532,7 +534,7 @@ def get_post(
     return _serialize_post(post, me.id)
 
 
-@router.delete("/posts/{post_id}")
+@router.delete("/posts/{post_id}", dependencies=_COMMUNITY_WRITE)
 def delete_post(
     post_id: str,
     db:      Session = Depends(get_db),
@@ -564,7 +566,7 @@ class _KudoIn(BaseModel):
         return v
 
 
-@router.post("/posts/{post_id}/kudo", status_code=201)
+@router.post("/posts/{post_id}/kudo", dependencies=_COMMUNITY_WRITE, status_code=201)
 def give_kudo(
     post_id: str,
     body:    _KudoIn,
@@ -595,7 +597,7 @@ def give_kudo(
     return {"ok": True, "kudo_type": body.kudo_type, "kudo_count": kudo_count}
 
 
-@router.delete("/posts/{post_id}/kudo")
+@router.delete("/posts/{post_id}/kudo", dependencies=_COMMUNITY_WRITE)
 def remove_kudo(
     post_id:   str,
     kudo_type: str = Query(...),
@@ -633,7 +635,7 @@ class _CommentIn(BaseModel):
         return v
 
 
-@router.post("/posts/{post_id}/comments", status_code=201)
+@router.post("/posts/{post_id}/comments", dependencies=_COMMUNITY_WRITE, status_code=201)
 def add_comment(
     post_id: str,
     body:    _CommentIn,
@@ -676,7 +678,7 @@ def list_comments(
     return [_serialize_comment(c) for c in comments]
 
 
-@router.delete("/comments/{comment_id}")
+@router.delete("/comments/{comment_id}", dependencies=_COMMUNITY_WRITE)
 def delete_comment(
     comment_id: str,
     db:         Session = Depends(get_db),
@@ -715,7 +717,7 @@ class _GroupIn(BaseModel):
         return v
 
 
-@router.post("/groups", status_code=201)
+@router.post("/groups", dependencies=_COMMUNITY_WRITE, status_code=201)
 def create_group(
     body: _GroupIn,
     db:   Session = Depends(get_db),
@@ -787,7 +789,7 @@ def get_group(
     return _serialize_group(g, me.id, db)
 
 
-@router.post("/groups/{group_id}/join")
+@router.post("/groups/{group_id}/join", dependencies=_COMMUNITY_WRITE)
 def join_group(
     group_id:    str,
     invite_code: Optional[str] = Query(None),
@@ -813,7 +815,7 @@ def join_group(
     return {"ok": True, "group_id": group_id}
 
 
-@router.delete("/groups/{group_id}/leave")
+@router.delete("/groups/{group_id}/leave", dependencies=_COMMUNITY_WRITE)
 def leave_group(
     group_id: str,
     db:       Session = Depends(get_db),
@@ -984,7 +986,7 @@ class _ChallengeIn(BaseModel):
         return v
 
 
-@router.post("/groups/{group_id}/challenges", status_code=201)
+@router.post("/groups/{group_id}/challenges", dependencies=_COMMUNITY_WRITE, status_code=201)
 def create_challenge(
     group_id: str,
     body:     _ChallengeIn,
@@ -1160,7 +1162,7 @@ def unread_notif_count(
     return {"unread": n}
 
 
-@router.post("/notifications/mark-read")
+@router.post("/notifications/mark-read", dependencies=_COMMUNITY_WRITE)
 def mark_notifs_read(
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
@@ -1245,7 +1247,7 @@ def public_profile(
 # § SHARE CARD — Imagen PNG para Instagram/WhatsApp
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.post("/posts/{post_id}/share-card")
+@router.post("/posts/{post_id}/share-card", dependencies=_COMMUNITY_WRITE)
 def generate_share_card(
     post_id: str,
     db:      Session  = Depends(get_db),
@@ -1356,7 +1358,7 @@ class _SettingsIn(BaseModel):
         return v
 
 
-@router.patch("/settings")
+@router.patch("/settings", dependencies=_COMMUNITY_WRITE)
 def update_community_settings(
     body: _SettingsIn,
     db:   Session = Depends(get_db),
@@ -1468,7 +1470,7 @@ def ranked_feed(
     }
 
 
-@router.post("/posts/{post_id}/flag")
+@router.post("/posts/{post_id}/flag", dependencies=_COMMUNITY_WRITE)
 def flag_post(
     post_id: str,
     db:      Session = Depends(get_db),

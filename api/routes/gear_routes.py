@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
-from ..plan_features import require_feature
+from ..plan_features import has_feature, require_feature
 from ..database import get_db
 from ..models import (
     User, CoachAthlete, RunningShoe, Bike, BikeComponent, MaintenanceLog,
@@ -24,7 +24,9 @@ from ..models import (
 )
 from ..services.gear_service import life_pct as _life_pct, reassign_shoe, backfill_shoe
 
-router = APIRouter(prefix="/gear", tags=["gear"], dependencies=[Depends(require_feature("gear"))])
+router = APIRouter(prefix="/gear", tags=["gear"])
+# Básico: 1 par de zapatillas activo. Bicis y componentes: agegroup+.
+_GEAR_FULL = [Depends(require_feature("gear"))]
 
 _SHOE_TYPES = {"rodaje", "series", "competicion", "trail", "otro"}
 _BIKE_TYPES = {"ruta", "tt_triatlon", "mtb", "gravel"}
@@ -89,6 +91,10 @@ def list_shoes(status: str = "active", db: Session = Depends(get_db), me: User =
 
 @router.post("/shoes")
 def create_shoe(body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    if not has_feature(me, "gear"):
+        activas = db.query(RunningShoe).filter(RunningShoe.user_id == me.id, RunningShoe.status == "active").count()
+        if activas >= 1:
+            raise HTTPException(403, "Tu plan Básico incluye 1 par de zapatillas activo. Retirá el actual o mejorá tu plan.")
     brand = (body.get("brand") or "").strip()
     model = (body.get("model") or "").strip()
     if not brand or not model:
@@ -267,7 +273,7 @@ def backfill_shoe_km(shoe_id: str, body: dict, db: Session = Depends(get_db), me
 
 # ── Bicicletas ────────────────────────────────────────────────────────────
 
-@router.get("/bikes")
+@router.get("/bikes", dependencies=_GEAR_FULL)
 def list_bikes(status: str = "active", db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     q = db.query(Bike).filter(Bike.user_id == me.id)
     if status in ("active", "retired"):
@@ -276,7 +282,7 @@ def list_bikes(status: str = "active", db: Session = Depends(get_db), me: User =
     return {"bikes": [_bike_out(b, db) for b in bikes]}
 
 
-@router.post("/bikes")
+@router.post("/bikes", dependencies=_GEAR_FULL)
 def create_bike(body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     brand = (body.get("brand") or "").strip()
     model = (body.get("model") or "").strip()
@@ -297,7 +303,7 @@ def create_bike(body: dict, db: Session = Depends(get_db), me: User = Depends(ge
     return _bike_out(bike, db)
 
 
-@router.patch("/bikes/{bike_id}")
+@router.patch("/bikes/{bike_id}", dependencies=_GEAR_FULL)
 def update_bike(bike_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     bike = db.query(Bike).filter(Bike.id == bike_id, Bike.user_id == me.id).first()
     if not bike:
@@ -321,7 +327,7 @@ def update_bike(bike_id: str, body: dict, db: Session = Depends(get_db), me: Use
     return _bike_out(bike, db)
 
 
-@router.delete("/bikes/{bike_id}")
+@router.delete("/bikes/{bike_id}", dependencies=_GEAR_FULL)
 def retire_bike(bike_id: str, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     bike = db.query(Bike).filter(Bike.id == bike_id, Bike.user_id == me.id).first()
     if not bike:
@@ -333,7 +339,7 @@ def retire_bike(bike_id: str, db: Session = Depends(get_db), me: User = Depends(
 
 # ── Componentes de bicicleta ──────────────────────────────────────────────
 
-@router.post("/bikes/{bike_id}/components")
+@router.post("/bikes/{bike_id}/components", dependencies=_GEAR_FULL)
 def create_component(bike_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     bike = db.query(Bike).filter(Bike.id == bike_id, Bike.user_id == me.id).first()
     if not bike:
@@ -369,7 +375,7 @@ def create_component(bike_id: str, body: dict, db: Session = Depends(get_db), me
     return _component_out(component)
 
 
-@router.patch("/bikes/{bike_id}/components/{component_id}")
+@router.patch("/bikes/{bike_id}/components/{component_id}", dependencies=_GEAR_FULL)
 def update_component(bike_id: str, component_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     bike = db.query(Bike).filter(Bike.id == bike_id, Bike.user_id == me.id).first()
     if not bike:
@@ -396,7 +402,7 @@ def update_component(bike_id: str, component_id: str, body: dict, db: Session = 
     return _component_out(component)
 
 
-@router.delete("/bikes/{bike_id}/components/{component_id}")
+@router.delete("/bikes/{bike_id}/components/{component_id}", dependencies=_GEAR_FULL)
 def remove_component(bike_id: str, component_id: str, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     bike = db.query(Bike).filter(Bike.id == bike_id, Bike.user_id == me.id).first()
     if not bike:
@@ -451,7 +457,7 @@ def set_activity_shoe(activity_id: str, body: dict, db: Session = Depends(get_db
     }
 
 
-@router.post("/bikes/{bike_id}/components/{component_id}/service")
+@router.post("/bikes/{bike_id}/components/{component_id}/service", dependencies=_GEAR_FULL)
 def log_service(bike_id: str, component_id: str, body: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     """Registra un mantenimiento real. Si resets_accumulated=True (ej. "cambié
     la cadena"), reinicia el acumulado del componente a 0 -- el kilometraje

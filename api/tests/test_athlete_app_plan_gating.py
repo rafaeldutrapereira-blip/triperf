@@ -41,10 +41,16 @@ def test_mapeo_de_visibilidad_por_plan():
     ]
 
 
-@pytest.mark.parametrize("module_id", ["community", "race_day", "gear"])
+@pytest.mark.parametrize("module_id", ["race_day"])
 def test_modulos_ocultos_son_agegroup_en_la_web(module_id):
     # Básico no los incluye; agegroup y elite sí. Mismo criterio que la web.
     assert _min_plan(module_id) == "agegroup"
+
+
+@pytest.mark.parametrize("module_id", ["community", "gear"])
+def test_comunidad_y_equipo_son_visibles_para_basico(module_id):
+    # Free: lectura de Comunidad y 1 par de zapatillas (decisión de Rafael).
+    assert _min_plan(module_id) == "basic"
 
 
 def test_visibilidad_usa_canaccess_de_la_web():

@@ -53,8 +53,8 @@ MODULES: dict[str, ModuleSpec] = {
     "mental":           ModuleSpec("core", "agegroup"),
     "nutrition":        ModuleSpec("core", "agegroup"),
     "race_day":         ModuleSpec("core", "agegroup"),   # pronóstico; estrategia = addon
-    "community":        ModuleSpec("core", "agegroup"),   # pendiente: "Comunidad básica" en Free
-    "gear":             ModuleSpec("core", "agegroup"),   # pendiente: "Equipo básico" en Free
+    "community":        ModuleSpec("core", "basico"),     # Free: lectura; escrituras agegroup+
+    "gear":             ModuleSpec("core", "basico"),     # Free: 1 par de zapatillas; bicis agegroup+
     "analytics":        ModuleSpec("core", "agegroup"),
     "training_detail":  ModuleSpec("core", "elite"),      # Sesión: drill-down
     # ── Addons ───────────────────────────────────────────────────────
