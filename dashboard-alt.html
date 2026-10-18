@@ -272,6 +272,7 @@
 
 <script src="dashboard-alt-data.js"></script>
 <script>
+function _t(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
 (function () {
   'use strict';
 
@@ -328,15 +329,15 @@
 
     var cards = [
       {
-        cls: 'da-c-ctl', label: 'CTL — Fitness', val: fmt1(d.ctl), color: '#22d3ee',
+        cls: 'da-c-ctl', label: _t('dba_lbl_ctl','CTL — Fitness'), val: fmt1(d.ctl), color: '#22d3ee',
         series: ctlSeries, trend: d.trends && d.trends.ctl, trendUnit: '', goTo: 'ctl',
       },
       {
-        cls: 'da-c-atl', label: 'ATL — Fatiga', val: fmt1(d.atl), color: '#fb923c',
+        cls: 'da-c-atl', label: _t('dba_lbl_atl','ATL — Fatiga'), val: fmt1(d.atl), color: '#fb923c',
         series: atlSeries, goTo: 'atl',
       },
       {
-        cls: tsbPos ? 'da-c-tsb-pos' : 'da-c-tsb-neg', label: 'TSB — Forma',
+        cls: tsbPos ? 'da-c-tsb-pos' : 'da-c-tsb-neg', label: _t('dba_lbl_tsb','TSB — Forma'),
         val: (d.tsb === null || d.tsb === undefined) ? '—' : (d.tsb > 0 ? '+' : '') + fmt1(d.tsb),
         color: tsbPos ? '#34d399' : '#f87171', series: tsbSeries, goTo: 'tsb',
       },
@@ -345,7 +346,7 @@
         series: hrvSeries, trend: d.trends && d.trends.hrv, goTo: 'hrv',
       },
       {
-        cls: 'da-c-tss', label: 'TSS Semana', val: fmt1(d.tss_week), color: '#f472b6',
+        cls: 'da-c-tss', label: _t('dba_lbl_tss_week','TSS Semana'), val: fmt1(d.tss_week), color: '#f472b6',
         trend: d.trends && d.trends.tss_week, goTo: 'tss',
       },
       {
@@ -376,9 +377,9 @@
   /* ── ACWR ────────────────────────────────────────────────────────── */
   function renderAcwr(d) {
     var acwr = d.acwr, zone = d.acwr_zone;
-    var color = '#34d399', zoneLabel = 'Óptimo';
-    if (zone === 'high' || (acwr !== null && acwr > 1.3)) { color = '#f87171'; zoneLabel = 'Riesgo alto'; }
-    else if (zone === 'low' || (acwr !== null && acwr < 0.8)) { color = '#fbbf24'; zoneLabel = 'Bajo'; }
+    var color = '#34d399', zoneLabel = _t('dba_acwr_optimal','Óptimo');
+    if (zone === 'high' || (acwr !== null && acwr > 1.3)) { color = '#f87171'; zoneLabel = _t('dba_acwr_high','Riesgo alto'); }
+    else if (zone === 'low' || (acwr !== null && acwr < 0.8)) { color = '#fbbf24'; zoneLabel = _t('dba_acwr_low','Bajo'); }
     document.getElementById('da-acwr-ring').outerHTML = ringSvg(acwr !== null ? clamp(acwr / 2, 0, 1) * 100 : null, color, 86, 9).replace('<svg ', '<svg id="da-acwr-ring" class="da-acwr-ring" ');
     document.getElementById('da-acwr-val').textContent = acwr !== null && acwr !== undefined ? acwr.toFixed(2) : '—';
     var zEl = document.getElementById('da-acwr-zone');
@@ -391,14 +392,14 @@
   var _raceDate = null;
   function renderRace(d) {
     if (!d.race_goal_date) {
-      document.getElementById('da-race-name').textContent = 'Sin carrera objetivo';
+      document.getElementById('da-race-name').textContent = _t('dash_no_goal','Sin carrera objetivo');
       document.getElementById('da-race-date').textContent = '';
-      document.getElementById('da-race-flip').innerHTML = '<div style="font-size:.72rem;color:#7d8bb0;padding:.4rem 0">Configura tu carrera en el Perfil del Atleta →</div>';
+      document.getElementById('da-race-flip').innerHTML = '<div style="font-size:.72rem;color:#7d8bb0;padding:.4rem 0">'+_t('dba_set_goal','Configura tu carrera en el Perfil del Atleta →')+'</div>';
       return;
     }
-    var MS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    var MS = [1,2,3,4,5,6,7,8,9,10,11,12].map(function(n){ return _t('dba_mos_'+n, ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][n-1]); });
     var dt = new Date(d.race_goal_date + 'T12:00:00');
-    document.getElementById('da-race-name').textContent = d.race_goal_name || 'Próxima carrera';
+    document.getElementById('da-race-name').textContent = d.race_goal_name || _t('dash_next_race_default','Próxima carrera');
     document.getElementById('da-race-date').textContent = dt.getDate() + ' ' + MS[dt.getMonth()] + ' ' + dt.getFullYear();
     _raceDate = new Date(d.race_goal_date + 'T07:00:00');
     tickRace();
@@ -459,7 +460,7 @@
           '<div class="da-disc-val">' + valLine + '</div>' +
           (pct !== null
             ? '<div class="da-disc-tgt">' + tgtLabel + ' · ' + Math.round(pct) + '%</div>'
-            : '<div class="da-disc-empty">Sin plan esta semana</div>') +
+            : '<div class="da-disc-empty">'+_t('dba_no_plan_week','Sin plan esta semana')+'</div>') +
         '</div>'
       );
     }).join('');
@@ -472,7 +473,7 @@
     var mon = new Date(today);
     mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
     var days = [];
-    var DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    var DOW = [1,2,3,4,5,6,7].map(function(n){ return _t('dba_dow_'+n, ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'][n-1]); });
     for (var i = 0; i < 7; i++) {
       var dt = new Date(mon); dt.setDate(mon.getDate() + i);
       var iso = dt.toISOString().slice(0, 10);
@@ -505,7 +506,7 @@
       hit.addEventListener('mousemove', function (e) {
         var idx = +hit.getAttribute('data-idx');
         var day = days[idx];
-        tt.innerHTML = '<b>' + day.label + '</b> · ' + day.tss.toFixed(0) + ' TSS<br>' + day.acts.length + ' actividad' + (day.acts.length === 1 ? '' : 'es');
+        tt.innerHTML = '<b>' + day.label + '</b> · ' + day.tss.toFixed(0) + ' TSS<br>' + day.acts.length + ' ' + (day.acts.length === 1 ? _t('dba_act_1','actividad') : _t('dba_act_n','actividades'));
         var wrapRect = wrap.getBoundingClientRect();
         var x = e.clientX - wrapRect.left;
         tt.style.left = clamp(x, 40, wrapRect.width - 40) + 'px';
@@ -516,7 +517,7 @@
     });
 
     if (!acts.length) {
-      wrap.innerHTML = '<div class="da-empty">Sin actividades sincronizadas esta semana</div>';
+      wrap.innerHTML = '<div class="da-empty">'+_t('dba_no_acts_week','Sin actividades sincronizadas esta semana')+'</div>';
     }
   }
 
@@ -524,7 +525,7 @@
   function renderPmc(pmc) {
     var svg = document.getElementById('da-pmc-svg');
     if (!pmc || pmc.length < 2) {
-      svg.parentNode.innerHTML = '<div class="da-empty">Sin datos históricos suficientes</div>';
+      svg.parentNode.innerHTML = '<div class="da-empty">'+_t('dba_no_hist','Sin datos históricos suficientes')+'</div>';
       return;
     }
     var recent = pmc.slice(-26);
@@ -566,11 +567,11 @@
 
   /* ── Readiness detail ────────────────────────────────────────────── */
   function readyMeta(score) {
-    if (score >= 85) return { label: 'Óptimo — listo para exigir', color: '#34d399' };
-    if (score >= 70) return { label: 'Bueno — apto para entrenar', color: '#a3e635' };
-    if (score >= 55) return { label: 'Moderado — entrena con cautela', color: '#fbbf24' };
-    if (score >= 35) return { label: 'Bajo — prioriza recuperación', color: '#fb923c' };
-    return { label: 'Crítico — descanso recomendado', color: '#f87171' };
+    if (score >= 85) return { label: _t('dba_ready_1','Óptimo — listo para exigir'), color: '#34d399' };
+    if (score >= 70) return { label: _t('dba_ready_2','Bueno — apto para entrenar'), color: '#a3e635' };
+    if (score >= 55) return { label: _t('dba_ready_3','Moderado — entrena con cautela'), color: '#fbbf24' };
+    if (score >= 35) return { label: _t('dba_ready_4','Bajo — prioriza recuperación'), color: '#fb923c' };
+    return { label: _t('dba_ready_5','Crítico — descanso recomendado'), color: '#f87171' };
   }
   function renderReadiness(d) {
     var score = d.readiness;
@@ -606,7 +607,7 @@
     var M = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     var n = new Date();
     document.getElementById('da-date-lbl').textContent = D[n.getDay()] + ', ' + n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear();
-    document.getElementById('da-sync-txt').textContent = d.last_sync ? 'Garmin · ' + d.last_sync : 'Garmin · sin sincronizar';
+    document.getElementById('da-sync-txt').textContent = d.last_sync ? 'Garmin · ' + d.last_sync : _t('dba_garmin_nosync','Garmin · sin sincronizar');
   }
 
   /* ── Boot ────────────────────────────────────────────────────────── */
@@ -625,7 +626,7 @@
   }).catch(function (err) {
     console.error('[dashboard-alt] fetch error', err);
     document.getElementById('da-kpi-grid').innerHTML =
-      '<div class="da-empty" style="grid-column:1/-1">No se pudieron cargar los datos. Intenta recargar la página.</div>';
+      '<div class="da-empty" style="grid-column:1/-1">'+_t('dba_load_error','No se pudieron cargar los datos. Intenta recargar la página.')+'</div>';
   });
 })();
 </script>

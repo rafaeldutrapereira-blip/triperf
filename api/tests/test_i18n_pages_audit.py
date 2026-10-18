@@ -87,6 +87,10 @@ _FORBIDDEN_LITERALS = [
     ("reset-password.html", "msg.textContent = ex.message;"),
     ("reset-password.html", "msg.textContent='Las contraseñas no coinciden.'"),
     ("reset-password.html", '<div class="card-sub">Elige una'),
+    # dashboard-alt.html (2026-10-18)
+    ("dashboard-alt.html", "label: 'TSS Semana'"),
+    ("dashboard-alt.html", "zoneLabel = 'Óptimo';"),
+    ("dashboard-alt.html", "var DOW = ['Lun'"),
 ]
 
 
