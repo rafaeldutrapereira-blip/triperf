@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '196';  // 2026-10-17: deportes en plantillas del backend y frases restantes (dashboard, app, info)
+var BUILD_VERSION = '197';  // 2026-10-18: etiquetas de nivel del backend y panel ACWR traducidos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
