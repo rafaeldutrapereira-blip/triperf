@@ -82,7 +82,10 @@ _FORBIDDEN_LITERALS = [
     # gear.html (2026-10-18): codigos del backend se muestran traducidos
     ("gear.html", "s.shoe_type + '</div>'"),
     ("gear.html", "+ b.bike_type + '</div></div>'"),
-    ("gear.html", "' ' + c.tracking_unit + '</div></div>'"),
+    ("gear.html", "' ' + c.tracking_unit + '</div></div>'"),    # reset-password.html (2026-10-18): errores con clave, sin ex.message ni literales
+    ("reset-password.html", "msg.textContent = ex.message;"),
+    ("reset-password.html", "msg.textContent='Las contraseñas no coinciden.'"),
+    ("reset-password.html", "<div class="card-sub">Elige una"),
 ]
 
 

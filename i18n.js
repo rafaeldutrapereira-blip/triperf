@@ -2067,6 +2067,17 @@ var DICT = {
     gear_unit_km: 'km',
     gear_unit_h: 'h',
     gear_unit_mo: 'meses',
+    /* reset-password.html (auditoria 2026-10-18) */
+    rp_forgot_title: '¿Olvidaste tu <span style="color:var(--cyan)">contraseña</span>?',
+    rp_new_title: 'Nueva <span style="color:var(--green)">contraseña</span>',
+    rp_choose_pw: 'Elige una contraseña segura',
+    rp_sent_ok: 'Si el email existe en nuestro sistema, recibirás un link en breve. Revisa también tu carpeta de spam.',
+    rp_err_send: 'Error al enviar el email.',
+    rp_err_update: 'Error al actualizar la contraseña.',
+    rp_repeat_pw: 'Repite la contraseña',
+    rp_pw_mismatch: 'Las contraseñas no coinciden.',
+    rp_pw_min: 'La contraseña debe tener al menos 8 caracteres.',
+    rp_back_login: '← Volver al inicio de sesión',
   },
 
   pt: {
@@ -4093,6 +4104,17 @@ var DICT = {
     gear_unit_km: 'km',
     gear_unit_h: 'h',
     gear_unit_mo: 'meses',
+    /* reset-password.html (auditoria 2026-10-18) */
+    rp_forgot_title: 'Esqueceu sua <span style="color:var(--cyan)">senha</span>?',
+    rp_new_title: 'Nova <span style="color:var(--green)">senha</span>',
+    rp_choose_pw: 'Escolha uma senha segura',
+    rp_sent_ok: 'Se o email existir em nosso sistema, você receberá um link em breve. Verifique também sua pasta de spam.',
+    rp_err_send: 'Erro ao enviar o email.',
+    rp_err_update: 'Erro ao atualizar a senha.',
+    rp_repeat_pw: 'Repita a senha',
+    rp_pw_mismatch: 'As senhas não coincidem.',
+    rp_pw_min: 'A senha deve ter pelo menos 8 caracteres.',
+    rp_back_login: '← Voltar ao início de sessão',
   },
 
   en: {
@@ -6119,6 +6141,17 @@ var DICT = {
     gear_unit_km: 'km',
     gear_unit_h: 'h',
     gear_unit_mo: 'months',
+    /* reset-password.html (auditoria 2026-10-18) */
+    rp_forgot_title: 'Forgot your <span style="color:var(--cyan)">password</span>?',
+    rp_new_title: 'New <span style="color:var(--green)">password</span>',
+    rp_choose_pw: 'Choose a secure password',
+    rp_sent_ok: 'If the email exists in our system, you will receive a link shortly. Also check your spam folder.',
+    rp_err_send: 'Error sending the email.',
+    rp_err_update: 'Error updating the password.',
+    rp_repeat_pw: 'Repeat the password',
+    rp_pw_mismatch: 'The passwords do not match.',
+    rp_pw_min: 'The password must be at least 8 characters long.',
+    rp_back_login: '← Back to sign in',
   }
 };
 
