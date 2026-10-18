@@ -1265,14 +1265,14 @@ async function loadOverviewBloodLabs(){
     var data=await apiGet('/labs/team');
     var count = data.athletes_count!=null ? data.athletes_count : (data.critical_athletes.length+data.warning_athletes.length+data.ok_athletes.length);
     if(!count){
-      sub.textContent = data.message || 'Sin atletas con exámenes registrados';
-      list.innerHTML = '<div class="empty"><p>Sin datos de laboratorio en el equipo aún</p></div>';
+      sub.textContent = data.message || _t('ov_labs_sub_empty','Sin atletas con exámenes registrados');
+      list.innerHTML = '<div class="empty"><p>' + _t('ov_labs_no_data','Sin datos de laboratorio en el equipo aún') + '</p></div>';
       return;
     }
-    sub.textContent = count+' atleta'+(count!==1?'s':'')+' · TRS promedio '+data.team_avg_trs+'/100';
+    sub.textContent = count+' '+(count!==1?_t('ov_labs_athlete_n','atletas'):_t('ov_labs_athlete_1','atleta'))+_t('ov_labs_avg_trs',' · TRS promedio ')+data.team_avg_trs+'/100';
     var rows = (data.critical_athletes||[]).concat(data.warning_athletes||[]);
     if(!rows.length){
-      list.innerHTML = '<div class="empty"><p>Todo el equipo en TRS óptimo ✅</p></div>';
+      list.innerHTML = '<div class="empty"><p>' + _t('ov_labs_all_optimal','Todo el equipo en TRS óptimo ✅') + '</p></div>';
       return;
     }
     list.innerHTML = rows.map(function(a){
@@ -1283,7 +1283,7 @@ async function loadOverviewBloodLabs(){
         +'<strong>'+esc(a.name)+'</strong>'
         +'<span style="font-size:.72rem;color:var(--dim);margin-left:.4rem">'+esc(a.exam_date||'')+'</span>'
         +(limiters?'<div style="font-size:.72rem;color:var(--dim);margin-top:.2rem">'+esc(limiters)+'</div>':'')
-        +(a.medical_referral?'<div style="font-size:.7rem;color:var(--red);margin-top:.15rem">⚠ Evaluación médica recomendada</div>':'')
+        +(a.medical_referral?'<div style="font-size:.7rem;color:var(--red);margin-top:.15rem">' + _t('ov_labs_med_referral','⚠ Evaluación médica recomendada') + '</div>':'')
         +'</div>'
         +'<span class="badge" style="background:'+color+'22;color:'+color+';border:1px solid '+color+'55">TRS '+a.trs+'/100</span>'
         +'</div>';

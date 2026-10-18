@@ -2223,6 +2223,23 @@ var DICT = {
     rp_gap_above_pre: ' supera el objetivo por <strong style="color:var(--orange)">',
     rp_gap_above_post: '</strong>. Incrementar CTL, mejorar FTP en bici o ajustar condiciones de carrera para cerrar la brecha.',
     rp_gap_est: ' es tu tiempo estimado con las métricas actuales. Mantener CTL &gt;85, llegar con TSB +10 a +20 y ejecutar la estrategia de ritmo.',
+    /* coach.html equipo/labs + recovery.html carga de protocolo */
+    ov_labs_sub_empty: 'Sin atletas con exámenes registrados',
+    ov_labs_no_data: 'Sin datos de laboratorio en el equipo aún',
+    ov_labs_athlete_1: 'atleta',
+    ov_labs_athlete_n: 'atletas',
+    ov_labs_avg_trs: ' · TRS promedio ',
+    ov_labs_all_optimal: 'Todo el equipo en TRS óptimo ✅',
+    ov_labs_med_referral: '⚠ Evaluación médica recomendada',
+    rcv_load_rest: 'DESCANSO',
+    rcv_load_easy: 'SUAVE',
+    rcv_load_moderate: 'MODERADA',
+    rcv_load_full: 'COMPLETA',
+    /* blood_lab_routes: titulo y notas de correlacion (plantillas) */
+    be_307: '{name} fuera de rango óptimo',
+    be_308: 'CTL actual de {ctl}: la carga alta pudo acelerar el consumo de reservas de hierro.',
+    be_309: 'CTL {ctl}: cortisol elevado + carga alta = riesgo de overreaching.',
+    be_310: 'CK elevada con CTL {ctl}: el plan de esta semana debería ser de recuperación activa.',
   },
 
   pt: {
@@ -4405,6 +4422,23 @@ var DICT = {
     rp_gap_above_pre: ' supera a meta em <strong style="color:var(--orange)">',
     rp_gap_above_post: '</strong>. Aumente o CTL, melhore o FTP na bike ou ajuste as condições da corrida para fechar a diferença.',
     rp_gap_est: ' é seu tempo estimado com as métricas atuais. Mantenha CTL &gt;85, chegue com TSB +10 a +20 e execute a estratégia de ritmo.',
+    /* coach.html equipo/labs + recovery.html carga de protocolo */
+    ov_labs_sub_empty: 'Nenhum atleta com exames registrados',
+    ov_labs_no_data: 'Ainda sem dados laboratoriais na equipe',
+    ov_labs_athlete_1: 'atleta',
+    ov_labs_athlete_n: 'atletas',
+    ov_labs_avg_trs: ' · TRS médio ',
+    ov_labs_all_optimal: 'Toda a equipe com TRS ótimo ✅',
+    ov_labs_med_referral: '⚠ Avaliação médica recomendada',
+    rcv_load_rest: 'DESCANSO',
+    rcv_load_easy: 'LEVE',
+    rcv_load_moderate: 'MODERADA',
+    rcv_load_full: 'COMPLETA',
+    /* blood_lab_routes: titulo y notas de correlacion (plantillas) */
+    be_307: '{name} fora da faixa ótima',
+    be_308: 'CTL atual de {ctl}: a carga alta pode ter acelerado o consumo das reservas de ferro.',
+    be_309: 'CTL {ctl}: cortisol elevado + carga alta = risco de overreaching.',
+    be_310: 'CK elevada com CTL {ctl}: o plano desta semana deveria ser de recuperação ativa.',
   },
 
   en: {
@@ -6587,6 +6621,23 @@ var DICT = {
     rp_gap_above_pre: ' beats the goal by <strong style="color:var(--orange)">',
     rp_gap_above_post: '</strong>. Increase CTL, improve bike FTP or adjust race conditions to close the gap.',
     rp_gap_est: ' is your estimated time with current metrics. Keep CTL &gt;85, arrive with TSB +10 to +20 and execute the pacing strategy.',
+    /* coach.html equipo/labs + recovery.html carga de protocolo */
+    ov_labs_sub_empty: 'No athletes with exams recorded',
+    ov_labs_no_data: 'No lab data for the team yet',
+    ov_labs_athlete_1: 'athlete',
+    ov_labs_athlete_n: 'athletes',
+    ov_labs_avg_trs: ' · average TRS ',
+    ov_labs_all_optimal: 'Whole team at optimal TRS ✅',
+    ov_labs_med_referral: '⚠ Medical evaluation recommended',
+    rcv_load_rest: 'REST',
+    rcv_load_easy: 'EASY',
+    rcv_load_moderate: 'MODERATE',
+    rcv_load_full: 'FULL',
+    /* blood_lab_routes: titulo y notas de correlacion (plantillas) */
+    be_307: '{name} out of optimal range',
+    be_308: 'Current CTL of {ctl}: high load may have accelerated iron stores depletion.',
+    be_309: 'CTL {ctl}: high cortisol + high load = overreaching risk.',
+    be_310: 'High CK with CTL {ctl}: this week\'s plan should focus on active recovery.',
   }
 };
 
