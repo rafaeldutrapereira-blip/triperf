@@ -173,6 +173,8 @@ def list_addons(user: User = Depends(get_current_user)):
             "id": aid,
             "name": name,
             "features": sorted(ADDON_FEATURES.get(aid, set())),
+            # Sin feature real todavía: se muestra "Próximamente" y no se vende.
+            "available": bool(ADDON_FEATURES.get(aid)),
             "included": plan == "elite" and aid in ELITE_INCLUDES_ADDONS,
             "price_configured": bool(os.getenv(addon_price_env(aid), "")),
         })
@@ -184,11 +186,14 @@ def addon_checkout(body: dict, user: User = Depends(get_current_user), db: Sessi
     from ..module_catalog import ADDONS, ELITE_INCLUDES_ADDONS, addon_price_env, addons_enabled
     from ..plan_features import normalize_plan
     import uuid as _uuid
+    from ..module_catalog import ADDON_FEATURES
     if not addons_enabled():
         raise HTTPException(503, "Addons todavía no están disponibles.")
     aid = str(body.get("addon_id", "")).lower()
     if aid not in ADDONS:
         raise HTTPException(400, f"Addon '{aid}' no existe.")
+    if not ADDON_FEATURES.get(aid):
+        raise HTTPException(400, f"El módulo '{aid}' todavía no está disponible.")
     if normalize_plan(user.plan_nivel) == "elite" and aid in ELITE_INCLUDES_ADDONS:
         raise HTTPException(400, "Tu plan Élite ya incluye este módulo.")
     price = os.getenv(addon_price_env(aid), "")

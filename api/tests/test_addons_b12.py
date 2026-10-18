@@ -122,6 +122,31 @@ def test_elite_si_compra_labs(client, db, athlete_user, fake_stripe, addons_on):
     assert r.status_code == 200, r.text
 
 
+def test_addon_sin_feature_no_se_vende(client, db, athlete_user, fake_stripe, addons_on, monkeypatch):
+    # estrategia_carrera, protocolos_mentales y rendimiento_avanzado no tienen funcionalidad todavía.
+    monkeypatch.setenv("STRIPE_PRICE_ADDON_ESTRATEGIA_CARRERA", "price_test_x")
+    _set_plan(db, athlete_user, "agegroup")
+    h = auth_headers(_token(client))
+    r = client.post("/api/stripe/addons/checkout", json={"addon_id": "estrategia_carrera"}, headers=h)
+    assert r.status_code == 400
+    items = {a["id"]: a for a in client.get("/api/stripe/addons", headers=h).json()["addons"]}
+    assert items["estrategia_carrera"]["available"] is False
+    assert items["labs"]["available"] is True
+    for sin in ("estrategia_carrera", "protocolos_mentales", "rendimiento_avanzado"):
+        assert items[sin]["available"] is False, sin
+
+
+def test_cuota_tambien_para_quien_compra_el_addon(db, athlete_user, addons_on):
+    _set_plan(db, athlete_user, "agegroup")
+    db.add(Entitlement(user_id=athlete_user.id, addon_id="asistente_ia", source="purchase", status="active"))
+    db.commit()
+    for _ in range(mc.AI_DAILY_QUOTA):
+        enforce_ai_quota(db, athlete_user)
+    with pytest.raises(HTTPException) as exc:
+        enforce_ai_quota(db, athlete_user)
+    assert exc.value.status_code == 429
+
+
 def test_addon_desconocido_400(client, db, athlete_user, fake_stripe, addons_on):
     h = auth_headers(_token(client))
     r = client.post("/api/stripe/addons/checkout", json={"addon_id": "nope"}, headers=h)

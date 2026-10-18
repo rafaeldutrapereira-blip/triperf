@@ -23,7 +23,7 @@ def test_addons_usan_los_endpoints_de_stripe():
 
 def test_sin_flag_no_se_ofrece_compra():
     # Si la API no está habilitada, la tarjeta muestra "próximamente", no el botón.
-    assert "!d.enabled || !a.price_configured" in PROFILE
+    assert "!a.available || !d.enabled || !a.price_configured" in PROFILE
 
 
 def test_incluido_no_se_vende_de_nuevo():
