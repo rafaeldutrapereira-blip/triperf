@@ -14,6 +14,8 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    dtw_aria_back: "Volver al Dashboard",
+    dtw_aria_period: "Período de tiempo",
     nutr_if_toggle_title: "Ajustar intensidad de bici y carrera",
     tos_001: "Términos de Servicio",
     tos_002: "Última actualización: julio de 2026",
@@ -2913,6 +2915,8 @@ var DICT = {
   },
 
   pt: {
+    dtw_aria_back: "Voltar ao Dashboard",
+    dtw_aria_period: "Período de tempo",
     nutr_if_toggle_title: "Ajustar intensidade da bike e da corrida",
     tos_001: "Termos de Serviço",
     tos_002: "Última atualização: julho de 2026",
@@ -5782,6 +5786,8 @@ var DICT = {
   },
 
   en: {
+    dtw_aria_back: "Back to Dashboard",
+    dtw_aria_period: "Time period",
     nutr_if_toggle_title: "Adjust bike and run intensity",
     tos_001: "Terms of Service",
     tos_002: "Last updated: July 2026",
