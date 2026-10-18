@@ -254,6 +254,8 @@ tr:hover td{background:rgba(14,165,233,.04)}
     <button class="coach-tab" data-tab="adherence" onclick="switchTab('adherence')" data-i18n="tab_compliance" data-i18n="tab_compliance">Cumplimiento</button>
     <button class="coach-tab" data-tab="gantt" onclick="switchTab('gantt')" data-i18n="tab_team_view">📋 Vista Equipo</button>
     <button class="coach-tab" data-tab="report" onclick="switchTab('report')" data-i18n="tab_reports">📊 Reportes</button>
+    <button class="coach-tab" data-tab="adp-coach" onclick="switchTab('adp-coach')" data-i18n="adp_tab_adjustments">⚙️ Ajustes adaptativos</button>
+    <button class="coach-tab" data-tab="rec-coach" onclick="switchTab('rec-coach')" data-i18n="coach_tab_recovery">❤️ Recuperación de atletas</button>
   </div>
 
   <!-- TAB: OVERVIEW -->
@@ -507,6 +509,13 @@ tr:hover td{background:rgba(14,165,233,.04)}
   </div>
 
   <!-- TAB: REPORTES -->
+  <div class="tab-panel" id="tab-adp-coach">
+    <iframe id="coach-adp-frame" data-src="adaptive.html?view=coach&amp;embed=1" title="Ajustes adaptativos" style="width:100%;height:900px;border:0;border-radius:12px;background:transparent"></iframe>
+  </div>
+  <div class="tab-panel" id="tab-rec-coach">
+    <iframe id="coach-rec-frame" data-src="recovery.html?view=coach&amp;embed=1" title="Recuperación de atletas" style="width:100%;height:900px;border:0;border-radius:12px;background:transparent"></iframe>
+  </div>
+
   <div class="tab-panel" id="tab-report">
     <!-- Filtros -->
     <div class="card" style="margin-bottom:1rem">
@@ -4115,6 +4124,17 @@ document.addEventListener('DOMContentLoaded', function(){
 <script src="i18n.js"></script>
 <script src="lx-info.js"></script>
 <script src="lx-audit.js"></script>
+<script>/* Carga perezosa de las vistas embebidas de Coach. */
+(function(){
+  var prev = window.switchTab;
+  var frames = { 'adp-coach': 'coach-adp-frame', 'rec-coach': 'coach-rec-frame' };
+  window.switchTab = function(name){
+    if(prev) prev(name);
+    var id = frames[name];
+    if(id){ var f = document.getElementById(id); if(f && !f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src')); }
+  };
+})();
+</script>
 </body>
 </html>
 
