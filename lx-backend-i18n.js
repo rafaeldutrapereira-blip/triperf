@@ -386,6 +386,94 @@ var LX_BE_ENTRIES = [
  [
   "Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.",
   "mentmsg_mfs_low"
+ ],
+ [
+  "Ferritina",
+  "be_156"
+ ],
+ [
+  "Hemoglobina",
+  "be_157"
+ ],
+ [
+  "Vitamina D",
+  "be_158"
+ ],
+ [
+  "Cortisol matutino",
+  "be_159"
+ ],
+ [
+  "Creatina Quinasa",
+  "be_160"
+ ],
+ [
+  "Hierro bisglicinate 25-50mg/día en ayunas + vitamina C",
+  "be_161"
+ ],
+ [
+  "Hierro bisglicinate 25mg/día con vitamina C",
+  "be_162"
+ ],
+ [
+  "Revisión dietética — aumentar hierro hemo (carnes rojas 2×/sem)",
+  "be_163"
+ ],
+ [
+  "Descartar anemia ferropénica con médico — posible suplementación IV",
+  "be_164"
+ ],
+ [
+  "Hierro + vitamina B12 + ácido fólico — revisar absorción GI",
+  "be_165"
+ ],
+ [
+  "Vitamina D3 4000-6000 UI/día × 8-12 semanas + control analítico",
+  "be_166"
+ ],
+ [
+  "Vitamina D3 2000 UI/día + exposición solar 15min/día",
+  "be_167"
+ ],
+ [
+  "Vitamina D3 1000 UI/día mantenimiento",
+  "be_168"
+ ],
+ [
+  "Ashwagandha 600mg/día + magnesio glicinato 400mg noche",
+  "be_169"
+ ],
+ [
+  "Reducir estresores externos + adaptógenos (rhodiola 200mg)",
+  "be_170"
+ ],
+ [
+  "Creatina monohidrato 5g/día + proteína 2g/kg/día",
+  "be_171"
+ ],
+ [
+  "Reducir eccéntricos — priorizar natación y ciclismo",
+  "be_172"
+ ],
+ [
+  "Iniciar suplementación de hierro; repetir labs en 3-4 semanas",
+  "be_173"
+ ],
+ [
+  "Semana de recuperación activa: máx. 60% del volumen habitual, solo Z1-Z2",
+  "be_174"
+ ],
+ [
+  "Priorizar sueño 8-9h, reducir estresores externos, mindfulness 10min/día",
+  "be_175"
+ ],
+ [
+  "Labs en rango óptimo — continuar planificación normal",
+  "be_176"
+ ],
+ [
+  "Cortisol elevado → limitar sesiones >90min hasta normalización",
+  "be_177"
  ]
 ];
 var LX_BE_SPORT = {
