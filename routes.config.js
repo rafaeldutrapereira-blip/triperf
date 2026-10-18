@@ -181,8 +181,8 @@
       tier:    'core',
       addonId: null,
       file:    'analytics.html',
-      label:   'Analytics',
-      labelI18n: 'nav_analytics',
+      label:   'Rendimiento',
+      labelI18n: 'nav_rendimiento',
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
       minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
@@ -206,7 +206,7 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
       minPlan: 'basic',
       roles:   ['athlete','coach','admin'],
-      sidebar: true,
+      sidebar: false,
       public:  false
     },
     /* ── Herramientas puntuales ───────────────────────── */

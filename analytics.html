@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><script src="routes.config.js?v=6"></script><script>LX_ROUTES.guard();</script>
+<meta charset="UTF-8"><script src="routes.config.js?v=7"></script><script>LX_ROUTES.guard();</script>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analytics — LabX</title>
@@ -97,15 +97,21 @@
 
     <!-- Tab bar -->
     <div class="an-tab-bar">
-      <button class="an-tab active" onclick="switchAnTab('power',this)"><span data-i18n="an_tab_power">&#9889; Curva Potencia</span></button>
+      <button class="an-tab active" onclick="switchAnTab('carga',this)"><span data-i18n="an_tab_load">&#128200; Carga</span></button>
+      <button class="an-tab" onclick="switchAnTab('power',this)"><span data-i18n="an_tab_power">&#9889; Curva Potencia</span></button>
       <button class="an-tab" onclick="switchAnTab('vo2max',this)"><span data-i18n="an_tab_vo2">&#128165; VO2max</span></button>
       <button class="an-tab" onclick="switchAnTab('records',this)"><span data-i18n="an_tab_records">&#127942; R&#233;cords</span></button>
       <button class="an-tab" onclick="switchAnTab('distrib',this)"><span data-i18n="an_tab_dist">&#128200; Distribuci&#243;n</span></button>
       <button class="an-tab" onclick="switchAnTab('zones',this)"><span data-i18n="an_tab_zones">&#9881; Zonas</span></button>
     </div>
 
+    <!-- ── PANE: CARGA (PMC/CTL/ATL/TSB, vista embebida de detalle.html) ── -->
+    <div class="an-pane active" id="pane-carga">
+      <iframe id="an-carga-frame" src="detalle.html?metric=pmc&amp;embed=1" title="Carga" style="width:100%;height:820px;border:0;border-radius:12px;background:transparent"></iframe>
+    </div>
+
     <!-- ── PANE: POWER CURVE ──────────────────────────────────── -->
-    <div class="an-pane active" id="pane-power">
+    <div class="an-pane" id="pane-power">
       <div>
         <div id="cp-meta" class="cp-meta">
           <div class="cp-badge">
@@ -274,6 +280,7 @@ function reloadAll(){
 }
 
 function _loadTab(name){
+  if(name==='carga') return; // el iframe carga su propia vista
   if(name==='power')   loadPowerCurve();
   else if(name==='vo2max')  loadVo2max();
   else if(name==='records') loadRecords();
