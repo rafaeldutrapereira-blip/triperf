@@ -365,6 +365,13 @@ def _generate_correlation_insights(correlations: list, markers_status: dict) -> 
     return insights
 
 
+_AI_LANG_NAMES = {
+    "es": "español",
+    "pt": "português (Brasil)",
+    "en": "English",
+}
+
+
 async def generate_labs_ai_interpretation(
     correlations_data: dict,
     user: User,
@@ -396,6 +403,8 @@ async def generate_labs_ai_interpretation(
             for c in top_corrs
         ])
 
+        lang_name = _AI_LANG_NAMES.get(getattr(user, "lang", None) or "es", _AI_LANG_NAMES["es"])
+
         prompt = f"""Eres un médico deportólogo analizando los labs de {user.nombre or 'el atleta'}.
 
 ESTADO ACTUAL DE MARCADORES:
@@ -407,7 +416,7 @@ CORRELACIONES DETECTADAS (lab ↔ rendimiento):
 INSIGHTS PREVIOS:
 {chr(10).join(insights) or 'Ninguno'}
 
-Genera un análisis de labs en español (2-3 párrafos):
+Genera un análisis de labs en {lang_name} (2-3 párrafos):
 1. Los marcadores más críticos que limitan el rendimiento AHORA
 2. El patrón de correlación más importante para este atleta
 3. El protocolo de 90 días más importante para optimizar su fisiología
