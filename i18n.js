@@ -14,6 +14,7 @@
 /* ─────────────────────────── DICCIONARIO ─────────────────────────── */
 var DICT = {
   es: {
+    nutr_if_toggle_title: "Ajustar intensidad de bici y carrera",
     tos_001: "Términos de Servicio",
     tos_002: "Última actualización: julio de 2026",
     tos_003: "Bienvenido a <strong>LabX</strong> (\"la Plataforma\"). Al crear una cuenta y utilizar nuestros servicios, aceptas los presentes Términos de Servicio. Si no estás de acuerdo, no utilices la Plataforma.",
@@ -2912,6 +2913,7 @@ var DICT = {
   },
 
   pt: {
+    nutr_if_toggle_title: "Ajustar intensidade da bike e da corrida",
     tos_001: "Termos de Serviço",
     tos_002: "Última atualização: julho de 2026",
     tos_003: "Bem-vindo ao <strong>LabX</strong> (\"a Plataforma\"). Ao criar uma conta e usar nossos serviços, você aceita estes Termos de Serviço. Se não concordar, não utilize a Plataforma.",
@@ -5780,6 +5782,7 @@ var DICT = {
   },
 
   en: {
+    nutr_if_toggle_title: "Adjust bike and run intensity",
     tos_001: "Terms of Service",
     tos_002: "Last updated: July 2026",
     tos_003: "Welcome to <strong>LabX</strong> (\"the Platform\"). By creating an account and using our services, you agree to these Terms of Service. If you do not agree, do not use the Platform.",
