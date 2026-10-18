@@ -127,7 +127,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   <!-- Loading state -->
   <div id="yr-loading" class="yr-loading">
     <div class="yr-spinner"></div>
-    Construyendo tu resumen&#8230;
+    <span data-i18n="hu_building">Construyendo tu resumen&#8230;</span>
   </div>
 
   <!-- Content (hidden until loaded) -->
@@ -161,7 +161,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <!-- Share -->
     <div class="share-section">
       <button class="share-btn" onclick="shareYearCard()">
-        &#128247; Compartir mi a&#241;o
+        <span data-i18n="hu_share">&#128247; Compartir mi año</span>
       </button>
     </div>
 
@@ -194,6 +194,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 </div>
 
 <script>
+function _t(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
 (function(){
   var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
   var TOK = function(){ return localStorage.getItem('lx_token') || localStorage.getItem('lx_co_token') || ''; };
@@ -241,7 +242,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
           _g('yr-empty').style.display = '';
           return;
         }
-        _g('yr-sub').textContent = 'Un año increíble, '+( d.athlete_name.split(' ')[0] )+'';
+        _g('yr-sub').textContent = _t('yr_amazing_year','Un año increíble, ')+( d.athlete_name.split(' ')[0] )+'';
         _g('yr-content').style.display = '';
         _renderStats(d);
         _renderSports(d);
@@ -260,7 +261,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   function _renderStats(d){
     var grid = _g('yr-stat-grid');
     var items = [
-      {num: d.total_activities, unit:'actividades', label:'Total actividades', ac:'var(--orange)'},
+      {num: d.total_activities, unit:_t('hu_unit_activities','actividades'), label:_t('hu_total_activities','Total actividades'), ac:'var(--orange)'},
       {num: d.total_hours+'h',  unit:'',            label:'Horas entrenadas',  ac:'var(--cyan)'},
       {num: d.total_km+'km',    unit:'',            label:'Kilómetros totales', ac:'var(--green)'},
       {num: Math.round(d.total_tss), unit:'TSS',   label:'Carga total',        ac:'var(--purple)'},
@@ -355,17 +356,17 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   /* ── CTL ──────────────────────────────────────────────────────────────── */
   function _renderCtl(d){
     var row = _g('yr-ctl-row');
-    if(!d.ctl_start && !d.ctl_end){ row.innerHTML = '<div style="color:var(--dim);font-size:.8rem">Sin datos de CTL</div>'; return; }
+    if(!d.ctl_start && !d.ctl_end){ row.innerHTML = '<div style="color:var(--dim);font-size:.8rem">'+_t('hu_no_ctl','Sin datos de CTL')+'</div>'; return; }
 
     var color = (d.ctl_improvement||0) >= 0 ? 'var(--green)' : 'var(--orange)';
     var arrow = (d.ctl_improvement||0) >= 0 ? '↑' : '↓';
     var sign  = (d.ctl_improvement||0) > 0 ? '+' : '';
 
     row.innerHTML = ''
-      +'<div class="ctl-box"><div class="ctl-lbl">Inicio del año</div><div class="ctl-num" style="color:var(--muted)">'+(d.ctl_start||'—')+'</div></div>'
+      +'<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_start','Inicio del año')+'</div><div class="ctl-num" style="color:var(--muted)">'+(d.ctl_start||'—')+'</div></div>'
       +'<div class="ctl-arrow">'+arrow+'</div>'
-      +'<div class="ctl-box" style="border-color:'+color+'44"><div class="ctl-lbl">Fin del año</div><div class="ctl-num" style="color:'+color+'">'+(d.ctl_end||'—')+'</div></div>'
-      +(d.ctl_peak ? '<div class="ctl-box"><div class="ctl-lbl">Pico del año</div><div class="ctl-num" style="color:var(--gold)">'+d.ctl_peak.value+'</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">'+d.ctl_peak.date_iso.slice(5)+'</div></div>' : '')
+      +'<div class="ctl-box" style="border-color:'+color+'44"><div class="ctl-lbl">'+_t('hu_year_end','Fin del año')+'</div><div class="ctl-num" style="color:'+color+'">'+(d.ctl_end||'—')+'</div></div>'
+      +(d.ctl_peak ? '<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_peak','Pico del año')+'</div><div class="ctl-num" style="color:var(--gold)">'+d.ctl_peak.value+'</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">'+d.ctl_peak.date_iso.slice(5)+'</div></div>' : '')
       +(d.ctl_improvement !== null ? '<div style="text-align:center"><div style="font-size:.65rem;color:var(--dim);margin-bottom:.3rem">Mejora total</div><div style="font-family:Oswald,sans-serif;font-size:1.6rem;font-weight:700;color:'+color+'">'+sign+d.ctl_improvement+'</div></div>' : '');
   }
 
