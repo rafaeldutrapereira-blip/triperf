@@ -3016,6 +3016,8 @@ var DICT = {
     be_412: "Urea elevada post-entrenamiento: normal si transitoria. Persistente = estrés renal.",
     be_413: "ALT en rango normal. Sin daño hepático.",
     be_414: "ALT elevada: puede indicar daño hepático o muscular severo. Descartar esfuerzo extremo reciente.",
+    be_415: "Aumentar ingesta proteica a 2-2.5g/kg. BCAAs intra-entrenamiento.",
+    be_416: "DRS calculado con {n}/{total} dimensiones — datos faltantes: {names}",
   },
 
   pt: {
@@ -5991,6 +5993,8 @@ var DICT = {
     be_412: "Ureia elevada pós-treino: normal se transitória. Se persistir = estresse renal.",
     be_413: "ALT na faixa normal. Sem dano hepático.",
     be_414: "ALT elevada: pode indicar dano hepático ou muscular grave. Descarte esforço extremo recente.",
+    be_415: "Aumentar a ingestão de proteína para 2-2,5 g/kg. BCAAs durante o treino.",
+    be_416: "DRS calculado com {n}/{total} dimensões — dados faltantes: {names}",
   },
 
   en: {
@@ -8966,6 +8970,8 @@ var DICT = {
     be_412: "High post-training urea: normal if transient. Persistent = kidney stress.",
     be_413: "ALT in normal range. No liver damage.",
     be_414: "High ALT: may indicate liver or severe muscle damage. Rule out recent extreme exertion.",
+    be_415: "Increase protein intake to 2-2.5 g/kg. BCAAs during training.",
+    be_416: "DRS calculated with {n}/{total} dimensions — missing data: {names}",
   }
 };
 

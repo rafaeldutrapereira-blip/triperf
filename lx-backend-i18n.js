@@ -1426,6 +1426,14 @@ var LX_BE_ENTRIES = [
  [
   "ALT elevada: puede indicar daño hepático o muscular severo. Descartar esfuerzo extremo reciente.",
   "be_414"
+ ],
+ [
+  "Aumentar ingesta proteica a 2-2.5g/kg. BCAAs intra-entrenamiento.",
+  "be_415"
+ ],
+ [
+  "DRS calculado con {n}/{total} dimensiones — datos faltantes: {names}",
+  "be_416"
  ]
 ];
 /* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */
