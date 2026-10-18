@@ -68,6 +68,35 @@ MODULES: dict[str, ModuleSpec] = {
 }
 
 
+# Feature de plan que desbloquea cada addon (B12). Addons sin feature propia
+# quedan pendientes de su bloque (estrategia de carrera, protocolos mentales, potencia).
+ADDON_FEATURES: dict[str, set[str]] = {
+    "asistente_ia": {"ai_coach"},
+    "labs": {"blood_labs"},
+    "indoor": {"indoor_workout"},
+    "ajustes_adaptativos": {"adaptive"},
+    "retrospectiva": {"year_in_review"},
+}
+
+# Elite incluye todos los addons salvo Labs (Labs = único addon con costo marginal).
+ELITE_INCLUDES_ADDONS = set(ADDONS) - {"labs"}
+
+# Precio de Stripe por addon: env STRIPE_PRICE_ADDON_<ID en mayúsculas>.
+def addon_price_env(addon_id: str) -> str:
+    return "STRIPE_PRICE_ADDON_" + addon_id.upper()
+
+
+# Activación de addons (B12): apagado hasta que se configuren precios y se avise a usuarios.
+ADDONS_FLAG_ENV = "LABX_ADDONS"
+LABS_GRACE_DAYS = 90
+AI_DAILY_QUOTA = 50
+
+
+def addons_enabled() -> bool:
+    import os
+    return os.getenv(ADDONS_FLAG_ENV, "0") == "1"
+
+
 def addon_for(module_id: str) -> str | None:
     spec = MODULES.get(module_id)
     return spec.addon_id if spec else None

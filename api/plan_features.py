@@ -17,6 +17,7 @@ from fastapi import Depends, HTTPException
 
 from .auth import get_current_user
 from .free_limits import free_limits_enabled
+from .module_catalog import ADDON_FEATURES, addons_enabled
 from .models import User
 
 _PLAN_FEATURES: dict[str, set[str]] = {
@@ -47,12 +48,37 @@ def normalize_plan(plan: str | None) -> str:
     return "basico" if p == "basic" else p
 
 
+def entitlement_features(user: User) -> set[str]:
+    """Features desbloqueadas por addons vigentes (purchase, legacy o trial)."""
+    from datetime import datetime, timezone
+    from sqlalchemy.orm import object_session
+    db = object_session(user) if user is not None else None
+    if db is None or getattr(user, "id", None) is None:
+        return set()
+    from .models import Entitlement
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    rows = (db.query(Entitlement)
+            .filter(Entitlement.user_id == user.id, Entitlement.status.in_(("active", "canceled")))
+            .all())
+    out: set[str] = set()
+    for e in rows:
+        if e.expires_at is not None and e.expires_at <= now:
+            continue
+        out |= ADDON_FEATURES.get(e.addon_id, set())
+    return out
+
+
 def has_feature(user: User, feature: str) -> bool:
     """Verifica si el usuario tiene acceso a una feature según su plan."""
     if user.rol in ("coach", "admin"):
         return True
+    if feature in entitlement_features(user):
+        return True
     plan = normalize_plan(user.plan_nivel)
     allowed = _PLAN_FEATURES.get(plan, _PLAN_FEATURES["basico"])
+    # B12: con addons activos, Labs deja de venir en Elite (sale por gracia o por addon).
+    if feature == "blood_labs" and plan == "elite" and addons_enabled():
+        return False
     # B11 (flag): Free accede al plan de entrenamiento, limitado a la semana actual.
     if feature == "training_plan" and plan == "basico" and free_limits_enabled():
         return True

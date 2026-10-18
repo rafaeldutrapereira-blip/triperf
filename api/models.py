@@ -2213,3 +2213,31 @@ class MaintenanceLog(Base):
 
     bike      = relationship("Bike", backref="maintenance_logs")
     component = relationship("BikeComponent", backref="maintenance_logs")
+
+
+class Entitlement(Base):
+    """Acceso a un addon (B12). source: purchase (Stripe) | legacy (gracia) | trial.
+    expires_at NULL = sin vencimiento. Al cancelar, el acceso dura hasta expires_at."""
+    __tablename__ = "entitlements"
+
+    id                      = Column(String, primary_key=True, default=_uuid)
+    user_id                 = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    addon_id                = Column(String(40), nullable=False)
+    source                  = Column(String(20), nullable=False, default="purchase")
+    status                  = Column(String(20), nullable=False, default="active")  # active | canceled
+    stripe_subscription_id  = Column(String, nullable=True, index=True)
+    expires_at              = Column(DateTime, nullable=True)
+    created_at              = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    user = relationship("User", backref="entitlements")
+
+
+class AiUsageDaily(Base):
+    """Consultas de IA por usuario y día (cuota del Asistente IA en Elite / addon)."""
+    __tablename__ = "ai_usage_daily"
+    __table_args__ = (UniqueConstraint("user_id", "date_iso", name="uq_ai_usage_user_day"),)
+
+    id       = Column(String, primary_key=True, default=_uuid)
+    user_id  = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    date_iso = Column(String(10), nullable=False)
+    count    = Column(Integer, nullable=False, default=0)

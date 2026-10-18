@@ -27,6 +27,24 @@ from ..auth import get_current_user
 from ..services.context_engine import get_context_for_prompt
 from ..plan_features import require_feature
 
+
+def enforce_ai_quota(db, user) -> None:
+    """B12: 50 consultas/día para el Asistente IA. Solo activa con LABX_ADDONS=1."""
+    from datetime import date as _d
+    from ..models import AiUsageDaily
+    from ..module_catalog import AI_DAILY_QUOTA, addons_enabled
+    if not addons_enabled() or user.rol in ("coach", "admin"):
+        return
+    today = _d.today().isoformat()
+    row = db.query(AiUsageDaily).filter_by(user_id=user.id, date_iso=today).first()
+    if row is None:
+        row = AiUsageDaily(user_id=user.id, date_iso=today, count=0)
+        db.add(row)
+    if row.count >= AI_DAILY_QUOTA:
+        raise HTTPException(429, f"Llegaste al límite de {AI_DAILY_QUOTA} consultas de hoy. Vuelve mañana.")
+    row.count += 1
+    db.commit()
+
 logger = logging.getLogger("labx.ai")
 router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(require_feature("ai_coach"))])
 
@@ -86,6 +104,7 @@ async def coach_suggest(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
+    enforce_ai_quota(db, me)
     """
     Consulta al Coach IA.
     El sistema prompt incluye el contexto fisiológico completo del atleta.
@@ -417,6 +436,7 @@ def api_generate_workout(
     db:   Session = Depends(get_db),
     me:   User    = Depends(get_current_user),
 ):
+    enforce_ai_quota(db, me)
     from ..models import AIAthleteContext, RecoveryScore
     from datetime import date as _date
 

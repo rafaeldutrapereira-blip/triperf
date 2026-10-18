@@ -157,6 +157,92 @@ def billing_portal(
     return {"portal_url": portal_session.url}
 
 
+# ─────────────────────────────────────────────────────────────
+# B12 — Addons (compra por módulo). Activación con LABX_ADDONS=1 y precios
+# STRIPE_PRICE_ADDON_<ID> configurados (los configura Rafael en el VM).
+# ─────────────────────────────────────────────────────────────
+
+@router.get("/addons")
+def list_addons(user: User = Depends(get_current_user)):
+    from ..module_catalog import ADDONS, ADDON_FEATURES, ELITE_INCLUDES_ADDONS, addon_price_env, addons_enabled
+    from ..plan_features import normalize_plan
+    plan = normalize_plan(user.plan_nivel)
+    items = []
+    for aid, name in ADDONS.items():
+        items.append({
+            "id": aid,
+            "name": name,
+            "features": sorted(ADDON_FEATURES.get(aid, set())),
+            "included": plan == "elite" and aid in ELITE_INCLUDES_ADDONS,
+            "price_configured": bool(os.getenv(addon_price_env(aid), "")),
+        })
+    return {"enabled": addons_enabled(), "plan": plan, "addons": items}
+
+
+@router.post("/addons/checkout")
+def addon_checkout(body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from ..module_catalog import ADDONS, ELITE_INCLUDES_ADDONS, addon_price_env, addons_enabled
+    from ..plan_features import normalize_plan
+    import uuid as _uuid
+    if not addons_enabled():
+        raise HTTPException(503, "Addons todavía no están disponibles.")
+    aid = str(body.get("addon_id", "")).lower()
+    if aid not in ADDONS:
+        raise HTTPException(400, f"Addon '{aid}' no existe.")
+    if normalize_plan(user.plan_nivel) == "elite" and aid in ELITE_INCLUDES_ADDONS:
+        raise HTTPException(400, "Tu plan Élite ya incluye este módulo.")
+    price = os.getenv(addon_price_env(aid), "")
+    if not price:
+        raise HTTPException(400, f"Precio del addon '{aid}' no configurado.")
+
+    stripe = _stripe()
+    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    customer_id = _get_or_create_stripe_customer(stripe, user, db)
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        customer=customer_id,
+        line_items=[{"price": price, "quantity": 1}],
+        success_url=f"{app_url}/athlete_profile.html?addon={aid}&ok=1",
+        cancel_url=f"{app_url}/athlete_profile.html?addon={aid}&ok=0",
+        metadata={"user_id": user.id, "kind": "addon", "addon_id": aid},
+        subscription_data={"metadata": {"user_id": user.id, "kind": "addon", "addon_id": aid}},
+        idempotency_key=f"addon-{user.id}-{aid}-{_uuid.uuid4().hex[:8]}",
+    )
+    logger.info("Checkout addon creado user_id=%s addon=%s session=%s", user.id, aid, session.id)
+    return {"checkout_url": session.url, "session_id": session.id}
+
+
+def _handle_addon_event(evt_type: str, sub: dict, db: Session) -> None:
+    """Addon: crea/activa el entitlement; al cancelar, el acceso dura hasta el fin del período pagado."""
+    from datetime import datetime as _dt, timezone
+    from ..models import Entitlement
+    md = sub.get("metadata", {}) or {}
+    uid, aid, sid = md.get("user_id"), md.get("addon_id"), sub.get("id")
+    if not uid or not aid or not sid:
+        return
+    ent = (db.query(Entitlement)
+           .filter(Entitlement.user_id == uid, Entitlement.addon_id == aid,
+                   Entitlement.stripe_subscription_id == sid).first())
+    status = sub.get("status", "")
+    now = _dt.now(timezone.utc).replace(tzinfo=None)
+    if evt_type == "customer.subscription.deleted" or status in ("canceled", "incomplete_expired", "unpaid"):
+        period_end = sub.get("current_period_end")
+        expires = _dt.fromtimestamp(period_end, tz=timezone.utc).replace(tzinfo=None) if period_end else now
+        if ent is None:
+            ent = Entitlement(user_id=uid, addon_id=aid, source="purchase", stripe_subscription_id=sid)
+            db.add(ent)
+        ent.status = "canceled"
+        ent.expires_at = expires
+    elif status in ("active", "trialing"):
+        if ent is None:
+            ent = Entitlement(user_id=uid, addon_id=aid, source="purchase", stripe_subscription_id=sid)
+            db.add(ent)
+        ent.status = "active"
+        ent.expires_at = None
+    db.commit()
+    logger.info("Entitlement addon=%s user=%s evento=%s status=%s", aid, uid, evt_type, status)
+
+
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request,
@@ -179,6 +265,12 @@ async def stripe_webhook(
 
     evt_type = event["type"]
     logger.info("Stripe webhook: %s", evt_type)
+
+    # B12: los addons no tocan plan_nivel; van a la tabla de entitlements.
+    if evt_type.startswith("customer.subscription.") and \
+            (event["data"]["object"].get("metadata") or {}).get("kind") == "addon":
+        _handle_addon_event(evt_type, event["data"]["object"], db)
+        return JSONResponse({"received": True})
 
     if evt_type in ("customer.subscription.created", "customer.subscription.updated"):
         sub = event["data"]["object"]
