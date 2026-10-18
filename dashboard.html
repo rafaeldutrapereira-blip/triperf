@@ -1068,7 +1068,7 @@ ul { list-style: none; }
         </div>
 
         <div class="kcr" onclick="goMetric('hrv')" role="button" tabindex="0" aria-label="Ver histórico HRV" data-i18n-aria="dash_aria_hist_hrv">
-          <span class="kcr-label"><span class="kcr-label-main" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</span><span class="kcr-sub">Anoche · 7d: <span id="hrv-7d-val">—</span>ms</span></span>
+          <span class="kcr-label"><span class="kcr-label-main" data-i18n="kpi_hrv" data-lx-info="hrv">HRV Score</span><span class="kcr-sub"><span data-i18n="dash_last_night_7d">Anoche · 7d:</span> <span id="hrv-7d-val">—</span>ms</span></span>
           <span class="kcr-right"><svg class="kcr-spark" id="spark-hrv" width="46" height="20" viewBox="0 0 46 20"></svg><span class="kcr-val"><span class="cu" data-kl="hrv_last_night">—</span><span class="u">ms</span></span><span id="badge-hrv" class="badge">—</span></span>
         </div>
         <div class="kcr" id="kc-rhr" onclick="goMetric('wellbeing')" role="button" tabindex="0" aria-label="Ver histórico FC Reposo" data-i18n-aria="dash_aria_hist_rhr">
@@ -1534,7 +1534,7 @@ function _setClusterPill(id, st){
 
 function updateClusterPills(d){
   var sevMap = {
-    reduce:  {cls:'sev-reduce',  label:'Reducir carga'},
+    reduce:  {cls:'sev-reduce',  label:_t('dash_reduce_load','Reducir carga')},
     caution: {cls:'sev-caution', label:_t('dash_sev_caution','Precaución')},
     good:    {cls:'sev-good',    label:_t('dash_val_optimal','Óptimo')},
     neutral: {cls:'sev-neutral', label:_t('dash_in_range','En rango')},
@@ -1553,7 +1553,7 @@ function updateClusterPills(d){
   _setClusterPill('cluster-hoy-pill', hoy);
 
   // Card "Objetivo": informativa, sin semáforo de riesgo
-  _setClusterPill('cluster-objetivo-pill', {cls:'sev-neutral', label:'Seguimiento'});
+  _setClusterPill('cluster-objetivo-pill', {cls:'sev-neutral', label:_t('aa_tracking','Seguimiento')});
 }
 
 function toggleInsightWhy(){
@@ -2118,7 +2118,7 @@ function patchData(){
       var tssIsEq = tssPct === 0;
       bTss.className = 'badge ' + (tssIsEq ? '' : (tssPct > 0 ? 'b-up' : 'b-dn'));
       bTss.innerHTML = (tssIsEq ? '' : (tssPct > 0 ? tssArrowUp : tssArrowDown))
-        + (tssIsEq ? '=' : (tssPct > 0 ? '+' : '') + tssPct + '%') + ' vs ant.';
+        + (tssIsEq ? '=' : (tssPct > 0 ? '+' : '') + tssPct + '%') + _t('dash_vs_prev',' vs ant.');
     } else if(d.trends.tss_week != null){
       // Semana anterior sin carga registrada (prev=0): el % no está
       // definido (no es "infinito positivo"), así que se muestra honesto
@@ -2664,7 +2664,7 @@ function _showSyncBanner(secsTotal){
       dateEl.textContent = dt.getDate()+' '+MS2[dt.getMonth()]+' '+dt.getFullYear();
     }
     var goalEl = document.getElementById('kc-race-goal');
-    if(goalEl && profile.race_goal_dist) goalEl.textContent = 'Objetivo: ' + profile.race_goal_dist + ' km';
+    if(goalEl && profile.race_goal_dist) goalEl.textContent = _t('dash_goal_prefix','Objetivo: ') + profile.race_goal_dist + ' km';
     var apiNameEl = document.getElementById('kl-race-goal-name');
     if(apiNameEl && profile.race_goal_name) apiNameEl.textContent = profile.race_goal_name;
   }).catch(function(){});
