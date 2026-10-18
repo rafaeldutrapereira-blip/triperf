@@ -190,6 +190,10 @@
         </div>
       </div>
       <div class="card" style="margin-bottom:1rem">
+        <div class="card-head"><div class="card-title" data-i18n="addon_card_title">Módulos adicionales</div></div>
+        <div class="card-body" id="addons-list"></div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
         <div class="card-head"><div class="card-title" data-i18n="cmw_privacy_title">Privacidad de mis actividades</div></div>
         <div class="card-body">
           <div class="priv-desc" data-i18n="cmw_privacy_desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
@@ -700,6 +704,7 @@ function loadProfile() {
       _has2FA  = !!p.totp_enabled;
       loadAvatarPerfil(p.id);
       loadPrivacyPrefs();
+      loadAddons();
       var name = p.nombre || p.name || '';
       document.getElementById('p-nombre').value    = name;
       document.getElementById('p-email').value     = p.email || '';
@@ -1035,6 +1040,29 @@ function savePrivacyPrefs(){
       msg.style.display = '';
       setTimeout(function(){ msg.style.display = 'none'; }, 2200);
     }).catch(function(){});
+}
+
+/* ── Addons (B12): compra por módulo ─────────────────────────── */
+function loadAddons(){
+  fetch(API + '/stripe/addons', { credentials:'include', headers: authH(false) })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var box = document.getElementById('addons-list');
+      if(!box || !d) return;
+      var esc = function(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+      box.innerHTML = d.addons.map(function(a){
+        var action = a.included ? '<span class="pf-conn-meta">' + _t('addon_included','Incluido en tu plan') + '</span>'
+          : (!d.enabled || !a.price_configured) ? '<span class="pf-conn-meta">' + _t('addon_soon','Próximamente') + '</span>'
+          : '<button class="btn btn-primary btn-sm" onclick="buyAddon(\'' + esc(a.id) + '\')">' + _t('addon_buy','Activar') + '</button>';
+        return '<div class="pf-conn-row"><div class="pf-conn-name">' + esc(a.name) + '</div><div>' + action + '</div></div>';
+      }).join('');
+    }).catch(function(){});
+}
+function buyAddon(id){
+  fetch(API + '/stripe/addons/checkout', { method:'POST', credentials:'include', headers: authH(), body: JSON.stringify({ addon_id: id }) })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(d){ window.location.href = d.checkout_url; })
+    .catch(function(){ toast(_t('addon_err','No se pudo iniciar la compra'),'err'); });
 }
 
 /* ── Personal Records ─────────────────────────────────────────── */
