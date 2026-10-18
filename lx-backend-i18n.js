@@ -474,8 +474,518 @@ var LX_BE_ENTRIES = [
  [
   "Cortisol elevado → limitar sesiones >90min hasta normalización",
   "be_177"
+ ],
+ [
+  "Testosterona",
+  "be_178"
+ ],
+ [
+  "TSH (Tiroides)",
+  "be_179"
+ ],
+ [
+  "Urea",
+  "be_180"
+ ],
+ [
+  "Vitamina B12",
+  "be_181"
+ ],
+ [
+  "Cortisol",
+  "be_182"
+ ],
+ [
+  "Evaluación endocrinológica urgente — señal overtraining severo",
+  "be_183"
+ ],
+ [
+  "Reducir volumen 30% + priorizar sueño 8-9h + Zinc 15mg/día",
+  "be_184"
+ ],
+ [
+  "Revisión ginecológica si síntomas. Zinc 8mg + D-AA opcional.",
+  "be_185"
+ ],
+ [
+  "Revisión endocrina. Asegurar ingesta de yodo y selenio.",
+  "be_186"
+ ],
+ [
+  "B12 metilcobalamina 1000μg/día sublingual × 4 semanas",
+  "be_187"
+ ],
+ [
+  "B12 metilcobalamina 500μg/día",
+  "be_188"
+ ],
+ [
+  "Proteína post-entreno dentro de 30 min. 30-40g por sesión.",
+  "be_189"
+ ],
+ [
+  "verde",
+  "be_190"
+ ],
+ [
+  "amarillo",
+  "be_191"
+ ],
+ [
+  "naranja",
+  "be_192"
+ ],
+ [
+  "rojo",
+  "be_193"
+ ],
+ [
+  "Sin marcadores reconocidos en el examen",
+  "be_194"
+ ],
+ [
+  "URGENTE: consultar médico por {names}",
+  "be_195"
+ ],
+ [
+  "Biomarcadores críticos: {names}",
+  "be_196"
+ ],
+ [
+  "CK {value} U/L → reducir sesiones de carrera con cuestas y eccéntricos",
+  "be_197"
+ ],
+ [
+  "{name} alterada → priorizar fuerza resistencia sobre hipertrofia",
+  "be_198"
+ ],
+ [
+  "{name} baja → zonas altas limitadas en todos los deportes",
+  "be_199"
+ ],
+ [
+  "Reducir CTL objetivo a ~{target} (desde {current}) hasta normalizar biomarcadores",
+  "be_200"
+ ],
+ [
+  "CTL actual {ctl} — puedes progresar +5-8% CTL en las próximas 4 semanas",
+  "be_201"
+ ],
+ [
+  "Repetir análisis de sangre en ~{days} días para confirmar respuesta",
+  "be_202"
+ ],
+ [
+  "CTL (Fitness crónico)",
+  "be_203"
+ ],
+ [
+  "TSB (Frescura)",
+  "be_204"
+ ],
+ [
+  "TSS semanal promedio",
+  "be_205"
+ ],
+ [
+  "HRV nocturno promedio",
+  "be_206"
+ ],
+ [
+  "Sin exámenes de labs en los últimos 12 meses.",
+  "be_207"
+ ],
+ [
+  "Por cada 10 ng/mL de ferritina, tu CTL tiende a ser {w_cmp}. La ferritina es crítica para el transporte de oxígeno.",
+  "be_208"
+ ],
+ [
+  "Ferritina y HRV covarían — niveles óptimos de hierro mejoran la recuperación autonómica.",
+  "be_209"
+ ],
+ [
+  "Cortisol elevado se asocia con períodos de menor fitness. Puede ser causa O consecuencia del sobreentrenamiento.",
+  "be_210"
+ ],
+ [
+  "Cortisol alto suprime el sistema parasimpático — HRV cae. Indicador temprano de sobreentrenamiento.",
+  "be_211"
+ ],
+ [
+  "CK sube tras entrenamientos intensos. Cuando la CK está elevada, el atleta entrena menos (recuperación correcta).",
+  "be_212"
+ ],
+ [
+  "Hemoglobina correlaciona con capacidad aeróbica. Optimizar hemoglobina mejora el CTL alcanzable.",
+  "be_213"
+ ],
+ [
+  "Vitamina D tiene receptores en músculo esquelético. Niveles adecuados facilitan adaptación al entrenamiento.",
+  "be_214"
+ ],
+ [
+  "Vitamina D regula función inmune y autonómica — niveles óptimos mejoran HRV.",
+  "be_215"
+ ],
+ [
+  "{marker} {w_dir} cuando {metric} {w_dir} (correlación {w_kind} {r}).",
+  "be_216"
+ ],
+ [
+  "Tu {marker} está bajo ({val}) y correlaciona positivamente con tu {metric} (r={r}). Optimizarlo podría mejorar directamente tu rendimiento.",
+  "be_217"
+ ],
+ [
+  "Tu {marker} está elevado ({val}) y correlaciona negativamente con tu {metric} (r={r}). Reducirlo es prioritario para mejorar el rendimiento.",
+  "be_218"
+ ],
+ [
+  "Correlación fuerte (r={r}): cuando tu {marker} {w_dir}, tu {metric} también {w_dir}. Patrón consistente en {n} exámenes.",
+  "be_219"
+ ],
+ [
+  "Con los datos disponibles no se detectan correlaciones fuertes aún. Se necesitan más exámenes de labs a lo largo del tiempo para detectar patrones (mínimo 3).",
+  "be_220"
+ ],
+ [
+  "Post Sprint",
+  "be_221"
+ ],
+ [
+  "3-5 días",
+  "be_222"
+ ],
+ [
+  "Día 1 (post-carrera)",
+  "be_223"
+ ],
+ [
+  "Hidratación 3L",
+  "be_224"
+ ],
+ [
+  "Proteína 2g/kg",
+  "be_225"
+ ],
+ [
+  "Baño frío 10min",
+  "be_226"
+ ],
+ [
+  "Sueño 9h",
+  "be_227"
+ ],
+ [
+  "Día 2",
+  "be_228"
+ ],
+ [
+  "30min natación técnica",
+  "be_229"
+ ],
+ [
+  "Masaje/foam roller",
+  "be_230"
+ ],
+ [
+  "Nutrición recuperación",
+  "be_231"
+ ],
+ [
+  "Día 3",
+  "be_232"
+ ],
+ [
+  "Bici Z1-Z2 45min o carrera 30min suave",
+  "be_233"
+ ],
+ [
+  "Día 4",
+  "be_234"
+ ],
+ [
+  "Entrenamiento normal si HRV normalizado",
+  "be_235"
+ ],
+ [
+  "HRV ≥ 90% del baseline antes de retomar intensidad",
+  "be_236"
+ ],
+ [
+  "Post 70.3",
+  "be_237"
+ ],
+ [
+  "10-14 días",
+  "be_238"
+ ],
+ [
+  "Días 1-2",
+  "be_239"
+ ],
+ [
+  "Descanso total",
+  "be_240"
+ ],
+ [
+  "Hidratación activa",
+  "be_241"
+ ],
+ [
+  "Anti-inflamatorio natural",
+  "be_242"
+ ],
+ [
+  "Sueño ≥9h",
+  "be_243"
+ ],
+ [
+  "Días 3-4",
+  "be_244"
+ ],
+ [
+  "Caminata suave 30min",
+  "be_245"
+ ],
+ [
+  "Natación técnica 20min",
+  "be_246"
+ ],
+ [
+  "Masaje profesional",
+  "be_247"
+ ],
+ [
+  "Días 5-7",
+  "be_248"
+ ],
+ [
+  "Bici Z1 45min o run 20min Z1",
+  "be_249"
+ ],
+ [
+  "Continúa foam roller diario",
+  "be_250"
+ ],
+ [
+  "Días 8-10",
+  "be_251"
+ ],
+ [
+  "Sesiones técnicas, sin intensidad",
+  "be_252"
+ ],
+ [
+  "Monitorear HRV — si <baseline, extender",
+  "be_253"
+ ],
+ [
+  "Días 11-14",
+  "be_254"
+ ],
+ [
+  "Reintroducir intensidad solo si HRV ≥ 95% baseline y TSB > -5",
+  "be_255"
+ ],
+ [
+  "HRV ≥ 95% del baseline antes de sesión umbral",
+  "be_256"
+ ],
+ [
+  "Post Ironman",
+  "be_257"
+ ],
+ [
+  "21-28 días",
+  "be_258"
+ ],
+ [
+  "Semana 1",
+  "be_259"
+ ],
+ [
+  "Descanso activo únicamente",
+  "be_260"
+ ],
+ [
+  "No nadar, no correr, no bici",
+  "be_261"
+ ],
+ [
+  "Crioterapia si disponible",
+  "be_262"
+ ],
+ [
+  "Proteína 2.2g/kg/día",
+  "be_263"
+ ],
+ [
+  "Semana 2",
+  "be_264"
+ ],
+ [
+  "Solo Z1-Z2 todas las sesiones",
+  "be_265"
+ ],
+ [
+  "Natación técnica OK",
+  "be_266"
+ ],
+ [
+  "Sin umbrales",
+  "be_267"
+ ],
+ [
+  "Semana 3",
+  "be_268"
+ ],
+ [
+  "Aumentar volumen progresivo",
+  "be_269"
+ ],
+ [
+  "Una sesión moderada al inicio de la semana",
+  "be_270"
+ ],
+ [
+  "Semana 4+",
+  "be_271"
+ ],
+ [
+  "Retorno a intensidad normal",
+  "be_272"
+ ],
+ [
+  "Solo si HRV ≥ baseline y TSB > 0",
+  "be_273"
+ ],
+ [
+  "No realizar intervalos hasta semana 4 Y HRV ≥ baseline",
+  "be_274"
+ ],
+ [
+  "El Ironman produce daño muscular detectable hasta 4 semanas post-carrera. Subestimar la recuperación es la principal causa de lesiones en triatletas.",
+  "be_275"
+ ],
+ [
+  "Post-Enfermedad",
+  "be_276"
+ ],
+ [
+  "Variable (48h sin fiebre mínimo)",
+  "be_277"
+ ],
+ [
+  "Durante síntomas",
+  "be_278"
+ ],
+ [
+  "Cero entrenamiento con fiebre",
+  "be_279"
+ ],
+ [
+  "Hidratación máxima",
+  "be_280"
+ ],
+ [
+  "48h asintomático",
+  "be_281"
+ ],
+ [
+  "Solo movilidad suave",
+  "be_282"
+ ],
+ [
+  "No aumentes si síntomas regresan",
+  "be_283"
+ ],
+ [
+  "4-5 días OK",
+  "be_284"
+ ],
+ [
+  "Retorno muy gradual",
+  "be_285"
+ ],
+ [
+  "HRV como guía principal",
+  "be_286"
+ ],
+ [
+  "7+ días OK",
+  "be_287"
+ ],
+ [
+  "Normal si HRV normalizado",
+  "be_288"
+ ],
+ [
+  "HRV normalizado al menos 3 días consecutivos",
+  "be_289"
+ ],
+ [
+  "Entrenar con fiebre o síntomas activos aumenta el riesgo de miocarditis. Regla: nunca.",
+  "be_290"
+ ],
+ [
+  "Sobreentrenamiento",
+  "be_291"
+ ],
+ [
+  "2-8 semanas (según severidad)",
+  "be_292"
+ ],
+ [
+  "Fase 1 (1-2 sem)",
+  "be_293"
+ ],
+ [
+  "Reducción drástica de carga",
+  "be_294"
+ ],
+ [
+  "Análisis de sangre (ferritina, cortisol, testosterona)",
+  "be_295"
+ ],
+ [
+  "Revisión nutricional",
+  "be_296"
+ ],
+ [
+  "Fase 2 (2-4 sem)",
+  "be_297"
+ ],
+ [
+  "Solo Z1 si HRV muestra mejora",
+  "be_298"
+ ],
+ [
+  "Monitoreo HRV diario obligatorio",
+  "be_299"
+ ],
+ [
+  "Fase 3 (4-8 sem)",
+  "be_300"
+ ],
+ [
+  "Aumento muy gradual",
+  "be_301"
+ ],
+ [
+  "CTL objetivo 50% del anterior",
+  "be_302"
+ ],
+ [
+  "HRV estable ≥ baseline durante 7 días consecutivos",
+  "be_303"
+ ],
+ [
+  "Sobreentrenamiento real puede requerir semanas o meses. Continuar entrenando agrava el síndrome.",
+  "be_304"
  ]
 ];
+/* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */
+var LX_BE_WORDS = {"mayor":"bew_mayor","menor":"bew_menor","sube":"bew_sube","baja":"bew_baja","directa":"bew_directa","inversa":"bew_inversa"};
 var LX_BE_SPORT = {
  "natación": "opt_swim",
  "ciclismo": "opt_bike",
@@ -494,7 +1004,7 @@ var LX_BE_SPORT = {
     var names = [], parts = es.split(/\{(\w+)\}/), src = '';
     for(var i = 0; i < parts.length; i++){
       if(i % 2 === 0){ src += escRe(parts[i]); }
-      else { names.push(parts[i]); src += '(.+?)'; }
+      else { names.push(parts[i]); src += (parts[i].indexOf('w_') === 0) ? '(' + Object.keys(LX_BE_WORDS).join('|') + ')' : '(.+?)'; }
     }
     TEMPL.push({ re: new RegExp('^' + src + '$'), key: key, names: names });
   });
@@ -515,6 +1025,15 @@ var LX_BE_SPORT = {
     return t;
   }
   window.lxSport = sportName;
+  /* valores insertados en plantillas: palabras sueltas (w_*) o nombres de marcadores (uno o varios, separados por coma) */
+  function varText(n, v){
+    if(n.indexOf('w_') === 0){ return tr(LX_BE_WORDS[v]) || v; }
+    if(Object.prototype.hasOwnProperty.call(FIXED, v)){ return tr(FIXED[v]) || v; }
+    if(v.indexOf(', ') === -1) return v;
+    return v.split(', ').map(function(x){
+      return Object.prototype.hasOwnProperty.call(FIXED, x) ? (tr(FIXED[x]) || x) : x;
+    }).join(', ');
+  }
   function one(text){
     if(Object.prototype.hasOwnProperty.call(FIXED, text)){ return tr(FIXED[text]) || text; }
     for(var i = 0; i < TEMPL.length; i++){
@@ -522,7 +1041,7 @@ var LX_BE_SPORT = {
       if(m){
         var vars = {};
         TEMPL[i].names.forEach(function(n, j){
-          vars[n] = (n === 'sport' || n === 'label') ? sportName(m[j + 1]) : m[j + 1];
+          vars[n] = (n === 'sport' || n === 'label') ? sportName(m[j + 1]) : varText(n, m[j + 1]);
         });
         return tr(TEMPL[i].key, vars) || text;
       }

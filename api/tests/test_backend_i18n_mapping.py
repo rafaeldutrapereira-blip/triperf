@@ -26,6 +26,7 @@ BACKEND_FILES = [
     # el insight diario ya genera el texto nativo desde esta tabla (ES/PT/EN)
     REPO / "api" / "services" / "insight_texts.py",
     REPO / "api" / "services" / "blood_labs_impact_service.py",
+    REPO / "api" / "services" / "blood_labs_correlation_service.py",
 ]
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -38,7 +39,9 @@ def _entries():
 
 
 def _backend_source():
-    return "\n".join(p.read_text(encoding="utf-8") for p in BACKEND_FILES)
+    src = "\n".join(p.read_text(encoding="utf-8") for p in BACKEND_FILES)
+    # literales adyacentes ("a" "b" / f"a" f"b") forman un solo texto en runtime
+    return re.sub(r'"[ \t]*\r?\n[ \t]*f?"', "", src)
 
 
 def _load_dict():
@@ -242,3 +245,58 @@ def test_insight_panel_frontend_keys_exist_in_all_languages():
             if key not in dic[lang]:
                 problems.append("%s falta en %s" % (key, lang))
     assert not problems, "\n".join(problems)
+
+
+def test_template_words_exist_in_all_languages():
+    """Palabras sueltas (w_*) que el backend inserta en plantillas: bew_* en es/pt/en."""
+    src = BE_JS.read_text(encoding="utf-8")
+    m = re.search(r"var LX_BE_WORDS = (\{.*?\});", src, re.S)
+    assert m, "LX_BE_WORDS no encontrado en lx-backend-i18n.js"
+    dic = _load_dict()
+    problems = []
+    for word, key in json.loads(m.group(1)).items():
+        for lang in ("es", "pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+        if key in dic["es"] and dic["es"][key] != word:
+            problems.append("%s: ES '%s' != '%s'" % (key, dic["es"][key], word))
+    assert not problems, "\n".join(problems)
+
+
+def _run_lxbet(lang, texts):
+    js = (
+        "const fs=require('fs');"
+        "const src=fs.readFileSync(process.argv[1],'utf8');"
+        r"const m=src.match(/var DICT = \{[\s\S]*?\n\};/);eval(m[0]);"
+        "global.window={i18n:{t:function(k){return DICT[process.argv[3]][k]||k;}}};"
+        "eval(fs.readFileSync(process.argv[2],'utf8'));"
+        "process.stdout.write(JSON.stringify(JSON.parse(process.argv[4]).map(window.lxBeT)));"
+    )
+    out = subprocess.run(
+        ["node", "-e", js, str(I18N_JS), str(BE_JS), lang, json.dumps(texts)],
+        capture_output=True, encoding="utf-8", check=True,
+    )
+    return json.loads(out.stdout)
+
+
+def test_lxbet_translates_blood_labs_templates_and_names():
+    es = [
+        "URGENTE: consultar médico por Ferritina, Vitamina D",
+        "Biomarcadores críticos: Ferritina",
+        "CK 650 U/L → reducir sesiones de carrera con cuestas y eccéntricos",
+        "Reducir CTL objetivo a ~56 (desde 80) hasta normalizar biomarcadores",
+        "verde",
+        "Vitamina B12 sube cuando HRV nocturno promedio sube (correlación directa 0.55).",
+        "Tu Ferritina está bajo (12) y correlaciona positivamente con tu CTL (Fitness crónico) (r=0.60). "
+        "Optimizarlo podría mejorar directamente tu rendimiento.",
+    ]
+    en = _run_lxbet("en", es)
+    assert en[0] == "URGENT: see a doctor about Ferritin, Vitamin D"
+    assert en[1] == "Critical biomarkers: Ferritin"
+    assert en[2].startswith("CK 650 U/L") and "hills" in en[2]
+    assert en[3] == "Lower target CTL to ~56 (from 80) until biomarkers normalize"
+    assert en[4] == "green"
+    assert en[5] == "Vitamin B12 rises when Average nightly HRV rises (direct correlation 0.55)."
+    assert en[6].startswith("Your Ferritin is low (12)") and "Chronic fitness" in en[6]
+    pt = _run_lxbet("pt", es)
+    assert pt[4] == "verde" and pt[0].startswith("URGENTE: consultar um médico")
