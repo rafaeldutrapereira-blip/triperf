@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="i18n.js"></script>
 <script src="lx-backend-i18n.js"></script>
+<script src="routes.config.js?v=4"></script>
 <script>(function(){function _ti(){var v=window.i18n?window.i18n.t('aa_page_title'):null;if(v&&v!=='aa_page_title')document.title=v;}_ti();document.addEventListener('lx:i18nready',_ti);document.addEventListener('lx:langchange',_ti);})();</script>
 <style>
 :root {
@@ -2208,7 +2209,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div class="menu-group-title" data-i18n="app_menu_goal">Objetivo</div>
       <div class="menu-grid">
-        <button class="menu-item" onclick="menuGo('screen-raceday')">
+        <button class="menu-item" id="menu-item-raceday" onclick="menuGo('screen-raceday')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           <span data-i18n="app_menu_raceday">Race Day</span>
         </button>
@@ -2224,7 +2225,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span data-i18n="app_menu_aicoach">AI Coach</span>
         </button>
-        <button class="menu-item" onclick="menuGo('screen-gear')">
+        <button class="menu-item" id="menu-item-gear" onclick="menuGo('screen-gear')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
           <span data-i18n="app_menu_gear">Mi Equipo</span>
         </button>
@@ -2452,6 +2453,22 @@ function doLogout(){
 var MENU_PLAN_LABELS = { basic:_t('shell_plan_basic','Básico'), agegroup:'Agegroup', elite:_t('shell_plan_elite','Élite') };
 var _menuHeaderLoaded = false;
 
+/* Oculta lo que el plan no incluye, con la misma regla que la web
+   (routes.config.js → canAccess). Solo muestra/oculta; no cambia navegación. */
+var _PLAN_GATED_ITEMS = [
+  { el: 'nav-community',     mod: 'community' },
+  { el: 'menu-item-raceday', mod: 'race_day' },
+  { el: 'menu-item-gear',    mod: 'gear' }
+];
+function _applyPlanVisibility(plan){
+  if(!window.LX_ROUTES) return;
+  var sess = { api_rol: 'atleta', plan: plan };
+  _PLAN_GATED_ITEMS.forEach(function(it){
+    var node = document.getElementById(it.el);
+    if(node) node.style.display = LX_ROUTES.canAccess(sess, it.mod) ? '' : 'none';
+  });
+}
+
 function openMenuSheet(){
   document.getElementById('menu-backdrop').classList.add('open');
   document.getElementById('menu-sheet').classList.add('open');
@@ -2555,6 +2572,7 @@ function loadMenuHeader(){
       _menuHeaderLoaded = true;
       var planEl = document.getElementById('menu-plan');
       planEl.textContent = MENU_PLAN_LABELS[p.plan_nivel] || p.plan_nivel || '—';
+      _applyPlanVisibility(p.plan_nivel);
     })
     .catch(function(){});
 }
