@@ -28,6 +28,8 @@ BACKEND_FILES = [
     REPO / "api" / "services" / "blood_labs_impact_service.py",
     REPO / "api" / "services" / "blood_labs_correlation_service.py",
     REPO / "api" / "routes" / "blood_lab_routes.py",
+    # genera el lab_name por defecto que queda guardado en la BD ("Laboratorio Clínico")
+    REPO / "scripts" / "blood_labs_upload.py",
 ]
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -319,3 +321,17 @@ def test_lxbet_translates_blood_lab_alert_title_and_correlation_notes():
     pt = _run_lxbet("pt", es)
     assert pt[0] == "Ferritina fora da faixa ótima"
     assert pt[2] == "CTL 62: cortisol elevado + carga alta = risco de overreaching."
+
+
+def test_lxbet_translates_stored_default_lab_name():
+    """lab_name por defecto guardado en la BD (blood_labs_upload.py) se traduce al leer."""
+    es = ["Laboratorio Clínico"]
+    assert _run_lxbet("en", es) == ["Clinical Laboratory"]
+    assert _run_lxbet("pt", es) == ["Laboratório Clínico"]
+    # un laboratorio con nombre propio no se toca
+    assert _run_lxbet("en", ["Lab Hospital Italiano"]) == ["Lab Hospital Italiano"]
+
+
+def test_blood_labs_routes_stored_lab_name_through_lxbe():
+    src = (REPO / "blood_labs.html").read_text(encoding="utf-8")
+    assert "_lxBe(cur.lab_name)" in src, "exam-ctx-lbl ya no traduce el lab_name guardado"

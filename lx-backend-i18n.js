@@ -1006,6 +1006,10 @@ var LX_BE_ENTRIES = [
  [
   "CK elevada con CTL {ctl}: el plan de esta semana debería ser de recuperación activa.",
   "be_310"
+ ],
+ [
+  "Laboratorio Clínico",
+  "bl_clinical_lab_default"
  ]
 ];
 /* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */
