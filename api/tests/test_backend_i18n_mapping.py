@@ -23,6 +23,8 @@ BACKEND_FILES = [
     REPO / "api" / "services" / "performance_analytics_service.py",
     REPO / "api" / "routes" / "mental_routes.py",
     REPO / "api" / "routes" / "race_routes.py",
+    # el insight diario ya genera el texto nativo desde esta tabla (ES/PT/EN)
+    REPO / "api" / "services" / "insight_texts.py",
 ]
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
