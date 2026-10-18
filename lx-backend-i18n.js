@@ -982,6 +982,14 @@ var LX_BE_ENTRIES = [
  [
   "Sobreentrenamiento real puede requerir semanas o meses. Continuar entrenando agrava el síndrome.",
   "be_304"
+ ],
+ [
+  "Sin actividades de {sport} con datos de potencia en los últimos {days} días.",
+  "be_305"
+ ],
+ [
+  "Sin actividades en el período",
+  "be_306"
  ]
 ];
 /* palabras sueltas que el backend inserta dentro de plantillas (marcadores w_*) */
