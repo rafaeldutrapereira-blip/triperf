@@ -121,3 +121,68 @@ def test_backend_sport_labels_exist_in_backend():
     src = (REPO / "api" / "services" / "training_service.py").read_text(encoding="utf-8")
     for name in ("Natación", "Ciclismo", "Trote", "Fuerza / Prep. física"):
         assert '"%s"' % name in src, "deporte del backend ya no existe: %s" % name
+
+
+LX_INFO_JS = REPO / "lx-info.js"
+
+FRONT_KEYS = [
+    "dash_reload_now", "dash_vo2_sport", "aa_high_risk", "dash_load_high",
+    "dtw_acwr_badge_low", "aa_lvl_low", "aa_lvl_mod", "aa_lvl_med", "aa_lvl_high",
+    "info_tu_valor", "info_que_mide", "info_como_calcula", "info_rangos_ref",
+    "info_ref_triatlon", "info_unidad",
+]
+
+
+def _acwr_block():
+    src = LX_INFO_JS.read_text(encoding="utf-8")
+    i = src.index("  acwr: {")
+    j = src.index("  ctl_projected:")
+    return src[i:j]
+
+
+def _acwr_source_strings():
+    """Textos ES del bloque acwr de lx-info.js que el panel traduce por clave."""
+    blk = _acwr_block()
+    str_re = r"'((?:[^'\\]|\\.)*)'"
+    out = {}
+    for field, key in [
+        ("nombre", "info_acwr_nombre"),
+        ("definicion", "info_acwr_definicion"),
+        ("unidad", "info_acwr_unidad"),
+        ("meta_triathlon", "info_acwr_meta"),
+        ("pro_tip", "info_acwr_tip"),
+    ]:
+        m = re.search(field + r": " + str_re, blk)
+        assert m, "campo %s no encontrado en el bloque acwr" % field
+        out[key] = m.group(1)
+    rangos = re.findall(r"\{min:[^}]*?label:" + str_re + r"[^}]*?advice:" + str_re + r"\}", blk)
+    assert len(rangos) == 4, "se esperaban 4 rangos ACWR y hay %d" % len(rangos)
+    for i, (label, advice) in enumerate(rangos):
+        out["info_acwr_r%d_label" % i] = label
+        out["info_acwr_r%d_adv" % i] = advice
+    return out
+
+
+def test_lx_info_acwr_keys_match_source_text():
+    dic = _load_dict()
+    problems = []
+    for key, es in _acwr_source_strings().items():
+        if key not in dic["es"]:
+            problems.append("%s falta en es" % key)
+            continue
+        if dic["es"][key] != es:
+            problems.append("%s: ES de i18n no coincide con lx-info.js" % key)
+        for lang in ("pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+    assert not problems, "\n".join(problems)
+
+
+def test_frontend_keys_exist_in_all_languages():
+    dic = _load_dict()
+    problems = []
+    for key in FRONT_KEYS:
+        for lang in ("es", "pt", "en"):
+            if key not in dic[lang]:
+                problems.append("%s falta en %s" % (key, lang))
+    assert not problems, "\n".join(problems)

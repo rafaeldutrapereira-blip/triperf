@@ -628,6 +628,10 @@ var LX_BE_ENTRIES = [
   "be_155"
  ],
  [
+  "TSB (forma)",
+  "be_156"
+ ],
+ [
   "Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.",
   "mentmsg_mfs_low"
  ]
@@ -670,6 +674,7 @@ var LX_BE_SPORT = {
     }
     return t;
   }
+  window.lxSport = sportName;
   function one(text){
     if(Object.prototype.hasOwnProperty.call(FIXED, text)){ return tr(FIXED[text]) || text; }
     for(var i = 0; i < TEMPL.length; i++){
