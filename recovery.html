@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme-vars.css">
 <script src="i18n.js"></script>
+<script src="lx-backend-i18n.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--amber:#F59E0B;--blue:#1D4ED8;--rc-good:#22D3EE;--rc-moderate:#F0A500;--rc-low:#F59E0B;--rc-critical:#EF4444;}
@@ -407,6 +408,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
 
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
+  // textos que genera el backend en español → idioma activo (lx-backend-i18n.js)
+  function _be(s){ return (window.lxBeT && typeof s === 'string') ? window.lxBeT(s) : s; }
 
   // ── Date picker setup ─────────────────────────────────────────────────────
   var dp = document.getElementById('date-picker');
@@ -481,8 +484,8 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     if (!rec) return;
     var score  = rec.score || 0;
     var color  = rec.color || 'var(--muted)';
-    var label  = rec.label || '';
-    var recs   = rec.recommendation || '';
+    var label  = _be(rec.label || '');
+    var recs   = _be(rec.recommendation || '');
 
     // Dial animation
     var circumference = 364;
@@ -618,7 +621,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     var alertsEl = document.getElementById('rec-alerts');
     if (alertsEl && d.alerts && d.alerts.length) {
       alertsEl.innerHTML = d.alerts.map(function (a) {
-        return '<div class="alert-chip ' + a.level + '">⚠️ ' + a.message + '</div>';
+        return '<div class="alert-chip ' + a.level + '">⚠️ ' + _be(a.message) + '</div>';
       }).join('');
     }
 
@@ -627,7 +630,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
     if (priEl && d.recovery_priorities && d.recovery_priorities.length) {
       priEl.innerHTML = '<div style="margin-top:.75rem;font-size:.75rem;color:var(--dim);font-family:\'Oswald\',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">' + _t('rcw_for_tonight','Para esta noche:') + '</div>' +
         d.recovery_priorities.map(function (p) {
-          return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0">' + p + '</div>';
+          return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0">' + _be(p) + '</div>';
         }).join('');
     }
   }
@@ -892,7 +895,7 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var insEl = document.getElementById('corr-insights');
         if (d.insights && d.insights.length) {
           insEl.innerHTML = d.insights.map(function (msg) {
-            return '<div class="alert-chip info">🔬 ' + msg + '</div>';
+            return '<div class="alert-chip info">🔬 ' + _be(msg) + '</div>';
           }).join('');
         } else {
           insEl.innerHTML = '<div style="color:var(--dim);font-size:.8rem">' + _t('rcw_no_correlation_data','Sin suficientes datos para análisis de correlación.') + '</div>';
@@ -939,26 +942,26 @@ footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);lett
         var loadColors = { rest:'#EF4444', easy:'#10B981', moderate:'#F0A500', full:'#0EA5E9' };
 
         var html = '<div class="panel" style="padding:1.2rem">' +
-          '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:.4rem">' + p.name + '</div>' +
-          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">' + _t('rcw_estimated_duration','Duración estimada:') + ' ' + p.duration + '</div>';
+          '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:.4rem">' + _be(p.name) + '</div>' +
+          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">' + _t('rcw_estimated_duration','Duración estimada:') + ' ' + _be(p.duration) + '</div>';
 
         if (p.warning) {
-          html += '<div class="alert-chip high" style="margin-bottom:1rem">⚠️ ' + p.warning + '</div>';
+          html += '<div class="alert-chip high" style="margin-bottom:1rem">⚠️ ' + _be(p.warning) + '</div>';
         }
 
         (p.days || []).forEach(function (day) {
           html += '<div class="proto-day">' +
-            '<div class="proto-phase">' + day.label + '</div>' +
+            '<div class="proto-phase">' + _be(day.label) + '</div>' +
             '<div><span class="proto-load ' + day.load + '">' + day.load.toUpperCase() + '</span>' +
             (day.tss_max !== null && day.tss_max !== undefined ? '<div style="font-size:.65rem;color:var(--dim);margin-top:.2rem">TSS ≤ ' + day.tss_max + '</div>' : '') +
             '</div>' +
             '<div class="proto-actions"><ul style="list-style:disc;padding-left:1rem">' +
-            (day.actions || []).map(function (a) { return '<li>' + a + '</li>'; }).join('') +
+            (day.actions || []).map(function (a) { return '<li>' + _be(a) + '</li>'; }).join('') +
             '</ul></div>' +
             '</div>';
         });
 
-        html += '<div class="alert-chip info" style="margin-top:1rem">🫀 ' + p.hrv_clearance + '</div>';
+        html += '<div class="alert-chip info" style="margin-top:1rem">🫀 ' + _be(p.hrv_clearance) + '</div>';
 
         if (ctx.recovery_score_today !== null && ctx.recovery_score_today !== undefined) {
           html += '<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)">' + _t('rcw_your_score_today','Tu Recovery Score hoy:') + ' <strong style="color:var(--text)">' + ctx.recovery_score_today + '</strong> · ' + (ctx.recommendation || '') + '</div>';
