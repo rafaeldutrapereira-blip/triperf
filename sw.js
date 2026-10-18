@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '195';  // 2026-10-17: i18n con datos reales (insight backend, dashboard, header, sidebar, Coach IA)
+var BUILD_VERSION = '196';  // 2026-10-17: deportes en plantillas del backend y frases restantes (dashboard, app, info)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
