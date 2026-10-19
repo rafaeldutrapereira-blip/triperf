@@ -22,7 +22,7 @@ from datetime import datetime, date, timedelta, timezone
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -129,20 +129,13 @@ async def _get_valid_access_token(user: User, db: Session) -> str:
 @router.get("/connect")
 def strava_connect(
     request: Request,
-    client: str | None = Query(None),
     me: User = Depends(get_current_user),
 ):
-    """Inicia el flujo OAuth: redirige al usuario a Strava.
-
-    client=mobile: el callback vuelve a /athlete-app.html en vez de /athlete_profile.html.
-    El flag viaja dentro del state (no hay otro parámetro en el callback de Strava)."""
+    """Inicia el flujo OAuth: redirige al usuario a Strava."""
     _require_strava()
-    # Guardar user_id (y el origen móvil) en state para recuperarlo en callback
+    # Guardar user_id en state para recuperarlo en callback
     import base64, json
-    payload = {"uid": me.id}
-    if client == "mobile":
-        payload["app"] = "mobile"
-    state = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+    state = base64.urlsafe_b64encode(json.dumps({"uid": me.id}).encode()).decode()
     url = (
         f"{_STRAVA_AUTH}"
         f"?client_id={_CLIENT_ID}"
@@ -153,17 +146,6 @@ def strava_connect(
         f"&state={state}"
     )
     return RedirectResponse(url)
-
-
-def _oauth_return_path(state: str | None) -> str:
-    """Página a la que volver tras el OAuth. Móvil si el state lo marca; si no, la web."""
-    import base64, json
-    try:
-        padded = (state or "") + "=" * (-len(state or "") % 4)
-        payload = json.loads(base64.urlsafe_b64decode(padded).decode())
-    except Exception:
-        return "/athlete_profile.html"
-    return "/athlete-app.html" if payload.get("app") == "mobile" else "/athlete_profile.html"
 
 
 @router.get("/callback")
@@ -177,7 +159,7 @@ async def strava_callback(
     _require_strava()
 
     if error or not code:
-        return RedirectResponse(_oauth_return_path(state) + "?strava=denied")
+        return RedirectResponse("/athlete_profile.html?strava=denied")
 
     # Recuperar user_id del state — BP-15: padding correcto para base64 variable
     import base64, json
@@ -203,13 +185,13 @@ async def strava_callback(
         })
         if r.status_code != 200:
             logger.error("Strava token exchange failed: %s", r.text)
-            return RedirectResponse(_oauth_return_path(state) + "?strava=error")
+            return RedirectResponse("/athlete_profile.html?strava=error")
         tokens = r.json()
 
     _save_strava_tokens(user, tokens, db)
     logger.info("Strava conectado para user=%s athlete_id=%s", user_id, user.strava_athlete_id)
 
-    return RedirectResponse(_oauth_return_path(state) + "?strava=connected")
+    return RedirectResponse("/athlete_profile.html?strava=connected")
 
 
 @router.get("/status")
