@@ -16,9 +16,10 @@ class TestSecurityHeaders:
         # Headers de seguridad deben estar presentes
         assert r.headers.get("x-content-type-options") == "nosniff"
 
-    def test_x_frame_options_deny(self, client):
+    def test_x_frame_options_sameorigin(self, client):
+        # SAMEORIGIN: permite embeds del mismo origen (Carga, Coach); otros orígenes siguen bloqueados.
         r = client.get("/health")
-        assert r.headers.get("x-frame-options") == "DENY"
+        assert r.headers.get("x-frame-options") == "SAMEORIGIN"
 
     def test_referrer_policy(self, client):
         r = client.get("/health")
