@@ -771,8 +771,14 @@ def update_notification_prefs(
 
 # ── Email helpers ──────────────────────────────────────────────
 
+# Base pública del sitio para enlaces que salen por correo. Si APP_URL no está
+# configurada (producción usa .env, que no la define), el enlace debe apuntar al
+# sitio real y no a localhost: un enlace a localhost nunca abre el formulario.
+PUBLIC_APP_URL = "https://labxperformanceapp.com"
+
+
 def _get_app_url() -> str:
-    return os.getenv("APP_URL", "http://localhost:8000")
+    return os.getenv("APP_URL", PUBLIC_APP_URL)
 
 
 def _send_reset_email(email: str, nombre: str, token: str) -> None:
