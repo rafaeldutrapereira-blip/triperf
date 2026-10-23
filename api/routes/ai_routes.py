@@ -50,7 +50,7 @@ router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(require_feat
 
 _ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
-SYSTEM_PROMPT_BASE = """Eres el Coach IA de LabX, experto en triatlón y deportes de resistencia.
+SYSTEM_PROMPT_BASE = """Eres el Asistente IA de LabX, experto en triatlón y deportes de resistencia.
 Tienes acceso al perfil fisiológico completo y datos de entrenamiento reales del atleta.
 
 REGLAS:
@@ -116,7 +116,7 @@ async def coach_suggest(
       history:    [{role,content}] — Historial reciente del frontend (hasta 10 turnos)
     """
     if not _ANTHROPIC_KEY:
-        raise HTTPException(503, {"code": "ai_not_configured", "message": "AI Coach no configurado — agrega ANTHROPIC_API_KEY al .env"})
+        raise HTTPException(503, {"code": "ai_not_configured", "message": "Asistente IA no configurado — agrega ANTHROPIC_API_KEY al .env"})
 
     question   = (body.get("message") or "").strip()
     session_id = body.get("session_id")
@@ -166,13 +166,13 @@ async def coach_suggest(
 
     except asyncio.TimeoutError:
         logger.error("Anthropic timeout (%ds) user=%s", _AI_TIMEOUT, me.id)
-        raise HTTPException(504, {"code": "ai_timeout", "message": f"AI Coach tardó más de {_AI_TIMEOUT}s. Intenta de nuevo."})
+        raise HTTPException(504, {"code": "ai_timeout", "message": f"Asistente IA tardó más de {_AI_TIMEOUT}s. Intenta de nuevo."})
     except anthropic.APIStatusError as e:
         logger.error("Anthropic API error user=%s: %s", me.id, e)
         raise HTTPException(502, {"code": "ai_api_error", "message": f"Error de API AI: {e.message}"})
     except Exception as e:
         logger.error("AI coach error user=%s: %s", me.id, e)
-        raise HTTPException(500, {"code": "ai_internal_error", "message": "Error interno del AI Coach"})
+        raise HTTPException(500, {"code": "ai_internal_error", "message": "Error interno del Asistente IA"})
 
     # ── Persistir sesión y mensajes ──────────────────────────────────────────
     try:

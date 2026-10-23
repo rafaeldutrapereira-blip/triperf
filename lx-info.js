@@ -261,7 +261,7 @@ var METRICS = {
       {min:55, max:75, label:'Alto',         color:'#F97316', advice:'Reduce intensidad y volumen al 70% esta semana.'},
       {min:75, max:999,label:'Crítico ⚠',   color:'#EF4444', advice:'Descansa hoy. Consulta con tu coach antes de entrenar mañana.'},
     ],
-    pro_tip: 'Mismo motor que usa la pestaña "Lesiones" del AI Coach — un solo número real en toda la app, no una aproximación distinta por pantalla.',
+    pro_tip: 'Mismo motor que usa la pestaña "Lesiones" del Asistente IA — un solo número real en toda la app, no una aproximación distinta por pantalla.',
     unidad: 'puntos (0-100)',
   },
 

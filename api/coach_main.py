@@ -393,7 +393,7 @@ _OPENAPI_TAGS = [
     {"name": "stripe",   "description": "Suscripciones y planes de pago"},
     {"name": "social",   "description": "Follows, kudos y comentarios entre atletas"},
     {"name": "notifications", "description": "Web Push VAPID — suscripción y envío"},
-    {"name": "ai",       "description": "Coach IA — preguntas sobre entrenamiento"},
+    {"name": "ai",       "description": "Asistente IA — preguntas sobre entrenamiento"},
     {"name": "admin",    "description": "Administración del sistema (solo admin)"},
     {"name": "infra",    "description": "Health checks y métricas de infraestructura"},
 ]

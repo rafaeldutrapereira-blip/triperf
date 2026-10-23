@@ -284,13 +284,13 @@
     if(window.i18n&&window.i18n.mountWidget) window.i18n.mountWidget();
     document.querySelectorAll('#sidebar [data-i18n], header.sb-topbar [data-i18n]').forEach(function(el){ var v=_nt(el.getAttribute('data-i18n'),''); if(v) el.textContent=v; });
     var t=document.querySelector('#lx-ai-panel .lx-ai-title');
-    if(t) t.innerHTML='&#x26A1; '+_escH(_nt('shell_ai_title','Coach IA · LabX'));
+    if(t) t.innerHTML='&#x26A1; '+_escH(_nt('shell_ai_title','Asistente IA · LabX'));
     var w=document.querySelector('#lx-ai-msgs > .lx-ai-msg.ai');
-    if(w) w.textContent=_nt('shell_ai_welcome','Hola! Soy tu Coach IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.');
+    if(w) w.textContent=_nt('shell_ai_welcome','Hola! Soy tu Asistente IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.');
     var inp=document.getElementById('lx-ai-inp');
     if(inp) inp.placeholder=_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…');
     var fb=document.getElementById('lx-ai-btn');
-    if(fb) fb.title=_nt('shell_ai_btn','Coach IA');
+    if(fb) fb.title=_nt('shell_ai_btn','Asistente IA');
   }
   document.addEventListener('lx:i18nready', _refreshI18n);
 
@@ -327,7 +327,7 @@
   })();
 
   /* ═══════════════════════════════════════════════════════════════
-     8.  AI COACH WIDGET FLOTANTE
+     8.  ASISTENTE IA WIDGET FLOTANTE
   ═══════════════════════════════════════════════════════════════ */
   (function(){
     var API=(window.location.protocol==='file:'?'http://localhost:8000':'')+'/api';
@@ -344,11 +344,11 @@
     function injectWidget(){
       if(document.getElementById('lx-ai-btn')) return;
       injectStyles();
-      var btn=document.createElement('button'); btn.id='lx-ai-btn'; btn.title=_nt('shell_ai_btn','Coach IA');
+      var btn=document.createElement('button'); btn.id='lx-ai-btn'; btn.title=_nt('shell_ai_btn','Asistente IA');
       btn.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.95 9.95 0 0 1-4.77-1.21L2 22l1.21-5.23A9.95 9.95 0 0 1 2 12 10 10 0 0 1 12 2z"/><path d="M8 12h8M8 8h5"/></svg>';
       btn.onclick=togglePanel;
       var panel=document.createElement('div'); panel.id='lx-ai-panel';
-      panel.innerHTML='<div id="lx-ai-head"><span class="lx-ai-title">&#x26A1; '+_escH(_nt('shell_ai_title','Coach IA · LabX'))+'</span><button class="lx-ai-close" onclick="document.getElementById(\'lx-ai-panel\').classList.remove(\'open\')">&#x2715;</button></div><div id="lx-ai-msgs"><div class="lx-ai-msg ai">'+_escH(_nt('shell_ai_welcome','Hola! Soy tu Coach IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.'))+'</div></div><form id="lx-ai-form" onsubmit="return false;"><textarea id="lx-ai-inp" rows="2" placeholder="'+_escH(_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…'))+'" onkeydown="lxAiKey(event)"></textarea><button id="lx-ai-send" type="button" onclick="lxAiSend()">&#x2192;</button></form>';
+      panel.innerHTML='<div id="lx-ai-head"><span class="lx-ai-title">&#x26A1; '+_escH(_nt('shell_ai_title','Asistente IA · LabX'))+'</span><button class="lx-ai-close" onclick="document.getElementById(\'lx-ai-panel\').classList.remove(\'open\')">&#x2715;</button></div><div id="lx-ai-msgs"><div class="lx-ai-msg ai">'+_escH(_nt('shell_ai_welcome','Hola! Soy tu Asistente IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.'))+'</div></div><form id="lx-ai-form" onsubmit="return false;"><textarea id="lx-ai-inp" rows="2" placeholder="'+_escH(_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…'))+'" onkeydown="lxAiKey(event)"></textarea><button id="lx-ai-send" type="button" onclick="lxAiSend()">&#x2192;</button></form>';
       document.body.appendChild(btn); document.body.appendChild(panel);
     }
 

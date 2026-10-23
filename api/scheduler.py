@@ -419,7 +419,7 @@ Responde en español.""",
                     db.add(AIInsight(
                         user_id    = u.id,
                         type       = "daily_coach_tip",
-                        title      = f"Coach IA — {today}",
+                        title      = f"Asistente IA — {today}",
                         body       = tip_text,
                         priority   = 2,
                         is_read    = False,

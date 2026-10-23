@@ -182,7 +182,7 @@ _WELCOME_TXT = {
         subject="Welcome to LabX — Your performance platform is ready",
         greeting="Dear",
         intro1="On behalf of the entire <strong style=\"color:#F0F9FF\">LabX</strong> team, we warmly welcome you and thank you for your trust in our platform.",
-        intro2="LabX is a training platform designed for endurance athletes — running, cycling, swimming and triathlon. We sync your real data from devices like Garmin and Strava to calculate your training load (CTL/ATL/TSB), your daily recovery status, and offer tools like our Race Predictor and an AI Coach, to support you at every stage of your preparation.",
+        intro2="LabX is a training platform designed for endurance athletes — running, cycling, swimming and triathlon. We sync your real data from devices like Garmin and Strava to calculate your training load (CTL/ATL/TSB), your daily recovery status, and offer tools like our Race Predictor and an AI Assistant, to support you at every stage of your preparation.",
         access_title="Accessing the platform",
         access_web_label="Web platform:",
         access_web="sign in at",
