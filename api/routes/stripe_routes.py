@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..app_url import get_app_url
 from ..database import get_db
 from ..models import User
 # Única fuente de verdad de feature-gating por plan (usada también por
@@ -119,7 +120,7 @@ def create_checkout(
     if not price_id:
         raise HTTPException(400, f"Plan '{plan}' no disponible o no configurado.")
 
-    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    app_url = get_app_url()
 
     customer_id = _get_or_create_stripe_customer(stripe, user, db)
 
@@ -146,7 +147,7 @@ def billing_portal(
 ):
     """S15: Crea una sesión del Stripe Billing Portal. Usa stripe_customer_id del modelo."""
     stripe  = _stripe()
-    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    app_url = get_app_url()
 
     customer_id = _get_or_create_stripe_customer(stripe, user, db)
 
@@ -201,7 +202,7 @@ def addon_checkout(body: dict, user: User = Depends(get_current_user), db: Sessi
         raise HTTPException(400, f"Precio del addon '{aid}' no configurado.")
 
     stripe = _stripe()
-    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    app_url = get_app_url()
     customer_id = _get_or_create_stripe_customer(stripe, user, db)
     session = stripe.checkout.Session.create(
         mode="subscription",

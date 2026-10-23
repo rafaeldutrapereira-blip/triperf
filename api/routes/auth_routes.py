@@ -19,6 +19,7 @@ from ..auth import (
 )
 
 from ..mailer import send_welcome, send_login_alert
+from ..app_url import get_app_url
 from ..garmin_pull_service import background_sync_user, dispatch_garmin_sync
 from ..audit import audit, ip_from_request, Action
 from ..redis_client import check_rate_limit_redis, redis_delete
@@ -771,14 +772,8 @@ def update_notification_prefs(
 
 # ── Email helpers ──────────────────────────────────────────────
 
-# Base pública del sitio para enlaces que salen por correo. Si APP_URL no está
-# configurada (producción usa .env, que no la define), el enlace debe apuntar al
-# sitio real y no a localhost: un enlace a localhost nunca abre el formulario.
-PUBLIC_APP_URL = "https://labxperformanceapp.com"
-
-
 def _get_app_url() -> str:
-    return os.getenv("APP_URL", PUBLIC_APP_URL)
+    return get_app_url()
 
 
 def _send_reset_email(email: str, nombre: str, token: str) -> None:

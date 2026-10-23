@@ -12,6 +12,8 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
+from .app_url import get_app_url
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from sqlalchemy.orm import Session
@@ -35,7 +37,7 @@ def _send_drip_emails() -> None:
     from .database import SessionLocal
     from .models import User
     from .mailer import send_day3_drip, send_day7_drip
-    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    app_url = get_app_url()
     db = SessionLocal()
     try:
         now = datetime.now(timezone.utc).replace(tzinfo=None)

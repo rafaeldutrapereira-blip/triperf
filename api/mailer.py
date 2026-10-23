@@ -27,6 +27,8 @@ import os
 import re
 from pathlib import Path
 
+from .app_url import get_app_url
+
 logger = logging.getLogger("labx.mailer")
 
 _FROM = os.getenv("EMAIL_FROM", "LabX <partnerships@labxperformanceapp.com>")
@@ -206,7 +208,7 @@ def send_welcome(email: str, nombre: str, app_url: str = "", lang: str = "es") -
     tenía antes). No se linkea a App Store/Google Play: la app nativa
     (Capacitor, Sprint 55) todavía no está compilada ni publicada en
     ninguna tienda -- se indica instalación PWA real, que sí funciona hoy."""
-    app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    app_url = app_url or get_app_url()
     t = _WELCOME_TXT.get(lang, _WELCOME_TXT["es"])
     inner = f"""
       <p style="margin:0 0 16px">{t['greeting']} <strong>{nombre}</strong>,</p>
@@ -275,7 +277,7 @@ _DAY3_TXT = {
 
 
 def send_day3_drip(email: str, nombre: str, app_url: str = "", lang: str = "es") -> None:
-    app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    app_url = app_url or get_app_url()
     t = _DAY3_TXT.get(lang, _DAY3_TXT["es"])
     inner = f"""
       <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
@@ -324,7 +326,7 @@ _DAY7_TXT = {
 
 
 def send_day7_drip(email: str, nombre: str, app_url: str = "", lang: str = "es") -> None:
-    app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    app_url = app_url or get_app_url()
     t = _DAY7_TXT.get(lang, _DAY7_TXT["es"])
     inner = f"""
       <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
@@ -523,7 +525,7 @@ _GEAR_ALERT_TXT = {
 def send_gear_alert(email: str, nombre: str, gear_label: str, gear_kind: str,
                      life_pct: float, threshold: int, app_url: str = "", lang: str = "es") -> None:
     """gear_kind: 'shoe' | 'component'. threshold: 80 o 100 (% de vida útil)."""
-    app_url = app_url or os.getenv("APP_URL", "http://localhost:8000")
+    app_url = app_url or get_app_url()
     t = _GEAR_ALERT_TXT.get(lang, _GEAR_ALERT_TXT["es"])
     icon = "👟" if gear_kind == "shoe" else "🚲"
     if threshold >= 100:

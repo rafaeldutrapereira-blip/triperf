@@ -7,6 +7,8 @@ from __future__ import annotations
 import logging
 from datetime import date
 
+from ..app_url import get_app_url
+
 logger = logging.getLogger("labx.notifications")
 
 
@@ -27,8 +29,8 @@ def _base_email(content_html: str) -> str:
     {content_html}
     <div style="margin-top:40px;text-align:center;color:#3D6880;font-size:.75rem">
       © {date.today().year} LabX ·
-      <a href="{{{{APP_URL}}}}/privacy.html" style="color:#3D6880">Privacidad</a> ·
-      <a href="{{{{APP_URL}}}}/unsubscribe.html" style="color:#3D6880">Cancelar suscripción</a>
+      <a href="{get_app_url()}/privacy.html" style="color:#3D6880">Privacidad</a> ·
+      <a href="{get_app_url()}/unsubscribe.html" style="color:#3D6880">Cancelar suscripción</a>
     </div>
   </div>
 </body>
@@ -49,7 +51,7 @@ def email_workout_assigned(athlete_name: str, workout_name: str, date_iso: str,
         <div style="color:#7FB3CC;font-size:.9rem">📅 Fecha: <strong style="color:#F0F9FF">{date_iso}</strong></div>
         {f'<div style="color:#7FB3CC;font-size:.9rem;margin-top:8px">📝 {notas}</div>' if notas else ''}
       </div>
-      <a href="{{{{APP_URL}}}}/dashboard.html" style="display:inline-block;background:#FF6535;color:white;
+      <a href="{get_app_url()}/dashboard.html" style="display:inline-block;background:#FF6535;color:white;
          padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">Ver entrenamiento</a>
     </div>
     """
@@ -91,7 +93,7 @@ def email_weekly_summary(athlete_name: str, week_data: dict) -> tuple[str, str]:
           <div style="color:#3D6880;font-size:.75rem">Carga (CTL: {ctl:.0f})</div>
         </div>
       </div>
-      <a href="{{{{APP_URL}}}}/dashboard.html" style="display:inline-block;background:#FF6535;color:white;
+      <a href="{get_app_url()}/dashboard.html" style="display:inline-block;background:#FF6535;color:white;
          padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">Ver dashboard</a>
     </div>
     """
@@ -107,7 +109,7 @@ def email_wellness_reminder(athlete_name: str) -> tuple[str, str]:
       <p style="color:#7FB3CC">Hola <strong>{athlete_name}</strong>, tomarte 30 segundos para registrar
         tu bienestar ayuda a tu coach a optimizar tu plan de entrenamiento.</p>
       <p style="color:#7FB3CC">Registra: fatiga, sueño, dolor muscular y estado de ánimo.</p>
-      <a href="{{{{APP_URL}}}}/dashboard.html#wellness" style="display:inline-block;background:#0EA5E9;
+      <a href="{get_app_url()}/dashboard.html#wellness" style="display:inline-block;background:#0EA5E9;
          color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">
         Registrar ahora</a>
     </div>
@@ -131,7 +133,7 @@ def email_overtraining_alert(athlete_name: str, tsb: float, acwr: float,
           (zona segura: 0.8–1.3)</div>
       </div>
       <p style="color:#7FB3CC">Recomendación: reduce volumen e intensidad esta semana. {coach_note}</p>
-      <a href="{{{{APP_URL}}}}/dashboard.html" style="display:inline-block;background:#EF4444;color:white;
+      <a href="{get_app_url()}/dashboard.html" style="display:inline-block;background:#EF4444;color:white;
          padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">Ver dashboard</a>
     </div>
     """

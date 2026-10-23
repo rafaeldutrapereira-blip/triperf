@@ -15,11 +15,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("labx.delivery")
 
-APP_URL = os.getenv("APP_URL", "http://localhost:8000")
-
 # Module-level imports so they can be patched in tests
 from .mailer import send_email          # noqa: E402
 from .crypto import decrypt_credential  # noqa: E402
+from .app_url import get_app_url         # noqa: E402
+
+APP_URL = get_app_url()
 
 
 # ─────────────────────────────────────────────────────────────────

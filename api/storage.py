@@ -21,6 +21,8 @@ import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from .app_url import get_app_url
+
 logger = logging.getLogger("labx.storage")
 
 _BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,7 +87,7 @@ class LocalStorage(StorageBackend):
             logger.debug("LocalStorage.delete key=%s", key)
 
     def url(self, key: str) -> str:
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
+        app_url = get_app_url()
         return f"{app_url}/api/storage/{key}"
 
     def exists(self, key: str) -> bool:
