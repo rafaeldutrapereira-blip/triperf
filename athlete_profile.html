@@ -1,1297 +1,3413 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es" translate="no">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Mi Perfil</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="nav.css?v=3">
-<style>
-.page-wrap { max-width:1160px; padding-bottom:3rem; }
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Mi Perfil</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="nav.css?v=3" />
+    <style>
+      .page-wrap {
+        max-width: 1160px;
+        padding-bottom: 3rem;
+      }
 
-/* Header */
-.ph { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.75rem; }
-.ph-left { display:flex; align-items:center; gap:1rem; }
-.avatar-lg {
-  width:58px; height:58px; border-radius:50%;
-  background:linear-gradient(135deg,var(--orange),var(--gold));
-  display:flex; align-items:center; justify-content:center;
-  font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; font-weight:900; color:#fff; flex-shrink:0;
-}
-.ph-name { font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; }
-.ph-sub  { font-size:.78rem; color:var(--muted); margin-top:.1rem; }
+      /* Header */
+      .ph {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+      }
+      .ph-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .avatar-lg {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--orange), var(--gold));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .ph-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .ph-sub {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-top: 0.1rem;
+      }
 
-/* Tabs */
-.tabs { display:flex; gap:.2rem; border-bottom:1px solid var(--border); margin-bottom:1.75rem; overflow-x:auto; scrollbar-width:none; }
-.tabs::-webkit-scrollbar { display:none; }
-.tab-btn {
-  font-family:'Oswald',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
-  padding:.65rem 1.1rem; background:none; border:none; border-bottom:2px solid transparent;
-  color:var(--muted); cursor:pointer; white-space:nowrap; transition:color .18s,border-color .18s; margin-bottom:-1px;
-}
-.tab-btn:hover { color:var(--text); }
-.tab-btn.active { color:var(--orange); border-bottom-color:var(--orange); }
-.tab-pane { display:none; }
-.tab-pane.active { display:block; }
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 0.2rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.75rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .tab-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.1rem;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        margin-bottom: -1px;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+      }
+      .tab-btn.active {
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.active {
+        display: block;
+      }
 
-/* Cards */
-.card { background:linear-gradient(145deg,var(--surface),var(--bg)); border:1px solid var(--border2); border-radius:var(--radius); margin-bottom:1.4rem; overflow:hidden; }
-.card-head { padding:1.2rem 1.6rem; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
-.card-title { font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; font-weight:700; letter-spacing:.04em; color:var(--text); display:flex; align-items:center; gap:.55rem; }
-.card-title svg { width:18px; height:18px; opacity:.7; flex-shrink:0; }
-.card-body { padding:1.6rem; }
+      /* Cards */
+      .card {
+        background: linear-gradient(145deg, var(--surface), var(--bg));
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        margin-bottom: 1.4rem;
+        overflow: hidden;
+      }
+      .card-head {
+        padding: 1.2rem 1.6rem;
+        border-bottom: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .card-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+      }
+      .card-title svg {
+        width: 18px;
+        height: 18px;
+        opacity: 0.7;
+        flex-shrink: 0;
+      }
+      .card-body {
+        padding: 1.6rem;
+      }
 
-/* Forms */
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
-@media(max-width:600px){ .form-grid,.form-grid.three { grid-template-columns:1fr; } }
-.field { display:flex; flex-direction:column; gap:.35rem; }
-.field label { font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-.field input,.field select,.field textarea {
-  background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);
-  color:var(--text); font-family:'Inter',sans-serif; font-size:.94rem; padding:.72rem .9rem;
-  transition:border-color .18s; outline:none;
-}
-.field input:focus,.field select:focus { border-color:var(--cyan); }
-.field input[readonly] { opacity:.5; cursor:default; }
-.field-hint { font-size:.67rem; color:var(--dim); margin-top:.15rem; }
+      /* Forms */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      .form-grid.three {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      @media (max-width: 600px) {
+        .form-grid,
+        .form-grid.three {
+          grid-template-columns: 1fr;
+        }
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .field label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.94rem;
+        padding: 0.72rem 0.9rem;
+        transition: border-color 0.18s;
+        outline: none;
+      }
+      .field input:focus,
+      .field select:focus {
+        border-color: var(--cyan);
+      }
+      .field input[readonly] {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .field-hint {
+        font-size: 0.67rem;
+        color: var(--dim);
+        margin-top: 0.15rem;
+      }
 
-/* Buttons */
-.btn { display:inline-flex; align-items:center; gap:.4rem; font-family:'Oswald',sans-serif; font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.58rem 1.2rem; border-radius:6px; border:none; cursor:pointer; transition:all .18s; white-space:nowrap; }
-.btn-primary { background:var(--orange); color:#fff; }
-.btn-primary:hover { background:#E8490A; transform:translateY(-1px); box-shadow:0 6px 20px rgba(255,101,53,.3); }
-.btn-secondary { background:transparent; color:var(--muted); border:1px solid var(--border); }
-.btn-secondary:hover { border-color:var(--cyan); color:var(--cyan); }
-.btn-danger { background:transparent; color:var(--red); border:1px solid rgba(239,68,68,.3); }
-.btn-danger:hover { background:rgba(239,68,68,.1); border-color:var(--red); }
-.btn-sm { padding:.38rem .85rem; font-size:.68rem; }
-.btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; }
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.58rem 1.2rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.18s;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--orange);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #e8490a;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(255, 101, 53, 0.3);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn-danger {
+        background: transparent;
+        color: var(--red);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--red);
+      }
+      .btn-sm {
+        padding: 0.38rem 0.85rem;
+        font-size: 0.68rem;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none !important;
+      }
 
-/* Status */
-.status-dot { display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem; font-weight:600; }
-.status-dot::before { content:''; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.status-connected::before    { background:var(--green); box-shadow:0 0 6px var(--green); }
-.status-disconnected::before { background:var(--dim); }
-.status-error::before        { background:var(--red); }
+      /* Status */
+      .status-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .status-dot::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .status-connected::before {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .status-disconnected::before {
+        background: var(--dim);
+      }
+      .status-error::before {
+        background: var(--red);
+      }
 
-/* Connection cards */
-.conn-card { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; padding:1.2rem 1.4rem; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius-sm); }
-.conn-left { display:flex; align-items:center; gap:.85rem; }
-.conn-logo { width:46px; height:46px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.35rem; flex-shrink:0; }
-.conn-logo-garmin { background:rgba(14,165,233,.12); border:1px solid rgba(14,165,233,.2); }
-.conn-logo-strava  { background:rgba(255,101,53,.12); border:1px solid rgba(255,101,53,.2); }
-.conn-name { font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
-.conn-desc { font-size:.7rem; color:var(--muted); margin-top:.1rem; }
-.conn-actions { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+      /* Connection cards */
+      .conn-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 1.2rem 1.4rem;
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius-sm);
+      }
+      .conn-left {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+      .conn-logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+      }
+      .conn-logo-garmin {
+        background: rgba(14, 165, 233, 0.12);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+      }
+      .conn-logo-strava {
+        background: rgba(255, 101, 53, 0.12);
+        border: 1px solid rgba(255, 101, 53, 0.2);
+      }
+      .conn-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .conn-desc {
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-top: 0.1rem;
+      }
+      .conn-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
 
-/* Zones table */
-.zone-table { width:100%; border-collapse:collapse; font-size:.9rem; }
-.zone-table th { font-family:'Oswald',sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); padding:.55rem .7rem; text-align:left; border-bottom:1px solid var(--border2); }
-.zone-table td { padding:.68rem .7rem; border-bottom:1px solid rgba(255,255,255,.04); }
-.zone-table tr:last-child td { border-bottom:none; }
-.zone-bar { height:5px; border-radius:3px; }
+      /* Zones table */
+      .zone-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .zone-table th {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding: 0.55rem 0.7rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border2);
+      }
+      .zone-table td {
+        padding: 0.68rem 0.7rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .zone-table tr:last-child td {
+        border-bottom: none;
+      }
+      .zone-bar {
+        height: 5px;
+        border-radius: 3px;
+      }
 
-/* Benchmarks */
-.bench-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(165px,1fr)); gap:1rem; }
-.bench-item { background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:1.2rem 1.1rem; text-align:center; }
-.bench-val   { font-family:'Barlow Condensed',sans-serif; font-size:2.1rem; font-weight:800; color:var(--orange); line-height:1; }
-.bench-label { font-size:.66rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:.35rem; }
+      /* Benchmarks */
+      .bench-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+        gap: 1rem;
+      }
+      .bench-item {
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius-sm);
+        padding: 1.2rem 1.1rem;
+        text-align: center;
+      }
+      .bench-val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.1rem;
+        font-weight: 800;
+        color: var(--orange);
+        line-height: 1;
+      }
+      .bench-label {
+        font-size: 0.66rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-top: 0.35rem;
+      }
 
-/* PRs */
-.pr-table { width:100%; border-collapse:collapse; font-size:.9rem; }
-.pr-table th { font-family:'Oswald',sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); padding:.55rem .7rem; text-align:left; border-bottom:1px solid var(--border2); }
-.pr-table td { padding:.68rem .7rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
-.pr-table tr:last-child td { border-bottom:none; }
-.pr-sport { display:inline-flex; align-items:center; font-size:.7rem; font-weight:600; padding:.14rem .5rem; border-radius:12px; }
-.pr-swim { background:rgba(14,165,233,.12); color:#0EA5E9; }
-.pr-bike { background:rgba(240,165,0,.12);  color:#F0A500; }
-.pr-run  { background:rgba(16,185,129,.12); color:#10B981; }
-.pr-tri  { background:rgba(168,85,247,.12); color:#A855F7; }
-.del-btn { background:none; border:none; color:var(--dim); cursor:pointer; padding:.2rem .4rem; border-radius:4px; transition:color .15s; font-size:.85rem; }
-.del-btn:hover { color:var(--red); }
+      /* PRs */
+      .pr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .pr-table th {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding: 0.55rem 0.7rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border2);
+      }
+      .pr-table td {
+        padding: 0.68rem 0.7rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+      }
+      .pr-table tr:last-child td {
+        border-bottom: none;
+      }
+      .pr-sport {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.14rem 0.5rem;
+        border-radius: 12px;
+      }
+      .pr-swim {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0ea5e9;
+      }
+      .pr-bike {
+        background: rgba(240, 165, 0, 0.12);
+        color: #f0a500;
+      }
+      .pr-run {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+      }
+      .pr-tri {
+        background: rgba(168, 85, 247, 0.12);
+        color: #a855f7;
+      }
+      .del-btn {
+        background: none;
+        border: none;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        transition: color 0.15s;
+        font-size: 0.85rem;
+      }
+      .del-btn:hover {
+        color: var(--red);
+      }
 
-/* Security */
-.sec-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; padding:.8rem 0; border-bottom:1px solid rgba(255,255,255,.04); }
-.sec-row:last-child { border-bottom:none; }
-.sec-label { font-size:.85rem; font-weight:600; }
-.sec-desc  { font-size:.7rem; color:var(--muted); margin-top:.12rem; }
-.toggle-switch { position:relative; width:38px; height:21px; flex-shrink:0; }
-.toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
-.toggle-track { position:absolute; inset:0; border-radius:11px; background:var(--border); cursor:pointer; transition:background .2s; }
-.toggle-switch input:checked + .toggle-track { background:var(--green); }
-.toggle-track::after { content:''; position:absolute; width:15px; height:15px; border-radius:50%; background:#fff; top:3px; left:3px; transition:transform .2s; }
-.toggle-switch input:checked + .toggle-track::after { transform:translateX(17px); }
+      /* Security */
+      .sec-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .sec-row:last-child {
+        border-bottom: none;
+      }
+      .sec-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .sec-desc {
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-top: 0.12rem;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 38px;
+        height: 21px;
+        flex-shrink: 0;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+      .toggle-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 11px;
+        background: var(--border);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .toggle-switch input:checked + .toggle-track {
+        background: var(--green);
+      }
+      .toggle-track::after {
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #fff;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.2s;
+      }
+      .toggle-switch input:checked + .toggle-track::after {
+        transform: translateX(17px);
+      }
 
-/* Danger */
-.danger-card { border-color:rgba(239,68,68,.22) !important; background:linear-gradient(145deg,rgba(239,68,68,.04),var(--bg)) !important; }
-.danger-card .card-head { border-bottom-color:rgba(239,68,68,.12) !important; }
-.danger-card .card-title { color:var(--red) !important; }
+      /* Danger */
+      .danger-card {
+        border-color: rgba(239, 68, 68, 0.22) !important;
+        background: linear-gradient(
+          145deg,
+          rgba(239, 68, 68, 0.04),
+          var(--bg)
+        ) !important;
+      }
+      .danger-card .card-head {
+        border-bottom-color: rgba(239, 68, 68, 0.12) !important;
+      }
+      .danger-card .card-title {
+        color: var(--red) !important;
+      }
 
-/* Toast */
-#prof-toast {
-  position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
-  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
-  padding:.65rem 1rem; font-size:.82rem; font-weight:500;
-  box-shadow:0 8px 32px rgba(0,0,0,.5); transform:translateY(120%); opacity:0;
-  transition:all .3s cubic-bezier(.34,1.56,.64,1); max-width:300px;
-}
-#prof-toast.show { transform:translateY(0); opacity:1; }
-#prof-toast.ok  { border-left:3px solid var(--green); }
-#prof-toast.err { border-left:3px solid var(--red); }
+      /* Toast */
+      #prof-toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.65rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        transform: translateY(120%);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        max-width: 300px;
+      }
+      #prof-toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      #prof-toast.ok {
+        border-left: 3px solid var(--green);
+      }
+      #prof-toast.err {
+        border-left: 3px solid var(--red);
+      }
 
-/* Modal 2FA */
-#modal-2fa { display:none; position:fixed; inset:0; z-index:9000; background:rgba(4,8,15,.88); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:1rem; }
-#modal-2fa.open { display:flex; }
-.modal-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; max-width:400px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,.7); }
-.modal-box h3 { font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:800; text-transform:uppercase; margin-bottom:.3rem; }
-.modal-box p  { font-size:.8rem; color:var(--muted); margin-bottom:1.2rem; line-height:1.6; }
-#qr-container { text-align:center; margin:1rem 0; }
-#qr-container img { border-radius:8px; }
+      /* Modal 2FA */
+      #modal-2fa {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        background: rgba(4, 8, 15, 0.88);
+        backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+      #modal-2fa.open {
+        display: flex;
+      }
+      .modal-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 2rem;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+      }
+      .modal-box h3 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 0.3rem;
+      }
+      .modal-box p {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+      }
+      #qr-container {
+        text-align: center;
+        margin: 1rem 0;
+      }
+      #qr-container img {
+        border-radius: 8px;
+      }
 
-.spin { display:inline-block; animation:_spin .7s linear infinite; }
-@keyframes _spin { to { transform:rotate(360deg); } }
-</style>
-</head>
-<body>
-<div class="app">
-  <aside id="sidebar"></aside>
-  <header class="sb-topbar"></header>
-  <div class="sb-overlay" id="sb-overlay"></div>
-  <main class="main" id="main-content">
-  <div class="page-wrap">
+      .spin {
+        display: inline-block;
+        animation: _spin 0.7s linear infinite;
+      }
+      @keyframes _spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside id="sidebar"></aside>
+      <header class="sb-topbar"></header>
+      <div class="sb-overlay" id="sb-overlay"></div>
+      <main class="main" id="main-content">
+        <div class="page-wrap">
+          <!-- PAGE HEADER -->
+          <div class="ph"></div>
 
-    <!-- PAGE HEADER -->
-    <div class="ph"></div>
+          <!-- Invitaciones de coach pendientes de aceptar -->
+          <div id="pending-coach-invites-wrap"></div>
 
-    <!-- Invitaciones de coach pendientes de aceptar -->
-    <div id="pending-coach-invites-wrap"></div>
-
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('perfil')" data-i18n="prof_tab_profile">Perfil</button>
-      <button class="tab-btn" onclick="switchTab('rendimiento')" data-i18n="prof_tab_performance">Rendimiento</button>
-      <button class="tab-btn" onclick="switchTab('conexiones')" data-i18n="prof_tab_connections">Conexiones</button>
-      <button class="tab-btn" onclick="switchTab('records')" data-i18n="prof_tab_records">Records</button>
-      <button class="tab-btn" onclick="switchTab('seguridad')" data-i18n="prof_tab_security">Seguridad</button>
-    </div>
-
-    <!-- ════════════════════ TAB: PERFIL ════════════════════════ -->
-    <div id="tab-perfil" class="tab-pane active">
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-head"><div class="card-title" data-i18n="prof_card_avatar">Foto de perfil</div></div>
-        <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <img id="pf-avatar-img" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;background:var(--bg3)" onerror="this.style.visibility='hidden'">
-          <label class="btn btn-secondary" style="cursor:pointer" data-i18n="prof_btn_avatar_change">Cambiar foto<input type="file" accept="image/*" style="display:none" onchange="uploadAvatarPerfil(this)"></label>
-          <button class="btn btn-secondary" onclick="deleteAvatarPerfil()" data-i18n="prof_btn_avatar_remove">Quitar</button>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-head"><div class="card-title" data-i18n="addon_card_title">Módulos adicionales</div></div>
-        <div class="card-body" id="addons-list"></div>
-      </div>
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-head"><div class="card-title" data-i18n="cmw_privacy_title">Privacidad de mis actividades</div></div>
-        <div class="card-body">
-          <div class="priv-desc" data-i18n="cmw_privacy_desc">Elegí qué puede ver la gente que te sigue cuando abre el detalle de una de tus actividades en Comunidad.</div>
-          <label class="priv-row"><input type="checkbox" id="priv-details" onchange="privToggleMaster()"> <span data-i18n="cmw_privacy_allow">Permitir que mis seguidores vean el detalle de mis actividades</span></label>
-          <div class="priv-sub" id="priv-sub">
-            <label class="priv-row"><input type="checkbox" id="priv-route"> <span data-i18n="cmw_priv_route">Mapa / recorrido</span></label>
-            <label class="priv-row"><input type="checkbox" id="priv-hr"> <span data-i18n="cmw_priv_hr">Frecuencia cardíaca</span></label>
-            <label class="priv-row"><input type="checkbox" id="priv-power"> <span data-i18n="cmw_priv_power">Potencia / cadencia</span></label>
-            <label class="priv-row"><input type="checkbox" id="priv-pace"> <span data-i18n="cmw_priv_pace">Ritmo / velocidad / parciales</span></label>
+          <!-- TABS -->
+          <div class="tabs">
+            <button
+              class="tab-btn active"
+              onclick="switchTab('perfil')"
+              data-i18n="prof_tab_profile"
+            >
+              Perfil
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('rendimiento')"
+              data-i18n="prof_tab_performance"
+            >
+              Rendimiento
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('conexiones')"
+              data-i18n="prof_tab_connections"
+            >
+              Conexiones
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('records')"
+              data-i18n="prof_tab_records"
+            >
+              Records
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('seguridad')"
+              data-i18n="prof_tab_security"
+            >
+              Seguridad
+            </button>
           </div>
-          <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem">
-            <button class="btn btn-primary btn-sm" onclick="savePrivacyPrefs()" data-i18n="btn_save">Guardar</button>
-            <span id="priv-saved-msg" style="display:none;color:var(--green);font-size:.78rem" data-i18n="cmw_saved">✓ Guardado</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_personal_data">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            Datos Personales
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="form-grid" style="margin-bottom:1rem">
-            <div class="field">
-              <label data-i18n="prof_label_fullname">Nombre completo</label>
-              <input id="p-nombre" type="text" placeholder="Tu nombre" data-i18n-placeholder="prof_ph_your_name">
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_email">Email</label>
-              <input id="p-email" type="email" readonly>
-              <span class="field-hint" data-i18n="prof_email_hint">No editable · contacta soporte para cambiar</span>
-            </div>
-          </div>
-          <div class="form-grid three">
-            <div class="field">
-              <label data-i18n="prof_label_weight">Peso (kg)</label>
-              <input id="p-peso" type="number" min="30" max="200" step=".1" placeholder="70">
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_height">Altura (cm)</label>
-              <input id="p-altura" type="number" min="100" max="250" placeholder="175">
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_age">Edad</label>
-              <input id="p-edad" type="number" min="10" max="100" placeholder="—">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_season_goal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            Objetivo de Temporada
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="form-grid three">
-            <div class="field">
-              <label data-i18n="prof_label_race_name">Carrera objetivo</label>
-              <input id="p-race-name" type="text" placeholder="Ej: IRONMAN 70.3 Pucón" data-i18n-placeholder="prof_ph_race_example">
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_date">Fecha</label>
-              <input id="p-race-date" type="date" data-i18n-aria="prof_aria_race_date">
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_distance">Distancia</label>
-              <select id="p-race-dist">
-                <option value="" data-i18n="prof_opt_select">— Seleccionar —</option>
-                <option value="ironman" data-i18n="prof_opt_ironman">Ironman (226 km)</option>
-                <option value="70.3" data-i18n="prof_opt_703">70.3 / Half (113 km)</option>
-                <option value="olympic" data-i18n="prof_opt_olympic">Olímpico (51.5 km)</option>
-                <option value="sprint" data-i18n="prof_opt_sprint">Sprint (25.75 km)</option>
-                <option value="marathon" data-i18n="prof_opt_marathon">Maratón</option>
-                <option value="half_marathon" data-i18n="prof_opt_half_marathon">Media Maratón</option>
-                <option value="10k">10K</option>
-                <option value="other" data-i18n="prof_opt_other">Otro</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:.7rem;margin-top:.25rem">
-        <button class="btn btn-secondary" onclick="loadProfile()" data-i18n="prof_btn_cancel">Cancelar</button>
-        <button class="btn btn-primary" id="btn-save-profile" onclick="saveProfile()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path d="M5 13l4 4L19 7"/></svg>
-          <span data-i18n="prof_btn_save_changes">Guardar cambios</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- ════════════════════ TAB: RENDIMIENTO ═══════════════════ -->
-    <div id="tab-rendimiento" class="tab-pane">
-
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_benchmarks">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Benchmarks Actuales
-          </span>
-          <button class="btn btn-secondary btn-sm" onclick="toggleBenchEdit()" data-i18n="prof_btn_update">Actualizar</button>
-        </div>
-        <div class="card-body">
-          <div class="bench-grid">
-            <div class="bench-item"><div class="bench-val" id="b-ftp">—</div><div class="bench-label">FTP (W)</div></div>
-            <div class="bench-item"><div class="bench-val" id="b-vo2">—</div><div class="bench-label">VO₂max</div></div>
-            <div class="bench-item"><div class="bench-val" id="b-fcmax">—</div><div class="bench-label" data-i18n="prof_label_fcmax">FC Max</div></div>
-            <div class="bench-item"><div class="bench-val" id="b-css">—</div><div class="bench-label">CSS</div></div>
-            <div class="bench-item"><div class="bench-val" id="b-run">—</div><div class="bench-label" data-i18n="prof_label_threshold_pace">Ritmo Umbral</div></div>
-            <div class="bench-item"><div class="bench-val" id="b-wpkg">—</div><div class="bench-label">W/kg</div></div>
-          </div>
-          <div id="bench-edit" style="display:none;margin-top:1.25rem;border-top:1px solid var(--border2);padding-top:1.25rem">
-            <div class="form-grid three" style="margin-bottom:.85rem">
-              <div class="field"><label>FTP (W)</label><input id="be-ftp" type="number" min="50" max="600"></div>
-              <div class="field"><label>VO₂max</label><input id="be-vo2" type="number" min="20" max="90" step=".1"></div>
-              <div class="field"><label data-i18n="prof_label_fcmax_bpm">FC Max (bpm)</label><input id="be-fcmax" type="number" min="100" max="230"></div>
-            </div>
-            <div class="form-grid three" style="margin-bottom:.85rem">
-              <div class="field"><label data-i18n="prof_label_css_full">CSS (min/100m)</label><input id="be-css" type="text" placeholder="1:30"></div>
-              <div class="field"><label data-i18n="prof_label_threshold_run">Ritmo umbral run</label><input id="be-run" type="text" placeholder="4:30 /km"></div>
-              <div class="field"><label data-i18n="prof_label_weight_current">Peso actual (kg)</label><input id="be-peso" type="number" min="30" max="200" step=".1"></div>
-            </div>
-            <div style="display:flex;gap:.6rem;justify-content:flex-end">
-              <button class="btn btn-secondary btn-sm" onclick="toggleBenchEdit()" data-i18n="prof_btn_cancel">Cancelar</button>
-              <button class="btn btn-primary btn-sm" onclick="saveBenchmarks()" data-i18n="prof_btn_save_benchmarks">Guardar Benchmarks</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_hr_zones">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h1l3-9 4 18 3-9h1"/></svg>
-            Zonas de Frecuencia Cardíaca
-          </span>
-        </div>
-        <div class="card-body" id="fc-zones-wrap">
-          <p style="color:var(--dim);font-size:.82rem" data-i18n="prof_loading_zones">Cargando zonas…</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_power_zones">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Zonas de Potencia — Ciclismo
-          </span>
-        </div>
-        <div class="card-body" id="pow-zones-wrap">
-          <p style="color:var(--dim);font-size:.82rem" data-i18n="prof_loading_zones">Cargando zonas…</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_pace_zones">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Zonas de Ritmo — Running
-          </span>
-        </div>
-        <div class="card-body" id="run-zones-wrap">
-          <p style="color:var(--dim);font-size:.82rem" data-i18n="prof_loading_zones">Cargando zonas…</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
-    <div id="tab-conexiones" class="tab-pane">
-
-      <!-- Garmin -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#0EA5E9"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            Garmin Connect
-          </span>
-          <span id="garmin-badge" class="status-dot status-disconnected" data-i18n="prof_status_disconnected">Sin conectar</span>
-        </div>
-        <div class="card-body">
-          <div class="conn-card">
-            <div class="conn-left">
-              <div class="conn-logo conn-logo-garmin">⌚</div>
-              <div>
-                <div class="conn-name">Garmin</div>
-                <div class="conn-desc" data-i18n="prof_garmin_desc">Sincroniza actividades, FC, potencia y bienestar automáticamente</div>
+          <!-- ════════════════════ TAB: PERFIL ════════════════════════ -->
+          <div id="tab-perfil" class="tab-pane active">
+            <div class="card" style="margin-bottom: 1rem">
+              <div class="card-head">
+                <div class="card-title" data-i18n="prof_card_avatar">
+                  Foto de perfil
+                </div>
+              </div>
+              <div
+                class="card-body"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  flex-wrap: wrap;
+                "
+              >
+                <img
+                  id="pf-avatar-img"
+                  alt=""
+                  style="
+                    width: 72px;
+                    height: 72px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    background: var(--bg3);
+                  "
+                  onerror="this.style.visibility = 'hidden'"
+                />
+                <label
+                  class="btn btn-secondary"
+                  style="cursor: pointer"
+                  data-i18n="prof_btn_avatar_change"
+                  >Cambiar foto<input
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    onchange="uploadAvatarPerfil(this)"
+                /></label>
+                <button
+                  class="btn btn-secondary"
+                  onclick="deleteAvatarPerfil()"
+                  data-i18n="prof_btn_avatar_remove"
+                >
+                  Quitar
+                </button>
               </div>
             </div>
-            <div class="conn-actions">
-              <button class="btn btn-secondary btn-sm" id="btn-garmin-sync" onclick="garminSync()" style="display:none">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-                Sync
+            <div class="card" style="margin-bottom: 1rem">
+              <div class="card-head">
+                <div class="card-title" data-i18n="addon_card_title">
+                  Módulos adicionales
+                </div>
+              </div>
+              <div class="card-body" id="addons-list"></div>
+            </div>
+            <div class="card" style="margin-bottom: 1rem">
+              <div class="card-head">
+                <div class="card-title" data-i18n="cmw_privacy_title">
+                  Privacidad de mis actividades
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="priv-desc" data-i18n="cmw_privacy_desc">
+                  Elegí qué puede ver la gente que te sigue cuando abre el
+                  detalle de una de tus actividades en Comunidad.
+                </div>
+                <label class="priv-row"
+                  ><input
+                    type="checkbox"
+                    id="priv-details"
+                    onchange="privToggleMaster()"
+                  />
+                  <span data-i18n="cmw_privacy_allow"
+                    >Permitir que mis seguidores vean el detalle de mis
+                    actividades</span
+                  ></label
+                >
+                <div class="priv-sub" id="priv-sub">
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-route" />
+                    <span data-i18n="cmw_priv_route"
+                      >Mapa / recorrido</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-hr" />
+                    <span data-i18n="cmw_priv_hr"
+                      >Frecuencia cardíaca</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-power" />
+                    <span data-i18n="cmw_priv_power"
+                      >Potencia / cadencia</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-pace" />
+                    <span data-i18n="cmw_priv_pace"
+                      >Ritmo / velocidad / parciales</span
+                    ></label
+                  >
+                </div>
+                <div
+                  style="
+                    margin-top: 1rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                  "
+                >
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick="savePrivacyPrefs()"
+                    data-i18n="btn_save"
+                  >
+                    Guardar
+                  </button>
+                  <span
+                    id="priv-saved-msg"
+                    style="
+                      display: none;
+                      color: var(--green);
+                      font-size: 0.78rem;
+                    "
+                    data-i18n="cmw_saved"
+                    >✓ Guardado</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_personal_data">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                  </svg>
+                  Datos Personales
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="form-grid" style="margin-bottom: 1rem">
+                  <div class="field">
+                    <label data-i18n="prof_label_fullname"
+                      >Nombre completo</label
+                    >
+                    <input
+                      id="p-nombre"
+                      type="text"
+                      placeholder="Tu nombre"
+                      data-i18n-placeholder="prof_ph_your_name"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_email">Email</label>
+                    <input id="p-email" type="email" readonly />
+                    <span class="field-hint" data-i18n="prof_email_hint"
+                      >No editable · contacta soporte para cambiar</span
+                    >
+                  </div>
+                </div>
+                <div class="form-grid three">
+                  <div class="field">
+                    <label data-i18n="prof_label_weight">Peso (kg)</label>
+                    <input
+                      id="p-peso"
+                      type="number"
+                      min="30"
+                      max="200"
+                      step=".1"
+                      placeholder="70"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_height">Altura (cm)</label>
+                    <input
+                      id="p-altura"
+                      type="number"
+                      min="100"
+                      max="250"
+                      placeholder="175"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_age">Edad</label>
+                    <input
+                      id="p-edad"
+                      type="number"
+                      min="10"
+                      max="100"
+                      placeholder="—"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_season_goal">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="2" />
+                  </svg>
+                  Objetivo de Temporada
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="form-grid three">
+                  <div class="field">
+                    <label data-i18n="prof_label_race_name"
+                      >Carrera objetivo</label
+                    >
+                    <input
+                      id="p-race-name"
+                      type="text"
+                      placeholder="Ej: IRONMAN 70.3 Pucón"
+                      data-i18n-placeholder="prof_ph_race_example"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_date">Fecha</label>
+                    <input
+                      id="p-race-date"
+                      type="date"
+                      data-i18n-aria="prof_aria_race_date"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_distance">Distancia</label>
+                    <select id="p-race-dist">
+                      <option value="" data-i18n="prof_opt_select">
+                        — Seleccionar —
+                      </option>
+                      <option value="ironman" data-i18n="prof_opt_ironman">
+                        Ironman (226 km)
+                      </option>
+                      <option value="70.3" data-i18n="prof_opt_703">
+                        70.3 / Half (113 km)
+                      </option>
+                      <option value="olympic" data-i18n="prof_opt_olympic">
+                        Olímpico (51.5 km)
+                      </option>
+                      <option value="sprint" data-i18n="prof_opt_sprint">
+                        Sprint (25.75 km)
+                      </option>
+                      <option value="marathon" data-i18n="prof_opt_marathon">
+                        Maratón
+                      </option>
+                      <option
+                        value="half_marathon"
+                        data-i18n="prof_opt_half_marathon"
+                      >
+                        Media Maratón
+                      </option>
+                      <option value="10k">10K</option>
+                      <option value="other" data-i18n="prof_opt_other">
+                        Otro
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.7rem;
+                margin-top: 0.25rem;
+              "
+            >
+              <button
+                class="btn btn-secondary"
+                onclick="loadProfile()"
+                data-i18n="prof_btn_cancel"
+              >
+                Cancelar
               </button>
-              <button class="btn btn-danger btn-sm" id="btn-garmin-dis" onclick="garminDisconnect()" style="display:none" data-i18n="prof_btn_disconnect">Desconectar</button>
-              <button class="btn btn-primary btn-sm" id="btn-garmin-con" onclick="showGarminForm()" data-i18n="prof_btn_connect">Conectar</button>
-            </div>
-          </div>
-          <div id="garmin-form" style="display:none;margin-top:.85rem;border-top:1px solid var(--border2);padding-top:1rem">
-            <!-- Paso 1: credenciales -->
-            <div id="garmin-step-creds">
-              <div class="form-grid" style="margin-bottom:.85rem">
-                <div class="field"><label data-i18n="prof_label_garmin_email">Email Garmin Connect</label><input id="g-email" type="email" placeholder="tu@email.com"></div>
-                <div class="field"><label data-i18n="prof_label_garmin_pw">Contraseña Garmin</label><input id="g-pass" type="password" placeholder="••••••••"></div>
-              </div>
-              <p style="font-size:.7rem;color:var(--muted);margin-bottom:.85rem" data-i18n="prof_garmin_creds_note">Credenciales almacenadas cifradas. Solo usadas para sync de actividades.</p>
-              <div style="display:flex;gap:.6rem;justify-content:flex-end">
-                <button class="btn btn-secondary btn-sm" onclick="hideGarminForm()" data-i18n="prof_btn_cancel">Cancelar</button>
-                <button class="btn btn-primary btn-sm" id="btn-garmin-save" onclick="saveGarminCreds()" data-i18n="prof_btn_save_connect">Guardar y Conectar</button>
-              </div>
-            </div>
-            <!-- Paso 2: código MFA (se muestra solo si Garmin pide verificación) -->
-            <div id="garmin-step-mfa" style="display:none">
-              <p style="font-size:.8rem;color:var(--fg);margin-bottom:.85rem" data-i18n="prof_garmin_mfa_note">
-                Garmin requiere verificación adicional. Revisa tu email o SMS y escribe el código:
-              </p>
-              <div class="field" style="margin-bottom:.85rem">
-                <label data-i18n="prof_label_verif_code">Código de verificación</label>
-                <input id="g-mfa-code" type="text" inputmode="numeric" maxlength="8" placeholder="123456" style="letter-spacing:.15em;font-size:1.1rem">
-              </div>
-              <div style="display:flex;gap:.6rem;justify-content:flex-end">
-                <button class="btn btn-secondary btn-sm" onclick="garminMfaCancel()" data-i18n="prof_btn_cancel">Cancelar</button>
-                <button class="btn btn-primary btn-sm" onclick="submitGarminMfa()" data-i18n="prof_btn_verify">Verificar</button>
-              </div>
-            </div>
-          </div>
-          <div id="garmin-log" style="display:none;margin-top:.75rem;font-size:.73rem;color:var(--muted);border-top:1px solid var(--border2);padding-top:.75rem">
-            <span id="garmin-log-txt"></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Strava -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#FF6535"><path d="M13 7l5 5-5 5"/><path d="M6 12h12"/></svg>
-            Strava
-          </span>
-          <span id="strava-badge" class="status-dot status-disconnected" data-i18n="prof_status_disconnected">Sin conectar</span>
-        </div>
-        <div class="card-body">
-          <div class="conn-card">
-            <div class="conn-left">
-              <div class="conn-logo conn-logo-strava">🏃</div>
-              <div>
-                <div class="conn-name">Strava</div>
-                <div class="conn-desc" data-i18n="prof_strava_desc">Importa actividades de running, ciclismo y natación desde Strava</div>
-              </div>
-            </div>
-            <div class="conn-actions">
-              <button class="btn btn-secondary btn-sm" id="btn-strava-sync" onclick="stravaSync()" style="display:none">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-                Sync
+              <button
+                class="btn btn-primary"
+                id="btn-save-profile"
+                onclick="saveProfile()"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  style="width: 14px; height: 14px"
+                >
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                <span data-i18n="prof_btn_save_changes">Guardar cambios</span>
               </button>
-              <button class="btn btn-danger btn-sm" id="btn-strava-dis" onclick="stravaDisconnect()" style="display:none" data-i18n="prof_btn_disconnect">Desconectar</button>
-              <button class="btn btn-primary btn-sm" id="btn-strava-con" onclick="stravaConnect()" data-i18n="prof_btn_connect_strava">Conectar con Strava</button>
             </div>
           </div>
-          <div id="strava-unavailable" style="display:none;margin-top:.75rem;font-size:.73rem;color:var(--dim);border-top:1px solid var(--border2);padding-top:.75rem" data-i18n="prof_strava_unavailable">
-            No disponible en este servidor todavía.
+
+          <!-- ════════════════════ TAB: RENDIMIENTO ═══════════════════ -->
+          <div id="tab-rendimiento" class="tab-pane">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_benchmarks">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                  Benchmarks Actuales
+                </span>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="toggleBenchEdit()"
+                  data-i18n="prof_btn_update"
+                >
+                  Actualizar
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="bench-grid">
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-ftp">—</div>
+                    <div class="bench-label">FTP (W)</div>
+                  </div>
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-vo2">—</div>
+                    <div class="bench-label">VO₂max</div>
+                  </div>
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-fcmax">—</div>
+                    <div class="bench-label" data-i18n="prof_label_fcmax">
+                      FC Max
+                    </div>
+                  </div>
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-css">—</div>
+                    <div class="bench-label">CSS</div>
+                  </div>
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-run">—</div>
+                    <div
+                      class="bench-label"
+                      data-i18n="prof_label_threshold_pace"
+                    >
+                      Ritmo Umbral
+                    </div>
+                  </div>
+                  <div class="bench-item">
+                    <div class="bench-val" id="b-wpkg">—</div>
+                    <div class="bench-label">W/kg</div>
+                  </div>
+                </div>
+                <div
+                  id="bench-edit"
+                  style="
+                    display: none;
+                    margin-top: 1.25rem;
+                    border-top: 1px solid var(--border2);
+                    padding-top: 1.25rem;
+                  "
+                >
+                  <div class="form-grid three" style="margin-bottom: 0.85rem">
+                    <div class="field">
+                      <label>FTP (W)</label
+                      ><input id="be-ftp" type="number" min="50" max="600" />
+                    </div>
+                    <div class="field">
+                      <label>VO₂max</label
+                      ><input
+                        id="be-vo2"
+                        type="number"
+                        min="20"
+                        max="90"
+                        step=".1"
+                      />
+                    </div>
+                    <div class="field">
+                      <label data-i18n="prof_label_fcmax_bpm"
+                        >FC Max (bpm)</label
+                      ><input id="be-fcmax" type="number" min="100" max="230" />
+                    </div>
+                  </div>
+                  <div class="form-grid three" style="margin-bottom: 0.85rem">
+                    <div class="field">
+                      <label data-i18n="prof_label_css_full"
+                        >CSS (min/100m)</label
+                      ><input id="be-css" type="text" placeholder="1:30" />
+                    </div>
+                    <div class="field">
+                      <label data-i18n="prof_label_threshold_run"
+                        >Ritmo umbral run</label
+                      ><input id="be-run" type="text" placeholder="4:30 /km" />
+                    </div>
+                    <div class="field">
+                      <label data-i18n="prof_label_weight_current"
+                        >Peso actual (kg)</label
+                      ><input
+                        id="be-peso"
+                        type="number"
+                        min="30"
+                        max="200"
+                        step=".1"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 0.6rem;
+                      justify-content: flex-end;
+                    "
+                  >
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      onclick="toggleBenchEdit()"
+                      data-i18n="prof_btn_cancel"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      class="btn btn-primary btn-sm"
+                      onclick="saveBenchmarks()"
+                      data-i18n="prof_btn_save_benchmarks"
+                    >
+                      Guardar Benchmarks
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_hr_zones">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M3 12h1l3-9 4 18 3-9h1" />
+                  </svg>
+                  Zonas de Frecuencia Cardíaca
+                </span>
+              </div>
+              <div class="card-body" id="fc-zones-wrap">
+                <p
+                  style="color: var(--dim); font-size: 0.82rem"
+                  data-i18n="prof_loading_zones"
+                >
+                  Cargando zonas…
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_power_zones">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  Zonas de Potencia — Ciclismo
+                </span>
+              </div>
+              <div class="card-body" id="pow-zones-wrap">
+                <p
+                  style="color: var(--dim); font-size: 0.82rem"
+                  data-i18n="prof_loading_zones"
+                >
+                  Cargando zonas…
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_pace_zones">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  Zonas de Ritmo — Running
+                </span>
+              </div>
+              <div class="card-body" id="run-zones-wrap">
+                <p
+                  style="color: var(--dim); font-size: 0.82rem"
+                  data-i18n="prof_loading_zones"
+                >
+                  Cargando zonas…
+                </p>
+              </div>
+            </div>
           </div>
-          <div id="strava-log" style="display:none;margin-top:.75rem;font-size:.73rem;color:var(--muted);border-top:1px solid var(--border2);padding-top:.75rem">
-            <span id="strava-log-txt"></span>
+
+          <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
+          <div id="tab-conexiones" class="tab-pane">
+            <!-- Garmin -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="color: #0ea5e9"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  Garmin Connect
+                </span>
+                <span
+                  id="garmin-badge"
+                  class="status-dot status-disconnected"
+                  data-i18n="prof_status_disconnected"
+                  >Sin conectar</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="conn-card">
+                  <div class="conn-left">
+                    <div class="conn-logo conn-logo-garmin">⌚</div>
+                    <div>
+                      <div class="conn-name">Garmin</div>
+                      <div class="conn-desc" data-i18n="prof_garmin_desc">
+                        Sincroniza actividades, FC, potencia y bienestar
+                        automáticamente
+                      </div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      id="btn-garmin-sync"
+                      onclick="garminSync()"
+                      style="display: none"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        style="width: 12px; height: 12px"
+                      >
+                        <path d="M23 4v6h-6M1 20v-6h6" />
+                        <path
+                          d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+                        />
+                      </svg>
+                      Sync
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      id="btn-garmin-dis"
+                      onclick="garminDisconnect()"
+                      style="display: none"
+                      data-i18n="prof_btn_disconnect"
+                    >
+                      Desconectar
+                    </button>
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="btn-garmin-con"
+                      onclick="showGarminForm()"
+                      data-i18n="prof_btn_connect"
+                    >
+                      Conectar
+                    </button>
+                  </div>
+                </div>
+                <div
+                  id="garmin-form"
+                  style="
+                    display: none;
+                    margin-top: 0.85rem;
+                    border-top: 1px solid var(--border2);
+                    padding-top: 1rem;
+                  "
+                >
+                  <!-- Paso 1: credenciales -->
+                  <div id="garmin-step-creds">
+                    <div class="form-grid" style="margin-bottom: 0.85rem">
+                      <div class="field">
+                        <label data-i18n="prof_label_garmin_email"
+                          >Email Garmin Connect</label
+                        ><input
+                          id="g-email"
+                          type="email"
+                          placeholder="tu@email.com"
+                        />
+                      </div>
+                      <div class="field">
+                        <label data-i18n="prof_label_garmin_pw"
+                          >Contraseña Garmin</label
+                        ><input
+                          id="g-pass"
+                          type="password"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+                    <p
+                      style="
+                        font-size: 0.7rem;
+                        color: var(--muted);
+                        margin-bottom: 0.85rem;
+                      "
+                      data-i18n="prof_garmin_creds_note"
+                    >
+                      Credenciales almacenadas cifradas. Solo usadas para sync
+                      de actividades.
+                    </p>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 0.6rem;
+                        justify-content: flex-end;
+                      "
+                    >
+                      <button
+                        class="btn btn-secondary btn-sm"
+                        onclick="hideGarminForm()"
+                        data-i18n="prof_btn_cancel"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        id="btn-garmin-save"
+                        onclick="saveGarminCreds()"
+                        data-i18n="prof_btn_save_connect"
+                      >
+                        Guardar y Conectar
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Paso 2: código MFA (se muestra solo si Garmin pide verificación) -->
+                  <div id="garmin-step-mfa" style="display: none">
+                    <p
+                      style="
+                        font-size: 0.8rem;
+                        color: var(--fg);
+                        margin-bottom: 0.85rem;
+                      "
+                      data-i18n="prof_garmin_mfa_note"
+                    >
+                      Garmin requiere verificación adicional. Revisa tu email o
+                      SMS y escribe el código:
+                    </p>
+                    <div class="field" style="margin-bottom: 0.85rem">
+                      <label data-i18n="prof_label_verif_code"
+                        >Código de verificación</label
+                      >
+                      <input
+                        id="g-mfa-code"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="8"
+                        placeholder="123456"
+                        style="letter-spacing: 0.15em; font-size: 1.1rem"
+                      />
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 0.6rem;
+                        justify-content: flex-end;
+                      "
+                    >
+                      <button
+                        class="btn btn-secondary btn-sm"
+                        onclick="garminMfaCancel()"
+                        data-i18n="prof_btn_cancel"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        onclick="submitGarminMfa()"
+                        data-i18n="prof_btn_verify"
+                      >
+                        Verificar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  id="garmin-log"
+                  style="
+                    display: none;
+                    margin-top: 0.75rem;
+                    font-size: 0.73rem;
+                    color: var(--muted);
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.75rem;
+                  "
+                >
+                  <span id="garmin-log-txt"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Strava -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="color: #ff6535"
+                  >
+                    <path d="M13 7l5 5-5 5" />
+                    <path d="M6 12h12" />
+                  </svg>
+                  Strava
+                </span>
+                <span
+                  id="strava-badge"
+                  class="status-dot status-disconnected"
+                  data-i18n="prof_status_disconnected"
+                  >Sin conectar</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="conn-card">
+                  <div class="conn-left">
+                    <div class="conn-logo conn-logo-strava">🏃</div>
+                    <div>
+                      <div class="conn-name">Strava</div>
+                      <div class="conn-desc" data-i18n="prof_strava_desc">
+                        Importa actividades de running, ciclismo y natación
+                        desde Strava
+                      </div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      id="btn-strava-sync"
+                      onclick="stravaSync()"
+                      style="display: none"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        style="width: 12px; height: 12px"
+                      >
+                        <path d="M23 4v6h-6M1 20v-6h6" />
+                        <path
+                          d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+                        />
+                      </svg>
+                      Sync
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      id="btn-strava-dis"
+                      onclick="stravaDisconnect()"
+                      style="display: none"
+                      data-i18n="prof_btn_disconnect"
+                    >
+                      Desconectar
+                    </button>
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="btn-strava-con"
+                      onclick="stravaConnect()"
+                      data-i18n="prof_btn_connect_strava"
+                    >
+                      Conectar con Strava
+                    </button>
+                  </div>
+                </div>
+                <div
+                  id="strava-unavailable"
+                  style="
+                    display: none;
+                    margin-top: 0.75rem;
+                    font-size: 0.73rem;
+                    color: var(--dim);
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.75rem;
+                  "
+                  data-i18n="prof_strava_unavailable"
+                >
+                  No disponible en este servidor todavía.
+                </div>
+                <div
+                  id="strava-log"
+                  style="
+                    display: none;
+                    margin-top: 0.75rem;
+                    font-size: 0.73rem;
+                    color: var(--muted);
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.75rem;
+                  "
+                >
+                  <span id="strava-log-txt"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════ TAB: RECORDS ═══════════════════════ -->
+          <div id="tab-records" class="tab-pane">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_records">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
+                    />
+                  </svg>
+                  Records Personales
+                </span>
+                <button
+                  class="btn btn-primary btn-sm"
+                  onclick="showPRForm()"
+                  data-i18n="prof_btn_new_record"
+                >
+                  + Nuevo Record
+                </button>
+              </div>
+              <div class="card-body" style="padding: 0">
+                <table class="pr-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="prof_label_sport">Deporte</th>
+                      <th data-i18n="prof_th_event">Evento</th>
+                      <th data-i18n="prof_th_mark">Marca</th>
+                      <th data-i18n="prof_label_date">Fecha</th>
+                      <th data-i18n="prof_th_place">Lugar</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="pr-tbody">
+                    <tr>
+                      <td
+                        colspan="6"
+                        style="
+                          text-align: center;
+                          color: var(--dim);
+                          padding: 2rem;
+                          font-size: 0.82rem;
+                        "
+                        data-i18n="prof_loading_records"
+                      >
+                        Cargando records…
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="pr-form-card" class="card" style="display: none">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_new_record"
+                  >Nuevo Record Personal</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="form-grid" style="margin-bottom: 1rem">
+                  <div class="field">
+                    <label data-i18n="prof_label_sport">Deporte</label>
+                    <select id="pr-sport">
+                      <option value="swim" data-i18n="prof_sport_swim">
+                        Natación
+                      </option>
+                      <option value="bike" data-i18n="prof_sport_bike">
+                        Ciclismo
+                      </option>
+                      <option value="run" data-i18n="prof_sport_run">
+                        Running
+                      </option>
+                      <option value="triathlon" data-i18n="prof_sport_tri">
+                        Triatlón
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_event_distance"
+                      >Evento / Distancia</label
+                    >
+                    <input
+                      id="pr-event"
+                      type="text"
+                      placeholder="Ej: Ironman 70.3, 10K, 400m…"
+                      data-i18n-placeholder="prof_ph_event_example"
+                    />
+                  </div>
+                </div>
+                <div class="form-grid three">
+                  <div class="field">
+                    <label data-i18n="prof_label_mark_hms"
+                      >Marca (hh:mm:ss)</label
+                    ><input id="pr-time" type="text" placeholder="4:32:10" />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_date">Fecha</label
+                    ><input
+                      id="pr-date"
+                      type="date"
+                      data-i18n-aria="prof_aria_record_date"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_place_opt"
+                      >Lugar (opcional)</label
+                    ><input
+                      id="pr-place"
+                      type="text"
+                      placeholder="Ej: Pucón, Chile"
+                      data-i18n-placeholder="prof_ph_place_example"
+                    />
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.6rem;
+                    justify-content: flex-end;
+                    margin-top: 1rem;
+                  "
+                >
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    onclick="hidePRForm()"
+                    data-i18n="prof_btn_cancel"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick="addPR()"
+                    data-i18n="prof_btn_save_record"
+                  >
+                    Guardar Record
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════ TAB: SEGURIDAD ═════════════════════ -->
+          <div id="tab-seguridad" class="tab-pane">
+            <!-- Cambiar contraseña -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_change_pw">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                  Cambiar Contraseña
+                </span>
+              </div>
+              <div class="card-body">
+                <div
+                  class="form-grid"
+                  style="max-width: 480px; margin-bottom: 1rem"
+                >
+                  <div class="field">
+                    <label data-i18n="prof_label_pw_current"
+                      >Contraseña actual</label
+                    ><input
+                      id="pw-old"
+                      type="password"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_pw_new">Nueva contraseña</label
+                    ><input
+                      id="pw-new"
+                      type="password"
+                      placeholder="Mínimo 8 caracteres"
+                      data-i18n-placeholder="prof_ph_min8"
+                    />
+                  </div>
+                </div>
+                <button
+                  class="btn btn-primary btn-sm"
+                  onclick="changePassword()"
+                  data-i18n="prof_btn_update_pw"
+                >
+                  Actualizar Contraseña
+                </button>
+              </div>
+            </div>
+
+            <!-- 2FA -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_2fa">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Autenticación de Dos Factores (2FA)
+                </span>
+                <span
+                  id="twofa-badge"
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--dim)"
+                  data-i18n="prof_2fa_off"
+                  >Desactivado</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="sec-row">
+                  <div>
+                    <div class="sec-label" data-i18n="prof_2fa_app_label">
+                      App autenticadora (TOTP)
+                    </div>
+                    <div class="sec-desc" data-i18n="prof_2fa_app_desc">
+                      Google Authenticator, Authy, o cualquier app compatible
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 0.6rem">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="btn-2fa-on"
+                      onclick="setup2FA()"
+                      data-i18n="prof_btn_2fa_on"
+                    >
+                      Activar 2FA
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      id="btn-2fa-off"
+                      onclick="disable2FA()"
+                      style="display: none"
+                      data-i18n="prof_btn_deactivate"
+                    >
+                      Desactivar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_notifications">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
+                    />
+                  </svg>
+                  Notificaciones
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="sec-row">
+                  <div>
+                    <div class="sec-label" data-i18n="prof_notif_weekly_label">
+                      Reporte semanal por email
+                    </div>
+                    <div class="sec-desc" data-i18n="prof_notif_weekly_desc">
+                      Resumen de entrenamiento todos los lunes
+                    </div>
+                  </div>
+                  <label class="toggle-switch"
+                    ><input
+                      type="checkbox"
+                      id="notif-weekly"
+                      onchange="saveNotifPrefs()" /><span
+                      class="toggle-track"
+                    ></span
+                  ></label>
+                </div>
+                <div class="sec-row">
+                  <div>
+                    <div class="sec-label" data-i18n="prof_notif_workout_label">
+                      Notificaciones de workouts
+                    </div>
+                    <div class="sec-desc" data-i18n="prof_notif_workout_desc">
+                      Aviso cuando el coach asigne un entrenamiento
+                    </div>
+                  </div>
+                  <label class="toggle-switch"
+                    ><input
+                      type="checkbox"
+                      id="notif-workout"
+                      onchange="saveNotifPrefs()" /><span
+                      class="toggle-track"
+                    ></span
+                  ></label>
+                </div>
+                <div class="sec-row">
+                  <div>
+                    <div class="sec-label" data-i18n="prof_notif_push_label">
+                      Push de bienestar
+                    </div>
+                    <div class="sec-desc" data-i18n="prof_notif_push_desc">
+                      Recordatorio diario para registrar bienestar
+                    </div>
+                  </div>
+                  <label class="toggle-switch"
+                    ><input
+                      type="checkbox"
+                      id="notif-push"
+                      onchange="saveNotifPrefs()" /><span
+                      class="toggle-track"
+                    ></span
+                  ></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sesiones activas -->
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_sessions">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                  Sesiones Activas
+                </span>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="loadSessions()"
+                  data-i18n="prof_btn_update"
+                >
+                  Actualizar
+                </button>
+              </div>
+              <div class="card-body" id="sessions-list">
+                <p
+                  style="color: var(--dim); font-size: 0.82rem"
+                  data-i18n="prof_loading_generic"
+                >
+                  Cargando…
+                </p>
+              </div>
+              <div
+                style="
+                  padding: 0.7rem 1.25rem;
+                  border-top: 1px solid var(--border2);
+                "
+              >
+                <button class="btn btn-danger btn-sm" onclick="revokeAll()">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    style="width: 11px; height: 11px"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span data-i18n="prof_btn_close_all_sessions"
+                    >Cerrar todas las sesiones</span
+                  >
+                </button>
+              </div>
+            </div>
+
+            <!-- Zona de peligro -->
+            <div class="card danger-card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_danger_zone">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                    />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  Zona de Peligro
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="sec-row">
+                  <div>
+                    <div
+                      class="sec-label"
+                      style="color: var(--red)"
+                      data-i18n="prof_label_delete_account"
+                    >
+                      Eliminar cuenta
+                    </div>
+                    <div class="sec-desc" data-i18n="prof_delete_account_desc">
+                      Borra todos tus datos permanentemente. Esta acción no se
+                      puede deshacer.
+                    </div>
+                  </div>
+                  <button
+                    class="btn btn-danger btn-sm"
+                    onclick="deleteAccount()"
+                    data-i18n="prof_btn_delete_account"
+                  >
+                    Eliminar mi cuenta
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+        <!-- /.page-wrap -->
+      </main>
     </div>
 
-    <!-- ════════════════════ TAB: RECORDS ═══════════════════════ -->
-    <div id="tab-records" class="tab-pane">
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_records">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-            Records Personales
-          </span>
-          <button class="btn btn-primary btn-sm" onclick="showPRForm()" data-i18n="prof_btn_new_record">+ Nuevo Record</button>
+    <!-- Modal 2FA -->
+    <div id="modal-2fa">
+      <div class="modal-box">
+        <h3 data-i18n="prof_btn_2fa_on">Activar 2FA</h3>
+        <p data-i18n="prof_2fa_modal_desc">
+          Escanea el QR con tu app autenticadora y luego ingresa el código de 6
+          dígitos para confirmar.
+        </p>
+        <div id="qr-container"></div>
+        <div class="field" style="margin-bottom: 1rem">
+          <label data-i18n="prof_label_verif_code"
+            >Código de verificación</label
+          >
+          <input
+            id="totp-code"
+            type="text"
+            maxlength="6"
+            placeholder="000000"
+            style="text-align: center; letter-spacing: 0.3em; font-size: 1.1rem"
+          />
         </div>
-        <div class="card-body" style="padding:0">
-          <table class="pr-table">
-            <thead><tr><th data-i18n="prof_label_sport">Deporte</th><th data-i18n="prof_th_event">Evento</th><th data-i18n="prof_th_mark">Marca</th><th data-i18n="prof_label_date">Fecha</th><th data-i18n="prof_th_place">Lugar</th><th></th></tr></thead>
-            <tbody id="pr-tbody">
-              <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:2rem;font-size:.82rem" data-i18n="prof_loading_records">Cargando records…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="pr-form-card" class="card" style="display:none">
-        <div class="card-head"><span class="card-title" data-i18n="prof_card_new_record">Nuevo Record Personal</span></div>
-        <div class="card-body">
-          <div class="form-grid" style="margin-bottom:1rem">
-            <div class="field">
-              <label data-i18n="prof_label_sport">Deporte</label>
-              <select id="pr-sport">
-                <option value="swim" data-i18n="prof_sport_swim">Natación</option>
-                <option value="bike" data-i18n="prof_sport_bike">Ciclismo</option>
-                <option value="run" data-i18n="prof_sport_run">Running</option>
-                <option value="triathlon" data-i18n="prof_sport_tri">Triatlón</option>
-              </select>
-            </div>
-            <div class="field">
-              <label data-i18n="prof_label_event_distance">Evento / Distancia</label>
-              <input id="pr-event" type="text" placeholder="Ej: Ironman 70.3, 10K, 400m…" data-i18n-placeholder="prof_ph_event_example">
-            </div>
-          </div>
-          <div class="form-grid three">
-            <div class="field"><label data-i18n="prof_label_mark_hms">Marca (hh:mm:ss)</label><input id="pr-time" type="text" placeholder="4:32:10"></div>
-            <div class="field"><label data-i18n="prof_label_date">Fecha</label><input id="pr-date" type="date" data-i18n-aria="prof_aria_record_date"></div>
-            <div class="field"><label data-i18n="prof_label_place_opt">Lugar (opcional)</label><input id="pr-place" type="text" placeholder="Ej: Pucón, Chile" data-i18n-placeholder="prof_ph_place_example"></div>
-          </div>
-          <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
-            <button class="btn btn-secondary btn-sm" onclick="hidePRForm()" data-i18n="prof_btn_cancel">Cancelar</button>
-            <button class="btn btn-primary btn-sm" onclick="addPR()" data-i18n="prof_btn_save_record">Guardar Record</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════════════════════ TAB: SEGURIDAD ═════════════════════ -->
-    <div id="tab-seguridad" class="tab-pane">
-
-      <!-- Cambiar contraseña -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_change_pw">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Cambiar Contraseña
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="form-grid" style="max-width:480px;margin-bottom:1rem">
-            <div class="field"><label data-i18n="prof_label_pw_current">Contraseña actual</label><input id="pw-old" type="password" placeholder="••••••••"></div>
-            <div class="field"><label data-i18n="prof_label_pw_new">Nueva contraseña</label><input id="pw-new" type="password" placeholder="Mínimo 8 caracteres" data-i18n-placeholder="prof_ph_min8"></div>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="changePassword()" data-i18n="prof_btn_update_pw">Actualizar Contraseña</button>
-        </div>
-      </div>
-
-      <!-- 2FA -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_2fa">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Autenticación de Dos Factores (2FA)
-          </span>
-          <span id="twofa-badge" style="font-size:.7rem;font-weight:600;color:var(--dim)" data-i18n="prof_2fa_off">Desactivado</span>
-        </div>
-        <div class="card-body">
-          <div class="sec-row">
-            <div>
-              <div class="sec-label" data-i18n="prof_2fa_app_label">App autenticadora (TOTP)</div>
-              <div class="sec-desc" data-i18n="prof_2fa_app_desc">Google Authenticator, Authy, o cualquier app compatible</div>
-            </div>
-            <div style="display:flex;gap:.6rem">
-              <button class="btn btn-primary btn-sm" id="btn-2fa-on" onclick="setup2FA()" data-i18n="prof_btn_2fa_on">Activar 2FA</button>
-              <button class="btn btn-danger btn-sm" id="btn-2fa-off" onclick="disable2FA()" style="display:none" data-i18n="prof_btn_deactivate">Desactivar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notificaciones -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_notifications">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-            Notificaciones
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="sec-row">
-            <div><div class="sec-label" data-i18n="prof_notif_weekly_label">Reporte semanal por email</div><div class="sec-desc" data-i18n="prof_notif_weekly_desc">Resumen de entrenamiento todos los lunes</div></div>
-            <label class="toggle-switch"><input type="checkbox" id="notif-weekly" onchange="saveNotifPrefs()"><span class="toggle-track"></span></label>
-          </div>
-          <div class="sec-row">
-            <div><div class="sec-label" data-i18n="prof_notif_workout_label">Notificaciones de workouts</div><div class="sec-desc" data-i18n="prof_notif_workout_desc">Aviso cuando el coach asigne un entrenamiento</div></div>
-            <label class="toggle-switch"><input type="checkbox" id="notif-workout" onchange="saveNotifPrefs()"><span class="toggle-track"></span></label>
-          </div>
-          <div class="sec-row">
-            <div><div class="sec-label" data-i18n="prof_notif_push_label">Push de bienestar</div><div class="sec-desc" data-i18n="prof_notif_push_desc">Recordatorio diario para registrar bienestar</div></div>
-            <label class="toggle-switch"><input type="checkbox" id="notif-push" onchange="saveNotifPrefs()"><span class="toggle-track"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sesiones activas -->
-      <div class="card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_sessions">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            Sesiones Activas
-          </span>
-          <button class="btn btn-secondary btn-sm" onclick="loadSessions()" data-i18n="prof_btn_update">Actualizar</button>
-        </div>
-        <div class="card-body" id="sessions-list">
-          <p style="color:var(--dim);font-size:.82rem" data-i18n="prof_loading_generic">Cargando…</p>
-        </div>
-        <div style="padding:.7rem 1.25rem;border-top:1px solid var(--border2)">
-          <button class="btn btn-danger btn-sm" onclick="revokeAll()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            <span data-i18n="prof_btn_close_all_sessions">Cerrar todas las sesiones</span>
+        <div style="display: flex; gap: 0.6rem; justify-content: flex-end">
+          <button
+            class="btn btn-secondary btn-sm"
+            onclick="close2FAModal()"
+            data-i18n="prof_btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary btn-sm"
+            onclick="verify2FA()"
+            data-i18n="prof_btn_verify_activate"
+          >
+            Verificar y Activar
           </button>
         </div>
       </div>
-
-      <!-- Zona de peligro -->
-      <div class="card danger-card">
-        <div class="card-head">
-          <span class="card-title" data-i18n="prof_card_danger_zone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Zona de Peligro
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="sec-row">
-            <div>
-              <div class="sec-label" style="color:var(--red)" data-i18n="prof_label_delete_account">Eliminar cuenta</div>
-              <div class="sec-desc" data-i18n="prof_delete_account_desc">Borra todos tus datos permanentemente. Esta acción no se puede deshacer.</div>
-            </div>
-            <button class="btn btn-danger btn-sm" onclick="deleteAccount()" data-i18n="prof_btn_delete_account">Eliminar mi cuenta</button>
-          </div>
-        </div>
-      </div>
     </div>
 
-  </div><!-- /.page-wrap -->
-  </main>
-</div>
+    <!-- Toast -->
+    <div id="prof-toast"></div>
 
-<!-- Modal 2FA -->
-<div id="modal-2fa">
-  <div class="modal-box">
-    <h3 data-i18n="prof_btn_2fa_on">Activar 2FA</h3>
-    <p data-i18n="prof_2fa_modal_desc">Escanea el QR con tu app autenticadora y luego ingresa el código de 6 dígitos para confirmar.</p>
-    <div id="qr-container"></div>
-    <div class="field" style="margin-bottom:1rem">
-      <label data-i18n="prof_label_verif_code">Código de verificación</label>
-      <input id="totp-code" type="text" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:.3em;font-size:1.1rem">
-    </div>
-    <div style="display:flex;gap:.6rem;justify-content:flex-end">
-      <button class="btn btn-secondary btn-sm" onclick="close2FAModal()" data-i18n="prof_btn_cancel">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="verify2FA()" data-i18n="prof_btn_verify_activate">Verificar y Activar</button>
-    </div>
-  </div>
-</div>
+    <script src="auth.js"></script>
+    <script>
+      KL.guard('athlete_profile');
+    </script>
+    <script>
+      var API =
+        (location.protocol === 'file:' ? 'http://localhost:8000' : '') + '/api';
+      var _profile = {};
+      var _has2FA = false;
 
-<!-- Toast -->
-<div id="prof-toast"></div>
-
-<script src="auth.js"></script>
-<script>KL.guard('athlete_profile');</script>
-<script>
-var API = (location.protocol === 'file:' ? 'http://localhost:8000' : '') + '/api';
-var _profile = {};
-var _has2FA  = false;
-
-function tok() { return localStorage.getItem('lx_co_token') || ''; }
-function authH(json) {
-  var h = {};
-  var t = tok();
-  if (t) h['Authorization'] = 'Bearer ' + t;
-  if (json !== false) h['Content-Type'] = 'application/json';
-  return h;
-}
-function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function _t(key, fallback) {
-  // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
-  // traducción — hay que detectar ese caso para no mostrar "prof_algo" crudo.
-  var v = window.i18n ? window.i18n.t(key) : null;
-  return (v && v !== key) ? v : fallback;
-}
-
-function toast(msg, type) {
-  var el = document.getElementById('prof-toast');
-  el.textContent = msg;
-  el.className = 'show ' + (type || 'ok');
-  clearTimeout(el._t);
-  el._t = setTimeout(function(){ el.className = ''; }, 3500);
-}
-
-/* ── Tabs ─────────────────────────────────────────────────────── */
-var TAB_ORDER = ['perfil','rendimiento','conexiones','records','seguridad'];
-function switchTab(name) {
-  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('tab-' + name).classList.add('active');
-  document.querySelectorAll('.tab-btn')[TAB_ORDER.indexOf(name)].classList.add('active');
-  if (name === 'rendimiento') { loadZones(); loadBenchmarks(); }
-  if (name === 'conexiones')  { loadGarminStatus(); loadStravaStatus(); }
-  if (name === 'records')     { loadPRs(); }
-  if (name === 'seguridad')   { loadSessions(); loadNotifPrefs(); render2FAStatus(); }
-}
-
-/* ── Profile ──────────────────────────────────────────────────── */
-function loadProfile() {
-  fetch(API + '/athlete/profile', { credentials:'include', headers: authH(false) })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(p) {
-      _profile = p;
-      _has2FA  = !!p.totp_enabled;
-      loadAvatarPerfil(p.id);
-      loadPrivacyPrefs();
-      loadAddons();
-      var name = p.nombre || p.name || '';
-      document.getElementById('p-nombre').value    = name;
-      document.getElementById('p-email').value     = p.email || '';
-      document.getElementById('p-peso').value      = p.weight_kg || '';
-      document.getElementById('p-altura').value    = p.height_cm || '';
-      document.getElementById('p-edad').value      = p.age || p.edad || '';
-      document.getElementById('p-race-name').value = p.race_goal_name || '';
-      document.getElementById('p-race-date').value = p.race_goal_date || '';
-      document.getElementById('p-race-dist').value = p.race_goal_dist || '';
-    })
-    .catch(function(){ toast(_t('prof_toast_profile_load_err', 'Error cargando perfil'), 'err'); });
-}
-
-function saveProfile() {
-  var btn = document.getElementById('btn-save-profile');
-  btn.disabled = true; btn.innerHTML = '<span class="spin">↻</span> ' + _t('prof_saving', 'Guardando…');
-  var body = {
-    nombre:         document.getElementById('p-nombre').value.trim() || null,
-    weight_kg:      parseFloat(document.getElementById('p-peso').value)   || null,
-    height_cm:      parseInt(document.getElementById('p-altura').value)   || null,
-    age:            parseInt(document.getElementById('p-edad').value)     || null,
-    race_goal_name: document.getElementById('p-race-name').value.trim()  || null,
-    race_goal_date: document.getElementById('p-race-date').value          || null,
-    race_goal_dist: document.getElementById('p-race-dist').value          || null
-  };
-  fetch(API + '/athlete/profile', {
-    method:'PATCH', credentials:'include', headers: authH(), body: JSON.stringify(body)
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ toast(_t('prof_toast_profile_saved', 'Perfil guardado ✓')); loadProfile(); })
-    .catch(function(){ toast(_t('prof_toast_profile_save_err', 'Error al guardar'), 'err'); })
-    .finally(function(){
-      btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path d="M5 13l4 4L19 7"/></svg> ' + _t('prof_btn_save_changes', 'Guardar cambios');
-    });
-}
-
-/* ── Benchmarks ───────────────────────────────────────────────── */
-function _renderBenchmarks(p) {
-  var ftp = p.ftp || 0;
-  var pkg = (ftp && p.weight_kg) ? (ftp / p.weight_kg).toFixed(2) : '—';
-  document.getElementById('b-ftp').textContent   = ftp || '—';
-  document.getElementById('b-vo2').textContent   = p.vo2max || '—';
-  document.getElementById('b-fcmax').textContent = p.fcmax || '—';
-  document.getElementById('b-css').textContent   = p.css || '—';
-  document.getElementById('b-run').textContent   = p.run_pace || '—';
-  document.getElementById('b-wpkg').textContent  = pkg;
-  document.getElementById('be-ftp').value   = p.ftp || '';
-  document.getElementById('be-vo2').value   = p.vo2max || '';
-  document.getElementById('be-fcmax').value = p.fcmax || '';
-  document.getElementById('be-css').value   = p.css || '';
-  document.getElementById('be-run').value   = p.run_pace || '';
-  document.getElementById('be-peso').value  = p.weight_kg || '';
-}
-function loadBenchmarks() {
-  fetch(API + '/athlete/profile', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(p){ _renderBenchmarks(p); })
-    .catch(function(){});
-}
-function toggleBenchEdit() {
-  var el = document.getElementById('bench-edit');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-function saveBenchmarks() {
-  var body = {
-    ftp:       parseInt(document.getElementById('be-ftp').value)    || null,
-    vo2max:    parseFloat(document.getElementById('be-vo2').value)  || null,
-    fcmax:     parseInt(document.getElementById('be-fcmax').value)  || null,
-    css:       document.getElementById('be-css').value.trim()       || null,
-    run_pace:  document.getElementById('be-run').value.trim()       || null,
-    weight_kg: parseFloat(document.getElementById('be-peso').value) || null
-  };
-  fetch(API + '/athlete/profile', {
-    method:'PATCH', credentials:'include', headers: authH(), body: JSON.stringify(body)
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ toast(_t('prof_toast_benchmarks_saved', 'Benchmarks guardados ✓')); toggleBenchEdit(); loadBenchmarks(); loadProfile(); })
-    .catch(function(){ toast(_t('prof_toast_benchmarks_err', 'Error guardando benchmarks'), 'err'); });
-}
-
-/* ── Zones ────────────────────────────────────────────────────── */
-var Z_FC  = ['#10B981','#0EA5E9','#F0A500','#FF6535','#EF4444'];
-var Z_POW = ['#3D6880','#10B981','#F0A500','#FF6535','#EF4444','#A855F7','#EC4899'];
-
-function buildZoneTable(zones, colors) {
-  if (!zones || !zones.length) return '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_zones_empty', 'Sin datos — actualiza tus benchmarks primero.')) + '</p>';
-  var html = '<table class="zone-table"><thead><tr><th>' + esc(_t('prof_zone_header_zone','Zona')) + '</th><th>' + esc(_t('prof_zone_header_name','Nombre')) + '</th><th>' + esc(_t('prof_zone_header_range','Rango')) + '</th><th style="width:120px">' + esc(_t('prof_zone_header_intensity','Intensidad')) + '</th></tr></thead><tbody>';
-  zones.forEach(function(z, i) {
-    var col = colors[i % colors.length];
-    var pct = Math.min(100, 15 + i * 17);
-    html += '<tr>' +
-      '<td style="color:' + col + ';font-weight:700;font-family:\'Barlow Condensed\',sans-serif">Z' + (i+1) + '</td>' +
-      '<td style="font-weight:600;font-size:.82rem">' + esc(z.name || z.label || '') + '</td>' +
-      '<td style="color:var(--muted);font-size:.76rem">' + esc(z.range || z.description || '') + '</td>' +
-      '<td><div class="zone-bar" style="width:' + pct + '%;background:' + col + ';opacity:.85"></div></td>' +
-      '</tr>';
-  });
-  return html + '</tbody></table>';
-}
-
-function loadZones() {
-  var MSG_EMPTY = '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_zones_empty', 'Sin datos — actualiza tus benchmarks primero.')) + '</p>';
-  fetch(API + '/athlete/zones/profile', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      document.getElementById('fc-zones-wrap').innerHTML  = d.hr_zones    ? buildZoneTable(d.hr_zones,    Z_FC)  : MSG_EMPTY;
-      document.getElementById('pow-zones-wrap').innerHTML = d.power_zones ? buildZoneTable(d.power_zones, Z_POW) : MSG_EMPTY;
-      document.getElementById('run-zones-wrap').innerHTML = d.run_zones   ? buildZoneTable(d.run_zones,   Z_FC)  : MSG_EMPTY;
-    })
-    .catch(function(){
-      ['fc-zones-wrap','pow-zones-wrap','run-zones-wrap'].forEach(function(id){
-        document.getElementById(id).innerHTML = '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_zones_unavailable', 'No disponible.')) + '</p>';
-      });
-    });
-}
-
-/* ── Garmin ───────────────────────────────────────────────────── */
-function loadGarminStatus() {
-  fetch(API + '/athlete/garmin/sync-status', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ setGarminUI(d.has_credentials || d.connected || d.status === 'ok', d); })
-    .catch(function(){ setGarminUI(false, {}); });
-}
-function setGarminUI(on, d) {
-  var badge = document.getElementById('garmin-badge');
-  badge.className = 'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
-  badge.textContent = on ? _t('prof_status_connected', 'Conectado') : _t('prof_status_disconnected', 'Sin conectar');
-  document.getElementById('btn-garmin-con').style.display  = on ? 'none' : '';
-  document.getElementById('btn-garmin-sync').style.display = on ? '' : 'none';
-  document.getElementById('btn-garmin-dis').style.display  = on ? '' : 'none';
-  if (on && d.last_sync) {
-    var log = document.getElementById('garmin-log');
-    log.style.display = 'block';
-    document.getElementById('garmin-log-txt').textContent = _t('prof_last_sync', 'Último sync:') + ' ' + new Date(d.last_sync).toLocaleString('es-CL');
-  }
-}
-function showGarminForm() {
-  document.getElementById('garmin-form').style.display = 'block';
-  document.getElementById('garmin-step-creds').style.display = '';
-  document.getElementById('garmin-step-mfa').style.display  = 'none';
-}
-function hideGarminForm() {
-  document.getElementById('garmin-form').style.display = 'none';
-}
-function garminMfaCancel() {
-  document.getElementById('garmin-step-mfa').style.display  = 'none';
-  document.getElementById('garmin-step-creds').style.display = '';
-  document.getElementById('g-mfa-code').value = '';
-}
-function saveGarminCreds() {
-  var email = document.getElementById('g-email').value.trim();
-  var pass  = document.getElementById('g-pass').value;
-  if (!email || !pass) { toast(_t('prof_toast_garmin_fields_err', 'Completa email y contraseña Garmin'), 'err'); return; }
-  var btn = document.getElementById('btn-garmin-save');
-  btn.disabled = true; btn.textContent = _t('prof_connecting', 'Conectando…');
-  fetch(API + '/athlete/garmin-credentials', {
-    method:'POST', credentials:'include', headers: authH(),
-    body: JSON.stringify({ garmin_email: email, garmin_password: pass })
-  })
-    .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw new Error(e.detail||'Error'); }); return r.json(); })
-    .then(function(d){
-      if(d.needs_mfa){
-        // Garmin pide código de verificación → mostrar paso 2
-        document.getElementById('garmin-step-creds').style.display = 'none';
-        document.getElementById('garmin-step-mfa').style.display   = '';
-        document.getElementById('g-mfa-code').focus();
-        toast(_t('prof_toast_garmin_mfa_sent', 'Revisa tu email/SMS: Garmin envió un código'), 'info');
-      } else {
-        toast(_t('prof_toast_garmin_connected', 'Garmin conectado ✓')); hideGarminForm(); loadGarminStatus();
+      function tok() {
+        return localStorage.getItem('lx_co_token') || '';
       }
-    })
-    .catch(function(e){ toast(_t('prof_toast_garmin_connect_err', 'Error conectando Garmin:') + ' ' + (e.message||e), 'err'); })
-    .finally(function(){ btn.disabled = false; btn.textContent = _t('prof_btn_save_connect', 'Guardar y Conectar'); });
-}
-function submitGarminMfa() {
-  var code = document.getElementById('g-mfa-code').value.trim();
-  if(!code){ toast(_t('prof_toast_verif_code_required', 'Escribe el código de verificación'), 'err'); return; }
-  fetch(API + '/athlete/garmin/reauth/mfa', {
-    method:'POST', credentials:'include', headers: authH(),
-    body: JSON.stringify({ code: code })
-  })
-    .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw new Error(e.detail||'Código incorrecto'); }); return r.json(); })
-    .then(function(d){
-      if(d.ok){
-        toast(_t('prof_toast_garmin_verified', 'Garmin verificado y conectado ✓')); hideGarminForm(); loadGarminStatus();
-      } else {
-        toast(_t('prof_toast_code_incorrect_retry', 'Código incorrecto, intenta de nuevo'), 'err');
+      function authH(json) {
+        var h = {};
+        var t = tok();
+        if (t) h['Authorization'] = 'Bearer ' + t;
+        if (json !== false) h['Content-Type'] = 'application/json';
+        return h;
       }
-    })
-    .catch(function(e){ toast(_t('prof_toast_generic_err', 'Error:') + ' ' + (e.message||e), 'err'); });
-}
-function garminSync() {
-  var btn = document.getElementById('btn-garmin-sync');
-  btn.disabled = true; toast(_t('prof_toast_syncing_garmin', 'Sincronizando Garmin…'));
-  fetch(API + '/athlete/garmin/sync', { method:'POST', credentials:'include', headers: authH() })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ toast(d.message || _t('prof_toast_sync_done', 'Sync completado ✓')); loadGarminStatus(); })
-    .catch(function(){ toast(_t('prof_toast_garmin_sync_err', 'Error en sync Garmin'), 'err'); })
-    .finally(function(){ btn.disabled = false; });
-}
-function garminDisconnect() {
-  if (!confirm(_t('prof_confirm_garmin_disconnect', '¿Desconectar Garmin? Se eliminarán las credenciales almacenadas.'))) return;
-  fetch(API + '/athlete/garmin-credentials', { method:'DELETE', credentials:'include', headers: authH(false) })
-    .then(function(){ toast(_t('prof_toast_garmin_disconnected', 'Garmin desconectado')); loadGarminStatus(); })
-    .catch(function(){ toast(_t('prof_toast_generic_err_short', 'Error'), 'err'); });
-}
-
-/* ── Strava ───────────────────────────────────────────────────── */
-function loadStravaStatus() {
-  fetch(API + '/strava/status', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var on = d.connected;
-      var badge = document.getElementById('strava-badge');
-      badge.className = 'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
-      badge.textContent = on ? (_t('prof_status_connected', 'Conectado') + (d.athlete_name ? ' — ' + d.athlete_name : '')) : _t('prof_status_disconnected', 'Sin conectar');
-
-      if (d.available === false) {
-        // Strava no configurado en este servidor (falta STRAVA_CLIENT_ID/SECRET)
-        // — ocultar el botón en vez de dejar que el usuario tope con el 503.
-        document.getElementById('btn-strava-con').style.display  = 'none';
-        document.getElementById('btn-strava-sync').style.display = 'none';
-        document.getElementById('btn-strava-dis').style.display  = 'none';
-        document.getElementById('strava-unavailable').style.display = 'block';
-        return;
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
       }
 
-      document.getElementById('btn-strava-con').style.display  = on ? 'none' : '';
-      document.getElementById('btn-strava-sync').style.display = on ? '' : 'none';
-      document.getElementById('btn-strava-dis').style.display  = on ? '' : 'none';
-      if (on && d.last_sync) {
-        var log = document.getElementById('strava-log');
-        log.style.display = 'block';
-        document.getElementById('strava-log-txt').textContent = _t('prof_last_sync', 'Último sync:') + ' ' + new Date(d.last_sync).toLocaleString('es-CL');
+      function _t(key, fallback) {
+        // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
+        // traducción — hay que detectar ese caso para no mostrar "prof_algo" crudo.
+        var v = window.i18n ? window.i18n.t(key) : null;
+        return v && v !== key ? v : fallback;
       }
-    }).catch(function(){});
-}
-function stravaConnect() {
-  // GET directo navegaba de página completa y mostraba el JSON crudo del
-  // error 503 cuando Strava no está configurado en el servidor. Con
-  // redirect:'manual' podemos distinguir "hay que redirigir a Strava"
-  // (funciona) de "está devolviendo un error" (mostrar toast amigable).
-  fetch(API + '/strava/connect', { credentials:'include', headers: authH(false), redirect:'manual' })
-    .then(function(r){
-      if (r.type === 'opaqueredirect' || r.status === 0) {
-        window.location.href = API + '/strava/connect';
-        return;
+
+      function toast(msg, type) {
+        var el = document.getElementById('prof-toast');
+        el.textContent = msg;
+        el.className = 'show ' + (type || 'ok');
+        clearTimeout(el._t);
+        el._t = setTimeout(function () {
+          el.className = '';
+        }, 3500);
       }
-      return r.json().then(function(d){
-        var msg = (d.errors && d.errors[0] && d.errors[0].message) || _t('prof_strava_unavailable_msg', 'Strava no está disponible en este momento.');
-        toast(msg, 'err');
-      });
-    })
-    .catch(function(){ toast(_t('prof_toast_strava_no_connect', 'No se pudo conectar con Strava'), 'err'); });
-}
-function stravaDisconnect() {
-  if (!confirm(_t('prof_confirm_strava_disconnect', '¿Desconectar Strava?'))) return;
-  fetch(API + '/strava/disconnect', { method:'DELETE', credentials:'include', headers: authH(false) })
-    .then(function(){ toast(_t('prof_toast_strava_disconnected', 'Strava desconectado')); loadStravaStatus(); })
-    .catch(function(){ toast(_t('prof_toast_generic_err_short', 'Error'), 'err'); });
-}
-function stravaSync() {
-  var btn = document.getElementById('btn-strava-sync');
-  btn.disabled = true; toast(_t('prof_toast_syncing_strava', 'Sincronizando Strava…'));
-  fetch(API + '/strava/sync', { method:'POST', credentials:'include', headers: authH() })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ toast(d.message || _t('prof_toast_strava_sync_done', 'Sync Strava completado ✓')); loadStravaStatus(); })
-    .catch(function(){ toast(_t('prof_toast_strava_sync_err', 'Error sync Strava'), 'err'); })
-    .finally(function(){ btn.disabled = false; });
-}
 
-/* ── Foto de perfil (movida desde Comunidad › Mi Perfil) ─────── */
-function loadAvatarPerfil(userId){
-  var img = document.getElementById('pf-avatar-img');
-  if(img && userId) img.src = API + '/athlete/profile/avatar/' + userId + '?t=' + Date.now();
-}
-function uploadAvatarPerfil(input){
-  var file = input.files && input.files[0];
-  if(!file) return;
-  if(!file.type.startsWith('image/')){ toast(_t('cmw_only_images','Solo se aceptan imágenes'),'err'); return; }
-  var fd = new FormData();
-  fd.append('file', file);
-  fetch(API + '/athlete/profile/avatar', { method:'POST', credentials:'include', headers: authH(false), body: fd })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
-      input.value = '';
-      if(!d){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); return; }
-      toast(_t('prof_toast_avatar_ok','Foto actualizada ✓'));
-      if(_profile && _profile.id) loadAvatarPerfil(_profile.id);
-    })
-    .catch(function(){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); });
-}
-function deleteAvatarPerfil(){
-  fetch(API + '/athlete/profile/avatar', { method:'DELETE', credentials:'include', headers: authH(false) })
-    .then(function(){
-      toast(_t('prof_toast_avatar_removed','Foto quitada'));
-      var img = document.getElementById('pf-avatar-img'); if(img) img.style.visibility = 'hidden';
-    })
-    .catch(function(){ toast(_t('prof_toast_avatar_err','No se pudo subir la foto'),'err'); });
-}
+      /* ── Tabs ─────────────────────────────────────────────────────── */
+      var TAB_ORDER = [
+        'perfil',
+        'rendimiento',
+        'conexiones',
+        'records',
+        'seguridad',
+      ];
+      function switchTab(name) {
+        document.querySelectorAll('.tab-pane').forEach(function (p) {
+          p.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          b.classList.remove('active');
+        });
+        document.getElementById('tab-' + name).classList.add('active');
+        document
+          .querySelectorAll('.tab-btn')
+          [TAB_ORDER.indexOf(name)].classList.add('active');
+        if (name === 'rendimiento') {
+          loadZones();
+          loadBenchmarks();
+        }
+        if (name === 'conexiones') {
+          loadGarminStatus();
+          loadStravaStatus();
+        }
+        if (name === 'records') {
+          loadPRs();
+        }
+        if (name === 'seguridad') {
+          loadSessions();
+          loadNotifPrefs();
+          render2FAStatus();
+        }
+      }
 
-/* ── Privacidad de actividades (movida desde Comunidad › Mi Perfil) ── */
-function privToggleMaster(){
-  var on = document.getElementById('priv-details').checked;
-  document.getElementById('priv-sub').classList.toggle('off', !on);
-}
-function loadPrivacyPrefs(){
-  fetch(API + '/athlete/community-privacy', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
-      var p = (d && d.prefs) || {};
-      document.getElementById('priv-details').checked = p.share_details !== false;
-      document.getElementById('priv-route').checked   = p.share_route  !== false;
-      document.getElementById('priv-hr').checked       = p.share_hr     !== false;
-      document.getElementById('priv-power').checked    = p.share_power  !== false;
-      document.getElementById('priv-pace').checked     = p.share_pace   !== false;
-      privToggleMaster();
-    }).catch(function(){});
-}
-function savePrivacyPrefs(){
-  var body = {
-    share_details: document.getElementById('priv-details').checked,
-    share_route:   document.getElementById('priv-route').checked,
-    share_hr:      document.getElementById('priv-hr').checked,
-    share_power:   document.getElementById('priv-power').checked,
-    share_pace:    document.getElementById('priv-pace').checked,
-  };
-  fetch(API + '/athlete/community-privacy', { method:'PUT', credentials:'include', headers: authH(), body: JSON.stringify(body) })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(){
-      var msg = document.getElementById('priv-saved-msg');
-      msg.style.display = '';
-      setTimeout(function(){ msg.style.display = 'none'; }, 2200);
-    }).catch(function(){});
-}
+      /* ── Profile ──────────────────────────────────────────────────── */
+      function loadProfile() {
+        fetch(API + '/athlete/profile', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function (p) {
+            _profile = p;
+            _has2FA = !!p.totp_enabled;
+            loadAvatarPerfil(p.id);
+            loadPrivacyPrefs();
+            loadAddons();
+            var name = p.nombre || p.name || '';
+            document.getElementById('p-nombre').value = name;
+            document.getElementById('p-email').value = p.email || '';
+            document.getElementById('p-peso').value = p.weight_kg || '';
+            document.getElementById('p-altura').value = p.height_cm || '';
+            document.getElementById('p-edad').value = p.age || p.edad || '';
+            document.getElementById('p-race-name').value =
+              p.race_goal_name || '';
+            document.getElementById('p-race-date').value =
+              p.race_goal_date || '';
+            document.getElementById('p-race-dist').value =
+              p.race_goal_dist || '';
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_profile_load_err', 'Error cargando perfil'),
+              'err',
+            );
+          });
+      }
 
-/* ── Addons (B12): compra por módulo ─────────────────────────── */
-function loadAddons(){
-  fetch(API + '/stripe/addons', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
-      var box = document.getElementById('addons-list');
-      if(!box || !d) return;
-      var esc = function(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
-      box.innerHTML = d.addons.map(function(a){
-        var action = a.included ? '<span class="pf-conn-meta">' + _t('addon_included','Incluido en tu plan') + '</span>'
-          : (!a.available || !d.enabled || !a.price_configured) ? '<span class="pf-conn-meta">' + _t('addon_soon','Próximamente') + '</span>'
-          : '<button class="btn btn-primary btn-sm" onclick="buyAddon(\'' + esc(a.id) + '\')">' + _t('addon_buy','Activar') + '</button>';
-        return '<div class="pf-conn-row"><div class="pf-conn-name">' + esc(a.name) + '</div><div>' + action + '</div></div>';
-      }).join('');
-    }).catch(function(){});
-}
-function buyAddon(id){
-  fetch(API + '/stripe/addons/checkout', { method:'POST', credentials:'include', headers: authH(), body: JSON.stringify({ addon_id: id }) })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(d){ window.location.href = d.checkout_url; })
-    .catch(function(){ toast(_t('addon_err','No se pudo iniciar la compra'),'err'); });
-}
+      function saveProfile() {
+        var btn = document.getElementById('btn-save-profile');
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="spin">↻</span> ' + _t('prof_saving', 'Guardando…');
+        var body = {
+          nombre: document.getElementById('p-nombre').value.trim() || null,
+          weight_kg:
+            parseFloat(document.getElementById('p-peso').value) || null,
+          height_cm:
+            parseInt(document.getElementById('p-altura').value) || null,
+          age: parseInt(document.getElementById('p-edad').value) || null,
+          race_goal_name:
+            document.getElementById('p-race-name').value.trim() || null,
+          race_goal_date: document.getElementById('p-race-date').value || null,
+          race_goal_dist: document.getElementById('p-race-dist').value || null,
+        };
+        fetch(API + '/athlete/profile', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify(body),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            toast(_t('prof_toast_profile_saved', 'Perfil guardado ✓'));
+            loadProfile();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_profile_save_err', 'Error al guardar'), 'err');
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.innerHTML =
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path d="M5 13l4 4L19 7"/></svg> ' +
+              _t('prof_btn_save_changes', 'Guardar cambios');
+          });
+      }
 
-/* ── Personal Records ─────────────────────────────────────────── */
-function SPORT_LBL(s) {
-  var d = { swim:'prof_sport_swim', bike:'prof_sport_bike', run:'prof_sport_run', triathlon:'prof_sport_tri' };
-  var fb = { swim:'Natación', bike:'Ciclismo', run:'Running', triathlon:'Triatlón' };
-  return d[s] ? _t(d[s], fb[s]) : s;
-}
-var SPORT_CLS = { swim:'pr-swim', bike:'pr-bike', run:'pr-run', triathlon:'pr-tri' };
+      /* ── Benchmarks ───────────────────────────────────────────────── */
+      function _renderBenchmarks(p) {
+        var ftp = p.ftp || 0;
+        var pkg = ftp && p.weight_kg ? (ftp / p.weight_kg).toFixed(2) : '—';
+        document.getElementById('b-ftp').textContent = ftp || '—';
+        document.getElementById('b-vo2').textContent = p.vo2max || '—';
+        document.getElementById('b-fcmax').textContent = p.fcmax || '—';
+        document.getElementById('b-css').textContent = p.css || '—';
+        document.getElementById('b-run').textContent = p.run_pace || '—';
+        document.getElementById('b-wpkg').textContent = pkg;
+        document.getElementById('be-ftp').value = p.ftp || '';
+        document.getElementById('be-vo2').value = p.vo2max || '';
+        document.getElementById('be-fcmax').value = p.fcmax || '';
+        document.getElementById('be-css').value = p.css || '';
+        document.getElementById('be-run').value = p.run_pace || '';
+        document.getElementById('be-peso').value = p.weight_kg || '';
+      }
+      function loadBenchmarks() {
+        fetch(API + '/athlete/profile', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (p) {
+            _renderBenchmarks(p);
+          })
+          .catch(function () {});
+      }
+      function toggleBenchEdit() {
+        var el = document.getElementById('bench-edit');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+      function saveBenchmarks() {
+        var body = {
+          ftp: parseInt(document.getElementById('be-ftp').value) || null,
+          vo2max: parseFloat(document.getElementById('be-vo2').value) || null,
+          fcmax: parseInt(document.getElementById('be-fcmax').value) || null,
+          css: document.getElementById('be-css').value.trim() || null,
+          run_pace: document.getElementById('be-run').value.trim() || null,
+          weight_kg:
+            parseFloat(document.getElementById('be-peso').value) || null,
+        };
+        fetch(API + '/athlete/profile', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify(body),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            toast(_t('prof_toast_benchmarks_saved', 'Benchmarks guardados ✓'));
+            toggleBenchEdit();
+            loadBenchmarks();
+            loadProfile();
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_benchmarks_err', 'Error guardando benchmarks'),
+              'err',
+            );
+          });
+      }
 
-function loadPRs() {
-  fetch(API + '/athlete/personal-records', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(renderPRs)
-    .catch(function(){
-      document.getElementById('pr-tbody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.82rem">' + esc(_t('prof_error_loading_records', 'Error cargando records')) + '</td></tr>';
-    });
-}
-function renderPRs(list) {
-  var tb = document.getElementById('pr-tbody');
-  if (!list || !list.length) {
-    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:2rem;font-size:.82rem">' + esc(_t('prof_records_empty', 'Sin records aún. ¡Agrega tu primer PR!')) + '</td></tr>';
-    return;
-  }
-  var delTitle = esc(_t('prof_delete', 'Eliminar'));
-  tb.innerHTML = list.map(function(pr) {
-    var sc = SPORT_CLS[pr.sport] || 'pr-tri';
-    return '<tr>' +
-      '<td><span class="pr-sport ' + sc + '">' + esc(SPORT_LBL(pr.sport) || pr.sport || '') + '</span></td>' +
-      '<td style="font-weight:600">' + esc(pr.event || pr.distance || '') + '</td>' +
-      '<td style="color:var(--gold);font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:700">' + esc(pr.time || pr.value_disp || pr.result || '') + '</td>' +
-      '<td style="color:var(--muted);font-size:.76rem">' + esc(pr.date || pr.achieved_at || '') + '</td>' +
-      '<td style="color:var(--muted);font-size:.76rem">' + esc(pr.place || pr.location || '') + '</td>' +
-      '<td><button class="del-btn" onclick="deletePR(\'' + esc(pr.id) + '\')" title="' + delTitle + '">✕</button></td>' +
-      '</tr>';
-  }).join('');
-}
-function showPRForm() { document.getElementById('pr-form-card').style.display = 'block'; }
-function hidePRForm() { document.getElementById('pr-form-card').style.display = 'none'; }
-function addPR() {
-  var body = {
-    sport: document.getElementById('pr-sport').value,
-    event: document.getElementById('pr-event').value.trim(),
-    time:  document.getElementById('pr-time').value.trim(),
-    date:  document.getElementById('pr-date').value,
-    place: document.getElementById('pr-place').value.trim()
-  };
-  if (!body.event || !body.time) { toast(_t('prof_toast_event_mark_required', 'Completa evento y marca'), 'err'); return; }
-  fetch(API + '/athlete/personal-records', {
-    method:'POST', credentials:'include', headers: authH(), body: JSON.stringify(body)
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ toast(_t('prof_toast_record_saved', 'Record guardado ✓')); hidePRForm(); loadPRs(); })
-    .catch(function(){ toast(_t('prof_toast_record_save_err', 'Error guardando record'), 'err'); });
-}
-function deletePR(id) {
-  if (!confirm(_t('prof_confirm_delete_record', '¿Eliminar este record?'))) return;
-  fetch(API + '/athlete/personal-records/' + id, { method:'DELETE', credentials:'include', headers: authH(false) })
-    .then(function(){ toast(_t('prof_toast_record_deleted', 'Record eliminado')); loadPRs(); })
-    .catch(function(){ toast(_t('prof_toast_generic_err_short', 'Error'), 'err'); });
-}
+      /* ── Zones ────────────────────────────────────────────────────── */
+      var Z_FC = ['#10B981', '#0EA5E9', '#F0A500', '#FF6535', '#EF4444'];
+      var Z_POW = [
+        '#3D6880',
+        '#10B981',
+        '#F0A500',
+        '#FF6535',
+        '#EF4444',
+        '#A855F7',
+        '#EC4899',
+      ];
 
-/* ── Password ─────────────────────────────────────────────────── */
-function changePassword() {
-  var old_ = document.getElementById('pw-old').value;
-  var new_ = document.getElementById('pw-new').value;
-  if (!old_ || !new_) { toast(_t('prof_toast_pw_fields_required', 'Completa ambos campos'), 'err'); return; }
-  if (new_.length < 8) { toast(_t('prof_ph_min8', 'Mínimo 8 caracteres'), 'err'); return; }
-  fetch(API + '/auth/change-password', {
-    method:'POST', credentials:'include', headers: authH(),
-    body: JSON.stringify({ old_password: old_, new_password: new_ })
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ toast(_t('prof_toast_pw_updated', 'Contraseña actualizada ✓')); document.getElementById('pw-old').value = ''; document.getElementById('pw-new').value = ''; })
-    .catch(function(){ toast(_t('prof_toast_pw_wrong', 'Contraseña actual incorrecta'), 'err'); });
-}
+      function buildZoneTable(zones, colors) {
+        if (!zones || !zones.length)
+          return (
+            '<p style="color:var(--dim);font-size:.82rem">' +
+            esc(
+              _t(
+                'prof_zones_empty',
+                'Sin datos — actualiza tus benchmarks primero.',
+              ),
+            ) +
+            '</p>'
+          );
+        var html =
+          '<table class="zone-table"><thead><tr><th>' +
+          esc(_t('prof_zone_header_zone', 'Zona')) +
+          '</th><th>' +
+          esc(_t('prof_zone_header_name', 'Nombre')) +
+          '</th><th>' +
+          esc(_t('prof_zone_header_range', 'Rango')) +
+          '</th><th style="width:120px">' +
+          esc(_t('prof_zone_header_intensity', 'Intensidad')) +
+          '</th></tr></thead><tbody>';
+        zones.forEach(function (z, i) {
+          var col = colors[i % colors.length];
+          var pct = Math.min(100, 15 + i * 17);
+          html +=
+            '<tr>' +
+            '<td style="color:' +
+            col +
+            ";font-weight:700;font-family:'Barlow Condensed',sans-serif\">Z" +
+            (i + 1) +
+            '</td>' +
+            '<td style="font-weight:600;font-size:.82rem">' +
+            esc(z.name || z.label || '') +
+            '</td>' +
+            '<td style="color:var(--muted);font-size:.76rem">' +
+            esc(z.range || z.description || '') +
+            '</td>' +
+            '<td><div class="zone-bar" style="width:' +
+            pct +
+            '%;background:' +
+            col +
+            ';opacity:.85"></div></td>' +
+            '</tr>';
+        });
+        return html + '</tbody></table>';
+      }
 
-/* ── 2FA ──────────────────────────────────────────────────────── */
-function render2FAStatus() {
-  var on = _has2FA || !!(_profile.totp_enabled);
-  document.getElementById('twofa-badge').textContent = on ? _t('prof_2fa_on', 'Activado ✓') : _t('prof_2fa_off', 'Desactivado');
-  document.getElementById('twofa-badge').style.color = on ? 'var(--green)' : 'var(--dim)';
-  document.getElementById('btn-2fa-on').style.display  = on ? 'none' : '';
-  document.getElementById('btn-2fa-off').style.display = on ? '' : 'none';
-}
-function setup2FA() {
-  fetch(API + '/auth/2fa/setup', { method:'POST', credentials:'include', headers: authH() })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      var src = d.qr_url || d.qr_image || '';
-      document.getElementById('qr-container').innerHTML = src
-        ? '<img src="' + esc(src) + '" width="180" height="180" alt="QR 2FA">'
-        : (d.secret ? '<p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem">' + esc(_t('prof_2fa_manual_key_label', 'Clave manual:')) + '</p><code style="font-size:.9rem;color:var(--orange);word-break:break-all">' + esc(d.secret) + '</code>' : '');
-      document.getElementById('modal-2fa').classList.add('open');
-    })
-    .catch(function(){ toast(_t('prof_toast_2fa_setup_err', 'Error configurando 2FA'), 'err'); });
-}
-function close2FAModal() { document.getElementById('modal-2fa').classList.remove('open'); }
-function verify2FA() {
-  var code = document.getElementById('totp-code').value.trim();
-  if (code.length !== 6) { toast(_t('prof_toast_2fa_code_6digits', 'Código de 6 dígitos requerido'), 'err'); return; }
-  fetch(API + '/auth/2fa/verify', {
-    method:'POST', credentials:'include', headers: authH(),
-    body: JSON.stringify({ totp_code: code })
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ _has2FA = true; toast(_t('prof_toast_2fa_enabled', '2FA activado ✓')); close2FAModal(); render2FAStatus(); })
-    .catch(function(){ toast(_t('prof_toast_code_incorrect', 'Código incorrecto'), 'err'); });
-}
-function disable2FA() {
-  var code = prompt(_t('prof_prompt_2fa_disable', 'Ingresa un código de tu app para desactivar 2FA:'));
-  if (!code) return;
-  fetch(API + '/auth/2fa/disable', {
-    method:'POST', credentials:'include', headers: authH(),
-    body: JSON.stringify({ totp_code: code })
-  })
-    .then(function(r){ if(!r.ok) throw r; return r.json(); })
-    .then(function(){ _has2FA = false; toast(_t('prof_toast_2fa_disabled', '2FA desactivado')); render2FAStatus(); })
-    .catch(function(){ toast(_t('prof_toast_code_incorrect', 'Código incorrecto'), 'err'); });
-}
+      function loadZones() {
+        var MSG_EMPTY =
+          '<p style="color:var(--dim);font-size:.82rem">' +
+          esc(
+            _t(
+              'prof_zones_empty',
+              'Sin datos — actualiza tus benchmarks primero.',
+            ),
+          ) +
+          '</p>';
+        fetch(API + '/athlete/zones/profile', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            document.getElementById('fc-zones-wrap').innerHTML = d.hr_zones
+              ? buildZoneTable(d.hr_zones, Z_FC)
+              : MSG_EMPTY;
+            document.getElementById('pow-zones-wrap').innerHTML = d.power_zones
+              ? buildZoneTable(d.power_zones, Z_POW)
+              : MSG_EMPTY;
+            document.getElementById('run-zones-wrap').innerHTML = d.run_zones
+              ? buildZoneTable(d.run_zones, Z_FC)
+              : MSG_EMPTY;
+          })
+          .catch(function () {
+            ['fc-zones-wrap', 'pow-zones-wrap', 'run-zones-wrap'].forEach(
+              function (id) {
+                document.getElementById(id).innerHTML =
+                  '<p style="color:var(--dim);font-size:.82rem">' +
+                  esc(_t('prof_zones_unavailable', 'No disponible.')) +
+                  '</p>';
+              },
+            );
+          });
+      }
 
-/* ── Sessions ─────────────────────────────────────────────────── */
-function loadSessions() {
-  var el = document.getElementById('sessions-list');
-  el.innerHTML = '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_loading_generic', 'Cargando…')) + '</p>';
-  fetch(API + '/auth/sessions', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      var list = d.sessions || (Array.isArray(d) ? d : []);
-      if (!list.length) { el.innerHTML = '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_no_active_sessions', 'No hay sesiones activas registradas.')) + '</p>'; return; }
-      var currentTag = esc(_t('prof_tag_current', 'ACTUAL'));
-      el.innerHTML = list.map(function(s) {
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)">' +
-          '<div>' +
-            '<div style="font-size:.82rem;font-weight:600">' + esc(s.device || s.user_agent || _t('prof_unknown_device', 'Dispositivo desconocido')) + '</div>' +
-            '<div style="font-size:.7rem;color:var(--muted)">' + esc(s.ip || '') + (s.created_at ? ' · ' + new Date(s.created_at).toLocaleString('es-CL') : '') + '</div>' +
-          '</div>' +
-          (s.current ? '<span style="font-size:.62rem;color:var(--green);font-weight:700;letter-spacing:.08em;text-transform:uppercase">' + currentTag + '</span>' : '') +
-          '</div>';
-      }).join('');
-    })
-    .catch(function(){ el.innerHTML = '<p style="color:var(--dim);font-size:.82rem">' + esc(_t('prof_sessions_unavailable', 'No disponible')) + '</p>'; });
-}
-function revokeAll() {
-  if (!confirm(_t('prof_confirm_revoke_all', '¿Cerrar todas las sesiones? Se cerrará esta sesión también.'))) return;
-  fetch(API + '/auth/revoke-all', { method:'POST', credentials:'include', headers: authH() })
-    .then(function(){ localStorage.removeItem('lx_co_token'); sessionStorage.removeItem('kl_s'); location.href = 'landing.html'; })
-    .catch(function(){ toast(_t('prof_toast_generic_err_short', 'Error'), 'err'); });
-}
+      /* ── Garmin ───────────────────────────────────────────────────── */
+      function loadGarminStatus() {
+        fetch(API + '/athlete/garmin/sync-status', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            setGarminUI(
+              d.has_credentials || d.connected || d.status === 'ok',
+              d,
+            );
+          })
+          .catch(function () {
+            setGarminUI(false, {});
+          });
+      }
+      function setGarminUI(on, d) {
+        var badge = document.getElementById('garmin-badge');
+        badge.className =
+          'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
+        badge.textContent = on
+          ? _t('prof_status_connected', 'Conectado')
+          : _t('prof_status_disconnected', 'Sin conectar');
+        document.getElementById('btn-garmin-con').style.display = on
+          ? 'none'
+          : '';
+        document.getElementById('btn-garmin-sync').style.display = on
+          ? ''
+          : 'none';
+        document.getElementById('btn-garmin-dis').style.display = on
+          ? ''
+          : 'none';
+        if (on && d.last_sync) {
+          var log = document.getElementById('garmin-log');
+          log.style.display = 'block';
+          document.getElementById('garmin-log-txt').textContent =
+            _t('prof_last_sync', 'Último sync:') +
+            ' ' +
+            new Date(d.last_sync).toLocaleString('es-CL');
+        }
+      }
+      function showGarminForm() {
+        document.getElementById('garmin-form').style.display = 'block';
+        document.getElementById('garmin-step-creds').style.display = '';
+        document.getElementById('garmin-step-mfa').style.display = 'none';
+      }
+      function hideGarminForm() {
+        document.getElementById('garmin-form').style.display = 'none';
+      }
+      function garminMfaCancel() {
+        document.getElementById('garmin-step-mfa').style.display = 'none';
+        document.getElementById('garmin-step-creds').style.display = '';
+        document.getElementById('g-mfa-code').value = '';
+      }
+      function saveGarminCreds() {
+        var email = document.getElementById('g-email').value.trim();
+        var pass = document.getElementById('g-pass').value;
+        if (!email || !pass) {
+          toast(
+            _t(
+              'prof_toast_garmin_fields_err',
+              'Completa email y contraseña Garmin',
+            ),
+            'err',
+          );
+          return;
+        }
+        var btn = document.getElementById('btn-garmin-save');
+        btn.disabled = true;
+        btn.textContent = _t('prof_connecting', 'Conectando…');
+        fetch(API + '/athlete/garmin-credentials', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ garmin_email: email, garmin_password: pass }),
+        })
+          .then(function (r) {
+            if (!r.ok)
+              return r.json().then(function (e) {
+                throw new Error(e.detail || 'Error');
+              });
+            return r.json();
+          })
+          .then(function (d) {
+            if (d.needs_mfa) {
+              // Garmin pide código de verificación → mostrar paso 2
+              document.getElementById('garmin-step-creds').style.display =
+                'none';
+              document.getElementById('garmin-step-mfa').style.display = '';
+              document.getElementById('g-mfa-code').focus();
+              toast(
+                _t(
+                  'prof_toast_garmin_mfa_sent',
+                  'Revisa tu email/SMS: Garmin envió un código',
+                ),
+                'info',
+              );
+            } else {
+              toast(_t('prof_toast_garmin_connected', 'Garmin conectado ✓'));
+              hideGarminForm();
+              loadGarminStatus();
+            }
+          })
+          .catch(function (e) {
+            toast(
+              _t('prof_toast_garmin_connect_err', 'Error conectando Garmin:') +
+                ' ' +
+                (e.message || e),
+              'err',
+            );
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.textContent = _t('prof_btn_save_connect', 'Guardar y Conectar');
+          });
+      }
+      function submitGarminMfa() {
+        var code = document.getElementById('g-mfa-code').value.trim();
+        if (!code) {
+          toast(
+            _t(
+              'prof_toast_verif_code_required',
+              'Escribe el código de verificación',
+            ),
+            'err',
+          );
+          return;
+        }
+        fetch(API + '/athlete/garmin/reauth/mfa', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ code: code }),
+        })
+          .then(function (r) {
+            if (!r.ok)
+              return r.json().then(function (e) {
+                throw new Error(e.detail || 'Código incorrecto');
+              });
+            return r.json();
+          })
+          .then(function (d) {
+            if (d.ok) {
+              toast(
+                _t(
+                  'prof_toast_garmin_verified',
+                  'Garmin verificado y conectado ✓',
+                ),
+              );
+              hideGarminForm();
+              loadGarminStatus();
+            } else {
+              toast(
+                _t(
+                  'prof_toast_code_incorrect_retry',
+                  'Código incorrecto, intenta de nuevo',
+                ),
+                'err',
+              );
+            }
+          })
+          .catch(function (e) {
+            toast(
+              _t('prof_toast_generic_err', 'Error:') + ' ' + (e.message || e),
+              'err',
+            );
+          });
+      }
+      function garminSync() {
+        var btn = document.getElementById('btn-garmin-sync');
+        btn.disabled = true;
+        toast(_t('prof_toast_syncing_garmin', 'Sincronizando Garmin…'));
+        fetch(API + '/athlete/garmin/sync', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            toast(d.message || _t('prof_toast_sync_done', 'Sync completado ✓'));
+            loadGarminStatus();
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_garmin_sync_err', 'Error en sync Garmin'),
+              'err',
+            );
+          })
+          .finally(function () {
+            btn.disabled = false;
+          });
+      }
+      function garminDisconnect() {
+        if (
+          !confirm(
+            _t(
+              'prof_confirm_garmin_disconnect',
+              '¿Desconectar Garmin? Se eliminarán las credenciales almacenadas.',
+            ),
+          )
+        )
+          return;
+        fetch(API + '/athlete/garmin-credentials', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function () {
+            toast(_t('prof_toast_garmin_disconnected', 'Garmin desconectado'));
+            loadGarminStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
+          });
+      }
 
-/* ── Notification prefs ───────────────────────────────────────── */
-function loadNotifPrefs() {
-  fetch(API + '/auth/notification-prefs', { credentials:'include', headers: authH(false) })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      document.getElementById('notif-weekly').checked  = !!d.email_weekly;
-      document.getElementById('notif-workout').checked = !!d.email_workout;
-      document.getElementById('notif-push').checked    = !!d.push_wellness;
-    }).catch(function(){});
-}
-function saveNotifPrefs() {
-  fetch(API + '/auth/notification-prefs', {
-    method:'PATCH', credentials:'include', headers: authH(),
-    body: JSON.stringify({
-      email_weekly:  document.getElementById('notif-weekly').checked,
-      email_workout: document.getElementById('notif-workout').checked,
-      push_wellness: document.getElementById('notif-push').checked
-    })
-  }).then(function(r){ if(r.ok) toast(_t('prof_toast_notif_saved', 'Preferencias guardadas ✓')); }).catch(function(){});
-}
+      /* ── Strava ───────────────────────────────────────────────────── */
+      function loadStravaStatus() {
+        fetch(API + '/strava/status', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var on = d.connected;
+            var badge = document.getElementById('strava-badge');
+            badge.className =
+              'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
+            badge.textContent = on
+              ? _t('prof_status_connected', 'Conectado') +
+                (d.athlete_name ? ' — ' + d.athlete_name : '')
+              : _t('prof_status_disconnected', 'Sin conectar');
 
-/* ── Delete account ───────────────────────────────────────────── */
-function deleteAccount() {
-  if (!confirm(_t('prof_confirm_delete_account', '¿Eliminar tu cuenta permanentemente? Esta acción NO se puede deshacer.'))) return;
-  if (prompt(_t('prof_prompt_delete_confirm', 'Escribe DELETE para confirmar:')) !== 'DELETE') { toast(_t('prof_toast_action_cancelled', 'Acción cancelada'), 'err'); return; }
-  fetch(API + '/auth/account', { method:'DELETE', credentials:'include', headers: authH(false) })
-    .then(function(){ localStorage.clear(); sessionStorage.clear(); location.href = 'landing.html'; })
-    .catch(function(){ toast(_t('prof_toast_delete_account_err', 'Error al eliminar cuenta'), 'err'); });
-}
+            if (d.available === false) {
+              // Strava no configurado en este servidor (falta STRAVA_CLIENT_ID/SECRET)
+              // — ocultar el botón en vez de dejar que el usuario tope con el 503.
+              document.getElementById('btn-strava-con').style.display = 'none';
+              document.getElementById('btn-strava-sync').style.display = 'none';
+              document.getElementById('btn-strava-dis').style.display = 'none';
+              document.getElementById('strava-unavailable').style.display =
+                'block';
+              return;
+            }
 
-/* ── Invitaciones de coach pendientes de aceptar (un coach quiso
+            document.getElementById('btn-strava-con').style.display = on
+              ? 'none'
+              : '';
+            document.getElementById('btn-strava-sync').style.display = on
+              ? ''
+              : 'none';
+            document.getElementById('btn-strava-dis').style.display = on
+              ? ''
+              : 'none';
+            if (on && d.last_sync) {
+              var log = document.getElementById('strava-log');
+              log.style.display = 'block';
+              document.getElementById('strava-log-txt').textContent =
+                _t('prof_last_sync', 'Último sync:') +
+                ' ' +
+                new Date(d.last_sync).toLocaleString('es-CL');
+            }
+          })
+          .catch(function () {});
+      }
+      function stravaConnect() {
+        // GET directo navegaba de página completa y mostraba el JSON crudo del
+        // error 503 cuando Strava no está configurado en el servidor. Con
+        // redirect:'manual' podemos distinguir "hay que redirigir a Strava"
+        // (funciona) de "está devolviendo un error" (mostrar toast amigable).
+        fetch(API + '/strava/connect', {
+          credentials: 'include',
+          headers: authH(false),
+          redirect: 'manual',
+        })
+          .then(function (r) {
+            if (r.type === 'opaqueredirect' || r.status === 0) {
+              window.location.href = API + '/strava/connect';
+              return;
+            }
+            return r.json().then(function (d) {
+              var msg =
+                (d.errors && d.errors[0] && d.errors[0].message) ||
+                _t(
+                  'prof_strava_unavailable_msg',
+                  'Strava no está disponible en este momento.',
+                );
+              toast(msg, 'err');
+            });
+          })
+          .catch(function () {
+            toast(
+              _t(
+                'prof_toast_strava_no_connect',
+                'No se pudo conectar con Strava',
+              ),
+              'err',
+            );
+          });
+      }
+      function stravaDisconnect() {
+        if (
+          !confirm(_t('prof_confirm_strava_disconnect', '¿Desconectar Strava?'))
+        )
+          return;
+        fetch(API + '/strava/disconnect', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function () {
+            toast(_t('prof_toast_strava_disconnected', 'Strava desconectado'));
+            loadStravaStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
+          });
+      }
+      function stravaSync() {
+        var btn = document.getElementById('btn-strava-sync');
+        btn.disabled = true;
+        toast(_t('prof_toast_syncing_strava', 'Sincronizando Strava…'));
+        fetch(API + '/strava/sync', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            toast(
+              d.message ||
+                _t('prof_toast_strava_sync_done', 'Sync Strava completado ✓'),
+            );
+            loadStravaStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_strava_sync_err', 'Error sync Strava'), 'err');
+          })
+          .finally(function () {
+            btn.disabled = false;
+          });
+      }
+
+      /* ── Foto de perfil (movida desde Comunidad › Mi Perfil) ─────── */
+      function loadAvatarPerfil(userId) {
+        var img = document.getElementById('pf-avatar-img');
+        if (img && userId)
+          img.src =
+            API + '/athlete/profile/avatar/' + userId + '?t=' + Date.now();
+      }
+      function uploadAvatarPerfil(input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          toast(_t('cmw_only_images', 'Solo se aceptan imágenes'), 'err');
+          return;
+        }
+        var fd = new FormData();
+        fd.append('file', file);
+        fetch(API + '/athlete/profile/avatar', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+          body: fd,
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            input.value = '';
+            if (!d) {
+              toast(
+                _t('prof_toast_avatar_err', 'No se pudo subir la foto'),
+                'err',
+              );
+              return;
+            }
+            toast(_t('prof_toast_avatar_ok', 'Foto actualizada ✓'));
+            if (_profile && _profile.id) loadAvatarPerfil(_profile.id);
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_avatar_err', 'No se pudo subir la foto'),
+              'err',
+            );
+          });
+      }
+      function deleteAvatarPerfil() {
+        fetch(API + '/athlete/profile/avatar', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function () {
+            toast(_t('prof_toast_avatar_removed', 'Foto quitada'));
+            var img = document.getElementById('pf-avatar-img');
+            if (img) img.style.visibility = 'hidden';
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_avatar_err', 'No se pudo subir la foto'),
+              'err',
+            );
+          });
+      }
+
+      /* ── Privacidad de actividades (movida desde Comunidad › Mi Perfil) ── */
+      function privToggleMaster() {
+        var on = document.getElementById('priv-details').checked;
+        document.getElementById('priv-sub').classList.toggle('off', !on);
+      }
+      function loadPrivacyPrefs() {
+        fetch(API + '/athlete/community-privacy', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            var p = (d && d.prefs) || {};
+            document.getElementById('priv-details').checked =
+              p.share_details !== false;
+            document.getElementById('priv-route').checked =
+              p.share_route !== false;
+            document.getElementById('priv-hr').checked = p.share_hr !== false;
+            document.getElementById('priv-power').checked =
+              p.share_power !== false;
+            document.getElementById('priv-pace').checked =
+              p.share_pace !== false;
+            privToggleMaster();
+          })
+          .catch(function () {});
+      }
+      function savePrivacyPrefs() {
+        var body = {
+          share_details: document.getElementById('priv-details').checked,
+          share_route: document.getElementById('priv-route').checked,
+          share_hr: document.getElementById('priv-hr').checked,
+          share_power: document.getElementById('priv-power').checked,
+          share_pace: document.getElementById('priv-pace').checked,
+        };
+        fetch(API + '/athlete/community-privacy', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify(body),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject();
+          })
+          .then(function () {
+            var msg = document.getElementById('priv-saved-msg');
+            msg.style.display = '';
+            setTimeout(function () {
+              msg.style.display = 'none';
+            }, 2200);
+          })
+          .catch(function () {});
+      }
+
+      /* ── Addons (B12): compra por módulo ─────────────────────────── */
+      function loadAddons() {
+        fetch(API + '/stripe/addons', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            var box = document.getElementById('addons-list');
+            if (!box || !d) return;
+            var esc = function (x) {
+              return String(x == null ? '' : x).replace(
+                /[&<>"']/g,
+                function (c) {
+                  return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                  }[c];
+                },
+              );
+            };
+            box.innerHTML = d.addons
+              .map(function (a) {
+                var action = a.included
+                  ? '<span class="pf-conn-meta">' +
+                    _t('addon_included', 'Incluido en tu plan') +
+                    '</span>'
+                  : !a.available || !d.enabled || !a.price_configured
+                    ? '<span class="pf-conn-meta">' +
+                      _t('addon_soon', 'Próximamente') +
+                      '</span>'
+                    : '<button class="btn btn-primary btn-sm" onclick="buyAddon(\'' +
+                      esc(a.id) +
+                      '\')">' +
+                      _t('addon_buy', 'Activar') +
+                      '</button>';
+                return (
+                  '<div class="pf-conn-row"><div class="pf-conn-name">' +
+                  esc(a.name) +
+                  '</div><div>' +
+                  action +
+                  '</div></div>'
+                );
+              })
+              .join('');
+          })
+          .catch(function () {});
+      }
+      function buyAddon(id) {
+        fetch(API + '/stripe/addons/checkout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ addon_id: id }),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject();
+          })
+          .then(function (d) {
+            window.location.href = d.checkout_url;
+          })
+          .catch(function () {
+            toast(_t('addon_err', 'No se pudo iniciar la compra'), 'err');
+          });
+      }
+
+      /* ── Personal Records ─────────────────────────────────────────── */
+      function SPORT_LBL(s) {
+        var d = {
+          swim: 'prof_sport_swim',
+          bike: 'prof_sport_bike',
+          run: 'prof_sport_run',
+          triathlon: 'prof_sport_tri',
+        };
+        var fb = {
+          swim: 'Natación',
+          bike: 'Ciclismo',
+          run: 'Running',
+          triathlon: 'Triatlón',
+        };
+        return d[s] ? _t(d[s], fb[s]) : s;
+      }
+      var SPORT_CLS = {
+        swim: 'pr-swim',
+        bike: 'pr-bike',
+        run: 'pr-run',
+        triathlon: 'pr-tri',
+      };
+
+      function loadPRs() {
+        fetch(API + '/athlete/personal-records', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(renderPRs)
+          .catch(function () {
+            document.getElementById('pr-tbody').innerHTML =
+              '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.82rem">' +
+              esc(_t('prof_error_loading_records', 'Error cargando records')) +
+              '</td></tr>';
+          });
+      }
+      function renderPRs(list) {
+        var tb = document.getElementById('pr-tbody');
+        if (!list || !list.length) {
+          tb.innerHTML =
+            '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:2rem;font-size:.82rem">' +
+            esc(
+              _t(
+                'prof_records_empty',
+                'Sin records aún. ¡Agrega tu primer PR!',
+              ),
+            ) +
+            '</td></tr>';
+          return;
+        }
+        var delTitle = esc(_t('prof_delete', 'Eliminar'));
+        tb.innerHTML = list
+          .map(function (pr) {
+            var sc = SPORT_CLS[pr.sport] || 'pr-tri';
+            return (
+              '<tr>' +
+              '<td><span class="pr-sport ' +
+              sc +
+              '">' +
+              esc(SPORT_LBL(pr.sport) || pr.sport || '') +
+              '</span></td>' +
+              '<td style="font-weight:600">' +
+              esc(pr.event || pr.distance || '') +
+              '</td>' +
+              '<td style="color:var(--gold);font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:700">' +
+              esc(pr.time || pr.value_disp || pr.result || '') +
+              '</td>' +
+              '<td style="color:var(--muted);font-size:.76rem">' +
+              esc(pr.date || pr.achieved_at || '') +
+              '</td>' +
+              '<td style="color:var(--muted);font-size:.76rem">' +
+              esc(pr.place || pr.location || '') +
+              '</td>' +
+              '<td><button class="del-btn" onclick="deletePR(\'' +
+              esc(pr.id) +
+              '\')" title="' +
+              delTitle +
+              '">✕</button></td>' +
+              '</tr>'
+            );
+          })
+          .join('');
+      }
+      function showPRForm() {
+        document.getElementById('pr-form-card').style.display = 'block';
+      }
+      function hidePRForm() {
+        document.getElementById('pr-form-card').style.display = 'none';
+      }
+      function addPR() {
+        var body = {
+          sport: document.getElementById('pr-sport').value,
+          event: document.getElementById('pr-event').value.trim(),
+          time: document.getElementById('pr-time').value.trim(),
+          date: document.getElementById('pr-date').value,
+          place: document.getElementById('pr-place').value.trim(),
+        };
+        if (!body.event || !body.time) {
+          toast(
+            _t('prof_toast_event_mark_required', 'Completa evento y marca'),
+            'err',
+          );
+          return;
+        }
+        fetch(API + '/athlete/personal-records', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify(body),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            toast(_t('prof_toast_record_saved', 'Record guardado ✓'));
+            hidePRForm();
+            loadPRs();
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_record_save_err', 'Error guardando record'),
+              'err',
+            );
+          });
+      }
+      function deletePR(id) {
+        if (
+          !confirm(_t('prof_confirm_delete_record', '¿Eliminar este record?'))
+        )
+          return;
+        fetch(API + '/athlete/personal-records/' + id, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function () {
+            toast(_t('prof_toast_record_deleted', 'Record eliminado'));
+            loadPRs();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
+          });
+      }
+
+      /* ── Password ─────────────────────────────────────────────────── */
+      function changePassword() {
+        var old_ = document.getElementById('pw-old').value;
+        var new_ = document.getElementById('pw-new').value;
+        if (!old_ || !new_) {
+          toast(
+            _t('prof_toast_pw_fields_required', 'Completa ambos campos'),
+            'err',
+          );
+          return;
+        }
+        if (new_.length < 8) {
+          toast(_t('prof_ph_min8', 'Mínimo 8 caracteres'), 'err');
+          return;
+        }
+        fetch(API + '/auth/change-password', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ old_password: old_, new_password: new_ }),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            toast(_t('prof_toast_pw_updated', 'Contraseña actualizada ✓'));
+            document.getElementById('pw-old').value = '';
+            document.getElementById('pw-new').value = '';
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_pw_wrong', 'Contraseña actual incorrecta'),
+              'err',
+            );
+          });
+      }
+
+      /* ── 2FA ──────────────────────────────────────────────────────── */
+      function render2FAStatus() {
+        var on = _has2FA || !!_profile.totp_enabled;
+        document.getElementById('twofa-badge').textContent = on
+          ? _t('prof_2fa_on', 'Activado ✓')
+          : _t('prof_2fa_off', 'Desactivado');
+        document.getElementById('twofa-badge').style.color = on
+          ? 'var(--green)'
+          : 'var(--dim)';
+        document.getElementById('btn-2fa-on').style.display = on ? 'none' : '';
+        document.getElementById('btn-2fa-off').style.display = on ? '' : 'none';
+      }
+      function setup2FA() {
+        fetch(API + '/auth/2fa/setup', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var src = d.qr_url || d.qr_image || '';
+            document.getElementById('qr-container').innerHTML = src
+              ? '<img src="' +
+                esc(src) +
+                '" width="180" height="180" alt="QR 2FA">'
+              : d.secret
+                ? '<p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem">' +
+                  esc(_t('prof_2fa_manual_key_label', 'Clave manual:')) +
+                  '</p><code style="font-size:.9rem;color:var(--orange);word-break:break-all">' +
+                  esc(d.secret) +
+                  '</code>'
+                : '';
+            document.getElementById('modal-2fa').classList.add('open');
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_2fa_setup_err', 'Error configurando 2FA'),
+              'err',
+            );
+          });
+      }
+      function close2FAModal() {
+        document.getElementById('modal-2fa').classList.remove('open');
+      }
+      function verify2FA() {
+        var code = document.getElementById('totp-code').value.trim();
+        if (code.length !== 6) {
+          toast(
+            _t('prof_toast_2fa_code_6digits', 'Código de 6 dígitos requerido'),
+            'err',
+          );
+          return;
+        }
+        fetch(API + '/auth/2fa/verify', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ totp_code: code }),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            _has2FA = true;
+            toast(_t('prof_toast_2fa_enabled', '2FA activado ✓'));
+            close2FAModal();
+            render2FAStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_code_incorrect', 'Código incorrecto'), 'err');
+          });
+      }
+      function disable2FA() {
+        var code = prompt(
+          _t(
+            'prof_prompt_2fa_disable',
+            'Ingresa un código de tu app para desactivar 2FA:',
+          ),
+        );
+        if (!code) return;
+        fetch(API + '/auth/2fa/disable', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({ totp_code: code }),
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function () {
+            _has2FA = false;
+            toast(_t('prof_toast_2fa_disabled', '2FA desactivado'));
+            render2FAStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_code_incorrect', 'Código incorrecto'), 'err');
+          });
+      }
+
+      /* ── Sessions ─────────────────────────────────────────────────── */
+      function loadSessions() {
+        var el = document.getElementById('sessions-list');
+        el.innerHTML =
+          '<p style="color:var(--dim);font-size:.82rem">' +
+          esc(_t('prof_loading_generic', 'Cargando…')) +
+          '</p>';
+        fetch(API + '/auth/sessions', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var list = d.sessions || (Array.isArray(d) ? d : []);
+            if (!list.length) {
+              el.innerHTML =
+                '<p style="color:var(--dim);font-size:.82rem">' +
+                esc(
+                  _t(
+                    'prof_no_active_sessions',
+                    'No hay sesiones activas registradas.',
+                  ),
+                ) +
+                '</p>';
+              return;
+            }
+            var currentTag = esc(_t('prof_tag_current', 'ACTUAL'));
+            el.innerHTML = list
+              .map(function (s) {
+                return (
+                  '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)">' +
+                  '<div>' +
+                  '<div style="font-size:.82rem;font-weight:600">' +
+                  esc(
+                    s.device ||
+                      s.user_agent ||
+                      _t('prof_unknown_device', 'Dispositivo desconocido'),
+                  ) +
+                  '</div>' +
+                  '<div style="font-size:.7rem;color:var(--muted)">' +
+                  esc(s.ip || '') +
+                  (s.created_at
+                    ? ' · ' + new Date(s.created_at).toLocaleString('es-CL')
+                    : '') +
+                  '</div>' +
+                  '</div>' +
+                  (s.current
+                    ? '<span style="font-size:.62rem;color:var(--green);font-weight:700;letter-spacing:.08em;text-transform:uppercase">' +
+                      currentTag +
+                      '</span>'
+                    : '') +
+                  '</div>'
+                );
+              })
+              .join('');
+          })
+          .catch(function () {
+            el.innerHTML =
+              '<p style="color:var(--dim);font-size:.82rem">' +
+              esc(_t('prof_sessions_unavailable', 'No disponible')) +
+              '</p>';
+          });
+      }
+      function revokeAll() {
+        if (
+          !confirm(
+            _t(
+              'prof_confirm_revoke_all',
+              '¿Cerrar todas las sesiones? Se cerrará esta sesión también.',
+            ),
+          )
+        )
+          return;
+        fetch(API + '/auth/revoke-all', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+        })
+          .then(function () {
+            localStorage.removeItem('lx_co_token');
+            sessionStorage.removeItem('kl_s');
+            location.href = 'landing.html';
+          })
+          .catch(function () {
+            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
+          });
+      }
+
+      /* ── Notification prefs ───────────────────────────────────────── */
+      function loadNotifPrefs() {
+        fetch(API + '/auth/notification-prefs', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            document.getElementById('notif-weekly').checked = !!d.email_weekly;
+            document.getElementById('notif-workout').checked =
+              !!d.email_workout;
+            document.getElementById('notif-push').checked = !!d.push_wellness;
+          })
+          .catch(function () {});
+      }
+      function saveNotifPrefs() {
+        fetch(API + '/auth/notification-prefs', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: authH(),
+          body: JSON.stringify({
+            email_weekly: document.getElementById('notif-weekly').checked,
+            email_workout: document.getElementById('notif-workout').checked,
+            push_wellness: document.getElementById('notif-push').checked,
+          }),
+        })
+          .then(function (r) {
+            if (r.ok)
+              toast(_t('prof_toast_notif_saved', 'Preferencias guardadas ✓'));
+          })
+          .catch(function () {});
+      }
+
+      /* ── Delete account ───────────────────────────────────────────── */
+      function deleteAccount() {
+        if (
+          !confirm(
+            _t(
+              'prof_confirm_delete_account',
+              '¿Eliminar tu cuenta permanentemente? Esta acción NO se puede deshacer.',
+            ),
+          )
+        )
+          return;
+        if (
+          prompt(
+            _t('prof_prompt_delete_confirm', 'Escribe DELETE para confirmar:'),
+          ) !== 'DELETE'
+        ) {
+          toast(_t('prof_toast_action_cancelled', 'Acción cancelada'), 'err');
+          return;
+        }
+        fetch(API + '/auth/account', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function () {
+            localStorage.clear();
+            sessionStorage.clear();
+            location.href = 'landing.html';
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_delete_account_err', 'Error al eliminar cuenta'),
+              'err',
+            );
+          });
+      }
+
+      /* ── Invitaciones de coach pendientes de aceptar (un coach quiso
    agregarte y ya tenías cuenta propia — nunca ve ni define tu password) ── */
-function loadPendingCoachInvites(){
-  var wrap = document.getElementById('pending-coach-invites-wrap');
-  if(!wrap) return;
-  fetch(API + '/athlete/pending-coach-invites', { headers: authH(false) })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows){
-      if(!rows || !rows.length){ wrap.innerHTML=''; return; }
-      var wantsAdd = esc(_t('prof_invite_wants_add', 'quiere agregarte a su equipo de entrenamiento.'));
-      var rejectLbl = esc(_t('prof_btn_reject', 'Rechazar'));
-      var acceptLbl = esc(_t('prof_btn_accept', 'Aceptar'));
-      wrap.innerHTML = rows.map(function(r){
-        return '<div class="card" style="margin-bottom:1rem;border-color:rgba(240,165,0,.35);background:rgba(240,165,0,.05)">'
-          +'<div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">'
-          +'<div><strong>'+esc(r.coach_nombre)+'</strong> '+wantsAdd
-          +'<div style="font-size:.72rem;color:var(--dim)">'+esc(r.coach_email)+'</div></div>'
-          +'<div style="display:flex;gap:.5rem">'
-          +'<button class="btn btn-ghost btn-sm" onclick="rejectCoachInvite(\''+r.id+'\')">'+rejectLbl+'</button>'
-          +'<button class="btn btn-primary btn-sm" onclick="acceptCoachInvite(\''+r.id+'\')">'+acceptLbl+'</button>'
-          +'</div></div></div>';
-      }).join('');
-    }).catch(function(){});
-}
-function acceptCoachInvite(id){
-  fetch(API + '/athlete/pending-coach-invites/' + id + '/accept', { method:'POST', headers: authH(false) })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(){ toast(_t('prof_toast_invite_accepted', 'Invitación aceptada'),'ok'); loadPendingCoachInvites(); })
-    .catch(function(){ toast(_t('prof_toast_invite_accept_err', 'Error al aceptar'),'err'); });
-}
-function rejectCoachInvite(id){
-  fetch(API + '/athlete/pending-coach-invites/' + id + '/reject', { method:'POST', headers: authH(false) })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(){ toast(_t('prof_toast_invite_rejected', 'Invitación rechazada'),'ok'); loadPendingCoachInvites(); })
-    .catch(function(){ toast(_t('prof_toast_invite_reject_err', 'Error al rechazar'),'err'); });
-}
+      function loadPendingCoachInvites() {
+        var wrap = document.getElementById('pending-coach-invites-wrap');
+        if (!wrap) return;
+        fetch(API + '/athlete/pending-coach-invites', { headers: authH(false) })
+          .then(function (r) {
+            return r.ok ? r.json() : [];
+          })
+          .then(function (rows) {
+            if (!rows || !rows.length) {
+              wrap.innerHTML = '';
+              return;
+            }
+            var wantsAdd = esc(
+              _t(
+                'prof_invite_wants_add',
+                'quiere agregarte a su equipo de entrenamiento.',
+              ),
+            );
+            var rejectLbl = esc(_t('prof_btn_reject', 'Rechazar'));
+            var acceptLbl = esc(_t('prof_btn_accept', 'Aceptar'));
+            wrap.innerHTML = rows
+              .map(function (r) {
+                return (
+                  '<div class="card" style="margin-bottom:1rem;border-color:rgba(240,165,0,.35);background:rgba(240,165,0,.05)">' +
+                  '<div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">' +
+                  '<div><strong>' +
+                  esc(r.coach_nombre) +
+                  '</strong> ' +
+                  wantsAdd +
+                  '<div style="font-size:.72rem;color:var(--dim)">' +
+                  esc(r.coach_email) +
+                  '</div></div>' +
+                  '<div style="display:flex;gap:.5rem">' +
+                  '<button class="btn btn-ghost btn-sm" onclick="rejectCoachInvite(\'' +
+                  r.id +
+                  '\')">' +
+                  rejectLbl +
+                  '</button>' +
+                  '<button class="btn btn-primary btn-sm" onclick="acceptCoachInvite(\'' +
+                  r.id +
+                  '\')">' +
+                  acceptLbl +
+                  '</button>' +
+                  '</div></div></div>'
+                );
+              })
+              .join('');
+          })
+          .catch(function () {});
+      }
+      function acceptCoachInvite(id) {
+        fetch(API + '/athlete/pending-coach-invites/' + id + '/accept', {
+          method: 'POST',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject();
+          })
+          .then(function () {
+            toast(
+              _t('prof_toast_invite_accepted', 'Invitación aceptada'),
+              'ok',
+            );
+            loadPendingCoachInvites();
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_invite_accept_err', 'Error al aceptar'),
+              'err',
+            );
+          });
+      }
+      function rejectCoachInvite(id) {
+        fetch(API + '/athlete/pending-coach-invites/' + id + '/reject', {
+          method: 'POST',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject();
+          })
+          .then(function () {
+            toast(
+              _t('prof_toast_invite_rejected', 'Invitación rechazada'),
+              'ok',
+            );
+            loadPendingCoachInvites();
+          })
+          .catch(function () {
+            toast(
+              _t('prof_toast_invite_reject_err', 'Error al rechazar'),
+              'err',
+            );
+          });
+      }
 
-/* ── Init ─────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', function() {
-  loadProfile();
-  loadPendingCoachInvites();
-});
-</script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="i18n.js"></script>
-<script src="lx-audit.js"></script>
-</body>
+      /* ── Init ─────────────────────────────────────────────────────── */
+      document.addEventListener('DOMContentLoaded', function () {
+        loadProfile();
+        loadPendingCoachInvites();
+      });
+    </script>
+    <script src="nav.js?v=4"></script>
+    <script src="footer.js"></script>
+    <script src="dash-header.js"></script>
+    <script src="lx-upgrade.js"></script>
+    <script src="i18n.js"></script>
+    <script src="lx-audit.js"></script>
+  </body>
 </html>
