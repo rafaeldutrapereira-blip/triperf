@@ -1,819 +1,2308 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es" translate="no">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script><meta name="google" content="notranslate">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Mi Equipo</title>
-<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
-<script>(function(){try{var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(s&&s.plan==='basic')document.documentElement.classList.add('lx-free');}catch(e){}})();</script>
-<style>.lx-free [data-main="bikes"],.lx-free #pane-bikes{display:none !important}</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme-vars.css">
-<script src="i18n.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
-a{color:inherit;text-decoration:none}ul{list-style:none}
-.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
-.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.62rem 1.3rem;border-radius:8px;border:none;cursor:pointer;transition:all var(--ease)}
-.btn-p{background:var(--orange);color:#fff}.btn-p:hover{filter:brightness(1.1)}
-.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-danger{background:transparent;color:#EF4444;border:1.5px solid rgba(239,68,68,.35)}.btn-danger:hover{background:rgba(239,68,68,.08)}
-.btn-sm{padding:.4rem .85rem;font-size:.68rem}
-.sr{opacity:0;transform:translateY(16px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
-
-.ph{padding-top:1.6rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
-.ph-inner{padding:1.6rem 0 1.3rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;letter-spacing:-.02em}
-.ph-sub{color:var(--muted);font-size:.88rem;margin-top:.2rem}
-
-.alert-banner{display:none;align-items:center;gap:.6rem;background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.25);border-radius:10px;padding:.75rem 1.1rem;margin:1.2rem 0;font-size:.82rem;color:var(--muted)}
-.alert-banner.on{display:flex}
-.alert-banner strong{color:var(--gold)}
-
-.main-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;width:fit-content;margin:1.4rem 0 1rem}
-.mt-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.5rem 1.2rem;border-radius:6px;color:var(--dim);transition:all var(--ease);display:flex;align-items:center;gap:.4rem}
-.mt-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.main-pane{display:none}.main-pane.on{display:block}
-
-.sub-tabs{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.8rem}
-.pill-tabs{display:flex;gap:3px}
-.pill-btn{background:var(--surface);border:1px solid var(--border);cursor:pointer;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.34rem .85rem;border-radius:6px;color:var(--dim)}
-.pill-btn.on{color:var(--text);border-color:var(--cyan);background:rgba(14,165,233,.08)}
-.sub-pane{display:none}.sub-pane.on{display:block}
-
-.gear-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
-.gear-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;transition:border-color var(--ease)}
-.gear-card:hover{border-color:rgba(255,101,53,.25)}
-.gc-head{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.85rem}
-.gear-icon{width:44px;height:44px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
-.gc-name{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;line-height:1.2}
-.gc-sub{font-size:.72rem;color:var(--dim);margin-top:.1rem}
-.gc-badges{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
-.gc-badge{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.15rem .5rem;border-radius:5px;background:rgba(14,165,233,.1);color:var(--cyan);border:1px solid rgba(14,165,233,.25)}
-.prog-wrap{background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;margin:.3rem 0}
-.prog-fill{height:100%;border-radius:4px;transition:width .6s ease}
-.prog-lbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
-.prog-lbl b{color:var(--text)}
-.gc-actions{display:flex;gap:.4rem;margin-top:.9rem;flex-wrap:wrap}
-.gc-comps{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border2)}
-.comp-row{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.78rem}
-.comp-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
-.comp-body{flex:1;min-width:0}
-.comp-name{color:var(--text);font-weight:600}
-.comp-val{font-size:.7rem;color:var(--dim)}
-.comp-actions{display:flex;gap:.25rem;flex-shrink:0}
-.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.72rem;transition:all var(--ease)}
-.icon-btn:hover{border-color:var(--cyan);color:var(--cyan)}
-.battery-chip{font-size:.7rem;font-family:'Barlow Condensed',sans-serif;font-weight:800;padding:.1rem .5rem;border-radius:5px}
-
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--dim)}
-.empty-state .es-icon{font-size:2.2rem;margin-bottom:.6rem;opacity:.5}
-.empty-state p{font-size:.85rem;max-width:340px;margin:0 auto}
-
-/* ── MODAL ── */
-.modal-ov{position:fixed;inset:0;background:rgba(4,8,15,.9);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
-.modal-ov.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:460px;max-height:92vh;overflow-y:auto}
-.modal-head{padding:1rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
-.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.modal-close{width:24px;height:24px;border-radius:5px;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:.85rem}
-.modal-body{padding:1.2rem}
-.form-row{margin-bottom:.8rem}
-.form-label{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.3rem}
-.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.52rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem}
-.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--orange)}
-.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237FB3CC' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .65rem center;padding-right:1.8rem}
-.form-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
-.form-check{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
-.form-hint{font-size:.7rem;color:var(--dim);margin-top:.35rem;line-height:1.4}
-.modal-foot{padding:.85rem 1.2rem;border-top:1px solid var(--border2);display:flex;gap:.55rem;justify-content:flex-end}
-.weekday-picker{display:flex;gap:.35rem;flex-wrap:wrap}
-.weekday-picker label{display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.65rem;color:var(--muted);cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.4rem .55rem}
-.weekday-picker input:checked+label,.weekday-picker label:has(input:checked){border-color:var(--cyan);color:var(--cyan);background:rgba(14,165,233,.08)}
-.weekday-picker input{margin:0}
-
-footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
-footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
-</style>
-<link rel="stylesheet" href="nav.css?v=3">
-</head>
-<body>
-
-<aside id="sidebar"></aside>
-<header class="sb-topbar"></header>
-<div class="sb-overlay" id="sb-overlay"></div>
-
-<div class="ph">
-  <div class="c">
-    <div class="ph-inner">
-      <div>
-        <div class="ph-title" data-i18n="gear_page_title">👟 🚲 Mi Equipo</div>
-        <div class="ph-sub" data-i18n="gear_page_sub">Kilometraje real de zapatillas y bicicletas — vida útil calculada desde tus actividades sincronizadas</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="c">
-  <div class="alert-banner" id="alert-banner">
-    ⚠️ <span id="alert-text"></span>
-  </div>
-
-  <div class="main-tabs">
-    <button class="mt-btn on" data-main="shoes" onclick="setMainTab('shoes')" data-i18n="app_tab_shoes">👟 Zapatillas</button>
-    <button class="mt-btn" data-main="bikes" onclick="setMainTab('bikes')" data-i18n="app_tab_bikes">🚲 Bicicletas</button>
-  </div>
-
-  <!-- ── ZAPATILLAS ── -->
-  <div class="main-pane on" id="pane-shoes">
-    <div class="sub-tabs">
-      <div class="pill-tabs">
-        <button class="pill-btn on" data-shoe-status="active" onclick="setShoeStatus('active')" data-i18n="app_gear_active">Activas</button>
-        <button class="pill-btn" data-shoe-status="retired" onclick="setShoeStatus('retired')" data-i18n="app_gear_retired">Retiradas</button>
-      </div>
-      <button class="btn btn-p btn-sm" onclick="openModal('modal-shoe')">+ <span data-i18n="app_gear_add_shoe">Agregar zapatilla</span></button>
-    </div>
-    <div class="gear-grid" id="shoes-grid"></div>
-  </div>
-
-  <!-- ── BICICLETAS ── -->
-  <div class="main-pane" id="pane-bikes">
-    <div class="sub-tabs">
-      <div class="pill-tabs">
-        <button class="pill-btn on" data-bike-status="active" onclick="setBikeStatus('active')" data-i18n="app_gear_active">Activas</button>
-        <button class="pill-btn" data-bike-status="retired" onclick="setBikeStatus('retired')" data-i18n="app_gear_retired">Retiradas</button>
-      </div>
-      <button class="btn btn-p btn-sm" onclick="openModal('modal-bike')">+ <span data-i18n="app_gear_add_bike">Agregar bicicleta</span></button>
-    </div>
-    <div class="gear-grid" id="bikes-grid"></div>
-  </div>
-</div>
-
-<footer><div>LabX © 2026</div></footer>
-
-<!-- ── MODAL: AGREGAR ZAPATILLA ── -->
-<div class="modal-ov" id="modal-shoe" onclick="closeModalOv(event,'modal-shoe')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">+ <span data-i18n="app_gear_add_shoe">Agregar zapatilla</span></div>
-      <button class="modal-close" onclick="closeModal('modal-shoe')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-2">
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_brand">Marca</label><input class="form-input" id="shoe-brand" placeholder="Hoka, Asics, Nike..." data-i18n-placeholder="gear_shoe_brand_ph"></div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_model">Modelo</label><input class="form-input" id="shoe-model" placeholder="Clifton 9" data-i18n-placeholder="gear_shoe_model_ph"></div>
-      </div>
-      <div class="form-row"><label class="form-label" data-i18n="app_gear_nickname">Apodo (opcional)</label><input class="form-input" id="shoe-nickname" placeholder="Ej: las rojas" data-i18n-placeholder="app_gear_nickname_ph"></div>
-      <div class="form-2">
-        <div class="form-row">
-          <label class="form-label" data-i18n="app_gear_type">Tipo</label>
-          <select class="form-select" id="shoe-type">
-            <option value="rodaje" data-i18n="app_gear_type_rodaje">Rodaje</option>
-            <option value="series" data-i18n="app_gear_type_series">Series</option>
-            <option value="competicion" data-i18n="app_gear_type_comp">Competición</option>
-            <option value="trail" data-i18n="app_gear_type_trail">Trail</option>
-            <option value="otro" data-i18n="app_gear_type_other">Otro</option>
-          </select>
-        </div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_target_km">Meta (km)</label><input class="form-input" type="number" id="shoe-target" placeholder="700"></div>
-      </div>
-      <div class="form-check"><input type="checkbox" id="shoe-default" checked><label for="shoe-default" data-i18n="gear_shoe_default_check">Usar como predeterminada para rodaje (asignación automática de km)</label></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-shoe')" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="submitShoe()" data-i18n="btn_save">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: EDITAR ZAPATILLA ── -->
-<div class="modal-ov" id="modal-edit-shoe" onclick="closeModalOv(event,'modal-edit-shoe')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" data-i18n="app_gear_edit_shoe_title">Editar zapatilla</div>
-      <button class="modal-close" onclick="closeModal('modal-edit-shoe')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-shoe-id">
-      <div class="form-2">
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_brand">Marca</label><input class="form-input" id="edit-shoe-brand"></div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_model">Modelo</label><input class="form-input" id="edit-shoe-model"></div>
-      </div>
-      <div class="form-row"><label class="form-label" data-i18n="app_gear_nickname">Apodo (opcional)</label><input class="form-input" id="edit-shoe-nickname"></div>
-      <div class="form-2">
-        <div class="form-row">
-          <label class="form-label" data-i18n="app_gear_type">Tipo</label>
-          <select class="form-select" id="edit-shoe-type">
-            <option value="rodaje" data-i18n="app_gear_type_rodaje">Rodaje</option>
-            <option value="series" data-i18n="app_gear_type_series">Series</option>
-            <option value="competicion" data-i18n="app_gear_type_comp">Competición</option>
-            <option value="trail" data-i18n="app_gear_type_trail">Trail</option>
-            <option value="otro" data-i18n="app_gear_type_other">Otro</option>
-          </select>
-        </div>
-        <div class="form-row"><label class="form-label" data-i18n="gear_edit_shoe_target_label">Meta de vida útil (km)</label><input class="form-input" type="number" id="edit-shoe-target"></div>
-      </div>
-      <div class="form-hint" data-i18n="gear_edit_shoe_hint">Cambiar la meta recalcula el % de vida útil al instante — útil si el fabricante recomienda más o menos km de los que pusiste al cargarla (ej. de 500 a 700 km).</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-edit-shoe')" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="submitEditShoe()" data-i18n="btn_save_changes_app">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: HORARIO SEMANAL + RECALCULO RETROACTIVO ── -->
-<div class="modal-ov" id="modal-schedule" onclick="closeModalOv(event,'modal-schedule')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" data-i18n="app_gear_sched_title">Días de uso y recálculo</div>
-      <button class="modal-close" onclick="closeModal('modal-schedule')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="sched-shoe-id">
-      <div class="form-row">
-        <label class="form-label" data-i18n="gear_sched_days_q">¿Qué días de la semana corrés con este par?</label>
-        <div class="weekday-picker" id="sched-days">
-          <label><input type="checkbox" value="mon"><span data-i18n="app_day_mon">Lun</span></label>
-          <label><input type="checkbox" value="tue"><span data-i18n="app_day_tue">Mar</span></label>
-          <label><input type="checkbox" value="wed"><span data-i18n="app_day_wed">Mié</span></label>
-          <label><input type="checkbox" value="thu"><span data-i18n="app_day_thu">Jue</span></label>
-          <label><input type="checkbox" value="fri"><span data-i18n="app_day_fri">Vie</span></label>
-          <label><input type="checkbox" value="sat"><span data-i18n="app_day_sat">Sáb</span></label>
-          <label><input type="checkbox" value="sun"><span data-i18n="app_day_sun">Dom</span></label>
-        </div>
-        <div class="form-hint" data-i18n="gear_sched_hint2_web">Si marcás días acá, tienen prioridad sobre "predeterminada para rodaje" al sincronizar. Un día solo puede pertenecer a un par — se lo quitamos automáticamente a otra zapatilla si lo tenía.</div>
-      </div>
-      <div class="form-row">
-        <label class="form-label" data-i18n="app_gear_start_date">Empecé a usar este par el (opcional)</label>
-        <input class="form-input" type="date" id="sched-start-date">
-        <div class="form-hint" data-i18n="gear_sched_hint3_web">Usalo si ya corriste con este par antes de cargarlo acá — te deja sumar retroactivamente el km ya corrido.</div>
-      </div>
-      <div class="form-check"><input type="checkbox" id="sched-force"><label for="sched-force" data-i18n="gear_force_overwrite_check">Sobrescribir asignaciones existentes (por si el sync automático ya le había asignado esas carreras a otra zapatilla)</label></div>
-    </div>
-    <div class="modal-foot" style="justify-content:space-between">
-      <button class="btn btn-g btn-sm" id="sched-backfill-btn" onclick="runBackfill()" data-i18n="gear_backfill_btn">↻ Recalcular km retroactivo</button>
-      <div style="display:flex;gap:.55rem">
-        <button class="btn btn-g btn-sm" onclick="closeModal('modal-schedule')" data-i18n="btn_close">Cerrar</button>
-        <button class="btn btn-p btn-sm" onclick="saveSchedule()" data-i18n="gear_save_schedule_btn">Guardar horario</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: AGREGAR BICICLETA ── -->
-<div class="modal-ov" id="modal-bike" onclick="closeModalOv(event,'modal-bike')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">+ <span data-i18n="app_gear_add_bike">Agregar bicicleta</span></div>
-      <button class="modal-close" onclick="closeModal('modal-bike')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-2">
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_brand">Marca</label><input class="form-input" id="bike-brand" placeholder="Canyon, Trek..." data-i18n-placeholder="gear_bike_brand_ph"></div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_model">Modelo</label><input class="form-input" id="bike-model" placeholder="Aeroad" data-i18n-placeholder="gear_bike_model_ph"></div>
-      </div>
-      <div class="form-row">
-        <label class="form-label" data-i18n="app_gear_type">Tipo</label>
-        <select class="form-select" id="bike-type">
-          <option value="ruta" data-i18n="app_gear_bike_type_road">Ruta</option>
-          <option value="tt_triatlon" data-i18n="app_gear_bike_type_tt">TT / Triatlón</option>
-          <option value="mtb" data-i18n="app_gear_bike_type_mtb">MTB</option>
-          <option value="gravel" data-i18n="app_gear_bike_type_gravel">Gravel</option>
-        </select>
-      </div>
-      <div class="form-check"><input type="checkbox" id="bike-default" checked><label for="bike-default" data-i18n="gear_bike_default_check">Usar como bici predeterminada (asignación automática de km)</label></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-bike')" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="submitBike()" data-i18n="btn_save">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: AGREGAR COMPONENTE ── -->
-<div class="modal-ov" id="modal-component" onclick="closeModalOv(event,'modal-component')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">+ <span data-i18n="app_gear_add_component">Agregar componente</span></div>
-      <button class="modal-close" onclick="closeModal('modal-component')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="comp-bike-id">
-      <div class="form-row">
-        <label class="form-label" data-i18n="app_gear_component_label">Componente</label>
-        <select class="form-select" id="comp-type" onchange="onCompTypeChange()">
-          <option value="cadena" data-i18n="app_gear_comp_chain">Cadena</option>
-          <option value="cubiertas" data-i18n="app_gear_comp_tires">Cubiertas</option>
-          <option value="pastillas_freno" data-i18n="app_gear_comp_brake_pads">Pastillas de freno</option>
-          <option value="discos_freno" data-i18n="app_gear_comp_brake_discs">Discos de freno</option>
-          <option value="bateria_grupo" data-i18n="app_gear_comp_battery">Batería grupo electrónico</option>
-          <option value="suspension" data-i18n="app_gear_comp_suspension">Suspensión</option>
-          <option value="sellante_tubeless" data-i18n="app_gear_comp_tubeless">Sellante tubeless</option>
-          <option value="otro" data-i18n="app_gear_comp_other">Otro</option>
-        </select>
-      </div>
-      <div class="form-row"><label class="form-label" data-i18n="app_gear_label_opt">Etiqueta (opcional)</label><input class="form-input" id="comp-label" placeholder="Ej: cadena trasera" data-i18n-placeholder="app_gear_label_ph"></div>
-      <div class="form-2" id="comp-tracking-row">
-        <div class="form-row">
-          <label class="form-label" data-i18n="app_gear_measured_by">Se mide por</label>
-          <select class="form-select" id="comp-unit">
-            <option value="km" data-i18n="app_gear_unit_km">Kilómetros</option>
-            <option value="horas" data-i18n="app_gear_unit_hours">Horas de uso</option>
-            <option value="meses" data-i18n="app_gear_unit_months">Meses (calendario)</option>
-          </select>
-        </div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_target">Meta</label><input class="form-input" type="number" id="comp-target" placeholder="3000"></div>
-      </div>
-      <div class="form-row" id="comp-charge-row" style="display:none">
-        <label class="form-label" data-i18n="app_gear_charge_pct">% de carga actual</label>
-        <input class="form-input" type="number" id="comp-charge" min="0" max="100" placeholder="90">
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-component')" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="submitComponent()" data-i18n="btn_save">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: REGISTRAR MANTENIMIENTO ── -->
-<div class="modal-ov" id="modal-service" onclick="closeModalOv(event,'modal-service')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" data-i18n="app_gear_service_title">Registrar mantenimiento</div>
-      <button class="modal-close" onclick="closeModal('modal-service')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="service-bike-id">
-      <input type="hidden" id="service-comp-id">
-      <div class="form-row"><label class="form-label" data-i18n="app_gear_desc_label">Descripción</label><textarea class="form-textarea" id="service-desc" placeholder="Ej: cambio de cadena por desgaste" data-i18n-placeholder="app_gear_desc_ph"></textarea></div>
-      <div class="form-2">
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_cost">Costo (opcional)</label><input class="form-input" type="number" id="service-cost" placeholder="35000"></div>
-        <div class="form-row"><label class="form-label" data-i18n="app_gear_date">Fecha</label><input class="form-input" type="date" id="service-date"></div>
-      </div>
-      <div class="form-check"><input type="checkbox" id="service-reset" checked><label for="service-reset" data-i18n="app_gear_reset_check">Se reemplazó la pieza — reiniciar acumulado a 0</label></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeModal('modal-service')" data-i18n="btn_cancel">Cancelar</button>
-      <button class="btn btn-p btn-sm" onclick="submitService()" data-i18n="btn_save">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-var GEAR_API = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : window.location.origin + '/api';
-var ST = { shoeStatus: 'active', bikeStatus: 'active', shoes: [], bikes: [] };
-
-function getGearToken() {
-  try {
-    var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
-    return (s && s.token) ? s.token : (localStorage.getItem('lx_co_token') || null);
-  } catch(e) { return null; }
-}
-
-function _gearErr(e){ console.warn(e && e.message); return _t('gear_err_server','No se pudo completar la acción. Intenta de nuevo.'); }
-function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
-
-function gearFetch(path, opts) {
-  var tok = getGearToken();
-  opts = opts || {};
-  opts.headers = Object.assign({ 'Authorization': 'Bearer ' + tok }, opts.headers || {});
-  if (opts.body && typeof opts.body !== 'string') {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(opts.body);
-  }
-  return fetch(GEAR_API + path, opts).then(function(r){
-    if (!r.ok) return r.json().then(function(e){ throw new Error((e.errors && e.errors[0] && e.errors[0].message) || 'Error'); });
-    return r.json();
-  });
-}
-
-function setMainTab(tab) {
-  document.querySelectorAll('.mt-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.main === tab); });
-  document.getElementById('pane-shoes').classList.toggle('on', tab === 'shoes');
-  document.getElementById('pane-bikes').classList.toggle('on', tab === 'bikes');
-}
-
-function setShoeStatus(status) {
-  ST.shoeStatus = status;
-  document.querySelectorAll('[data-shoe-status]').forEach(function(b){ b.classList.toggle('on', b.dataset.shoeStatus === status); });
-  loadShoes();
-}
-
-function setBikeStatus(status) {
-  ST.bikeStatus = status;
-  document.querySelectorAll('[data-bike-status]').forEach(function(b){ b.classList.toggle('on', b.dataset.bikeStatus === status); });
-  loadBikes();
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function closeModalOv(ev, id) { if (ev.target.id === id) closeModal(id); }
-
-function lifeColor(pct) {
-  if (pct >= 100) return '#EF4444';
-  if (pct >= 80) return '#F0A500';
-  return '#10B981';
-}
-
-var COMP_ICONS = { cadena:'⛓️', cubiertas:'🛞', pastillas_freno:'🛑', discos_freno:'💿', bateria_grupo:'🔋', suspension:'🔧', sellante_tubeless:'💧', otro:'⚙️' };
-function COMP_LABELS(){ return {
-  cadena:_t('app_gear_comp_chain','Cadena'), cubiertas:_t('app_gear_comp_tires','Cubiertas'),
-  pastillas_freno:_t('app_gear_comp_brake_pads','Pastillas de freno'), discos_freno:_t('app_gear_comp_brake_discs','Discos de freno'),
-  bateria_grupo:_t('app_gear_comp_battery','Batería grupo'), suspension:_t('app_gear_comp_suspension','Suspensión'),
-  sellante_tubeless:_t('app_gear_comp_tubeless','Sellante tubeless'), otro:_t('app_gear_comp_other','Otro'),
-}; }
-
-// Codigos del backend (shoe_type, bike_type, tracking_unit) -> texto del idioma activo; si no se reconoce se muestra tal cual
-function shoeTypeLbl(v){ var m={rodaje:['app_gear_type_rodaje','Rodaje'],series:['app_gear_type_series','Series'],competicion:['app_gear_type_comp','Competición'],trail:['app_gear_type_trail','Trail'],otro:['app_gear_type_other','Otro']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
-function bikeTypeLbl(v){ var m={ruta:['app_gear_bike_type_road','Ruta'],tt_triatlon:['app_gear_bike_type_tt','TT / Triatlón'],mtb:['app_gear_bike_type_mtb','MTB'],gravel:['app_gear_bike_type_gravel','Gravel']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
-function unitLbl(v){ var m={km:['gear_unit_km','km'],horas:['gear_unit_h','h'],meses:['gear_unit_mo','meses']}; return m[v] ? _t(m[v][0], m[v][1]) : v; }
-
-// ── ZAPATILLAS ──────────────────────────────────────────────
-
-function loadShoes() {
-  gearFetch('/gear/shoes?status=' + ST.shoeStatus).then(function(d){
-    ST.shoes = d.shoes || [];
-    renderShoes();
-  }).catch(function(){ renderShoesError(); });
-  checkSummaryAlerts();
-}
-
-function renderShoesError() {
-  document.getElementById('shoes-grid').innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>' + _t('gear_load_error_retry','No se pudo cargar tu equipo. Reintenta en unos segundos.') + '</p></div>';
-}
-
-function renderShoes() {
-  var grid = document.getElementById('shoes-grid');
-  if (!ST.shoes.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="es-icon">👟</div><p>' +
-      (ST.shoeStatus === 'active' ? _t('gear_no_shoes_web','Todavía no agregaste zapatillas. Agrega tu primer par para empezar a trackear el kilometraje real.') : _t('app_gear_no_shoes_retired','No tienes zapatillas retiradas.')) +
-      '</p></div>';
-    return;
-  }
-  var DAY_LABELS = {mon:_t('app_day_mon','Lun'),tue:_t('app_day_tue','Mar'),wed:_t('app_day_wed','Mié'),thu:_t('app_day_thu','Jue'),fri:_t('app_day_fri','Vie'),sat:_t('app_day_sat','Sáb'),sun:_t('app_day_sun','Dom')};
-  grid.innerHTML = ST.shoes.map(function(s){
-    var color = lifeColor(s.life_pct);
-    var badges = (s.default_for || []).map(function(t){ return '<span class="gc-badge">★ ' + shoeTypeLbl(t) + '</span>'; }).join('');
-    var dayBadges = (s.schedule_days || []).map(function(d){ return '<span class="gc-badge">' + (DAY_LABELS[d]||d) + '</span>'; }).join('');
-    return '<div class="gear-card">' +
-      '<div class="gc-head">' +
-        '<div class="gear-icon">👟</div>' +
-        '<div style="flex:1"><div class="gc-name">' + esc(s.brand) + ' ' + esc(s.model) + '</div>' +
-        '<div class="gc-sub">' + (s.nickname ? esc(s.nickname) + ' · ' : '') + shoeTypeLbl(s.shoe_type) + '</div>' +
-        '<div class="gc-badges">' + badges + dayBadges + '</div></div>' +
-      '</div>' +
-      '<div class="prog-wrap"><div class="prog-fill" style="width:' + Math.min(100, s.life_pct) + '%;background:' + color + '"></div></div>' +
-      '<div class="prog-lbl"><span><b style="color:' + color + '">' + s.life_pct + '%</b> ' + _t('adp_of_word','de') + ' ' + _t('app_gear_life_pct_label','vida útil') + '</span><span>' + s.accumulated_km.toFixed(0) + ' / ' + s.target_km.toFixed(0) + ' km</span></div>' +
-      '<div class="gc-actions">' +
-        (ST.shoeStatus === 'active' ?
-          '<button class="btn btn-g btn-sm" onclick="setDefaultShoe(\'' + s.id + '\')">' + _t('app_gear_set_default_shoe_btn','Predet. rodaje') + '</button>' +
-          '<button class="btn btn-g btn-sm" onclick="openScheduleModal(\'' + s.id + '\')">' + _t('app_gear_schedule_btn','📅 Días/recálculo') + '</button>' +
-          '<button class="btn btn-g btn-sm" onclick="openEditShoeModal(\'' + s.id + '\')">' + _t('app_gear_edit_btn','✎ Editar') + '</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="retireShoe(\'' + s.id + '\')">' + _t('app_gear_retire_btn','Retirar') + '</button>'
-          : '<button class="btn btn-g btn-sm" onclick="reactivateShoe(\'' + s.id + '\')">' + _t('app_gear_reactivate_btn','Reactivar') + '</button>') +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function submitShoe() {
-  var brand = document.getElementById('shoe-brand').value.trim();
-  var model = document.getElementById('shoe-model').value.trim();
-  if (!brand || !model) { alert(_t('app_gear_brand_model_required','Marca y modelo son obligatorios')); return; }
-  var body = {
-    brand: brand, model: model,
-    nickname: document.getElementById('shoe-nickname').value.trim() || null,
-    shoe_type: document.getElementById('shoe-type').value,
-    target_km: parseFloat(document.getElementById('shoe-target').value) || undefined,
-  };
-  gearFetch('/gear/shoes', { method: 'POST', body: body }).then(function(shoe){
-    if (document.getElementById('shoe-default').checked) {
-      return gearFetch('/gear/shoes/' + shoe.id + '/set-default', { method: 'POST', body: { workout_subtype: 'rodaje' } });
-    }
-  }).then(function(){
-    closeModal('modal-shoe');
-    document.getElementById('shoe-brand').value = '';
-    document.getElementById('shoe-model').value = '';
-    document.getElementById('shoe-nickname').value = '';
-    document.getElementById('shoe-target').value = '';
-    loadShoes();
-  }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function setDefaultShoe(id) {
-  gearFetch('/gear/shoes/' + id + '/set-default', { method: 'POST', body: { workout_subtype: 'rodaje' } })
-    .then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function retireShoe(id) {
-  if (!confirm(_t('app_gear_confirm_retire_shoe','¿Retirar esta zapatilla? El historial de km se conserva.'))) return;
-  gearFetch('/gear/shoes/' + id, { method: 'DELETE' }).then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function reactivateShoe(id) {
-  gearFetch('/gear/shoes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadShoes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function openEditShoeModal(shoeId) {
-  var shoe = ST.shoes.find(function(s){ return s.id === shoeId; });
-  if (!shoe) return;
-  document.getElementById('edit-shoe-id').value = shoeId;
-  document.getElementById('edit-shoe-brand').value = shoe.brand;
-  document.getElementById('edit-shoe-model').value = shoe.model;
-  document.getElementById('edit-shoe-nickname').value = shoe.nickname || '';
-  document.getElementById('edit-shoe-type').value = shoe.shoe_type;
-  document.getElementById('edit-shoe-target').value = shoe.target_km;
-  openModal('modal-edit-shoe');
-}
-
-function submitEditShoe() {
-  var shoeId = document.getElementById('edit-shoe-id').value;
-  var brand = document.getElementById('edit-shoe-brand').value.trim();
-  var model = document.getElementById('edit-shoe-model').value.trim();
-  if (!brand || !model) { alert(_t('app_gear_brand_model_required','Marca y modelo son obligatorios')); return; }
-  var target = parseFloat(document.getElementById('edit-shoe-target').value);
-  if (!target || target <= 0) { alert(_t('app_gear_valid_km_target','Ingresa una meta de km válida')); return; }
-
-  var body = {
-    brand: brand, model: model,
-    nickname: document.getElementById('edit-shoe-nickname').value.trim() || null,
-    shoe_type: document.getElementById('edit-shoe-type').value,
-    target_km: target,
-  };
-  gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: body }).then(function(){
-    closeModal('modal-edit-shoe');
-    loadShoes();
-  }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function openScheduleModal(shoeId) {
-  var shoe = ST.shoes.find(function(s){ return s.id === shoeId; });
-  if (!shoe) return;
-  document.getElementById('sched-shoe-id').value = shoeId;
-  document.querySelectorAll('#sched-days input[type=checkbox]').forEach(function(cb){
-    cb.checked = (shoe.schedule_days || []).indexOf(cb.value) !== -1;
-  });
-  document.getElementById('sched-start-date').value = shoe.tracking_start_date || '';
-  openModal('modal-schedule');
-}
-
-function saveSchedule() {
-  var shoeId = document.getElementById('sched-shoe-id').value;
-  var days = Array.prototype.slice.call(document.querySelectorAll('#sched-days input[type=checkbox]:checked')).map(function(cb){ return cb.value; });
-  var startDate = document.getElementById('sched-start-date').value || null;
-
-  gearFetch('/gear/shoes/' + shoeId + '/schedule', { method: 'PATCH', body: { days: days } })
-    .then(function(){
-      if (startDate !== null) {
-        return gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: { tracking_start_date: startDate } });
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <meta name="google" content="notranslate" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Mi Equipo</title>
+    <script>
+      try {
+        var _k = JSON.parse(
+          sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s') ||
+            'null',
+        );
+        if (!_k) throw 0;
+      } catch (e) {
+        location.replace('login.html');
       }
-    })
-    .then(function(){
-      // Guardar el horario o la fecha de inicio dispara automáticamente el
-      // recálculo (forzado): si el atleta corrige "empecé a usar este par
-      // el..." o cambia qué días le tocan, el sistema mueve el km de
-      // inmediato entre zapatillas sin un segundo paso manual.
-      if (startDate) {
-        return gearFetch('/gear/shoes/' + shoeId + '/backfill', { method: 'POST', body: { start_date: startDate, force: true } });
+    </script>
+    <script>
+      (function () {
+        try {
+          var s = JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          );
+          if (s && s.plan === 'basic')
+            document.documentElement.classList.add('lx-free');
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      .lx-free [data-main='bikes'],
+      .lx-free #pane-bikes {
+        display: none !important;
       }
-    })
-    .then(function(result){
-      closeModal('modal-schedule');
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <script src="i18n.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      ul {
+        list-style: none;
+      }
+      .c {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.62rem 1.3rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all var(--ease);
+      }
+      .btn-p {
+        background: var(--orange);
+        color: #fff;
+      }
+      .btn-p:hover {
+        filter: brightness(1.1);
+      }
+      .btn-g {
+        background: transparent;
+        color: var(--muted);
+        border: 1.5px solid var(--border);
+      }
+      .btn-g:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn-danger {
+        background: transparent;
+        color: #ef4444;
+        border: 1.5px solid rgba(239, 68, 68, 0.35);
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.08);
+      }
+      .btn-sm {
+        padding: 0.4rem 0.85rem;
+        font-size: 0.68rem;
+      }
+      .sr {
+        opacity: 0;
+        transform: translateY(16px);
+        transition:
+          opacity 0.5s var(--ease),
+          transform 0.5s var(--ease);
+      }
+      .vis {
+        opacity: 1;
+        transform: none;
+      }
+
+      .ph {
+        padding-top: 1.6rem;
+        background: linear-gradient(180deg, #060e1c 0%, var(--bg) 100%);
+        border-bottom: 1px solid var(--border2);
+      }
+      .ph-inner {
+        padding: 1.6rem 0 1.3rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .ph-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .ph-sub {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-top: 0.2rem;
+      }
+
+      .alert-banner {
+        display: none;
+        align-items: center;
+        gap: 0.6rem;
+        background: rgba(240, 165, 0, 0.07);
+        border: 1px solid rgba(240, 165, 0, 0.25);
+        border-radius: 10px;
+        padding: 0.75rem 1.1rem;
+        margin: 1.2rem 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .alert-banner.on {
+        display: flex;
+      }
+      .alert-banner strong {
+        color: var(--gold);
+      }
+
+      .main-tabs {
+        display: flex;
+        gap: 3px;
+        background: var(--surface2);
+        border-radius: 8px;
+        padding: 3px;
+        width: fit-content;
+        margin: 1.4rem 0 1rem;
+      }
+      .mt-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.5rem 1.2rem;
+        border-radius: 6px;
+        color: var(--dim);
+        transition: all var(--ease);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .mt-btn.on {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .main-pane {
+        display: none;
+      }
+      .main-pane.on {
+        display: block;
+      }
+
+      .sub-tabs {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.1rem;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+      }
+      .pill-tabs {
+        display: flex;
+        gap: 3px;
+      }
+      .pill-btn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.34rem 0.85rem;
+        border-radius: 6px;
+        color: var(--dim);
+      }
+      .pill-btn.on {
+        color: var(--text);
+        border-color: var(--cyan);
+        background: rgba(14, 165, 233, 0.08);
+      }
+      .sub-pane {
+        display: none;
+      }
+      .sub-pane.on {
+        display: block;
+      }
+
+      .gear-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+      .gear-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem;
+        transition: border-color var(--ease);
+      }
+      .gear-card:hover {
+        border-color: rgba(255, 101, 53, 0.25);
+      }
+      .gc-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+      }
+      .gear-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: var(--surface2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+      .gc-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .gc-sub {
+        font-size: 0.72rem;
+        color: var(--dim);
+        margin-top: 0.1rem;
+      }
+      .gc-badges {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        margin-top: 0.4rem;
+      }
+      .gc-badge {
+        font-size: 0.62rem;
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.5rem;
+        border-radius: 5px;
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--cyan);
+        border: 1px solid rgba(14, 165, 233, 0.25);
+      }
+      .prog-wrap {
+        background: var(--surface2);
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+        margin: 0.3rem 0;
+      }
+      .prog-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s ease;
+      }
+      .prog-lbl {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .prog-lbl b {
+        color: var(--text);
+      }
+      .gc-actions {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.9rem;
+        flex-wrap: wrap;
+      }
+      .gc-comps {
+        margin-top: 0.9rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--border2);
+      }
+      .comp-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.4rem 0;
+        font-size: 0.78rem;
+      }
+      .comp-icon {
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .comp-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .comp-name {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .comp-val {
+        font-size: 0.7rem;
+        color: var(--dim);
+      }
+      .comp-actions {
+        display: flex;
+        gap: 0.25rem;
+        flex-shrink: 0;
+      }
+      .icon-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        transition: all var(--ease);
+      }
+      .icon-btn:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .battery-chip {
+        font-size: 0.7rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        padding: 0.1rem 0.5rem;
+        border-radius: 5px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--dim);
+      }
+      .empty-state .es-icon {
+        font-size: 2.2rem;
+        margin-bottom: 0.6rem;
+        opacity: 0.5;
+      }
+      .empty-state p {
+        font-size: 0.85rem;
+        max-width: 340px;
+        margin: 0 auto;
+      }
+
+      /* ── MODAL ── */
+      .modal-ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(4, 8, 15, 0.9);
+        z-index: 300;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+      .modal-ov.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 460px;
+        max-height: 92vh;
+        overflow-y: auto;
+      }
+      .modal-head {
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+      }
+      .modal-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .modal-close {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        border: none;
+        background: var(--surface2);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .modal-body {
+        padding: 1.2rem;
+      }
+      .form-row {
+        margin-bottom: 0.8rem;
+      }
+      .form-label {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 0.3rem;
+      }
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.52rem 0.75rem;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+      }
+      .form-input:focus,
+      .form-select:focus,
+      .form-textarea:focus {
+        outline: none;
+        border-color: var(--orange);
+      }
+      .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237FB3CC' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.65rem center;
+        padding-right: 1.8rem;
+      }
+      .form-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+      }
+      .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .form-hint {
+        font-size: 0.7rem;
+        color: var(--dim);
+        margin-top: 0.35rem;
+        line-height: 1.4;
+      }
+      .modal-foot {
+        padding: 0.85rem 1.2rem;
+        border-top: 1px solid var(--border2);
+        display: flex;
+        gap: 0.55rem;
+        justify-content: flex-end;
+      }
+      .weekday-picker {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      .weekday-picker label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.65rem;
+        color: var(--muted);
+        cursor: pointer;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 0.4rem 0.55rem;
+      }
+      .weekday-picker input:checked + label,
+      .weekday-picker label:has(input:checked) {
+        border-color: var(--cyan);
+        color: var(--cyan);
+        background: rgba(14, 165, 233, 0.08);
+      }
+      .weekday-picker input {
+        margin: 0;
+      }
+
+      footer {
+        border-top: 1px solid var(--border2);
+        padding: 1.5rem 0;
+        text-align: center;
+      }
+      footer div {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.1em;
+      }
+    </style>
+    <link rel="stylesheet" href="nav.css?v=3" />
+  </head>
+  <body>
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
+
+    <div class="ph">
+      <div class="c">
+        <div class="ph-inner">
+          <div>
+            <div class="ph-title" data-i18n="gear_page_title">
+              👟 🚲 Mi Equipo
+            </div>
+            <div class="ph-sub" data-i18n="gear_page_sub">
+              Kilometraje real de zapatillas y bicicletas — vida útil calculada
+              desde tus actividades sincronizadas
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c">
+      <div class="alert-banner" id="alert-banner">
+        ⚠️ <span id="alert-text"></span>
+      </div>
+
+      <div class="main-tabs">
+        <button
+          class="mt-btn on"
+          data-main="shoes"
+          onclick="setMainTab('shoes')"
+          data-i18n="app_tab_shoes"
+        >
+          👟 Zapatillas
+        </button>
+        <button
+          class="mt-btn"
+          data-main="bikes"
+          onclick="setMainTab('bikes')"
+          data-i18n="app_tab_bikes"
+        >
+          🚲 Bicicletas
+        </button>
+      </div>
+
+      <!-- ── ZAPATILLAS ── -->
+      <div class="main-pane on" id="pane-shoes">
+        <div class="sub-tabs">
+          <div class="pill-tabs">
+            <button
+              class="pill-btn on"
+              data-shoe-status="active"
+              onclick="setShoeStatus('active')"
+              data-i18n="app_gear_active"
+            >
+              Activas
+            </button>
+            <button
+              class="pill-btn"
+              data-shoe-status="retired"
+              onclick="setShoeStatus('retired')"
+              data-i18n="app_gear_retired"
+            >
+              Retiradas
+            </button>
+          </div>
+          <button class="btn btn-p btn-sm" onclick="openModal('modal-shoe')">
+            + <span data-i18n="app_gear_add_shoe">Agregar zapatilla</span>
+          </button>
+        </div>
+        <div class="gear-grid" id="shoes-grid"></div>
+      </div>
+
+      <!-- ── BICICLETAS ── -->
+      <div class="main-pane" id="pane-bikes">
+        <div class="sub-tabs">
+          <div class="pill-tabs">
+            <button
+              class="pill-btn on"
+              data-bike-status="active"
+              onclick="setBikeStatus('active')"
+              data-i18n="app_gear_active"
+            >
+              Activas
+            </button>
+            <button
+              class="pill-btn"
+              data-bike-status="retired"
+              onclick="setBikeStatus('retired')"
+              data-i18n="app_gear_retired"
+            >
+              Retiradas
+            </button>
+          </div>
+          <button class="btn btn-p btn-sm" onclick="openModal('modal-bike')">
+            + <span data-i18n="app_gear_add_bike">Agregar bicicleta</span>
+          </button>
+        </div>
+        <div class="gear-grid" id="bikes-grid"></div>
+      </div>
+    </div>
+
+    <footer><div>LabX © 2026</div></footer>
+
+    <!-- ── MODAL: AGREGAR ZAPATILLA ── -->
+    <div
+      class="modal-ov"
+      id="modal-shoe"
+      onclick="closeModalOv(event, 'modal-shoe')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">
+            + <span data-i18n="app_gear_add_shoe">Agregar zapatilla</span>
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-shoe')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_brand">Marca</label
+              ><input
+                class="form-input"
+                id="shoe-brand"
+                placeholder="Hoka, Asics, Nike..."
+                data-i18n-placeholder="gear_shoe_brand_ph"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_model">Modelo</label
+              ><input
+                class="form-input"
+                id="shoe-model"
+                placeholder="Clifton 9"
+                data-i18n-placeholder="gear_shoe_model_ph"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_nickname"
+              >Apodo (opcional)</label
+            ><input
+              class="form-input"
+              id="shoe-nickname"
+              placeholder="Ej: las rojas"
+              data-i18n-placeholder="app_gear_nickname_ph"
+            />
+          </div>
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_type">Tipo</label>
+              <select class="form-select" id="shoe-type">
+                <option value="rodaje" data-i18n="app_gear_type_rodaje">
+                  Rodaje
+                </option>
+                <option value="series" data-i18n="app_gear_type_series">
+                  Series
+                </option>
+                <option value="competicion" data-i18n="app_gear_type_comp">
+                  Competición
+                </option>
+                <option value="trail" data-i18n="app_gear_type_trail">
+                  Trail
+                </option>
+                <option value="otro" data-i18n="app_gear_type_other">
+                  Otro
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_target_km"
+                >Meta (km)</label
+              ><input
+                class="form-input"
+                type="number"
+                id="shoe-target"
+                placeholder="700"
+              />
+            </div>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="shoe-default" checked /><label
+              for="shoe-default"
+              data-i18n="gear_shoe_default_check"
+              >Usar como predeterminada para rodaje (asignación automática de
+              km)</label
+            >
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-g btn-sm"
+            onclick="closeModal('modal-shoe')"
+            data-i18n="btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="submitShoe()"
+            data-i18n="btn_save"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL: EDITAR ZAPATILLA ── -->
+    <div
+      class="modal-ov"
+      id="modal-edit-shoe"
+      onclick="closeModalOv(event, 'modal-edit-shoe')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" data-i18n="app_gear_edit_shoe_title">
+            Editar zapatilla
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-edit-shoe')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-shoe-id" />
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_brand">Marca</label
+              ><input class="form-input" id="edit-shoe-brand" />
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_model">Modelo</label
+              ><input class="form-input" id="edit-shoe-model" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_nickname"
+              >Apodo (opcional)</label
+            ><input class="form-input" id="edit-shoe-nickname" />
+          </div>
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_type">Tipo</label>
+              <select class="form-select" id="edit-shoe-type">
+                <option value="rodaje" data-i18n="app_gear_type_rodaje">
+                  Rodaje
+                </option>
+                <option value="series" data-i18n="app_gear_type_series">
+                  Series
+                </option>
+                <option value="competicion" data-i18n="app_gear_type_comp">
+                  Competición
+                </option>
+                <option value="trail" data-i18n="app_gear_type_trail">
+                  Trail
+                </option>
+                <option value="otro" data-i18n="app_gear_type_other">
+                  Otro
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="gear_edit_shoe_target_label"
+                >Meta de vida útil (km)</label
+              ><input class="form-input" type="number" id="edit-shoe-target" />
+            </div>
+          </div>
+          <div class="form-hint" data-i18n="gear_edit_shoe_hint">
+            Cambiar la meta recalcula el % de vida útil al instante — útil si el
+            fabricante recomienda más o menos km de los que pusiste al cargarla
+            (ej. de 500 a 700 km).
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-g btn-sm"
+            onclick="closeModal('modal-edit-shoe')"
+            data-i18n="btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="submitEditShoe()"
+            data-i18n="btn_save_changes_app"
+          >
+            Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL: HORARIO SEMANAL + RECALCULO RETROACTIVO ── -->
+    <div
+      class="modal-ov"
+      id="modal-schedule"
+      onclick="closeModalOv(event, 'modal-schedule')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" data-i18n="app_gear_sched_title">
+            Días de uso y recálculo
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-schedule')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="sched-shoe-id" />
+          <div class="form-row">
+            <label class="form-label" data-i18n="gear_sched_days_q"
+              >¿Qué días de la semana corrés con este par?</label
+            >
+            <div class="weekday-picker" id="sched-days">
+              <label
+                ><input type="checkbox" value="mon" /><span
+                  data-i18n="app_day_mon"
+                  >Lun</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="tue" /><span
+                  data-i18n="app_day_tue"
+                  >Mar</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="wed" /><span
+                  data-i18n="app_day_wed"
+                  >Mié</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="thu" /><span
+                  data-i18n="app_day_thu"
+                  >Jue</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="fri" /><span
+                  data-i18n="app_day_fri"
+                  >Vie</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="sat" /><span
+                  data-i18n="app_day_sat"
+                  >Sáb</span
+                ></label
+              >
+              <label
+                ><input type="checkbox" value="sun" /><span
+                  data-i18n="app_day_sun"
+                  >Dom</span
+                ></label
+              >
+            </div>
+            <div class="form-hint" data-i18n="gear_sched_hint2_web">
+              Si marcás días acá, tienen prioridad sobre "predeterminada para
+              rodaje" al sincronizar. Un día solo puede pertenecer a un par — se
+              lo quitamos automáticamente a otra zapatilla si lo tenía.
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_start_date"
+              >Empecé a usar este par el (opcional)</label
+            >
+            <input class="form-input" type="date" id="sched-start-date" />
+            <div class="form-hint" data-i18n="gear_sched_hint3_web">
+              Usalo si ya corriste con este par antes de cargarlo acá — te deja
+              sumar retroactivamente el km ya corrido.
+            </div>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="sched-force" /><label
+              for="sched-force"
+              data-i18n="gear_force_overwrite_check"
+              >Sobrescribir asignaciones existentes (por si el sync automático
+              ya le había asignado esas carreras a otra zapatilla)</label
+            >
+          </div>
+        </div>
+        <div class="modal-foot" style="justify-content: space-between">
+          <button
+            class="btn btn-g btn-sm"
+            id="sched-backfill-btn"
+            onclick="runBackfill()"
+            data-i18n="gear_backfill_btn"
+          >
+            ↻ Recalcular km retroactivo
+          </button>
+          <div style="display: flex; gap: 0.55rem">
+            <button
+              class="btn btn-g btn-sm"
+              onclick="closeModal('modal-schedule')"
+              data-i18n="btn_close"
+            >
+              Cerrar
+            </button>
+            <button
+              class="btn btn-p btn-sm"
+              onclick="saveSchedule()"
+              data-i18n="gear_save_schedule_btn"
+            >
+              Guardar horario
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL: AGREGAR BICICLETA ── -->
+    <div
+      class="modal-ov"
+      id="modal-bike"
+      onclick="closeModalOv(event, 'modal-bike')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">
+            + <span data-i18n="app_gear_add_bike">Agregar bicicleta</span>
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-bike')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_brand">Marca</label
+              ><input
+                class="form-input"
+                id="bike-brand"
+                placeholder="Canyon, Trek..."
+                data-i18n-placeholder="gear_bike_brand_ph"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_model">Modelo</label
+              ><input
+                class="form-input"
+                id="bike-model"
+                placeholder="Aeroad"
+                data-i18n-placeholder="gear_bike_model_ph"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_type">Tipo</label>
+            <select class="form-select" id="bike-type">
+              <option value="ruta" data-i18n="app_gear_bike_type_road">
+                Ruta
+              </option>
+              <option value="tt_triatlon" data-i18n="app_gear_bike_type_tt">
+                TT / Triatlón
+              </option>
+              <option value="mtb" data-i18n="app_gear_bike_type_mtb">
+                MTB
+              </option>
+              <option value="gravel" data-i18n="app_gear_bike_type_gravel">
+                Gravel
+              </option>
+            </select>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="bike-default" checked /><label
+              for="bike-default"
+              data-i18n="gear_bike_default_check"
+              >Usar como bici predeterminada (asignación automática de
+              km)</label
+            >
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-g btn-sm"
+            onclick="closeModal('modal-bike')"
+            data-i18n="btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="submitBike()"
+            data-i18n="btn_save"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL: AGREGAR COMPONENTE ── -->
+    <div
+      class="modal-ov"
+      id="modal-component"
+      onclick="closeModalOv(event, 'modal-component')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">
+            + <span data-i18n="app_gear_add_component">Agregar componente</span>
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-component')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="comp-bike-id" />
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_component_label"
+              >Componente</label
+            >
+            <select
+              class="form-select"
+              id="comp-type"
+              onchange="onCompTypeChange()"
+            >
+              <option value="cadena" data-i18n="app_gear_comp_chain">
+                Cadena
+              </option>
+              <option value="cubiertas" data-i18n="app_gear_comp_tires">
+                Cubiertas
+              </option>
+              <option
+                value="pastillas_freno"
+                data-i18n="app_gear_comp_brake_pads"
+              >
+                Pastillas de freno
+              </option>
+              <option
+                value="discos_freno"
+                data-i18n="app_gear_comp_brake_discs"
+              >
+                Discos de freno
+              </option>
+              <option value="bateria_grupo" data-i18n="app_gear_comp_battery">
+                Batería grupo electrónico
+              </option>
+              <option value="suspension" data-i18n="app_gear_comp_suspension">
+                Suspensión
+              </option>
+              <option
+                value="sellante_tubeless"
+                data-i18n="app_gear_comp_tubeless"
+              >
+                Sellante tubeless
+              </option>
+              <option value="otro" data-i18n="app_gear_comp_other">Otro</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_label_opt"
+              >Etiqueta (opcional)</label
+            ><input
+              class="form-input"
+              id="comp-label"
+              placeholder="Ej: cadena trasera"
+              data-i18n-placeholder="app_gear_label_ph"
+            />
+          </div>
+          <div class="form-2" id="comp-tracking-row">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_measured_by"
+                >Se mide por</label
+              >
+              <select class="form-select" id="comp-unit">
+                <option value="km" data-i18n="app_gear_unit_km">
+                  Kilómetros
+                </option>
+                <option value="horas" data-i18n="app_gear_unit_hours">
+                  Horas de uso
+                </option>
+                <option value="meses" data-i18n="app_gear_unit_months">
+                  Meses (calendario)
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_target">Meta</label
+              ><input
+                class="form-input"
+                type="number"
+                id="comp-target"
+                placeholder="3000"
+              />
+            </div>
+          </div>
+          <div class="form-row" id="comp-charge-row" style="display: none">
+            <label class="form-label" data-i18n="app_gear_charge_pct"
+              >% de carga actual</label
+            >
+            <input
+              class="form-input"
+              type="number"
+              id="comp-charge"
+              min="0"
+              max="100"
+              placeholder="90"
+            />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-g btn-sm"
+            onclick="closeModal('modal-component')"
+            data-i18n="btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="submitComponent()"
+            data-i18n="btn_save"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL: REGISTRAR MANTENIMIENTO ── -->
+    <div
+      class="modal-ov"
+      id="modal-service"
+      onclick="closeModalOv(event, 'modal-service')"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" data-i18n="app_gear_service_title">
+            Registrar mantenimiento
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-service')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="service-bike-id" />
+          <input type="hidden" id="service-comp-id" />
+          <div class="form-row">
+            <label class="form-label" data-i18n="app_gear_desc_label"
+              >Descripción</label
+            ><textarea
+              class="form-textarea"
+              id="service-desc"
+              placeholder="Ej: cambio de cadena por desgaste"
+              data-i18n-placeholder="app_gear_desc_ph"
+            ></textarea>
+          </div>
+          <div class="form-2">
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_cost"
+                >Costo (opcional)</label
+              ><input
+                class="form-input"
+                type="number"
+                id="service-cost"
+                placeholder="35000"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label" data-i18n="app_gear_date">Fecha</label
+              ><input class="form-input" type="date" id="service-date" />
+            </div>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="service-reset" checked /><label
+              for="service-reset"
+              data-i18n="app_gear_reset_check"
+              >Se reemplazó la pieza — reiniciar acumulado a 0</label
+            >
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button
+            class="btn btn-g btn-sm"
+            onclick="closeModal('modal-service')"
+            data-i18n="btn_cancel"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="submitService()"
+            data-i18n="btn_save"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var GEAR_API =
+        window.location.protocol === 'file:'
+          ? 'http://localhost:8000/api'
+          : window.location.origin + '/api';
+      var ST = {
+        shoeStatus: 'active',
+        bikeStatus: 'active',
+        shoes: [],
+        bikes: [],
+      };
+
+      function getGearToken() {
+        try {
+          var s = JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          );
+          return s && s.token
+            ? s.token
+            : localStorage.getItem('lx_co_token') || null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function _gearErr(e) {
+        console.warn(e && e.message);
+        return _t(
+          'gear_err_server',
+          'No se pudo completar la acción. Intenta de nuevo.',
+        );
+      }
+      function _t(key, fallback) {
+        return (window.i18n ? window.i18n.t(key) : null) || fallback;
+      }
+
+      function gearFetch(path, opts) {
+        var tok = getGearToken();
+        opts = opts || {};
+        opts.headers = Object.assign(
+          { Authorization: 'Bearer ' + tok },
+          opts.headers || {},
+        );
+        if (opts.body && typeof opts.body !== 'string') {
+          opts.headers['Content-Type'] = 'application/json';
+          opts.body = JSON.stringify(opts.body);
+        }
+        return fetch(GEAR_API + path, opts).then(function (r) {
+          if (!r.ok)
+            return r.json().then(function (e) {
+              throw new Error(
+                (e.errors && e.errors[0] && e.errors[0].message) || 'Error',
+              );
+            });
+          return r.json();
+        });
+      }
+
+      function setMainTab(tab) {
+        document.querySelectorAll('.mt-btn').forEach(function (b) {
+          b.classList.toggle('on', b.dataset.main === tab);
+        });
+        document
+          .getElementById('pane-shoes')
+          .classList.toggle('on', tab === 'shoes');
+        document
+          .getElementById('pane-bikes')
+          .classList.toggle('on', tab === 'bikes');
+      }
+
+      function setShoeStatus(status) {
+        ST.shoeStatus = status;
+        document.querySelectorAll('[data-shoe-status]').forEach(function (b) {
+          b.classList.toggle('on', b.dataset.shoeStatus === status);
+        });
+        loadShoes();
+      }
+
+      function setBikeStatus(status) {
+        ST.bikeStatus = status;
+        document.querySelectorAll('[data-bike-status]').forEach(function (b) {
+          b.classList.toggle('on', b.dataset.bikeStatus === status);
+        });
+        loadBikes();
+      }
+
+      function openModal(id) {
+        document.getElementById(id).classList.add('open');
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+      }
+      function closeModalOv(ev, id) {
+        if (ev.target.id === id) closeModal(id);
+      }
+
+      function lifeColor(pct) {
+        if (pct >= 100) return '#EF4444';
+        if (pct >= 80) return '#F0A500';
+        return '#10B981';
+      }
+
+      var COMP_ICONS = {
+        cadena: '⛓️',
+        cubiertas: '🛞',
+        pastillas_freno: '🛑',
+        discos_freno: '💿',
+        bateria_grupo: '🔋',
+        suspension: '🔧',
+        sellante_tubeless: '💧',
+        otro: '⚙️',
+      };
+      function COMP_LABELS() {
+        return {
+          cadena: _t('app_gear_comp_chain', 'Cadena'),
+          cubiertas: _t('app_gear_comp_tires', 'Cubiertas'),
+          pastillas_freno: _t('app_gear_comp_brake_pads', 'Pastillas de freno'),
+          discos_freno: _t('app_gear_comp_brake_discs', 'Discos de freno'),
+          bateria_grupo: _t('app_gear_comp_battery', 'Batería grupo'),
+          suspension: _t('app_gear_comp_suspension', 'Suspensión'),
+          sellante_tubeless: _t('app_gear_comp_tubeless', 'Sellante tubeless'),
+          otro: _t('app_gear_comp_other', 'Otro'),
+        };
+      }
+
+      // Codigos del backend (shoe_type, bike_type, tracking_unit) -> texto del idioma activo; si no se reconoce se muestra tal cual
+      function shoeTypeLbl(v) {
+        var m = {
+          rodaje: ['app_gear_type_rodaje', 'Rodaje'],
+          series: ['app_gear_type_series', 'Series'],
+          competicion: ['app_gear_type_comp', 'Competición'],
+          trail: ['app_gear_type_trail', 'Trail'],
+          otro: ['app_gear_type_other', 'Otro'],
+        };
+        return m[v] ? _t(m[v][0], m[v][1]) : v;
+      }
+      function bikeTypeLbl(v) {
+        var m = {
+          ruta: ['app_gear_bike_type_road', 'Ruta'],
+          tt_triatlon: ['app_gear_bike_type_tt', 'TT / Triatlón'],
+          mtb: ['app_gear_bike_type_mtb', 'MTB'],
+          gravel: ['app_gear_bike_type_gravel', 'Gravel'],
+        };
+        return m[v] ? _t(m[v][0], m[v][1]) : v;
+      }
+      function unitLbl(v) {
+        var m = {
+          km: ['gear_unit_km', 'km'],
+          horas: ['gear_unit_h', 'h'],
+          meses: ['gear_unit_mo', 'meses'],
+        };
+        return m[v] ? _t(m[v][0], m[v][1]) : v;
+      }
+
+      // ── ZAPATILLAS ──────────────────────────────────────────────
+
+      function loadShoes() {
+        gearFetch('/gear/shoes?status=' + ST.shoeStatus)
+          .then(function (d) {
+            ST.shoes = d.shoes || [];
+            renderShoes();
+          })
+          .catch(function () {
+            renderShoesError();
+          });
+        checkSummaryAlerts();
+      }
+
+      function renderShoesError() {
+        document.getElementById('shoes-grid').innerHTML =
+          '<div class="empty-state"><div class="es-icon">⚠️</div><p>' +
+          _t(
+            'gear_load_error_retry',
+            'No se pudo cargar tu equipo. Reintenta en unos segundos.',
+          ) +
+          '</p></div>';
+      }
+
+      function renderShoes() {
+        var grid = document.getElementById('shoes-grid');
+        if (!ST.shoes.length) {
+          grid.innerHTML =
+            '<div class="empty-state"><div class="es-icon">👟</div><p>' +
+            (ST.shoeStatus === 'active'
+              ? _t(
+                  'gear_no_shoes_web',
+                  'Todavía no agregaste zapatillas. Agrega tu primer par para empezar a trackear el kilometraje real.',
+                )
+              : _t(
+                  'app_gear_no_shoes_retired',
+                  'No tienes zapatillas retiradas.',
+                )) +
+            '</p></div>';
+          return;
+        }
+        var DAY_LABELS = {
+          mon: _t('app_day_mon', 'Lun'),
+          tue: _t('app_day_tue', 'Mar'),
+          wed: _t('app_day_wed', 'Mié'),
+          thu: _t('app_day_thu', 'Jue'),
+          fri: _t('app_day_fri', 'Vie'),
+          sat: _t('app_day_sat', 'Sáb'),
+          sun: _t('app_day_sun', 'Dom'),
+        };
+        grid.innerHTML = ST.shoes
+          .map(function (s) {
+            var color = lifeColor(s.life_pct);
+            var badges = (s.default_for || [])
+              .map(function (t) {
+                return '<span class="gc-badge">★ ' + shoeTypeLbl(t) + '</span>';
+              })
+              .join('');
+            var dayBadges = (s.schedule_days || [])
+              .map(function (d) {
+                return (
+                  '<span class="gc-badge">' + (DAY_LABELS[d] || d) + '</span>'
+                );
+              })
+              .join('');
+            return (
+              '<div class="gear-card">' +
+              '<div class="gc-head">' +
+              '<div class="gear-icon">👟</div>' +
+              '<div style="flex:1"><div class="gc-name">' +
+              esc(s.brand) +
+              ' ' +
+              esc(s.model) +
+              '</div>' +
+              '<div class="gc-sub">' +
+              (s.nickname ? esc(s.nickname) + ' · ' : '') +
+              shoeTypeLbl(s.shoe_type) +
+              '</div>' +
+              '<div class="gc-badges">' +
+              badges +
+              dayBadges +
+              '</div></div>' +
+              '</div>' +
+              '<div class="prog-wrap"><div class="prog-fill" style="width:' +
+              Math.min(100, s.life_pct) +
+              '%;background:' +
+              color +
+              '"></div></div>' +
+              '<div class="prog-lbl"><span><b style="color:' +
+              color +
+              '">' +
+              s.life_pct +
+              '%</b> ' +
+              _t('adp_of_word', 'de') +
+              ' ' +
+              _t('app_gear_life_pct_label', 'vida útil') +
+              '</span><span>' +
+              s.accumulated_km.toFixed(0) +
+              ' / ' +
+              s.target_km.toFixed(0) +
+              ' km</span></div>' +
+              '<div class="gc-actions">' +
+              (ST.shoeStatus === 'active'
+                ? '<button class="btn btn-g btn-sm" onclick="setDefaultShoe(\'' +
+                  s.id +
+                  '\')">' +
+                  _t('app_gear_set_default_shoe_btn', 'Predet. rodaje') +
+                  '</button>' +
+                  '<button class="btn btn-g btn-sm" onclick="openScheduleModal(\'' +
+                  s.id +
+                  '\')">' +
+                  _t('app_gear_schedule_btn', '📅 Días/recálculo') +
+                  '</button>' +
+                  '<button class="btn btn-g btn-sm" onclick="openEditShoeModal(\'' +
+                  s.id +
+                  '\')">' +
+                  _t('app_gear_edit_btn', '✎ Editar') +
+                  '</button>' +
+                  '<button class="btn btn-danger btn-sm" onclick="retireShoe(\'' +
+                  s.id +
+                  '\')">' +
+                  _t('app_gear_retire_btn', 'Retirar') +
+                  '</button>'
+                : '<button class="btn btn-g btn-sm" onclick="reactivateShoe(\'' +
+                  s.id +
+                  '\')">' +
+                  _t('app_gear_reactivate_btn', 'Reactivar') +
+                  '</button>') +
+              '</div>' +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+
+      function submitShoe() {
+        var brand = document.getElementById('shoe-brand').value.trim();
+        var model = document.getElementById('shoe-model').value.trim();
+        if (!brand || !model) {
+          alert(
+            _t(
+              'app_gear_brand_model_required',
+              'Marca y modelo son obligatorios',
+            ),
+          );
+          return;
+        }
+        var body = {
+          brand: brand,
+          model: model,
+          nickname:
+            document.getElementById('shoe-nickname').value.trim() || null,
+          shoe_type: document.getElementById('shoe-type').value,
+          target_km:
+            parseFloat(document.getElementById('shoe-target').value) ||
+            undefined,
+        };
+        gearFetch('/gear/shoes', { method: 'POST', body: body })
+          .then(function (shoe) {
+            if (document.getElementById('shoe-default').checked) {
+              return gearFetch('/gear/shoes/' + shoe.id + '/set-default', {
+                method: 'POST',
+                body: { workout_subtype: 'rodaje' },
+              });
+            }
+          })
+          .then(function () {
+            closeModal('modal-shoe');
+            document.getElementById('shoe-brand').value = '';
+            document.getElementById('shoe-model').value = '';
+            document.getElementById('shoe-nickname').value = '';
+            document.getElementById('shoe-target').value = '';
+            loadShoes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function setDefaultShoe(id) {
+        gearFetch('/gear/shoes/' + id + '/set-default', {
+          method: 'POST',
+          body: { workout_subtype: 'rodaje' },
+        })
+          .then(loadShoes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function retireShoe(id) {
+        if (
+          !confirm(
+            _t(
+              'app_gear_confirm_retire_shoe',
+              '¿Retirar esta zapatilla? El historial de km se conserva.',
+            ),
+          )
+        )
+          return;
+        gearFetch('/gear/shoes/' + id, { method: 'DELETE' })
+          .then(loadShoes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function reactivateShoe(id) {
+        gearFetch('/gear/shoes/' + id, {
+          method: 'PATCH',
+          body: { status: 'active' },
+        })
+          .then(loadShoes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function openEditShoeModal(shoeId) {
+        var shoe = ST.shoes.find(function (s) {
+          return s.id === shoeId;
+        });
+        if (!shoe) return;
+        document.getElementById('edit-shoe-id').value = shoeId;
+        document.getElementById('edit-shoe-brand').value = shoe.brand;
+        document.getElementById('edit-shoe-model').value = shoe.model;
+        document.getElementById('edit-shoe-nickname').value =
+          shoe.nickname || '';
+        document.getElementById('edit-shoe-type').value = shoe.shoe_type;
+        document.getElementById('edit-shoe-target').value = shoe.target_km;
+        openModal('modal-edit-shoe');
+      }
+
+      function submitEditShoe() {
+        var shoeId = document.getElementById('edit-shoe-id').value;
+        var brand = document.getElementById('edit-shoe-brand').value.trim();
+        var model = document.getElementById('edit-shoe-model').value.trim();
+        if (!brand || !model) {
+          alert(
+            _t(
+              'app_gear_brand_model_required',
+              'Marca y modelo son obligatorios',
+            ),
+          );
+          return;
+        }
+        var target = parseFloat(
+          document.getElementById('edit-shoe-target').value,
+        );
+        if (!target || target <= 0) {
+          alert(
+            _t('app_gear_valid_km_target', 'Ingresa una meta de km válida'),
+          );
+          return;
+        }
+
+        var body = {
+          brand: brand,
+          model: model,
+          nickname:
+            document.getElementById('edit-shoe-nickname').value.trim() || null,
+          shoe_type: document.getElementById('edit-shoe-type').value,
+          target_km: target,
+        };
+        gearFetch('/gear/shoes/' + shoeId, { method: 'PATCH', body: body })
+          .then(function () {
+            closeModal('modal-edit-shoe');
+            loadShoes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function openScheduleModal(shoeId) {
+        var shoe = ST.shoes.find(function (s) {
+          return s.id === shoeId;
+        });
+        if (!shoe) return;
+        document.getElementById('sched-shoe-id').value = shoeId;
+        document
+          .querySelectorAll('#sched-days input[type=checkbox]')
+          .forEach(function (cb) {
+            cb.checked = (shoe.schedule_days || []).indexOf(cb.value) !== -1;
+          });
+        document.getElementById('sched-start-date').value =
+          shoe.tracking_start_date || '';
+        openModal('modal-schedule');
+      }
+
+      function saveSchedule() {
+        var shoeId = document.getElementById('sched-shoe-id').value;
+        var days = Array.prototype.slice
+          .call(
+            document.querySelectorAll(
+              '#sched-days input[type=checkbox]:checked',
+            ),
+          )
+          .map(function (cb) {
+            return cb.value;
+          });
+        var startDate =
+          document.getElementById('sched-start-date').value || null;
+
+        gearFetch('/gear/shoes/' + shoeId + '/schedule', {
+          method: 'PATCH',
+          body: { days: days },
+        })
+          .then(function () {
+            if (startDate !== null) {
+              return gearFetch('/gear/shoes/' + shoeId, {
+                method: 'PATCH',
+                body: { tracking_start_date: startDate },
+              });
+            }
+          })
+          .then(function () {
+            // Guardar el horario o la fecha de inicio dispara automáticamente el
+            // recálculo (forzado): si el atleta corrige "empecé a usar este par
+            // el..." o cambia qué días le tocan, el sistema mueve el km de
+            // inmediato entre zapatillas sin un segundo paso manual.
+            if (startDate) {
+              return gearFetch('/gear/shoes/' + shoeId + '/backfill', {
+                method: 'POST',
+                body: { start_date: startDate, force: true },
+              });
+            }
+          })
+          .then(function (result) {
+            closeModal('modal-schedule');
+            loadShoes();
+            if (result && (result.added_count || result.moved_count)) {
+              var parts = [];
+              if (result.moved_count)
+                parts.push(
+                  result.moved_count +
+                    ' ' +
+                    _t(
+                      'gear_moved_from_other_suffix',
+                      'carrera(s) movida(s) desde otra zapatilla',
+                    ) +
+                    ' (+' +
+                    result.moved_km.toFixed(1) +
+                    ' km)',
+                );
+              if (result.added_count)
+                parts.push(
+                  result.added_count +
+                    ' ' +
+                    _t(
+                      'gear_added_unassigned_suffix',
+                      'carrera(s) sin asignar sumada(s)',
+                    ) +
+                    ' (+' +
+                    result.added_km.toFixed(1) +
+                    ' km)',
+                );
+              alert(
+                _t(
+                  'gear_schedule_saved_recalc_prefix',
+                  'Horario guardado. Recalculado automáticamente: ',
+                ) +
+                  parts.join(', ') +
+                  '.',
+              );
+            }
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function runBackfill() {
+        var shoeId = document.getElementById('sched-shoe-id').value;
+        var startDate = document.getElementById('sched-start-date').value;
+        var force = document.getElementById('sched-force').checked;
+        var since = startDate
+          ? _t('gear_since_literal', ' desde ') + startDate
+          : _t('gear_since_saved', ' desde la fecha de inicio guardada');
+        var msg = force
+          ? _t(
+              'gear_backfill_confirm_force',
+              'Esto va a revisar tus carreras{since} y REASIGNAR a esta zapatilla incluso las que ya tenían otra asignada (mueve el km del par viejo al nuevo). ¿Continuar?',
+            ).replace('{since}', since)
+          : _t(
+              'gear_backfill_confirm_normal',
+              'Esto va a revisar tus carreras{since} y sumar a esta zapatilla las que todavía no tengan un par asignado. Las que ya tienen otra zapatilla asignada (automática o manual) NO se tocan. ¿Continuar?',
+            ).replace('{since}', since);
+        if (!confirm(msg)) return;
+
+        var body = startDate
+          ? { start_date: startDate, force: force }
+          : { force: force };
+        gearFetch('/gear/shoes/' + shoeId + '/backfill', {
+          method: 'POST',
+          body: body,
+        })
+          .then(function (d) {
+            var parts = [];
+            if (d.added_count)
+              parts.push(
+                d.added_count +
+                  ' ' +
+                  _t(
+                    'gear_added_unassigned_suffix',
+                    'carrera(s) sin asignar sumada(s)',
+                  ) +
+                  ' (+' +
+                  d.added_km.toFixed(1) +
+                  ' km)',
+              );
+            if (d.moved_count)
+              parts.push(
+                d.moved_count +
+                  ' ' +
+                  _t(
+                    'gear_moved_from_other_suffix',
+                    'carrera(s) movida(s) desde otra zapatilla',
+                  ) +
+                  ' (+' +
+                  d.moved_km.toFixed(1) +
+                  ' km)',
+              );
+            alert(
+              parts.length
+                ? _t('gear_backfill_done_prefix', 'Listo: ') +
+                    parts.join(', ') +
+                    '.'
+                : _t(
+                    'gear_backfill_none',
+                    'No se encontraron carreras para recalcular en ese rango.',
+                  ),
+            );
+            closeModal('modal-schedule');
+            loadShoes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      // ── BICICLETAS ──────────────────────────────────────────────
+
+      function loadBikes() {
+        gearFetch('/gear/bikes?status=' + ST.bikeStatus)
+          .then(function (d) {
+            ST.bikes = d.bikes || [];
+            renderBikes();
+          })
+          .catch(function () {
+            renderBikesError();
+          });
+        checkSummaryAlerts();
+      }
+
+      function renderBikesError() {
+        document.getElementById('bikes-grid').innerHTML =
+          '<div class="empty-state"><div class="es-icon">⚠️</div><p>' +
+          _t(
+            'gear_load_error_retry',
+            'No se pudo cargar tu equipo. Reintenta en unos segundos.',
+          ) +
+          '</p></div>';
+      }
+
+      function renderBikes() {
+        var grid = document.getElementById('bikes-grid');
+        if (!ST.bikes.length) {
+          grid.innerHTML =
+            '<div class="empty-state"><div class="es-icon">🚲</div><p>' +
+            (ST.bikeStatus === 'active'
+              ? _t(
+                  'gear_no_bikes_web',
+                  'Todavía no agregaste bicicletas. Agrega la tuya para trackear cadena, cubiertas y más.',
+                )
+              : _t(
+                  'app_gear_no_bikes_retired',
+                  'No tienes bicicletas retiradas.',
+                )) +
+            '</p></div>';
+          return;
+        }
+        var compLbl = COMP_LABELS();
+        grid.innerHTML = ST.bikes
+          .map(function (b) {
+            var compsHtml = b.components
+              .map(function (c) {
+                if (c.tracking_unit === 'carga_pct') {
+                  var chargeColor =
+                    c.charge_pct !== null && c.charge_pct <= 20
+                      ? '#EF4444'
+                      : c.charge_pct !== null && c.charge_pct <= 40
+                        ? '#F0A500'
+                        : '#10B981';
+                  return (
+                    '<div class="comp-row">' +
+                    '<div class="comp-icon">' +
+                    (COMP_ICONS[c.component_type] || '⚙️') +
+                    '</div>' +
+                    '<div class="comp-body"><div class="comp-name">' +
+                    esc(c.label || compLbl[c.component_type]) +
+                    '</div>' +
+                    '<div class="comp-val">' +
+                    (c.last_service_date
+                      ? _t('app_gear_last_service_label', 'Última revisión:') +
+                        ' ' +
+                        c.last_service_date
+                      : _t('app_gear_no_service', 'Sin revisión')) +
+                    '</div></div>' +
+                    '<span class="battery-chip" style="background:' +
+                    chargeColor +
+                    '22;color:' +
+                    chargeColor +
+                    '">' +
+                    (c.charge_pct !== null ? c.charge_pct + '%' : '—') +
+                    '</span>' +
+                    '<div class="comp-actions"><button class="icon-btn" title="' +
+                    _t('app_gear_charge_pct', '% de carga actual') +
+                    '" onclick="promptChargeUpdate(\'' +
+                    b.id +
+                    "','" +
+                    c.id +
+                    "'," +
+                    (c.charge_pct || 0) +
+                    ')">✎</button></div>' +
+                    '</div>'
+                  );
+                }
+                var color = lifeColor(c.life_pct);
+                return (
+                  '<div class="comp-row">' +
+                  '<div class="comp-icon">' +
+                  (COMP_ICONS[c.component_type] || '⚙️') +
+                  '</div>' +
+                  '<div class="comp-body"><div class="comp-name">' +
+                  esc(c.label || compLbl[c.component_type]) +
+                  '</div>' +
+                  '<div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:' +
+                  Math.min(100, c.life_pct) +
+                  '%;background:' +
+                  color +
+                  '"></div></div>' +
+                  '<div class="comp-val"><b style="color:' +
+                  color +
+                  '">' +
+                  c.life_pct +
+                  '%</b> · ' +
+                  c.accumulated_value.toFixed(0) +
+                  ' / ' +
+                  c.target_value.toFixed(0) +
+                  ' ' +
+                  unitLbl(c.tracking_unit) +
+                  '</div></div>' +
+                  '<div class="comp-actions">' +
+                  '<button class="icon-btn" title="' +
+                  _t('app_gear_service_title', 'Registrar mantenimiento') +
+                  '" onclick="openServiceModal(\'' +
+                  b.id +
+                  "','" +
+                  c.id +
+                  '\')">🔧</button>' +
+                  '<button class="icon-btn" title="✕" onclick="removeComponent(\'' +
+                  b.id +
+                  "','" +
+                  c.id +
+                  '\')">✕</button>' +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('');
+            return (
+              '<div class="gear-card">' +
+              '<div class="gc-head">' +
+              '<div class="gear-icon">🚲</div>' +
+              '<div style="flex:1"><div class="gc-name">' +
+              esc(b.brand) +
+              ' ' +
+              esc(b.model) +
+              (b.is_default
+                ? ' <span class="gc-badge">★ ' +
+                  _t('gear_default_badge', 'predeterminada') +
+                  '</span>'
+                : '') +
+              '</div>' +
+              '<div class="gc-sub">' +
+              bikeTypeLbl(b.bike_type) +
+              '</div></div>' +
+              '</div>' +
+              '<div class="gc-comps">' +
+              (compsHtml ||
+                '<div class="comp-val" style="padding:.4rem 0">' +
+                  _t('app_gear_no_components', 'Sin componentes.') +
+                  '</div>') +
+              '</div>' +
+              '<div class="gc-actions">' +
+              '<button class="btn btn-g btn-sm" onclick="openComponentModal(\'' +
+              b.id +
+              '\')">' +
+              _t('app_gear_add_component_btn', '+ Componente') +
+              '</button>' +
+              (ST.bikeStatus === 'active'
+                ? (!b.is_default
+                    ? '<button class="btn btn-g btn-sm" onclick="setDefaultBike(\'' +
+                      b.id +
+                      '\')">' +
+                      _t('app_gear_set_default_btn', 'Predet.') +
+                      '</button>'
+                    : '') +
+                  '<button class="btn btn-danger btn-sm" onclick="retireBike(\'' +
+                  b.id +
+                  '\')">' +
+                  _t('app_gear_retire_btn', 'Retirar') +
+                  '</button>'
+                : '<button class="btn btn-g btn-sm" onclick="reactivateBike(\'' +
+                  b.id +
+                  '\')">' +
+                  _t('app_gear_reactivate_btn', 'Reactivar') +
+                  '</button>') +
+              '</div>' +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+
+      function submitBike() {
+        var brand = document.getElementById('bike-brand').value.trim();
+        var model = document.getElementById('bike-model').value.trim();
+        if (!brand || !model) {
+          alert(
+            _t(
+              'app_gear_brand_model_required',
+              'Marca y modelo son obligatorios',
+            ),
+          );
+          return;
+        }
+        var body = {
+          brand: brand,
+          model: model,
+          bike_type: document.getElementById('bike-type').value,
+          is_default: document.getElementById('bike-default').checked,
+        };
+        gearFetch('/gear/bikes', { method: 'POST', body: body })
+          .then(function () {
+            closeModal('modal-bike');
+            document.getElementById('bike-brand').value = '';
+            document.getElementById('bike-model').value = '';
+            loadBikes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function setDefaultBike(id) {
+        gearFetch('/gear/bikes/' + id, {
+          method: 'PATCH',
+          body: { is_default: true },
+        })
+          .then(loadBikes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function retireBike(id) {
+        if (
+          !confirm(
+            _t('app_gear_confirm_retire_bike', '¿Retirar esta bicicleta?'),
+          )
+        )
+          return;
+        gearFetch('/gear/bikes/' + id, { method: 'DELETE' })
+          .then(loadBikes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function reactivateBike(id) {
+        gearFetch('/gear/bikes/' + id, {
+          method: 'PATCH',
+          body: { status: 'active' },
+        })
+          .then(loadBikes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function onCompTypeChange() {
+        var isBattery =
+          document.getElementById('comp-type').value === 'bateria_grupo';
+        document.getElementById('comp-tracking-row').style.display = isBattery
+          ? 'none'
+          : 'grid';
+        document.getElementById('comp-charge-row').style.display = isBattery
+          ? 'block'
+          : 'none';
+        if (isBattery) document.getElementById('comp-unit').value = 'carga_pct';
+      }
+
+      function openComponentModal(bikeId) {
+        document.getElementById('comp-bike-id').value = bikeId;
+        document.getElementById('comp-type').value = 'cadena';
+        document.getElementById('comp-label').value = '';
+        document.getElementById('comp-unit').value = 'km';
+        document.getElementById('comp-target').value = '';
+        document.getElementById('comp-charge').value = '';
+        onCompTypeChange();
+        openModal('modal-component');
+      }
+
+      function submitComponent() {
+        var bikeId = document.getElementById('comp-bike-id').value;
+        var type = document.getElementById('comp-type').value;
+        var isBattery = type === 'bateria_grupo';
+        var body = {
+          component_type: type,
+          label: document.getElementById('comp-label').value.trim() || null,
+          tracking_unit: isBattery
+            ? 'carga_pct'
+            : document.getElementById('comp-unit').value,
+          target_value: isBattery
+            ? 100
+            : parseFloat(document.getElementById('comp-target').value) || null,
+          charge_pct: isBattery
+            ? parseInt(document.getElementById('comp-charge').value) || 100
+            : undefined,
+        };
+        if (!body.target_value) {
+          alert(_t('app_gear_valid_target', 'Ingresa una meta válida'));
+          return;
+        }
+        gearFetch('/gear/bikes/' + bikeId + '/components', {
+          method: 'POST',
+          body: body,
+        })
+          .then(function () {
+            closeModal('modal-component');
+            loadBikes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function removeComponent(bikeId, compId) {
+        if (
+          !confirm(
+            _t(
+              'app_gear_confirm_remove_component',
+              '¿Quitar este componente del seguimiento?',
+            ),
+          )
+        )
+          return;
+        gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, {
+          method: 'DELETE',
+        })
+          .then(loadBikes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function promptChargeUpdate(bikeId, compId, current) {
+        var val = prompt(
+          _t('app_gear_charge_prompt', '% de carga actual de la batería:'),
+          current,
+        );
+        if (val === null) return;
+        var pct = parseInt(val);
+        if (isNaN(pct) || pct < 0 || pct > 100) {
+          alert(
+            _t('app_gear_valid_pct_range', 'Ingresa un valor entre 0 y 100'),
+          );
+          return;
+        }
+        gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, {
+          method: 'PATCH',
+          body: { charge_pct: pct },
+        })
+          .then(loadBikes)
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      function openServiceModal(bikeId, compId) {
+        document.getElementById('service-bike-id').value = bikeId;
+        document.getElementById('service-comp-id').value = compId;
+        document.getElementById('service-desc').value = '';
+        document.getElementById('service-cost').value = '';
+        document.getElementById('service-date').value = new Date()
+          .toISOString()
+          .slice(0, 10);
+        document.getElementById('service-reset').checked = true;
+        openModal('modal-service');
+      }
+
+      function submitService() {
+        var bikeId = document.getElementById('service-bike-id').value;
+        var compId = document.getElementById('service-comp-id').value;
+        var desc = document.getElementById('service-desc').value.trim();
+        if (!desc) {
+          alert(
+            _t(
+              'app_gear_describe_service',
+              'Describe el mantenimiento realizado',
+            ),
+          );
+          return;
+        }
+        var body = {
+          description: desc,
+          cost:
+            parseFloat(document.getElementById('service-cost').value) || null,
+          date_iso: document.getElementById('service-date').value || undefined,
+          resets_accumulated: document.getElementById('service-reset').checked,
+        };
+        gearFetch(
+          '/gear/bikes/' + bikeId + '/components/' + compId + '/service',
+          { method: 'POST', body: body },
+        )
+          .then(function () {
+            closeModal('modal-service');
+            loadBikes();
+          })
+          .catch(function (e) {
+            alert(_gearErr(e));
+          });
+      }
+
+      // ── RESUMEN / ALERTAS ──────────────────────────────────────────
+
+      function checkSummaryAlerts() {
+        gearFetch('/gear/summary')
+          .then(function (d) {
+            var banner = document.getElementById('alert-banner');
+            if (d.alerts_count > 0) {
+              document.getElementById('alert-text').textContent =
+                d.alerts_count === 1
+                  ? _t(
+                      'gear_alert_single_web',
+                      'Tienes 1 equipo por encima del 80% de su vida útil recomendada.',
+                    )
+                  : _t(
+                      'gear_alert_plural_web',
+                      'Tienes {n} equipos por encima del 80% de su vida útil recomendada.',
+                    ).replace('{n}', d.alerts_count);
+              banner.classList.add('on');
+            } else {
+              banner.classList.remove('on');
+            }
+          })
+          .catch(function () {});
+      }
+
+      function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+      }
+
       loadShoes();
-      if (result && (result.added_count || result.moved_count)) {
-        var parts = [];
-        if (result.moved_count) parts.push(result.moved_count + ' ' + _t('gear_moved_from_other_suffix','carrera(s) movida(s) desde otra zapatilla') + ' (+' + result.moved_km.toFixed(1) + ' km)');
-        if (result.added_count) parts.push(result.added_count + ' ' + _t('gear_added_unassigned_suffix','carrera(s) sin asignar sumada(s)') + ' (+' + result.added_km.toFixed(1) + ' km)');
-        alert(_t('gear_schedule_saved_recalc_prefix','Horario guardado. Recalculado automáticamente: ') + parts.join(', ') + '.');
-      }
-    }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function runBackfill() {
-  var shoeId = document.getElementById('sched-shoe-id').value;
-  var startDate = document.getElementById('sched-start-date').value;
-  var force = document.getElementById('sched-force').checked;
-  var since = startDate ? _t('gear_since_literal',' desde ') + startDate : _t('gear_since_saved',' desde la fecha de inicio guardada');
-  var msg = force
-    ? _t('gear_backfill_confirm_force','Esto va a revisar tus carreras{since} y REASIGNAR a esta zapatilla incluso las que ya tenían otra asignada (mueve el km del par viejo al nuevo). ¿Continuar?').replace('{since}',since)
-    : _t('gear_backfill_confirm_normal','Esto va a revisar tus carreras{since} y sumar a esta zapatilla las que todavía no tengan un par asignado. Las que ya tienen otra zapatilla asignada (automática o manual) NO se tocan. ¿Continuar?').replace('{since}',since);
-  if (!confirm(msg)) return;
-
-  var body = startDate ? { start_date: startDate, force: force } : { force: force };
-  gearFetch('/gear/shoes/' + shoeId + '/backfill', { method: 'POST', body: body })
-    .then(function(d){
-      var parts = [];
-      if (d.added_count) parts.push(d.added_count + ' ' + _t('gear_added_unassigned_suffix','carrera(s) sin asignar sumada(s)') + ' (+' + d.added_km.toFixed(1) + ' km)');
-      if (d.moved_count) parts.push(d.moved_count + ' ' + _t('gear_moved_from_other_suffix','carrera(s) movida(s) desde otra zapatilla') + ' (+' + d.moved_km.toFixed(1) + ' km)');
-      alert(parts.length ? _t('gear_backfill_done_prefix','Listo: ') + parts.join(', ') + '.' : _t('gear_backfill_none','No se encontraron carreras para recalcular en ese rango.'));
-      closeModal('modal-schedule');
-      loadShoes();
-    }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-// ── BICICLETAS ──────────────────────────────────────────────
-
-function loadBikes() {
-  gearFetch('/gear/bikes?status=' + ST.bikeStatus).then(function(d){
-    ST.bikes = d.bikes || [];
-    renderBikes();
-  }).catch(function(){ renderBikesError(); });
-  checkSummaryAlerts();
-}
-
-function renderBikesError() {
-  document.getElementById('bikes-grid').innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>' + _t('gear_load_error_retry','No se pudo cargar tu equipo. Reintenta en unos segundos.') + '</p></div>';
-}
-
-function renderBikes() {
-  var grid = document.getElementById('bikes-grid');
-  if (!ST.bikes.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="es-icon">🚲</div><p>' +
-      (ST.bikeStatus === 'active' ? _t('gear_no_bikes_web','Todavía no agregaste bicicletas. Agrega la tuya para trackear cadena, cubiertas y más.') : _t('app_gear_no_bikes_retired','No tienes bicicletas retiradas.')) +
-      '</p></div>';
-    return;
-  }
-  var compLbl = COMP_LABELS();
-  grid.innerHTML = ST.bikes.map(function(b){
-    var compsHtml = b.components.map(function(c){
-      if (c.tracking_unit === 'carga_pct') {
-        var chargeColor = (c.charge_pct !== null && c.charge_pct <= 20) ? '#EF4444' : (c.charge_pct !== null && c.charge_pct <= 40 ? '#F0A500' : '#10B981');
-        return '<div class="comp-row">' +
-          '<div class="comp-icon">' + (COMP_ICONS[c.component_type] || '⚙️') + '</div>' +
-          '<div class="comp-body"><div class="comp-name">' + esc(c.label || compLbl[c.component_type]) + '</div>' +
-          '<div class="comp-val">' + (c.last_service_date ? _t('app_gear_last_service_label','Última revisión:') + ' ' + c.last_service_date : _t('app_gear_no_service','Sin revisión')) + '</div></div>' +
-          '<span class="battery-chip" style="background:' + chargeColor + '22;color:' + chargeColor + '">' + (c.charge_pct !== null ? c.charge_pct + '%' : '—') + '</span>' +
-          '<div class="comp-actions"><button class="icon-btn" title="' + _t('app_gear_charge_pct','% de carga actual') + '" onclick="promptChargeUpdate(\'' + b.id + '\',\'' + c.id + '\',' + (c.charge_pct||0) + ')">✎</button></div>' +
-        '</div>';
-      }
-      var color = lifeColor(c.life_pct);
-      return '<div class="comp-row">' +
-        '<div class="comp-icon">' + (COMP_ICONS[c.component_type] || '⚙️') + '</div>' +
-        '<div class="comp-body"><div class="comp-name">' + esc(c.label || compLbl[c.component_type]) + '</div>' +
-        '<div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:' + Math.min(100,c.life_pct) + '%;background:' + color + '"></div></div>' +
-        '<div class="comp-val"><b style="color:' + color + '">' + c.life_pct + '%</b> · ' + c.accumulated_value.toFixed(0) + ' / ' + c.target_value.toFixed(0) + ' ' + unitLbl(c.tracking_unit) + '</div></div>' +
-        '<div class="comp-actions">' +
-          '<button class="icon-btn" title="' + _t('app_gear_service_title','Registrar mantenimiento') + '" onclick="openServiceModal(\'' + b.id + '\',\'' + c.id + '\')">🔧</button>' +
-          '<button class="icon-btn" title="✕" onclick="removeComponent(\'' + b.id + '\',\'' + c.id + '\')">✕</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-    return '<div class="gear-card">' +
-      '<div class="gc-head">' +
-        '<div class="gear-icon">🚲</div>' +
-        '<div style="flex:1"><div class="gc-name">' + esc(b.brand) + ' ' + esc(b.model) + (b.is_default ? ' <span class="gc-badge">★ ' + _t('gear_default_badge','predeterminada') + '</span>' : '') + '</div>' +
-        '<div class="gc-sub">' + bikeTypeLbl(b.bike_type) + '</div></div>' +
-      '</div>' +
-      '<div class="gc-comps">' + (compsHtml || '<div class="comp-val" style="padding:.4rem 0">' + _t('app_gear_no_components','Sin componentes.') + '</div>') + '</div>' +
-      '<div class="gc-actions">' +
-        '<button class="btn btn-g btn-sm" onclick="openComponentModal(\'' + b.id + '\')">' + _t('app_gear_add_component_btn','+ Componente') + '</button>' +
-        (ST.bikeStatus === 'active' ?
-          (!b.is_default ? '<button class="btn btn-g btn-sm" onclick="setDefaultBike(\'' + b.id + '\')">' + _t('app_gear_set_default_btn','Predet.') + '</button>' : '') +
-          '<button class="btn btn-danger btn-sm" onclick="retireBike(\'' + b.id + '\')">' + _t('app_gear_retire_btn','Retirar') + '</button>'
-          : '<button class="btn btn-g btn-sm" onclick="reactivateBike(\'' + b.id + '\')">' + _t('app_gear_reactivate_btn','Reactivar') + '</button>') +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function submitBike() {
-  var brand = document.getElementById('bike-brand').value.trim();
-  var model = document.getElementById('bike-model').value.trim();
-  if (!brand || !model) { alert(_t('app_gear_brand_model_required','Marca y modelo son obligatorios')); return; }
-  var body = { brand: brand, model: model, bike_type: document.getElementById('bike-type').value, is_default: document.getElementById('bike-default').checked };
-  gearFetch('/gear/bikes', { method: 'POST', body: body }).then(function(){
-    closeModal('modal-bike');
-    document.getElementById('bike-brand').value = '';
-    document.getElementById('bike-model').value = '';
-    loadBikes();
-  }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function setDefaultBike(id) {
-  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { is_default: true } }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function retireBike(id) {
-  if (!confirm(_t('app_gear_confirm_retire_bike','¿Retirar esta bicicleta?'))) return;
-  gearFetch('/gear/bikes/' + id, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function reactivateBike(id) {
-  gearFetch('/gear/bikes/' + id, { method: 'PATCH', body: { status: 'active' } }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function onCompTypeChange() {
-  var isBattery = document.getElementById('comp-type').value === 'bateria_grupo';
-  document.getElementById('comp-tracking-row').style.display = isBattery ? 'none' : 'grid';
-  document.getElementById('comp-charge-row').style.display = isBattery ? 'block' : 'none';
-  if (isBattery) document.getElementById('comp-unit').value = 'carga_pct';
-}
-
-function openComponentModal(bikeId) {
-  document.getElementById('comp-bike-id').value = bikeId;
-  document.getElementById('comp-type').value = 'cadena';
-  document.getElementById('comp-label').value = '';
-  document.getElementById('comp-unit').value = 'km';
-  document.getElementById('comp-target').value = '';
-  document.getElementById('comp-charge').value = '';
-  onCompTypeChange();
-  openModal('modal-component');
-}
-
-function submitComponent() {
-  var bikeId = document.getElementById('comp-bike-id').value;
-  var type = document.getElementById('comp-type').value;
-  var isBattery = type === 'bateria_grupo';
-  var body = {
-    component_type: type,
-    label: document.getElementById('comp-label').value.trim() || null,
-    tracking_unit: isBattery ? 'carga_pct' : document.getElementById('comp-unit').value,
-    target_value: isBattery ? 100 : (parseFloat(document.getElementById('comp-target').value) || null),
-    charge_pct: isBattery ? (parseInt(document.getElementById('comp-charge').value) || 100) : undefined,
-  };
-  if (!body.target_value) { alert(_t('app_gear_valid_target','Ingresa una meta válida')); return; }
-  gearFetch('/gear/bikes/' + bikeId + '/components', { method: 'POST', body: body }).then(function(){
-    closeModal('modal-component');
-    loadBikes();
-  }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function removeComponent(bikeId, compId) {
-  if (!confirm(_t('app_gear_confirm_remove_component','¿Quitar este componente del seguimiento?'))) return;
-  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'DELETE' }).then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function promptChargeUpdate(bikeId, compId, current) {
-  var val = prompt(_t('app_gear_charge_prompt','% de carga actual de la batería:'), current);
-  if (val === null) return;
-  var pct = parseInt(val);
-  if (isNaN(pct) || pct < 0 || pct > 100) { alert(_t('app_gear_valid_pct_range','Ingresa un valor entre 0 y 100')); return; }
-  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId, { method: 'PATCH', body: { charge_pct: pct } })
-    .then(loadBikes).catch(function(e){ alert(_gearErr(e)); });
-}
-
-function openServiceModal(bikeId, compId) {
-  document.getElementById('service-bike-id').value = bikeId;
-  document.getElementById('service-comp-id').value = compId;
-  document.getElementById('service-desc').value = '';
-  document.getElementById('service-cost').value = '';
-  document.getElementById('service-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('service-reset').checked = true;
-  openModal('modal-service');
-}
-
-function submitService() {
-  var bikeId = document.getElementById('service-bike-id').value;
-  var compId = document.getElementById('service-comp-id').value;
-  var desc = document.getElementById('service-desc').value.trim();
-  if (!desc) { alert(_t('app_gear_describe_service','Describe el mantenimiento realizado')); return; }
-  var body = {
-    description: desc,
-    cost: parseFloat(document.getElementById('service-cost').value) || null,
-    date_iso: document.getElementById('service-date').value || undefined,
-    resets_accumulated: document.getElementById('service-reset').checked,
-  };
-  gearFetch('/gear/bikes/' + bikeId + '/components/' + compId + '/service', { method: 'POST', body: body }).then(function(){
-    closeModal('modal-service');
-    loadBikes();
-  }).catch(function(e){ alert(_gearErr(e)); });
-}
-
-// ── RESUMEN / ALERTAS ──────────────────────────────────────────
-
-function checkSummaryAlerts() {
-  gearFetch('/gear/summary').then(function(d){
-    var banner = document.getElementById('alert-banner');
-    if (d.alerts_count > 0) {
-      document.getElementById('alert-text').textContent = d.alerts_count === 1
-        ? _t('gear_alert_single_web','Tienes 1 equipo por encima del 80% de su vida útil recomendada.')
-        : _t('gear_alert_plural_web','Tienes {n} equipos por encima del 80% de su vida útil recomendada.').replace('{n}',d.alerts_count);
-      banner.classList.add('on');
-    } else {
-      banner.classList.remove('on');
-    }
-  }).catch(function(){});
-}
-
-function esc(s) {
-  var d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
-}
-
-loadShoes();
-loadBikes();
-</script>
-<script src="auth.js"></script>
-<script>KL.guard('gear');</script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-</body>
+      loadBikes();
+    </script>
+    <script src="auth.js"></script>
+    <script>
+      KL.guard('gear');
+    </script>
+    <script src="nav.js?v=4"></script>
+    <script src="footer.js"></script>
+  </body>
 </html>

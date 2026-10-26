@@ -1,619 +1,1624 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Mi Huella de Datos</title>
-<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme-vars.css">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--swim:#06B6D4;--bike:#F59E0B;--run:#10B981;--str:#A855F7;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
-a{color:inherit;text-decoration:none}
-.c{max-width:1080px;margin:0 auto;padding:0 1.5rem}
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Mi Huella de Datos</title>
+    <script>
+      try {
+        var _k = JSON.parse(
+          sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s') ||
+            'null',
+        );
+        if (!_k) throw 0;
+      } catch (e) {
+        location.replace('login.html');
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --swim: #06b6d4;
+        --bike: #f59e0b;
+        --run: #10b981;
+        --str: #a855f7;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .c {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
 
-.ph{padding:1.6rem 0 .3rem}
+      .ph {
+        padding: 1.6rem 0 0.3rem;
+      }
 
-.hu-row-btns{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;justify-content:flex-start;margin-top:1.4rem;border-bottom:1px solid var(--border)}
-.hu-period-btns{display:flex;gap:.2rem}
-.hu-period-btns + .hu-period-btns{border-left:1px solid var(--border2);padding-left:1.5rem}
-.hu-period-btn{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:.65rem 1.1rem;cursor:pointer;white-space:nowrap;transition:color .18s,border-color .18s;margin-bottom:-1px}
-.hu-period-btn:hover{color:var(--text)}
-.hu-period-btn.on{color:var(--orange);border-bottom-color:var(--orange)}
+      .hu-row-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: center;
+        justify-content: flex-start;
+        margin-top: 1.4rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .hu-period-btns {
+        display: flex;
+        gap: 0.2rem;
+      }
+      .hu-period-btns + .hu-period-btns {
+        border-left: 1px solid var(--border2);
+        padding-left: 1.5rem;
+      }
+      .hu-period-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.65rem 1.1rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        margin-bottom: -1px;
+      }
+      .hu-period-btn:hover {
+        color: var(--text);
+      }
+      .hu-period-btn.on {
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
 
-.hu-wrap{padding:.5rem 0 2rem;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap}
-.hu-flower-box{position:relative;width:100%;max-width:640px;flex:1 1 480px;aspect-ratio:1/1}
-.hu-flower-box svg{width:100%;height:100%;overflow:visible}
-.hu-wordmark{font-size:1.15rem;align-self:flex-end;margin-bottom:3.25rem}
+      .hu-wrap {
+        padding: 0.5rem 0 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2.5rem;
+        flex-wrap: wrap;
+      }
+      .hu-flower-box {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        flex: 1 1 480px;
+        aspect-ratio: 1/1;
+      }
+      .hu-flower-box svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .hu-wordmark {
+        font-size: 1.15rem;
+        align-self: flex-end;
+        margin-bottom: 3.25rem;
+      }
 
-/* Idéntico a la flor "hero" del landing (landing.html .ll-arcs/.ll-flower) */
-.ll-arcs   { animation: ll-spin-arcs   40s linear infinite;         transform-origin: 200px 200px; }
-.ll-flower { animation: ll-spin-flower 24s linear infinite reverse; transform-origin: 200px 200px; }
-.ll-pulse-g{ animation: ll-pulse       3s ease-in-out infinite;     transform-origin: 200px 200px; }
-@keyframes ll-spin-arcs   { to { transform: rotate(360deg); } }
-@keyframes ll-spin-flower { to { transform: rotate(360deg); } }
-@keyframes ll-pulse { 0%,100% { opacity:.88; transform:scale(1); } 50% { opacity:1; transform:scale(1.12); } }
+      /* Idéntico a la flor "hero" del landing (landing.html .ll-arcs/.ll-flower) */
+      .ll-arcs {
+        animation: ll-spin-arcs 40s linear infinite;
+        transform-origin: 200px 200px;
+      }
+      .ll-flower {
+        animation: ll-spin-flower 24s linear infinite reverse;
+        transform-origin: 200px 200px;
+      }
+      .ll-pulse-g {
+        animation: ll-pulse 3s ease-in-out infinite;
+        transform-origin: 200px 200px;
+      }
+      @keyframes ll-spin-arcs {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes ll-spin-flower {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes ll-pulse {
+        0%,
+        100% {
+          opacity: 0.88;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.12);
+        }
+      }
 
-.hu-petal{cursor:pointer;transition:filter .2s ease}
-.hu-petal:hover, .hu-petal.active{filter:brightness(1.45)}
-.hu-petal-txt{pointer-events:none;font-family:'Oswald',sans-serif;text-anchor:middle;dominant-baseline:middle;paint-order:stroke fill;stroke:#04080F;fill:#fff}
+      .hu-petal {
+        cursor: pointer;
+        transition: filter 0.2s ease;
+      }
+      .hu-petal:hover,
+      .hu-petal.active {
+        filter: brightness(1.45);
+      }
+      .hu-petal-txt {
+        pointer-events: none;
+        font-family: 'Oswald', sans-serif;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        paint-order: stroke fill;
+        stroke: #04080f;
+        fill: #fff;
+      }
 
-.hu-empty{text-align:center;padding:3rem 1rem;color:var(--dim)}
+      .hu-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--dim);
+      }
 
-/* ── Año en Review (fusionado desde year_in_review.html) ── */
-.hu-sec-divider{border-top:1px solid var(--border2);margin:1rem 0 0}
-.hu-sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text);padding:2rem 0 1rem;text-align:center}
-.yr-year-select{display:flex;gap:.5rem;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap}
-.yr-year-btn{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:.65rem 1.1rem;cursor:pointer;white-space:nowrap;transition:color .18s,border-color .18s;margin-bottom:-1px}
-.yr-year-btn:hover{color:var(--text)}
-.yr-year-btn.on{color:var(--orange);border-bottom-color:var(--orange)}
+      /* ── Año en Review (fusionado desde year_in_review.html) ── */
+      .hu-sec-divider {
+        border-top: 1px solid var(--border2);
+        margin: 1rem 0 0;
+      }
+      .hu-sec-h {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text);
+        padding: 2rem 0 1rem;
+        text-align: center;
+      }
+      .yr-year-select {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .yr-year-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.65rem 1.1rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        margin-bottom: -1px;
+      }
+      .yr-year-btn:hover {
+        color: var(--text);
+      }
+      .yr-year-btn.on {
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
 
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem}
-.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.6rem 1rem;text-align:center;position:relative;overflow:hidden;transition:border-color var(--ease)}
-.stat-card:hover{border-color:var(--orange)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--orange))}
-.stat-num{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:700;color:var(--text);line-height:1}
-.stat-unit{font-size:.68rem;color:var(--muted);margin-left:.15rem}
-.stat-label{font-size:.62rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-top:.4rem}
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 1.6rem 1rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: border-color var(--ease);
+      }
+      .stat-card:hover {
+        border-color: var(--orange);
+      }
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--ac, var(--orange));
+      }
+      .stat-num {
+        font-family: 'Oswald', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1;
+      }
+      .stat-unit {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-left: 0.15rem;
+      }
+      .stat-label {
+        font-size: 0.62rem;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-top: 0.4rem;
+      }
 
-.yr-panel{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:1.25rem}
-.yr-panel-title{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:1rem}
+      .yr-panel {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 1.2rem 1.4rem;
+        margin-bottom: 1.25rem;
+      }
+      .yr-panel-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--muted);
+        margin-bottom: 1rem;
+      }
 
-.sport-row{display:flex;align-items:center;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border2)}
-.sport-row:last-child{border:none}
-.sport-icon{font-size:1.25rem;width:2rem;text-align:center;flex-shrink:0}
-.sport-info{flex:1;min-width:0}
-.sport-name{font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.sport-bar-bg{height:6px;background:var(--border2);border-radius:3px;margin-top:.32rem;overflow:hidden}
-.sport-bar-f{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.sport-stat{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--muted);flex-shrink:0;text-align:right;min-width:56px}
+      .sport-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--border2);
+      }
+      .sport-row:last-child {
+        border: none;
+      }
+      .sport-icon {
+        font-size: 1.25rem;
+        width: 2rem;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .sport-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .sport-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .sport-bar-bg {
+        height: 6px;
+        background: var(--border2);
+        border-radius: 3px;
+        margin-top: 0.32rem;
+        overflow: hidden;
+      }
+      .sport-bar-f {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .sport-stat {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.85rem;
+        color: var(--muted);
+        flex-shrink: 0;
+        text-align: right;
+        min-width: 56px;
+      }
 
-.month-chart{display:flex;align-items:flex-end;gap:3px;height:160px;padding:0 .5rem}
-.month-bar-wrap{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;position:relative}
-.month-bar{width:100%;border-radius:2px 2px 0 0;transition:height .4s cubic-bezier(.4,0,.2,1),filter .15s;background:var(--orange);min-height:2px}
-.month-bar-wrap:hover .month-bar{filter:brightness(1.25)}
-.month-label{font-size:.55rem;color:var(--dim);text-align:center}
-.month-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-2px);margin-bottom:4px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;color:var(--text);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5}
-.month-bar-wrap:hover .month-tip{opacity:1;transform:translateX(-50%) translateY(-6px)}
+      .month-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 160px;
+        padding: 0 0.5rem;
+      }
+      .month-bar-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 4px;
+        height: 100%;
+        position: relative;
+      }
+      .month-bar {
+        width: 100%;
+        border-radius: 2px 2px 0 0;
+        transition:
+          height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+          filter 0.15s;
+        background: var(--orange);
+        min-height: 2px;
+      }
+      .month-bar-wrap:hover .month-bar {
+        filter: brightness(1.25);
+      }
+      .month-label {
+        font-size: 0.55rem;
+        color: var(--dim);
+        text-align: center;
+      }
+      .month-tip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-2px);
+        margin-bottom: 4px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        z-index: 5;
+      }
+      .month-bar-wrap:hover .month-tip {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-6px);
+      }
 
-.highlight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.25rem}
-@media(max-width:820px){.highlight-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:480px){.highlight-grid{grid-template-columns:1fr}}
-.hl-card{background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--border2);border-radius:var(--radius);padding:1.6rem 1.8rem}
-.hl-emoji{font-size:2.3rem;margin-bottom:.7rem;display:block}
-.hl-title{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
-.hl-val{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--text);line-height:1}
-.hl-sub{font-size:.74rem;color:var(--muted);margin-top:.4rem}
+      .highlight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+      @media (max-width: 820px) {
+        .highlight-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 480px) {
+        .highlight-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hl-card {
+        background: linear-gradient(
+          135deg,
+          var(--surface) 0%,
+          var(--surface2) 100%
+        );
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 1.6rem 1.8rem;
+      }
+      .hl-emoji {
+        font-size: 2.3rem;
+        margin-bottom: 0.7rem;
+        display: block;
+      }
+      .hl-title {
+        font-size: 0.68rem;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
+      }
+      .hl-val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--text);
+        line-height: 1;
+      }
+      .hl-sub {
+        font-size: 0.74rem;
+        color: var(--muted);
+        margin-top: 0.4rem;
+      }
 
-.ctl-row{display:flex;align-items:center;gap:1.5rem;justify-content:center;flex-wrap:wrap;padding:.5rem}
-.ctl-box{text-align:center;padding:1.6rem 1.8rem;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border2)}
-.ctl-lbl{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
-.ctl-num{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1}
-.ctl-arrow{font-size:2.1rem;color:var(--muted)}
+      .ctl-row {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 0.5rem;
+      }
+      .ctl-box {
+        text-align: center;
+        padding: 1.6rem 1.8rem;
+        border-radius: var(--radius);
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+      }
+      .ctl-lbl {
+        font-size: 0.68rem;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
+      }
+      .ctl-num {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .ctl-arrow {
+        font-size: 2.1rem;
+        color: var(--muted);
+      }
 
-.share-section{text-align:center;padding:1.5rem 0 3rem}
-.share-btn{display:inline-flex;align-items:center;gap:.6rem;background:var(--orange);color:#fff;border:none;border-radius:24px;padding:.7rem 1.8rem;font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:transform var(--ease),box-shadow var(--ease)}
-.share-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,101,53,.35)}
+      .share-section {
+        text-align: center;
+        padding: 1.5rem 0 3rem;
+      }
+      .share-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--orange);
+        color: #fff;
+        border: none;
+        border-radius: 24px;
+        padding: 0.7rem 1.8rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          transform var(--ease),
+          box-shadow var(--ease);
+      }
+      .share-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(255, 101, 53, 0.35);
+      }
 
-.yr-loading{text-align:center;padding:3rem 1rem;color:var(--dim);font-size:.85rem}
-.yr-spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:yr-spin .8s linear infinite;margin:0 auto 1rem}
-@keyframes yr-spin{to{transform:rotate(360deg)}}
+      .yr-loading {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--dim);
+        font-size: 0.85rem;
+      }
+      .yr-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border2);
+        border-top-color: var(--orange);
+        border-radius: 50%;
+        animation: yr-spin 0.8s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      @keyframes yr-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-@media print{
-  body>*:not(#yr-share-card){display:none!important}
-  #yr-share-card{display:block!important;position:static!important}
-}
-</style>
-<link rel="stylesheet" href="nav.css?v=3">
-</head>
-<body>
+      @media print {
+        body > *:not(#yr-share-card) {
+          display: none !important;
+        }
+        #yr-share-card {
+          display: block !important;
+          position: static !important;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="nav.css?v=3" />
+  </head>
+  <body>
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
 
-<aside id="sidebar"></aside>
-<header class="sb-topbar"></header>
-<div class="sb-overlay" id="sb-overlay"></div>
-
-<div class="ph">
-  <div class="c">
-    <div class="hu-row-btns">
-      <div class="hu-period-btns" id="hu-mode-btns">
-        <button class="hu-period-btn on" data-mode="days"><span data-i18n="dba_days">Días</span></button>
-        <button class="hu-period-btn" data-mode="km">Km</button>
+    <div class="ph">
+      <div class="c">
+        <div class="hu-row-btns">
+          <div class="hu-period-btns" id="hu-mode-btns">
+            <button class="hu-period-btn on" data-mode="days">
+              <span data-i18n="dba_days">Días</span>
+            </button>
+            <button class="hu-period-btn" data-mode="km">Km</button>
+          </div>
+          <div class="hu-period-btns" id="hu-period-btns">
+            <button class="hu-period-btn" data-period="week">
+              <span data-i18n="hu_week">Semana</span>
+            </button>
+            <button class="hu-period-btn" data-period="month">
+              <span data-i18n="hu_month">Mes</span>
+            </button>
+            <button class="hu-period-btn" data-period="year">
+              <span data-i18n="hu_year_btn">Año</span>
+            </button>
+            <button class="hu-period-btn on" data-period="all">
+              <span data-i18n="hu_all">Todo</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="hu-period-btns" id="hu-period-btns">
-        <button class="hu-period-btn" data-period="week"><span data-i18n="hu_week">Semana</span></button>
-        <button class="hu-period-btn" data-period="month"><span data-i18n="hu_month">Mes</span></button>
-        <button class="hu-period-btn" data-period="year"><span data-i18n="hu_year_btn">Año</span></button>
-        <button class="hu-period-btn on" data-period="all"><span data-i18n="hu_all">Todo</span></button>
+    </div>
+
+    <div class="c">
+      <div class="hu-wrap" id="hu-wrap">
+        <div class="hu-flower-box" style="position: relative">
+          <svg
+            id="hu-svg"
+            viewBox="0 0 400 400"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          ></svg>
+          <div
+            data-lx-info="huella_flor"
+            style="position: absolute; top: 0; right: 0"
+          ></div>
+        </div>
+        <span class="sb-logo hu-wordmark" aria-hidden="true"
+          >Lab<span>X</span></span
+        >
+      </div>
+
+      <!-- ── Año en Review (fusionado desde year_in_review.html) ── -->
+      <div class="hu-sec-divider"></div>
+      <div class="hu-sec-h">
+        <span data-i18n="hu_year_review">Año en Review</span>
+      </div>
+      <div class="yr-year-select" id="yr-year-btns"></div>
+
+      <div id="yr-loading" class="yr-loading">
+        <div class="yr-spinner"></div>
+        <span data-i18n="hu_building">Construyendo tu resumen&#8230;</span>
+      </div>
+
+      <div id="yr-content" style="display: none">
+        <div class="stat-grid" id="yr-stat-grid"></div>
+
+        <div class="yr-panel">
+          <div class="yr-panel-title">
+            <span data-i18n="hu_km_sport">Kilómetros por deporte</span>
+          </div>
+          <div id="yr-sport-breakdown"></div>
+        </div>
+
+        <div class="yr-panel">
+          <div class="yr-panel-title">
+            <span data-i18n="hu_tss_month">TSS mensual</span>
+          </div>
+          <div class="month-chart" id="yr-month-chart"></div>
+        </div>
+
+        <div
+          class="yr-panel-title"
+          style="text-align: center; margin-bottom: 0.75rem"
+        >
+          <span data-i18n="hu_moments">Momentos del año</span>
+        </div>
+        <div class="highlight-grid" id="yr-highlights"></div>
+
+        <div class="yr-panel">
+          <div class="yr-panel-title">
+            <span data-i18n="hu_fitness_yoy"
+              >Fitness (CTL) — inicio vs fin de año</span
+            >
+          </div>
+          <div class="ctl-row" id="yr-ctl-row"></div>
+        </div>
+
+        <div class="share-section">
+          <button class="share-btn" onclick="shareYearCard()">
+            <span data-i18n="hu_share">&#128247; Compartir mi año</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="yr-empty"
+        style="
+          display: none;
+          text-align: center;
+          padding: 3rem 1rem 4rem;
+          color: var(--dim);
+        "
+      >
+        <div style="font-size: 2.5rem; margin-bottom: 1rem">&#127939;</div>
+        <div
+          style="
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 0.5rem;
+          "
+        >
+          <span data-i18n="hu_no_activity">Sin actividades este año</span>
+        </div>
+        <div style="font-size: 0.8rem">
+          <span data-i18n="hu_sync_hint"
+            >Sincroniza Garmin desde el dashboard para ver tu resumen</span
+          >
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="c">
-  <div class="hu-wrap" id="hu-wrap">
-    <div class="hu-flower-box" style="position:relative">
-      <svg id="hu-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div data-lx-info="huella_flor" style="position:absolute;top:0;right:0"></div>
+    <!-- Share card (impresión/descarga) -->
+    <div
+      id="yr-share-card"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          #0b0f1a 0%,
+          #1a1035 50%,
+          #0b1a24 100%
+        );
+        z-index: 9999;
+        overflow: auto;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      "
+    >
+      <div
+        style="
+          background: linear-gradient(135deg, #131929, #1a2235);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 20px;
+          padding: 2rem;
+          max-width: 400px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+        "
+      >
+        <div
+          style="
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
+            color: var(--orange);
+            margin-bottom: 0.75rem;
+          "
+        >
+          LABX
+        </div>
+        <div
+          style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+          "
+          id="sc-athlete"
+        ></div>
+        <div
+          style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--orange);
+            line-height: 1;
+          "
+          id="sc-year"
+        ></div>
+        <div
+          style="
+            margin: 1.5rem 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+          "
+          id="sc-stats"
+        ></div>
+        <div style="font-size: 0.65rem; color: var(--dim); margin-top: 1rem">
+          <span data-i18n="hu_footer_tag"
+            >labxperformanceapp.com · Tu plataforma de triatlón</span
+          >
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+          flex-wrap: wrap;
+          justify-content: center;
+        "
+      >
+        <button
+          onclick="downloadShareCard()"
+          style="
+            background: var(--orange);
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 0.6rem 1.4rem;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+          "
+        >
+          <span data-i18n="hu_download">&#8615; Descargar</span>
+        </button>
+        <button
+          onclick="closeShareCard()"
+          style="
+            background: none;
+            border: 1px solid var(--border2);
+            color: var(--muted);
+            border-radius: 20px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+          "
+        >
+          <span data-i18n="hu_close">&#10005; Cerrar</span>
+        </button>
+      </div>
     </div>
-    <span class="sb-logo hu-wordmark" aria-hidden="true">Lab<span>X</span></span>
-  </div>
 
-  <!-- ── Año en Review (fusionado desde year_in_review.html) ── -->
-  <div class="hu-sec-divider"></div>
-  <div class="hu-sec-h"><span data-i18n="hu_year_review">Año en Review</span></div>
-  <div class="yr-year-select" id="yr-year-btns"></div>
+    <script src="dashboard-alt-data.js"></script>
+    <script>
+      function _t(k, fb) {
+        var v = window.i18n ? window.i18n.t(k) : null;
+        return v && v !== k ? v : fb;
+      }
+      function _hLoc() {
+        var l = (window.i18n && window.i18n.lang) || 'es';
+        return l === 'pt' ? 'pt-BR' : l === 'en' ? 'en-US' : 'es-CL';
+      }
+      (function () {
+        'use strict';
 
-  <div id="yr-loading" class="yr-loading">
-    <div class="yr-spinner"></div>
-    <span data-i18n="hu_building">Construyendo tu resumen&#8230;</span>
-  </div>
+        // Las posiciones son EXACTAMENTE las de los pétalos internos de la flor
+        // real del landing (landing.html, grupo .ll-flower, offset 52 desde el
+        // centro) — no se inventa geometría nueva, solo se les da color propio
+        // por categoría y se las hace crecer/brillar según la data real.
+        //
+        // Modo "Días": usa los 6 pétalos internos completos.
+        // Modo "Km": solo hay 3 disciplinas con distancia real (natación/ciclismo/
+        // carrera) — se usan 3 de los 6 slots, espaciados 120° entre sí (índices
+        // 0/2/4 del hexágono original) para que el ramo se vea equilibrado con
+        // menos pétalos activos, en vez de dejar 3 huecos seguidos.
+        var MODES = {
+          days: {
+            centerKey: 'days_connected',
+            get centerLabel() {
+              return _t('hu_days_connected', 'DÍAS CONECTADO');
+            },
+            fmt: function (v) {
+              return Math.round(v).toLocaleString(_hLoc());
+            },
+            cats: [
+              {
+                key: 'activities',
+                name: 'Actividades',
+                color: '#FF6535',
+                x: 252,
+                y: 200,
+              },
+              {
+                key: 'training_load_days',
+                name: 'Carga (PMC)',
+                color: '#0EA5E9',
+                x: 226,
+                y: 155,
+              },
+              {
+                key: 'vo2_days',
+                name: 'VO2 Max',
+                color: '#22D3EE',
+                x: 174,
+                y: 155,
+              },
+              {
+                key: 'body_battery_days',
+                name: 'Body Battery',
+                color: '#10B981',
+                x: 148,
+                y: 200,
+              },
+              {
+                key: 'sleep_nights',
+                name: 'Sueño',
+                color: '#A855F7',
+                x: 174,
+                y: 245,
+              },
+              {
+                key: 'hrv_days',
+                name: 'HRV',
+                color: '#F0A500',
+                x: 226,
+                y: 245,
+              },
+            ],
+          },
+          km: {
+            centerKey: 'total_km',
+            get centerLabel() {
+              return _t('hu_km_total_center', 'KM TOTAL');
+            },
+            fmt: function (v) {
+              return (
+                v.toLocaleString(_hLoc(), { maximumFractionDigits: 1 }) + ' km'
+              );
+            },
+            cats: [
+              {
+                key: 'swim_km',
+                name: 'Natación',
+                color: '#22D3EE',
+                x: 252,
+                y: 200,
+              }, // derecha
+              {
+                key: 'bike_km',
+                name: 'Ciclismo',
+                color: '#FF6535',
+                x: 174,
+                y: 155,
+              }, // arriba-izquierda
+              {
+                key: 'run_km',
+                name: 'Carrera',
+                color: '#10B981',
+                x: 174,
+                y: 245,
+              }, // abajo-izquierda
+            ],
+          },
+        };
 
-  <div id="yr-content" style="display:none">
-    <div class="stat-grid" id="yr-stat-grid"></div>
+        function clamp(n, lo, hi) {
+          return Math.max(lo, Math.min(hi, n));
+        }
 
-    <div class="yr-panel">
-      <div class="yr-panel-title"><span data-i18n="hu_km_sport">Kilómetros por deporte</span></div>
-      <div id="yr-sport-breakdown"></div>
-    </div>
+        // Escala ÚNICA y compartida entre las 7 pelotas (6 categorías + centro):
+        // el tamaño de cada una es proporcional a su valor real comparado con el
+        // MÁXIMO real entre las 7 — dos números casi iguales (2884 vs 2885) dan
+        // pelotas casi iguales; números claramente distintos (2885 vs 4172) dan
+        // pelotas claramente distintas. Raíz cuadrada porque el tamaño que
+        // percibimos en un círculo es su ÁREA (∝ radio²), no el radio.
+        var MIN_R = 30,
+          MAX_R = 74; // alrededor del r=52 original de la flor
 
-    <div class="yr-panel">
-      <div class="yr-panel-title"><span data-i18n="hu_tss_month">TSS mensual</span></div>
-      <div class="month-chart" id="yr-month-chart"></div>
-    </div>
+        function render(data, mode) {
+          var cx = 200,
+            cy = 200;
+          var svg = document.getElementById('hu-svg');
+          var modeCfg = MODES[mode] || MODES.days;
+          var CATS = modeCfg.cats;
 
-    <div class="yr-panel-title" style="text-align:center;margin-bottom:.75rem"><span data-i18n="hu_moments">Momentos del año</span></div>
-    <div class="highlight-grid" id="yr-highlights"></div>
+          var centerValue = data[modeCfg.centerKey] || 0;
+          var allValues = CATS.map(function (c) {
+            return data[c.key] || 0;
+          }).concat([centerValue]);
+          var maxValue = Math.max.apply(null, allValues) || 1;
+          function pctOf(value) {
+            return Math.sqrt(Math.max(0, value) / maxValue);
+          }
 
-    <div class="yr-panel">
-      <div class="yr-panel-title"><span data-i18n="hu_fitness_yoy">Fitness (CTL) — inicio vs fin de año</span></div>
-      <div class="ctl-row" id="yr-ctl-row"></div>
-    </div>
+          var dataDefs = '';
+          var dataPetals = '';
 
-    <div class="share-section">
-      <button class="share-btn" onclick="shareYearCard()"><span data-i18n="hu_share">&#128247; Compartir mi año</span></button>
-    </div>
-  </div>
+          CATS.forEach(function (cat, i) {
+            var count = data[cat.key] || 0;
+            var pct = pctOf(count);
+            var radius = MIN_R + pct * (MAX_R - MIN_R);
+            var fillOp = (0.05 + pct * 0.32).toFixed(3);
+            var strokeOp = (0.18 + pct * 0.55).toFixed(3);
+            var gid = 'hu-g-' + i;
 
-  <div id="yr-empty" style="display:none;text-align:center;padding:3rem 1rem 4rem;color:var(--dim)">
-    <div style="font-size:2.5rem;margin-bottom:1rem">&#127939;</div>
-    <div style="font-size:1rem;font-weight:600;color:var(--muted);margin-bottom:.5rem"><span data-i18n="hu_no_activity">Sin actividades este año</span></div>
-    <div style="font-size:.8rem"><span data-i18n="hu_sync_hint">Sincroniza Garmin desde el dashboard para ver tu resumen</span></div>
-  </div>
-</div>
+            dataDefs +=
+              '<radialGradient id="' +
+              gid +
+              '" cx="50%" cy="50%" r="50%">' +
+              '<stop offset="0%" stop-color="' +
+              cat.color +
+              '" stop-opacity="' +
+              fillOp +
+              '"/>' +
+              '<stop offset="100%" stop-color="' +
+              cat.color +
+              '" stop-opacity="0"/>' +
+              '</radialGradient>';
 
-<!-- Share card (impresión/descarga) -->
-<div id="yr-share-card" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0B0F1A 0%,#1A1035 50%,#0B1A24 100%);z-index:9999;overflow:auto;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem">
-  <div style="background:linear-gradient(135deg,#131929,#1A2235);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6)">
-    <div style="font-family:'Oswald',sans-serif;font-size:.9rem;letter-spacing:.2em;color:var(--orange);margin-bottom:.75rem">LABX</div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;text-transform:uppercase;margin-bottom:.3rem" id="sc-athlete"></div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:3.5rem;font-weight:900;color:var(--orange);line-height:1" id="sc-year"></div>
-    <div style="margin:1.5rem 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem" id="sc-stats"></div>
-    <div style="font-size:.65rem;color:var(--dim);margin-top:1rem"><span data-i18n="hu_footer_tag">labxperformanceapp.com · Tu plataforma de triatlón</span></div>
-  </div>
-  <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;justify-content:center">
-    <button onclick="downloadShareCard()" style="background:var(--orange);color:#fff;border:none;border-radius:20px;padding:.6rem 1.4rem;font-family:'Oswald',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.1em;cursor:pointer"><span data-i18n="hu_download">&#8615; Descargar</span></button>
-    <button onclick="closeShareCard()" style="background:none;border:1px solid var(--border2);color:var(--muted);border-radius:20px;padding:.6rem 1.2rem;font-size:.8rem;cursor:pointer"><span data-i18n="hu_close">&#10005; Cerrar</span></button>
-  </div>
-</div>
+            var nameFs = clamp(radius * 0.22, 7, 13);
+            var numFs = clamp(radius * 0.34, 9, 19);
+            var nameY = cat.y - radius * 0.28;
+            var numY = cat.y + radius * 0.16;
 
-<script src="dashboard-alt-data.js"></script>
-<script>
-function _t(k,fb){ var v=window.i18n?window.i18n.t(k):null; return (v&&v!==k)?v:fb; }
-function _hLoc(){ var l=(window.i18n&&window.i18n.lang)||'es'; return l==='pt'?'pt-BR':l==='en'?'en-US':'es-CL'; }
-(function () {
-  'use strict';
+            // El grupo interno contrarrota exactamente lo que gira .ll-flower
+            // (24s, reverse) para que el texto de cada pétalo se mantenga
+            // siempre derecho mientras el ramo entero gira, igual que el logo.
+            dataPetals +=
+              '<g class="hu-petal-group" data-idx="' +
+              i +
+              '">' +
+              '<animateTransform attributeName="transform" type="rotate" ' +
+              'from="0 ' +
+              cat.x +
+              ' ' +
+              cat.y +
+              '" to="360 ' +
+              cat.x +
+              ' ' +
+              cat.y +
+              '" ' +
+              'dur="24s" repeatCount="indefinite"/>' +
+              '<circle class="hu-petal" data-idx="' +
+              i +
+              '" cx="' +
+              cat.x +
+              '" cy="' +
+              cat.y +
+              '" r="' +
+              radius.toFixed(1) +
+              '" ' +
+              'fill="url(#' +
+              gid +
+              ')" stroke="' +
+              cat.color +
+              '" stroke-width="1.3" stroke-opacity="' +
+              strokeOp +
+              '"/>' +
+              '<text class="hu-petal-txt" x="' +
+              cat.x +
+              '" y="' +
+              nameY.toFixed(1) +
+              '" font-size="' +
+              nameFs.toFixed(1) +
+              '" font-weight="600" stroke-width="' +
+              (nameFs * 0.12).toFixed(2) +
+              '">' +
+              cat.name +
+              '</text>' +
+              '<text class="hu-petal-txt" x="' +
+              cat.x +
+              '" y="' +
+              numY.toFixed(1) +
+              '" font-size="' +
+              numFs.toFixed(1) +
+              '" font-weight="800" stroke-width="' +
+              (numFs * 0.12).toFixed(2) +
+              '">' +
+              modeCfg.fmt(count) +
+              '</text>' +
+              '</g>';
+          });
 
-  // Las posiciones son EXACTAMENTE las de los pétalos internos de la flor
-  // real del landing (landing.html, grupo .ll-flower, offset 52 desde el
-  // centro) — no se inventa geometría nueva, solo se les da color propio
-  // por categoría y se las hace crecer/brillar según la data real.
-  //
-  // Modo "Días": usa los 6 pétalos internos completos.
-  // Modo "Km": solo hay 3 disciplinas con distancia real (natación/ciclismo/
-  // carrera) — se usan 3 de los 6 slots, espaciados 120° entre sí (índices
-  // 0/2/4 del hexágono original) para que el ramo se vea equilibrado con
-  // menos pétalos activos, en vez de dejar 3 huecos seguidos.
-  var MODES = {
-    days: {
-      centerKey: 'days_connected',
-      get centerLabel(){ return _t('hu_days_connected','DÍAS CONECTADO'); },
-      fmt: function (v) { return Math.round(v).toLocaleString(_hLoc()); },
-      cats: [
-        { key: 'activities',         name: 'Actividades',  color: '#FF6535', x: 252, y: 200 },
-        { key: 'training_load_days', name: 'Carga (PMC)',  color: '#0EA5E9', x: 226, y: 155 },
-        { key: 'vo2_days',           name: 'VO2 Max',       color: '#22D3EE', x: 174, y: 155 },
-        { key: 'body_battery_days',  name: 'Body Battery',  color: '#10B981', x: 148, y: 200 },
-        { key: 'sleep_nights',       name: 'Sueño',         color: '#A855F7', x: 174, y: 245 },
-        { key: 'hrv_days',           name: 'HRV',           color: '#F0A500', x: 226, y: 245 },
-      ],
-    },
-    km: {
-      centerKey: 'total_km',
-      get centerLabel(){ return _t('hu_km_total_center','KM TOTAL'); },
-      fmt: function (v) { return v.toLocaleString(_hLoc(), { maximumFractionDigits: 1 }) + ' km'; },
-      cats: [
-        { key: 'swim_km', name: 'Natación', color: '#22D3EE', x: 252, y: 200 }, // derecha
-        { key: 'bike_km', name: 'Ciclismo', color: '#FF6535', x: 174, y: 155 }, // arriba-izquierda
-        { key: 'run_km',  name: 'Carrera',  color: '#10B981', x: 174, y: 245 }, // abajo-izquierda
-      ],
-    },
-  };
+          // Centro: misma escala que los pétalos (si el valor del centro es
+          // parecido al de una categoría llena, el tamaño también debe serlo).
+          var centerPct = pctOf(centerValue);
+          var centerR = 24 + centerPct * 14; // 24 → 38, alrededor del r=24/38 original
+          var centerNumFs = clamp(
+            centerValue >= 1000 ? 15 + centerPct * 10 : 20 + centerPct * 14,
+            15,
+            34,
+          );
 
-  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+          // ── SVG idéntico a landing.html (.ll-arcs + .ll-flower), con los 6
+          //    pétalos internos reemplazados por los pétalos de datos de arriba.
+          svg.innerHTML =
+            '<defs>' +
+            '<linearGradient id="hu-sunset" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0A500"/><stop offset="50%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></linearGradient>' +
+            '<linearGradient id="hu-ocean" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/></linearGradient>' +
+            '<radialGradient id="hu-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".55"/><stop offset="60%" stop-color="#F0A500" stop-opacity=".15"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient>' +
+            '<filter id="hu-gf" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+            '<filter id="hu-gs" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+            dataDefs +
+            '</defs>' +
+            '<g class="ll-arcs">' +
+            '<circle cx="200" cy="200" r="188" stroke="rgba(255,101,53,.05)" stroke-width="1"/>' +
+            '<circle cx="200" cy="200" r="176" stroke="rgba(240,165,0,.04)" stroke-width="1" stroke-dasharray="5 11"/>' +
+            '<circle cx="200" cy="200" r="162" stroke="rgba(14,165,233,.05)" stroke-width="1"/>' +
+            '<circle cx="200" cy="200" r="176" stroke="url(#hu-ocean)" stroke-width="4" stroke-dasharray="168 952" stroke-linecap="round" transform="rotate(-90 200 200)" filter="url(#hu-gf)"/>' +
+            '<circle cx="200" cy="200" r="161" stroke="url(#hu-sunset)" stroke-width="5" stroke-dasharray="248 826" stroke-linecap="round" transform="rotate(28 200 200)" filter="url(#hu-gs)"/>' +
+            '<circle cx="200" cy="200" r="146" stroke="#F0A500" stroke-width="2.5" stroke-dasharray="92 838" stroke-linecap="round" transform="rotate(158 200 200)" stroke-opacity=".5"/>' +
+            '</g>' +
+            '<g>' +
+            // Rotación del ramo entero vía SMIL (no CSS): visualmente idéntica
+            // a la animación ll-spin-flower del landing (24s, sentido inverso),
+            // pero en el MISMO reloj de animación que la contra-rotación de
+            // cada pétalo — mezclar CSS+SMIL desincroniza sus tiempos de inicio
+            // y el texto queda inclinado.
+            '<animateTransform attributeName="transform" type="rotate" from="0 200 200" to="-360 200 200" dur="24s" repeatCount="indefinite"/>' +
+            // Pétalo central decorativo (idéntico al original, se funde con el sol)
+            '<circle cx="200" cy="200" r="52" stroke="rgba(255,101,53,.25)" stroke-width="1.2" fill="rgba(255,101,53,.025)"/>' +
+            // 6 pétalos internos → ahora son los pétalos de DATOS
+            dataPetals +
+            // 6 pétalos externos decorativos (idénticos al original, sin cambios)
+            '<circle cx="304" cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
+            '<circle cx="278" cy="110" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
+            '<circle cx="122" cy="110" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
+            '<circle cx="96"  cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
+            '<circle cx="122" cy="290" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
+            '<circle cx="278" cy="290" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
+            '</g>' +
+            '<circle cx="200" cy="200" r="38" fill="url(#hu-glow)"/>' +
+            '<circle cx="200" cy="200" r="' +
+            centerR.toFixed(1) +
+            '" fill="rgba(255,101,53,.14)" stroke="rgba(255,101,53,.4)" stroke-width="1.2"/>' +
+            '<g class="ll-pulse-g">' +
+            '<text x="200" y="' +
+            (200 + centerNumFs * 0.32).toFixed(1) +
+            '" text-anchor="middle" font-family="\'Barlow Condensed\',sans-serif" font-weight="900" font-size="' +
+            centerNumFs.toFixed(1) +
+            '" fill="#fff" stroke="#04080F" stroke-width="2" paint-order="stroke fill" style="filter:drop-shadow(0 0 10px rgba(255,101,53,.8))">' +
+            (data[modeCfg.centerKey] !== null &&
+            data[modeCfg.centerKey] !== undefined
+              ? modeCfg.fmt(centerValue)
+              : '—') +
+            '</text>' +
+            '<text x="200" y="228" text-anchor="middle" font-family="Oswald,sans-serif" font-size="7" font-weight="700" letter-spacing=".08em" fill="rgba(240,249,255,.7)">' +
+            modeCfg.centerLabel +
+            '</text>' +
+            '</g>';
 
-  // Escala ÚNICA y compartida entre las 7 pelotas (6 categorías + centro):
-  // el tamaño de cada una es proporcional a su valor real comparado con el
-  // MÁXIMO real entre las 7 — dos números casi iguales (2884 vs 2885) dan
-  // pelotas casi iguales; números claramente distintos (2885 vs 4172) dan
-  // pelotas claramente distintas. Raíz cuadrada porque el tamaño que
-  // percibimos en un círculo es su ÁREA (∝ radio²), no el radio.
-  var MIN_R = 30, MAX_R = 74; // alrededor del r=52 original de la flor
+          // Interacción: hover resalta el pétalo bajo el mouse
+          svg.querySelectorAll('.hu-petal-group').forEach(function (el) {
+            el.addEventListener('mouseenter', function () {
+              svg.querySelectorAll('.hu-petal').forEach(function (p) {
+                p.classList.toggle(
+                  'active',
+                  p === el.querySelector('.hu-petal'),
+                );
+              });
+            });
+          });
+        }
 
-  function render(data, mode) {
-    var cx = 200, cy = 200;
-    var svg = document.getElementById('hu-svg');
-    var modeCfg = MODES[mode] || MODES.days;
-    var CATS = modeCfg.cats;
-
-    var centerValue = data[modeCfg.centerKey] || 0;
-    var allValues = CATS.map(function (c) { return data[c.key] || 0; }).concat([centerValue]);
-    var maxValue = Math.max.apply(null, allValues) || 1;
-    function pctOf(value) { return Math.sqrt(Math.max(0, value) / maxValue); }
-
-    var dataDefs = '';
-    var dataPetals = '';
-
-    CATS.forEach(function (cat, i) {
-      var count = data[cat.key] || 0;
-      var pct = pctOf(count);
-      var radius = MIN_R + pct * (MAX_R - MIN_R);
-      var fillOp = (0.05 + pct * 0.32).toFixed(3);
-      var strokeOp = (0.18 + pct * 0.55).toFixed(3);
-      var gid = 'hu-g-' + i;
-
-      dataDefs +=
-        '<radialGradient id="' + gid + '" cx="50%" cy="50%" r="50%">' +
-        '<stop offset="0%" stop-color="' + cat.color + '" stop-opacity="' + fillOp + '"/>' +
-        '<stop offset="100%" stop-color="' + cat.color + '" stop-opacity="0"/>' +
-        '</radialGradient>';
-
-      var nameFs = clamp(radius * 0.22, 7, 13);
-      var numFs  = clamp(radius * 0.34, 9, 19);
-      var nameY  = cat.y - radius * 0.28;
-      var numY   = cat.y + radius * 0.16;
-
-      // El grupo interno contrarrota exactamente lo que gira .ll-flower
-      // (24s, reverse) para que el texto de cada pétalo se mantenga
-      // siempre derecho mientras el ramo entero gira, igual que el logo.
-      dataPetals +=
-        '<g class="hu-petal-group" data-idx="' + i + '">' +
-          '<animateTransform attributeName="transform" type="rotate" ' +
-          'from="0 ' + cat.x + ' ' + cat.y + '" to="360 ' + cat.x + ' ' + cat.y + '" ' +
-          'dur="24s" repeatCount="indefinite"/>' +
-          '<circle class="hu-petal" data-idx="' + i + '" cx="' + cat.x + '" cy="' + cat.y + '" r="' + radius.toFixed(1) + '" ' +
-          'fill="url(#' + gid + ')" stroke="' + cat.color + '" stroke-width="1.3" stroke-opacity="' + strokeOp + '"/>' +
-          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + nameY.toFixed(1) + '" font-size="' + nameFs.toFixed(1) + '" font-weight="600" stroke-width="' + (nameFs * 0.12).toFixed(2) + '">' + cat.name + '</text>' +
-          '<text class="hu-petal-txt" x="' + cat.x + '" y="' + numY.toFixed(1) + '" font-size="' + numFs.toFixed(1) + '" font-weight="800" stroke-width="' + (numFs * 0.12).toFixed(2) + '">' + modeCfg.fmt(count) + '</text>' +
-        '</g>';
-    });
-
-    // Centro: misma escala que los pétalos (si el valor del centro es
-    // parecido al de una categoría llena, el tamaño también debe serlo).
-    var centerPct = pctOf(centerValue);
-    var centerR = 24 + centerPct * 14; // 24 → 38, alrededor del r=24/38 original
-    var centerNumFs = clamp(centerValue >= 1000 ? 15 + centerPct * 10 : 20 + centerPct * 14, 15, 34);
-
-    // ── SVG idéntico a landing.html (.ll-arcs + .ll-flower), con los 6
-    //    pétalos internos reemplazados por los pétalos de datos de arriba.
-    svg.innerHTML =
-      '<defs>' +
-        '<linearGradient id="hu-sunset" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0A500"/><stop offset="50%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></linearGradient>' +
-        '<linearGradient id="hu-ocean" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/></linearGradient>' +
-        '<radialGradient id="hu-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF6535" stop-opacity=".55"/><stop offset="60%" stop-color="#F0A500" stop-opacity=".15"/><stop offset="100%" stop-color="#FF6535" stop-opacity="0"/></radialGradient>' +
-        '<filter id="hu-gf" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
-        '<filter id="hu-gs" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
-        dataDefs +
-      '</defs>' +
-      '<g class="ll-arcs">' +
-        '<circle cx="200" cy="200" r="188" stroke="rgba(255,101,53,.05)" stroke-width="1"/>' +
-        '<circle cx="200" cy="200" r="176" stroke="rgba(240,165,0,.04)" stroke-width="1" stroke-dasharray="5 11"/>' +
-        '<circle cx="200" cy="200" r="162" stroke="rgba(14,165,233,.05)" stroke-width="1"/>' +
-        '<circle cx="200" cy="200" r="176" stroke="url(#hu-ocean)" stroke-width="4" stroke-dasharray="168 952" stroke-linecap="round" transform="rotate(-90 200 200)" filter="url(#hu-gf)"/>' +
-        '<circle cx="200" cy="200" r="161" stroke="url(#hu-sunset)" stroke-width="5" stroke-dasharray="248 826" stroke-linecap="round" transform="rotate(28 200 200)" filter="url(#hu-gs)"/>' +
-        '<circle cx="200" cy="200" r="146" stroke="#F0A500" stroke-width="2.5" stroke-dasharray="92 838" stroke-linecap="round" transform="rotate(158 200 200)" stroke-opacity=".5"/>' +
-      '</g>' +
-      '<g>' +
-        // Rotación del ramo entero vía SMIL (no CSS): visualmente idéntica
-        // a la animación ll-spin-flower del landing (24s, sentido inverso),
-        // pero en el MISMO reloj de animación que la contra-rotación de
-        // cada pétalo — mezclar CSS+SMIL desincroniza sus tiempos de inicio
-        // y el texto queda inclinado.
-        '<animateTransform attributeName="transform" type="rotate" from="0 200 200" to="-360 200 200" dur="24s" repeatCount="indefinite"/>' +
-        // Pétalo central decorativo (idéntico al original, se funde con el sol)
-        '<circle cx="200" cy="200" r="52" stroke="rgba(255,101,53,.25)" stroke-width="1.2" fill="rgba(255,101,53,.025)"/>' +
-        // 6 pétalos internos → ahora son los pétalos de DATOS
-        dataPetals +
-        // 6 pétalos externos decorativos (idénticos al original, sin cambios)
-        '<circle cx="304" cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
-        '<circle cx="278" cy="110" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
-        '<circle cx="122" cy="110" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
-        '<circle cx="96"  cy="200" r="52" stroke="rgba(255,101,53,.06)" stroke-width=".8" fill="none"/>' +
-        '<circle cx="122" cy="290" r="52" stroke="rgba(240,165,0,.06)" stroke-width=".8" fill="none"/>' +
-        '<circle cx="278" cy="290" r="52" stroke="rgba(14,165,233,.06)" stroke-width=".8" fill="none"/>' +
-      '</g>' +
-      '<circle cx="200" cy="200" r="38" fill="url(#hu-glow)"/>' +
-      '<circle cx="200" cy="200" r="' + centerR.toFixed(1) + '" fill="rgba(255,101,53,.14)" stroke="rgba(255,101,53,.4)" stroke-width="1.2"/>' +
-      '<g class="ll-pulse-g">' +
-        '<text x="200" y="' + (200 + centerNumFs * 0.32).toFixed(1) + '" text-anchor="middle" font-family="\'Barlow Condensed\',sans-serif" font-weight="900" font-size="' + centerNumFs.toFixed(1) + '" fill="#fff" stroke="#04080F" stroke-width="2" paint-order="stroke fill" style="filter:drop-shadow(0 0 10px rgba(255,101,53,.8))">' +
-          (data[modeCfg.centerKey] !== null && data[modeCfg.centerKey] !== undefined ? modeCfg.fmt(centerValue) : '—') +
-        '</text>' +
-        '<text x="200" y="228" text-anchor="middle" font-family="Oswald,sans-serif" font-size="7" font-weight="700" letter-spacing=".08em" fill="rgba(240,249,255,.7)">' + modeCfg.centerLabel + '</text>' +
-      '</g>';
-
-    // Interacción: hover resalta el pétalo bajo el mouse
-    svg.querySelectorAll('.hu-petal-group').forEach(function (el) {
-      el.addEventListener('mouseenter', function () {
-        svg.querySelectorAll('.hu-petal').forEach(function (p) {
-          p.classList.toggle('active', p === el.querySelector('.hu-petal'));
-        });
-      });
-    });
-  }
-
-  var tok = LabXData.getToken();
-  if (!tok) { window.location.href = 'login.html'; return; }
-
-  var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
-
-  var state = { data: null, mode: 'days', period: 'all' };
-
-  function load(period) {
-    fetch(API + '/athlete/data-footprint?period=' + encodeURIComponent(period), { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('fetch failed'); return r.json(); })
-      .then(function (d) { state.data = d; render(d, state.mode); })
-      .catch(function (err) {
-        console.error('[huella] error', err);
-        document.getElementById('hu-wrap').innerHTML = '<div class="hu-empty" style="grid-column:1/-1">'+_t('hu_load_error','No se pudo cargar tu huella de datos. Intenta recargar.')+'</div>';
-      });
-  }
-
-  // El modo (Días/Km) no necesita refetch — el endpoint ya trae ambos
-  // conjuntos de campos para el período elegido; solo cambia qué se dibuja.
-  document.querySelectorAll('#hu-mode-btns .hu-period-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('#hu-mode-btns .hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
-      btn.classList.add('on');
-      state.mode = btn.getAttribute('data-mode');
-      if (state.data) render(state.data, state.mode);
-    });
-  });
-
-  document.querySelectorAll('#hu-period-btns .hu-period-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('#hu-period-btns .hu-period-btn').forEach(function (b) { b.classList.remove('on'); });
-      btn.classList.add('on');
-      state.period = btn.getAttribute('data-period');
-      load(state.period);
-    });
-  });
-
-  load('all');
-})();
-</script>
-
-<!-- Año en Review — fusionado desde year_in_review.html -->
-<script>
-(function(){
-  'use strict';
-
-  var API = window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api';
-  var tok = LabXData.getToken();
-  if(!tok) return;
-  var HDR = function(){ return {Authorization:'Bearer '+tok}; };
-
-  var _data = null;
-  var _year = new Date().getFullYear();
-
-  var SPORT_LABEL = {swim:'Natación', bike:'Ciclismo', run:'Carrera', strength:'Fuerza', gym:'Gimnasio', brick:'Brick', other:'Otro'};
-  var SPORT_COLOR = {swim:'var(--swim)', bike:'var(--bike)', run:'var(--run)', strength:'var(--str)', gym:'var(--str)'};
-  var SPORT_ICON  = {swim:'🏊', bike:'🚴', run:'🏃', strength:'💪', gym:'💪', brick:'⚡', other:'🏅'};
-
-  function _g(id){ return document.getElementById(id); }
-  function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function _fmt_hm(h){ var hh=Math.floor(h); var m=Math.round((h-hh)*60); return hh+'h'+(m>0?' '+m+'m':''); }
-
-  function _buildYearBtns(){
-    var cy = new Date().getFullYear();
-    var btns = _g('yr-year-btns');
-    btns.innerHTML = '';
-    for(var y = cy; y >= cy-3; y--){
-      var b = document.createElement('button');
-      b.className = 'yr-year-btn' + (y===_year?' on':'');
-      b.textContent = y;
-      b.setAttribute('data-y', y);
-      b.onclick = function(){ _year = parseInt(this.getAttribute('data-y')); _buildYearBtns(); loadYearData(); };
-      btns.appendChild(b);
-    }
-  }
-
-  function loadYearData(){
-    _g('yr-loading').style.display = '';
-    _g('yr-content').style.display = 'none';
-    _g('yr-empty').style.display   = 'none';
-
-    fetch(API+'/athlete/year-in-review?year='+_year, {headers:HDR()})
-      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
-      .then(function(d){
-        _data = d;
-        _g('yr-loading').style.display = 'none';
-        if(!d.total_activities){
-          _g('yr-empty').style.display = '';
+        var tok = LabXData.getToken();
+        if (!tok) {
+          window.location.href = 'login.html';
           return;
         }
-        _g('yr-content').style.display = '';
-        _renderStats(d);
-        _renderSports(d);
-        _renderMonths(d);
-        _renderHighlights(d);
-        _renderCtl(d);
-      })
-      .catch(function(e){
-        _g('yr-loading').style.display = 'none';
-        _g('yr-empty').style.display = '';
-        console.error('YIR error', e);
-      });
-  }
 
-  function _renderStats(d){
-    var grid = _g('yr-stat-grid');
-    var items = [
-      {num: d.total_activities, unit:_t('hu_unit_activities','actividades'), label:_t('hu_total_activities','Total actividades'), ac:'var(--orange)'},
-      {num: d.total_hours+'h',  unit:'',            label:_t('hu_hours_trained','Horas entrenadas'),  ac:'var(--cyan)'},
-      {num: d.total_km+'km',    unit:'',            label:_t('hu_km_total','Kilómetros totales'), ac:'var(--green)'},
-      {num: Math.round(d.total_tss), unit:'TSS',   label:_t('hu_load_total','Carga total'),        ac:'var(--purple)'},
-    ];
-    grid.innerHTML = items.map(function(i){
-      return '<div class="stat-card" style="--ac:'+i.ac+'">'
-        +'<div class="stat-num">'+i.num+'<span class="stat-unit">'+i.unit+'</span></div>'
-        +'<div class="stat-label">'+i.label+'</div>'
-        +'</div>';
-    }).join('');
-  }
+        var API =
+          window.location.protocol === 'file:'
+            ? 'http://localhost:8000/api'
+            : window.location.origin + '/api';
 
-  function _renderSports(d){
-    var container = _g('yr-sport-breakdown');
-    var sports = Object.entries(d.by_sport).sort(function(a,b){ return b[1].km - a[1].km; });
-    var maxKm   = sports.reduce(function(m,s){ return Math.max(m, s[1].km); }, 0);
-    container.innerHTML = sports.map(function(entry){
-      var sport = entry[0], info = entry[1];
-      var clr   = SPORT_COLOR[sport] || 'var(--orange)';
-      var pct   = maxKm > 0 ? Math.round(info.km / maxKm * 100) : 0;
-      return '<div class="sport-row">'
-        +'<div class="sport-icon">'+( SPORT_ICON[sport]||'🏅' )+'</div>'
-        +'<div class="sport-info">'
-        +'<div class="sport-name">'+(SPORT_LABEL[sport]||sport)+'</div>'
-        +'<div class="sport-bar-bg"><div class="sport-bar-f" style="width:'+pct+'%;background:'+clr+'"></div></div>'
-        +'</div>'
-        +'<div class="sport-stat">'+info.km+' km</div>'
-        +'</div>';
-    }).join('');
-  }
+        var state = { data: null, mode: 'days', period: 'all' };
 
-  function _renderMonths(d){
-    var chart  = _g('yr-month-chart');
-    var months = d.month_series;
-    var maxTss = months.reduce(function(m,mo){ return Math.max(m, mo.tss); }, 0);
-    chart.innerHTML = months.map(function(mo){
-      var pct = maxTss > 0 ? Math.max(2, Math.round(mo.tss / maxTss * 100)) : 2;
-      var clr = mo.tss === maxTss ? 'var(--orange)' : 'rgba(255,101,53,.45)';
-      return '<div class="month-bar-wrap">'
-        +'<div class="month-tip">'+mo.label+': '+Math.round(mo.tss)+' TSS</div>'
-        +'<div class="month-bar" style="height:'+pct+'%;background:'+clr+'"></div>'
-        +'<div class="month-label">'+mo.label.slice(0,1)+'</div>'
-        +'</div>';
-    }).join('');
-  }
+        function load(period) {
+          fetch(
+            API +
+              '/athlete/data-footprint?period=' +
+              encodeURIComponent(period),
+            { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' },
+          )
+            .then(function (r) {
+              if (!r.ok) throw new Error('fetch failed');
+              return r.json();
+            })
+            .then(function (d) {
+              state.data = d;
+              render(d, state.mode);
+            })
+            .catch(function (err) {
+              console.error('[huella] error', err);
+              document.getElementById('hu-wrap').innerHTML =
+                '<div class="hu-empty" style="grid-column:1/-1">' +
+                _t(
+                  'hu_load_error',
+                  'No se pudo cargar tu huella de datos. Intenta recargar.',
+                ) +
+                '</div>';
+            });
+        }
 
-  function _renderHighlights(d){
-    var hl   = _g('yr-highlights');
-    var cards = [];
+        // El modo (Días/Km) no necesita refetch — el endpoint ya trae ambos
+        // conjuntos de campos para el período elegido; solo cambia qué se dibuja.
+        document
+          .querySelectorAll('#hu-mode-btns .hu-period-btn')
+          .forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              document
+                .querySelectorAll('#hu-mode-btns .hu-period-btn')
+                .forEach(function (b) {
+                  b.classList.remove('on');
+                });
+              btn.classList.add('on');
+              state.mode = btn.getAttribute('data-mode');
+              if (state.data) render(state.data, state.mode);
+            });
+          });
 
-    if(d.peak_week_iso){
-      cards.push({emoji:'🔥', title:'Semana más dura', val:Math.round(d.peak_week_tss)+' TSS', sub:d.peak_week_iso, ac:'var(--orange)'});
-    }
-    if(d.fav_weekday){
-      cards.push({emoji:'📅', title:'Día favorito', val:d.fav_weekday, sub:'El día que más entrenas', ac:'var(--cyan)'});
-    }
-    Object.entries(d.longest_by_sport).forEach(function(entry){
-      var sport = entry[0], act = entry[1];
-      if(!act.dist_km) return;
-      cards.push({
-        emoji: SPORT_ICON[sport]||'🏅',
-        title: 'Mejor '+( SPORT_LABEL[sport]||sport ).toLowerCase(),
-        val:   act.dist_km+' km',
-        sub:   (act.dur_min ? _fmt_hm(act.dur_min/60)+' · ' : '') + (act.date_iso||'').slice(0,10),
-        ac:    SPORT_COLOR[sport]||'var(--orange)',
-      });
-    });
-    if(d.ctl_improvement !== null && d.ctl_improvement !== undefined){
-      var sign = d.ctl_improvement > 0 ? '+' : '';
-      cards.push({emoji:'📈', title:'Mejora de fitness', val:sign+d.ctl_improvement+' CTL', sub:'Inicio → fin de año', ac:'var(--green)'});
-    }
+        document
+          .querySelectorAll('#hu-period-btns .hu-period-btn')
+          .forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              document
+                .querySelectorAll('#hu-period-btns .hu-period-btn')
+                .forEach(function (b) {
+                  b.classList.remove('on');
+                });
+              btn.classList.add('on');
+              state.period = btn.getAttribute('data-period');
+              load(state.period);
+            });
+          });
 
-    hl.innerHTML = cards.slice(0,6).map(function(c){
-      return '<div class="hl-card" style="--ac:'+c.ac+'">'
-        +'<span class="hl-emoji">'+c.emoji+'</span>'
-        +'<div class="hl-title">'+_esc(c.title)+'</div>'
-        +'<div class="hl-val">'+_esc(c.val)+'</div>'
-        +'<div class="hl-sub">'+_esc(c.sub)+'</div>'
-        +'</div>';
-    }).join('');
-  }
+        load('all');
+      })();
+    </script>
 
-  function _renderCtl(d){
-    var row = _g('yr-ctl-row');
-    if(!d.ctl_start && !d.ctl_end){ row.innerHTML = '<div style="color:var(--dim);font-size:.8rem">'+_t('hu_no_ctl','Sin datos de CTL')+'</div>'; return; }
+    <!-- Año en Review — fusionado desde year_in_review.html -->
+    <script>
+      (function () {
+        'use strict';
 
-    var color = (d.ctl_improvement||0) >= 0 ? 'var(--green)' : 'var(--orange)';
-    var arrow = (d.ctl_improvement||0) >= 0 ? '↑' : '↓';
-    var sign  = (d.ctl_improvement||0) > 0 ? '+' : '';
+        var API =
+          window.location.protocol === 'file:'
+            ? 'http://localhost:8000/api'
+            : window.location.origin + '/api';
+        var tok = LabXData.getToken();
+        if (!tok) return;
+        var HDR = function () {
+          return { Authorization: 'Bearer ' + tok };
+        };
 
-    row.innerHTML = ''
-      +'<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_start','Inicio del año')+'</div><div class="ctl-num" style="color:var(--muted)">'+(d.ctl_start||'—')+'</div></div>'
-      +'<div class="ctl-arrow">'+arrow+'</div>'
-      +'<div class="ctl-box" style="border-color:'+color+'44"><div class="ctl-lbl">'+_t('hu_year_end','Fin del año')+'</div><div class="ctl-num" style="color:'+color+'">'+(d.ctl_end||'—')+'</div></div>'
-      +(d.ctl_peak ? '<div class="ctl-box"><div class="ctl-lbl">'+_t('hu_year_peak','Pico del año')+'</div><div class="ctl-num" style="color:var(--gold)">'+d.ctl_peak.value+'</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">'+d.ctl_peak.date_iso.slice(5)+'</div></div>' : '')
-      +(d.ctl_improvement !== null ? '<div style="text-align:center"><div style="font-size:.65rem;color:var(--dim);margin-bottom:.3rem">Mejora total</div><div style="font-family:Oswald,sans-serif;font-size:1.6rem;font-weight:700;color:'+color+'">'+sign+d.ctl_improvement+'</div></div>' : '');
-  }
+        var _data = null;
+        var _year = new Date().getFullYear();
 
-  window.shareYearCard = function(){
-    if(!_data) return;
-    var card = _g('yr-share-card');
-    card.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+        var SPORT_LABEL = {
+          swim: 'Natación',
+          bike: 'Ciclismo',
+          run: 'Carrera',
+          strength: 'Fuerza',
+          gym: 'Gimnasio',
+          brick: 'Brick',
+          other: 'Otro',
+        };
+        var SPORT_COLOR = {
+          swim: 'var(--swim)',
+          bike: 'var(--bike)',
+          run: 'var(--run)',
+          strength: 'var(--str)',
+          gym: 'var(--str)',
+        };
+        var SPORT_ICON = {
+          swim: '🏊',
+          bike: '🚴',
+          run: '🏃',
+          strength: '💪',
+          gym: '💪',
+          brick: '⚡',
+          other: '🏅',
+        };
 
-    _g('sc-athlete').textContent = _data.athlete_name;
-    _g('sc-year').textContent    = _year;
+        function _g(id) {
+          return document.getElementById(id);
+        }
+        function _esc(s) {
+          return String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        }
+        function _fmt_hm(h) {
+          var hh = Math.floor(h);
+          var m = Math.round((h - hh) * 60);
+          return hh + 'h' + (m > 0 ? ' ' + m + 'm' : '');
+        }
 
-    var stats = [
-      {n:_data.total_activities,  u:'actividades'},
-      {n:_data.total_km+'km',     u:'totales'},
-      {n:Math.round(_data.total_hours)+'h', u:'entrenadas'},
-    ];
-    _g('sc-stats').innerHTML = stats.map(function(s){
-      return '<div style="background:rgba(255,255,255,.05);border-radius:8px;padding:.7rem .5rem">'
-        +'<div style="font-family:Oswald,sans-serif;font-size:1.5rem;font-weight:700;color:var(--orange)">'+s.n+'</div>'
-        +'<div style="font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em">'+s.u+'</div>'
-        +'</div>';
-    }).join('');
-  };
+        function _buildYearBtns() {
+          var cy = new Date().getFullYear();
+          var btns = _g('yr-year-btns');
+          btns.innerHTML = '';
+          for (var y = cy; y >= cy - 3; y--) {
+            var b = document.createElement('button');
+            b.className = 'yr-year-btn' + (y === _year ? ' on' : '');
+            b.textContent = y;
+            b.setAttribute('data-y', y);
+            b.onclick = function () {
+              _year = parseInt(this.getAttribute('data-y'));
+              _buildYearBtns();
+              loadYearData();
+            };
+            btns.appendChild(b);
+          }
+        }
 
-  window.downloadShareCard = function(){ window.print(); };
+        function loadYearData() {
+          _g('yr-loading').style.display = '';
+          _g('yr-content').style.display = 'none';
+          _g('yr-empty').style.display = 'none';
 
-  window.closeShareCard = function(){
-    var card = _g('yr-share-card');
-    card.style.display = 'none';
-    document.body.style.overflow = '';
-  };
+          fetch(API + '/athlete/year-in-review?year=' + _year, {
+            headers: HDR(),
+          })
+            .then(function (r) {
+              return r.ok ? r.json() : Promise.reject(r.status);
+            })
+            .then(function (d) {
+              _data = d;
+              _g('yr-loading').style.display = 'none';
+              if (!d.total_activities) {
+                _g('yr-empty').style.display = '';
+                return;
+              }
+              _g('yr-content').style.display = '';
+              _renderStats(d);
+              _renderSports(d);
+              _renderMonths(d);
+              _renderHighlights(d);
+              _renderCtl(d);
+            })
+            .catch(function (e) {
+              _g('yr-loading').style.display = 'none';
+              _g('yr-empty').style.display = '';
+              console.error('YIR error', e);
+            });
+        }
 
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape') window.closeShareCard(); });
+        function _renderStats(d) {
+          var grid = _g('yr-stat-grid');
+          var items = [
+            {
+              num: d.total_activities,
+              unit: _t('hu_unit_activities', 'actividades'),
+              label: _t('hu_total_activities', 'Total actividades'),
+              ac: 'var(--orange)',
+            },
+            {
+              num: d.total_hours + 'h',
+              unit: '',
+              label: _t('hu_hours_trained', 'Horas entrenadas'),
+              ac: 'var(--cyan)',
+            },
+            {
+              num: d.total_km + 'km',
+              unit: '',
+              label: _t('hu_km_total', 'Kilómetros totales'),
+              ac: 'var(--green)',
+            },
+            {
+              num: Math.round(d.total_tss),
+              unit: 'TSS',
+              label: _t('hu_load_total', 'Carga total'),
+              ac: 'var(--purple)',
+            },
+          ];
+          grid.innerHTML = items
+            .map(function (i) {
+              return (
+                '<div class="stat-card" style="--ac:' +
+                i.ac +
+                '">' +
+                '<div class="stat-num">' +
+                i.num +
+                '<span class="stat-unit">' +
+                i.unit +
+                '</span></div>' +
+                '<div class="stat-label">' +
+                i.label +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
 
-  _buildYearBtns();
-  loadYearData();
-})();
-</script>
-<script src="auth.js"></script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="lx-info.js"></script>
-<script src="i18n.js"></script>
-<script>(function(){function _ti(){var v=window.i18n?window.i18n.t('hu_title'):null;if(v&&v!=='hu_title')document.title=v;}_ti();document.addEventListener('lx:i18nready',_ti);document.addEventListener('lx:langchange',_ti);})();</script>
-</body>
+        function _renderSports(d) {
+          var container = _g('yr-sport-breakdown');
+          var sports = Object.entries(d.by_sport).sort(function (a, b) {
+            return b[1].km - a[1].km;
+          });
+          var maxKm = sports.reduce(function (m, s) {
+            return Math.max(m, s[1].km);
+          }, 0);
+          container.innerHTML = sports
+            .map(function (entry) {
+              var sport = entry[0],
+                info = entry[1];
+              var clr = SPORT_COLOR[sport] || 'var(--orange)';
+              var pct = maxKm > 0 ? Math.round((info.km / maxKm) * 100) : 0;
+              return (
+                '<div class="sport-row">' +
+                '<div class="sport-icon">' +
+                (SPORT_ICON[sport] || '🏅') +
+                '</div>' +
+                '<div class="sport-info">' +
+                '<div class="sport-name">' +
+                (SPORT_LABEL[sport] || sport) +
+                '</div>' +
+                '<div class="sport-bar-bg"><div class="sport-bar-f" style="width:' +
+                pct +
+                '%;background:' +
+                clr +
+                '"></div></div>' +
+                '</div>' +
+                '<div class="sport-stat">' +
+                info.km +
+                ' km</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        function _renderMonths(d) {
+          var chart = _g('yr-month-chart');
+          var months = d.month_series;
+          var maxTss = months.reduce(function (m, mo) {
+            return Math.max(m, mo.tss);
+          }, 0);
+          chart.innerHTML = months
+            .map(function (mo) {
+              var pct =
+                maxTss > 0
+                  ? Math.max(2, Math.round((mo.tss / maxTss) * 100))
+                  : 2;
+              var clr =
+                mo.tss === maxTss ? 'var(--orange)' : 'rgba(255,101,53,.45)';
+              return (
+                '<div class="month-bar-wrap">' +
+                '<div class="month-tip">' +
+                mo.label +
+                ': ' +
+                Math.round(mo.tss) +
+                ' TSS</div>' +
+                '<div class="month-bar" style="height:' +
+                pct +
+                '%;background:' +
+                clr +
+                '"></div>' +
+                '<div class="month-label">' +
+                mo.label.slice(0, 1) +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        function _renderHighlights(d) {
+          var hl = _g('yr-highlights');
+          var cards = [];
+
+          if (d.peak_week_iso) {
+            cards.push({
+              emoji: '🔥',
+              title: 'Semana más dura',
+              val: Math.round(d.peak_week_tss) + ' TSS',
+              sub: d.peak_week_iso,
+              ac: 'var(--orange)',
+            });
+          }
+          if (d.fav_weekday) {
+            cards.push({
+              emoji: '📅',
+              title: 'Día favorito',
+              val: d.fav_weekday,
+              sub: 'El día que más entrenas',
+              ac: 'var(--cyan)',
+            });
+          }
+          Object.entries(d.longest_by_sport).forEach(function (entry) {
+            var sport = entry[0],
+              act = entry[1];
+            if (!act.dist_km) return;
+            cards.push({
+              emoji: SPORT_ICON[sport] || '🏅',
+              title: 'Mejor ' + (SPORT_LABEL[sport] || sport).toLowerCase(),
+              val: act.dist_km + ' km',
+              sub:
+                (act.dur_min ? _fmt_hm(act.dur_min / 60) + ' · ' : '') +
+                (act.date_iso || '').slice(0, 10),
+              ac: SPORT_COLOR[sport] || 'var(--orange)',
+            });
+          });
+          if (d.ctl_improvement !== null && d.ctl_improvement !== undefined) {
+            var sign = d.ctl_improvement > 0 ? '+' : '';
+            cards.push({
+              emoji: '📈',
+              title: 'Mejora de fitness',
+              val: sign + d.ctl_improvement + ' CTL',
+              sub: 'Inicio → fin de año',
+              ac: 'var(--green)',
+            });
+          }
+
+          hl.innerHTML = cards
+            .slice(0, 6)
+            .map(function (c) {
+              return (
+                '<div class="hl-card" style="--ac:' +
+                c.ac +
+                '">' +
+                '<span class="hl-emoji">' +
+                c.emoji +
+                '</span>' +
+                '<div class="hl-title">' +
+                _esc(c.title) +
+                '</div>' +
+                '<div class="hl-val">' +
+                _esc(c.val) +
+                '</div>' +
+                '<div class="hl-sub">' +
+                _esc(c.sub) +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        function _renderCtl(d) {
+          var row = _g('yr-ctl-row');
+          if (!d.ctl_start && !d.ctl_end) {
+            row.innerHTML =
+              '<div style="color:var(--dim);font-size:.8rem">' +
+              _t('hu_no_ctl', 'Sin datos de CTL') +
+              '</div>';
+            return;
+          }
+
+          var color =
+            (d.ctl_improvement || 0) >= 0 ? 'var(--green)' : 'var(--orange)';
+          var arrow = (d.ctl_improvement || 0) >= 0 ? '↑' : '↓';
+          var sign = (d.ctl_improvement || 0) > 0 ? '+' : '';
+
+          row.innerHTML =
+            '' +
+            '<div class="ctl-box"><div class="ctl-lbl">' +
+            _t('hu_year_start', 'Inicio del año') +
+            '</div><div class="ctl-num" style="color:var(--muted)">' +
+            (d.ctl_start || '—') +
+            '</div></div>' +
+            '<div class="ctl-arrow">' +
+            arrow +
+            '</div>' +
+            '<div class="ctl-box" style="border-color:' +
+            color +
+            '44"><div class="ctl-lbl">' +
+            _t('hu_year_end', 'Fin del año') +
+            '</div><div class="ctl-num" style="color:' +
+            color +
+            '">' +
+            (d.ctl_end || '—') +
+            '</div></div>' +
+            (d.ctl_peak
+              ? '<div class="ctl-box"><div class="ctl-lbl">' +
+                _t('hu_year_peak', 'Pico del año') +
+                '</div><div class="ctl-num" style="color:var(--gold)">' +
+                d.ctl_peak.value +
+                '</div><div style="font-size:.6rem;color:var(--dim);margin-top:.2rem">' +
+                d.ctl_peak.date_iso.slice(5) +
+                '</div></div>'
+              : '') +
+            (d.ctl_improvement !== null
+              ? '<div style="text-align:center"><div style="font-size:.65rem;color:var(--dim);margin-bottom:.3rem">Mejora total</div><div style="font-family:Oswald,sans-serif;font-size:1.6rem;font-weight:700;color:' +
+                color +
+                '">' +
+                sign +
+                d.ctl_improvement +
+                '</div></div>'
+              : '');
+        }
+
+        window.shareYearCard = function () {
+          if (!_data) return;
+          var card = _g('yr-share-card');
+          card.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+
+          _g('sc-athlete').textContent = _data.athlete_name;
+          _g('sc-year').textContent = _year;
+
+          var stats = [
+            { n: _data.total_activities, u: 'actividades' },
+            { n: _data.total_km + 'km', u: 'totales' },
+            { n: Math.round(_data.total_hours) + 'h', u: 'entrenadas' },
+          ];
+          _g('sc-stats').innerHTML = stats
+            .map(function (s) {
+              return (
+                '<div style="background:rgba(255,255,255,.05);border-radius:8px;padding:.7rem .5rem">' +
+                '<div style="font-family:Oswald,sans-serif;font-size:1.5rem;font-weight:700;color:var(--orange)">' +
+                s.n +
+                '</div>' +
+                '<div style="font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em">' +
+                s.u +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        };
+
+        window.downloadShareCard = function () {
+          window.print();
+        };
+
+        window.closeShareCard = function () {
+          var card = _g('yr-share-card');
+          card.style.display = 'none';
+          document.body.style.overflow = '';
+        };
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') window.closeShareCard();
+        });
+
+        _buildYearBtns();
+        loadYearData();
+      })();
+    </script>
+    <script src="auth.js"></script>
+    <script src="nav.js?v=4"></script>
+    <script src="footer.js"></script>
+    <script src="dash-header.js"></script>
+    <script src="lx-upgrade.js"></script>
+    <script src="lx-info.js"></script>
+    <script src="i18n.js"></script>
+    <script>
+      (function () {
+        function _ti() {
+          var v = window.i18n ? window.i18n.t('hu_title') : null;
+          if (v && v !== 'hu_title') document.title = v;
+        }
+        _ti();
+        document.addEventListener('lx:i18nready', _ti);
+        document.addEventListener('lx:langchange', _ti);
+      })();
+    </script>
+  </body>
 </html>

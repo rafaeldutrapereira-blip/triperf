@@ -1,930 +1,2357 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Race Day Intelligence</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="nav.css?v=3">
-<style>
-:root{
-  --bg:#04080F;--card:#08121E;--card2:#0C1D30;--border:rgba(8,116,174,.18);
-  --text:#F0F9FF;--sub:#7FB3CC;--acc:#FF6535;--acc2:#EF4444;
-  --green:#10B981;--blue:#0EA5E9;--purple:#A855F7;
-  --r:12px;--r2:8px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-#nav-placeholder{height:0}
-/* ─── LabX TopNav ─── */
-#lx-topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:rgba(4,8,15,.97);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.12);display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem}
-.lxn-brand{display:flex;align-items:center;gap:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#F0F9FF;text-decoration:none;flex-shrink:0}
-.lxn-brand span{color:#FF6535}
-.lxn-brand svg.sbl-svg{width:32px;height:32px;flex-shrink:0}
-.lxn-nav{display:flex;align-items:center;gap:.15rem;flex:1;overflow-x:auto}
-.lxn-nav a{padding:.32rem .68rem;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7FB3CC;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
-.lxn-nav a:hover,.lxn-nav a.on{color:#FF6535;background:rgba(255,101,53,.1)}
-.lxn-out{background:transparent;border:1px solid rgba(61,104,128,.32);border-radius:5px;color:#3D6880;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .65rem;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
-.lxn-out:hover{border-color:#EF4444;color:#EF4444}
-.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
-.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
-@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
-@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
-@media(max-width:700px){.lxn-nav{display:none}}
-.page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
-.page-header{margin-bottom:24px}
-.page-header h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.4rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;color:var(--text)}
-.page-header p{color:var(--sub);margin-top:4px;font-size:.9rem}
-
-/* TABS */
-.tabs{display:flex;gap:.2rem;margin-bottom:24px;overflow-x:auto;border-bottom:1px solid var(--border)}
-.tab-btn{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.1rem;border:none;border-bottom:2px solid transparent;cursor:pointer;background:transparent;color:var(--sub);transition:color .18s,border-color .18s;white-space:nowrap;margin-bottom:-1px}
-.tab-btn.active{background:none;color:var(--acc);border-bottom-color:var(--acc)}
-.tab-btn:hover:not(.active){background:none;color:var(--text)}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-
-/* CARDS */
-.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
-.card-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;letter-spacing:.01em;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text)}
-.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
-
-/* COUNTDOWN */
-.countdown-hero{text-align:center;padding:24px}
-.countdown-days{font-size:5rem;font-weight:900;background:linear-gradient(135deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
-.countdown-label{font-size:.85rem;color:var(--sub);margin-top:4px}
-.race-name-big{font-size:1.3rem;font-weight:700;margin-top:8px}
-.race-date-sub{font-size:.88rem;color:var(--sub)}
-
-/* FITNESS CHIPS */
-.chips{display:flex;gap:10px;flex-wrap:wrap}
-.chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:80px}
-.chip-val{font-size:1.4rem;font-weight:800}
-.chip-label{font-size:.7rem;color:var(--sub);margin-top:2px}
-.chip-ctl{border-color:var(--blue);} .chip-ctl .chip-val{color:var(--blue)}
-.chip-tsb .chip-val{color:var(--green)}
-.chip-tsb-neg .chip-val{color:var(--acc2)}
-.chip-rec .chip-val{color:var(--purple)}
-
-/* SPLITS TABLE */
-.splits-table{width:100%;border-collapse:collapse}
-.splits-table th{text-align:left;color:var(--sub);font-size:.78rem;padding:8px 10px;border-bottom:1px solid var(--border)}
-.splits-table td{padding:10px;border-bottom:1px solid var(--border)33;font-size:.88rem}
-.splits-table td:last-child{text-align:right;font-weight:700;color:var(--acc)}
-.splits-table tr.total-row td{border-top:2px solid var(--border);font-weight:700;font-size:.95rem;color:var(--text)}
-.segment-icon{font-size:1.1rem;margin-right:6px}
-
-/* PACING TARGETS */
-.target-card{background:var(--card2);border-radius:var(--r2);padding:16px;border:1px solid var(--border);margin-bottom:12px}
-.target-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.target-label{font-size:.88rem;font-weight:600}
-.target-value{font-size:1.5rem;font-weight:800;color:var(--acc)}
-.target-sub{font-size:.78rem;color:var(--sub)}
-.if-bar{height:8px;border-radius:4px;background:var(--border);margin-top:8px;overflow:hidden}
-.if-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--acc),var(--acc2))}
-
-/* NUTRITION */
-.nutr-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.nutr-stat{background:var(--card2);border-radius:var(--r2);padding:12px;text-align:center}
-.nutr-val{font-size:1.4rem;font-weight:800;color:var(--acc)}
-.nutr-label{font-size:.7rem;color:var(--sub);margin-top:2px}
-.nutr-timeline{list-style:none}
-.nutr-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)44}
-.nutr-seg{width:80px;font-size:.78rem;font-weight:600;color:var(--acc);flex-shrink:0}
-.nutr-detail{flex:1;font-size:.8rem;color:var(--sub);line-height:1.4}
-.nutr-macros{font-size:.75rem;color:var(--text);font-weight:600;margin-top:2px}
-.warning-list{list-style:none;margin-top:12px}
-.warning-list li{padding:6px 0;font-size:.8rem;color:var(--acc);border-bottom:1px solid var(--border)33}
-.warning-list li::before{content:"⚠ ";color:var(--acc)}
-
-/* RESULT FORM */
-.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.form-group{display:flex;flex-direction:column;gap:6px}
-.form-group label{font-size:.78rem;color:var(--sub);font-weight:500}
-.form-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;width:100%}
-.form-input:focus{outline:none;border-color:var(--acc)}
-.btn-primary{padding:10px 24px;background:var(--acc);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
-.btn-primary:hover{opacity:.85}
-.btn-sm{padding:6px 14px;font-size:.8rem}
-.btn-outline{padding:10px 22px;background:transparent;border:1px solid var(--acc);color:var(--acc);border-radius:8px;cursor:pointer;font-weight:600}
-
-/* ANALYSIS */
-.comparison-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)44}
-.comp-seg{font-size:.85rem;font-weight:600;width:80px}
-.comp-vals{display:flex;gap:20px;font-size:.85rem}
-.comp-pred{color:var(--sub)}
-.comp-actual{font-weight:700}
-.comp-diff{font-size:.78rem;padding:2px 8px;border-radius:10px}
-.diff-faster{background:var(--green)22;color:var(--green)}
-.diff-slower{background:var(--acc2)22;color:var(--acc2)}
-.pacing-score-hero{text-align:center;padding:20px}
-.pacing-score-num{font-size:4rem;font-weight:900}
-.learning-item{padding:10px 0;border-bottom:1px solid var(--border)44;font-size:.85rem;color:var(--sub)}
-.learning-item::before{content:"→ ";color:var(--acc)}
-
-/* HISTORY */
-.history-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)44;flex-wrap:wrap;gap:8px}
-.hist-name{font-weight:600;font-size:.88rem}
-.hist-time{font-size:1.1rem;font-weight:800;color:var(--acc)}
-.hist-date{font-size:.75rem;color:var(--sub)}
-.score-pill{font-size:.75rem;padding:2px 10px;border-radius:12px;font-weight:600}
-.score-hi{background:var(--green)22;color:var(--green)}
-.score-mid{background:var(--acc)22;color:var(--acc)}
-.score-lo{background:var(--acc2)22;color:var(--acc2)}
-.dnf-badge{font-size:.72rem;color:var(--acc2);font-weight:700}
-
-/* PLAN FORM */
-.plan-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px}
-.select-input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-size:.88rem;width:100%}
-.select-input:focus{outline:none;border-color:var(--acc)}
-
-/* MISC */
-.empty-state{text-align:center;padding:40px;color:var(--sub);font-size:.9rem}
-.loader{text-align:center;padding:40px;color:var(--sub)}
-.tag{font-size:.72rem;padding:2px 8px;border-radius:10px;font-weight:600}
-.success-msg{color:var(--green);font-size:.85rem;font-weight:600}
-</style>
-</head>
-<body>
-<div class="app">
-  <aside id="sidebar"></aside>
-  <header class="sb-topbar"></header>
-  <div class="sb-overlay" id="sb-overlay"></div>
-  <main class="main" id="main-content">
-<div class="page-wrap">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')" data-i18n="rd_tab_dashboard">Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('plan')" data-i18n="rd_tab_plan">Generar Plan</button>
-    <button class="tab-btn" onclick="switchTab('nutrition')" data-i18n="rd_tab_nutrition">Nutrición</button>
-    <button class="tab-btn" onclick="switchTab('result')" data-i18n="rd_tab_result">Registrar Resultado</button>
-    <button class="tab-btn" onclick="switchTab('history')" data-i18n="rd_tab_history">Historial</button>
-  </div>
-
-  <!-- ═══════════ TAB: DASHBOARD ═══════════ -->
-  <div class="tab-panel active" id="tab-dashboard">
-    <div id="dash-loader" class="loader" data-i18n="rd_loading_dashboard">Cargando Race Day Dashboard...</div>
-    <div id="dash-content" style="display:none">
-
-      <!-- Countdown -->
-      <div class="card" style="margin-bottom:16px" id="countdown-card">
-        <div class="countdown-hero">
-          <div class="countdown-days" id="dash-days">—</div>
-          <div class="countdown-label" data-i18n="rd_days_to_race">días para la carrera</div>
-          <div class="race-name-big" id="dash-race-name" data-i18n="rd_no_race_registered">Sin carrera registrada</div>
-          <div class="race-date-sub" id="dash-race-date"></div>
-        </div>
-      </div>
-
-      <!-- Fitness -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title" data-i18n="rd_card_fitness_state">Estado de Forma</div>
-        <div class="chips">
-          <div class="chip chip-ctl">
-            <div class="chip-val" id="dash-ctl">—</div>
-            <div class="chip-label" data-i18n="rd_label_ctl">CTL (Fitness)</div>
-          </div>
-          <div class="chip" id="dash-tsb-chip">
-            <div class="chip-val" id="dash-tsb">—</div>
-            <div class="chip-label" data-i18n="rd_label_tsb">TSB (Forma)</div>
-          </div>
-          <div class="chip">
-            <div class="chip-val" id="dash-atl">—</div>
-            <div class="chip-label" data-i18n="rd_label_atl">ATL (Fatiga)</div>
-          </div>
-          <div class="chip chip-rec">
-            <div class="chip-val" id="dash-rec">—</div>
-            <div class="chip-label">Recovery</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Current Plan -->
-      <div class="card" style="margin-bottom:16px" id="dash-plan-card">
-        <div class="card-title" data-i18n="rd_card_current_plan">Plan de Carrera Actual</div>
-        <div id="dash-plan-content"></div>
-      </div>
-
-      <!-- Recent History -->
-      <div class="card">
-        <div class="card-title" data-i18n="rd_card_recent_races">Últimas Carreras</div>
-        <div id="dash-history-list">
-          <div class="empty-state" data-i18n="rd_no_race_history">Sin historial de carreras.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ TAB: PLAN ═══════════ -->
-  <div class="tab-panel" id="tab-plan">
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title" data-i18n="rd_card_gen_plan_auto">Generar Plan de Carrera Automático</div>
-      <p style="font-size:.85rem;color:var(--sub);margin-bottom:16px" data-i18n="rd_plan_desc">
-        El motor usa tu CTL, TSB y Recovery Score actuales para predecir splits y generar targets de pacing.
-        Opcionalmente ingresa tu FTP para targets de potencia más precisos.
-      </p>
-      <div class="plan-form">
-        <div class="form-group">
-          <label data-i18n="rd_label_race_type">Tipo de carrera</label>
-          <select class="select-input" id="plan-race-type" onchange="syncPlanIFSliders(); syncPlanGoalInput();">
-            <option value="sprint" data-i18n="rd_opt_sprint">Sprint (750m/20km/5km)</option>
-            <option value="olympic" selected data-i18n="rd_opt_olympic">Olímpico (1.5km/40km/10km)</option>
-            <option value="703">Ironman 70.3</option>
-            <option value="full" data-i18n="rd_opt_full">Ironman Completo</option>
-            <option value="21k" data-i18n="rd_opt_half_marathon">Media Maratón</option>
-            <option value="42k" data-i18n="rd_opt_marathon">Maratón</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_ftp_optional">FTP (Watts) — opcional</label>
-          <input type="number" class="form-input" id="plan-ftp" placeholder="ej. 220" min="50" max="500">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_weight_optional">Peso corporal (kg) — opcional</label>
-          <input type="number" class="form-input" id="plan-weight" placeholder="ej. 72" min="30" max="150">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_sweat_optional">Tasa de sudor (L/h) — opcional</label>
-          <input type="number" class="form-input" id="plan-sweat" placeholder="ej. 0.8" min="0.3" max="2.5" step="0.1">
-        </div>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
-        <div class="card-title" style="font-size:.85rem;margin-bottom:6px" data-i18n="rd_card_intensity_optional">Intensidad — opcional</div>
-        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px" data-i18n="rd_intensity_desc">
-          Los % estándar asumen un atleta age-grouper típico. Ajústalos si tu esfuerzo real es distinto
-          (ej. más conservador, o querés simular ir más agresivo). Se guardan por tipo de carrera.
-        </p>
-        <div class="plan-form">
-          <div class="form-group">
-            <label data-i18n="rd_label_bike_pct_ftp">Bici — % de tu FTP <span id="plan-if-bike-val" style="color:var(--acc);font-weight:700">80%</span></label>
-            <input type="range" id="plan-if-bike" min="50" max="105" step="1" oninput="onPlanIFChange()">
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_run_pct_threshold">Trote — % de tu ritmo umbral <span id="plan-if-run-val" style="color:var(--acc);font-weight:700">97%</span></label>
-            <input type="range" id="plan-if-run" min="50" max="120" step="1" oninput="onPlanIFChange()">
-          </div>
-        </div>
-        <button class="btn-outline btn-sm" onclick="resetPlanIF()" data-i18n="rd_btn_reset_standard">↺ Restablecer estándar</button>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
-        <div class="card-title" style="font-size:.85rem;margin-bottom:6px" data-i18n="rd_card_gpx_optional">Ruta real (GPX) — opcional</div>
-        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px" data-i18n="rd_gpx_desc">
-          Sube el track GPX de la bici y/o del trote para reemplazar el modelo genérico por física real
-          (desnivel segmento a segmento en la bici, costo metabólico por pendiente en el trote).
-        </p>
-        <div class="plan-form">
-          <div class="form-group">
-            <label data-i18n="rd_label_bike_route">Ruta de bici (.gpx)</label>
-            <input type="file" class="form-input" id="plan-gpx-bike" accept=".gpx" onchange="handleGpxUpload('bike', this)">
-            <div id="plan-gpx-bike-info" style="font-size:.72rem;color:var(--green);margin-top:4px;display:none"></div>
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_run_route">Ruta de trote (.gpx)</label>
-            <input type="file" class="form-input" id="plan-gpx-run" accept=".gpx" onchange="handleGpxUpload('run', this)">
-            <div id="plan-gpx-run-info" style="font-size:.72rem;color:var(--green);margin-top:4px;display:none"></div>
-          </div>
-        </div>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
-        <div class="card-title" style="font-size:.85rem;margin-bottom:6px" data-i18n="rd_card_conditions_optional">Condiciones del día — opcional</div>
-        <div class="plan-form">
-          <div class="form-group">
-            <label data-i18n="rd_label_wind">Viento (km/h, + = en contra)</label>
-            <input type="number" class="form-input" id="plan-wind" placeholder="ej. 10" min="-30" max="30" step="1">
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_altitude">Altitud (msnm)</label>
-            <input type="number" class="form-input" id="plan-altitude" placeholder="ej. 0" min="0" max="6000" step="50">
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_temperature">Temperatura (°C)</label>
-            <input type="number" class="form-input" id="plan-temp" placeholder="ej. 22" min="-10" max="50" step="1">
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_run_surface">Superficie del trote</label>
-            <select class="select-input" id="plan-surface">
-              <option value="asfalto" data-i18n="rd_surf_asphalt">Asfalto</option>
-              <option value="mixto" data-i18n="rd_surf_mixed">Mixto</option>
-              <option value="trail" data-i18n="rd_surf_trail">Trail</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label data-i18n="rd_label_water_condition">Condición del agua (nado)</label>
-            <select class="select-input" id="plan-water">
-              <option value="1.00" data-i18n="rd_water_pool">Piscina</option>
-              <option value="0.98" data-i18n="rd_water_calm">Mar calmo</option>
-              <option value="0.95" data-i18n="rd_water_moderate">Mar moderado</option>
-              <option value="0.90" data-i18n="rd_water_rough">Mar agitado</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
-        <div class="card-title" style="font-size:.85rem;margin-bottom:6px" data-i18n="rd_card_goal_optional">Meta — opcional</div>
-        <p style="font-size:.78rem;color:var(--sub);margin-bottom:12px" data-i18n="rd_goal_desc">
-          Si te pusiste un objetivo de tiempo para esta carrera, lo comparamos contra la predicción.
-        </p>
-        <div class="plan-form">
-          <div class="form-group">
-            <label data-i18n="rd_label_goal_time">Tiempo meta (hh:mm:ss)</label>
-            <input type="text" class="form-input" id="plan-goal" placeholder="ej. 5:00:00">
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn-primary" onclick="generatePlan()" data-i18n="rd_btn_generate_plan">Generar Plan</button>
-        <span id="plan-gen-msg" style="display:none;font-size:.85rem;color:var(--green)" data-i18n="rd_plan_generated">✓ Plan generado</span>
-        <span id="plan-method-badge" style="display:none;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.3rem .7rem;border-radius:20px"></span>
-      </div>
-    </div>
-
-    <!-- Results -->
-    <div id="plan-results" style="display:none">
-      <div id="plan-confidence-row" style="display:none;margin-bottom:16px">
-        <div class="card" style="text-align:center">
-          <div style="font-size:.78rem;color:var(--sub);margin-bottom:4px">
-            <span data-i18n="rd_label_confidence">Confianza:</span> <strong id="plan-conf-pct" style="color:var(--acc)">—</strong>
-            &nbsp;·&nbsp; <span data-i18n="rd_label_estimated_range">Rango estimado:</span> <strong id="plan-range" style="color:var(--text)">—</strong>
-          </div>
-        </div>
-      </div>
-      <div id="plan-goal-row" style="display:none;margin-bottom:16px">
-        <div class="card">
-          <div class="card-title" style="font-size:.85rem" data-i18n="rd_card_goal_vs_pred">Meta vs Predicción</div>
-          <div class="chips" style="margin-top:8px">
-            <div class="chip"><div class="chip-val" style="color:var(--green)" id="plan-goal-val">—</div><div class="chip-label" data-i18n="rd_chip_your_goal">Tu meta</div></div>
-            <div class="chip"><div class="chip-val" id="plan-goal-pred">—</div><div class="chip-label" data-i18n="rd_chip_prediction">Predicción</div></div>
-            <div class="chip"><div class="chip-val" id="plan-goal-gap">—</div><div class="chip-label" data-i18n="rd_chip_difference">Diferencia</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="grid-2" style="margin-bottom:16px">
-        <!-- Splits -->
-        <div class="card">
-          <div class="card-title" data-i18n="rd_card_predicted_splits">Splits Predichos</div>
-          <table class="splits-table" id="splits-table-plan"></table>
-        </div>
-        <!-- Pacing -->
-        <div class="card">
-          <div class="card-title" data-i18n="rd_card_pacing_targets">Targets de Pacing</div>
-          <div id="pacing-targets-plan"></div>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title" data-i18n="rd_card_prediction_basis">Base de la Predicción</div>
-        <div id="plan-basis"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ TAB: NUTRITION ═══════════ -->
-  <div class="tab-panel" id="tab-nutrition">
-    <div class="card" style="text-align:center;padding:40px 24px">
-      <div style="font-size:2.2rem;margin-bottom:12px">🍽️</div>
-      <div class="card-title" style="margin-bottom:8px" data-i18n="rd_nutrition_title">La calculadora de nutrición vive en su propia página</div>
-      <p style="font-size:.85rem;color:var(--sub);max-width:480px;margin:0 auto 20px" data-i18n="rd_nutrition_desc">
-        Usa tu perfil real (FTP/CSS/ritmo/peso), física precisa de splits, condiciones del día
-        y planes pre/post-carrera — más completo que un cálculo rápido acá.
-      </p>
-      <a id="nutrition-link" class="btn-primary" style="display:inline-flex;text-decoration:none" href="nutrition.html" data-i18n="rd_btn_go_nutrition">Ir a Nutrición →</a>
-    </div>
-  </div>
-
-  <!-- ═══════════ TAB: RESULT ═══════════ -->
-  <div class="tab-panel" id="tab-result">
-    <div class="card">
-      <div class="card-title" data-i18n="rd_card_record_result">Registrar Resultado de Carrera</div>
-      <p style="font-size:.85rem;color:var(--sub);margin-bottom:16px" data-i18n="rd_record_desc">Ingresa tus splits reales para calcular el score de ejecución vs el plan.</p>
-      <div class="form-grid">
-        <div class="form-group">
-          <label data-i18n="rd_label_swim_time">Tiempo Nado (mm:ss)</label>
-          <input type="text" class="form-input" id="res-swim" placeholder="28:45">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_t1">T1 (mm:ss)</label>
-          <input type="text" class="form-input" id="res-t1" placeholder="2:30">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_bike_time">Tiempo Bici (h:mm:ss)</label>
-          <input type="text" class="form-input" id="res-bike" placeholder="1:12:00">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_t2">T2 (mm:ss)</label>
-          <input type="text" class="form-input" id="res-t2" placeholder="1:45">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_run_time">Tiempo Carrera (h:mm:ss)</label>
-          <input type="text" class="form-input" id="res-run" placeholder="42:30">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_avg_power">Potencia media bici (W)</label>
-          <input type="number" class="form-input" id="res-power" placeholder="185" min="50" max="600">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_avg_hr">FC media en carrera (bpm)</label>
-          <input type="number" class="form-input" id="res-hr-run" placeholder="158" min="60" max="220">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_run_pace">Pace carrera (mm:ss/km)</label>
-          <input type="text" class="form-input" id="res-run-pace" placeholder="4:15">
-        </div>
-        <div class="form-group">
-          <label data-i18n="rd_label_feeling">Sensación general (1-5)</label>
-          <select class="select-input" id="res-feeling">
-            <option value="">—</option>
-            <option value="5" data-i18n="rd_feel_5">5 — Excelente</option>
-            <option value="4" data-i18n="rd_feel_4">4 — Bueno</option>
-            <option value="3" data-i18n="rd_feel_3">3 — Regular</option>
-            <option value="2" data-i18n="rd_feel_2">2 — Malo</option>
-            <option value="1" data-i18n="rd_feel_1">1 — Muy malo</option>
-          </select>
-        </div>
-      </div>
-      <div style="margin:12px 0;display:flex;gap:10px;align-items:center">
-        <label style="font-size:.85rem;display:flex;gap:8px;align-items:center">
-          <input type="checkbox" id="res-dnf"> DNF
-        </label>
-        <input type="text" class="form-input" id="res-dnf-reason" placeholder="Motivo DNF" style="width:auto;flex:1;display:none" data-i18n-placeholder="rd_ph_dnf_reason">
-      </div>
-      <textarea class="form-input" id="res-notes" placeholder="Notas post-carrera..." style="resize:none;min-height:64px;margin-bottom:12px" data-i18n-placeholder="rd_ph_notes"></textarea>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button class="btn-primary" onclick="saveResult()" data-i18n="rd_btn_save_result">Guardar Resultado</button>
-        <span id="res-saved-msg" style="display:none"></span>
-      </div>
-    </div>
-    <div id="res-analysis-box" style="display:none;margin-top:16px">
-      <div class="card">
-        <div class="card-title" data-i18n="rd_card_analysis_result">Resultado del Análisis</div>
-        <div id="res-analysis-content"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ TAB: HISTORY ═══════════ -->
-  <div class="tab-panel" id="tab-history">
-    <div class="card">
-      <div class="card-title" data-i18n="rd_card_race_history">Historial de Carreras</div>
-      <div id="history-list"><div class="loader" data-i18n="rd_loading">Cargando...</div></div>
-    </div>
-  </div>
-</div>
-
-<script>
-var API = '/api';
-var currentPlan = null;
-
-function _t(key, fallback) {
-  // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
-  // traducción — hay que detectar ese caso para no mostrar "rd_algo" crudo.
-  var v = window.i18n ? window.i18n.t(key) : null;
-  return (v && v !== key) ? v : fallback;
-}
-
-function _authTok() {
-  var direct = localStorage.getItem('lx_co_token');
-  if (direct) return direct;
-  try { var s = JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); return s&&s.token?s.token:''; }
-  catch(e){ return ''; }
-}
-
-function switchTab(name) {
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('tab-' + name).classList.add('active');
-  var tabs = {dashboard:0, plan:1, nutrition:2, result:3, history:4};
-  document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
-  if (name === 'history') loadHistory();
-  if (name === 'nutrition') updateNutritionLink();
-}
-
-// ─── DASHBOARD ───────────────────────────────────────────────────────────────
-function loadDashboard() {
-  fetch(API + '/races/dashboard-s19', {credentials:'include', headers:{'Authorization':'Bearer '+_authTok()}})
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderDashboard(d); })
-    .catch(function(){ document.getElementById('dash-loader').textContent = _t('rd_err_load_retry', 'Error al cargar. Reintenta.'); });
-}
-
-function renderDashboard(d) {
-  document.getElementById('dash-loader').style.display = 'none';
-  document.getElementById('dash-content').style.display = 'block';
-
-  var nr = d.next_race || {};
-  document.getElementById('dash-days').textContent = nr.days_to_race !== null ? nr.days_to_race : '—';
-  document.getElementById('dash-race-name').textContent = nr.name || _t('rd_no_race_registered', 'Sin carrera registrada');
-  document.getElementById('dash-race-date').textContent = nr.date || '';
-
-  var fit = d.fitness || {};
-  document.getElementById('dash-ctl').textContent = fit.ctl !== null ? fit.ctl : '—';
-  document.getElementById('dash-tsb').textContent = fit.tsb !== null ? fit.tsb : '—';
-  document.getElementById('dash-atl').textContent = fit.atl !== null ? fit.atl : '—';
-  document.getElementById('dash-rec').textContent = fit.recovery_score !== null ? fit.recovery_score : '—';
-  var tsbChip = document.getElementById('dash-tsb-chip');
-  tsbChip.className = 'chip ' + ((fit.tsb || 0) >= 0 ? 'chip-tsb' : 'chip-tsb-neg');
-
-  var plan = d.plan || {};
-  var pc = document.getElementById('dash-plan-content');
-  if (plan.total_fmt) {
-    pc.innerHTML = '<div class="chips">' +
-      '<div class="chip"><div class="chip-val" style="color:var(--acc)">' + plan.total_fmt + '</div><div class="chip-label">' + escHtml(_t('rd_chip_predicted_time','Tiempo Predicho')) + '</div></div>' +
-      (plan.bike_power ? '<div class="chip"><div class="chip-val">' + plan.bike_power + 'W</div><div class="chip-label">' + escHtml(_t('rd_chip_bike_target','Target Bici')) + '</div></div>' : '') +
-      (plan.run_pace ? '<div class="chip"><div class="chip-val">' + escHtml(plan.run_pace) + '</div><div class="chip-label">' + escHtml(_t('rd_chip_run_pace_label','Pace Carrera')) + '</div></div>' : '') +
-      '</div>' +
-      '<div style="margin-top:12px"><button class="btn-outline btn-sm" onclick="switchTab(\'plan\')">' + escHtml(_t('rd_btn_regenerate_plan','Regenerar plan')) + '</button></div>';
-  } else {
-    pc.innerHTML = '<div class="empty-state">' + escHtml(_t('rd_no_plan_generated','Sin plan generado.')) + ' <button class="btn-primary btn-sm" onclick="switchTab(\'plan\')" style="margin-left:10px">' + escHtml(_t('rd_btn_generate_now','Generar ahora')) + '</button></div>';
-  }
-
-  var hist = d.history || [];
-  var hl = document.getElementById('dash-history-list');
-  if (!hist.length) { hl.innerHTML = '<div class="empty-state">' + escHtml(_t('rd_no_races_yet','Sin carreras registradas aún.')) + '</div>'; return; }
-  hl.innerHTML = hist.map(function(r) {
-    var scoreHtml = r.pacing_score ? '<span class="score-pill ' + scoreCls(r.pacing_score) + '">' + r.pacing_score + ' ' + escHtml(_t('rd_exec_suffix','exec')) + '</span>' : '';
-    var dnfHtml   = r.dnf ? '<span class="dnf-badge">DNF</span>' : '';
-    return '<div class="history-row">' +
-      '<div><div class="hist-name">' + escHtml(r.race_name) + '</div></div>' +
-      '<div style="display:flex;gap:10px;align-items:center">' +
-      '<span class="hist-time">' + escHtml(r.total_fmt || '—') + '</span>' +
-      scoreHtml + dnfHtml + '</div></div>';
-  }).join('');
-}
-
-// ─── RUTA REAL (GPX) ─────────────────────────────────────────────────────────
-var gpxData = { bike: null, run: null };  // {distance_km, elevation_gain_m, elevation_loss_m, profile}
-
-function handleGpxUpload(kind, inputEl) {
-  var file = inputEl.files && inputEl.files[0];
-  var infoEl = document.getElementById('plan-gpx-' + kind + '-info');
-  if (!file) return;
-  infoEl.style.display = 'block';
-  infoEl.style.color = 'var(--sub)';
-  infoEl.textContent = _t('rd_analyzing_route', 'Analizando ruta…');
-
-  var fd = new FormData();
-  fd.append('file', file);
-  fetch(API + '/races/parse-gpx', {
-    method:'POST', credentials:'include',
-    headers:{'Authorization':'Bearer '+_authTok()},
-    body: fd
-  })
-    .then(function(r){ if(!r.ok) throw new Error('parse failed'); return r.json(); })
-    .then(function(d){
-      gpxData[kind] = d;
-      infoEl.style.color = 'var(--green)';
-      infoEl.textContent = '✓ ' + d.distance_km + ' km · D+' + Math.round(d.elevation_gain_m) + 'm · D-' + Math.round(d.elevation_loss_m) + 'm';
-    })
-    .catch(function(){
-      gpxData[kind] = null;
-      infoEl.style.color = '#EF4444';
-      infoEl.textContent = _t('rd_gpx_read_error', 'No se pudo leer el GPX. Verifica el archivo.');
-    });
-}
-
-// ─── INTENSIDAD (% FTP bici / % ritmo umbral trote, editable por tipo de carrera) ──
-var PLAN_IF_DEFAULTS = {
-  sprint:  {bike: 0.90, run: 1.10},
-  olympic: {bike: 0.82, run: 1.05},
-  '703':   {bike: 0.75, run: 0.97},
-  full:    {bike: 0.70, run: 0.88},
-  '21k':   {bike: null, run: 0.95},
-  '42k':   {bike: null, run: 0.88},
-};
-var PLAN_IF_STORAGE_KEY = 'lx_raceday_if_overrides';
-var planIFOverrides = {};
-(function loadPlanIFOverrides(){
-  try { planIFOverrides = JSON.parse(localStorage.getItem(PLAN_IF_STORAGE_KEY)||'{}'); } catch(e){ planIFOverrides = {}; }
-})();
-
-function getEffectivePlanIF(rk) {
-  var base = PLAN_IF_DEFAULTS[rk] || PLAN_IF_DEFAULTS.olympic;
-  var ov = planIFOverrides[rk];
-  return {
-    bike: ov && ov.bike != null ? ov.bike : base.bike,
-    run:  ov && ov.run  != null ? ov.run  : base.run,
-  };
-}
-
-function syncPlanIFSliders() {
-  var rk = document.getElementById('plan-race-type').value;
-  var eff = getEffectivePlanIF(rk);
-  var bikeSlider = document.getElementById('plan-if-bike');
-  var bikeGroup  = bikeSlider.closest('.form-group');
-  if (eff.bike == null) {
-    bikeGroup.style.display = 'none';
-  } else {
-    bikeGroup.style.display = '';
-    var bp = Math.round(eff.bike*100);
-    bikeSlider.value = bp;
-    document.getElementById('plan-if-bike-val').textContent = bp + '%';
-  }
-  var rp = Math.round(eff.run*100);
-  document.getElementById('plan-if-run').value = rp;
-  document.getElementById('plan-if-run-val').textContent = rp + '%';
-}
-
-function onPlanIFChange() {
-  var rk = document.getElementById('plan-race-type').value;
-  var bikePct = parseInt(document.getElementById('plan-if-bike').value) || 80;
-  var runPct  = parseInt(document.getElementById('plan-if-run').value) || 95;
-  document.getElementById('plan-if-bike-val').textContent = bikePct + '%';
-  document.getElementById('plan-if-run-val').textContent  = runPct + '%';
-  planIFOverrides[rk] = { bike: bikePct/100, run: runPct/100 };
-  try { localStorage.setItem(PLAN_IF_STORAGE_KEY, JSON.stringify(planIFOverrides)); } catch(e){}
-}
-
-function resetPlanIF() {
-  var rk = document.getElementById('plan-race-type').value;
-  delete planIFOverrides[rk];
-  try { localStorage.setItem(PLAN_IF_STORAGE_KEY, JSON.stringify(planIFOverrides)); } catch(e){}
-  syncPlanIFSliders();
-}
-
-// ─── META (comparación local, rescatada de race_predictor.html) ──────────────
-var PLAN_GOAL_STORAGE_KEY = 'lx_raceday_goal_overrides';
-var planGoalOverrides = {};
-(function loadPlanGoalOverrides(){
-  try { planGoalOverrides = JSON.parse(localStorage.getItem(PLAN_GOAL_STORAGE_KEY)||'{}'); } catch(e){ planGoalOverrides = {}; }
-})();
-function fmtHMS(sec) {
-  sec = Math.round(sec);
-  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
-  return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-}
-function syncPlanGoalInput() {
-  var rk = document.getElementById('plan-race-type').value;
-  document.getElementById('plan-goal').value = planGoalOverrides[rk] || '';
-}
-document.addEventListener('change', function(e){
-  if (e.target && e.target.id === 'plan-goal') {
-    var rk = document.getElementById('plan-race-type').value;
-    var v = e.target.value.trim();
-    if (v) planGoalOverrides[rk] = v; else delete planGoalOverrides[rk];
-    try { localStorage.setItem(PLAN_GOAL_STORAGE_KEY, JSON.stringify(planGoalOverrides)); } catch(err){}
-  }
-});
-
-// ─── GENERATE PLAN ───────────────────────────────────────────────────────────
-function generatePlan() {
-  var payload = {
-    race_type: document.getElementById('plan-race-type').value || null,
-    ftp_w:     parseInt(document.getElementById('plan-ftp').value) || null,
-    weight_kg: parseFloat(document.getElementById('plan-weight').value) || null,
-    sweat_l_h: parseFloat(document.getElementById('plan-sweat').value) || null,
-  };
-
-  var windKmh = parseFloat(document.getElementById('plan-wind').value);
-  var altitude = parseFloat(document.getElementById('plan-altitude').value);
-  var temp = parseFloat(document.getElementById('plan-temp').value);
-  var surface = document.getElementById('plan-surface').value;
-  var waterMult = parseFloat(document.getElementById('plan-water').value);
-  if (!isNaN(windKmh)) payload.wind_ms = windKmh / 3.6;
-  if (!isNaN(altitude)) payload.altitude_m = altitude;
-  if (!isNaN(temp)) payload.temperature_c = temp;
-  if (!isNaN(waterMult) && waterMult < 1) payload.water_mult = waterMult;
-  if (surface) payload.run_surface = surface;
-
-  if (gpxData.bike) {
-    payload.bike_profile          = gpxData.bike.profile;
-    payload.bike_distance_km      = gpxData.bike.distance_km;
-    payload.bike_elevation_gain_m = gpxData.bike.elevation_gain_m;
-    payload.bike_elevation_loss_m = gpxData.bike.elevation_loss_m;
-  }
-  if (gpxData.run) {
-    payload.run_distance_km      = gpxData.run.distance_km;
-    payload.run_elevation_gain_m = gpxData.run.elevation_gain_m;
-    payload.run_elevation_loss_m = gpxData.run.elevation_loss_m;
-  }
-
-  var effIF = getEffectivePlanIF(payload.race_type || document.getElementById('plan-race-type').value);
-  if (effIF.bike != null) payload.bike_if_override = effIF.bike;
-  if (effIF.run  != null) payload.run_fraction_override = effIF.run;
-
-  fetch(API + '/races/auto-plan', {
-    method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_authTok()},
-    body: JSON.stringify(payload)
-  })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      currentPlan = d;
-      document.getElementById('plan-gen-msg').style.display = 'inline';
-      setTimeout(function(){ document.getElementById('plan-gen-msg').style.display = 'none'; }, 3000);
-      var badge = document.getElementById('plan-method-badge');
-      if (d.method === 'physics') {
-        badge.style.display = 'inline-block';
-        badge.style.background = 'rgba(16,185,129,.15)';
-        badge.style.color = 'var(--green)';
-        badge.textContent = _t('rd_method_physics', '⚡ Física precisa (ruta + condiciones)');
-      } else {
-        badge.style.display = 'inline-block';
-        badge.style.background = 'rgba(148,163,184,.12)';
-        badge.style.color = 'var(--sub)';
-        badge.textContent = _t('rd_method_standard', 'Modelo estándar (CTL/TSB)');
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Race Day Intelligence</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="nav.css?v=3" />
+    <style>
+      :root {
+        --bg: #04080f;
+        --card: #08121e;
+        --card2: #0c1d30;
+        --border: rgba(8, 116, 174, 0.18);
+        --text: #f0f9ff;
+        --sub: #7fb3cc;
+        --acc: #ff6535;
+        --acc2: #ef4444;
+        --green: #10b981;
+        --blue: #0ea5e9;
+        --purple: #a855f7;
+        --r: 12px;
+        --r2: 8px;
       }
-      renderPlanResults(d);
-    })
-    .catch(function(){ alert(_t('rd_err_generate_plan', 'Error al generar plan. Verifica tus datos.')); });
-}
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+        min-height: 100vh;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      #nav-placeholder {
+        height: 0;
+      }
+      /* ─── LabX TopNav ─── */
+      #lx-topnav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        height: 60px;
+        background: rgba(4, 8, 15, 0.97);
+        backdrop-filter: blur(18px) saturate(160%);
+        border-bottom: 1px solid rgba(8, 145, 178, 0.12);
+        display: flex;
+        align-items: center;
+        padding: 0 1.5rem;
+        gap: 1.2rem;
+      }
+      .lxn-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.38rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #f0f9ff;
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .lxn-brand span {
+        color: #ff6535;
+      }
+      .lxn-brand svg.sbl-svg {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+      .lxn-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.15rem;
+        flex: 1;
+        overflow-x: auto;
+      }
+      .lxn-nav a {
+        padding: 0.32rem 0.68rem;
+        border-radius: 5px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #7fb3cc;
+        text-decoration: none;
+        white-space: nowrap;
+        transition:
+          color 0.15s,
+          background 0.15s;
+        flex-shrink: 0;
+      }
+      .lxn-nav a:hover,
+      .lxn-nav a.on {
+        color: #ff6535;
+        background: rgba(255, 101, 53, 0.1);
+      }
+      .lxn-out {
+        background: transparent;
+        border: 1px solid rgba(61, 104, 128, 0.32);
+        border-radius: 5px;
+        color: #3d6880;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.32rem 0.65rem;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .lxn-out:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+      .sbl-flower {
+        animation: sbl-spin-flower 24s linear infinite reverse;
+        transform-origin: 50px 50px;
+      }
+      .sbl-arcs {
+        animation: sbl-spin-arcs 40s linear infinite;
+        transform-origin: 50px 50px;
+      }
+      @keyframes sbl-spin-flower {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes sbl-spin-arcs {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (max-width: 700px) {
+        .lxn-nav {
+          display: none;
+        }
+      }
+      .page-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+      .page-header {
+        margin-bottom: 24px;
+      }
+      .page-header h1 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      .page-header p {
+        color: var(--sub);
+        margin-top: 4px;
+        font-size: 0.9rem;
+      }
 
-function renderPlanResults(d) {
-  document.getElementById('plan-results').style.display = 'block';
-  var splits = d.splits || {};
+      /* TABS */
+      .tabs {
+        display: flex;
+        gap: 0.2rem;
+        margin-bottom: 24px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--border);
+      }
+      .tab-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        background: transparent;
+        color: var(--sub);
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        white-space: nowrap;
+        margin-bottom: -1px;
+      }
+      .tab-btn.active {
+        background: none;
+        color: var(--acc);
+        border-bottom-color: var(--acc);
+      }
+      .tab-btn:hover:not(.active) {
+        background: none;
+        color: var(--text);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
 
-  // Confianza + rango (rescatado de race_predictor.html)
-  if (d.confidence) {
-    document.getElementById('plan-confidence-row').style.display = 'block';
-    document.getElementById('plan-conf-pct').textContent = d.confidence.confidence_pct + '%';
-    document.getElementById('plan-range').textContent = d.confidence.range_low_fmt + ' – ' + d.confidence.range_high_fmt;
-  }
+      /* CARDS */
+      .card {
+        background: var(--card);
+        border-radius: var(--r);
+        padding: 20px;
+        border: 1px solid var(--border);
+      }
+      .card-title {
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
+        letter-spacing: 0.01em;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+      }
 
-  // Meta vs Predicción (rescatado de race_predictor.html)
-  var goalStr = document.getElementById('plan-goal').value.trim();
-  var goalSec = goalStr ? parseTimeToSec(goalStr) : null;
-  if (goalSec) {
-    document.getElementById('plan-goal-row').style.display = 'block';
-    document.getElementById('plan-goal-val').textContent = goalStr;
-    document.getElementById('plan-goal-pred').textContent = splits.total_fmt || '—';
-    var gap = splits.total_s - goalSec;
-    var gapEl = document.getElementById('plan-goal-gap');
-    gapEl.textContent = (gap <= 0 ? '-' : '+') + fmtHMS(Math.abs(gap)) + (gap <= 0 ? ' ✓' : '');
-    gapEl.style.color = gap <= 0 ? 'var(--green)' : '#EF4444';
-  } else {
-    document.getElementById('plan-goal-row').style.display = 'none';
-  }
+      /* COUNTDOWN */
+      .countdown-hero {
+        text-align: center;
+        padding: 24px;
+      }
+      .countdown-days {
+        font-size: 5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+      }
+      .countdown-label {
+        font-size: 0.85rem;
+        color: var(--sub);
+        margin-top: 4px;
+      }
+      .race-name-big {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+      .race-date-sub {
+        font-size: 0.88rem;
+        color: var(--sub);
+      }
 
-  var rows = [];
-  if (splits.swim_fmt && splits.swim_fmt !== '—') rows.push(['🏊', _t('rd_seg_swim','Nado'),    splits.swim_fmt, splits.swim_s]);
-  if (splits.t1_fmt   && splits.t1_fmt   !== '—') rows.push(['↔', 'T1',      splits.t1_fmt,  0]);
-  if (splits.bike_fmt && splits.bike_fmt !== '—') rows.push(['🚴', _t('rd_seg_bike','Bici'),    splits.bike_fmt, splits.bike_s]);
-  if (splits.t2_fmt   && splits.t2_fmt   !== '—') rows.push(['↔', 'T2',      splits.t2_fmt,  0]);
-  if (splits.run_fmt  && splits.run_fmt  !== '—') rows.push(['🏃', _t('rd_seg_run','Carrera'), splits.run_fmt,  splits.run_s]);
+      /* FITNESS CHIPS */
+      .chips {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-align: center;
+        flex: 1;
+        min-width: 80px;
+      }
+      .chip-val {
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+      .chip-label {
+        font-size: 0.7rem;
+        color: var(--sub);
+        margin-top: 2px;
+      }
+      .chip-ctl {
+        border-color: var(--blue);
+      }
+      .chip-ctl .chip-val {
+        color: var(--blue);
+      }
+      .chip-tsb .chip-val {
+        color: var(--green);
+      }
+      .chip-tsb-neg .chip-val {
+        color: var(--acc2);
+      }
+      .chip-rec .chip-val {
+        color: var(--purple);
+      }
 
-  var tableHtml = '<thead><tr><th colspan="2">' + escHtml(_t('rd_th_segment','Segmento')) + '</th><th>' + escHtml(_t('rd_th_time','Tiempo')) + '</th></tr></thead><tbody>' +
-    rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td>' + escHtml(r[1]) + '</td><td>' + escHtml(r[2]) + '</td></tr>'; }).join('') +
-    '<tr class="total-row"><td>⏱</td><td>' + escHtml(_t('rd_total','TOTAL')) + '</td><td>' + escHtml(splits.total_fmt || '—') + '</td></tr></tbody>';
-  document.getElementById('splits-table-plan').innerHTML = tableHtml;
+      /* SPLITS TABLE */
+      .splits-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .splits-table th {
+        text-align: left;
+        color: var(--sub);
+        font-size: 0.78rem;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .splits-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border) 33;
+        font-size: 0.88rem;
+      }
+      .splits-table td:last-child {
+        text-align: right;
+        font-weight: 700;
+        color: var(--acc);
+      }
+      .splits-table tr.total-row td {
+        border-top: 2px solid var(--border);
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text);
+      }
+      .segment-icon {
+        font-size: 1.1rem;
+        margin-right: 6px;
+      }
 
-  var pacing = d.pacing || {};
-  var pts = document.getElementById('pacing-targets-plan');
-  pts.innerHTML = '';
-  if (pacing.bike_power || pacing.bike_if) {
-    var ifPct = pacing.bike_if ? Math.round(pacing.bike_if * 100) : 0;
-    pts.innerHTML += '<div class="target-card">' +
-      '<div class="target-header"><span class="target-label">' + escHtml(_t('rd_target_bike_power','🚴 Potencia Bici')) + '</span>' +
-      '<span class="target-value">' + (pacing.bike_power || '—') + 'W</span></div>' +
-      '<div class="target-sub">' + escHtml(_t('rd_if_target_prefix','IF objetivo:')) + ' ' + (pacing.bike_if || '—') + ' (' + ifPct + '% FTP)</div>' +
-      '<div class="if-bar"><div class="if-fill" style="width:' + Math.min(100, ifPct) + '%"></div></div>' +
-      '</div>';
-  }
-  if (pacing.run_pace) {
-    pts.innerHTML += '<div class="target-card">' +
-      '<div class="target-header"><span class="target-label">' + escHtml(_t('rd_target_run_pace','🏃 Pace Carrera')) + '</span>' +
-      '<span class="target-value">' + escHtml(pacing.run_pace) + '</span></div>' +
-      '<div class="target-sub">' + escHtml(_t('rd_target_run_note','Incluye factor de fatiga del triatlón')) + '</div>' +
-      '</div>';
-  }
+      /* PACING TARGETS */
+      .target-card {
+        background: var(--card2);
+        border-radius: var(--r2);
+        padding: 16px;
+        border: 1px solid var(--border);
+        margin-bottom: 12px;
+      }
+      .target-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .target-label {
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+      .target-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--acc);
+      }
+      .target-sub {
+        font-size: 0.78rem;
+        color: var(--sub);
+      }
+      .if-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--border);
+        margin-top: 8px;
+        overflow: hidden;
+      }
+      .if-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--green),
+          var(--acc),
+          var(--acc2)
+        );
+      }
 
-  var basis = document.getElementById('plan-basis');
-  basis.innerHTML = '<div class="chips">' +
-    '<div class="chip"><div class="chip-val" style="color:var(--blue)">' + (d.ctl_used || '—') + '</div><div class="chip-label">' + escHtml(_t('rd_chip_ctl_used','CTL usado')) + '</div></div>' +
-    '<div class="chip"><div class="chip-val">' + (d.tsb_used !== null ? d.tsb_used : '—') + '</div><div class="chip-label">TSB</div></div>' +
-    '<div class="chip"><div class="chip-val">' + (d.recovery || '—') + '</div><div class="chip-label">Recovery</div></div>' +
-    '<div class="chip"><div class="chip-val">' + (d.perf_mod || '—') + '</div><div class="chip-label">' + escHtml(_t('rd_chip_modifier','Modificador')) + '</div></div>' +
-    (pacing.bike_avg_speed_kmh ? '<div class="chip"><div class="chip-val">' + pacing.bike_avg_speed_kmh + ' km/h</div><div class="chip-label">' + escHtml(_t('rd_chip_avg_bike_speed','Vel. media bici')) + '</div></div>' : '') +
-    '</div>';
-}
+      /* NUTRITION */
+      .nutr-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .nutr-stat {
+        background: var(--card2);
+        border-radius: var(--r2);
+        padding: 12px;
+        text-align: center;
+      }
+      .nutr-val {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--acc);
+      }
+      .nutr-label {
+        font-size: 0.7rem;
+        color: var(--sub);
+        margin-top: 2px;
+      }
+      .nutr-timeline {
+        list-style: none;
+      }
+      .nutr-row {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border) 44;
+      }
+      .nutr-seg {
+        width: 80px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--acc);
+        flex-shrink: 0;
+      }
+      .nutr-detail {
+        flex: 1;
+        font-size: 0.8rem;
+        color: var(--sub);
+        line-height: 1.4;
+      }
+      .nutr-macros {
+        font-size: 0.75rem;
+        color: var(--text);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .warning-list {
+        list-style: none;
+        margin-top: 12px;
+      }
+      .warning-list li {
+        padding: 6px 0;
+        font-size: 0.8rem;
+        color: var(--acc);
+        border-bottom: 1px solid var(--border) 33;
+      }
+      .warning-list li::before {
+        content: '⚠ ';
+        color: var(--acc);
+      }
 
-// ─── NUTRITION (redirige a nutrition.html, ver switchTab) ─────────────────────
-var RACE_TYPE_TO_NUTRITION = { sprint:'sprint', olympic:'olympic', '703':'703', full:'ironman' };
-function updateNutritionLink() {
-  var link = document.getElementById('nutrition-link');
-  if (!link) return;
-  var rk = document.getElementById('plan-race-type') ? document.getElementById('plan-race-type').value : null;
-  var mapped = RACE_TYPE_TO_NUTRITION[rk];
-  link.href = mapped ? 'nutrition.html?race=' + mapped : 'nutrition.html';
-}
+      /* RESULT FORM */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-group label {
+        font-size: 0.78rem;
+        color: var(--sub);
+        font-weight: 500;
+      }
+      .form-input {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        color: var(--text);
+        font-size: 0.88rem;
+        width: 100%;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: var(--acc);
+      }
+      .btn-primary {
+        padding: 10px 24px;
+        background: var(--acc);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+      }
+      .btn-sm {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+      }
+      .btn-outline {
+        padding: 10px 22px;
+        background: transparent;
+        border: 1px solid var(--acc);
+        color: var(--acc);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
 
-// ─── RESULT ──────────────────────────────────────────────────────────────────
-document.addEventListener('change', function(e) {
-  if (e.target && e.target.id === 'res-dnf') {
-    document.getElementById('res-dnf-reason').style.display =
-      e.target.checked ? 'block' : 'none';
-  }
-});
+      /* ANALYSIS */
+      .comparison-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border) 44;
+      }
+      .comp-seg {
+        font-size: 0.85rem;
+        font-weight: 600;
+        width: 80px;
+      }
+      .comp-vals {
+        display: flex;
+        gap: 20px;
+        font-size: 0.85rem;
+      }
+      .comp-pred {
+        color: var(--sub);
+      }
+      .comp-actual {
+        font-weight: 700;
+      }
+      .comp-diff {
+        font-size: 0.78rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .diff-faster {
+        background: var(--green) 22;
+        color: var(--green);
+      }
+      .diff-slower {
+        background: var(--acc2) 22;
+        color: var(--acc2);
+      }
+      .pacing-score-hero {
+        text-align: center;
+        padding: 20px;
+      }
+      .pacing-score-num {
+        font-size: 4rem;
+        font-weight: 900;
+      }
+      .learning-item {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border) 44;
+        font-size: 0.85rem;
+        color: var(--sub);
+      }
+      .learning-item::before {
+        content: '→ ';
+        color: var(--acc);
+      }
 
-function parseTimeToSec(str) {
-  if (!str || !str.trim()) return null;
-  var parts = str.trim().split(':').map(Number);
-  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
-  if (parts.length === 2) return parts[0]*60 + parts[1];
-  return parseInt(str) || null;
-}
+      /* HISTORY */
+      .history-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border) 44;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .hist-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+      }
+      .hist-time {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--acc);
+      }
+      .hist-date {
+        font-size: 0.75rem;
+        color: var(--sub);
+      }
+      .score-pill {
+        font-size: 0.75rem;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+      }
+      .score-hi {
+        background: var(--green) 22;
+        color: var(--green);
+      }
+      .score-mid {
+        background: var(--acc) 22;
+        color: var(--acc);
+      }
+      .score-lo {
+        background: var(--acc2) 22;
+        color: var(--acc2);
+      }
+      .dnf-badge {
+        font-size: 0.72rem;
+        color: var(--acc2);
+        font-weight: 700;
+      }
 
-function saveResult() {
-  var payload = {
-    swim_s:            parseTimeToSec(document.getElementById('res-swim').value),
-    t1_s:              parseTimeToSec(document.getElementById('res-t1').value),
-    bike_s:            parseTimeToSec(document.getElementById('res-bike').value),
-    t2_s:              parseTimeToSec(document.getElementById('res-t2').value),
-    run_s:             parseTimeToSec(document.getElementById('res-run').value),
-    avg_power_bike_w:  parseInt(document.getElementById('res-power').value) || null,
-    avg_hr_run:        parseInt(document.getElementById('res-hr-run').value) || null,
-    avg_pace_run_s_km: parseTimeToSec(document.getElementById('res-run-pace').value),
-    overall_feeling:   parseInt(document.getElementById('res-feeling').value) || null,
-    dnf:               document.getElementById('res-dnf').checked,
-    dnf_reason:        document.getElementById('res-dnf-reason').value || null,
-    notes:             document.getElementById('res-notes').value || null,
-  };
+      /* PLAN FORM */
+      .plan-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .select-input {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.88rem;
+        width: 100%;
+      }
+      .select-input:focus {
+        outline: none;
+        border-color: var(--acc);
+      }
 
-  fetch(API + '/races/record-result', {
-    method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_authTok()},
-    body: JSON.stringify(payload)
-  })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      var msg = document.getElementById('res-saved-msg');
-      msg.style.display = 'inline';
-      msg.className = 'success-msg';
-      msg.textContent = escHtml(_t('rd_saved_result_prefix','✓ Guardado — Tiempo:')) + ' ' + (d.total_fmt || '—') +
-        (d.pacing_score ? ' · ' + escHtml(_t('rd_exec_label','Exec:')) + ' ' + d.pacing_score + '/100' : '') +
-        (d.pred_error_fmt ? ' · ' + d.pred_error_fmt + ' ' + escHtml(_t('rd_vs_prediction_suffix','vs predicción')) : '');
+      /* MISC */
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+        font-size: 0.9rem;
+      }
+      .loader {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+      }
+      .tag {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .success-msg {
+        color: var(--green);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside id="sidebar"></aside>
+      <header class="sb-topbar"></header>
+      <div class="sb-overlay" id="sb-overlay"></div>
+      <main class="main" id="main-content">
+        <div class="page-wrap">
+          <div class="tabs">
+            <button
+              class="tab-btn active"
+              onclick="switchTab('dashboard')"
+              data-i18n="rd_tab_dashboard"
+            >
+              Dashboard
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('plan')"
+              data-i18n="rd_tab_plan"
+            >
+              Generar Plan
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('nutrition')"
+              data-i18n="rd_tab_nutrition"
+            >
+              Nutrición
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('result')"
+              data-i18n="rd_tab_result"
+            >
+              Registrar Resultado
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('history')"
+              data-i18n="rd_tab_history"
+            >
+              Historial
+            </button>
+          </div>
 
-      var box = document.getElementById('res-analysis-box');
-      var content = document.getElementById('res-analysis-content');
-      box.style.display = 'block';
-      content.innerHTML =
-        '<div class="chips">' +
-        '<div class="chip"><div class="chip-val" style="color:var(--acc)">' + (d.total_fmt || '—') + '</div><div class="chip-label">' + escHtml(_t('rd_chip_final_time','Tiempo final')) + '</div></div>' +
-        (d.pacing_score !== null ? '<div class="chip"><div class="chip-val" style="color:' + scoreColor(d.pacing_score) + '">' + d.pacing_score + '</div><div class="chip-label">' + escHtml(_t('rd_chip_pacing_score','Pacing Score')) + '</div></div>' : '') +
-        (d.pred_error_fmt ? '<div class="chip"><div class="chip-val" style="font-size:.9rem">' + escHtml(d.pred_error_fmt) + '</div><div class="chip-label">' + escHtml(_t('rd_chip_vs_prediction','vs Predicción')) + '</div></div>' : '') +
-        '</div>';
-    })
-    .catch(function(){ alert(_t('rd_err_save_result', 'Error al guardar resultado.')); });
-}
+          <!-- ═══════════ TAB: DASHBOARD ═══════════ -->
+          <div class="tab-panel active" id="tab-dashboard">
+            <div
+              id="dash-loader"
+              class="loader"
+              data-i18n="rd_loading_dashboard"
+            >
+              Cargando Race Day Dashboard...
+            </div>
+            <div id="dash-content" style="display: none">
+              <!-- Countdown -->
+              <div class="card" style="margin-bottom: 16px" id="countdown-card">
+                <div class="countdown-hero">
+                  <div class="countdown-days" id="dash-days">—</div>
+                  <div class="countdown-label" data-i18n="rd_days_to_race">
+                    días para la carrera
+                  </div>
+                  <div
+                    class="race-name-big"
+                    id="dash-race-name"
+                    data-i18n="rd_no_race_registered"
+                  >
+                    Sin carrera registrada
+                  </div>
+                  <div class="race-date-sub" id="dash-race-date"></div>
+                </div>
+              </div>
 
-// ─── HISTORY ─────────────────────────────────────────────────────────────────
-function loadHistory() {
-  var container = document.getElementById('history-list');
-  container.innerHTML = '<div class="loader">' + escHtml(_t('rd_loading','Cargando...')) + '</div>';
-  fetch(API + '/races?limit=20', {credentials:'include', headers:{'Authorization':'Bearer '+_authTok()}})
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderHistory(d.races || d || []); })
-    .catch(function(){ container.innerHTML = '<div class="empty-state">' + escHtml(_t('rd_err_load_history','Error al cargar historial.')) + '</div>'; });
-}
+              <!-- Fitness -->
+              <div class="card" style="margin-bottom: 16px">
+                <div class="card-title" data-i18n="rd_card_fitness_state">
+                  Estado de Forma
+                </div>
+                <div class="chips">
+                  <div class="chip chip-ctl">
+                    <div class="chip-val" id="dash-ctl">—</div>
+                    <div class="chip-label" data-i18n="rd_label_ctl">
+                      CTL (Fitness)
+                    </div>
+                  </div>
+                  <div class="chip" id="dash-tsb-chip">
+                    <div class="chip-val" id="dash-tsb">—</div>
+                    <div class="chip-label" data-i18n="rd_label_tsb">
+                      TSB (Forma)
+                    </div>
+                  </div>
+                  <div class="chip">
+                    <div class="chip-val" id="dash-atl">—</div>
+                    <div class="chip-label" data-i18n="rd_label_atl">
+                      ATL (Fatiga)
+                    </div>
+                  </div>
+                  <div class="chip chip-rec">
+                    <div class="chip-val" id="dash-rec">—</div>
+                    <div class="chip-label">Recovery</div>
+                  </div>
+                </div>
+              </div>
 
-function renderHistory(races) {
-  var container = document.getElementById('history-list');
-  if (!races.length) { container.innerHTML = '<div class="empty-state">' + escHtml(_t('rd_no_races_registered','Sin carreras registradas.')) + '</div>'; return; }
-  container.innerHTML = races.map(function(r) {
-    var score = r.pacing_score || r.readiness_score;
-    var scoreHtml = score ? '<span class="score-pill ' + scoreCls(score) + '">' + score + '</span>' : '';
-    return '<div class="history-row">' +
-      '<div>' +
-        '<div class="hist-name">' + escHtml(r.race_name || r.name || '—') + '</div>' +
-        '<div class="hist-date">' + (r.race_date || r.date || '') + ' · ' + (r.distance || '—') + '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:8px;align-items:center">' + scoreHtml + '</div>' +
-      '</div>';
-  }).join('');
-}
+              <!-- Current Plan -->
+              <div class="card" style="margin-bottom: 16px" id="dash-plan-card">
+                <div class="card-title" data-i18n="rd_card_current_plan">
+                  Plan de Carrera Actual
+                </div>
+                <div id="dash-plan-content"></div>
+              </div>
 
-// ─── UTILS ───────────────────────────────────────────────────────────────────
-function scoreCls(s) {
-  return s >= 80 ? 'score-hi' : s >= 60 ? 'score-mid' : 'score-lo';
-}
-function scoreColor(s) {
-  return s >= 80 ? '#10B981' : s >= 60 ? '#F59E0B' : '#EF4444';
-}
-function escHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+              <!-- Recent History -->
+              <div class="card">
+                <div class="card-title" data-i18n="rd_card_recent_races">
+                  Últimas Carreras
+                </div>
+                <div id="dash-history-list">
+                  <div class="empty-state" data-i18n="rd_no_race_history">
+                    Sin historial de carreras.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-document.addEventListener('DOMContentLoaded', function() {
-  loadDashboard();
-  syncPlanIFSliders();
-  syncPlanGoalInput();
-});
-</script>
-<script src="auth.js"></script>
-<script>KL.guard('race_day');</script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="i18n.js"></script>
-  </main>
-</div>
-</body>
+          <!-- ═══════════ TAB: PLAN ═══════════ -->
+          <div class="tab-panel" id="tab-plan">
+            <div class="card" style="margin-bottom: 16px">
+              <div class="card-title" data-i18n="rd_card_gen_plan_auto">
+                Generar Plan de Carrera Automático
+              </div>
+              <p
+                style="
+                  font-size: 0.85rem;
+                  color: var(--sub);
+                  margin-bottom: 16px;
+                "
+                data-i18n="rd_plan_desc"
+              >
+                El motor usa tu CTL, TSB y Recovery Score actuales para predecir
+                splits y generar targets de pacing. Opcionalmente ingresa tu FTP
+                para targets de potencia más precisos.
+              </p>
+              <div class="plan-form">
+                <div class="form-group">
+                  <label data-i18n="rd_label_race_type">Tipo de carrera</label>
+                  <select
+                    class="select-input"
+                    id="plan-race-type"
+                    onchange="
+                      syncPlanIFSliders();
+                      syncPlanGoalInput();
+                    "
+                  >
+                    <option value="sprint" data-i18n="rd_opt_sprint">
+                      Sprint (750m/20km/5km)
+                    </option>
+                    <option value="olympic" selected data-i18n="rd_opt_olympic">
+                      Olímpico (1.5km/40km/10km)
+                    </option>
+                    <option value="703">Ironman 70.3</option>
+                    <option value="full" data-i18n="rd_opt_full">
+                      Ironman Completo
+                    </option>
+                    <option value="21k" data-i18n="rd_opt_half_marathon">
+                      Media Maratón
+                    </option>
+                    <option value="42k" data-i18n="rd_opt_marathon">
+                      Maratón
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_ftp_optional"
+                    >FTP (Watts) — opcional</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="plan-ftp"
+                    placeholder="ej. 220"
+                    min="50"
+                    max="500"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_weight_optional"
+                    >Peso corporal (kg) — opcional</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="plan-weight"
+                    placeholder="ej. 72"
+                    min="30"
+                    max="150"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_sweat_optional"
+                    >Tasa de sudor (L/h) — opcional</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="plan-sweat"
+                    placeholder="ej. 0.8"
+                    min="0.3"
+                    max="2.5"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  margin: 16px 0;
+                  padding-top: 16px;
+                "
+              >
+                <div
+                  class="card-title"
+                  style="font-size: 0.85rem; margin-bottom: 6px"
+                  data-i18n="rd_card_intensity_optional"
+                >
+                  Intensidad — opcional
+                </div>
+                <p
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--sub);
+                    margin-bottom: 12px;
+                  "
+                  data-i18n="rd_intensity_desc"
+                >
+                  Los % estándar asumen un atleta age-grouper típico. Ajústalos
+                  si tu esfuerzo real es distinto (ej. más conservador, o querés
+                  simular ir más agresivo). Se guardan por tipo de carrera.
+                </p>
+                <div class="plan-form">
+                  <div class="form-group">
+                    <label data-i18n="rd_label_bike_pct_ftp"
+                      >Bici — % de tu FTP
+                      <span
+                        id="plan-if-bike-val"
+                        style="color: var(--acc); font-weight: 700"
+                        >80%</span
+                      ></label
+                    >
+                    <input
+                      type="range"
+                      id="plan-if-bike"
+                      min="50"
+                      max="105"
+                      step="1"
+                      oninput="onPlanIFChange()"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_run_pct_threshold"
+                      >Trote — % de tu ritmo umbral
+                      <span
+                        id="plan-if-run-val"
+                        style="color: var(--acc); font-weight: 700"
+                        >97%</span
+                      ></label
+                    >
+                    <input
+                      type="range"
+                      id="plan-if-run"
+                      min="50"
+                      max="120"
+                      step="1"
+                      oninput="onPlanIFChange()"
+                    />
+                  </div>
+                </div>
+                <button
+                  class="btn-outline btn-sm"
+                  onclick="resetPlanIF()"
+                  data-i18n="rd_btn_reset_standard"
+                >
+                  ↺ Restablecer estándar
+                </button>
+              </div>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  margin: 16px 0;
+                  padding-top: 16px;
+                "
+              >
+                <div
+                  class="card-title"
+                  style="font-size: 0.85rem; margin-bottom: 6px"
+                  data-i18n="rd_card_gpx_optional"
+                >
+                  Ruta real (GPX) — opcional
+                </div>
+                <p
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--sub);
+                    margin-bottom: 12px;
+                  "
+                  data-i18n="rd_gpx_desc"
+                >
+                  Sube el track GPX de la bici y/o del trote para reemplazar el
+                  modelo genérico por física real (desnivel segmento a segmento
+                  en la bici, costo metabólico por pendiente en el trote).
+                </p>
+                <div class="plan-form">
+                  <div class="form-group">
+                    <label data-i18n="rd_label_bike_route"
+                      >Ruta de bici (.gpx)</label
+                    >
+                    <input
+                      type="file"
+                      class="form-input"
+                      id="plan-gpx-bike"
+                      accept=".gpx"
+                      onchange="handleGpxUpload('bike', this)"
+                    />
+                    <div
+                      id="plan-gpx-bike-info"
+                      style="
+                        font-size: 0.72rem;
+                        color: var(--green);
+                        margin-top: 4px;
+                        display: none;
+                      "
+                    ></div>
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_run_route"
+                      >Ruta de trote (.gpx)</label
+                    >
+                    <input
+                      type="file"
+                      class="form-input"
+                      id="plan-gpx-run"
+                      accept=".gpx"
+                      onchange="handleGpxUpload('run', this)"
+                    />
+                    <div
+                      id="plan-gpx-run-info"
+                      style="
+                        font-size: 0.72rem;
+                        color: var(--green);
+                        margin-top: 4px;
+                        display: none;
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  margin: 16px 0;
+                  padding-top: 16px;
+                "
+              >
+                <div
+                  class="card-title"
+                  style="font-size: 0.85rem; margin-bottom: 6px"
+                  data-i18n="rd_card_conditions_optional"
+                >
+                  Condiciones del día — opcional
+                </div>
+                <div class="plan-form">
+                  <div class="form-group">
+                    <label data-i18n="rd_label_wind"
+                      >Viento (km/h, + = en contra)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="plan-wind"
+                      placeholder="ej. 10"
+                      min="-30"
+                      max="30"
+                      step="1"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_altitude">Altitud (msnm)</label>
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="plan-altitude"
+                      placeholder="ej. 0"
+                      min="0"
+                      max="6000"
+                      step="50"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_temperature"
+                      >Temperatura (°C)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="plan-temp"
+                      placeholder="ej. 22"
+                      min="-10"
+                      max="50"
+                      step="1"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_run_surface"
+                      >Superficie del trote</label
+                    >
+                    <select class="select-input" id="plan-surface">
+                      <option value="asfalto" data-i18n="rd_surf_asphalt">
+                        Asfalto
+                      </option>
+                      <option value="mixto" data-i18n="rd_surf_mixed">
+                        Mixto
+                      </option>
+                      <option value="trail" data-i18n="rd_surf_trail">
+                        Trail
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="rd_label_water_condition"
+                      >Condición del agua (nado)</label
+                    >
+                    <select class="select-input" id="plan-water">
+                      <option value="1.00" data-i18n="rd_water_pool">
+                        Piscina
+                      </option>
+                      <option value="0.98" data-i18n="rd_water_calm">
+                        Mar calmo
+                      </option>
+                      <option value="0.95" data-i18n="rd_water_moderate">
+                        Mar moderado
+                      </option>
+                      <option value="0.90" data-i18n="rd_water_rough">
+                        Mar agitado
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  margin: 16px 0;
+                  padding-top: 16px;
+                "
+              >
+                <div
+                  class="card-title"
+                  style="font-size: 0.85rem; margin-bottom: 6px"
+                  data-i18n="rd_card_goal_optional"
+                >
+                  Meta — opcional
+                </div>
+                <p
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--sub);
+                    margin-bottom: 12px;
+                  "
+                  data-i18n="rd_goal_desc"
+                >
+                  Si te pusiste un objetivo de tiempo para esta carrera, lo
+                  comparamos contra la predicción.
+                </p>
+                <div class="plan-form">
+                  <div class="form-group">
+                    <label data-i18n="rd_label_goal_time"
+                      >Tiempo meta (hh:mm:ss)</label
+                    >
+                    <input
+                      type="text"
+                      class="form-input"
+                      id="plan-goal"
+                      placeholder="ej. 5:00:00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  class="btn-primary"
+                  onclick="generatePlan()"
+                  data-i18n="rd_btn_generate_plan"
+                >
+                  Generar Plan
+                </button>
+                <span
+                  id="plan-gen-msg"
+                  style="display: none; font-size: 0.85rem; color: var(--green)"
+                  data-i18n="rd_plan_generated"
+                  >✓ Plan generado</span
+                >
+                <span
+                  id="plan-method-badge"
+                  style="
+                    display: none;
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    padding: 0.3rem 0.7rem;
+                    border-radius: 20px;
+                  "
+                ></span>
+              </div>
+            </div>
+
+            <!-- Results -->
+            <div id="plan-results" style="display: none">
+              <div
+                id="plan-confidence-row"
+                style="display: none; margin-bottom: 16px"
+              >
+                <div class="card" style="text-align: center">
+                  <div
+                    style="
+                      font-size: 0.78rem;
+                      color: var(--sub);
+                      margin-bottom: 4px;
+                    "
+                  >
+                    <span data-i18n="rd_label_confidence">Confianza:</span>
+                    <strong id="plan-conf-pct" style="color: var(--acc)"
+                      >—</strong
+                    >
+                    &nbsp;·&nbsp;
+                    <span data-i18n="rd_label_estimated_range"
+                      >Rango estimado:</span
+                    >
+                    <strong id="plan-range" style="color: var(--text)"
+                      >—</strong
+                    >
+                  </div>
+                </div>
+              </div>
+              <div
+                id="plan-goal-row"
+                style="display: none; margin-bottom: 16px"
+              >
+                <div class="card">
+                  <div
+                    class="card-title"
+                    style="font-size: 0.85rem"
+                    data-i18n="rd_card_goal_vs_pred"
+                  >
+                    Meta vs Predicción
+                  </div>
+                  <div class="chips" style="margin-top: 8px">
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        style="color: var(--green)"
+                        id="plan-goal-val"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="rd_chip_your_goal">
+                        Tu meta
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div class="chip-val" id="plan-goal-pred">—</div>
+                      <div class="chip-label" data-i18n="rd_chip_prediction">
+                        Predicción
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div class="chip-val" id="plan-goal-gap">—</div>
+                      <div class="chip-label" data-i18n="rd_chip_difference">
+                        Diferencia
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="grid-2" style="margin-bottom: 16px">
+                <!-- Splits -->
+                <div class="card">
+                  <div class="card-title" data-i18n="rd_card_predicted_splits">
+                    Splits Predichos
+                  </div>
+                  <table class="splits-table" id="splits-table-plan"></table>
+                </div>
+                <!-- Pacing -->
+                <div class="card">
+                  <div class="card-title" data-i18n="rd_card_pacing_targets">
+                    Targets de Pacing
+                  </div>
+                  <div id="pacing-targets-plan"></div>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom: 16px">
+                <div class="card-title" data-i18n="rd_card_prediction_basis">
+                  Base de la Predicción
+                </div>
+                <div id="plan-basis"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: NUTRITION ═══════════ -->
+          <div class="tab-panel" id="tab-nutrition">
+            <div class="card" style="text-align: center; padding: 40px 24px">
+              <div style="font-size: 2.2rem; margin-bottom: 12px">🍽️</div>
+              <div
+                class="card-title"
+                style="margin-bottom: 8px"
+                data-i18n="rd_nutrition_title"
+              >
+                La calculadora de nutrición vive en su propia página
+              </div>
+              <p
+                style="
+                  font-size: 0.85rem;
+                  color: var(--sub);
+                  max-width: 480px;
+                  margin: 0 auto 20px;
+                "
+                data-i18n="rd_nutrition_desc"
+              >
+                Usa tu perfil real (FTP/CSS/ritmo/peso), física precisa de
+                splits, condiciones del día y planes pre/post-carrera — más
+                completo que un cálculo rápido acá.
+              </p>
+              <a
+                id="nutrition-link"
+                class="btn-primary"
+                style="display: inline-flex; text-decoration: none"
+                href="nutrition.html"
+                data-i18n="rd_btn_go_nutrition"
+                >Ir a Nutrición →</a
+              >
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: RESULT ═══════════ -->
+          <div class="tab-panel" id="tab-result">
+            <div class="card">
+              <div class="card-title" data-i18n="rd_card_record_result">
+                Registrar Resultado de Carrera
+              </div>
+              <p
+                style="
+                  font-size: 0.85rem;
+                  color: var(--sub);
+                  margin-bottom: 16px;
+                "
+                data-i18n="rd_record_desc"
+              >
+                Ingresa tus splits reales para calcular el score de ejecución vs
+                el plan.
+              </p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label data-i18n="rd_label_swim_time"
+                    >Tiempo Nado (mm:ss)</label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-swim"
+                    placeholder="28:45"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_t1">T1 (mm:ss)</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-t1"
+                    placeholder="2:30"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_bike_time"
+                    >Tiempo Bici (h:mm:ss)</label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-bike"
+                    placeholder="1:12:00"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_t2">T2 (mm:ss)</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-t2"
+                    placeholder="1:45"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_run_time"
+                    >Tiempo Carrera (h:mm:ss)</label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-run"
+                    placeholder="42:30"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_avg_power"
+                    >Potencia media bici (W)</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="res-power"
+                    placeholder="185"
+                    min="50"
+                    max="600"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_avg_hr"
+                    >FC media en carrera (bpm)</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="res-hr-run"
+                    placeholder="158"
+                    min="60"
+                    max="220"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_run_pace"
+                    >Pace carrera (mm:ss/km)</label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="res-run-pace"
+                    placeholder="4:15"
+                  />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="rd_label_feeling"
+                    >Sensación general (1-5)</label
+                  >
+                  <select class="select-input" id="res-feeling">
+                    <option value="">—</option>
+                    <option value="5" data-i18n="rd_feel_5">
+                      5 — Excelente
+                    </option>
+                    <option value="4" data-i18n="rd_feel_4">4 — Bueno</option>
+                    <option value="3" data-i18n="rd_feel_3">3 — Regular</option>
+                    <option value="2" data-i18n="rd_feel_2">2 — Malo</option>
+                    <option value="1" data-i18n="rd_feel_1">
+                      1 — Muy malo
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div
+                style="
+                  margin: 12px 0;
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                "
+              >
+                <label
+                  style="
+                    font-size: 0.85rem;
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                  "
+                >
+                  <input type="checkbox" id="res-dnf" /> DNF
+                </label>
+                <input
+                  type="text"
+                  class="form-input"
+                  id="res-dnf-reason"
+                  placeholder="Motivo DNF"
+                  style="width: auto; flex: 1; display: none"
+                  data-i18n-placeholder="rd_ph_dnf_reason"
+                />
+              </div>
+              <textarea
+                class="form-input"
+                id="res-notes"
+                placeholder="Notas post-carrera..."
+                style="resize: none; min-height: 64px; margin-bottom: 12px"
+                data-i18n-placeholder="rd_ph_notes"
+              ></textarea>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <button
+                  class="btn-primary"
+                  onclick="saveResult()"
+                  data-i18n="rd_btn_save_result"
+                >
+                  Guardar Resultado
+                </button>
+                <span id="res-saved-msg" style="display: none"></span>
+              </div>
+            </div>
+            <div id="res-analysis-box" style="display: none; margin-top: 16px">
+              <div class="card">
+                <div class="card-title" data-i18n="rd_card_analysis_result">
+                  Resultado del Análisis
+                </div>
+                <div id="res-analysis-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: HISTORY ═══════════ -->
+          <div class="tab-panel" id="tab-history">
+            <div class="card">
+              <div class="card-title" data-i18n="rd_card_race_history">
+                Historial de Carreras
+              </div>
+              <div id="history-list">
+                <div class="loader" data-i18n="rd_loading">Cargando...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+          var API = '/api';
+          var currentPlan = null;
+
+          function _t(key, fallback) {
+            // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
+            // traducción — hay que detectar ese caso para no mostrar "rd_algo" crudo.
+            var v = window.i18n ? window.i18n.t(key) : null;
+            return v && v !== key ? v : fallback;
+          }
+
+          function _authTok() {
+            var direct = localStorage.getItem('lx_co_token');
+            if (direct) return direct;
+            try {
+              var s = JSON.parse(
+                sessionStorage.getItem('kl_s') ||
+                  localStorage.getItem('kl_s') ||
+                  'null',
+              );
+              return s && s.token ? s.token : '';
+            } catch (e) {
+              return '';
+            }
+          }
+
+          function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(function (p) {
+              p.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(function (b) {
+              b.classList.remove('active');
+            });
+            document.getElementById('tab-' + name).classList.add('active');
+            var tabs = {
+              dashboard: 0,
+              plan: 1,
+              nutrition: 2,
+              result: 3,
+              history: 4,
+            };
+            document
+              .querySelectorAll('.tab-btn')
+              [tabs[name] || 0].classList.add('active');
+            if (name === 'history') loadHistory();
+            if (name === 'nutrition') updateNutritionLink();
+          }
+
+          // ─── DASHBOARD ───────────────────────────────────────────────────────────────
+          function loadDashboard() {
+            fetch(API + '/races/dashboard-s19', {
+              credentials: 'include',
+              headers: { Authorization: 'Bearer ' + _authTok() },
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderDashboard(d);
+              })
+              .catch(function () {
+                document.getElementById('dash-loader').textContent = _t(
+                  'rd_err_load_retry',
+                  'Error al cargar. Reintenta.',
+                );
+              });
+          }
+
+          function renderDashboard(d) {
+            document.getElementById('dash-loader').style.display = 'none';
+            document.getElementById('dash-content').style.display = 'block';
+
+            var nr = d.next_race || {};
+            document.getElementById('dash-days').textContent =
+              nr.days_to_race !== null ? nr.days_to_race : '—';
+            document.getElementById('dash-race-name').textContent =
+              nr.name || _t('rd_no_race_registered', 'Sin carrera registrada');
+            document.getElementById('dash-race-date').textContent =
+              nr.date || '';
+
+            var fit = d.fitness || {};
+            document.getElementById('dash-ctl').textContent =
+              fit.ctl !== null ? fit.ctl : '—';
+            document.getElementById('dash-tsb').textContent =
+              fit.tsb !== null ? fit.tsb : '—';
+            document.getElementById('dash-atl').textContent =
+              fit.atl !== null ? fit.atl : '—';
+            document.getElementById('dash-rec').textContent =
+              fit.recovery_score !== null ? fit.recovery_score : '—';
+            var tsbChip = document.getElementById('dash-tsb-chip');
+            tsbChip.className =
+              'chip ' + ((fit.tsb || 0) >= 0 ? 'chip-tsb' : 'chip-tsb-neg');
+
+            var plan = d.plan || {};
+            var pc = document.getElementById('dash-plan-content');
+            if (plan.total_fmt) {
+              pc.innerHTML =
+                '<div class="chips">' +
+                '<div class="chip"><div class="chip-val" style="color:var(--acc)">' +
+                plan.total_fmt +
+                '</div><div class="chip-label">' +
+                escHtml(_t('rd_chip_predicted_time', 'Tiempo Predicho')) +
+                '</div></div>' +
+                (plan.bike_power
+                  ? '<div class="chip"><div class="chip-val">' +
+                    plan.bike_power +
+                    'W</div><div class="chip-label">' +
+                    escHtml(_t('rd_chip_bike_target', 'Target Bici')) +
+                    '</div></div>'
+                  : '') +
+                (plan.run_pace
+                  ? '<div class="chip"><div class="chip-val">' +
+                    escHtml(plan.run_pace) +
+                    '</div><div class="chip-label">' +
+                    escHtml(_t('rd_chip_run_pace_label', 'Pace Carrera')) +
+                    '</div></div>'
+                  : '') +
+                '</div>' +
+                '<div style="margin-top:12px"><button class="btn-outline btn-sm" onclick="switchTab(\'plan\')">' +
+                escHtml(_t('rd_btn_regenerate_plan', 'Regenerar plan')) +
+                '</button></div>';
+            } else {
+              pc.innerHTML =
+                '<div class="empty-state">' +
+                escHtml(_t('rd_no_plan_generated', 'Sin plan generado.')) +
+                ' <button class="btn-primary btn-sm" onclick="switchTab(\'plan\')" style="margin-left:10px">' +
+                escHtml(_t('rd_btn_generate_now', 'Generar ahora')) +
+                '</button></div>';
+            }
+
+            var hist = d.history || [];
+            var hl = document.getElementById('dash-history-list');
+            if (!hist.length) {
+              hl.innerHTML =
+                '<div class="empty-state">' +
+                escHtml(
+                  _t('rd_no_races_yet', 'Sin carreras registradas aún.'),
+                ) +
+                '</div>';
+              return;
+            }
+            hl.innerHTML = hist
+              .map(function (r) {
+                var scoreHtml = r.pacing_score
+                  ? '<span class="score-pill ' +
+                    scoreCls(r.pacing_score) +
+                    '">' +
+                    r.pacing_score +
+                    ' ' +
+                    escHtml(_t('rd_exec_suffix', 'exec')) +
+                    '</span>'
+                  : '';
+                var dnfHtml = r.dnf ? '<span class="dnf-badge">DNF</span>' : '';
+                return (
+                  '<div class="history-row">' +
+                  '<div><div class="hist-name">' +
+                  escHtml(r.race_name) +
+                  '</div></div>' +
+                  '<div style="display:flex;gap:10px;align-items:center">' +
+                  '<span class="hist-time">' +
+                  escHtml(r.total_fmt || '—') +
+                  '</span>' +
+                  scoreHtml +
+                  dnfHtml +
+                  '</div></div>'
+                );
+              })
+              .join('');
+          }
+
+          // ─── RUTA REAL (GPX) ─────────────────────────────────────────────────────────
+          var gpxData = { bike: null, run: null }; // {distance_km, elevation_gain_m, elevation_loss_m, profile}
+
+          function handleGpxUpload(kind, inputEl) {
+            var file = inputEl.files && inputEl.files[0];
+            var infoEl = document.getElementById('plan-gpx-' + kind + '-info');
+            if (!file) return;
+            infoEl.style.display = 'block';
+            infoEl.style.color = 'var(--sub)';
+            infoEl.textContent = _t('rd_analyzing_route', 'Analizando ruta…');
+
+            var fd = new FormData();
+            fd.append('file', file);
+            fetch(API + '/races/parse-gpx', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { Authorization: 'Bearer ' + _authTok() },
+              body: fd,
+            })
+              .then(function (r) {
+                if (!r.ok) throw new Error('parse failed');
+                return r.json();
+              })
+              .then(function (d) {
+                gpxData[kind] = d;
+                infoEl.style.color = 'var(--green)';
+                infoEl.textContent =
+                  '✓ ' +
+                  d.distance_km +
+                  ' km · D+' +
+                  Math.round(d.elevation_gain_m) +
+                  'm · D-' +
+                  Math.round(d.elevation_loss_m) +
+                  'm';
+              })
+              .catch(function () {
+                gpxData[kind] = null;
+                infoEl.style.color = '#EF4444';
+                infoEl.textContent = _t(
+                  'rd_gpx_read_error',
+                  'No se pudo leer el GPX. Verifica el archivo.',
+                );
+              });
+          }
+
+          // ─── INTENSIDAD (% FTP bici / % ritmo umbral trote, editable por tipo de carrera) ──
+          var PLAN_IF_DEFAULTS = {
+            sprint: { bike: 0.9, run: 1.1 },
+            olympic: { bike: 0.82, run: 1.05 },
+            703: { bike: 0.75, run: 0.97 },
+            full: { bike: 0.7, run: 0.88 },
+            '21k': { bike: null, run: 0.95 },
+            '42k': { bike: null, run: 0.88 },
+          };
+          var PLAN_IF_STORAGE_KEY = 'lx_raceday_if_overrides';
+          var planIFOverrides = {};
+          (function loadPlanIFOverrides() {
+            try {
+              planIFOverrides = JSON.parse(
+                localStorage.getItem(PLAN_IF_STORAGE_KEY) || '{}',
+              );
+            } catch (e) {
+              planIFOverrides = {};
+            }
+          })();
+
+          function getEffectivePlanIF(rk) {
+            var base = PLAN_IF_DEFAULTS[rk] || PLAN_IF_DEFAULTS.olympic;
+            var ov = planIFOverrides[rk];
+            return {
+              bike: ov && ov.bike != null ? ov.bike : base.bike,
+              run: ov && ov.run != null ? ov.run : base.run,
+            };
+          }
+
+          function syncPlanIFSliders() {
+            var rk = document.getElementById('plan-race-type').value;
+            var eff = getEffectivePlanIF(rk);
+            var bikeSlider = document.getElementById('plan-if-bike');
+            var bikeGroup = bikeSlider.closest('.form-group');
+            if (eff.bike == null) {
+              bikeGroup.style.display = 'none';
+            } else {
+              bikeGroup.style.display = '';
+              var bp = Math.round(eff.bike * 100);
+              bikeSlider.value = bp;
+              document.getElementById('plan-if-bike-val').textContent =
+                bp + '%';
+            }
+            var rp = Math.round(eff.run * 100);
+            document.getElementById('plan-if-run').value = rp;
+            document.getElementById('plan-if-run-val').textContent = rp + '%';
+          }
+
+          function onPlanIFChange() {
+            var rk = document.getElementById('plan-race-type').value;
+            var bikePct =
+              parseInt(document.getElementById('plan-if-bike').value) || 80;
+            var runPct =
+              parseInt(document.getElementById('plan-if-run').value) || 95;
+            document.getElementById('plan-if-bike-val').textContent =
+              bikePct + '%';
+            document.getElementById('plan-if-run-val').textContent =
+              runPct + '%';
+            planIFOverrides[rk] = { bike: bikePct / 100, run: runPct / 100 };
+            try {
+              localStorage.setItem(
+                PLAN_IF_STORAGE_KEY,
+                JSON.stringify(planIFOverrides),
+              );
+            } catch (e) {}
+          }
+
+          function resetPlanIF() {
+            var rk = document.getElementById('plan-race-type').value;
+            delete planIFOverrides[rk];
+            try {
+              localStorage.setItem(
+                PLAN_IF_STORAGE_KEY,
+                JSON.stringify(planIFOverrides),
+              );
+            } catch (e) {}
+            syncPlanIFSliders();
+          }
+
+          // ─── META (comparación local, rescatada de race_predictor.html) ──────────────
+          var PLAN_GOAL_STORAGE_KEY = 'lx_raceday_goal_overrides';
+          var planGoalOverrides = {};
+          (function loadPlanGoalOverrides() {
+            try {
+              planGoalOverrides = JSON.parse(
+                localStorage.getItem(PLAN_GOAL_STORAGE_KEY) || '{}',
+              );
+            } catch (e) {
+              planGoalOverrides = {};
+            }
+          })();
+          function fmtHMS(sec) {
+            sec = Math.round(sec);
+            var h = Math.floor(sec / 3600),
+              m = Math.floor((sec % 3600) / 60),
+              s = sec % 60;
+            return (
+              h +
+              ':' +
+              String(m).padStart(2, '0') +
+              ':' +
+              String(s).padStart(2, '0')
+            );
+          }
+          function syncPlanGoalInput() {
+            var rk = document.getElementById('plan-race-type').value;
+            document.getElementById('plan-goal').value =
+              planGoalOverrides[rk] || '';
+          }
+          document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'plan-goal') {
+              var rk = document.getElementById('plan-race-type').value;
+              var v = e.target.value.trim();
+              if (v) planGoalOverrides[rk] = v;
+              else delete planGoalOverrides[rk];
+              try {
+                localStorage.setItem(
+                  PLAN_GOAL_STORAGE_KEY,
+                  JSON.stringify(planGoalOverrides),
+                );
+              } catch (err) {}
+            }
+          });
+
+          // ─── GENERATE PLAN ───────────────────────────────────────────────────────────
+          function generatePlan() {
+            var payload = {
+              race_type:
+                document.getElementById('plan-race-type').value || null,
+              ftp_w:
+                parseInt(document.getElementById('plan-ftp').value) || null,
+              weight_kg:
+                parseFloat(document.getElementById('plan-weight').value) ||
+                null,
+              sweat_l_h:
+                parseFloat(document.getElementById('plan-sweat').value) || null,
+            };
+
+            var windKmh = parseFloat(
+              document.getElementById('plan-wind').value,
+            );
+            var altitude = parseFloat(
+              document.getElementById('plan-altitude').value,
+            );
+            var temp = parseFloat(document.getElementById('plan-temp').value);
+            var surface = document.getElementById('plan-surface').value;
+            var waterMult = parseFloat(
+              document.getElementById('plan-water').value,
+            );
+            if (!isNaN(windKmh)) payload.wind_ms = windKmh / 3.6;
+            if (!isNaN(altitude)) payload.altitude_m = altitude;
+            if (!isNaN(temp)) payload.temperature_c = temp;
+            if (!isNaN(waterMult) && waterMult < 1)
+              payload.water_mult = waterMult;
+            if (surface) payload.run_surface = surface;
+
+            if (gpxData.bike) {
+              payload.bike_profile = gpxData.bike.profile;
+              payload.bike_distance_km = gpxData.bike.distance_km;
+              payload.bike_elevation_gain_m = gpxData.bike.elevation_gain_m;
+              payload.bike_elevation_loss_m = gpxData.bike.elevation_loss_m;
+            }
+            if (gpxData.run) {
+              payload.run_distance_km = gpxData.run.distance_km;
+              payload.run_elevation_gain_m = gpxData.run.elevation_gain_m;
+              payload.run_elevation_loss_m = gpxData.run.elevation_loss_m;
+            }
+
+            var effIF = getEffectivePlanIF(
+              payload.race_type ||
+                document.getElementById('plan-race-type').value,
+            );
+            if (effIF.bike != null) payload.bike_if_override = effIF.bike;
+            if (effIF.run != null) payload.run_fraction_override = effIF.run;
+
+            fetch(API + '/races/auto-plan', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + _authTok(),
+              },
+              body: JSON.stringify(payload),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                currentPlan = d;
+                document.getElementById('plan-gen-msg').style.display =
+                  'inline';
+                setTimeout(function () {
+                  document.getElementById('plan-gen-msg').style.display =
+                    'none';
+                }, 3000);
+                var badge = document.getElementById('plan-method-badge');
+                if (d.method === 'physics') {
+                  badge.style.display = 'inline-block';
+                  badge.style.background = 'rgba(16,185,129,.15)';
+                  badge.style.color = 'var(--green)';
+                  badge.textContent = _t(
+                    'rd_method_physics',
+                    '⚡ Física precisa (ruta + condiciones)',
+                  );
+                } else {
+                  badge.style.display = 'inline-block';
+                  badge.style.background = 'rgba(148,163,184,.12)';
+                  badge.style.color = 'var(--sub)';
+                  badge.textContent = _t(
+                    'rd_method_standard',
+                    'Modelo estándar (CTL/TSB)',
+                  );
+                }
+                renderPlanResults(d);
+              })
+              .catch(function () {
+                alert(
+                  _t(
+                    'rd_err_generate_plan',
+                    'Error al generar plan. Verifica tus datos.',
+                  ),
+                );
+              });
+          }
+
+          function renderPlanResults(d) {
+            document.getElementById('plan-results').style.display = 'block';
+            var splits = d.splits || {};
+
+            // Confianza + rango (rescatado de race_predictor.html)
+            if (d.confidence) {
+              document.getElementById('plan-confidence-row').style.display =
+                'block';
+              document.getElementById('plan-conf-pct').textContent =
+                d.confidence.confidence_pct + '%';
+              document.getElementById('plan-range').textContent =
+                d.confidence.range_low_fmt +
+                ' – ' +
+                d.confidence.range_high_fmt;
+            }
+
+            // Meta vs Predicción (rescatado de race_predictor.html)
+            var goalStr = document.getElementById('plan-goal').value.trim();
+            var goalSec = goalStr ? parseTimeToSec(goalStr) : null;
+            if (goalSec) {
+              document.getElementById('plan-goal-row').style.display = 'block';
+              document.getElementById('plan-goal-val').textContent = goalStr;
+              document.getElementById('plan-goal-pred').textContent =
+                splits.total_fmt || '—';
+              var gap = splits.total_s - goalSec;
+              var gapEl = document.getElementById('plan-goal-gap');
+              gapEl.textContent =
+                (gap <= 0 ? '-' : '+') +
+                fmtHMS(Math.abs(gap)) +
+                (gap <= 0 ? ' ✓' : '');
+              gapEl.style.color = gap <= 0 ? 'var(--green)' : '#EF4444';
+            } else {
+              document.getElementById('plan-goal-row').style.display = 'none';
+            }
+
+            var rows = [];
+            if (splits.swim_fmt && splits.swim_fmt !== '—')
+              rows.push([
+                '🏊',
+                _t('rd_seg_swim', 'Nado'),
+                splits.swim_fmt,
+                splits.swim_s,
+              ]);
+            if (splits.t1_fmt && splits.t1_fmt !== '—')
+              rows.push(['↔', 'T1', splits.t1_fmt, 0]);
+            if (splits.bike_fmt && splits.bike_fmt !== '—')
+              rows.push([
+                '🚴',
+                _t('rd_seg_bike', 'Bici'),
+                splits.bike_fmt,
+                splits.bike_s,
+              ]);
+            if (splits.t2_fmt && splits.t2_fmt !== '—')
+              rows.push(['↔', 'T2', splits.t2_fmt, 0]);
+            if (splits.run_fmt && splits.run_fmt !== '—')
+              rows.push([
+                '🏃',
+                _t('rd_seg_run', 'Carrera'),
+                splits.run_fmt,
+                splits.run_s,
+              ]);
+
+            var tableHtml =
+              '<thead><tr><th colspan="2">' +
+              escHtml(_t('rd_th_segment', 'Segmento')) +
+              '</th><th>' +
+              escHtml(_t('rd_th_time', 'Tiempo')) +
+              '</th></tr></thead><tbody>' +
+              rows
+                .map(function (r) {
+                  return (
+                    '<tr><td>' +
+                    r[0] +
+                    '</td><td>' +
+                    escHtml(r[1]) +
+                    '</td><td>' +
+                    escHtml(r[2]) +
+                    '</td></tr>'
+                  );
+                })
+                .join('') +
+              '<tr class="total-row"><td>⏱</td><td>' +
+              escHtml(_t('rd_total', 'TOTAL')) +
+              '</td><td>' +
+              escHtml(splits.total_fmt || '—') +
+              '</td></tr></tbody>';
+            document.getElementById('splits-table-plan').innerHTML = tableHtml;
+
+            var pacing = d.pacing || {};
+            var pts = document.getElementById('pacing-targets-plan');
+            pts.innerHTML = '';
+            if (pacing.bike_power || pacing.bike_if) {
+              var ifPct = pacing.bike_if ? Math.round(pacing.bike_if * 100) : 0;
+              pts.innerHTML +=
+                '<div class="target-card">' +
+                '<div class="target-header"><span class="target-label">' +
+                escHtml(_t('rd_target_bike_power', '🚴 Potencia Bici')) +
+                '</span>' +
+                '<span class="target-value">' +
+                (pacing.bike_power || '—') +
+                'W</span></div>' +
+                '<div class="target-sub">' +
+                escHtml(_t('rd_if_target_prefix', 'IF objetivo:')) +
+                ' ' +
+                (pacing.bike_if || '—') +
+                ' (' +
+                ifPct +
+                '% FTP)</div>' +
+                '<div class="if-bar"><div class="if-fill" style="width:' +
+                Math.min(100, ifPct) +
+                '%"></div></div>' +
+                '</div>';
+            }
+            if (pacing.run_pace) {
+              pts.innerHTML +=
+                '<div class="target-card">' +
+                '<div class="target-header"><span class="target-label">' +
+                escHtml(_t('rd_target_run_pace', '🏃 Pace Carrera')) +
+                '</span>' +
+                '<span class="target-value">' +
+                escHtml(pacing.run_pace) +
+                '</span></div>' +
+                '<div class="target-sub">' +
+                escHtml(
+                  _t(
+                    'rd_target_run_note',
+                    'Incluye factor de fatiga del triatlón',
+                  ),
+                ) +
+                '</div>' +
+                '</div>';
+            }
+
+            var basis = document.getElementById('plan-basis');
+            basis.innerHTML =
+              '<div class="chips">' +
+              '<div class="chip"><div class="chip-val" style="color:var(--blue)">' +
+              (d.ctl_used || '—') +
+              '</div><div class="chip-label">' +
+              escHtml(_t('rd_chip_ctl_used', 'CTL usado')) +
+              '</div></div>' +
+              '<div class="chip"><div class="chip-val">' +
+              (d.tsb_used !== null ? d.tsb_used : '—') +
+              '</div><div class="chip-label">TSB</div></div>' +
+              '<div class="chip"><div class="chip-val">' +
+              (d.recovery || '—') +
+              '</div><div class="chip-label">Recovery</div></div>' +
+              '<div class="chip"><div class="chip-val">' +
+              (d.perf_mod || '—') +
+              '</div><div class="chip-label">' +
+              escHtml(_t('rd_chip_modifier', 'Modificador')) +
+              '</div></div>' +
+              (pacing.bike_avg_speed_kmh
+                ? '<div class="chip"><div class="chip-val">' +
+                  pacing.bike_avg_speed_kmh +
+                  ' km/h</div><div class="chip-label">' +
+                  escHtml(_t('rd_chip_avg_bike_speed', 'Vel. media bici')) +
+                  '</div></div>'
+                : '') +
+              '</div>';
+          }
+
+          // ─── NUTRITION (redirige a nutrition.html, ver switchTab) ─────────────────────
+          var RACE_TYPE_TO_NUTRITION = {
+            sprint: 'sprint',
+            olympic: 'olympic',
+            703: '703',
+            full: 'ironman',
+          };
+          function updateNutritionLink() {
+            var link = document.getElementById('nutrition-link');
+            if (!link) return;
+            var rk = document.getElementById('plan-race-type')
+              ? document.getElementById('plan-race-type').value
+              : null;
+            var mapped = RACE_TYPE_TO_NUTRITION[rk];
+            link.href = mapped
+              ? 'nutrition.html?race=' + mapped
+              : 'nutrition.html';
+          }
+
+          // ─── RESULT ──────────────────────────────────────────────────────────────────
+          document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'res-dnf') {
+              document.getElementById('res-dnf-reason').style.display = e.target
+                .checked
+                ? 'block'
+                : 'none';
+            }
+          });
+
+          function parseTimeToSec(str) {
+            if (!str || !str.trim()) return null;
+            var parts = str.trim().split(':').map(Number);
+            if (parts.length === 3)
+              return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            if (parts.length === 2) return parts[0] * 60 + parts[1];
+            return parseInt(str) || null;
+          }
+
+          function saveResult() {
+            var payload = {
+              swim_s: parseTimeToSec(document.getElementById('res-swim').value),
+              t1_s: parseTimeToSec(document.getElementById('res-t1').value),
+              bike_s: parseTimeToSec(document.getElementById('res-bike').value),
+              t2_s: parseTimeToSec(document.getElementById('res-t2').value),
+              run_s: parseTimeToSec(document.getElementById('res-run').value),
+              avg_power_bike_w:
+                parseInt(document.getElementById('res-power').value) || null,
+              avg_hr_run:
+                parseInt(document.getElementById('res-hr-run').value) || null,
+              avg_pace_run_s_km: parseTimeToSec(
+                document.getElementById('res-run-pace').value,
+              ),
+              overall_feeling:
+                parseInt(document.getElementById('res-feeling').value) || null,
+              dnf: document.getElementById('res-dnf').checked,
+              dnf_reason:
+                document.getElementById('res-dnf-reason').value || null,
+              notes: document.getElementById('res-notes').value || null,
+            };
+
+            fetch(API + '/races/record-result', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + _authTok(),
+              },
+              body: JSON.stringify(payload),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                var msg = document.getElementById('res-saved-msg');
+                msg.style.display = 'inline';
+                msg.className = 'success-msg';
+                msg.textContent =
+                  escHtml(
+                    _t('rd_saved_result_prefix', '✓ Guardado — Tiempo:'),
+                  ) +
+                  ' ' +
+                  (d.total_fmt || '—') +
+                  (d.pacing_score
+                    ? ' · ' +
+                      escHtml(_t('rd_exec_label', 'Exec:')) +
+                      ' ' +
+                      d.pacing_score +
+                      '/100'
+                    : '') +
+                  (d.pred_error_fmt
+                    ? ' · ' +
+                      d.pred_error_fmt +
+                      ' ' +
+                      escHtml(_t('rd_vs_prediction_suffix', 'vs predicción'))
+                    : '');
+
+                var box = document.getElementById('res-analysis-box');
+                var content = document.getElementById('res-analysis-content');
+                box.style.display = 'block';
+                content.innerHTML =
+                  '<div class="chips">' +
+                  '<div class="chip"><div class="chip-val" style="color:var(--acc)">' +
+                  (d.total_fmt || '—') +
+                  '</div><div class="chip-label">' +
+                  escHtml(_t('rd_chip_final_time', 'Tiempo final')) +
+                  '</div></div>' +
+                  (d.pacing_score !== null
+                    ? '<div class="chip"><div class="chip-val" style="color:' +
+                      scoreColor(d.pacing_score) +
+                      '">' +
+                      d.pacing_score +
+                      '</div><div class="chip-label">' +
+                      escHtml(_t('rd_chip_pacing_score', 'Pacing Score')) +
+                      '</div></div>'
+                    : '') +
+                  (d.pred_error_fmt
+                    ? '<div class="chip"><div class="chip-val" style="font-size:.9rem">' +
+                      escHtml(d.pred_error_fmt) +
+                      '</div><div class="chip-label">' +
+                      escHtml(_t('rd_chip_vs_prediction', 'vs Predicción')) +
+                      '</div></div>'
+                    : '') +
+                  '</div>';
+              })
+              .catch(function () {
+                alert(_t('rd_err_save_result', 'Error al guardar resultado.'));
+              });
+          }
+
+          // ─── HISTORY ─────────────────────────────────────────────────────────────────
+          function loadHistory() {
+            var container = document.getElementById('history-list');
+            container.innerHTML =
+              '<div class="loader">' +
+              escHtml(_t('rd_loading', 'Cargando...')) +
+              '</div>';
+            fetch(API + '/races?limit=20', {
+              credentials: 'include',
+              headers: { Authorization: 'Bearer ' + _authTok() },
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderHistory(d.races || d || []);
+              })
+              .catch(function () {
+                container.innerHTML =
+                  '<div class="empty-state">' +
+                  escHtml(
+                    _t('rd_err_load_history', 'Error al cargar historial.'),
+                  ) +
+                  '</div>';
+              });
+          }
+
+          function renderHistory(races) {
+            var container = document.getElementById('history-list');
+            if (!races.length) {
+              container.innerHTML =
+                '<div class="empty-state">' +
+                escHtml(
+                  _t('rd_no_races_registered', 'Sin carreras registradas.'),
+                ) +
+                '</div>';
+              return;
+            }
+            container.innerHTML = races
+              .map(function (r) {
+                var score = r.pacing_score || r.readiness_score;
+                var scoreHtml = score
+                  ? '<span class="score-pill ' +
+                    scoreCls(score) +
+                    '">' +
+                    score +
+                    '</span>'
+                  : '';
+                return (
+                  '<div class="history-row">' +
+                  '<div>' +
+                  '<div class="hist-name">' +
+                  escHtml(r.race_name || r.name || '—') +
+                  '</div>' +
+                  '<div class="hist-date">' +
+                  (r.race_date || r.date || '') +
+                  ' · ' +
+                  (r.distance || '—') +
+                  '</div>' +
+                  '</div>' +
+                  '<div style="display:flex;gap:8px;align-items:center">' +
+                  scoreHtml +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('');
+          }
+
+          // ─── UTILS ───────────────────────────────────────────────────────────────────
+          function scoreCls(s) {
+            return s >= 80 ? 'score-hi' : s >= 60 ? 'score-mid' : 'score-lo';
+          }
+          function scoreColor(s) {
+            return s >= 80 ? '#10B981' : s >= 60 ? '#F59E0B' : '#EF4444';
+          }
+          function escHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+          }
+
+          document.addEventListener('DOMContentLoaded', function () {
+            loadDashboard();
+            syncPlanIFSliders();
+            syncPlanGoalInput();
+          });
+        </script>
+        <script src="auth.js"></script>
+        <script>
+          KL.guard('race_day');
+        </script>
+        <script src="nav.js?v=4"></script>
+        <script src="footer.js"></script>
+        <script src="dash-header.js"></script>
+        <script src="lx-upgrade.js"></script>
+        <script src="i18n.js"></script>
+      </main>
+    </div>
+  </body>
 </html>

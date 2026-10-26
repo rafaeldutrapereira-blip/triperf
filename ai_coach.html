@@ -1,756 +1,1993 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Asistente IA</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="nav.css?v=3">
-<style>
-:root{
-  /* Paleta LabX estándar (misma que mental.html/recovery.html) — antes esta
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Asistente IA</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="nav.css?v=3" />
+    <style>
+      :root {
+        /* Paleta LabX estándar (misma que mental.html/recovery.html) — antes esta
      página tenía sus propios colores genéricos de SaaS (slate/amber/violeta),
      sin relación con el resto de la app. */
-  --bg:#04080F;--card:#08121E;--card2:#0C1D30;--border:#16283A;
-  --text:#F0F9FF;--sub:#7FB3CC;--acc:#F0A500;--acc2:#EF4444;
-  --green:#10B981;--blue:#0EA5E9;--purple:#A855F7;--ai:#FF6535;
-  --r:14px;--r2:10px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
-#nav-placeholder{height:0}
-/* ─── LabX TopNav ─── */
-#lx-topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:rgba(4,8,15,.97);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(8,145,178,.12);display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem}
-.lxn-brand{display:flex;align-items:center;gap:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#F0F9FF;text-decoration:none;flex-shrink:0}
-.lxn-brand span{color:#FF6535}
-.lxn-brand svg.sbl-svg{width:32px;height:32px;flex-shrink:0}
-.lxn-nav{display:flex;align-items:center;gap:.15rem;flex:1;overflow-x:auto}
-.lxn-nav a{padding:.32rem .68rem;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7FB3CC;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
-.lxn-nav a:hover,.lxn-nav a.on{color:#FF6535;background:rgba(255,101,53,.1)}
-.lxn-out{background:transparent;border:1px solid rgba(61,104,128,.32);border-radius:5px;color:#3D6880;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .65rem;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
-.lxn-out:hover{border-color:#EF4444;color:#EF4444}
-.sbl-flower{animation:sbl-spin-flower 24s linear infinite reverse;transform-origin:50px 50px}
-.sbl-arcs{animation:sbl-spin-arcs 40s linear infinite;transform-origin:50px 50px}
-@keyframes sbl-spin-flower{to{transform:rotate(360deg)}}
-@keyframes sbl-spin-arcs{to{transform:rotate(360deg)}}
-@media(max-width:700px){.lxn-nav{display:none}}
-.page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
-.page-header h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.4rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;color:var(--text)}
-.page-header p{color:var(--sub);font-size:.9rem;margin-top:4px}
-
-.tabs{display:flex;gap:.2rem;border-bottom:1px solid var(--border);margin:20px 0 24px;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab-btn{flex:none;padding:.65rem 1.1rem;border:none;border-bottom:2px solid transparent;cursor:pointer;background:none;color:var(--sub);font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:color .18s,border-color .18s;white-space:nowrap;margin-bottom:-1px}
-.tab-btn.active{background:none;color:var(--ai);border-bottom-color:var(--ai)}
-.tab-btn:hover:not(.active){background:none;color:var(--text)}
-.tab-panel{display:none}.tab-panel.active{display:block}
-
-.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
-.card-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;letter-spacing:.01em;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text)}
-.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-@media(max-width:640px){.grid-2{grid-template-columns:1fr}}
-
-/* CHAT */
-.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 280px);min-height:400px}
-.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.msg{padding:12px 16px;border-radius:var(--r2);max-width:80%;font-size:.88rem;line-height:1.5;white-space:pre-wrap}
-.msg-user{background:var(--ai);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.msg-ai{background:var(--card2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
-.msg-typing{color:var(--sub);font-style:italic;font-size:.82rem;align-self:flex-start;padding:8px 12px}
-.chat-input-row{display:flex;gap:8px;padding:16px;background:var(--card2);border-top:1px solid var(--border)}
-.chat-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;resize:none;min-height:42px;max-height:120px}
-.chat-input:focus{outline:none;border-color:var(--ai)}
-.btn-send{padding:10px 20px;background:var(--ai);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
-.btn-send:disabled{opacity:.5;cursor:not-allowed}
-.sessions-list{list-style:none}
-.session-item{padding:10px;border-bottom:1px solid var(--border)44;cursor:pointer;font-size:.85rem;transition:background .15s}
-.session-item:hover{background:var(--card2)}
-.session-time{font-size:.72rem;color:var(--sub);margin-top:2px}
-
-/* WORKOUT GENERATOR */
-.sport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.sport-btn{padding:12px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;background:var(--card2);color:var(--sub);font-size:.82rem;text-align:center;transition:all .2s}
-.sport-btn.active{border-color:var(--ai);color:var(--ai);background:var(--ai)11}
-.focus-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
-@media(max-width:600px){.focus-grid{grid-template-columns:repeat(3,1fr)}}
-.focus-btn{padding:10px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;background:var(--card2);color:var(--sub);font-size:.78rem;text-align:center;transition:all .2s}
-.focus-btn.active{border-color:var(--acc);color:var(--acc);background:var(--acc)11}
-.phase-item{padding:14px;border-left:3px solid var(--border);margin-bottom:10px;background:var(--card2);border-radius:0 var(--r2) var(--r2) 0}
-.phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.phase-name{font-weight:600;font-size:.88rem}
-.phase-meta{font-size:.75rem;color:var(--sub);display:flex;gap:10px}
-.phase-desc{font-size:.8rem;color:var(--sub);line-height:1.4}
-.zone-badge{font-size:.72rem;padding:2px 8px;border-radius:10px;font-weight:700}
-.zone-Z1{background:#10B98122;color:#10B981}
-.zone-Z2{background:#0EA5E922;color:#0EA5E9}
-.zone-Z3{background:#F0A50022;color:#F0A500}
-.zone-Z4{background:#F9730622;color:#F97316}
-.zone-Z5{background:#EF444422;color:#EF4444}
-.rpe-bar{display:flex;gap:3px;margin-top:4px}
-.rpe-dot{width:12px;height:8px;border-radius:2px;background:var(--border)}
-.rpe-dot.active{background:var(--acc)}
-
-/* REPORT */
-.score-ring{width:100px;height:100px;margin:0 auto 16px}
-.score-circle{fill:none;stroke:var(--border);stroke-width:8}
-.score-fill{fill:none;stroke-width:8;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .8s ease}
-.score-val{font-size:2rem;font-weight:900;text-anchor:middle;dominant-baseline:central}
-.kv-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.kv-item{background:var(--card2);border-radius:var(--r2);padding:12px}
-.kv-label{font-size:.72rem;color:var(--sub);margin-bottom:4px}
-.kv-val{font-size:.9rem;font-weight:600}
-.list-check{list-style:none}
-.list-check li{padding:6px 0;font-size:.85rem;border-bottom:1px solid var(--border)33}
-.list-check li::before{content:"✓ ";color:var(--green)}
-.list-warn li::before{content:"⚠ ";color:var(--acc)}
-
-/* FORECAST */
-.forecast-chart{position:relative;height:180px;border-bottom:1px solid var(--border);border-left:1px solid var(--border);margin:16px 0}
-.forecast-x{display:flex;justify-content:space-around;padding:4px 0 0;font-size:.7rem;color:var(--sub)}
-.form-badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600}
-.form-peak{background:#10B98122;color:#10B981}
-.form-fresh{background:#0EA5E922;color:#0EA5E9}
-.form-normal{background:#7FB3CC22;color:#7FB3CC}
-.form-fatigued{background:#F0A50022;color:#F0A500}
-.form-overtrained{background:#EF444422;color:#EF4444}
-.forecast-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)33;font-size:.83rem;flex-wrap:wrap;gap:6px}
-
-/* INJURY */
-.risk-meter{text-align:center;padding:16px}
-.risk-score-num{font-size:4rem;font-weight:900}
-.risk-low{color:var(--green)}
-.risk-caution{color:var(--acc)}
-.risk-high{color:var(--acc2)}
-.risk-critical{color:#DC2626}
-.action-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)33;font-size:.84rem;align-items:flex-start}
-.action-num{width:22px;height:22px;background:var(--ai);color:#fff;border-radius:50%;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* MISC */
-.btn-primary{padding:10px 24px;background:var(--ai);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
-.btn-primary:hover{opacity:.85}
-.btn-outline{padding:10px 22px;background:transparent;border:1px solid var(--ai);color:var(--ai);border-radius:8px;cursor:pointer;font-weight:600}
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.form-group label{font-size:.78rem;color:var(--sub);font-weight:500}
-.form-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:.88rem;width:100%}
-.form-input:focus{outline:none;border-color:var(--ai)}
-.loader{text-align:center;padding:40px;color:var(--sub)}
-.empty-state{text-align:center;padding:32px;color:var(--sub);font-size:.9rem}
-.chips{display:flex;gap:10px;flex-wrap:wrap}
-.chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:80px}
-.chip-val{font-size:1.3rem;font-weight:800;color:var(--ai)}
-.chip-label{font-size:.7rem;color:var(--sub)}
-.override-banner{background:var(--acc)22;border:1px solid var(--acc)44;border-radius:8px;padding:10px;font-size:.83rem;color:var(--acc);margin-bottom:12px}
-</style>
-</head>
-<body>
-<div class="app">
-  <aside id="sidebar"></aside>
-  <header class="sb-topbar"></header>
-  <div class="sb-overlay" id="sb-overlay"></div>
-  <main class="main" id="main-content">
-<div class="page-wrap">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('chat')" data-i18n="aico_tab_chat">💬 Chat</button>
-    <button class="tab-btn" onclick="switchTab('workout')" data-i18n="aico_tab_workout">🏋 Workout</button>
-    <button class="tab-btn" onclick="switchTab('report')" data-i18n="aico_tab_report">📊 Informe</button>
-    <button class="tab-btn" onclick="switchTab('forecast')" data-i18n="aico_tab_forecast">📈 Forecast</button>
-    <button class="tab-btn" onclick="switchTab('injury')" data-i18n="aico_tab_injury">🛡 Lesiones</button>
-  </div>
-
-  <!-- CHAT -->
-  <div class="tab-panel active" id="tab-chat">
-    <div class="grid-2" style="gap:16px">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="chat-wrap">
-          <div class="chat-messages" id="chat-messages">
-            <div class="msg msg-ai" data-i18n="aico_chat_welcome">Hola! Soy tu Asistente IA de LabX. Tengo acceso a tu CTL, TSB, HRV, recuperación y actividades recientes. ¿En qué te ayudo hoy?</div>
-          </div>
-          <div class="chat-input-row">
-            <textarea class="chat-input" id="chat-input" placeholder="Escribe tu consulta..." rows="2" data-i18n-placeholder="aico_chat_placeholder"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
-            <button class="btn-send" id="btn-send" onclick="sendMessage()" data-i18n="aico_btn_send">Enviar</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" data-i18n="aico_sessions_title">Sesiones anteriores</div>
-        <div id="sessions-list"><div class="loader" data-i18n="aico_loading">Cargando...</div></div>
-        <div style="margin-top:12px">
-          <button class="btn-outline" style="width:100%;font-size:.8rem" onclick="newSession()" data-i18n="aico_btn_new_session">+ Nueva sesión</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- WORKOUT GENERATOR -->
-  <div class="tab-panel" id="tab-workout">
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title" data-i18n="aico_wkt_title">Generador de Entrenamiento IA</div>
-      <p style="font-size:.83rem;color:var(--sub);margin-bottom:16px" data-i18n="aico_wkt_desc">
-        El motor usa tu CTL, TSB y Recovery Score actuales para adaptar la intensidad automáticamente.
-      </p>
-
-      <div class="form-group">
-        <label data-i18n="aico_label_sport">Deporte</label>
-        <div class="sport-grid">
-          <button class="sport-btn active" data-sport="run" onclick="selectSport(this)" data-i18n="aico_sport_run">🏃 Carrera</button>
-          <button class="sport-btn" data-sport="bike" onclick="selectSport(this)" data-i18n="aico_sport_bike">🚴 Ciclismo</button>
-          <button class="sport-btn" data-sport="swim" onclick="selectSport(this)" data-i18n="aico_sport_swim">🏊 Natación</button>
-          <button class="sport-btn" data-sport="gym" onclick="selectSport(this)" data-i18n="aico_sport_gym">🏋 Gym</button>
-          <button class="sport-btn" data-sport="brick" onclick="selectSport(this)" data-i18n="aico_sport_brick">⚡ Brick</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="aico_label_focus">Foco</label>
-        <div class="focus-grid">
-          <button class="focus-btn active" data-focus="endurance" onclick="selectFocus(this)" data-i18n="aico_focus_endurance">Resistencia</button>
-          <button class="focus-btn" data-focus="threshold" onclick="selectFocus(this)" data-i18n="aico_focus_threshold">Umbral</button>
-          <button class="focus-btn" data-focus="vo2" onclick="selectFocus(this)">VO₂max</button>
-          <button class="focus-btn" data-focus="recovery" onclick="selectFocus(this)" data-i18n="aico_focus_recovery">Recuperación</button>
-          <button class="focus-btn" data-focus="strength" onclick="selectFocus(this)" data-i18n="aico_focus_strength">Fuerza</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="aico_label_duration">Duración (min)</label>
-        <input type="range" min="20" max="240" value="60" step="5" id="wkt-duration"
-          oninput="updateDurVal(this.value)"
-          style="width:100%;accent-color:var(--ai)">
-        <span id="dur-val" style="font-size:.88rem;color:var(--text)">60 min</span>
-      </div>
-
-      <button class="btn-primary" onclick="generateWorkout()" data-i18n="aico_btn_generate_workout">Generar Entrenamiento</button>
-    </div>
-
-    <div id="wkt-result" style="display:none">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-          <div>
-            <div class="card-title" id="wkt-title" style="margin-bottom:4px"></div>
-            <div id="wkt-meta" style="font-size:.8rem;color:var(--sub)"></div>
-          </div>
-          <div id="wkt-tss" style="font-size:1.4rem;font-weight:800;color:var(--ai)"></div>
-        </div>
-        <div id="wkt-override" style="display:none" class="override-banner"></div>
-        <div id="wkt-phases"></div>
-        <div style="margin-top:14px">
-          <div style="font-size:.8rem;font-weight:600;color:var(--sub);margin-bottom:8px" data-i18n="aico_wkt_key_points">PUNTOS CLAVE</div>
-          <ul class="list-check" id="wkt-tips"></ul>
-        </div>
-        <div id="wkt-warnings-box" style="display:none;margin-top:10px">
-          <ul class="list-check list-warn" id="wkt-warnings"></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- REPORT -->
-  <div class="tab-panel" id="tab-report">
-    <div id="report-loader" class="loader" data-i18n="aico_loading_report">Cargando informe semanal...</div>
-    <div id="report-content" style="display:none">
-      <div class="grid-2" style="margin-bottom:16px">
-        <div class="card" style="text-align:center">
-          <div class="card-title" data-i18n="aico_card_week_score">Score de la Semana</div>
-          <svg class="score-ring" viewBox="0 0 100 100">
-            <circle class="score-circle" cx="50" cy="50" r="40"/>
-            <circle class="score-fill" id="rpt-ring" cx="50" cy="50" r="40" stroke="#FF6535"
-                    stroke-dasharray="251" stroke-dashoffset="251"/>
-            <text class="score-val" x="50" y="50" fill="#F0F9FF" id="rpt-score-val">—</text>
-          </svg>
-          <div id="rpt-form" style="font-size:.9rem;color:var(--sub)"></div>
-        </div>
-        <div class="card">
-          <div class="card-title" data-i18n="aico_card_week_load">Carga de la Semana</div>
-          <div class="chips" style="margin-bottom:12px">
-            <div class="chip"><div class="chip-val" id="rpt-tss">—</div><div class="chip-label">TSS</div></div>
-            <div class="chip"><div class="chip-val" id="rpt-hours">—</div><div class="chip-label" data-i18n="aico_unit_hours">horas</div></div>
-            <div class="chip"><div class="chip-val" id="rpt-acts">—</div><div class="chip-label" data-i18n="aico_unit_sessions">sesiones</div></div>
-          </div>
-          <p id="rpt-load-summary" style="font-size:.83rem;color:var(--sub);line-height:1.4"></p>
-        </div>
-      </div>
-      <div class="grid-2" style="margin-bottom:16px">
-        <div class="card">
-          <div class="card-title" data-i18n="aico_card_achievements">✅ Logros</div>
-          <ul class="list-check" id="rpt-achievements"></ul>
-        </div>
-        <div class="card">
-          <div class="card-title" data-i18n="aico_card_concerns">⚠ Preocupaciones</div>
-          <ul class="list-check list-warn" id="rpt-concerns">
-            <li style="color:var(--sub)" data-i18n="aico_no_alerts_week">Sin alertas esta semana.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" data-i18n="aico_card_next_week_recs">Recomendaciones para la Próxima Semana</div>
-        <div id="rpt-next-wrap">
-          <div class="chips" style="margin-bottom:12px">
-            <div class="chip"><div class="chip-val" id="rpt-tss-min" style="font-size:1rem">—</div><div class="chip-label" data-i18n="aico_tss_min">TSS mín</div></div>
-            <div class="chip"><div class="chip-val" id="rpt-tss-max" style="font-size:1rem">—</div><div class="chip-label" data-i18n="aico_tss_max">TSS máx</div></div>
-            <div class="chip"><div class="chip-val" id="rpt-focus-next" style="font-size:.9rem">—</div><div class="chip-label" data-i18n="aico_suggested_focus">Foco sugerido</div></div>
-          </div>
-          <ul class="list-check" id="rpt-recs"></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FORECAST -->
-  <div class="tab-panel" id="tab-forecast">
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title" data-i18n="aico_card_forecast_params">Parámetros del Forecast</div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-        <div class="form-group" style="flex:1;min-width:140px;margin:0">
-          <label data-i18n="aico_label_weeks_project">Semanas a proyectar</label>
-          <input type="number" class="form-input" id="fc-weeks" value="8" min="2" max="16">
-        </div>
-        <div class="form-group" style="flex:1;min-width:140px;margin:0">
-          <label data-i18n="aico_label_weekly_tss_planned">TSS semanal planificado</label>
-          <input type="number" class="form-input" id="fc-tss" placeholder="Auto desde histórico" min="0" max="3000" data-i18n-placeholder="aico_ph_auto_hist">
-        </div>
-        <button class="btn-primary" onclick="loadForecast()" data-i18n="aico_btn_project">Proyectar</button>
-      </div>
-    </div>
-
-    <div id="forecast-loader" class="loader" style="display:none" data-i18n="aico_loading_forecast">Calculando proyección...</div>
-    <div id="forecast-content" style="display:none">
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title" data-i18n="aico_card_ctl_projection">Proyección CTL · 8 semanas</div>
-        <canvas id="forecast-canvas" height="160" style="width:100%"></canvas>
-        <div class="forecast-x" id="fc-x-labels"></div>
-      </div>
-      <div class="card">
-        <div class="card-title" data-i18n="aico_card_weekly_detail">Detalle por semana</div>
-        <div id="forecast-rows"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- INJURY -->
-  <div class="tab-panel" id="tab-injury">
-    <div id="injury-loader" class="loader" data-i18n="aico_loading_injury">Calculando riesgo de lesión...</div>
-    <div id="injury-content" style="display:none">
-      <div class="grid-2" style="margin-bottom:16px">
-        <div class="card" style="text-align:center">
-          <div class="card-title" data-i18n="aico_card_risk_score">Score de Riesgo</div>
-          <div class="risk-meter">
-            <div class="risk-score-num" id="inj-score">—</div>
-            <div id="inj-level" style="font-size:1rem;font-weight:600;margin-top:4px"></div>
-            <div id="inj-driver" style="font-size:.82rem;color:var(--sub);margin-top:6px"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title" data-i18n="aico_card_risk_window">Ventana de Riesgo</div>
-          <div class="chips">
-            <div class="chip"><div class="chip-val" id="inj-days-risk" style="font-size:1.3rem">—</div><div class="chip-label" data-i18n="aico_days_at_risk">días en riesgo</div></div>
-            <div class="chip"><div class="chip-val" id="inj-days-rec" style="font-size:1.3rem">—</div><div class="chip-label" data-i18n="aico_days_recovery">días de recuperación</div></div>
-          </div>
-          <div style="margin-top:12px">
-            <div style="font-size:.78rem;color:var(--sub);font-weight:600;margin-bottom:6px" data-i18n="aico_signals_title">SEÑALES</div>
-            <ul class="list-check list-warn" id="inj-warnings">
-              <li style="color:var(--sub)" data-i18n="aico_no_warning_signs">Sin señales de alerta.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" data-i18n="aico_card_action_plan">Plan de Acción</div>
-        <div id="inj-plan"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-var API = '/api';
-var chatHistory = [];
-var currentSession = null;
-var selectedSport = 'run';
-var selectedFocus = 'endurance';
-
-function _t(key, fallback) {
-  // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
-  // traducción — hay que detectar ese caso para no mostrar "aico_algo" crudo.
-  var v = window.i18n ? window.i18n.t(key) : null;
-  return (v && v !== key) ? v : fallback;
-}
-
-function updateDurVal(v) {
-  document.getElementById('dur-val').textContent = v + ' ' + _t('aico_unit_min', 'min');
-}
-
-function switchTab(name) {
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('tab-' + name).classList.add('active');
-  var tabs = {chat:0, workout:1, report:2, forecast:3, injury:4};
-  document.querySelectorAll('.tab-btn')[tabs[name] || 0].classList.add('active');
-  if (name === 'report') loadReport();
-  if (name === 'injury') loadInjury();
-  if (name === 'forecast') loadForecast();
-}
-
-// ─── CHAT ────────────────────────────────────────────────────────────────────
-function newSession() {
-  currentSession = null;
-  chatHistory = [];
-  document.getElementById('chat-messages').innerHTML =
-    '<div class="msg msg-ai">' + esc(_t('aico_new_conv_started', 'Nueva conversación iniciada. ¿Cómo puedo ayudarte?')) + '</div>';
-}
-
-function loadSessions() {
-  fetch(API + '/ai/sessions', {credentials: 'include'})
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      var ul = document.getElementById('sessions-list');
-      if (!d.length) { ul.innerHTML = '<div class="empty-state">' + esc(_t('aico_no_prev_sessions', 'Sin sesiones previas.')) + '</div>'; return; }
-      ul.innerHTML = '<ul class="sessions-list">' +
-        d.map(function(s) {
-          return '<li class="session-item" onclick="loadSession(\'' + esc(s.id) + '\')">' +
-            '<div>' + esc(s.title) + '</div>' +
-            '<div class="session-time">' + (s.last_message_at ? s.last_message_at.slice(0,16) : '') + '</div>' +
-            '</li>';
-        }).join('') + '</ul>';
-    })
-    .catch(function(){ document.getElementById('sessions-list').innerHTML = '<div class="empty-state">' + esc(_t('aico_err_loading_sessions', 'Error cargando sesiones.')) + '</div>'; });
-}
-
-function loadSession(id) {
-  fetch(API + '/ai/sessions/' + id + '/messages', {credentials: 'include'})
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      currentSession = id;
-      chatHistory = [];
-      var box = document.getElementById('chat-messages');
-      box.innerHTML = '';
-      (d.messages || []).forEach(function(m) {
-        chatHistory.push({role: m.role, content: m.content});
-        appendMsg(m.role === 'user' ? 'msg-user' : 'msg-ai', m.content);
-      });
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-function sendMessage() {
-  var input = document.getElementById('chat-input');
-  var msg   = input.value.trim();
-  if (!msg) return;
-
-  input.value = '';
-  appendMsg('msg-user', msg);
-  chatHistory.push({role: 'user', content: msg});
-
-  var typing = document.createElement('div');
-  typing.className = 'msg-typing';
-  typing.textContent = _t('aico_typing', 'Asistente IA está escribiendo…');
-  document.getElementById('chat-messages').appendChild(typing);
-
-  document.getElementById('btn-send').disabled = true;
-
-  fetch(API + '/ai/coach-suggest', {
-    method: 'POST', credentials: 'include',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      message:    msg,
-      session_id: currentSession,
-      history:    chatHistory.slice(-10),
-    }),
-  })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      typing.remove();
-      if (d.answer) {
-        appendMsg('msg-ai', d.answer);
-        chatHistory.push({role: 'assistant', content: d.answer});
-        currentSession = d.session_id || currentSession;
-        loadSessions();
-      } else {
-        // Los errores de la API llegan como {ok:false, errors:[{message}]},
-        // no como {detail} (formato FastAPI por defecto) — este backend
-        // envuelve todas las excepciones en ese formato propio.
-        var errMsg = (d.errors && d.errors[0] && d.errors[0].message) || d.detail || _t('aico_empty_response', 'Respuesta vacía');
-        appendMsg('msg-ai', _t('aico_error_prefix', 'Error:') + ' ' + errMsg);
+        --bg: #04080f;
+        --card: #08121e;
+        --card2: #0c1d30;
+        --border: #16283a;
+        --text: #f0f9ff;
+        --sub: #7fb3cc;
+        --acc: #f0a500;
+        --acc2: #ef4444;
+        --green: #10b981;
+        --blue: #0ea5e9;
+        --purple: #a855f7;
+        --ai: #ff6535;
+        --r: 14px;
+        --r2: 10px;
       }
-    })
-    .catch(function() {
-      typing.remove();
-      appendMsg('msg-ai', _t('aico_conn_error', 'Error de conexión. Verifica que la API esté activa.'));
-    })
-    .finally(function() {
-      document.getElementById('btn-send').disabled = false;
-    });
-}
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+        min-height: 100vh;
+      }
+      #nav-placeholder {
+        height: 0;
+      }
+      /* ─── LabX TopNav ─── */
+      #lx-topnav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        height: 60px;
+        background: rgba(4, 8, 15, 0.97);
+        backdrop-filter: blur(18px) saturate(160%);
+        border-bottom: 1px solid rgba(8, 145, 178, 0.12);
+        display: flex;
+        align-items: center;
+        padding: 0 1.5rem;
+        gap: 1.2rem;
+      }
+      .lxn-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.38rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #f0f9ff;
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .lxn-brand span {
+        color: #ff6535;
+      }
+      .lxn-brand svg.sbl-svg {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+      .lxn-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.15rem;
+        flex: 1;
+        overflow-x: auto;
+      }
+      .lxn-nav a {
+        padding: 0.32rem 0.68rem;
+        border-radius: 5px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #7fb3cc;
+        text-decoration: none;
+        white-space: nowrap;
+        transition:
+          color 0.15s,
+          background 0.15s;
+        flex-shrink: 0;
+      }
+      .lxn-nav a:hover,
+      .lxn-nav a.on {
+        color: #ff6535;
+        background: rgba(255, 101, 53, 0.1);
+      }
+      .lxn-out {
+        background: transparent;
+        border: 1px solid rgba(61, 104, 128, 0.32);
+        border-radius: 5px;
+        color: #3d6880;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.32rem 0.65rem;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .lxn-out:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+      .sbl-flower {
+        animation: sbl-spin-flower 24s linear infinite reverse;
+        transform-origin: 50px 50px;
+      }
+      .sbl-arcs {
+        animation: sbl-spin-arcs 40s linear infinite;
+        transform-origin: 50px 50px;
+      }
+      @keyframes sbl-spin-flower {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes sbl-spin-arcs {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (max-width: 700px) {
+        .lxn-nav {
+          display: none;
+        }
+      }
+      .page-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+      .page-header h1 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+      .page-header p {
+        color: var(--sub);
+        font-size: 0.9rem;
+        margin-top: 4px;
+      }
 
-function appendMsg(cls, text) {
-  var box = document.getElementById('chat-messages');
-  var el  = document.createElement('div');
-  el.className = 'msg ' + cls;
-  el.textContent = text;
-  box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
-}
+      .tabs {
+        display: flex;
+        gap: 0.2rem;
+        border-bottom: 1px solid var(--border);
+        margin: 20px 0 24px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .tab-btn {
+        flex: none;
+        padding: 0.65rem 1.1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        background: none;
+        color: var(--sub);
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        white-space: nowrap;
+        margin-bottom: -1px;
+      }
+      .tab-btn.active {
+        background: none;
+        color: var(--ai);
+        border-bottom-color: var(--ai);
+      }
+      .tab-btn:hover:not(.active) {
+        background: none;
+        color: var(--text);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
 
-// ─── WORKOUT ─────────────────────────────────────────────────────────────────
-function selectSport(btn) {
-  document.querySelectorAll('.sport-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  selectedSport = btn.dataset.sport;
-}
+      .card {
+        background: var(--card);
+        border-radius: var(--r);
+        padding: 20px;
+        border: 1px solid var(--border);
+      }
+      .card-title {
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
+        letter-spacing: 0.01em;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
 
-function selectFocus(btn) {
-  document.querySelectorAll('.focus-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  selectedFocus = btn.dataset.focus;
-}
+      /* CHAT */
+      .chat-wrap {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 280px);
+        min-height: 400px;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .msg {
+        padding: 12px 16px;
+        border-radius: var(--r2);
+        max-width: 80%;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+      .msg-user {
+        background: var(--ai);
+        color: #fff;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+      .msg-ai {
+        background: var(--card2);
+        color: var(--text);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .msg-typing {
+        color: var(--sub);
+        font-style: italic;
+        font-size: 0.82rem;
+        align-self: flex-start;
+        padding: 8px 12px;
+      }
+      .chat-input-row {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: var(--card2);
+        border-top: 1px solid var(--border);
+      }
+      .chat-input {
+        flex: 1;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        color: var(--text);
+        font-size: 0.88rem;
+        resize: none;
+        min-height: 42px;
+        max-height: 120px;
+      }
+      .chat-input:focus {
+        outline: none;
+        border-color: var(--ai);
+      }
+      .btn-send {
+        padding: 10px 20px;
+        background: var(--ai);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .btn-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .sessions-list {
+        list-style: none;
+      }
+      .session-item {
+        padding: 10px;
+        border-bottom: 1px solid var(--border) 44;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.15s;
+      }
+      .session-item:hover {
+        background: var(--card2);
+      }
+      .session-time {
+        font-size: 0.72rem;
+        color: var(--sub);
+        margin-top: 2px;
+      }
 
-function generateWorkout() {
-  var dur = parseInt(document.getElementById('wkt-duration').value);
+      /* WORKOUT GENERATOR */
+      .sport-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .sport-btn {
+        padding: 12px;
+        border: 2px solid var(--border);
+        border-radius: var(--r2);
+        cursor: pointer;
+        background: var(--card2);
+        color: var(--sub);
+        font-size: 0.82rem;
+        text-align: center;
+        transition: all 0.2s;
+      }
+      .sport-btn.active {
+        border-color: var(--ai);
+        color: var(--ai);
+        background: var(--ai) 11;
+      }
+      .focus-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 600px) {
+        .focus-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .focus-btn {
+        padding: 10px;
+        border: 2px solid var(--border);
+        border-radius: var(--r2);
+        cursor: pointer;
+        background: var(--card2);
+        color: var(--sub);
+        font-size: 0.78rem;
+        text-align: center;
+        transition: all 0.2s;
+      }
+      .focus-btn.active {
+        border-color: var(--acc);
+        color: var(--acc);
+        background: var(--acc) 11;
+      }
+      .phase-item {
+        padding: 14px;
+        border-left: 3px solid var(--border);
+        margin-bottom: 10px;
+        background: var(--card2);
+        border-radius: 0 var(--r2) var(--r2) 0;
+      }
+      .phase-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .phase-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+      }
+      .phase-meta {
+        font-size: 0.75rem;
+        color: var(--sub);
+        display: flex;
+        gap: 10px;
+      }
+      .phase-desc {
+        font-size: 0.8rem;
+        color: var(--sub);
+        line-height: 1.4;
+      }
+      .zone-badge {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+      }
+      .zone-Z1 {
+        background: #10b98122;
+        color: #10b981;
+      }
+      .zone-Z2 {
+        background: #0ea5e922;
+        color: #0ea5e9;
+      }
+      .zone-Z3 {
+        background: #f0a50022;
+        color: #f0a500;
+      }
+      .zone-Z4 {
+        background: #f9730622;
+        color: #f97316;
+      }
+      .zone-Z5 {
+        background: #ef444422;
+        color: #ef4444;
+      }
+      .rpe-bar {
+        display: flex;
+        gap: 3px;
+        margin-top: 4px;
+      }
+      .rpe-dot {
+        width: 12px;
+        height: 8px;
+        border-radius: 2px;
+        background: var(--border);
+      }
+      .rpe-dot.active {
+        background: var(--acc);
+      }
 
-  fetch(API + '/ai/generate-workout', {
-    method: 'POST', credentials: 'include',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({sport: selectedSport, focus: selectedFocus, duration_min: dur}),
-  })
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderWorkout(d); })
-    .catch(function(){ alert(_t('aico_err_gen_workout', 'Error al generar entrenamiento.')); });
-}
+      /* REPORT */
+      .score-ring {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 16px;
+      }
+      .score-circle {
+        fill: none;
+        stroke: var(--border);
+        stroke-width: 8;
+      }
+      .score-fill {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dashoffset 0.8s ease;
+      }
+      .score-val {
+        font-size: 2rem;
+        font-weight: 900;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .kv-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .kv-item {
+        background: var(--card2);
+        border-radius: var(--r2);
+        padding: 12px;
+      }
+      .kv-label {
+        font-size: 0.72rem;
+        color: var(--sub);
+        margin-bottom: 4px;
+      }
+      .kv-val {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .list-check {
+        list-style: none;
+      }
+      .list-check li {
+        padding: 6px 0;
+        font-size: 0.85rem;
+        border-bottom: 1px solid var(--border) 33;
+      }
+      .list-check li::before {
+        content: '✓ ';
+        color: var(--green);
+      }
+      .list-warn li::before {
+        content: '⚠ ';
+        color: var(--acc);
+      }
 
-function renderWorkout(d) {
-  document.getElementById('wkt-result').style.display = 'block';
-  document.getElementById('wkt-title').textContent = d.title || '';
-  document.getElementById('wkt-meta').textContent =
-    d.total_duration + ' ' + _t('aico_unit_min', 'min') + ' · ' + _t('aico_label_state', 'Estado') + ': ' + d.form_state;
-  document.getElementById('wkt-tss').textContent = '~' + d.estimated_tss + ' TSS';
+      /* FORECAST */
+      .forecast-chart {
+        position: relative;
+        height: 180px;
+        border-bottom: 1px solid var(--border);
+        border-left: 1px solid var(--border);
+        margin: 16px 0;
+      }
+      .forecast-x {
+        display: flex;
+        justify-content: space-around;
+        padding: 4px 0 0;
+        font-size: 0.7rem;
+        color: var(--sub);
+      }
+      .form-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .form-peak {
+        background: #10b98122;
+        color: #10b981;
+      }
+      .form-fresh {
+        background: #0ea5e922;
+        color: #0ea5e9;
+      }
+      .form-normal {
+        background: #7fb3cc22;
+        color: #7fb3cc;
+      }
+      .form-fatigued {
+        background: #f0a50022;
+        color: #f0a500;
+      }
+      .form-overtrained {
+        background: #ef444422;
+        color: #ef4444;
+      }
+      .forecast-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border) 33;
+        font-size: 0.83rem;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
 
-  var ovr = document.getElementById('wkt-override');
-  if (d.override_reason) {
-    ovr.style.display = 'block';
-    ovr.textContent = '⚡ ' + _t('aico_auto_adjustment', 'Ajuste automático:') + ' ' + d.override_reason;
-  } else {
-    ovr.style.display = 'none';
-  }
+      /* INJURY */
+      .risk-meter {
+        text-align: center;
+        padding: 16px;
+      }
+      .risk-score-num {
+        font-size: 4rem;
+        font-weight: 900;
+      }
+      .risk-low {
+        color: var(--green);
+      }
+      .risk-caution {
+        color: var(--acc);
+      }
+      .risk-high {
+        color: var(--acc2);
+      }
+      .risk-critical {
+        color: #dc2626;
+      }
+      .action-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border) 33;
+        font-size: 0.84rem;
+        align-items: flex-start;
+      }
+      .action-num {
+        width: 22px;
+        height: 22px;
+        background: var(--ai);
+        color: #fff;
+        border-radius: 50%;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
 
-  var phases = document.getElementById('wkt-phases');
-  phases.innerHTML = (d.phases || []).map(function(p) {
-    var dots = Array.from({length: 10}, function(_, i) {
-      return '<div class="rpe-dot' + (i < p.rpe ? ' active' : '') + '"></div>';
-    }).join('');
-    return '<div class="phase-item">' +
-      '<div class="phase-header">' +
-        '<span class="phase-name">' + esc(p.name) + '</span>' +
-        '<span class="zone-badge zone-' + p.zone + '">' + p.zone + ' — ' + esc(p.zone_range) + '</span>' +
-      '</div>' +
-      '<div class="phase-meta">' +
-        '<span>' + p.duration_min + ' min</span>' +
-        '<span>RPE: ' + p.rpe + '/10</span>' +
-      '</div>' +
-      '<div class="rpe-bar">' + dots + '</div>' +
-      '<div class="phase-desc" style="margin-top:6px">' + esc(p.description) + '</div>' +
-    '</div>';
-  }).join('');
+      /* MISC */
+      .btn-primary {
+        padding: 10px 24px;
+        background: var(--ai);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+      }
+      .btn-outline {
+        padding: 10px 22px;
+        background: transparent;
+        border: 1px solid var(--ai);
+        color: var(--ai);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .form-group label {
+        font-size: 0.78rem;
+        color: var(--sub);
+        font-weight: 500;
+      }
+      .form-input {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        color: var(--text);
+        font-size: 0.88rem;
+        width: 100%;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: var(--ai);
+      }
+      .loader {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 32px;
+        color: var(--sub);
+        font-size: 0.9rem;
+      }
+      .chips {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-align: center;
+        flex: 1;
+        min-width: 80px;
+      }
+      .chip-val {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--ai);
+      }
+      .chip-label {
+        font-size: 0.7rem;
+        color: var(--sub);
+      }
+      .override-banner {
+        background: var(--acc) 22;
+        border: 1px solid var(--acc) 44;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.83rem;
+        color: var(--acc);
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside id="sidebar"></aside>
+      <header class="sb-topbar"></header>
+      <div class="sb-overlay" id="sb-overlay"></div>
+      <main class="main" id="main-content">
+        <div class="page-wrap">
+          <div class="tabs">
+            <button
+              class="tab-btn active"
+              onclick="switchTab('chat')"
+              data-i18n="aico_tab_chat"
+            >
+              💬 Chat
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('workout')"
+              data-i18n="aico_tab_workout"
+            >
+              🏋 Workout
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('report')"
+              data-i18n="aico_tab_report"
+            >
+              📊 Informe
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('forecast')"
+              data-i18n="aico_tab_forecast"
+            >
+              📈 Forecast
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab('injury')"
+              data-i18n="aico_tab_injury"
+            >
+              🛡 Lesiones
+            </button>
+          </div>
 
-  var tips = document.getElementById('wkt-tips');
-  tips.innerHTML = (d.key_points || []).map(function(t) {
-    return '<li>' + esc(t) + '</li>';
-  }).join('');
+          <!-- CHAT -->
+          <div class="tab-panel active" id="tab-chat">
+            <div class="grid-2" style="gap: 16px">
+              <div class="card" style="padding: 0; overflow: hidden">
+                <div class="chat-wrap">
+                  <div class="chat-messages" id="chat-messages">
+                    <div class="msg msg-ai" data-i18n="aico_chat_welcome">
+                      Hola! Soy tu Asistente IA de LabX. Tengo acceso a tu CTL,
+                      TSB, HRV, recuperación y actividades recientes. ¿En qué te
+                      ayudo hoy?
+                    </div>
+                  </div>
+                  <div class="chat-input-row">
+                    <textarea
+                      class="chat-input"
+                      id="chat-input"
+                      placeholder="Escribe tu consulta..."
+                      rows="2"
+                      data-i18n-placeholder="aico_chat_placeholder"
+                      onkeydown="
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault();
+                          sendMessage();
+                        }
+                      "
+                    ></textarea>
+                    <button
+                      class="btn-send"
+                      id="btn-send"
+                      onclick="sendMessage()"
+                      data-i18n="aico_btn_send"
+                    >
+                      Enviar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title" data-i18n="aico_sessions_title">
+                  Sesiones anteriores
+                </div>
+                <div id="sessions-list">
+                  <div class="loader" data-i18n="aico_loading">Cargando...</div>
+                </div>
+                <div style="margin-top: 12px">
+                  <button
+                    class="btn-outline"
+                    style="width: 100%; font-size: 0.8rem"
+                    onclick="newSession()"
+                    data-i18n="aico_btn_new_session"
+                  >
+                    + Nueva sesión
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-  var wb  = document.getElementById('wkt-warnings-box');
-  var wl  = document.getElementById('wkt-warnings');
-  if (d.warnings && d.warnings.length) {
-    wb.style.display = 'block';
-    wl.innerHTML = d.warnings.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('');
-  } else {
-    wb.style.display = 'none';
-  }
-}
+          <!-- WORKOUT GENERATOR -->
+          <div class="tab-panel" id="tab-workout">
+            <div class="card" style="margin-bottom: 16px">
+              <div class="card-title" data-i18n="aico_wkt_title">
+                Generador de Entrenamiento IA
+              </div>
+              <p
+                style="
+                  font-size: 0.83rem;
+                  color: var(--sub);
+                  margin-bottom: 16px;
+                "
+                data-i18n="aico_wkt_desc"
+              >
+                El motor usa tu CTL, TSB y Recovery Score actuales para adaptar
+                la intensidad automáticamente.
+              </p>
 
-// ─── REPORT ──────────────────────────────────────────────────────────────────
-function loadReport() {
-  document.getElementById('report-loader').style.display = 'block';
-  document.getElementById('report-content').style.display = 'none';
+              <div class="form-group">
+                <label data-i18n="aico_label_sport">Deporte</label>
+                <div class="sport-grid">
+                  <button
+                    class="sport-btn active"
+                    data-sport="run"
+                    onclick="selectSport(this)"
+                    data-i18n="aico_sport_run"
+                  >
+                    🏃 Carrera
+                  </button>
+                  <button
+                    class="sport-btn"
+                    data-sport="bike"
+                    onclick="selectSport(this)"
+                    data-i18n="aico_sport_bike"
+                  >
+                    🚴 Ciclismo
+                  </button>
+                  <button
+                    class="sport-btn"
+                    data-sport="swim"
+                    onclick="selectSport(this)"
+                    data-i18n="aico_sport_swim"
+                  >
+                    🏊 Natación
+                  </button>
+                  <button
+                    class="sport-btn"
+                    data-sport="gym"
+                    onclick="selectSport(this)"
+                    data-i18n="aico_sport_gym"
+                  >
+                    🏋 Gym
+                  </button>
+                  <button
+                    class="sport-btn"
+                    data-sport="brick"
+                    onclick="selectSport(this)"
+                    data-i18n="aico_sport_brick"
+                  >
+                    ⚡ Brick
+                  </button>
+                </div>
+              </div>
 
-  fetch(API + '/ai/weekly-report', {credentials: 'include'})
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderReport(d); })
-    .catch(function() {
-      document.getElementById('report-loader').textContent = _t('aico_err_load_report', 'Error al cargar informe.');
-    });
-}
+              <div class="form-group">
+                <label data-i18n="aico_label_focus">Foco</label>
+                <div class="focus-grid">
+                  <button
+                    class="focus-btn active"
+                    data-focus="endurance"
+                    onclick="selectFocus(this)"
+                    data-i18n="aico_focus_endurance"
+                  >
+                    Resistencia
+                  </button>
+                  <button
+                    class="focus-btn"
+                    data-focus="threshold"
+                    onclick="selectFocus(this)"
+                    data-i18n="aico_focus_threshold"
+                  >
+                    Umbral
+                  </button>
+                  <button
+                    class="focus-btn"
+                    data-focus="vo2"
+                    onclick="selectFocus(this)"
+                  >
+                    VO₂max
+                  </button>
+                  <button
+                    class="focus-btn"
+                    data-focus="recovery"
+                    onclick="selectFocus(this)"
+                    data-i18n="aico_focus_recovery"
+                  >
+                    Recuperación
+                  </button>
+                  <button
+                    class="focus-btn"
+                    data-focus="strength"
+                    onclick="selectFocus(this)"
+                    data-i18n="aico_focus_strength"
+                  >
+                    Fuerza
+                  </button>
+                </div>
+              </div>
 
-function renderReport(d) {
-  document.getElementById('report-loader').style.display = 'none';
-  document.getElementById('report-content').style.display = 'block';
+              <div class="form-group">
+                <label data-i18n="aico_label_duration">Duración (min)</label>
+                <input
+                  type="range"
+                  min="20"
+                  max="240"
+                  value="60"
+                  step="5"
+                  id="wkt-duration"
+                  oninput="updateDurVal(this.value)"
+                  style="width: 100%; accent-color: var(--ai)"
+                />
+                <span
+                  id="dur-val"
+                  style="font-size: 0.88rem; color: var(--text)"
+                  >60 min</span
+                >
+              </div>
 
-  var score = d.week_score || 50;
-  var circ  = 2 * Math.PI * 40;
-  document.getElementById('rpt-ring').setAttribute('stroke-dashoffset',
-    (circ - circ * score / 100).toFixed(1));
-  document.getElementById('rpt-score-val').textContent = score;
-  document.getElementById('rpt-form').textContent = d.form_assessment || '';
+              <button
+                class="btn-primary"
+                onclick="generateWorkout()"
+                data-i18n="aico_btn_generate_workout"
+              >
+                Generar Entrenamiento
+              </button>
+            </div>
 
-  var raw = d.raw || {};
-  document.getElementById('rpt-tss').textContent   = raw.week_tss || 0;
-  document.getElementById('rpt-hours').textContent = raw.week_hours || 0;
-  document.getElementById('rpt-acts').textContent  = raw.activities || 0;
-  document.getElementById('rpt-load-summary').textContent = d.load_summary || '';
+            <div id="wkt-result" style="display: none">
+              <div class="card">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <div>
+                    <div
+                      class="card-title"
+                      id="wkt-title"
+                      style="margin-bottom: 4px"
+                    ></div>
+                    <div
+                      id="wkt-meta"
+                      style="font-size: 0.8rem; color: var(--sub)"
+                    ></div>
+                  </div>
+                  <div
+                    id="wkt-tss"
+                    style="
+                      font-size: 1.4rem;
+                      font-weight: 800;
+                      color: var(--ai);
+                    "
+                  ></div>
+                </div>
+                <div
+                  id="wkt-override"
+                  style="display: none"
+                  class="override-banner"
+                ></div>
+                <div id="wkt-phases"></div>
+                <div style="margin-top: 14px">
+                  <div
+                    style="
+                      font-size: 0.8rem;
+                      font-weight: 600;
+                      color: var(--sub);
+                      margin-bottom: 8px;
+                    "
+                    data-i18n="aico_wkt_key_points"
+                  >
+                    PUNTOS CLAVE
+                  </div>
+                  <ul class="list-check" id="wkt-tips"></ul>
+                </div>
+                <div
+                  id="wkt-warnings-box"
+                  style="display: none; margin-top: 10px"
+                >
+                  <ul class="list-check list-warn" id="wkt-warnings"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
 
-  document.getElementById('rpt-achievements').innerHTML =
-    (d.key_achievements || []).map(function(a){ return '<li>' + esc(a) + '</li>'; }).join('');
+          <!-- REPORT -->
+          <div class="tab-panel" id="tab-report">
+            <div
+              id="report-loader"
+              class="loader"
+              data-i18n="aico_loading_report"
+            >
+              Cargando informe semanal...
+            </div>
+            <div id="report-content" style="display: none">
+              <div class="grid-2" style="margin-bottom: 16px">
+                <div class="card" style="text-align: center">
+                  <div class="card-title" data-i18n="aico_card_week_score">
+                    Score de la Semana
+                  </div>
+                  <svg class="score-ring" viewBox="0 0 100 100">
+                    <circle class="score-circle" cx="50" cy="50" r="40" />
+                    <circle
+                      class="score-fill"
+                      id="rpt-ring"
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#FF6535"
+                      stroke-dasharray="251"
+                      stroke-dashoffset="251"
+                    />
+                    <text
+                      class="score-val"
+                      x="50"
+                      y="50"
+                      fill="#F0F9FF"
+                      id="rpt-score-val"
+                    >
+                      —
+                    </text>
+                  </svg>
+                  <div
+                    id="rpt-form"
+                    style="font-size: 0.9rem; color: var(--sub)"
+                  ></div>
+                </div>
+                <div class="card">
+                  <div class="card-title" data-i18n="aico_card_week_load">
+                    Carga de la Semana
+                  </div>
+                  <div class="chips" style="margin-bottom: 12px">
+                    <div class="chip">
+                      <div class="chip-val" id="rpt-tss">—</div>
+                      <div class="chip-label">TSS</div>
+                    </div>
+                    <div class="chip">
+                      <div class="chip-val" id="rpt-hours">—</div>
+                      <div class="chip-label" data-i18n="aico_unit_hours">
+                        horas
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div class="chip-val" id="rpt-acts">—</div>
+                      <div class="chip-label" data-i18n="aico_unit_sessions">
+                        sesiones
+                      </div>
+                    </div>
+                  </div>
+                  <p
+                    id="rpt-load-summary"
+                    style="
+                      font-size: 0.83rem;
+                      color: var(--sub);
+                      line-height: 1.4;
+                    "
+                  ></p>
+                </div>
+              </div>
+              <div class="grid-2" style="margin-bottom: 16px">
+                <div class="card">
+                  <div class="card-title" data-i18n="aico_card_achievements">
+                    ✅ Logros
+                  </div>
+                  <ul class="list-check" id="rpt-achievements"></ul>
+                </div>
+                <div class="card">
+                  <div class="card-title" data-i18n="aico_card_concerns">
+                    ⚠ Preocupaciones
+                  </div>
+                  <ul class="list-check list-warn" id="rpt-concerns">
+                    <li
+                      style="color: var(--sub)"
+                      data-i18n="aico_no_alerts_week"
+                    >
+                      Sin alertas esta semana.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title" data-i18n="aico_card_next_week_recs">
+                  Recomendaciones para la Próxima Semana
+                </div>
+                <div id="rpt-next-wrap">
+                  <div class="chips" style="margin-bottom: 12px">
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        id="rpt-tss-min"
+                        style="font-size: 1rem"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="aico_tss_min">
+                        TSS mín
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        id="rpt-tss-max"
+                        style="font-size: 1rem"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="aico_tss_max">
+                        TSS máx
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        id="rpt-focus-next"
+                        style="font-size: 0.9rem"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="aico_suggested_focus">
+                        Foco sugerido
+                      </div>
+                    </div>
+                  </div>
+                  <ul class="list-check" id="rpt-recs"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
 
-  var conc = document.getElementById('rpt-concerns');
-  if (d.concerns && d.concerns.length) {
-    conc.innerHTML = d.concerns.map(function(c){ return '<li>' + esc(c) + '</li>'; }).join('');
-  }
+          <!-- FORECAST -->
+          <div class="tab-panel" id="tab-forecast">
+            <div class="card" style="margin-bottom: 16px">
+              <div class="card-title" data-i18n="aico_card_forecast_params">
+                Parámetros del Forecast
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 14px;
+                  flex-wrap: wrap;
+                  align-items: flex-end;
+                "
+              >
+                <div
+                  class="form-group"
+                  style="flex: 1; min-width: 140px; margin: 0"
+                >
+                  <label data-i18n="aico_label_weeks_project"
+                    >Semanas a proyectar</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="fc-weeks"
+                    value="8"
+                    min="2"
+                    max="16"
+                  />
+                </div>
+                <div
+                  class="form-group"
+                  style="flex: 1; min-width: 140px; margin: 0"
+                >
+                  <label data-i18n="aico_label_weekly_tss_planned"
+                    >TSS semanal planificado</label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="fc-tss"
+                    placeholder="Auto desde histórico"
+                    min="0"
+                    max="3000"
+                    data-i18n-placeholder="aico_ph_auto_hist"
+                  />
+                </div>
+                <button
+                  class="btn-primary"
+                  onclick="loadForecast()"
+                  data-i18n="aico_btn_project"
+                >
+                  Proyectar
+                </button>
+              </div>
+            </div>
 
-  var nw = d.next_week || {};
-  document.getElementById('rpt-tss-min').textContent  = (nw.tss_range || {}).min || '—';
-  document.getElementById('rpt-tss-max').textContent  = (nw.tss_range || {}).max || '—';
-  document.getElementById('rpt-focus-next').textContent = nw.focus || '—';
-  document.getElementById('rpt-recs').innerHTML =
-    (nw.recommendations || []).map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
-}
+            <div
+              id="forecast-loader"
+              class="loader"
+              style="display: none"
+              data-i18n="aico_loading_forecast"
+            >
+              Calculando proyección...
+            </div>
+            <div id="forecast-content" style="display: none">
+              <div class="card" style="margin-bottom: 16px">
+                <div class="card-title" data-i18n="aico_card_ctl_projection">
+                  Proyección CTL · 8 semanas
+                </div>
+                <canvas
+                  id="forecast-canvas"
+                  height="160"
+                  style="width: 100%"
+                ></canvas>
+                <div class="forecast-x" id="fc-x-labels"></div>
+              </div>
+              <div class="card">
+                <div class="card-title" data-i18n="aico_card_weekly_detail">
+                  Detalle por semana
+                </div>
+                <div id="forecast-rows"></div>
+              </div>
+            </div>
+          </div>
 
-// ─── FORECAST ────────────────────────────────────────────────────────────────
-function loadForecast() {
-  var weeks  = parseInt(document.getElementById('fc-weeks').value) || 8;
-  var tssVal = document.getElementById('fc-tss').value;
-  var url    = API + '/ai/forecast?weeks=' + weeks + (tssVal ? '&tss_per_week=' + tssVal : '');
+          <!-- INJURY -->
+          <div class="tab-panel" id="tab-injury">
+            <div
+              id="injury-loader"
+              class="loader"
+              data-i18n="aico_loading_injury"
+            >
+              Calculando riesgo de lesión...
+            </div>
+            <div id="injury-content" style="display: none">
+              <div class="grid-2" style="margin-bottom: 16px">
+                <div class="card" style="text-align: center">
+                  <div class="card-title" data-i18n="aico_card_risk_score">
+                    Score de Riesgo
+                  </div>
+                  <div class="risk-meter">
+                    <div class="risk-score-num" id="inj-score">—</div>
+                    <div
+                      id="inj-level"
+                      style="font-size: 1rem; font-weight: 600; margin-top: 4px"
+                    ></div>
+                    <div
+                      id="inj-driver"
+                      style="
+                        font-size: 0.82rem;
+                        color: var(--sub);
+                        margin-top: 6px;
+                      "
+                    ></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-title" data-i18n="aico_card_risk_window">
+                    Ventana de Riesgo
+                  </div>
+                  <div class="chips">
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        id="inj-days-risk"
+                        style="font-size: 1.3rem"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="aico_days_at_risk">
+                        días en riesgo
+                      </div>
+                    </div>
+                    <div class="chip">
+                      <div
+                        class="chip-val"
+                        id="inj-days-rec"
+                        style="font-size: 1.3rem"
+                      >
+                        —
+                      </div>
+                      <div class="chip-label" data-i18n="aico_days_recovery">
+                        días de recuperación
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 12px">
+                    <div
+                      style="
+                        font-size: 0.78rem;
+                        color: var(--sub);
+                        font-weight: 600;
+                        margin-bottom: 6px;
+                      "
+                      data-i18n="aico_signals_title"
+                    >
+                      SEÑALES
+                    </div>
+                    <ul class="list-check list-warn" id="inj-warnings">
+                      <li
+                        style="color: var(--sub)"
+                        data-i18n="aico_no_warning_signs"
+                      >
+                        Sin señales de alerta.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title" data-i18n="aico_card_action_plan">
+                  Plan de Acción
+                </div>
+                <div id="inj-plan"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  document.getElementById('forecast-loader').style.display = 'block';
-  document.getElementById('forecast-content').style.display = 'none';
+        <script>
+          var API = '/api';
+          var chatHistory = [];
+          var currentSession = null;
+          var selectedSport = 'run';
+          var selectedFocus = 'endurance';
 
-  fetch(url, {credentials: 'include'})
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderForecast(d); })
-    .catch(function() {
-      document.getElementById('forecast-loader').textContent = _t('aico_err_load_forecast', 'Error al cargar forecast.');
-    });
-}
+          function _t(key, fallback) {
+            // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
+            // traducción — hay que detectar ese caso para no mostrar "aico_algo" crudo.
+            var v = window.i18n ? window.i18n.t(key) : null;
+            return v && v !== key ? v : fallback;
+          }
 
-function renderForecast(d) {
-  document.getElementById('forecast-loader').style.display = 'none';
-  document.getElementById('forecast-content').style.display = 'block';
+          function updateDurVal(v) {
+            document.getElementById('dur-val').textContent =
+              v + ' ' + _t('aico_unit_min', 'min');
+          }
 
-  var proj = d.projection || [];
-  var canvas = document.getElementById('forecast-canvas');
-  var ctx    = canvas.getContext('2d');
-  canvas.width = canvas.parentElement.clientWidth;
-  var W = canvas.width, H = canvas.height;
+          function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(function (p) {
+              p.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(function (b) {
+              b.classList.remove('active');
+            });
+            document.getElementById('tab-' + name).classList.add('active');
+            var tabs = {
+              chat: 0,
+              workout: 1,
+              report: 2,
+              forecast: 3,
+              injury: 4,
+            };
+            document
+              .querySelectorAll('.tab-btn')
+              [tabs[name] || 0].classList.add('active');
+            if (name === 'report') loadReport();
+            if (name === 'injury') loadInjury();
+            if (name === 'forecast') loadForecast();
+          }
 
-  var maxCTL = Math.max.apply(null, proj.map(function(p){ return p.ctl; }));
-  var minCTL = Math.min.apply(null, proj.map(function(p){ return p.ctl; }));
-  var padTop = 20, padBot = 10;
+          // ─── CHAT ────────────────────────────────────────────────────────────────────
+          function newSession() {
+            currentSession = null;
+            chatHistory = [];
+            document.getElementById('chat-messages').innerHTML =
+              '<div class="msg msg-ai">' +
+              esc(
+                _t(
+                  'aico_new_conv_started',
+                  'Nueva conversación iniciada. ¿Cómo puedo ayudarte?',
+                ),
+              ) +
+              '</div>';
+          }
 
-  var toY = function(v) { return padTop + (1 - (v - minCTL) / (maxCTL - minCTL + 1)) * (H - padTop - padBot); };
+          function loadSessions() {
+            fetch(API + '/ai/sessions', { credentials: 'include' })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                var ul = document.getElementById('sessions-list');
+                if (!d.length) {
+                  ul.innerHTML =
+                    '<div class="empty-state">' +
+                    esc(_t('aico_no_prev_sessions', 'Sin sesiones previas.')) +
+                    '</div>';
+                  return;
+                }
+                ul.innerHTML =
+                  '<ul class="sessions-list">' +
+                  d
+                    .map(function (s) {
+                      return (
+                        '<li class="session-item" onclick="loadSession(\'' +
+                        esc(s.id) +
+                        '\')">' +
+                        '<div>' +
+                        esc(s.title) +
+                        '</div>' +
+                        '<div class="session-time">' +
+                        (s.last_message_at
+                          ? s.last_message_at.slice(0, 16)
+                          : '') +
+                        '</div>' +
+                        '</li>'
+                      );
+                    })
+                    .join('') +
+                  '</ul>';
+              })
+              .catch(function () {
+                document.getElementById('sessions-list').innerHTML =
+                  '<div class="empty-state">' +
+                  esc(
+                    _t('aico_err_loading_sessions', 'Error cargando sesiones.'),
+                  ) +
+                  '</div>';
+              });
+          }
 
-  ctx.clearRect(0, 0, W, H);
+          function loadSession(id) {
+            fetch(API + '/ai/sessions/' + id + '/messages', {
+              credentials: 'include',
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                currentSession = id;
+                chatHistory = [];
+                var box = document.getElementById('chat-messages');
+                box.innerHTML = '';
+                (d.messages || []).forEach(function (m) {
+                  chatHistory.push({ role: m.role, content: m.content });
+                  appendMsg(
+                    m.role === 'user' ? 'msg-user' : 'msg-ai',
+                    m.content,
+                  );
+                });
+                box.scrollTop = box.scrollHeight;
+              });
+          }
 
-  // CTL line
-  ctx.beginPath();
-  ctx.strokeStyle = '#FF6535';
-  ctx.lineWidth   = 2.5;
-  proj.forEach(function(p, i) {
-    var x = (i / (proj.length - 1)) * W;
-    var y = toY(p.ctl);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.stroke();
+          function sendMessage() {
+            var input = document.getElementById('chat-input');
+            var msg = input.value.trim();
+            if (!msg) return;
 
-  // TSB dots
-  proj.forEach(function(p, i) {
-    var x = (i / (proj.length - 1)) * W;
-    var tsbNorm = Math.max(0, Math.min(1, (p.tsb + 30) / 60));
-    var y = padTop + 8;
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = p.tsb >= 0 ? '#10B981' : '#F0A500';
-    ctx.fill();
-  });
+            input.value = '';
+            appendMsg('msg-user', msg);
+            chatHistory.push({ role: 'user', content: msg });
 
-  // X labels
-  var weekAbbr = esc(_t('aico_week_abbrev', 'S'));
-  document.getElementById('fc-x-labels').innerHTML =
-    proj.map(function(p){ return '<span>' + weekAbbr + p.week + '</span>'; }).join('');
+            var typing = document.createElement('div');
+            typing.className = 'msg-typing';
+            typing.textContent = _t(
+              'aico_typing',
+              'Asistente IA está escribiendo…',
+            );
+            document.getElementById('chat-messages').appendChild(typing);
 
-  // Rows
-  var formCls = {peak:'form-peak', fresh:'form-fresh', normal:'form-normal', fatigued:'form-fatigued', overtrained:'form-overtrained'};
-  document.getElementById('forecast-rows').innerHTML = proj.map(function(p) {
-    return '<div class="forecast-row">' +
-      '<span style="color:var(--sub);width:40px">' + weekAbbr + p.week + '</span>' +
-      '<span>CTL: <strong>' + p.ctl + '</strong></span>' +
-      '<span>TSB: <strong style="color:' + (p.tsb >= 0 ? 'var(--green)' : 'var(--acc)') + '">' + p.tsb + '</strong></span>' +
-      '<span class="form-badge ' + (formCls[p.form_label] || 'form-normal') + '">' + p.form_label + '</span>' +
-      '<span style="color:var(--sub);font-size:.75rem">' + p.planned_tss + ' TSS</span>' +
-      (p.notes && p.notes.length ? '<span style="color:var(--acc);font-size:.72rem">⚠ ' + esc(p.notes[0]) + '</span>' : '') +
-    '</div>';
-  }).join('');
-}
+            document.getElementById('btn-send').disabled = true;
 
-// ─── INJURY ──────────────────────────────────────────────────────────────────
-function loadInjury() {
-  document.getElementById('injury-loader').style.display = 'block';
-  document.getElementById('injury-content').style.display = 'none';
+            fetch(API + '/ai/coach-suggest', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: msg,
+                session_id: currentSession,
+                history: chatHistory.slice(-10),
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                typing.remove();
+                if (d.answer) {
+                  appendMsg('msg-ai', d.answer);
+                  chatHistory.push({ role: 'assistant', content: d.answer });
+                  currentSession = d.session_id || currentSession;
+                  loadSessions();
+                } else {
+                  // Los errores de la API llegan como {ok:false, errors:[{message}]},
+                  // no como {detail} (formato FastAPI por defecto) — este backend
+                  // envuelve todas las excepciones en ese formato propio.
+                  var errMsg =
+                    (d.errors && d.errors[0] && d.errors[0].message) ||
+                    d.detail ||
+                    _t('aico_empty_response', 'Respuesta vacía');
+                  appendMsg(
+                    'msg-ai',
+                    _t('aico_error_prefix', 'Error:') + ' ' + errMsg,
+                  );
+                }
+              })
+              .catch(function () {
+                typing.remove();
+                appendMsg(
+                  'msg-ai',
+                  _t(
+                    'aico_conn_error',
+                    'Error de conexión. Verifica que la API esté activa.',
+                  ),
+                );
+              })
+              .finally(function () {
+                document.getElementById('btn-send').disabled = false;
+              });
+          }
 
-  fetch(API + '/ai/injury-forecast', {credentials: 'include'})
-    .then(function(r){ return r.json(); })
-    .then(function(d) { renderInjury(d); })
-    .catch(function() {
-      document.getElementById('injury-loader').textContent = _t('aico_err_load_analysis', 'Error al cargar análisis.');
-    });
-}
+          function appendMsg(cls, text) {
+            var box = document.getElementById('chat-messages');
+            var el = document.createElement('div');
+            el.className = 'msg ' + cls;
+            el.textContent = text;
+            box.appendChild(el);
+            box.scrollTop = box.scrollHeight;
+          }
 
-function renderInjury(d) {
-  document.getElementById('injury-loader').style.display = 'none';
-  document.getElementById('injury-content').style.display = 'block';
+          // ─── WORKOUT ─────────────────────────────────────────────────────────────────
+          function selectSport(btn) {
+            document.querySelectorAll('.sport-btn').forEach(function (b) {
+              b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            selectedSport = btn.dataset.sport;
+          }
 
-  var pct  = Math.round((d.risk_score || 0) * 100);
-  var cls  = {low: 'risk-low', caution: 'risk-caution', high: 'risk-high', critical: 'risk-critical'}[d.risk_level] || 'risk-caution';
-  document.getElementById('inj-score').textContent  = pct + '%';
-  document.getElementById('inj-score').className    = 'risk-score-num ' + cls;
-  document.getElementById('inj-level').textContent  = d.risk_level || '—';
-  document.getElementById('inj-driver').textContent = d.primary_driver || '';
+          function selectFocus(btn) {
+            document.querySelectorAll('.focus-btn').forEach(function (b) {
+              b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            selectedFocus = btn.dataset.focus;
+          }
 
-  document.getElementById('inj-days-risk').textContent = d.time_at_risk_days || 0;
-  document.getElementById('inj-days-rec').textContent  = d.recovery_days_needed || 0;
+          function generateWorkout() {
+            var dur = parseInt(document.getElementById('wkt-duration').value);
 
-  var ws = document.getElementById('inj-warnings');
-  if (d.warning_signs && d.warning_signs.length) {
-    ws.innerHTML = d.warning_signs.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('');
-  }
+            fetch(API + '/ai/generate-workout', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sport: selectedSport,
+                focus: selectedFocus,
+                duration_min: dur,
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderWorkout(d);
+              })
+              .catch(function () {
+                alert(
+                  _t('aico_err_gen_workout', 'Error al generar entrenamiento.'),
+                );
+              });
+          }
 
-  document.getElementById('inj-plan').innerHTML =
-    (d.action_plan || []).map(function(step, i) {
-      return '<div class="action-item">' +
-        '<div class="action-num">' + (i+1) + '</div>' +
-        '<div>' + esc(step) + '</div>' +
-      '</div>';
-    }).join('');
-}
+          function renderWorkout(d) {
+            document.getElementById('wkt-result').style.display = 'block';
+            document.getElementById('wkt-title').textContent = d.title || '';
+            document.getElementById('wkt-meta').textContent =
+              d.total_duration +
+              ' ' +
+              _t('aico_unit_min', 'min') +
+              ' · ' +
+              _t('aico_label_state', 'Estado') +
+              ': ' +
+              d.form_state;
+            document.getElementById('wkt-tss').textContent =
+              '~' + d.estimated_tss + ' TSS';
 
-// ─── UTILS ───────────────────────────────────────────────────────────────────
-function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+            var ovr = document.getElementById('wkt-override');
+            if (d.override_reason) {
+              ovr.style.display = 'block';
+              ovr.textContent =
+                '⚡ ' +
+                _t('aico_auto_adjustment', 'Ajuste automático:') +
+                ' ' +
+                d.override_reason;
+            } else {
+              ovr.style.display = 'none';
+            }
 
-document.addEventListener('DOMContentLoaded', function() {
-  loadSessions();
-});
-</script>
-<script src="auth.js"></script>
-<script>KL.guard('ai_coach');</script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="i18n.js"></script>
-  </main>
-</div>
-</body>
+            var phases = document.getElementById('wkt-phases');
+            phases.innerHTML = (d.phases || [])
+              .map(function (p) {
+                var dots = Array.from({ length: 10 }, function (_, i) {
+                  return (
+                    '<div class="rpe-dot' +
+                    (i < p.rpe ? ' active' : '') +
+                    '"></div>'
+                  );
+                }).join('');
+                return (
+                  '<div class="phase-item">' +
+                  '<div class="phase-header">' +
+                  '<span class="phase-name">' +
+                  esc(p.name) +
+                  '</span>' +
+                  '<span class="zone-badge zone-' +
+                  p.zone +
+                  '">' +
+                  p.zone +
+                  ' — ' +
+                  esc(p.zone_range) +
+                  '</span>' +
+                  '</div>' +
+                  '<div class="phase-meta">' +
+                  '<span>' +
+                  p.duration_min +
+                  ' min</span>' +
+                  '<span>RPE: ' +
+                  p.rpe +
+                  '/10</span>' +
+                  '</div>' +
+                  '<div class="rpe-bar">' +
+                  dots +
+                  '</div>' +
+                  '<div class="phase-desc" style="margin-top:6px">' +
+                  esc(p.description) +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('');
+
+            var tips = document.getElementById('wkt-tips');
+            tips.innerHTML = (d.key_points || [])
+              .map(function (t) {
+                return '<li>' + esc(t) + '</li>';
+              })
+              .join('');
+
+            var wb = document.getElementById('wkt-warnings-box');
+            var wl = document.getElementById('wkt-warnings');
+            if (d.warnings && d.warnings.length) {
+              wb.style.display = 'block';
+              wl.innerHTML = d.warnings
+                .map(function (w) {
+                  return '<li>' + esc(w) + '</li>';
+                })
+                .join('');
+            } else {
+              wb.style.display = 'none';
+            }
+          }
+
+          // ─── REPORT ──────────────────────────────────────────────────────────────────
+          function loadReport() {
+            document.getElementById('report-loader').style.display = 'block';
+            document.getElementById('report-content').style.display = 'none';
+
+            fetch(API + '/ai/weekly-report', { credentials: 'include' })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderReport(d);
+              })
+              .catch(function () {
+                document.getElementById('report-loader').textContent = _t(
+                  'aico_err_load_report',
+                  'Error al cargar informe.',
+                );
+              });
+          }
+
+          function renderReport(d) {
+            document.getElementById('report-loader').style.display = 'none';
+            document.getElementById('report-content').style.display = 'block';
+
+            var score = d.week_score || 50;
+            var circ = 2 * Math.PI * 40;
+            document
+              .getElementById('rpt-ring')
+              .setAttribute(
+                'stroke-dashoffset',
+                (circ - (circ * score) / 100).toFixed(1),
+              );
+            document.getElementById('rpt-score-val').textContent = score;
+            document.getElementById('rpt-form').textContent =
+              d.form_assessment || '';
+
+            var raw = d.raw || {};
+            document.getElementById('rpt-tss').textContent = raw.week_tss || 0;
+            document.getElementById('rpt-hours').textContent =
+              raw.week_hours || 0;
+            document.getElementById('rpt-acts').textContent =
+              raw.activities || 0;
+            document.getElementById('rpt-load-summary').textContent =
+              d.load_summary || '';
+
+            document.getElementById('rpt-achievements').innerHTML = (
+              d.key_achievements || []
+            )
+              .map(function (a) {
+                return '<li>' + esc(a) + '</li>';
+              })
+              .join('');
+
+            var conc = document.getElementById('rpt-concerns');
+            if (d.concerns && d.concerns.length) {
+              conc.innerHTML = d.concerns
+                .map(function (c) {
+                  return '<li>' + esc(c) + '</li>';
+                })
+                .join('');
+            }
+
+            var nw = d.next_week || {};
+            document.getElementById('rpt-tss-min').textContent =
+              (nw.tss_range || {}).min || '—';
+            document.getElementById('rpt-tss-max').textContent =
+              (nw.tss_range || {}).max || '—';
+            document.getElementById('rpt-focus-next').textContent =
+              nw.focus || '—';
+            document.getElementById('rpt-recs').innerHTML = (
+              nw.recommendations || []
+            )
+              .map(function (r) {
+                return '<li>' + esc(r) + '</li>';
+              })
+              .join('');
+          }
+
+          // ─── FORECAST ────────────────────────────────────────────────────────────────
+          function loadForecast() {
+            var weeks =
+              parseInt(document.getElementById('fc-weeks').value) || 8;
+            var tssVal = document.getElementById('fc-tss').value;
+            var url =
+              API +
+              '/ai/forecast?weeks=' +
+              weeks +
+              (tssVal ? '&tss_per_week=' + tssVal : '');
+
+            document.getElementById('forecast-loader').style.display = 'block';
+            document.getElementById('forecast-content').style.display = 'none';
+
+            fetch(url, { credentials: 'include' })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderForecast(d);
+              })
+              .catch(function () {
+                document.getElementById('forecast-loader').textContent = _t(
+                  'aico_err_load_forecast',
+                  'Error al cargar forecast.',
+                );
+              });
+          }
+
+          function renderForecast(d) {
+            document.getElementById('forecast-loader').style.display = 'none';
+            document.getElementById('forecast-content').style.display = 'block';
+
+            var proj = d.projection || [];
+            var canvas = document.getElementById('forecast-canvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            var W = canvas.width,
+              H = canvas.height;
+
+            var maxCTL = Math.max.apply(
+              null,
+              proj.map(function (p) {
+                return p.ctl;
+              }),
+            );
+            var minCTL = Math.min.apply(
+              null,
+              proj.map(function (p) {
+                return p.ctl;
+              }),
+            );
+            var padTop = 20,
+              padBot = 10;
+
+            var toY = function (v) {
+              return (
+                padTop +
+                (1 - (v - minCTL) / (maxCTL - minCTL + 1)) *
+                  (H - padTop - padBot)
+              );
+            };
+
+            ctx.clearRect(0, 0, W, H);
+
+            // CTL line
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF6535';
+            ctx.lineWidth = 2.5;
+            proj.forEach(function (p, i) {
+              var x = (i / (proj.length - 1)) * W;
+              var y = toY(p.ctl);
+              i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // TSB dots
+            proj.forEach(function (p, i) {
+              var x = (i / (proj.length - 1)) * W;
+              var tsbNorm = Math.max(0, Math.min(1, (p.tsb + 30) / 60));
+              var y = padTop + 8;
+              ctx.beginPath();
+              ctx.arc(x, y, 5, 0, 2 * Math.PI);
+              ctx.fillStyle = p.tsb >= 0 ? '#10B981' : '#F0A500';
+              ctx.fill();
+            });
+
+            // X labels
+            var weekAbbr = esc(_t('aico_week_abbrev', 'S'));
+            document.getElementById('fc-x-labels').innerHTML = proj
+              .map(function (p) {
+                return '<span>' + weekAbbr + p.week + '</span>';
+              })
+              .join('');
+
+            // Rows
+            var formCls = {
+              peak: 'form-peak',
+              fresh: 'form-fresh',
+              normal: 'form-normal',
+              fatigued: 'form-fatigued',
+              overtrained: 'form-overtrained',
+            };
+            document.getElementById('forecast-rows').innerHTML = proj
+              .map(function (p) {
+                return (
+                  '<div class="forecast-row">' +
+                  '<span style="color:var(--sub);width:40px">' +
+                  weekAbbr +
+                  p.week +
+                  '</span>' +
+                  '<span>CTL: <strong>' +
+                  p.ctl +
+                  '</strong></span>' +
+                  '<span>TSB: <strong style="color:' +
+                  (p.tsb >= 0 ? 'var(--green)' : 'var(--acc)') +
+                  '">' +
+                  p.tsb +
+                  '</strong></span>' +
+                  '<span class="form-badge ' +
+                  (formCls[p.form_label] || 'form-normal') +
+                  '">' +
+                  p.form_label +
+                  '</span>' +
+                  '<span style="color:var(--sub);font-size:.75rem">' +
+                  p.planned_tss +
+                  ' TSS</span>' +
+                  (p.notes && p.notes.length
+                    ? '<span style="color:var(--acc);font-size:.72rem">⚠ ' +
+                      esc(p.notes[0]) +
+                      '</span>'
+                    : '') +
+                  '</div>'
+                );
+              })
+              .join('');
+          }
+
+          // ─── INJURY ──────────────────────────────────────────────────────────────────
+          function loadInjury() {
+            document.getElementById('injury-loader').style.display = 'block';
+            document.getElementById('injury-content').style.display = 'none';
+
+            fetch(API + '/ai/injury-forecast', { credentials: 'include' })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderInjury(d);
+              })
+              .catch(function () {
+                document.getElementById('injury-loader').textContent = _t(
+                  'aico_err_load_analysis',
+                  'Error al cargar análisis.',
+                );
+              });
+          }
+
+          function renderInjury(d) {
+            document.getElementById('injury-loader').style.display = 'none';
+            document.getElementById('injury-content').style.display = 'block';
+
+            var pct = Math.round((d.risk_score || 0) * 100);
+            var cls =
+              {
+                low: 'risk-low',
+                caution: 'risk-caution',
+                high: 'risk-high',
+                critical: 'risk-critical',
+              }[d.risk_level] || 'risk-caution';
+            document.getElementById('inj-score').textContent = pct + '%';
+            document.getElementById('inj-score').className =
+              'risk-score-num ' + cls;
+            document.getElementById('inj-level').textContent =
+              d.risk_level || '—';
+            document.getElementById('inj-driver').textContent =
+              d.primary_driver || '';
+
+            document.getElementById('inj-days-risk').textContent =
+              d.time_at_risk_days || 0;
+            document.getElementById('inj-days-rec').textContent =
+              d.recovery_days_needed || 0;
+
+            var ws = document.getElementById('inj-warnings');
+            if (d.warning_signs && d.warning_signs.length) {
+              ws.innerHTML = d.warning_signs
+                .map(function (w) {
+                  return '<li>' + esc(w) + '</li>';
+                })
+                .join('');
+            }
+
+            document.getElementById('inj-plan').innerHTML = (
+              d.action_plan || []
+            )
+              .map(function (step, i) {
+                return (
+                  '<div class="action-item">' +
+                  '<div class="action-num">' +
+                  (i + 1) +
+                  '</div>' +
+                  '<div>' +
+                  esc(step) +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('');
+          }
+
+          // ─── UTILS ───────────────────────────────────────────────────────────────────
+          function esc(s) {
+            if (!s) return '';
+            return String(s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+          }
+
+          document.addEventListener('DOMContentLoaded', function () {
+            loadSessions();
+          });
+        </script>
+        <script src="auth.js"></script>
+        <script>
+          KL.guard('ai_coach');
+        </script>
+        <script src="nav.js?v=4"></script>
+        <script src="footer.js"></script>
+        <script src="dash-header.js"></script>
+        <script src="lx-upgrade.js"></script>
+        <script src="i18n.js"></script>
+      </main>
+    </div>
+  </body>
 </html>

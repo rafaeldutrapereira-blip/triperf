@@ -1,1029 +1,2662 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Blood Labs</title>
-<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme-vars.css">
-<script src="i18n.js"></script>
-<script src="lx-backend-i18n.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--amber:#F59E0B;--blue:#3B82F6;--s-green:rgba(16,185,129,.12);--s-blue:rgba(59,130,246,.12);--s-amber:rgba(245,158,11,.12);--s-red:rgba(239,68,68,.12);}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-a{color:inherit;text-decoration:none}ul{list-style:none}
-.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
-.sr{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}.vis{opacity:1;transform:none}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
-.panel-body{padding:1.2rem}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
-@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:900px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
-@media(max-width:640px){.g3,.g4{grid-template-columns:1fr}}
-.mt2{margin-top:1.5rem}.mt3{margin-top:2.5rem}
-.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
-.sec-h span{color:var(--dim);font-size:.85em}
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Blood Labs</title>
+    <script>
+      try {
+        var _k = JSON.parse(
+          sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s') ||
+            'null',
+        );
+        if (!_k) throw 0;
+      } catch (e) {
+        location.replace('login.html');
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <script src="i18n.js"></script>
+    <script src="lx-backend-i18n.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --amber: #f59e0b;
+        --blue: #3b82f6;
+        --s-green: rgba(16, 185, 129, 0.12);
+        --s-blue: rgba(59, 130, 246, 0.12);
+        --s-amber: rgba(245, 158, 11, 0.12);
+        --s-red: rgba(239, 68, 68, 0.12);
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      ul {
+        list-style: none;
+      }
+      .c {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+      }
+      .sr {
+        opacity: 0;
+        transform: translateY(16px);
+        transition:
+          opacity 0.5s ease,
+          transform 0.5s ease;
+      }
+      .vis {
+        opacity: 1;
+        transform: none;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .panel-body {
+        padding: 1.2rem;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.4rem;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+      }
+      .g4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+      @media (max-width: 1100px) {
+        .g4 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 900px) {
+        .g3 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .g2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 640px) {
+        .g3,
+        .g4 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .mt2 {
+        margin-top: 1.5rem;
+      }
+      .mt3 {
+        margin-top: 2.5rem;
+      }
+      .sec-h {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .sec-h span {
+        color: var(--dim);
+        font-size: 0.85em;
+      }
 
-/* ── PAGE HEADER ── */
-.ph{background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2);padding-top:1.5rem}
-.ph-inner{padding:1.5rem 0 1.3rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
-.ph-eye{font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.7rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
-.ph-title em{color:var(--red);font-style:normal}
-.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.07em;margin-top:.3rem}
-.ph-chips{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-top:.75rem}
-.chip{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .7rem;font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted)}
-.chip strong{color:var(--text);font-weight:700}
-.chip-g{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.07);color:var(--green)}
-.chip-r{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07);color:var(--red)}
-.chip-a{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07);color:var(--amber)}
+      /* ── PAGE HEADER ── */
+      .ph {
+        background: linear-gradient(180deg, #060e1c 0%, var(--bg) 100%);
+        border-bottom: 1px solid var(--border2);
+        padding-top: 1.5rem;
+      }
+      .ph-inner {
+        padding: 1.5rem 0 1.3rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .ph-eye {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-bottom: 0.3rem;
+      }
+      .ph-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.7rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+      .ph-title em {
+        color: var(--red);
+        font-style: normal;
+      }
+      .ph-sub {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.07em;
+        margin-top: 0.3rem;
+      }
+      .ph-chips {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.28rem 0.7rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+      }
+      .chip strong {
+        color: var(--text);
+        font-weight: 700;
+      }
+      .chip-g {
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.07);
+        color: var(--green);
+      }
+      .chip-r {
+        border-color: rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.07);
+        color: var(--red);
+      }
+      .chip-a {
+        border-color: rgba(245, 158, 11, 0.3);
+        background: rgba(245, 158, 11, 0.07);
+        color: var(--amber);
+      }
 
-/* ── EXAM SELECTOR ── */
-.exam-bar{background:rgba(6,14,28,.97);border-bottom:1px solid var(--border);padding:.65rem 0;position:sticky;top:0;z-index:100}
-.exam-inner{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
-.exam-meta{font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:.5rem}
-.exam-meta select{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.8rem;outline:none;cursor:pointer}
-.exam-ctx{font-family:'Oswald',sans-serif;font-size:.65rem;color:var(--dim);letter-spacing:.06em;margin-left:auto}
+      /* ── EXAM SELECTOR ── */
+      .exam-bar {
+        background: rgba(6, 14, 28, 0.97);
+        border-bottom: 1px solid var(--border);
+        padding: 0.65rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .exam-inner {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .exam-meta {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .exam-meta select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 0.3rem 0.65rem;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8rem;
+        outline: none;
+        cursor: pointer;
+      }
+      .exam-ctx {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        color: var(--dim);
+        letter-spacing: 0.06em;
+        margin-left: auto;
+      }
 
-/* ── TABS ── */
-.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:1.5rem;width:fit-content;flex-wrap:wrap}
-.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
-.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.tab-pane{display:none}.tab-pane.on{display:block}
+      /* ── TABS ── */
+      .tabs-bar {
+        display: flex;
+        gap: 3px;
+        background: var(--surface2);
+        border-radius: 8px;
+        padding: 3px;
+        margin-bottom: 1.5rem;
+        width: fit-content;
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        padding: 0.38rem 1rem;
+        border-radius: 6px;
+        color: var(--dim);
+        transition: all var(--ease);
+        white-space: nowrap;
+      }
+      .tab-btn.on {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.on {
+        display: block;
+      }
 
-/* ── SUB-TABS ── */
-.stabs-bar{display:flex;gap:3px;background:rgba(8,18,30,.6);border-radius:7px;padding:3px;margin-bottom:1.2rem;flex-wrap:wrap}
-.stab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.64rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;padding:.3rem .75rem;border-radius:5px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
-.stab-btn.on{background:rgba(14,165,233,.15);color:var(--cyan);border:1px solid rgba(14,165,233,.2)}
-.stab-pane{display:none}.stab-pane.on{display:block}
+      /* ── SUB-TABS ── */
+      .stabs-bar {
+        display: flex;
+        gap: 3px;
+        background: rgba(8, 18, 30, 0.6);
+        border-radius: 7px;
+        padding: 3px;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .stab-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        padding: 0.3rem 0.75rem;
+        border-radius: 5px;
+        color: var(--dim);
+        transition: all var(--ease);
+        white-space: nowrap;
+      }
+      .stab-btn.on {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--cyan);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+      }
+      .stab-pane {
+        display: none;
+      }
+      .stab-pane.on {
+        display: block;
+      }
 
-/* ── KPI CARDS ── */
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;transition:border-color var(--ease)}
-.kpi:hover{border-color:rgba(14,165,233,.22)}
-.kpi-score{font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;line-height:1}
-.kpi-bar-wrap{height:4px;background:var(--surface2);border-radius:2px;margin:.45rem 0 .3rem;overflow:hidden}
-.kpi-bar{height:100%;border-radius:2px;transition:width .8s ease}
-.kpi-label{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.15rem}
-.kpi-grade{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em}
-.kpi-detail{font-size:.72rem;color:var(--dim);margin-top:.3rem;line-height:1.5}
-.kpi-icon{font-size:1.3rem;margin-bottom:.3rem}
+      /* ── KPI CARDS ── */
+      .kpi {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        transition: border-color var(--ease);
+      }
+      .kpi:hover {
+        border-color: rgba(14, 165, 233, 0.22);
+      }
+      .kpi-score {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .kpi-bar-wrap {
+        height: 4px;
+        background: var(--surface2);
+        border-radius: 2px;
+        margin: 0.45rem 0 0.3rem;
+        overflow: hidden;
+      }
+      .kpi-bar {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.8s ease;
+      }
+      .kpi-label {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.15rem;
+      }
+      .kpi-grade {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+      }
+      .kpi-detail {
+        font-size: 0.72rem;
+        color: var(--dim);
+        margin-top: 0.3rem;
+        line-height: 1.5;
+      }
+      .kpi-icon {
+        font-size: 1.3rem;
+        margin-bottom: 0.3rem;
+      }
 
-/* ── STATUS BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:.25rem;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.07em;padding:.22rem .55rem;border-radius:4px}
-.b-ok{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
-.b-warn{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
-.b-bad{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
-.b-na{background:rgba(100,116,139,.1);color:var(--dim);border:1px solid rgba(100,116,139,.15)}
+      /* ── STATUS BADGES ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        padding: 0.22rem 0.55rem;
+        border-radius: 4px;
+      }
+      .b-ok {
+        background: rgba(16, 185, 129, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+      }
+      .b-warn {
+        background: rgba(245, 158, 11, 0.12);
+        color: var(--amber);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+      .b-bad {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+      .b-na {
+        background: rgba(100, 116, 139, 0.1);
+        color: var(--dim);
+        border: 1px solid rgba(100, 116, 139, 0.15);
+      }
 
-/* ── ALERTS ── */
-.alert-box{border-radius:9px;padding:.85rem 1.1rem;font-size:.8rem;line-height:1.6;margin-bottom:.8rem}
-.alert-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22)}
-.alert-warn .alert-title{color:var(--amber)}
-.alert-ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2)}
-.alert-ok .alert-title{color:var(--green)}
-.alert-title{font-family:'Oswald',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem}
+      /* ── ALERTS ── */
+      .alert-box {
+        border-radius: 9px;
+        padding: 0.85rem 1.1rem;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        margin-bottom: 0.8rem;
+      }
+      .alert-warn {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.22);
+      }
+      .alert-warn .alert-title {
+        color: var(--amber);
+      }
+      .alert-ok {
+        background: rgba(16, 185, 129, 0.07);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+      .alert-ok .alert-title {
+        color: var(--green);
+      }
+      .alert-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
 
-/* ── BIOMARKER TABLE ── */
-.bm-category{margin-bottom:1.5rem}
-.bm-cat-head{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.55rem .75rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;background:rgba(255,255,255,.02);border-radius:6px 6px 0 0}
-.bm-cat-head:hover{background:rgba(255,255,255,.035)}
-.bm-cat-body{overflow:hidden;transition:max-height .3s ease}
-.bm-t{width:100%;border-collapse:collapse;font-size:.78rem}
-.bm-t th{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:.45rem .7rem;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap;background:rgba(255,255,255,.015)}
-.bm-t td{padding:.55rem .7rem;border-bottom:1px solid rgba(8,116,174,.05);vertical-align:middle}
-.bm-t tr:last-child td{border-bottom:none}
-.bm-t tr:hover td{background:rgba(255,255,255,.015)}
-.bm-name{font-weight:600;color:var(--text)}
-.bm-unit{font-size:.7rem;color:var(--dim)}
-.bm-val{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800}
-.bm-ref{font-size:.72rem;color:var(--dim)}
-.bm-delta{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700}
-.delta-up{color:var(--green)}.delta-dn{color:var(--red)}.delta-no{color:var(--dim)}
-.bm-note{font-size:.68rem;color:var(--dim);font-style:italic;padding:.3rem .7rem;background:rgba(255,255,255,.01);border-top:1px solid rgba(8,116,174,.04)}
+      /* ── BIOMARKER TABLE ── */
+      .bm-category {
+        margin-bottom: 1.5rem;
+      }
+      .bm-cat-head {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0.55rem 0.75rem;
+        border-bottom: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 6px 6px 0 0;
+      }
+      .bm-cat-head:hover {
+        background: rgba(255, 255, 255, 0.035);
+      }
+      .bm-cat-body {
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+      .bm-t {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+      }
+      .bm-t th {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding: 0.45rem 0.7rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border2);
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.015);
+      }
+      .bm-t td {
+        padding: 0.55rem 0.7rem;
+        border-bottom: 1px solid rgba(8, 116, 174, 0.05);
+        vertical-align: middle;
+      }
+      .bm-t tr:last-child td {
+        border-bottom: none;
+      }
+      .bm-t tr:hover td {
+        background: rgba(255, 255, 255, 0.015);
+      }
+      .bm-name {
+        font-weight: 600;
+        color: var(--text);
+      }
+      .bm-unit {
+        font-size: 0.7rem;
+        color: var(--dim);
+      }
+      .bm-val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+      .bm-ref {
+        font-size: 0.72rem;
+        color: var(--dim);
+      }
+      .bm-delta {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+      .delta-up {
+        color: var(--green);
+      }
+      .delta-dn {
+        color: var(--red);
+      }
+      .delta-no {
+        color: var(--dim);
+      }
+      .bm-note {
+        font-size: 0.68rem;
+        color: var(--dim);
+        font-style: italic;
+        padding: 0.3rem 0.7rem;
+        background: rgba(255, 255, 255, 0.01);
+        border-top: 1px solid rgba(8, 116, 174, 0.04);
+      }
 
-/* ── CHARTS ── */
-.ch-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem}
-.ch-title{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem}
-.ch-sub{font-size:.7rem;color:var(--dim);margin-top:.15rem;margin-bottom:.6rem}
-.ch-inner{position:relative;height:260px}
-.ch-inner-sm{position:relative;height:180px}
-.ch-inner-lg{position:relative;height:340px}
+      /* ── CHARTS ── */
+      .ch-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem;
+      }
+      .ch-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.65rem;
+      }
+      .ch-sub {
+        font-size: 0.7rem;
+        color: var(--dim);
+        margin-top: 0.15rem;
+        margin-bottom: 0.6rem;
+      }
+      .ch-inner {
+        position: relative;
+        height: 260px;
+      }
+      .ch-inner-sm {
+        position: relative;
+        height: 180px;
+      }
+      .ch-inner-lg {
+        position: relative;
+        height: 340px;
+      }
 
-/* ── RADAR PANEL ── */
-.radar-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;text-align:center}
+      /* ── RADAR PANEL ── */
+      .radar-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem;
+        text-align: center;
+      }
 
-/* ── CORRELATION TABLE ── */
-.corr-t{width:100%;border-collapse:collapse;font-size:.78rem}
-.corr-t th{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);padding:.45rem .7rem;text-align:left;border-bottom:1px solid var(--border2);background:rgba(255,255,255,.015)}
-.corr-t td{padding:.6rem .7rem;border-bottom:1px solid rgba(8,116,174,.05);font-size:.75rem;vertical-align:top;line-height:1.4}
-.corr-t tr:hover td{background:rgba(255,255,255,.015)}
-.corr-bm{font-family:'Oswald',sans-serif;font-weight:700;color:var(--text);font-size:.78rem}
-.corr-action{color:var(--cyan)}
+      /* ── CORRELATION TABLE ── */
+      .corr-t {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+      }
+      .corr-t th {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding: 0.45rem 0.7rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.015);
+      }
+      .corr-t td {
+        padding: 0.6rem 0.7rem;
+        border-bottom: 1px solid rgba(8, 116, 174, 0.05);
+        font-size: 0.75rem;
+        vertical-align: top;
+        line-height: 1.4;
+      }
+      .corr-t tr:hover td {
+        background: rgba(255, 255, 255, 0.015);
+      }
+      .corr-bm {
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        color: var(--text);
+        font-size: 0.78rem;
+      }
+      .corr-action {
+        color: var(--cyan);
+      }
 
-/* ── FORM (import exam) ── */
-.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
-@media(max-width:900px){.form-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
-.form-field{display:flex;flex-direction:column;gap:.25rem}
-.form-label{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.form-note{font-size:.62rem;color:var(--dim);margin-top:.15rem;font-style:italic}
-.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.38rem .65rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;outline:none;transition:border-color var(--ease)}
-.form-input:focus{border-color:rgba(14,165,233,.4)}
-.form-cat-head{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:1px solid var(--border2)}
-.btn{display:inline-flex;align-items:center;gap:.4rem;font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.4rem;border-radius:7px;border:none;cursor:pointer;transition:all var(--ease)}
-.btn-primary{background:var(--orange);color:#fff;box-shadow:0 2px 12px rgba(255,101,53,.3)}.btn-primary:hover{background:var(--orange2)}
-.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-sm{padding:.38rem .85rem;font-size:.68rem}
-.save-msg{display:none;padding:.6rem 1rem;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;margin-top:.75rem;text-align:center}
-.save-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--green);display:flex}
-.save-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red);display:flex}
+      /* ── FORM (import exam) ── */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+      }
+      @media (max-width: 900px) {
+        .form-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 640px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .form-label {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .form-note {
+        font-size: 0.62rem;
+        color: var(--dim);
+        margin-top: 0.15rem;
+        font-style: italic;
+      }
+      .form-input {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 0.38rem 0.65rem;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        outline: none;
+        transition: border-color var(--ease);
+      }
+      .form-input:focus {
+        border-color: rgba(14, 165, 233, 0.4);
+      }
+      .form-cat-head {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 1rem 0 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border2);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.4rem;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        transition: all var(--ease);
+      }
+      .btn-primary {
+        background: var(--orange);
+        color: #fff;
+        box-shadow: 0 2px 12px rgba(255, 101, 53, 0.3);
+      }
+      .btn-primary:hover {
+        background: var(--orange2);
+      }
+      .btn-g {
+        background: transparent;
+        color: var(--muted);
+        border: 1.5px solid var(--border);
+      }
+      .btn-g:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn-sm {
+        padding: 0.38rem 0.85rem;
+        font-size: 0.68rem;
+      }
+      .save-msg {
+        display: none;
+        padding: 0.6rem 1rem;
+        border-radius: 7px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-top: 0.75rem;
+        text-align: center;
+      }
+      .save-ok {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: var(--green);
+        display: flex;
+      }
+      .save-err {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: var(--red);
+        display: flex;
+      }
 
-/* ── FICK CARD ── */
-.fick-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.9rem 1.1rem;font-size:.78rem;color:var(--muted);line-height:1.6}
-.fick-card h4{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text);margin-bottom:.5rem}
-.fick-card strong{color:var(--text)}
-.fick-card ul{margin:.4rem 0 0 .9rem;list-style:disc}
-.fick-card li{margin-bottom:.2rem}
-.metric-mini{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:8px;padding:.7rem .9rem;margin-bottom:.7rem}
-.metric-mini-n{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;line-height:1}
-.metric-mini-l{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.1rem}
-.metric-mini-d{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+      /* ── FICK CARD ── */
+      .fick-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 0.9rem 1.1rem;
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .fick-card h4 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+      }
+      .fick-card strong {
+        color: var(--text);
+      }
+      .fick-card ul {
+        margin: 0.4rem 0 0 0.9rem;
+        list-style: disc;
+      }
+      .fick-card li {
+        margin-bottom: 0.2rem;
+      }
+      .metric-mini {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 0.7rem 0.9rem;
+        margin-bottom: 0.7rem;
+      }
+      .metric-mini-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .metric-mini-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-top: 0.1rem;
+      }
+      .metric-mini-d {
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-top: 0.2rem;
+      }
 
-footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
-footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
-</style>
-<link rel="stylesheet" href="nav.css?v=3">
-</head>
-<body>
+      footer {
+        border-top: 1px solid var(--border2);
+        padding: 1.5rem 0;
+        text-align: center;
+      }
+      footer div {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.1em;
+      }
+    </style>
+    <link rel="stylesheet" href="nav.css?v=3" />
+  </head>
+  <body>
+    <!-- ══ SIDEBAR ══ -->
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
 
-<!-- ══ SIDEBAR ══ -->
-<aside id="sidebar"></aside>
-<header class="sb-topbar"></header>
-<div class="sb-overlay" id="sb-overlay"></div>
-
-<!-- ══ EXAM SELECTOR BAR ══ -->
-<div class="exam-bar">
-  <div class="c">
-    <div class="exam-inner">
-      <span class="exam-meta">
-        <span data-i18n="bl_current_exam">Examen actual:</span>
-        <select id="sel-exam" onchange="switchExam()"></select>
-      </span>
-      <span class="exam-meta" id="comp-label" style="display:none">
-        vs
-        <select id="sel-comp" onchange="switchExam()"></select>
-      </span>
-      <span class="exam-ctx" id="exam-ctx-lbl"></span>
-      <button class="btn btn-g btn-sm" id="btn-delete-exam" style="display:none" onclick="deleteCurrentExam()">🗑 <span data-i18n="bl_delete_exam">Eliminar</span></button>
-      <button class="btn btn-g btn-sm" onclick="switchTab('import',document.querySelector('[data-tab=import]'))">+ <span data-i18n="bl_register_exam">Registrar Examen</span></button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ PAGE HEADER ══ -->
-<div class="ph">
-  <div class="c">
-    <div class="ph-inner">
-      <div>
-        <div class="ph-chips" id="ph-chips">
-          <span class="chip chip-g"><span data-i18n="bl_chip_trs">TRS:</span> <strong id="chip-score">—</strong></span>
-          <span class="chip chip-a" id="chip-alerts" style="display:none"><span data-i18n="bl_chip_alerts">Alertas:</span> <strong id="chip-alert-n">0</strong></span>
-          <span class="chip"><span data-i18n="bl_chip_exams">Exámenes:</span> <strong id="chip-exams">—</strong></span>
+    <!-- ══ EXAM SELECTOR BAR ══ -->
+    <div class="exam-bar">
+      <div class="c">
+        <div class="exam-inner">
+          <span class="exam-meta">
+            <span data-i18n="bl_current_exam">Examen actual:</span>
+            <select id="sel-exam" onchange="switchExam()"></select>
+          </span>
+          <span class="exam-meta" id="comp-label" style="display: none">
+            vs
+            <select id="sel-comp" onchange="switchExam()"></select>
+          </span>
+          <span class="exam-ctx" id="exam-ctx-lbl"></span>
+          <button
+            class="btn btn-g btn-sm"
+            id="btn-delete-exam"
+            style="display: none"
+            onclick="deleteCurrentExam()"
+          >
+            🗑 <span data-i18n="bl_delete_exam">Eliminar</span>
+          </button>
+          <button
+            class="btn btn-g btn-sm"
+            onclick="
+              switchTab('import', document.querySelector('[data-tab=import]'))
+            "
+          >
+            + <span data-i18n="bl_register_exam">Registrar Examen</span>
+          </button>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ══ MAIN ══ -->
-<div style="padding:2rem 0 4rem">
-<div class="c">
-
-<!-- TABS -->
-<div class="tabs-bar">
-  <button class="tab-btn on" data-tab="resumen" onclick="switchTab('resumen',this)">🏥 <span data-i18n="bl_tab_resumen">Resumen Clínico</span></button>
-  <button class="tab-btn" data-tab="trends" onclick="switchTab('trends',this)">📈 <span data-i18n="bl_tab_trends">Tendencias</span></button>
-  <button class="tab-btn" data-tab="garmin" onclick="switchTab('garmin',this)">🔗 <span data-i18n="bl_tab_garmin">Correlación Garmin</span></button>
-  <button class="tab-btn" data-tab="import" onclick="switchTab('import',this)">📥 <span data-i18n="bl_register_exam">Registrar Examen</span></button>
-</div>
-
-<!-- ══ TAB 1: RESUMEN CLÍNICO ══ -->
-<div class="tab-pane on" id="tab-resumen">
-
-<div id="resumen-empty-state" style="display:none">
-  <p style="color:var(--dim);padding:2rem" data-i18n="bl_no_exams">No hay exámenes registrados. Usa la pestaña Registrar Examen para agregar el primero.</p>
-</div>
-
-<div id="resumen-content">
-
-  <!-- TRS + discipline chips -->
-  <div class="g3 sr" id="kpi-section">
-    <div class="kpi" id="kpi-trs">
-      <div class="kpi-icon">🏥</div>
-      <div class="kpi-label" data-i18n="bl_kpi_trs">Training Restriction Score</div>
-      <div class="kpi-score" id="kpi-trs-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-trs-bar"></div></div>
-      <div class="kpi-grade" id="kpi-trs-grade"></div>
-      <div class="kpi-detail" id="kpi-trs-detail"></div>
-    </div>
-    <div class="kpi" id="kpi-markers">
-      <div class="kpi-icon">🧬</div>
-      <div class="kpi-label" data-i18n="bl_kpi_markers">Marcadores Analizados</div>
-      <div class="kpi-score" id="kpi-markers-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-markers-bar"></div></div>
-      <div class="kpi-grade" id="kpi-markers-grade"></div>
-      <div class="kpi-detail" id="kpi-markers-detail"></div>
-    </div>
-    <div class="kpi" id="kpi-next">
-      <div class="kpi-icon">📅</div>
-      <div class="kpi-label" data-i18n="bl_kpi_next">Próximo Control</div>
-      <div class="kpi-score" id="kpi-next-score">—</div>
-      <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-next-bar"></div></div>
-      <div class="kpi-grade" id="kpi-next-grade"></div>
-      <div class="kpi-detail" id="kpi-next-detail"></div>
-    </div>
-  </div>
-
-  <!-- Radar chart + Alerts -->
-  <div class="g2 sr mt2">
-    <div class="radar-box">
-      <div class="ch-title" data-i18n="bl_radar_title">Radar de Rendimiento Bioquímico</div>
-      <div class="ch-sub" data-i18n="bl_radar_sub">Puntaje 0-100 por categoría vs referencia deportiva</div>
-      <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
-    </div>
-    <div>
-      <div class="sec-h"><span data-i18n="bl_notable_changes">Alertas Activas</span> <span id="alerts-date-label"></span></div>
-      <div id="alerts-container"></div>
-      <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">Impacto en Entrenamiento</div>
-      <div id="clinical-summary" style="font-size:.8rem;color:var(--muted);line-height:1.7"></div>
-    </div>
-  </div>
-
-  <!-- Interpretación IA -->
-  <div class="sr mt3">
-    <div class="sec-h" style="display:flex;align-items:center;justify-content:space-between">
-      <span data-i18n="bl_ai_interpretation">Interpretación con IA</span>
-      <button class="btn btn-g btn-sm" id="btn-ai-analyze" onclick="runAiAnalysis()">✨ <span data-i18n="bl_ai_run">Generar interpretación</span></button>
-    </div>
-    <div class="panel"><div class="panel-body" id="ai-interpretation-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">—</div></div>
-  </div>
-
-  <!-- Full biomarker table -->
-  <div class="sr mt3">
-    <div class="sec-h" data-i18n="bl_full_bm_table">Tabla Completa de Biomarcadores</div>
-    <div id="bm-table-container"></div>
-  </div>
-
-</div>
-</div>
-
-<!-- ══ TAB 2: TENDENCIAS ══ -->
-<div class="tab-pane" id="tab-trends">
-  <div class="stabs-bar" id="trends-stabs-bar"></div>
-  <div id="trend-content"></div>
-</div>
-
-<!-- ══ TAB 3: CORRELACIÓN GARMIN ══ -->
-<div class="tab-pane" id="tab-garmin">
-  <p style="font-size:.8rem;color:var(--dim);margin-bottom:1.5rem" data-i18n="bl_garmin_intro">Superposición de biomarcadores con métricas de entrenamiento · Datos Garmin</p>
-
-  <div class="sr">
-    <div class="sec-h">🔗 <span data-i18n="bl_ctl_vs_labs">Carga de Entrenamiento (CTL/ATL/TSB) en cada examen</span></div>
-    <div class="ch-box">
-      <div class="ch-title">CTL / ATL / TSB — por fecha de examen</div>
-      <div class="ch-sub" data-i18n="bl_ctl_overlay_sub">Útil para ver si un examen se tomó en una semana de carga alta o de descanso</div>
-      <div class="ch-inner-lg"><canvas id="ch-ctl-overlay"></canvas></div>
-    </div>
-  </div>
-
-  <div class="sr mt3">
-    <div class="sec-h" data-i18n="bl_key_markers_per_exam">Marcadores Clave por Examen</div>
-    <div class="panel">
-      <div class="panel-body">
-        <table class="corr-t" id="corr-table">
-          <thead><tr id="corr-thead"></tr></thead>
-          <tbody id="corr-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Correlaciones estadísticas (GET /labs/correlations) -->
-  <div class="sr mt3">
-    <div class="sec-h" data-i18n="bl_stat_correlations">Correlaciones Estadísticas</div>
-    <div id="stat-corr-content"></div>
-  </div>
-</div>
-
-<!-- ══ TAB 4: REGISTRAR EXAMEN ══ -->
-<div class="tab-pane" id="tab-import">
-  <div class="g2">
-    <div>
-      <div class="sec-h" data-i18n="bl_register_new">Registrar Nuevo Examen</div>
-      <div class="panel">
-        <div class="panel-body">
-          <div class="g2" style="gap:.75rem;margin-bottom:.75rem">
-            <div class="form-field">
-              <label class="form-label" data-i18n="app_gear_date">Fecha del examen</label>
-              <input type="date" class="form-input" id="inp-date">
-            </div>
-            <div class="form-field">
-              <label class="form-label" data-i18n="bl_lab_label">Laboratorio</label>
-              <input type="text" class="form-input" id="inp-lab" placeholder="Laboratorio Clínico" data-i18n-placeholder="bl_lab_ph">
+    <!-- ══ PAGE HEADER ══ -->
+    <div class="ph">
+      <div class="c">
+        <div class="ph-inner">
+          <div>
+            <div class="ph-chips" id="ph-chips">
+              <span class="chip chip-g"
+                ><span data-i18n="bl_chip_trs">TRS:</span>
+                <strong id="chip-score">—</strong></span
+              >
+              <span class="chip chip-a" id="chip-alerts" style="display: none"
+                ><span data-i18n="bl_chip_alerts">Alertas:</span>
+                <strong id="chip-alert-n">0</strong></span
+              >
+              <span class="chip"
+                ><span data-i18n="bl_chip_exams">Exámenes:</span>
+                <strong id="chip-exams">—</strong></span
+              >
             </div>
           </div>
-          <div class="form-field" style="margin-bottom:.75rem">
-            <label class="form-label" data-i18n="bl_context_label">Contexto / Motivo</label>
-            <input type="text" class="form-input" id="inp-ctx" placeholder="Ej: Control pre-temporada · Post-Ironman Vitoria" data-i18n-placeholder="bl_context_ph">
-          </div>
-          <div id="form-cats-container"></div>
-          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="saveExam()">💾 <span data-i18n="bl_save_exam">Guardar Examen</span></button>
-            <button class="btn btn-g" onclick="clearForm()">✕ <span data-i18n="bl_clear">Limpiar</span></button>
-          </div>
-          <div class="save-msg" id="save-msg"></div>
         </div>
       </div>
     </div>
-    <div>
-      <div class="sec-h" data-i18n="bl_marker_guide">Guía de Marcadores para Triatleta</div>
-      <div class="panel">
-        <div class="panel-body" id="guide-panel" style="font-size:.78rem;color:var(--muted);line-height:1.65;max-height:520px;overflow-y:auto"></div>
+
+    <!-- ══ MAIN ══ -->
+    <div style="padding: 2rem 0 4rem">
+      <div class="c">
+        <!-- TABS -->
+        <div class="tabs-bar">
+          <button
+            class="tab-btn on"
+            data-tab="resumen"
+            onclick="switchTab('resumen', this)"
+          >
+            🏥 <span data-i18n="bl_tab_resumen">Resumen Clínico</span>
+          </button>
+          <button
+            class="tab-btn"
+            data-tab="trends"
+            onclick="switchTab('trends', this)"
+          >
+            📈 <span data-i18n="bl_tab_trends">Tendencias</span>
+          </button>
+          <button
+            class="tab-btn"
+            data-tab="garmin"
+            onclick="switchTab('garmin', this)"
+          >
+            🔗 <span data-i18n="bl_tab_garmin">Correlación Garmin</span>
+          </button>
+          <button
+            class="tab-btn"
+            data-tab="import"
+            onclick="switchTab('import', this)"
+          >
+            📥 <span data-i18n="bl_register_exam">Registrar Examen</span>
+          </button>
+        </div>
+
+        <!-- ══ TAB 1: RESUMEN CLÍNICO ══ -->
+        <div class="tab-pane on" id="tab-resumen">
+          <div id="resumen-empty-state" style="display: none">
+            <p style="color: var(--dim); padding: 2rem" data-i18n="bl_no_exams">
+              No hay exámenes registrados. Usa la pestaña Registrar Examen para
+              agregar el primero.
+            </p>
+          </div>
+
+          <div id="resumen-content">
+            <!-- TRS + discipline chips -->
+            <div class="g3 sr" id="kpi-section">
+              <div class="kpi" id="kpi-trs">
+                <div class="kpi-icon">🏥</div>
+                <div class="kpi-label" data-i18n="bl_kpi_trs">
+                  Training Restriction Score
+                </div>
+                <div class="kpi-score" id="kpi-trs-score">—</div>
+                <div class="kpi-bar-wrap">
+                  <div class="kpi-bar" id="kpi-trs-bar"></div>
+                </div>
+                <div class="kpi-grade" id="kpi-trs-grade"></div>
+                <div class="kpi-detail" id="kpi-trs-detail"></div>
+              </div>
+              <div class="kpi" id="kpi-markers">
+                <div class="kpi-icon">🧬</div>
+                <div class="kpi-label" data-i18n="bl_kpi_markers">
+                  Marcadores Analizados
+                </div>
+                <div class="kpi-score" id="kpi-markers-score">—</div>
+                <div class="kpi-bar-wrap">
+                  <div class="kpi-bar" id="kpi-markers-bar"></div>
+                </div>
+                <div class="kpi-grade" id="kpi-markers-grade"></div>
+                <div class="kpi-detail" id="kpi-markers-detail"></div>
+              </div>
+              <div class="kpi" id="kpi-next">
+                <div class="kpi-icon">📅</div>
+                <div class="kpi-label" data-i18n="bl_kpi_next">
+                  Próximo Control
+                </div>
+                <div class="kpi-score" id="kpi-next-score">—</div>
+                <div class="kpi-bar-wrap">
+                  <div class="kpi-bar" id="kpi-next-bar"></div>
+                </div>
+                <div class="kpi-grade" id="kpi-next-grade"></div>
+                <div class="kpi-detail" id="kpi-next-detail"></div>
+              </div>
+            </div>
+
+            <!-- Radar chart + Alerts -->
+            <div class="g2 sr mt2">
+              <div class="radar-box">
+                <div class="ch-title" data-i18n="bl_radar_title">
+                  Radar de Rendimiento Bioquímico
+                </div>
+                <div class="ch-sub" data-i18n="bl_radar_sub">
+                  Puntaje 0-100 por categoría vs referencia deportiva
+                </div>
+                <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
+              </div>
+              <div>
+                <div class="sec-h">
+                  <span data-i18n="bl_notable_changes">Alertas Activas</span>
+                  <span id="alerts-date-label"></span>
+                </div>
+                <div id="alerts-container"></div>
+                <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">
+                  Impacto en Entrenamiento
+                </div>
+                <div
+                  id="clinical-summary"
+                  style="
+                    font-size: 0.8rem;
+                    color: var(--muted);
+                    line-height: 1.7;
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <!-- Interpretación IA -->
+            <div class="sr mt3">
+              <div
+                class="sec-h"
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                "
+              >
+                <span data-i18n="bl_ai_interpretation"
+                  >Interpretación con IA</span
+                >
+                <button
+                  class="btn btn-g btn-sm"
+                  id="btn-ai-analyze"
+                  onclick="runAiAnalysis()"
+                >
+                  ✨ <span data-i18n="bl_ai_run">Generar interpretación</span>
+                </button>
+              </div>
+              <div class="panel">
+                <div
+                  class="panel-body"
+                  id="ai-interpretation-box"
+                  style="
+                    font-size: 0.82rem;
+                    color: var(--muted);
+                    line-height: 1.7;
+                    white-space: pre-wrap;
+                  "
+                >
+                  —
+                </div>
+              </div>
+            </div>
+
+            <!-- Full biomarker table -->
+            <div class="sr mt3">
+              <div class="sec-h" data-i18n="bl_full_bm_table">
+                Tabla Completa de Biomarcadores
+              </div>
+              <div id="bm-table-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB 2: TENDENCIAS ══ -->
+        <div class="tab-pane" id="tab-trends">
+          <div class="stabs-bar" id="trends-stabs-bar"></div>
+          <div id="trend-content"></div>
+        </div>
+
+        <!-- ══ TAB 3: CORRELACIÓN GARMIN ══ -->
+        <div class="tab-pane" id="tab-garmin">
+          <p
+            style="font-size: 0.8rem; color: var(--dim); margin-bottom: 1.5rem"
+            data-i18n="bl_garmin_intro"
+          >
+            Superposición de biomarcadores con métricas de entrenamiento · Datos
+            Garmin
+          </p>
+
+          <div class="sr">
+            <div class="sec-h">
+              🔗
+              <span data-i18n="bl_ctl_vs_labs"
+                >Carga de Entrenamiento (CTL/ATL/TSB) en cada examen</span
+              >
+            </div>
+            <div class="ch-box">
+              <div class="ch-title">CTL / ATL / TSB — por fecha de examen</div>
+              <div class="ch-sub" data-i18n="bl_ctl_overlay_sub">
+                Útil para ver si un examen se tomó en una semana de carga alta o
+                de descanso
+              </div>
+              <div class="ch-inner-lg">
+                <canvas id="ch-ctl-overlay"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="sr mt3">
+            <div class="sec-h" data-i18n="bl_key_markers_per_exam">
+              Marcadores Clave por Examen
+            </div>
+            <div class="panel">
+              <div class="panel-body">
+                <table class="corr-t" id="corr-table">
+                  <thead>
+                    <tr id="corr-thead"></tr>
+                  </thead>
+                  <tbody id="corr-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Correlaciones estadísticas (GET /labs/correlations) -->
+          <div class="sr mt3">
+            <div class="sec-h" data-i18n="bl_stat_correlations">
+              Correlaciones Estadísticas
+            </div>
+            <div id="stat-corr-content"></div>
+          </div>
+        </div>
+
+        <!-- ══ TAB 4: REGISTRAR EXAMEN ══ -->
+        <div class="tab-pane" id="tab-import">
+          <div class="g2">
+            <div>
+              <div class="sec-h" data-i18n="bl_register_new">
+                Registrar Nuevo Examen
+              </div>
+              <div class="panel">
+                <div class="panel-body">
+                  <div class="g2" style="gap: 0.75rem; margin-bottom: 0.75rem">
+                    <div class="form-field">
+                      <label class="form-label" data-i18n="app_gear_date"
+                        >Fecha del examen</label
+                      >
+                      <input type="date" class="form-input" id="inp-date" />
+                    </div>
+                    <div class="form-field">
+                      <label class="form-label" data-i18n="bl_lab_label"
+                        >Laboratorio</label
+                      >
+                      <input
+                        type="text"
+                        class="form-input"
+                        id="inp-lab"
+                        placeholder="Laboratorio Clínico"
+                        data-i18n-placeholder="bl_lab_ph"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-field" style="margin-bottom: 0.75rem">
+                    <label class="form-label" data-i18n="bl_context_label"
+                      >Contexto / Motivo</label
+                    >
+                    <input
+                      type="text"
+                      class="form-input"
+                      id="inp-ctx"
+                      placeholder="Ej: Control pre-temporada · Post-Ironman Vitoria"
+                      data-i18n-placeholder="bl_context_ph"
+                    />
+                  </div>
+                  <div id="form-cats-container"></div>
+                  <div
+                    style="
+                      margin-top: 1.2rem;
+                      display: flex;
+                      gap: 0.75rem;
+                      flex-wrap: wrap;
+                    "
+                  >
+                    <button class="btn btn-primary" onclick="saveExam()">
+                      💾 <span data-i18n="bl_save_exam">Guardar Examen</span>
+                    </button>
+                    <button class="btn btn-g" onclick="clearForm()">
+                      ✕ <span data-i18n="bl_clear">Limpiar</span>
+                    </button>
+                  </div>
+                  <div class="save-msg" id="save-msg"></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="sec-h" data-i18n="bl_marker_guide">
+                Guía de Marcadores para Triatleta
+              </div>
+              <div class="panel">
+                <div
+                  class="panel-body"
+                  id="guide-panel"
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--muted);
+                    line-height: 1.65;
+                    max-height: 520px;
+                    overflow-y: auto;
+                  "
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-</div>
-</div>
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-// ══════════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════════
-function _t(key, fallback){
-  // window.i18n.t() devuelve la CLAVE CRUDA (no null/undefined) cuando falta
-  // la traducción — varias claves nuevas de esta página todavía no están en
-  // el diccionario i18n.js, así que hay que detectar ese caso explícitamente
-  // para caer al fallback en español en vez de mostrar "bl_algo_sin_traducir".
-  var v = window.i18n ? window.i18n.t(key) : null;
-  return (v && v !== key) ? v : fallback;
-}
-function var_css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-// Traduce textos que el backend genera en español (lx-backend-i18n.js); sin mapa devuelve el original
-function _lxBe(s){ return (window.lxBeT && typeof s==='string') ? window.lxBeT(s) : s; }
-function _lxBeList(a){ return (a||[]).map(_lxBe); }
-function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
-
-var CAT_ORDER = ['hematologico','vitaminas','minerales','hormonal','inflamacion','metabolico','renal','hepatico'];
-function catMeta(){ return {
-  hematologico: {icon:'🩸', label:_t('bl_cat_hematologico','Hematológico')},
-  vitaminas:    {icon:'🌟', label:_t('bl_cat_vit','Vitaminas')},
-  minerales:    {icon:'🧂', label:_t('bl_cat_minerales','Minerales')},
-  hormonal:     {icon:'🧪', label:_t('bl_cat_horm','Hormonal')},
-  inflamacion:  {icon:'🔥', label:_t('bl_cat_inflamacion','Inflamación')},
-  metabolico:   {icon:'🔬', label:_t('bl_cat_metabolico','Metabólico')},
-  renal:        {icon:'🫘', label:_t('bl_cat_renalfunc','Renal')},
-  hepatico:     {icon:'🫀', label:_t('bl_cat_hepatico','Hepático')},
-}; }
-
-function statusGrade(status){
-  if(status==='ok')       return {label:_t('bl_badge_normal','Normal'),      color:var_css('--green'), badge:'b-ok',   icon:'✅'};
-  if(status==='warning')  return {label:_t('bl_grade_monitor','Monitorear'), color:var_css('--amber'), badge:'b-warn', icon:'🟡'};
-  if(status==='critical') return {label:_t('bl_grade_alert','Alerta'),      color:var_css('--red'),   badge:'b-bad',  icon:'🔴'};
-  return {label:_t('status_no_data','Sin datos'), color:var_css('--dim'), badge:'b-na', icon:'—'};
-}
-
-// ══════════════════════════════════════════════════════════════
-// API — /api/labs/* (blood_lab_routes.py, motor nuevo de análisis)
-// ══════════════════════════════════════════════════════════════
-function apiBase(){ return window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api'; }
-function apiToken(){
-  var tok = localStorage.getItem('lx_co_token');
-  if(!tok){ try{ var s=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null'); if(s&&s.token) tok=s.token; }catch(e){} }
-  return tok;
-}
-function authHeaders(extra){
-  var h = {Authorization:'Bearer '+apiToken()};
-  if(extra) for(var k in extra) h[k]=extra[k];
-  return h;
-}
-function apiGet(path){
-  return fetch(apiBase()+path, {headers:authHeaders()})
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
-}
-function apiPost(path, body){
-  return fetch(apiBase()+path, {method:'POST', headers:authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(body||{})})
-    .then(function(r){ return r.json().then(function(data){ return r.ok ? data : Promise.reject(data); }); });
-}
-function apiDelete(path){
-  return fetch(apiBase()+path, {method:'DELETE', headers:authHeaders()})
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
-}
-function apiPatch(path, body){
-  return fetch(apiBase()+path, {method:'PATCH', headers:authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(body||{})})
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
-}
-
-// ══════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════
-var MARKERS_CATALOG = {};   // key -> {key,name,unit,cat}
-var EXAMS           = [];   // GET /labs/exams — más recientes primero
-var EXAM_DETAIL     = {};   // id -> detalle completo (cache)
-var CUR_EXAM_ID     = null;
-var CUR_COMP_ID     = null;
-var SUMMARY         = null;
-var TRAINING_IMPACT = null;
-var ALERTS          = [];
-var TIMELINE        = null;
-var CORR            = [];
-var STAT_CORR       = null;
-var FEATURE_LOCKED  = false;
-var EXAMS_LOAD_ERROR = null;
-var CH = {};
-
-function loadMarkersCatalog(){ return apiGet('/labs/markers').then(function(d){ MARKERS_CATALOG = d||{}; }); }
-function loadExamsList(){
-  EXAMS_LOAD_ERROR = null;
-  return apiGet('/labs/exams').then(function(d){ EXAMS = d||[]; })
-    .catch(function(status){
-      EXAMS = [];
-      if(status===403) { FEATURE_LOCKED = true; return; }
-      EXAMS_LOAD_ERROR = (typeof status === 'number') ? status : 'network';
-    });
-}
-function examsErrorMessage(err){
-  if(err===401) return _t('bl_err_session','Tu sesión expiró o no es válida. Vuelve a iniciar sesión.');
-  if(err==='network') return _t('bl_err_network','No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
-  return _t('bl_err_server','El servidor respondió con error {status}. Intenta de nuevo en unos minutos.').replace('{status}', err);
-}
-function loadExamDetail(id){
-  if(EXAM_DETAIL[id]) return Promise.resolve(EXAM_DETAIL[id]);
-  return apiGet('/labs/exams/'+id).then(function(d){ EXAM_DETAIL[id]=d; return d; });
-}
-function loadSummary(){ return apiGet('/labs/summary').then(function(d){ SUMMARY=d; }).catch(function(){ SUMMARY=null; }); }
-function loadAlertsList(){ return apiGet('/labs/alerts').then(function(d){ ALERTS=d||[]; }).catch(function(){ ALERTS=[]; }); }
-function loadTrainingImpact(){ return apiGet('/labs/training-impact').then(function(d){ TRAINING_IMPACT=d; }).catch(function(){ TRAINING_IMPACT=null; }); }
-function loadTimeline(){ return apiGet('/labs/timeline').then(function(d){ TIMELINE=d; }).catch(function(){ TIMELINE=null; }); }
-function loadCorrelationOverlay(){ return apiGet('/labs/correlation').then(function(d){ CORR=d||[]; }).catch(function(){ CORR=[]; }); }
-function loadStatCorrelations(){ return apiGet('/labs/correlations').then(function(d){ STAT_CORR=d; }).catch(function(){ STAT_CORR=null; }); }
-function refreshAfterChange(){
-  return Promise.all([loadExamsList(), loadSummary(), loadTrainingImpact(), loadAlertsList(), loadTimeline(), loadCorrelationOverlay(), loadStatCorrelations()]);
-}
-
-// ══════════════════════════════════════════════════════════════
-// EXAM SELECTOR
-// ══════════════════════════════════════════════════════════════
-function buildExamSelectors() {
-  var sel = document.getElementById('sel-exam');
-  var cmp = document.getElementById('sel-comp');
-  sel.innerHTML = ''; cmp.innerHTML = '<option value="">'+_t('bl_none','Ninguno')+'</option>';
-  EXAMS.forEach(function(e){
-    var o = '<option value="'+e.id+'">'+e.date_iso+'</option>';
-    sel.innerHTML += o; cmp.innerHTML += o;
-  });
-  if(CUR_EXAM_ID) sel.value = CUR_EXAM_ID;
-  if(CUR_COMP_ID){ document.getElementById('comp-label').style.display='flex'; cmp.value=CUR_COMP_ID; }
-  else { document.getElementById('comp-label').style.display='none'; }
-  document.getElementById('btn-delete-exam').style.display = EXAMS.length ? '' : 'none';
-}
-
-function switchExam() {
-  CUR_EXAM_ID = document.getElementById('sel-exam').value || null;
-  CUR_COMP_ID = document.getElementById('sel-comp').value || null;
-  renderExamDependent();
-}
-
-function deleteCurrentExam() {
-  if(!CUR_EXAM_ID) return;
-  if(!confirm(_t('bl_confirm_delete','¿Eliminar este examen? Esta acción no se puede deshacer.'))) return;
-  apiDelete('/labs/exams/'+CUR_EXAM_ID).then(function(){
-    delete EXAM_DETAIL[CUR_EXAM_ID];
-    return refreshAfterChange();
-  }).then(function(){
-    CUR_EXAM_ID = EXAMS.length ? EXAMS[0].id : null;
-    CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
-    buildExamSelectors();
-    return renderAll();
-  });
-}
-
-// ══════════════════════════════════════════════════════════════
-// RENDER ALL
-// ══════════════════════════════════════════════════════════════
-function renderAll() {
-  var emptyState = document.getElementById('resumen-empty-state');
-  var content    = document.getElementById('resumen-content');
-  if(FEATURE_LOCKED){
-    emptyState.innerHTML = '<p style="color:var(--dim);padding:2rem">'+_t('bl_feature_locked','Blood Labs Intelligence es una función del plan Elite. Actualiza tu plan para acceder.')+'</p>';
-    emptyState.style.display = ''; content.style.display = 'none';
-    return;
-  }
-  if(EXAMS_LOAD_ERROR!==null){
-    emptyState.innerHTML = '<p style="color:var(--red);padding:2rem">'+esc(examsErrorMessage(EXAMS_LOAD_ERROR))+'</p>';
-    emptyState.style.display = ''; content.style.display = 'none';
-    return;
-  }
-  if(!EXAMS.length){
-    emptyState.style.display = ''; content.style.display = 'none';
-    return;
-  }
-  emptyState.style.display = 'none'; content.style.display = '';
-
-  renderSummaryChips();
-  renderAlertsPanel();
-  renderTrainingImpactCards();
-  renderTrendsTab();
-  renderGarminTab();
-  return renderExamDependent();
-}
-
-function renderSummaryChips() {
-  document.getElementById('chip-exams').textContent = EXAMS.length;
-  var trs = TRAINING_IMPACT && TRAINING_IMPACT.has_labs ? TRAINING_IMPACT.trs : null;
-  document.getElementById('chip-score').textContent = trs!=null ? trs+'/100' : '—';
-  document.getElementById('chip-alerts').style.display = ALERTS.length ? 'inline-flex' : 'none';
-  document.getElementById('chip-alert-n').textContent  = ALERTS.length;
-}
-
-// ══════════════════════════════════════════════════════════════
-// ALERTS (GET /labs/alerts + PATCH dismiss)
-// ══════════════════════════════════════════════════════════════
-function renderAlertsPanel() {
-  var el = document.getElementById('alerts-container');
-  if(!ALERTS.length){
-    el.innerHTML = '<div class="alert-box alert-ok"><div class="alert-title">✅ '+_t('bl_no_significant_changes','Sin alertas activas')+'</div></div>';
-    return;
-  }
-  var critical = ALERTS.filter(function(a){ return a.severity==='critical'; });
-  var warning  = ALERTS.filter(function(a){ return a.severity!=='critical'; });
-  function group(list, title){
-    if(!list.length) return '';
-    return '<div class="alert-box alert-warn"><div class="alert-title">'+title+'</div>'+
-      list.map(function(a){
-        return '<div style="font-size:.78rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'+
-          '<span><strong>'+esc(_lxBe(a.title))+'</strong>'+(a.correlation_note?'<br><span style="color:var(--dim)">'+esc(_lxBe(a.correlation_note))+'</span>':'')+'</span>'+
-          '<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="dismissAlertRow(\''+a.id+'\')">✕</button></div>';
-      }).join('')+'</div>';
-  }
-  el.innerHTML = group(critical, '🔴 '+_t('bl_needs_attention','Requiere atención')) +
-                 group(warning,  '🟡 '+_t('bl_grade_monitor','Monitorear'));
-}
-function dismissAlertRow(id) {
-  apiPatch('/labs/alerts/'+id+'/dismiss', {}).then(function(){
-    ALERTS = ALERTS.filter(function(a){ return a.id!==id; });
-    renderAlertsPanel();
-    renderSummaryChips();
-  });
-}
-
-// ══════════════════════════════════════════════════════════════
-// TRS + IMPACTO EN ENTRENAMIENTO (GET /labs/training-impact + /labs/summary)
-// ══════════════════════════════════════════════════════════════
-function setKpi(id, scoreText, gradeText, gradeColor, barPct, barColor, detail) {
-  document.getElementById('kpi-'+id+'-score').textContent = scoreText;
-  document.getElementById('kpi-'+id+'-score').style.color = gradeColor||'';
-  document.getElementById('kpi-'+id+'-grade').textContent = gradeText||'';
-  document.getElementById('kpi-'+id+'-grade').style.color = gradeColor||'';
-  document.getElementById('kpi-'+id+'-bar').style.width = (barPct||0)+'%';
-  document.getElementById('kpi-'+id+'-bar').style.background = barColor||'';
-  document.getElementById('kpi-'+id+'-detail').textContent = detail||'';
-}
-
-// disciplina del backend (swim|bike|run|strength) → etiqueta traducida
-function discLabel(k){
-  var m = {swim:['dtw_sport_swim','Natación'], bike:['dtw_sport_bike','Ciclismo'], run:['dtw_sport_run','Trote'], strength:['dtw_sport_gym','Fuerza / Prep. física']}[k];
-  return m ? _t(m[0], m[1]) : k;
-}
-// El backend manda {marker, severity, recommendation, priority}; se acepta también {name, dose} (comentario del dataclass)
-function suppLabel(x){
-  if(x==null) return '';
-  if(typeof x==='string') return _lxBe(x);
-  var base = x.recommendation ? _lxBe(x.recommendation) : _lxBe(x.name||'');
-  if(x.marker) base = _lxBe(x.marker)+': '+base;
-  if(!x.recommendation && x.dose) base += ' ('+x.dose+')';
-  return base;
-}
-
-function renderTrainingImpactCards() {
-  var ti = TRAINING_IMPACT, sm = SUMMARY;
-  if(!ti || !ti.has_labs) {
-    setKpi('trs', '—');
-    setKpi('markers', '—');
-    setKpi('next', '—');
-    document.getElementById('clinical-summary').innerHTML = '<span style="color:var(--dim)">'+_t('bl_load_first_exam','Registra tu primer examen para ver el impacto en tu entrenamiento.')+'</span>';
-    return;
-  }
-  setKpi('trs', ti.trs+'/100', _lxBe(ti.trs_label), ti.trs_color, ti.trs, ti.trs_color,
-    (ti.primary_limiters&&ti.primary_limiters.length) ? _lxBeList(ti.primary_limiters).join(', ') : _t('bl_no_limiters','Sin limitantes activos'));
-
-  var okN = sm ? sm.markers_ok : 0, totalN = sm ? sm.total_markers : 0;
-  setKpi('markers', totalN||'—', sm?(sm.markers_critical+' '+_t('bl_critical_label','críticos')+' · '+sm.markers_warning+' '+_t('bl_badge_limit','límite')):'', '',
-    totalN ? Math.round(okN/totalN*100) : 0, 'var(--green)',
-    sm ? (sm.markers_ok+' '+_t('bl_markers_optimal','en rango óptimo')) : '');
-
-  var nextDays = sm ? sm.next_recommended_in_days : null;
-  var overdue  = nextDays!=null && nextDays<=0;
-  setKpi('next', nextDays!=null ? nextDays+'d' : '—',
-    overdue ? _t('bl_overdue','Vencido') : _t('bl_on_track','En plazo'),
-    overdue ? 'var(--red)' : 'var(--green)',
-    nextDays!=null ? Math.max(0,Math.min(100, 100-(nextDays/90*100))) : 0, 'var(--cyan)',
-    sm ? (_t('bl_last_exam_on','Último examen:')+' '+sm.latest_date) : '');
-
-  var lines = [];
-  lines.push('<strong style="color:var(--text)">'+_t('bl_disciplines','Disciplinas')+':</strong> ' +
-    (ti.disciplines||[]).map(function(d){ var nt=_lxBeList(d.notes).join('; '); return esc(discLabel(d.discipline))+' '+(d.allowed?'✅':'⛔')+(nt?' — '+esc(nt):''); }).join(' · '));
-  if(ti.supplements && ti.supplements.length) lines.push('<strong style="color:var(--text)">'+_t('bl_supplements','Suplementación')+':</strong> '+ti.supplements.map(function(x){ return esc(suppLabel(x)); }).join(', '));
-  if(ti.key_actions && ti.key_actions.length) lines.push('<strong style="color:var(--text)">'+_t('bl_key_actions','Acciones clave')+':</strong><br>'+ti.key_actions.map(function(a){ return '• '+esc(_lxBe(a)); }).join('<br>'));
-  if(ti.medical_referral) lines.push('<span style="color:var(--red)">⚠️ '+esc(_lxBe(ti.medical_reason)||_t('bl_medical_referral','Se recomienda evaluación médica.'))+'</span>');
-  document.getElementById('clinical-summary').innerHTML = lines.join('<br><br>');
-}
-
-// ══════════════════════════════════════════════════════════════
-// EXAMEN SELECCIONADO: radar + tabla + interpretación IA
-// (GET /labs/exams/{id} — análisis por marcador ya calculado server-side)
-// ══════════════════════════════════════════════════════════════
-function renderExamDependent() {
-  if(!CUR_EXAM_ID) return Promise.resolve();
-  var tasks = [loadExamDetail(CUR_EXAM_ID)];
-  if(CUR_COMP_ID) tasks.push(loadExamDetail(CUR_COMP_ID));
-  return Promise.all(tasks).then(function(results){
-    var cur = results[0], comp = results[1]||null;
-    document.getElementById('exam-ctx-lbl').textContent = (_lxBe(cur.lab_name)||'') + ' · ' + (cur.context||'');
-    var aiBox = document.getElementById('ai-interpretation-box');
-    aiBox.textContent = (cur.ai_interpretation && cur.ai_interpretation.text) ? cur.ai_interpretation.text : '—';
-    renderRadar(cur);
-    renderBMTable(cur, comp);
-  });
-}
-
-function renderRadar(exam) {
-  var cm = catMeta();
-  var byCat = {}; CAT_ORDER.forEach(function(c){ byCat[c]=[]; });
-  Object.keys(exam.markers||{}).forEach(function(k){
-    var m = exam.markers[k];
-    if(m.cat && byCat[m.cat]) byCat[m.cat].push(m.pct!=null?m.pct:50);
-  });
-  var labels=[], data=[];
-  CAT_ORDER.forEach(function(c){
-    if(!byCat[c].length) return;
-    labels.push(cm[c].icon+' '+cm[c].label);
-    data.push(Math.round(byCat[c].reduce(function(a,b){return a+b;},0)/byCat[c].length));
-  });
-  if(CH.radar) CH.radar.destroy();
-  if(!labels.length) return;
-  CH.radar = new Chart(document.getElementById('ch-radar'), {
-    type:'radar',
-    data:{ labels:labels, datasets:[{ label:_t('bl_biochem_score','Score bioquímico'), data:data,
-      backgroundColor:'rgba(14,165,233,.12)', borderColor:'rgba(14,165,233,.7)', borderWidth:2.5,
-      pointBackgroundColor:'#0EA5E9', pointBorderColor:'#fff', pointRadius:4 }] },
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ r:{ min:0, max:100, ticks:{display:false,stepSize:25}, grid:{color:'rgba(8,116,174,.18)'},
-        pointLabels:{color:'#7FB3CC', font:{family:'Oswald', size:11, weight:'600'}}, angleLines:{color:'rgba(8,116,174,.12)'} } },
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){ return c.label+': '+c.raw+'/100'; }}} }
-    }
-  });
-}
-
-function renderBMTable(cur, comp) {
-  var cm = catMeta();
-  var curM  = cur.markers||{};
-  var compM = comp ? (comp.markers||{}) : {};
-  var html = '';
-  CAT_ORDER.forEach(function(cat){
-    var keys = Object.keys(curM).filter(function(k){ return curM[k].cat===cat; });
-    if(!keys.length) return;
-    html += '<div class="bm-category panel">';
-    html += '<div class="bm-cat-head" onclick="toggleCat(this)">'+cm[cat].icon+' '+cm[cat].label+' <span style="margin-left:auto;opacity:.5;font-size:.85em;font-weight:400">▾</span></div>';
-    html += '<div class="bm-cat-body">';
-    html += '<table class="bm-t"><thead><tr><th>'+_t('bl_th_marker','Marcador')+'</th>';
-    if(comp) html += '<th>'+comp.date_iso+'</th>';
-    html += '<th>'+cur.date_iso+'</th><th>Δ</th><th>'+_t('bl_th_status','Estado')+'</th></tr></thead><tbody>';
-    keys.forEach(function(k){
-      var m = curM[k], cv = compM[k];
-      var delta = '<span class="delta-no">—</span>';
-      if(cv && cv.value!=null && m.value!=null && cv.value!==0){
-        var dp = (m.value-cv.value)/Math.abs(cv.value)*100;
-        delta = '<span class="bm-delta '+(dp>0?'delta-up':'delta-dn')+'">'+(dp>0?'▲':'▼')+' '+Math.abs(dp).toFixed(1)+'%</span>';
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+      // ══════════════════════════════════════════════════════════════
+      // HELPERS
+      // ══════════════════════════════════════════════════════════════
+      function _t(key, fallback) {
+        // window.i18n.t() devuelve la CLAVE CRUDA (no null/undefined) cuando falta
+        // la traducción — varias claves nuevas de esta página todavía no están en
+        // el diccionario i18n.js, así que hay que detectar ese caso explícitamente
+        // para caer al fallback en español en vez de mostrar "bl_algo_sin_traducir".
+        var v = window.i18n ? window.i18n.t(key) : null;
+        return v && v !== key ? v : fallback;
       }
-      var sg = statusGrade(m.status);
-      html += '<tr>';
-      html += '<td><div class="bm-name">'+esc(_lxBe(m.name))+'</div><div class="bm-unit">'+esc(m.unit)+'</div></td>';
-      if(comp) html += '<td class="bm-val" style="color:var(--dim)">'+(cv&&cv.value!=null?cv.value:'—')+'</td>';
-      html += '<td class="bm-val" style="color:'+sg.color+'">'+(m.value!=null?m.value:'—')+'</td>';
-      html += '<td>'+delta+'</td>';
-      html += '<td><span class="badge '+sg.badge+'">'+sg.icon+' '+sg.label+'</span></td>';
-      html += '</tr>';
-      if(m.tip) html += '<tr><td colspan="'+(comp?5:4)+'" class="bm-note">📋 '+esc(_lxBe(m.tip))+'</td></tr>';
-    });
-    html += '</tbody></table></div></div>';
-  });
-  document.getElementById('bm-table-container').innerHTML = html || '<p style="color:var(--dim);font-size:.8rem">'+_t('bl_no_markers','Sin marcadores en este examen.')+'</p>';
-}
-
-function toggleCat(head) {
-  var body = head.nextElementSibling;
-  var isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
-  if(isOpen){ body.style.maxHeight='0'; body.style.overflow='hidden'; }
-  else { body.style.maxHeight = body.scrollHeight+'px'; body.style.overflow='visible'; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// INTERPRETACIÓN IA (POST /labs/exams/{id}/analyze)
-// ══════════════════════════════════════════════════════════════
-function runAiAnalysis() {
-  if(!CUR_EXAM_ID) return;
-  var btn = document.getElementById('btn-ai-analyze');
-  var box = document.getElementById('ai-interpretation-box');
-  btn.disabled = true; btn.style.opacity = .6;
-  box.textContent = _t('bl_ai_loading','Generando interpretación con IA — puede tomar unos segundos…');
-  apiPost('/labs/exams/'+CUR_EXAM_ID+'/analyze', {}).then(function(d){
-    box.textContent = d.interpretation || '—';
-    delete EXAM_DETAIL[CUR_EXAM_ID];
-  }).catch(function(err){
-    box.textContent = '⚠️ '+_t('bl_ai_failed','No se pudo generar la interpretación.')+(err&&err.errors&&err.errors[0]?(' '+err.errors[0].message):'');
-  }).then(function(){ btn.disabled=false; btn.style.opacity=1; });
-}
-
-// ══════════════════════════════════════════════════════════════
-// TENDENCIAS (GET /labs/timeline)
-// ══════════════════════════════════════════════════════════════
-var TIMELINE_MARKERS = {
-  ferritin:  {label:'Ferritina',    unit:'ng/mL'},
-  hemoglobin:{label:'Hemoglobina',  unit:'g/dL'},
-  cortisol:  {label:'Cortisol',     unit:'μg/dL'},
-  vitamin_d: {label:'Vitamina D',   unit:'ng/mL'},
-  ck:        {label:'CK',           unit:'U/L'},
-  hba1c:     {label:'HbA1c',        unit:'%'},
-  urea:      {label:'Urea',         unit:'mmol/L'},
-};
-
-function renderTrendsTab() {
-  var info = document.getElementById('trends-stabs-bar');
-  var container = document.getElementById('trend-content');
-  var tl = TIMELINE && TIMELINE.timeline ? TIMELINE.timeline : [];
-  Object.keys(CH).filter(function(k){ return k.indexOf('tr-')===0; }).forEach(function(k){ CH[k].destroy(); delete CH[k]; });
-
-  if(tl.length < 2){
-    info.innerHTML = '';
-    container.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+_t('bl_no_data_category','Sin suficientes exámenes para ver tendencias (mínimo 2).')+'</p>';
-    return;
-  }
-  var dr = TIMELINE.date_range || {};
-  info.innerHTML = '<span style="font-size:.72rem;color:var(--dim);padding:.3rem .6rem">'+tl.length+' '+_t('bl_exams_label','exámenes')+' · '+(dr.from||'')+' → '+(dr.to||'')+'</span>';
-
-  var dates = tl.map(function(t){ return t.exam_date; });
-  var available = Object.keys(TIMELINE_MARKERS).filter(function(k){ return tl.some(function(t){ return t[k]!=null; }); });
-  if(!available.length){ container.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+_t('bl_no_data_category','Sin datos para graficar.')+'</p>'; return; }
-
-  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem">' +
-    available.map(function(k){
-      return '<div class="ch-box"><div class="ch-title">'+TIMELINE_MARKERS[k].label+'</div><div class="ch-sub">'+TIMELINE_MARKERS[k].unit+'</div>'+
-        '<div style="position:relative;height:160px"><canvas id="trend-'+k+'"></canvas></div></div>';
-    }).join('') + '</div>';
-
-  available.forEach(function(k){
-    var vals = tl.map(function(t){ return t[k]!=null?t[k]:null; });
-    var canvas = document.getElementById('trend-'+k);
-    if(!canvas) return;
-    CH['tr-'+k] = new Chart(canvas, {
-      type:'line',
-      data:{ labels:dates, datasets:[{ label:TIMELINE_MARKERS[k].label, data:vals,
-        borderColor:'#0EA5E9', backgroundColor:'rgba(14,165,233,.06)', pointBackgroundColor:'#0EA5E9',
-        pointBorderColor:'#fff', pointRadius:6, borderWidth:2.5, fill:false, tension:.3, spanGaps:true }] },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){ return c.parsed.y+' '+TIMELINE_MARKERS[k].unit; }}} },
-        scales:{ x:{ticks:{color:'#3D6880',font:{size:9}}, grid:{color:'rgba(8,116,174,.06)'}},
-                 y:{ticks:{color:'#3D6880',font:{size:9}}, grid:{color:'rgba(8,116,174,.08)'}} }
+      function var_css(v) {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue(v)
+          .trim();
       }
-    });
-  });
-}
-
-// ══════════════════════════════════════════════════════════════
-// CORRELACIÓN GARMIN (GET /labs/correlation)
-// ══════════════════════════════════════════════════════════════
-function renderGarminTab() {
-  var rows = CORR||[];
-  if(CH.ctlOverlay){ CH.ctlOverlay.destroy(); CH.ctlOverlay=null; }
-  var canvas = document.getElementById('ch-ctl-overlay');
-  if(!rows.length){
-    if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-  } else if(canvas){
-    var dates = rows.map(function(r){ return r.date_iso; });
-    CH.ctlOverlay = new Chart(canvas, {
-      type:'line',
-      data:{ labels:dates, datasets:[
-        {label:'CTL', data:rows.map(function(r){return r.ctl;}),  borderColor:'#10B981', pointRadius:6, borderWidth:2.5, fill:false, tension:.3, spanGaps:true},
-        {label:'ATL', data:rows.map(function(r){return r.atl;}),  borderColor:'#FF6535', pointRadius:6, borderWidth:2,   fill:false, tension:.3, spanGaps:true, borderDash:[5,3]},
-        {label:'TSB', data:rows.map(function(r){return r.tsb;}),  borderColor:'#F0A500', pointRadius:6, borderWidth:2,   fill:false, tension:.3, spanGaps:true, borderDash:[2,2]},
-      ]},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{labels:{color:'#7FB3CC',font:{family:'Oswald',size:11},boxWidth:12}} },
-        scales:{ x:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.06)'}},
-                 y:{ticks:{color:'#3D6880',font:{size:10}},grid:{color:'rgba(8,116,174,.08)'}} }
+      // Traduce textos que el backend genera en español (lx-backend-i18n.js); sin mapa devuelve el original
+      function _lxBe(s) {
+        return window.lxBeT && typeof s === 'string' ? window.lxBeT(s) : s;
       }
-    });
-  }
+      function _lxBeList(a) {
+        return (a || []).map(_lxBe);
+      }
+      function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+      }
 
-  var allKeys = {};
-  rows.forEach(function(r){ Object.keys(r.values||{}).forEach(function(k){ allKeys[k]=true; }); });
-  var keys = Object.keys(allKeys);
-  document.getElementById('corr-thead').innerHTML = '<th>'+_t('bl_th_date','Fecha')+'</th>'+
-    keys.map(function(k){ return '<th>'+esc((MARKERS_CATALOG[k]&&MARKERS_CATALOG[k].name)||k)+'</th>'; }).join('')+'<th>CTL</th>';
-  document.getElementById('corr-tbody').innerHTML = rows.length ? rows.map(function(r){
-    return '<tr><td class="corr-bm">'+r.date_iso+'</td>'+
-      keys.map(function(k){ var v=(r.values||{})[k]; return '<td>'+(v!=null?v:'—')+'</td>'; }).join('')+
-      '<td>'+(r.ctl!=null?r.ctl:'—')+'</td></tr>';
-  }).join('') : '<tr><td colspan="99" style="color:var(--dim)">'+_t('bl_no_exams','Sin exámenes.')+'</td></tr>';
+      var CAT_ORDER = [
+        'hematologico',
+        'vitaminas',
+        'minerales',
+        'hormonal',
+        'inflamacion',
+        'metabolico',
+        'renal',
+        'hepatico',
+      ];
+      function catMeta() {
+        return {
+          hematologico: {
+            icon: '🩸',
+            label: _t('bl_cat_hematologico', 'Hematológico'),
+          },
+          vitaminas: { icon: '🌟', label: _t('bl_cat_vit', 'Vitaminas') },
+          minerales: { icon: '🧂', label: _t('bl_cat_minerales', 'Minerales') },
+          hormonal: { icon: '🧪', label: _t('bl_cat_horm', 'Hormonal') },
+          inflamacion: {
+            icon: '🔥',
+            label: _t('bl_cat_inflamacion', 'Inflamación'),
+          },
+          metabolico: {
+            icon: '🔬',
+            label: _t('bl_cat_metabolico', 'Metabólico'),
+          },
+          renal: { icon: '🫘', label: _t('bl_cat_renalfunc', 'Renal') },
+          hepatico: { icon: '🫀', label: _t('bl_cat_hepatico', 'Hepático') },
+        };
+      }
 
-  renderStatCorrelations();
-}
+      function statusGrade(status) {
+        if (status === 'ok')
+          return {
+            label: _t('bl_badge_normal', 'Normal'),
+            color: var_css('--green'),
+            badge: 'b-ok',
+            icon: '✅',
+          };
+        if (status === 'warning')
+          return {
+            label: _t('bl_grade_monitor', 'Monitorear'),
+            color: var_css('--amber'),
+            badge: 'b-warn',
+            icon: '🟡',
+          };
+        if (status === 'critical')
+          return {
+            label: _t('bl_grade_alert', 'Alerta'),
+            color: var_css('--red'),
+            badge: 'b-bad',
+            icon: '🔴',
+          };
+        return {
+          label: _t('status_no_data', 'Sin datos'),
+          color: var_css('--dim'),
+          badge: 'b-na',
+          icon: '—',
+        };
+      }
 
-// ══════════════════════════════════════════════════════════════
-// CORRELACIONES ESTADÍSTICAS (GET /labs/correlations + IA)
-// ══════════════════════════════════════════════════════════════
-function renderStatCorrelations() {
-  var el = document.getElementById('stat-corr-content');
-  var sc = STAT_CORR;
-  if(!sc || sc.message){
-    el.innerHTML = '<p style="font-size:.8rem;color:var(--dim)">'+(sc&&sc.message?esc(_lxBe(sc.message)):_t('bl_no_data_category','Sin suficientes exámenes para calcular correlaciones (mínimo 3).'))+'</p>';
-    return;
-  }
-  var html = '';
+      // ══════════════════════════════════════════════════════════════
+      // API — /api/labs/* (blood_lab_routes.py, motor nuevo de análisis)
+      // ══════════════════════════════════════════════════════════════
+      function apiBase() {
+        return window.location.protocol === 'file:'
+          ? 'http://localhost:8000/api'
+          : window.location.origin + '/api';
+      }
+      function apiToken() {
+        var tok = localStorage.getItem('lx_co_token');
+        if (!tok) {
+          try {
+            var s = JSON.parse(
+              sessionStorage.getItem('kl_s') ||
+                localStorage.getItem('kl_s') ||
+                'null',
+            );
+            if (s && s.token) tok = s.token;
+          } catch (e) {}
+        }
+        return tok;
+      }
+      function authHeaders(extra) {
+        var h = { Authorization: 'Bearer ' + apiToken() };
+        if (extra) for (var k in extra) h[k] = extra[k];
+        return h;
+      }
+      function apiGet(path) {
+        return fetch(apiBase() + path, { headers: authHeaders() }).then(
+          function (r) {
+            return r.ok ? r.json() : Promise.reject(r.status);
+          },
+        );
+      }
+      function apiPost(path, body) {
+        return fetch(apiBase() + path, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(body || {}),
+        }).then(function (r) {
+          return r.json().then(function (data) {
+            return r.ok ? data : Promise.reject(data);
+          });
+        });
+      }
+      function apiDelete(path) {
+        return fetch(apiBase() + path, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        }).then(function (r) {
+          return r.ok ? r.json() : Promise.reject(r.status);
+        });
+      }
+      function apiPatch(path, body) {
+        return fetch(apiBase() + path, {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(body || {}),
+        }).then(function (r) {
+          return r.ok ? r.json() : Promise.reject(r.status);
+        });
+      }
 
-  if(sc.insights && sc.insights.length){
-    html += '<div class="alert-box alert-ok" style="margin-bottom:1rem"><div class="alert-title">💡 '+_t('bl_insights','Insights')+'</div>'+
-      sc.insights.map(function(i){ return '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">'+esc(_lxBe(i))+'</p>'; }).join('')+'</div>';
-  }
+      // ══════════════════════════════════════════════════════════════
+      // STATE
+      // ══════════════════════════════════════════════════════════════
+      var MARKERS_CATALOG = {}; // key -> {key,name,unit,cat}
+      var EXAMS = []; // GET /labs/exams — más recientes primero
+      var EXAM_DETAIL = {}; // id -> detalle completo (cache)
+      var CUR_EXAM_ID = null;
+      var CUR_COMP_ID = null;
+      var SUMMARY = null;
+      var TRAINING_IMPACT = null;
+      var ALERTS = [];
+      var TIMELINE = null;
+      var CORR = [];
+      var STAT_CORR = null;
+      var FEATURE_LOCKED = false;
+      var EXAMS_LOAD_ERROR = null;
+      var CH = {};
 
-  if(sc.correlations && sc.correlations.length){
-    html += '<div class="panel" style="margin-bottom:1rem"><div class="panel-body">'+
-      '<table class="corr-t"><thead><tr><th>'+_t('bl_th_biomarker','Biomarcador')+'</th><th>'+_t('bl_th_signal','Métrica')+'</th><th>r</th><th>'+_t('bl_th_expected_corr','Interpretación')+'</th></tr></thead><tbody>'+
-      sc.correlations.map(function(c){
-        var color = c.abs_r>=0.7 ? 'var(--red)' : 'var(--amber)';
-        return '<tr><td class="corr-bm">'+esc(_lxBe(c.marker_label))+'</td><td style="color:var(--muted)">'+esc(_lxBe(c.metric_label))+'</td>'+
-          '<td style="color:'+color+';font-weight:700">'+c.r.toFixed(2)+'</td>'+
-          '<td style="color:var(--muted)">'+esc(_lxBe(c.interpretation))+'</td></tr>';
-      }).join('')+'</tbody></table></div></div>';
-  } else {
-    html += '<p style="font-size:.8rem;color:var(--dim);margin-bottom:1rem">'+_t('bl_no_strong_correlations','No se detectaron correlaciones estadísticamente significativas todavía (requiere más historial).')+'</p>';
-  }
+      function loadMarkersCatalog() {
+        return apiGet('/labs/markers').then(function (d) {
+          MARKERS_CATALOG = d || {};
+        });
+      }
+      function loadExamsList() {
+        EXAMS_LOAD_ERROR = null;
+        return apiGet('/labs/exams')
+          .then(function (d) {
+            EXAMS = d || [];
+          })
+          .catch(function (status) {
+            EXAMS = [];
+            if (status === 403) {
+              FEATURE_LOCKED = true;
+              return;
+            }
+            EXAMS_LOAD_ERROR = typeof status === 'number' ? status : 'network';
+          });
+      }
+      function examsErrorMessage(err) {
+        if (err === 401)
+          return _t(
+            'bl_err_session',
+            'Tu sesión expiró o no es válida. Vuelve a iniciar sesión.',
+          );
+        if (err === 'network')
+          return _t(
+            'bl_err_network',
+            'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.',
+          );
+        return _t(
+          'bl_err_server',
+          'El servidor respondió con error {status}. Intenta de nuevo en unos minutos.',
+        ).replace('{status}', err);
+      }
+      function loadExamDetail(id) {
+        if (EXAM_DETAIL[id]) return Promise.resolve(EXAM_DETAIL[id]);
+        return apiGet('/labs/exams/' + id).then(function (d) {
+          EXAM_DETAIL[id] = d;
+          return d;
+        });
+      }
+      function loadSummary() {
+        return apiGet('/labs/summary')
+          .then(function (d) {
+            SUMMARY = d;
+          })
+          .catch(function () {
+            SUMMARY = null;
+          });
+      }
+      function loadAlertsList() {
+        return apiGet('/labs/alerts')
+          .then(function (d) {
+            ALERTS = d || [];
+          })
+          .catch(function () {
+            ALERTS = [];
+          });
+      }
+      function loadTrainingImpact() {
+        return apiGet('/labs/training-impact')
+          .then(function (d) {
+            TRAINING_IMPACT = d;
+          })
+          .catch(function () {
+            TRAINING_IMPACT = null;
+          });
+      }
+      function loadTimeline() {
+        return apiGet('/labs/timeline')
+          .then(function (d) {
+            TIMELINE = d;
+          })
+          .catch(function () {
+            TIMELINE = null;
+          });
+      }
+      function loadCorrelationOverlay() {
+        return apiGet('/labs/correlation')
+          .then(function (d) {
+            CORR = d || [];
+          })
+          .catch(function () {
+            CORR = [];
+          });
+      }
+      function loadStatCorrelations() {
+        return apiGet('/labs/correlations')
+          .then(function (d) {
+            STAT_CORR = d;
+          })
+          .catch(function () {
+            STAT_CORR = null;
+          });
+      }
+      function refreshAfterChange() {
+        return Promise.all([
+          loadExamsList(),
+          loadSummary(),
+          loadTrainingImpact(),
+          loadAlertsList(),
+          loadTimeline(),
+          loadCorrelationOverlay(),
+          loadStatCorrelations(),
+        ]);
+      }
 
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">'+
-    '<button class="btn btn-g btn-sm" id="btn-stat-ai" onclick="runStatCorrelationAi()">✨ '+_t('bl_ai_run','Generar interpretación')+'</button></div>'+
-    '<div class="panel"><div class="panel-body" id="stat-ai-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">'+
-    (sc.ai_narrative ? esc(sc.ai_narrative) : '—') + '</div></div>';
+      // ══════════════════════════════════════════════════════════════
+      // EXAM SELECTOR
+      // ══════════════════════════════════════════════════════════════
+      function buildExamSelectors() {
+        var sel = document.getElementById('sel-exam');
+        var cmp = document.getElementById('sel-comp');
+        sel.innerHTML = '';
+        cmp.innerHTML =
+          '<option value="">' + _t('bl_none', 'Ninguno') + '</option>';
+        EXAMS.forEach(function (e) {
+          var o = '<option value="' + e.id + '">' + e.date_iso + '</option>';
+          sel.innerHTML += o;
+          cmp.innerHTML += o;
+        });
+        if (CUR_EXAM_ID) sel.value = CUR_EXAM_ID;
+        if (CUR_COMP_ID) {
+          document.getElementById('comp-label').style.display = 'flex';
+          cmp.value = CUR_COMP_ID;
+        } else {
+          document.getElementById('comp-label').style.display = 'none';
+        }
+        document.getElementById('btn-delete-exam').style.display = EXAMS.length
+          ? ''
+          : 'none';
+      }
 
-  el.innerHTML = html;
-}
+      function switchExam() {
+        CUR_EXAM_ID = document.getElementById('sel-exam').value || null;
+        CUR_COMP_ID = document.getElementById('sel-comp').value || null;
+        renderExamDependent();
+      }
 
-function runStatCorrelationAi() {
-  var btn = document.getElementById('btn-stat-ai');
-  var box = document.getElementById('stat-ai-box');
-  if(!btn || !box) return;
-  btn.disabled = true; btn.style.opacity = .6;
-  box.textContent = _t('bl_ai_loading','Generando interpretación con IA — puede tomar unos segundos…');
-  apiPost('/labs/correlations/ai-interpretation', {}).then(function(d){
-    STAT_CORR = d;
-    box.textContent = d.ai_narrative || '—';
-  }).catch(function(){
-    box.textContent = '⚠️ '+_t('bl_ai_failed','No se pudo generar la interpretación.');
-  }).then(function(){ btn.disabled=false; btn.style.opacity=1; });
-}
+      function deleteCurrentExam() {
+        if (!CUR_EXAM_ID) return;
+        if (
+          !confirm(
+            _t(
+              'bl_confirm_delete',
+              '¿Eliminar este examen? Esta acción no se puede deshacer.',
+            ),
+          )
+        )
+          return;
+        apiDelete('/labs/exams/' + CUR_EXAM_ID)
+          .then(function () {
+            delete EXAM_DETAIL[CUR_EXAM_ID];
+            return refreshAfterChange();
+          })
+          .then(function () {
+            CUR_EXAM_ID = EXAMS.length ? EXAMS[0].id : null;
+            CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+            buildExamSelectors();
+            return renderAll();
+          });
+      }
 
-// ══════════════════════════════════════════════════════════════
-// REGISTRAR EXAMEN (GET /labs/markers → form dinámico, POST /labs/exams)
-// ══════════════════════════════════════════════════════════════
-function buildForm() {
-  var cm = catMeta();
-  var byCat = {}; CAT_ORDER.forEach(function(c){ byCat[c]=[]; });
-  Object.keys(MARKERS_CATALOG).forEach(function(k){
-    var m = MARKERS_CATALOG[k];
-    if(byCat[m.cat]) byCat[m.cat].push(m);
-  });
-  var html = '', guide = '';
-  CAT_ORDER.forEach(function(cat){
-    var markers = byCat[cat];
-    if(!markers.length) return;
-    html  += '<div class="form-cat-head">'+cm[cat].icon+' '+cm[cat].label+'</div><div class="form-grid">';
-    guide += '<p style="font-family:\'Oswald\',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.9rem 0 .3rem">'+cm[cat].icon+' '+cm[cat].label+'</p>';
-    markers.forEach(function(m){
-      html  += '<div class="form-field"><label class="form-label">'+esc(m.name)+' ('+esc(m.unit)+')</label>'+
-        '<input type="number" step="any" class="form-input" id="fi-'+m.key+'"></div>';
-      guide += '<p><strong style="color:var(--text)">'+esc(m.name)+'</strong> ('+esc(m.unit)+')</p>';
-    });
-    html += '</div>';
-  });
-  document.getElementById('form-cats-container').innerHTML = html;
-  document.getElementById('guide-panel').innerHTML = guide;
-  document.getElementById('inp-date').value = new Date().toISOString().slice(0,10);
-}
+      // ══════════════════════════════════════════════════════════════
+      // RENDER ALL
+      // ══════════════════════════════════════════════════════════════
+      function renderAll() {
+        var emptyState = document.getElementById('resumen-empty-state');
+        var content = document.getElementById('resumen-content');
+        if (FEATURE_LOCKED) {
+          emptyState.innerHTML =
+            '<p style="color:var(--dim);padding:2rem">' +
+            _t(
+              'bl_feature_locked',
+              'Blood Labs Intelligence es una función del plan Elite. Actualiza tu plan para acceder.',
+            ) +
+            '</p>';
+          emptyState.style.display = '';
+          content.style.display = 'none';
+          return;
+        }
+        if (EXAMS_LOAD_ERROR !== null) {
+          emptyState.innerHTML =
+            '<p style="color:var(--red);padding:2rem">' +
+            esc(examsErrorMessage(EXAMS_LOAD_ERROR)) +
+            '</p>';
+          emptyState.style.display = '';
+          content.style.display = 'none';
+          return;
+        }
+        if (!EXAMS.length) {
+          emptyState.style.display = '';
+          content.style.display = 'none';
+          return;
+        }
+        emptyState.style.display = 'none';
+        content.style.display = '';
 
-function saveExam() {
-  var dateVal = document.getElementById('inp-date').value;
-  if(!dateVal){ showSaveMsg('⚠️ '+_t('bl_select_date','Selecciona la fecha del examen'),'err'); return; }
-  var values = {};
-  Object.keys(MARKERS_CATALOG).forEach(function(k){
-    var el = document.getElementById('fi-'+k);
-    if(el && el.value !== '') values[k] = parseFloat(el.value);
-  });
-  if(!Object.keys(values).length){ showSaveMsg('⚠️ '+_t('bl_enter_one_value','Ingresa al menos un valor de marcador'),'err'); return; }
+        renderSummaryChips();
+        renderAlertsPanel();
+        renderTrainingImpactCards();
+        renderTrendsTab();
+        renderGarminTab();
+        return renderExamDependent();
+      }
 
-  apiPost('/labs/exams', {
-    date_iso: dateVal,
-    values:   values,
-    lab_name: document.getElementById('inp-lab').value || null,
-    context:  document.getElementById('inp-ctx').value || null,
-  }).then(function(resp){
-    return refreshAfterChange().then(function(){
-      CUR_EXAM_ID = resp.exam_id;
-      CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
-      buildExamSelectors();
-      return renderAll();
-    });
-  }).then(function(){
-    showSaveMsg('✅ '+_t('bl_exam_saved','Examen del {date} guardado con {n} marcadores.').replace('{date}',dateVal).replace('{n}',Object.keys(values).length),'ok');
-  }).catch(function(){
-    showSaveMsg('⚠️ '+_t('bl_save_failed','No se pudo guardar el examen — revisá tu conexión e intentá de nuevo.'),'err');
-  });
-}
+      function renderSummaryChips() {
+        document.getElementById('chip-exams').textContent = EXAMS.length;
+        var trs =
+          TRAINING_IMPACT && TRAINING_IMPACT.has_labs
+            ? TRAINING_IMPACT.trs
+            : null;
+        document.getElementById('chip-score').textContent =
+          trs != null ? trs + '/100' : '—';
+        document.getElementById('chip-alerts').style.display = ALERTS.length
+          ? 'inline-flex'
+          : 'none';
+        document.getElementById('chip-alert-n').textContent = ALERTS.length;
+      }
 
-function clearForm() {
-  Object.keys(MARKERS_CATALOG).forEach(function(k){ var el=document.getElementById('fi-'+k); if(el) el.value=''; });
-  document.getElementById('inp-lab').value = '';
-  document.getElementById('inp-ctx').value = '';
-  document.getElementById('save-msg').style.display='none';
-}
+      // ══════════════════════════════════════════════════════════════
+      // ALERTS (GET /labs/alerts + PATCH dismiss)
+      // ══════════════════════════════════════════════════════════════
+      function renderAlertsPanel() {
+        var el = document.getElementById('alerts-container');
+        if (!ALERTS.length) {
+          el.innerHTML =
+            '<div class="alert-box alert-ok"><div class="alert-title">✅ ' +
+            _t('bl_no_significant_changes', 'Sin alertas activas') +
+            '</div></div>';
+          return;
+        }
+        var critical = ALERTS.filter(function (a) {
+          return a.severity === 'critical';
+        });
+        var warning = ALERTS.filter(function (a) {
+          return a.severity !== 'critical';
+        });
+        function group(list, title) {
+          if (!list.length) return '';
+          return (
+            '<div class="alert-box alert-warn"><div class="alert-title">' +
+            title +
+            '</div>' +
+            list
+              .map(function (a) {
+                return (
+                  '<div style="font-size:.78rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">' +
+                  '<span><strong>' +
+                  esc(_lxBe(a.title)) +
+                  '</strong>' +
+                  (a.correlation_note
+                    ? '<br><span style="color:var(--dim)">' +
+                      esc(_lxBe(a.correlation_note)) +
+                      '</span>'
+                    : '') +
+                  '</span>' +
+                  '<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="dismissAlertRow(\'' +
+                  a.id +
+                  '\')">✕</button></div>'
+                );
+              })
+              .join('') +
+            '</div>'
+          );
+        }
+        el.innerHTML =
+          group(
+            critical,
+            '🔴 ' + _t('bl_needs_attention', 'Requiere atención'),
+          ) + group(warning, '🟡 ' + _t('bl_grade_monitor', 'Monitorear'));
+      }
+      function dismissAlertRow(id) {
+        apiPatch('/labs/alerts/' + id + '/dismiss', {}).then(function () {
+          ALERTS = ALERTS.filter(function (a) {
+            return a.id !== id;
+          });
+          renderAlertsPanel();
+          renderSummaryChips();
+        });
+      }
 
-function showSaveMsg(msg, type) {
-  var el = document.getElementById('save-msg');
-  el.className = 'save-msg save-'+(type==='ok'?'ok':'err');
-  el.style.display='flex'; el.textContent=msg;
-  setTimeout(function(){ el.style.display='none'; }, 5000);
-}
+      // ══════════════════════════════════════════════════════════════
+      // TRS + IMPACTO EN ENTRENAMIENTO (GET /labs/training-impact + /labs/summary)
+      // ══════════════════════════════════════════════════════════════
+      function setKpi(
+        id,
+        scoreText,
+        gradeText,
+        gradeColor,
+        barPct,
+        barColor,
+        detail,
+      ) {
+        document.getElementById('kpi-' + id + '-score').textContent = scoreText;
+        document.getElementById('kpi-' + id + '-score').style.color =
+          gradeColor || '';
+        document.getElementById('kpi-' + id + '-grade').textContent =
+          gradeText || '';
+        document.getElementById('kpi-' + id + '-grade').style.color =
+          gradeColor || '';
+        document.getElementById('kpi-' + id + '-bar').style.width =
+          (barPct || 0) + '%';
+        document.getElementById('kpi-' + id + '-bar').style.background =
+          barColor || '';
+        document.getElementById('kpi-' + id + '-detail').textContent =
+          detail || '';
+      }
 
-// ══════════════════════════════════════════════════════════════
-// TABS + SCROLL ANIMATIONS
-// ══════════════════════════════════════════════════════════════
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('on'); });
-  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('on'); });
-  btn.classList.add('on');
-  document.getElementById('tab-'+id).classList.add('on');
-}
+      // disciplina del backend (swim|bike|run|strength) → etiqueta traducida
+      function discLabel(k) {
+        var m = {
+          swim: ['dtw_sport_swim', 'Natación'],
+          bike: ['dtw_sport_bike', 'Ciclismo'],
+          run: ['dtw_sport_run', 'Trote'],
+          strength: ['dtw_sport_gym', 'Fuerza / Prep. física'],
+        }[k];
+        return m ? _t(m[0], m[1]) : k;
+      }
+      // El backend manda {marker, severity, recommendation, priority}; se acepta también {name, dose} (comentario del dataclass)
+      function suppLabel(x) {
+        if (x == null) return '';
+        if (typeof x === 'string') return _lxBe(x);
+        var base = x.recommendation
+          ? _lxBe(x.recommendation)
+          : _lxBe(x.name || '');
+        if (x.marker) base = _lxBe(x.marker) + ': ' + base;
+        if (!x.recommendation && x.dose) base += ' (' + x.dose + ')';
+        return base;
+      }
 
-var io = new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('vis');});},{threshold:.08});
-document.querySelectorAll('.sr').forEach(function(el){ io.observe(el); });
+      function renderTrainingImpactCards() {
+        var ti = TRAINING_IMPACT,
+          sm = SUMMARY;
+        if (!ti || !ti.has_labs) {
+          setKpi('trs', '—');
+          setKpi('markers', '—');
+          setKpi('next', '—');
+          document.getElementById('clinical-summary').innerHTML =
+            '<span style="color:var(--dim)">' +
+            _t(
+              'bl_load_first_exam',
+              'Registra tu primer examen para ver el impacto en tu entrenamiento.',
+            ) +
+            '</span>';
+          return;
+        }
+        setKpi(
+          'trs',
+          ti.trs + '/100',
+          _lxBe(ti.trs_label),
+          ti.trs_color,
+          ti.trs,
+          ti.trs_color,
+          ti.primary_limiters && ti.primary_limiters.length
+            ? _lxBeList(ti.primary_limiters).join(', ')
+            : _t('bl_no_limiters', 'Sin limitantes activos'),
+        );
 
-// ══════════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════════
-(function init(){
-  var tok = apiToken();
-  if(!tok) return;
+        var okN = sm ? sm.markers_ok : 0,
+          totalN = sm ? sm.total_markers : 0;
+        setKpi(
+          'markers',
+          totalN || '—',
+          sm
+            ? sm.markers_critical +
+                ' ' +
+                _t('bl_critical_label', 'críticos') +
+                ' · ' +
+                sm.markers_warning +
+                ' ' +
+                _t('bl_badge_limit', 'límite')
+            : '',
+          '',
+          totalN ? Math.round((okN / totalN) * 100) : 0,
+          'var(--green)',
+          sm
+            ? sm.markers_ok + ' ' + _t('bl_markers_optimal', 'en rango óptimo')
+            : '',
+        );
 
-  Promise.all([
-    loadMarkersCatalog(),
-    loadExamsList(),
-    loadSummary(),
-    loadAlertsList(),
-    loadTrainingImpact(),
-    loadTimeline(),
-    loadCorrelationOverlay(),
-    loadStatCorrelations(),
-  ]).then(function(){
-    buildForm();
-    if(EXAMS.length){
-      CUR_EXAM_ID = EXAMS[0].id;
-      CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
-    }
-    buildExamSelectors();
-    return renderAll();
-  }).catch(function(e){
-    console.error('blood_labs init error', e);
-  });
-})();
-</script>
-<script src="auth.js"></script>
-<script>KL.guard('blood_labs');</script>
-<script src="nav.js?v=4"></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="lx-audit.js"></script>
-</body>
+        var nextDays = sm ? sm.next_recommended_in_days : null;
+        var overdue = nextDays != null && nextDays <= 0;
+        setKpi(
+          'next',
+          nextDays != null ? nextDays + 'd' : '—',
+          overdue ? _t('bl_overdue', 'Vencido') : _t('bl_on_track', 'En plazo'),
+          overdue ? 'var(--red)' : 'var(--green)',
+          nextDays != null
+            ? Math.max(0, Math.min(100, 100 - (nextDays / 90) * 100))
+            : 0,
+          'var(--cyan)',
+          sm
+            ? _t('bl_last_exam_on', 'Último examen:') + ' ' + sm.latest_date
+            : '',
+        );
+
+        var lines = [];
+        lines.push(
+          '<strong style="color:var(--text)">' +
+            _t('bl_disciplines', 'Disciplinas') +
+            ':</strong> ' +
+            (ti.disciplines || [])
+              .map(function (d) {
+                var nt = _lxBeList(d.notes).join('; ');
+                return (
+                  esc(discLabel(d.discipline)) +
+                  ' ' +
+                  (d.allowed ? '✅' : '⛔') +
+                  (nt ? ' — ' + esc(nt) : '')
+                );
+              })
+              .join(' · '),
+        );
+        if (ti.supplements && ti.supplements.length)
+          lines.push(
+            '<strong style="color:var(--text)">' +
+              _t('bl_supplements', 'Suplementación') +
+              ':</strong> ' +
+              ti.supplements
+                .map(function (x) {
+                  return esc(suppLabel(x));
+                })
+                .join(', '),
+          );
+        if (ti.key_actions && ti.key_actions.length)
+          lines.push(
+            '<strong style="color:var(--text)">' +
+              _t('bl_key_actions', 'Acciones clave') +
+              ':</strong><br>' +
+              ti.key_actions
+                .map(function (a) {
+                  return '• ' + esc(_lxBe(a));
+                })
+                .join('<br>'),
+          );
+        if (ti.medical_referral)
+          lines.push(
+            '<span style="color:var(--red)">⚠️ ' +
+              esc(
+                _lxBe(ti.medical_reason) ||
+                  _t('bl_medical_referral', 'Se recomienda evaluación médica.'),
+              ) +
+              '</span>',
+          );
+        document.getElementById('clinical-summary').innerHTML =
+          lines.join('<br><br>');
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // EXAMEN SELECCIONADO: radar + tabla + interpretación IA
+      // (GET /labs/exams/{id} — análisis por marcador ya calculado server-side)
+      // ══════════════════════════════════════════════════════════════
+      function renderExamDependent() {
+        if (!CUR_EXAM_ID) return Promise.resolve();
+        var tasks = [loadExamDetail(CUR_EXAM_ID)];
+        if (CUR_COMP_ID) tasks.push(loadExamDetail(CUR_COMP_ID));
+        return Promise.all(tasks).then(function (results) {
+          var cur = results[0],
+            comp = results[1] || null;
+          document.getElementById('exam-ctx-lbl').textContent =
+            (_lxBe(cur.lab_name) || '') + ' · ' + (cur.context || '');
+          var aiBox = document.getElementById('ai-interpretation-box');
+          aiBox.textContent =
+            cur.ai_interpretation && cur.ai_interpretation.text
+              ? cur.ai_interpretation.text
+              : '—';
+          renderRadar(cur);
+          renderBMTable(cur, comp);
+        });
+      }
+
+      function renderRadar(exam) {
+        var cm = catMeta();
+        var byCat = {};
+        CAT_ORDER.forEach(function (c) {
+          byCat[c] = [];
+        });
+        Object.keys(exam.markers || {}).forEach(function (k) {
+          var m = exam.markers[k];
+          if (m.cat && byCat[m.cat])
+            byCat[m.cat].push(m.pct != null ? m.pct : 50);
+        });
+        var labels = [],
+          data = [];
+        CAT_ORDER.forEach(function (c) {
+          if (!byCat[c].length) return;
+          labels.push(cm[c].icon + ' ' + cm[c].label);
+          data.push(
+            Math.round(
+              byCat[c].reduce(function (a, b) {
+                return a + b;
+              }, 0) / byCat[c].length,
+            ),
+          );
+        });
+        if (CH.radar) CH.radar.destroy();
+        if (!labels.length) return;
+        CH.radar = new Chart(document.getElementById('ch-radar'), {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: _t('bl_biochem_score', 'Score bioquímico'),
+                data: data,
+                backgroundColor: 'rgba(14,165,233,.12)',
+                borderColor: 'rgba(14,165,233,.7)',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#0EA5E9',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                min: 0,
+                max: 100,
+                ticks: { display: false, stepSize: 25 },
+                grid: { color: 'rgba(8,116,174,.18)' },
+                pointLabels: {
+                  color: '#7FB3CC',
+                  font: { family: 'Oswald', size: 11, weight: '600' },
+                },
+                angleLines: { color: 'rgba(8,116,174,.12)' },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (c) {
+                    return c.label + ': ' + c.raw + '/100';
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function renderBMTable(cur, comp) {
+        var cm = catMeta();
+        var curM = cur.markers || {};
+        var compM = comp ? comp.markers || {} : {};
+        var html = '';
+        CAT_ORDER.forEach(function (cat) {
+          var keys = Object.keys(curM).filter(function (k) {
+            return curM[k].cat === cat;
+          });
+          if (!keys.length) return;
+          html += '<div class="bm-category panel">';
+          html +=
+            '<div class="bm-cat-head" onclick="toggleCat(this)">' +
+            cm[cat].icon +
+            ' ' +
+            cm[cat].label +
+            ' <span style="margin-left:auto;opacity:.5;font-size:.85em;font-weight:400">▾</span></div>';
+          html += '<div class="bm-cat-body">';
+          html +=
+            '<table class="bm-t"><thead><tr><th>' +
+            _t('bl_th_marker', 'Marcador') +
+            '</th>';
+          if (comp) html += '<th>' + comp.date_iso + '</th>';
+          html +=
+            '<th>' +
+            cur.date_iso +
+            '</th><th>Δ</th><th>' +
+            _t('bl_th_status', 'Estado') +
+            '</th></tr></thead><tbody>';
+          keys.forEach(function (k) {
+            var m = curM[k],
+              cv = compM[k];
+            var delta = '<span class="delta-no">—</span>';
+            if (cv && cv.value != null && m.value != null && cv.value !== 0) {
+              var dp = ((m.value - cv.value) / Math.abs(cv.value)) * 100;
+              delta =
+                '<span class="bm-delta ' +
+                (dp > 0 ? 'delta-up' : 'delta-dn') +
+                '">' +
+                (dp > 0 ? '▲' : '▼') +
+                ' ' +
+                Math.abs(dp).toFixed(1) +
+                '%</span>';
+            }
+            var sg = statusGrade(m.status);
+            html += '<tr>';
+            html +=
+              '<td><div class="bm-name">' +
+              esc(_lxBe(m.name)) +
+              '</div><div class="bm-unit">' +
+              esc(m.unit) +
+              '</div></td>';
+            if (comp)
+              html +=
+                '<td class="bm-val" style="color:var(--dim)">' +
+                (cv && cv.value != null ? cv.value : '—') +
+                '</td>';
+            html +=
+              '<td class="bm-val" style="color:' +
+              sg.color +
+              '">' +
+              (m.value != null ? m.value : '—') +
+              '</td>';
+            html += '<td>' + delta + '</td>';
+            html +=
+              '<td><span class="badge ' +
+              sg.badge +
+              '">' +
+              sg.icon +
+              ' ' +
+              sg.label +
+              '</span></td>';
+            html += '</tr>';
+            if (m.tip)
+              html +=
+                '<tr><td colspan="' +
+                (comp ? 5 : 4) +
+                '" class="bm-note">📋 ' +
+                esc(_lxBe(m.tip)) +
+                '</td></tr>';
+          });
+          html += '</tbody></table></div></div>';
+        });
+        document.getElementById('bm-table-container').innerHTML =
+          html ||
+          '<p style="color:var(--dim);font-size:.8rem">' +
+            _t('bl_no_markers', 'Sin marcadores en este examen.') +
+            '</p>';
+      }
+
+      function toggleCat(head) {
+        var body = head.nextElementSibling;
+        var isOpen =
+          body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+        if (isOpen) {
+          body.style.maxHeight = '0';
+          body.style.overflow = 'hidden';
+        } else {
+          body.style.maxHeight = body.scrollHeight + 'px';
+          body.style.overflow = 'visible';
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // INTERPRETACIÓN IA (POST /labs/exams/{id}/analyze)
+      // ══════════════════════════════════════════════════════════════
+      function runAiAnalysis() {
+        if (!CUR_EXAM_ID) return;
+        var btn = document.getElementById('btn-ai-analyze');
+        var box = document.getElementById('ai-interpretation-box');
+        btn.disabled = true;
+        btn.style.opacity = 0.6;
+        box.textContent = _t(
+          'bl_ai_loading',
+          'Generando interpretación con IA — puede tomar unos segundos…',
+        );
+        apiPost('/labs/exams/' + CUR_EXAM_ID + '/analyze', {})
+          .then(function (d) {
+            box.textContent = d.interpretation || '—';
+            delete EXAM_DETAIL[CUR_EXAM_ID];
+          })
+          .catch(function (err) {
+            box.textContent =
+              '⚠️ ' +
+              _t('bl_ai_failed', 'No se pudo generar la interpretación.') +
+              (err && err.errors && err.errors[0]
+                ? ' ' + err.errors[0].message
+                : '');
+          })
+          .then(function () {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+          });
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // TENDENCIAS (GET /labs/timeline)
+      // ══════════════════════════════════════════════════════════════
+      var TIMELINE_MARKERS = {
+        ferritin: { label: 'Ferritina', unit: 'ng/mL' },
+        hemoglobin: { label: 'Hemoglobina', unit: 'g/dL' },
+        cortisol: { label: 'Cortisol', unit: 'μg/dL' },
+        vitamin_d: { label: 'Vitamina D', unit: 'ng/mL' },
+        ck: { label: 'CK', unit: 'U/L' },
+        hba1c: { label: 'HbA1c', unit: '%' },
+        urea: { label: 'Urea', unit: 'mmol/L' },
+      };
+
+      function renderTrendsTab() {
+        var info = document.getElementById('trends-stabs-bar');
+        var container = document.getElementById('trend-content');
+        var tl = TIMELINE && TIMELINE.timeline ? TIMELINE.timeline : [];
+        Object.keys(CH)
+          .filter(function (k) {
+            return k.indexOf('tr-') === 0;
+          })
+          .forEach(function (k) {
+            CH[k].destroy();
+            delete CH[k];
+          });
+
+        if (tl.length < 2) {
+          info.innerHTML = '';
+          container.innerHTML =
+            '<p style="font-size:.8rem;color:var(--dim)">' +
+            _t(
+              'bl_no_data_category',
+              'Sin suficientes exámenes para ver tendencias (mínimo 2).',
+            ) +
+            '</p>';
+          return;
+        }
+        var dr = TIMELINE.date_range || {};
+        info.innerHTML =
+          '<span style="font-size:.72rem;color:var(--dim);padding:.3rem .6rem">' +
+          tl.length +
+          ' ' +
+          _t('bl_exams_label', 'exámenes') +
+          ' · ' +
+          (dr.from || '') +
+          ' → ' +
+          (dr.to || '') +
+          '</span>';
+
+        var dates = tl.map(function (t) {
+          return t.exam_date;
+        });
+        var available = Object.keys(TIMELINE_MARKERS).filter(function (k) {
+          return tl.some(function (t) {
+            return t[k] != null;
+          });
+        });
+        if (!available.length) {
+          container.innerHTML =
+            '<p style="font-size:.8rem;color:var(--dim)">' +
+            _t('bl_no_data_category', 'Sin datos para graficar.') +
+            '</p>';
+          return;
+        }
+
+        container.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem">' +
+          available
+            .map(function (k) {
+              return (
+                '<div class="ch-box"><div class="ch-title">' +
+                TIMELINE_MARKERS[k].label +
+                '</div><div class="ch-sub">' +
+                TIMELINE_MARKERS[k].unit +
+                '</div>' +
+                '<div style="position:relative;height:160px"><canvas id="trend-' +
+                k +
+                '"></canvas></div></div>'
+              );
+            })
+            .join('') +
+          '</div>';
+
+        available.forEach(function (k) {
+          var vals = tl.map(function (t) {
+            return t[k] != null ? t[k] : null;
+          });
+          var canvas = document.getElementById('trend-' + k);
+          if (!canvas) return;
+          CH['tr-' + k] = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: dates,
+              datasets: [
+                {
+                  label: TIMELINE_MARKERS[k].label,
+                  data: vals,
+                  borderColor: '#0EA5E9',
+                  backgroundColor: 'rgba(14,165,233,.06)',
+                  pointBackgroundColor: '#0EA5E9',
+                  pointBorderColor: '#fff',
+                  pointRadius: 6,
+                  borderWidth: 2.5,
+                  fill: false,
+                  tension: 0.3,
+                  spanGaps: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      return c.parsed.y + ' ' + TIMELINE_MARKERS[k].unit;
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  ticks: { color: '#3D6880', font: { size: 9 } },
+                  grid: { color: 'rgba(8,116,174,.06)' },
+                },
+                y: {
+                  ticks: { color: '#3D6880', font: { size: 9 } },
+                  grid: { color: 'rgba(8,116,174,.08)' },
+                },
+              },
+            },
+          });
+        });
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // CORRELACIÓN GARMIN (GET /labs/correlation)
+      // ══════════════════════════════════════════════════════════════
+      function renderGarminTab() {
+        var rows = CORR || [];
+        if (CH.ctlOverlay) {
+          CH.ctlOverlay.destroy();
+          CH.ctlOverlay = null;
+        }
+        var canvas = document.getElementById('ch-ctl-overlay');
+        if (!rows.length) {
+          if (canvas)
+            canvas
+              .getContext('2d')
+              .clearRect(0, 0, canvas.width, canvas.height);
+        } else if (canvas) {
+          var dates = rows.map(function (r) {
+            return r.date_iso;
+          });
+          CH.ctlOverlay = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: dates,
+              datasets: [
+                {
+                  label: 'CTL',
+                  data: rows.map(function (r) {
+                    return r.ctl;
+                  }),
+                  borderColor: '#10B981',
+                  pointRadius: 6,
+                  borderWidth: 2.5,
+                  fill: false,
+                  tension: 0.3,
+                  spanGaps: true,
+                },
+                {
+                  label: 'ATL',
+                  data: rows.map(function (r) {
+                    return r.atl;
+                  }),
+                  borderColor: '#FF6535',
+                  pointRadius: 6,
+                  borderWidth: 2,
+                  fill: false,
+                  tension: 0.3,
+                  spanGaps: true,
+                  borderDash: [5, 3],
+                },
+                {
+                  label: 'TSB',
+                  data: rows.map(function (r) {
+                    return r.tsb;
+                  }),
+                  borderColor: '#F0A500',
+                  pointRadius: 6,
+                  borderWidth: 2,
+                  fill: false,
+                  tension: 0.3,
+                  spanGaps: true,
+                  borderDash: [2, 2],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: {
+                    color: '#7FB3CC',
+                    font: { family: 'Oswald', size: 11 },
+                    boxWidth: 12,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  ticks: { color: '#3D6880', font: { size: 10 } },
+                  grid: { color: 'rgba(8,116,174,.06)' },
+                },
+                y: {
+                  ticks: { color: '#3D6880', font: { size: 10 } },
+                  grid: { color: 'rgba(8,116,174,.08)' },
+                },
+              },
+            },
+          });
+        }
+
+        var allKeys = {};
+        rows.forEach(function (r) {
+          Object.keys(r.values || {}).forEach(function (k) {
+            allKeys[k] = true;
+          });
+        });
+        var keys = Object.keys(allKeys);
+        document.getElementById('corr-thead').innerHTML =
+          '<th>' +
+          _t('bl_th_date', 'Fecha') +
+          '</th>' +
+          keys
+            .map(function (k) {
+              return (
+                '<th>' +
+                esc((MARKERS_CATALOG[k] && MARKERS_CATALOG[k].name) || k) +
+                '</th>'
+              );
+            })
+            .join('') +
+          '<th>CTL</th>';
+        document.getElementById('corr-tbody').innerHTML = rows.length
+          ? rows
+              .map(function (r) {
+                return (
+                  '<tr><td class="corr-bm">' +
+                  r.date_iso +
+                  '</td>' +
+                  keys
+                    .map(function (k) {
+                      var v = (r.values || {})[k];
+                      return '<td>' + (v != null ? v : '—') + '</td>';
+                    })
+                    .join('') +
+                  '<td>' +
+                  (r.ctl != null ? r.ctl : '—') +
+                  '</td></tr>'
+                );
+              })
+              .join('')
+          : '<tr><td colspan="99" style="color:var(--dim)">' +
+            _t('bl_no_exams', 'Sin exámenes.') +
+            '</td></tr>';
+
+        renderStatCorrelations();
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // CORRELACIONES ESTADÍSTICAS (GET /labs/correlations + IA)
+      // ══════════════════════════════════════════════════════════════
+      function renderStatCorrelations() {
+        var el = document.getElementById('stat-corr-content');
+        var sc = STAT_CORR;
+        if (!sc || sc.message) {
+          el.innerHTML =
+            '<p style="font-size:.8rem;color:var(--dim)">' +
+            (sc && sc.message
+              ? esc(_lxBe(sc.message))
+              : _t(
+                  'bl_no_data_category',
+                  'Sin suficientes exámenes para calcular correlaciones (mínimo 3).',
+                )) +
+            '</p>';
+          return;
+        }
+        var html = '';
+
+        if (sc.insights && sc.insights.length) {
+          html +=
+            '<div class="alert-box alert-ok" style="margin-bottom:1rem"><div class="alert-title">💡 ' +
+            _t('bl_insights', 'Insights') +
+            '</div>' +
+            sc.insights
+              .map(function (i) {
+                return (
+                  '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">' +
+                  esc(_lxBe(i)) +
+                  '</p>'
+                );
+              })
+              .join('') +
+            '</div>';
+        }
+
+        if (sc.correlations && sc.correlations.length) {
+          html +=
+            '<div class="panel" style="margin-bottom:1rem"><div class="panel-body">' +
+            '<table class="corr-t"><thead><tr><th>' +
+            _t('bl_th_biomarker', 'Biomarcador') +
+            '</th><th>' +
+            _t('bl_th_signal', 'Métrica') +
+            '</th><th>r</th><th>' +
+            _t('bl_th_expected_corr', 'Interpretación') +
+            '</th></tr></thead><tbody>' +
+            sc.correlations
+              .map(function (c) {
+                var color = c.abs_r >= 0.7 ? 'var(--red)' : 'var(--amber)';
+                return (
+                  '<tr><td class="corr-bm">' +
+                  esc(_lxBe(c.marker_label)) +
+                  '</td><td style="color:var(--muted)">' +
+                  esc(_lxBe(c.metric_label)) +
+                  '</td>' +
+                  '<td style="color:' +
+                  color +
+                  ';font-weight:700">' +
+                  c.r.toFixed(2) +
+                  '</td>' +
+                  '<td style="color:var(--muted)">' +
+                  esc(_lxBe(c.interpretation)) +
+                  '</td></tr>'
+                );
+              })
+              .join('') +
+            '</tbody></table></div></div>';
+        } else {
+          html +=
+            '<p style="font-size:.8rem;color:var(--dim);margin-bottom:1rem">' +
+            _t(
+              'bl_no_strong_correlations',
+              'No se detectaron correlaciones estadísticamente significativas todavía (requiere más historial).',
+            ) +
+            '</p>';
+        }
+
+        html +=
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">' +
+          '<button class="btn btn-g btn-sm" id="btn-stat-ai" onclick="runStatCorrelationAi()">✨ ' +
+          _t('bl_ai_run', 'Generar interpretación') +
+          '</button></div>' +
+          '<div class="panel"><div class="panel-body" id="stat-ai-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">' +
+          (sc.ai_narrative ? esc(sc.ai_narrative) : '—') +
+          '</div></div>';
+
+        el.innerHTML = html;
+      }
+
+      function runStatCorrelationAi() {
+        var btn = document.getElementById('btn-stat-ai');
+        var box = document.getElementById('stat-ai-box');
+        if (!btn || !box) return;
+        btn.disabled = true;
+        btn.style.opacity = 0.6;
+        box.textContent = _t(
+          'bl_ai_loading',
+          'Generando interpretación con IA — puede tomar unos segundos…',
+        );
+        apiPost('/labs/correlations/ai-interpretation', {})
+          .then(function (d) {
+            STAT_CORR = d;
+            box.textContent = d.ai_narrative || '—';
+          })
+          .catch(function () {
+            box.textContent =
+              '⚠️ ' +
+              _t('bl_ai_failed', 'No se pudo generar la interpretación.');
+          })
+          .then(function () {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+          });
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // REGISTRAR EXAMEN (GET /labs/markers → form dinámico, POST /labs/exams)
+      // ══════════════════════════════════════════════════════════════
+      function buildForm() {
+        var cm = catMeta();
+        var byCat = {};
+        CAT_ORDER.forEach(function (c) {
+          byCat[c] = [];
+        });
+        Object.keys(MARKERS_CATALOG).forEach(function (k) {
+          var m = MARKERS_CATALOG[k];
+          if (byCat[m.cat]) byCat[m.cat].push(m);
+        });
+        var html = '',
+          guide = '';
+        CAT_ORDER.forEach(function (cat) {
+          var markers = byCat[cat];
+          if (!markers.length) return;
+          html +=
+            '<div class="form-cat-head">' +
+            cm[cat].icon +
+            ' ' +
+            cm[cat].label +
+            '</div><div class="form-grid">';
+          guide +=
+            '<p style="font-family:\'Oswald\',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.9rem 0 .3rem">' +
+            cm[cat].icon +
+            ' ' +
+            cm[cat].label +
+            '</p>';
+          markers.forEach(function (m) {
+            html +=
+              '<div class="form-field"><label class="form-label">' +
+              esc(m.name) +
+              ' (' +
+              esc(m.unit) +
+              ')</label>' +
+              '<input type="number" step="any" class="form-input" id="fi-' +
+              m.key +
+              '"></div>';
+            guide +=
+              '<p><strong style="color:var(--text)">' +
+              esc(m.name) +
+              '</strong> (' +
+              esc(m.unit) +
+              ')</p>';
+          });
+          html += '</div>';
+        });
+        document.getElementById('form-cats-container').innerHTML = html;
+        document.getElementById('guide-panel').innerHTML = guide;
+        document.getElementById('inp-date').value = new Date()
+          .toISOString()
+          .slice(0, 10);
+      }
+
+      function saveExam() {
+        var dateVal = document.getElementById('inp-date').value;
+        if (!dateVal) {
+          showSaveMsg(
+            '⚠️ ' + _t('bl_select_date', 'Selecciona la fecha del examen'),
+            'err',
+          );
+          return;
+        }
+        var values = {};
+        Object.keys(MARKERS_CATALOG).forEach(function (k) {
+          var el = document.getElementById('fi-' + k);
+          if (el && el.value !== '') values[k] = parseFloat(el.value);
+        });
+        if (!Object.keys(values).length) {
+          showSaveMsg(
+            '⚠️ ' +
+              _t('bl_enter_one_value', 'Ingresa al menos un valor de marcador'),
+            'err',
+          );
+          return;
+        }
+
+        apiPost('/labs/exams', {
+          date_iso: dateVal,
+          values: values,
+          lab_name: document.getElementById('inp-lab').value || null,
+          context: document.getElementById('inp-ctx').value || null,
+        })
+          .then(function (resp) {
+            return refreshAfterChange().then(function () {
+              CUR_EXAM_ID = resp.exam_id;
+              CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+              buildExamSelectors();
+              return renderAll();
+            });
+          })
+          .then(function () {
+            showSaveMsg(
+              '✅ ' +
+                _t(
+                  'bl_exam_saved',
+                  'Examen del {date} guardado con {n} marcadores.',
+                )
+                  .replace('{date}', dateVal)
+                  .replace('{n}', Object.keys(values).length),
+              'ok',
+            );
+          })
+          .catch(function () {
+            showSaveMsg(
+              '⚠️ ' +
+                _t(
+                  'bl_save_failed',
+                  'No se pudo guardar el examen — revisá tu conexión e intentá de nuevo.',
+                ),
+              'err',
+            );
+          });
+      }
+
+      function clearForm() {
+        Object.keys(MARKERS_CATALOG).forEach(function (k) {
+          var el = document.getElementById('fi-' + k);
+          if (el) el.value = '';
+        });
+        document.getElementById('inp-lab').value = '';
+        document.getElementById('inp-ctx').value = '';
+        document.getElementById('save-msg').style.display = 'none';
+      }
+
+      function showSaveMsg(msg, type) {
+        var el = document.getElementById('save-msg');
+        el.className = 'save-msg save-' + (type === 'ok' ? 'ok' : 'err');
+        el.style.display = 'flex';
+        el.textContent = msg;
+        setTimeout(function () {
+          el.style.display = 'none';
+        }, 5000);
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // TABS + SCROLL ANIMATIONS
+      // ══════════════════════════════════════════════════════════════
+      function switchTab(id, btn) {
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          b.classList.remove('on');
+        });
+        document.querySelectorAll('.tab-pane').forEach(function (p) {
+          p.classList.remove('on');
+        });
+        btn.classList.add('on');
+        document.getElementById('tab-' + id).classList.add('on');
+      }
+
+      var io = new IntersectionObserver(
+        function (e) {
+          e.forEach(function (x) {
+            if (x.isIntersecting) x.target.classList.add('vis');
+          });
+        },
+        { threshold: 0.08 },
+      );
+      document.querySelectorAll('.sr').forEach(function (el) {
+        io.observe(el);
+      });
+
+      // ══════════════════════════════════════════════════════════════
+      // INIT
+      // ══════════════════════════════════════════════════════════════
+      (function init() {
+        var tok = apiToken();
+        if (!tok) return;
+
+        Promise.all([
+          loadMarkersCatalog(),
+          loadExamsList(),
+          loadSummary(),
+          loadAlertsList(),
+          loadTrainingImpact(),
+          loadTimeline(),
+          loadCorrelationOverlay(),
+          loadStatCorrelations(),
+        ])
+          .then(function () {
+            buildForm();
+            if (EXAMS.length) {
+              CUR_EXAM_ID = EXAMS[0].id;
+              CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+            }
+            buildExamSelectors();
+            return renderAll();
+          })
+          .catch(function (e) {
+            console.error('blood_labs init error', e);
+          });
+      })();
+    </script>
+    <script src="auth.js"></script>
+    <script>
+      KL.guard('blood_labs');
+    </script>
+    <script src="nav.js?v=4"></script>
+    <script src="footer.js"></script>
+    <script src="dash-header.js"></script>
+    <script src="lx-upgrade.js"></script>
+    <script src="lx-audit.js"></script>
+  </body>
 </html>
-

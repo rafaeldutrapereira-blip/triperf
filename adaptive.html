@@ -1,807 +1,2098 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8"><script src="routes.config.js?v=8"></script><script>LX_ROUTES.guard();</script>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabX — Plan Adaptativo</title>
-<script>try{var _k=JSON.parse(sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||'null');if(!_k)throw 0}catch(e){location.replace('login.html')}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme-vars.css">
-<script src="i18n.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--amber:#F59E0B;--blue:#1D4ED8;}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
-a{color:inherit;text-decoration:none}ul{list-style:none}
-.c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
-.btn{display:inline-flex;align-items:center;gap:.45rem;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:6px;border:none;cursor:pointer;transition:all var(--ease)}
-.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-sm{padding:.42rem .95rem;font-size:.74rem}
-.btn-primary{background:var(--purple);color:#fff}.btn-primary:hover{opacity:.88}
-.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.88}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.panel-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
-.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.05em;display:flex;align-items:center;gap:.5rem}
-.sr{opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease),transform .5s var(--ease)}.vis{opacity:1;transform:none}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
-@media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:720px){.g3,.g2,.g4{grid-template-columns:1fr}}
-.mt2{margin-top:1.5rem}.mt3{margin-top:2rem}
-.sec-h{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
-
-/* ── PAGE HEADER ── */
-.ph{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}
-.ph-inner{padding:1.6rem 0 1.4rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
-.ph-eye{font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem}
-.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
-.ph-sub{font-family:'Oswald',sans-serif;font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin-top:.35rem}
-
-/* ── SIGNAL BANNER ── */
-.signal-banner{border-radius:10px;padding:1.1rem 1.4rem;border:1.5px solid;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
-.signal-banner.increase{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.4)}
-.signal-banner.maintain{background:rgba(16,185,129,.05);border-color:rgba(16,185,129,.3)}
-.signal-banner.decrease{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.3)}
-.signal-banner.taper{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.3)}
-.signal-banner.rest{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.3)}
-.signal-label{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
-.signal-reason{font-size:.8rem;color:var(--muted);line-height:1.5;flex:1;min-width:200px}
-
-/* ── PHASE BANNER ── */
-.phase-banner{border-radius:10px;padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem}
-.phase-banner.base    {background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3)}
-.phase-banner.build   {background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.3)}
-.phase-banner.peak    {background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.3)}
-.phase-banner.taper   {background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.3)}
-.phase-banner.recovery{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.3)}
-.phase-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800}
-.phase-countdown{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1}
-.phase-prog{display:flex;align-items:center;gap:.6rem;flex:1}
-.phase-prog-bar{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
-.phase-prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
-
-/* ── TABS ── */
-.tabs-bar{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;flex-wrap:wrap}
-.tab-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.38rem 1rem;border-radius:6px;color:var(--dim);transition:all var(--ease);white-space:nowrap}
-.tab-btn.on{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.tab-pane{display:none}.tab-pane.on{display:block}
-
-/* ── SESSION CARD ── */
-.session-card{border-radius:10px;padding:.85rem 1rem;border:1px solid var(--border2);margin-bottom:.5rem;display:grid;grid-template-columns:65px 1fr auto;gap:.75rem;align-items:start;transition:border-color .2s}
-.session-card:hover{border-color:var(--border)}
-.session-card.adapted{border-left:3px solid var(--amber)}
-.session-card.window{border-left:3px solid var(--purple)}
-.session-card.rest-day{opacity:.55}
-.session-day{font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding-top:.1rem}
-.session-date{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted)}
-.session-name{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
-.session-detail{font-size:.75rem;color:var(--muted);line-height:1.4}
-.session-reason{font-size:.7rem;color:var(--amber);line-height:1.35;margin-top:.3rem;font-style:italic}
-.session-window-badge{font-size:.65rem;font-weight:700;font-family:'Oswald',sans-serif;letter-spacing:.08em;color:var(--purple);background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);padding:.15rem .45rem;border-radius:4px;margin-top:.25rem;display:inline-block}
-.session-tss{text-align:right}
-.tss-n{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;line-height:1}
-.tss-orig{font-size:.65rem;color:var(--dim);text-decoration:line-through}
-.tss-l{font-family:'Oswald',sans-serif;font-size:.55rem;letter-spacing:.08em;color:var(--dim)}
-.session-actions{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
-.accept-btn{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.08);color:var(--green);cursor:pointer;transition:all .15s}
-.accept-btn:hover{background:rgba(16,185,129,.2)}
-.reject-btn{font-size:.62rem;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.05);color:var(--red);cursor:pointer;transition:all .15s}
-.reject-btn:hover{background:rgba(239,68,68,.15)}
-.accepted-badge{font-size:.62rem;font-family:'Oswald',sans-serif;color:var(--green);letter-spacing:.08em}
-.rejected-badge{font-size:.62rem;font-family:'Oswald',sans-serif;color:var(--dim);letter-spacing:.08em}
-
-/* ── KPI box ── */
-.kpi-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center}
-.kpi-n{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1}
-.kpi-l{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
-.kpi-s{font-size:.68rem;color:var(--muted);margin-top:.06rem}
-
-/* ── COMPLIANCE CHART ── */
-.comp-hd{display:flex;align-items:center;gap:.4rem;margin-bottom:.85rem;position:relative}
-.comp-title{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800}
-.comp-sub{font-size:.74rem;color:var(--muted);margin-top:.1rem}
-.comp-week{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:1.6rem}
-.comp-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:.35rem;flex:1;min-width:26px;height:100%;justify-content:flex-end}
-.comp-bar-pct{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;white-space:nowrap}
-.comp-bar{width:100%;border-radius:3px 3px 0 0;transition:height .6s ease}
-.comp-label{font-family:'Oswald',sans-serif;font-size:.6rem;color:var(--dim);letter-spacing:.05em;white-space:nowrap;margin-top:.15rem}
-
-/* ── TAPER CARD ── */
-.taper-day{display:grid;grid-template-columns:100px 80px 1fr;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--border2);align-items:center;font-size:.78rem}
-.taper-day:last-child{border-bottom:none}
-.taper-date{color:var(--dim);font-size:.72rem}
-.taper-factor{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800}
-.taper-label{color:var(--muted)}
-
-/* ── PROJECTION CHART ── */
-.proj-row{display:grid;grid-template-columns:75px 1fr 55px 55px;gap:.5rem;align-items:center;padding:.3rem 0;font-size:.75rem;border-bottom:1px solid var(--border2)}
-.proj-row:last-child{border-bottom:none}
-.proj-date{color:var(--dim);font-size:.68rem}
-.proj-bar-wrap{background:var(--surface2);border-radius:2px;height:6px}
-.proj-fill{height:100%;border-radius:2px;background:var(--cyan);transition:width .6s}
-.proj-ctl{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-align:right}
-.proj-phase{font-family:'Oswald',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);text-align:right}
-
-/* ── ALERT CHIP ── */
-.alert-chip{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .9rem;border-radius:8px;font-size:.78rem;line-height:1.5;margin-bottom:.5rem}
-.alert-chip.info{background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.2);color:var(--muted)}
-.alert-chip.warn{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);color:var(--amber)}
-.alert-chip.good{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);color:var(--green)}
-
-footer{border-top:1px solid var(--border2);padding:1.5rem 0;text-align:center}
-footer div{font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--dim);letter-spacing:.1em}
-</style>
-<link rel="stylesheet" href="nav.css?v=3">
-<style>
-/* Modo embed (?embed=1): vista incrustada en otra página (plan, coach). */
-.lx-embed body{padding-left:0 !important}
-.lx-embed #sidebar, .lx-embed .sb-topbar{display:none !important}
-</style>
-<script>if(new URLSearchParams(location.search).get("embed")==="1"){document.documentElement.classList.add("lx-embed");}</script>
-</head>
-<body>
-
-<!-- SIDEBAR -->
-<aside id="sidebar"></aside>
-<header class="sb-topbar"></header>
-<div class="sb-overlay" id="sb-overlay"></div>
-
-<!-- PAGE HEADER -->
-<div class="ph">
-  <div class="c">
-    <div class="ph-inner">
-      <div></div>
-      <button class="btn btn-g btn-sm" onclick="loadDashboard()" data-i18n="adp_refresh">↻ Actualizar</button>
-    </div>
-  </div>
-</div>
-
-<div style="padding:2rem 0 5rem">
-<div class="c">
-
-<!-- ══ PHASE + SIGNAL BANNERS ══ -->
-<section class="sr" id="sec-banners">
-  <div id="phase-banner-wrap"></div>
-  <div id="signal-banner-wrap"></div>
-</section>
-
-<!-- ══ WEEK KPIs ══ -->
-<section class="sr mt2" id="sec-kpis">
-  <div class="g4" id="week-kpis"></div>
-</section>
-
-<!-- ══ TABS ══ -->
-<section class="sr mt2" id="sec-tabs">
-  <div class="panel">
-    <div class="panel-head">
-      <span class="panel-title">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        <span data-i18n="adp_title">Análisis Adaptativo</span>
-      </span>
-      <div class="tabs-bar">
-        <button class="tab-btn on" onclick="switchTab('week',this)">📅 <span data-i18n="adp_tab_week">Semana</span></button>
-        <button class="tab-btn" onclick="switchTab('compliance',this)">📊 <span data-i18n="adp_tab_compliance">Compliance</span></button>
-        <button class="tab-btn" onclick="switchTab('taper',this)">🏁 <span data-i18n="adp_tab_taper">Tapering</span></button>
-        <button class="tab-btn" onclick="switchTab('projections',this)">📈 <span data-i18n="adp_tab_projections">Proyección CTL</span></button>
-        <button class="tab-btn" onclick="switchTab('history',this)">📋 <span data-i18n="adp_tab_history">Historial</span></button>
-      </div>
-    </div>
-    <div style="padding:1.5rem">
-
-      <!-- ── TAB: SEMANA ── -->
-      <div class="tab-pane on" id="tab-week">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <button class="btn btn-g btn-sm" id="prev-week-btn" onclick="changeWeek(-1)" data-i18n="adp_prev_week">← Anterior</button>
-            <span id="week-label" style="font-family:'Oswald',sans-serif;font-size:.75rem;color:var(--muted);letter-spacing:.06em"></span>
-            <button class="btn btn-g btn-sm" id="next-week-btn" onclick="changeWeek(1)" data-i18n="adp_next_week">Siguiente →</button>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="acceptAllWeek()">✅ <span data-i18n="adp_accept_all_week">Aceptar toda la semana</span></button>
-        </div>
-        <div id="week-sessions"></div>
-        <div id="form-windows-week" style="margin-top:1rem"></div>
-      </div>
-
-      <!-- ── TAB: COMPLIANCE ── -->
-      <div class="tab-pane" id="tab-compliance">
-        <div class="g3" id="compliance-kpis" style="margin-bottom:1.5rem;gap:.75rem"></div>
-        <div class="comp-hd">
-          <div>
-            <div class="comp-title">📊 <span data-i18n="adp_compliance_title">Cumplimiento semanal</span></div>
-            <div class="comp-sub" data-i18n="adp_compliance_sub">TSS realmente completado vs. TSS planificado, últimas 8 semanas</div>
-          </div>
-          <span id="compliance-info-mount"></span>
-        </div>
-        <div id="compliance-chart" style="margin-bottom:1.2rem"></div>
-        <div id="compliance-insights"></div>
-      </div>
-
-      <!-- ── TAB: TAPERING ── -->
-      <div class="tab-pane" id="tab-taper">
-        <div id="taper-content">
-          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_taper">Cargando protocolo de tapering…</div>
-        </div>
-      </div>
-
-      <!-- ── TAB: PROYECCIÓN CTL ── -->
-      <div class="tab-pane" id="tab-projections">
-        <div id="projections-content">
-          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_projections">Cargando proyección…</div>
-        </div>
-      </div>
-
-      <!-- ── TAB: HISTORIAL ── -->
-      <div class="tab-pane" id="tab-history">
-        <div id="history-content">
-          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_history">Cargando historial de adaptaciones…</div>
-        </div>
-      </div>
-
-      <!-- ── TAB: COACH ── -->
-      <div class="tab-pane" id="tab-coach">
-        <div id="coach-queue-content">
-          <div style="color:var(--dim);font-size:.82rem" data-i18n="adp_loading_coach">Cargando cola de aprobaciones…</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-</div>
-</div>
-
-
-
-<script src="auth.js"></script>
-<script src="nav.js?v=4" defer></script>
-<script src="footer.js"></script>
-<script src="dash-header.js"></script>
-<script src="lx-upgrade.js"></script>
-<script src="lx-info.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  var _k   = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null') || {};
-  var API  = '/api';
-  var hdrs = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_k.token || '') };
-
-  function _t(key, fallback){ return (window.i18n ? window.i18n.t(key) : null) || fallback; }
-  function DAYS_ES(){ return [
-    _t('app_day_sun','Dom'), _t('app_day_mon','Lun'), _t('app_day_tue','Mar'), _t('app_day_wed','Mié'),
-    _t('app_day_thu','Jue'), _t('app_day_fri','Vie'), _t('app_day_sat','Sáb'),
-  ]; }
-  var PHASE_COLORS = { base:'#0EA5E9', build:'#F0A500', peak:'#EF4444', taper:'#22D3EE', recovery:'#10B981' };
-
-  // ── Current week state ────────────────────────────────────────────────────
-  var _weekOffset = 0;  // 0 = current week, -1 = prev, +1 = next
-
-  function _weekStart(offset) {
-    var today = new Date();
-    var mon   = new Date(today);
-    mon.setDate(today.getDate() - today.getDay() + 1 + offset * 7);
-    if (today.getDay() === 0) mon.setDate(mon.getDate() - 6 + offset * 7);
-    return mon.toISOString().slice(0, 10);
-  }
-
-  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
-
-  // ── Reveal on scroll ──────────────────────────────────────────────────────
-  function reveal() {
-    document.querySelectorAll('.sr').forEach(function (el) {
-      if (el.getBoundingClientRect().top < window.innerHeight * 0.93) el.classList.add('vis');
-    });
-  }
-  window.addEventListener('scroll', reveal, { passive: true });
-  setTimeout(reveal, 80);
-
-  // ── Tab switcher ──────────────────────────────────────────────────────────
-  window.switchTab = function (id, btn) {
-    document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('on'); });
-    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('on'); });
-    var pane = document.getElementById('tab-' + id);
-    if (pane) pane.classList.add('on');
-    if (btn)  btn.classList.add('on');
-
-    if      (id === 'compliance')  loadCompliance();
-    else if (id === 'taper')       loadTaper();
-    else if (id === 'projections') loadProjections();
-    else if (id === 'history')     loadHistory();
-    else if (id === 'coach')       loadCoachQueue();
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DASHBOARD
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadDashboard() {
-    fetch(API + '/adaptive/dashboard', { headers: hdrs })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        renderPhaseBanner(d.phase);
-        renderSignalBanner(d.today_adaptation);
-        renderWeekKpis(d.week, d.training_load);
-        renderFormWindows(d.form_windows || []);
-      })
-      .catch(function () {
-        document.getElementById('signal-banner-wrap').innerHTML =
-          '<div class="alert-chip warn">⚠️ ' + _t('adp_no_data_warn','Sin datos suficientes. Sincroniza tu Garmin y registra tu carrera objetivo.') + '</div>';
-      });
-    loadWeek();
-  }
-  window.loadDashboard = loadDashboard;
-
-  // ── Phase banner ────────────────────────────────────────────────────────
-  function renderPhaseBanner(phase) {
-    if (!phase) return;
-    var col  = PHASE_COLORS[phase.current] || 'var(--cyan)';
-    var pct  = phase.phase_week && phase.total_weeks
-      ? Math.round(phase.phase_week / phase.total_weeks * 100) : 0;
-
-    var html = '<div class="phase-banner ' + (phase.current || 'base') + '">' +
-      '<div>' +
-      '<div class="phase-name" style="color:' + col + '">' + (phase.phase_label || phase.current || '') + '</div>' +
-      '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' +
-        _t('adp_week_word','Semana') + ' ' + (phase.phase_week || 1) + ' ' + _t('adp_of_word','de') + ' ' + (phase.total_weeks || '—') +
-        (phase.race_name ? ' · ' + phase.race_name : '') +
-      '</div>' +
-      '<div class="phase-prog mt2" style="margin-top:.5rem;gap:.6rem;display:flex;align-items:center">' +
-        '<div class="phase-prog-bar" style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">' +
-          '<div class="phase-prog-fill" style="width:' + pct + '%;background:' + col + '"></div>' +
-        '</div>' +
-        '<span style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim)">' + pct + '%</span>' +
-      '</div>' +
-      '</div>' +
-      (phase.days_to_race !== null && phase.days_to_race !== undefined
-        ? '<div style="text-align:right">' +
-          '<div class="phase-countdown" style="color:' + col + '">' + phase.days_to_race + '</div>' +
-          '<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--dim)">' + _t('adp_days_label','DÍAS') + '</div>' +
-          '</div>'
-        : '') +
-      '</div>';
-    document.getElementById('phase-banner-wrap').innerHTML = html;
-  }
-
-  // ── Signal banner ────────────────────────────────────────────────────────
-  function renderSignalBanner(adap) {
-    if (!adap) return;
-    var sig  = adap.signal || 'maintain';
-    var html = '<div class="signal-banner ' + sig + '">' +
-      '<div>' +
-      '<div class="signal-label">' + (adap.signal_label || '') + '</div>' +
-      '<div style="font-size:.7rem;color:var(--dim);margin-top:.12rem;font-family:\'Oswald\',sans-serif;letter-spacing:.06em">' +
-        _t('adp_recovery_label','Recovery') + ': ' + (adap.recovery_score !== null ? adap.recovery_score : '—') + ' · ' +
-        'TSB: ' + (adap.tsb !== null ? (adap.tsb > 0 ? '+' : '') + Math.round(adap.tsb || 0) : '—') + ' · ' +
-        _t('adp_compliance7d_label','Compliance 7d') + ': ' + (adap.compliance_7d !== null ? Math.round((adap.compliance_7d || 0) * 100) + '%' : '—') +
-      '</div>' +
-      '</div>' +
-      '<div class="signal-reason">' + (adap.reason_text || '') + '</div>' +
-      '</div>';
-    document.getElementById('signal-banner-wrap').innerHTML = html;
-  }
-
-  // ── Week KPIs ─────────────────────────────────────────────────────────────
-  function renderWeekKpis(week, tl) {
-    if (!week) return;
-    var delta = week.tss_delta_pct || 0;
-    var deltaCol = delta < -5 ? 'var(--amber)' : (delta > 5 ? 'var(--purple)' : 'var(--green)');
-    var kpis = [
-      { label: _t('adp_kpi_tss_planned','TSS Planificado'), value: week.tss_planned,  color: 'var(--muted)',   sub: _t('adp_this_week','esta semana') },
-      { label: _t('adp_kpi_tss_adjusted','TSS Adaptado'),    value: week.tss_adjusted, color: 'var(--cyan)',    sub: (delta > 0 ? '+' : '') + delta + '%' },
-      { label: 'CTL',             value: tl && tl.ctl ? Math.round(tl.ctl) : '—',    color: 'var(--purple)',  sub: _t('adp_fitness_word','fitness') },
-      { label: 'TSB',             value: tl && tl.tsb !== null ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0) : '—', color: tl && (tl.tsb || 0) > 0 ? 'var(--green)' : 'var(--amber)', sub: _t('adp_form_word','forma') },
-    ];
-    document.getElementById('week-kpis').innerHTML = kpis.map(function (k) {
-      return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div>' +
-        '<div class="kpi-l">' + k.label + '</div>' +
-        '<div class="kpi-s" style="color:' + (k.sub && k.sub.includes('+') ? 'var(--purple)' : k.sub && k.sub.includes('-') ? 'var(--amber)' : 'var(--dim)') + '">' + (k.sub || '') + '</div></div>';
-    }).join('');
-  }
-
-  // ── Form windows ─────────────────────────────────────────────────────────
-  function renderFormWindows(windows) {
-    var el = document.getElementById('form-windows-week');
-    if (!windows || !windows.length) { el.innerHTML = ''; return; }
-    el.innerHTML = windows.map(function (w) {
-      return '<div class="alert-chip info">🎯 <strong>' + w.date_iso + '</strong> — ' + w.label + '</div>';
-    }).join('');
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WEEK PLAN
-  // ═══════════════════════════════════════════════════════════════════════════
-  var _weekAdaptations = [];
-
-  function loadWeek() {
-    var ws   = _weekStart(_weekOffset);
-    var url  = API + '/adaptive/week?week_start=' + ws;
-    fetch(url, { headers: hdrs })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        _weekAdaptations = d.adaptations || [];
-        renderWeekSessions(d);
-        updateWeekLabel(d.week_start, d.week_end);
-      })
-      .catch(function () {
-        document.getElementById('week-sessions').innerHTML = '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_week_data','Sin datos de plan para esta semana.') + '</div>';
-      });
-  }
-
-  function updateWeekLabel(start, end) {
-    var lbl = document.getElementById('week-label');
-    if (lbl) lbl.textContent = start + ' → ' + (end || '');
-  }
-
-  window.changeWeek = function (delta) {
-    _weekOffset += delta;
-    loadWeek();
-  };
-
-  window.acceptAllWeek = function () {
-    var today   = new Date().toISOString().slice(0, 10);
-    var pending = _weekAdaptations.filter(function (a) {
-      return a.signal !== 'maintain' && a.accepted === null && a.date_iso >= today;
-    });
-    if (!pending.length) { alert(_t('adp_no_pending_adaptations','No hay adaptaciones pendientes de aceptar esta semana.')); return; }
-    var promises = pending.map(function (a) {
-      return fetch(API + '/adaptive/accept/' + a.date_iso, { method: 'POST', headers: hdrs });
-    });
-    Promise.all(promises).then(function () { loadWeek(); }).catch(function () {});
-  };
-
-  function renderWeekSessions(d) {
-    var el       = document.getElementById('week-sessions');
-    var adaptations = d.adaptations || [];
-    if (!adaptations.length) {
-      el.innerHTML = '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_sessions_week','Sin sesiones planificadas esta semana.') + '</div>';
-      return;
-    }
-
-    var intensityColor = {
-      easy: '#10B981', moderate: '#F59E0B', hard: '#EF4444', race: '#EF4444', rest: '#3D6880'
-    };
-    var intensityLabel = {
-      easy: '🟢 ' + _t('adp_int_easy','Fácil'), moderate: '🟡 ' + _t('adp_int_moderate','Moderado'),
-      hard: '🟠 ' + _t('adp_int_hard','Intenso'), race: '🔴 ' + _t('adp_int_race','Carrera'),
-      rest: '⚪ ' + _t('adp_int_rest','Descanso'),
-    };
-
-    var days = DAYS_ES();
-    var html = '';
-    adaptations.forEach(function (a) {
-      var d_date  = new Date(a.date_iso + 'T12:00:00');
-      var dayName = days[d_date.getDay()];
-      var dayN    = d_date.getDate();
-      var isAdapted = a.signal && a.signal !== 'maintain';
-      var isWindow  = a.signal === 'increase';
-      var isRest    = a.signal === 'rest' || !a.adjusted_tss || a.adjusted_tss < 1;
-
-      var cardClass = 'session-card' +
-        (isAdapted ? ' adapted' : '') +
-        (isWindow  ? ' window'  : '') +
-        (isRest    ? ' rest-day': '');
-
-      var adjCol   = intensityColor[a.adjusted_intensity] || 'var(--muted)';
-      var adjLabel = intensityLabel[a.adjusted_intensity] || a.adjusted_intensity || '—';
-
-      var acceptState = '';
-      if (a.accepted === true)  acceptState = '<span class="accepted-badge">✅ ' + _t('adp_accepted_badge','ACEPTADO') + '</span>';
-      else if (a.accepted === false) acceptState = '<span class="rejected-badge">✗ ' + _t('adp_rejected_badge','RECHAZADO') + '</span>';
-      else if (isAdapted) {
-        acceptState = '<button class="accept-btn" onclick="acceptDay(\'' + a.date_iso + '\')">✅ ' + _t('adp_accept_btn','Aceptar') + '</button>' +
-                      '<button class="reject-btn" onclick="rejectDay(\'' + a.date_iso + '\')">✗ ' + _t('adp_reject_btn','Rechazar') + '</button>';
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=8"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Plan Adaptativo</title>
+    <script>
+      try {
+        var _k = JSON.parse(
+          sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s') ||
+            'null',
+        );
+        if (!_k) throw 0;
+      } catch (e) {
+        location.replace('login.html');
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <script src="i18n.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --amber: #f59e0b;
+        --blue: #1d4ed8;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      ul {
+        list-style: none;
+      }
+      .c {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 0.7rem 1.5rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all var(--ease);
+      }
+      .btn-g {
+        background: transparent;
+        color: var(--muted);
+        border: 1.5px solid var(--border);
+      }
+      .btn-g:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn-sm {
+        padding: 0.42rem 0.95rem;
+        font-size: 0.74rem;
+      }
+      .btn-primary {
+        background: var(--purple);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        opacity: 0.88;
+      }
+      .btn-green {
+        background: var(--green);
+        color: #fff;
+      }
+      .btn-green:hover {
+        opacity: 0.88;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .panel-head {
+        padding: 1rem 1.4rem;
+        border-bottom: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .panel-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .sr {
+        opacity: 0;
+        transform: translateY(20px);
+        transition:
+          opacity 0.5s var(--ease),
+          transform 0.5s var(--ease);
+      }
+      .vis {
+        opacity: 1;
+        transform: none;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+      }
+      .g4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+      @media (max-width: 1000px) {
+        .g4 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .g3 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .g3,
+        .g2,
+        .g4 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .mt2 {
+        margin-top: 1.5rem;
+      }
+      .mt3 {
+        margin-top: 2rem;
+      }
+      .sec-h {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 1rem;
       }
 
-      html += '<div class="' + cardClass + '" id="card-' + a.date_iso + '">' +
-        '<div>' +
-        '<div class="session-day">' + dayName + '</div>' +
-        '<div class="session-date" style="color:' + adjCol + '">' + dayN + '</div>' +
-        '</div>' +
-        '<div>' +
-        '<div class="session-name" style="color:' + adjCol + '">' + adjLabel + '</div>' +
-        '<div class="session-detail">' +
-          _t('adp_phase_label','Fase') + ': ' + (a.phase || '—') +
-          (a.coach_note ? ' · ' + _t('adp_coach_note_label','Coach') + ': ' + a.coach_note : '') +
-        '</div>' +
-        (isAdapted ? '<div class="session-reason">' + (a.reason_text || '') + '</div>' : '') +
-        (isWindow   ? '<span class="session-window-badge">🎯 ' + _t('adp_window_badge','VENTANA DE FORMA') + '</span>' : '') +
-        '<div class="session-actions">' + acceptState + '</div>' +
-        '</div>' +
-        '<div class="session-tss">' +
-          '<div class="tss-n" style="color:' + adjCol + '">' + Math.round(a.adjusted_tss || 0) + '</div>' +
-          (isAdapted && a.original_tss ? '<div class="tss-orig">' + Math.round(a.original_tss) + '</div>' : '') +
-          '<div class="tss-l">TSS</div>' +
-        '</div>' +
-        '</div>';
-    });
-    el.innerHTML = html;
-  }
+      /* ── PAGE HEADER ── */
+      .ph {
+        padding-top: 1.5rem;
+        background: linear-gradient(180deg, #060e1c 0%, var(--bg) 100%);
+        border-bottom: 1px solid var(--border2);
+      }
+      .ph-inner {
+        padding: 1.6rem 0 1.4rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .ph-eye {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.63rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-bottom: 0.3rem;
+      }
+      .ph-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.8rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+      .ph-sub {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        margin-top: 0.35rem;
+      }
 
-  window.acceptDay = function (dateIso) {
-    fetch(API + '/adaptive/accept/' + dateIso, { method: 'POST', headers: hdrs })
-      .then(function () { loadWeek(); })
-      .catch(function () {});
-  };
+      /* ── SIGNAL BANNER ── */
+      .signal-banner {
+        border-radius: 10px;
+        padding: 1.1rem 1.4rem;
+        border: 1.5px solid;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .signal-banner.increase {
+        background: rgba(168, 85, 247, 0.06);
+        border-color: rgba(168, 85, 247, 0.4);
+      }
+      .signal-banner.maintain {
+        background: rgba(16, 185, 129, 0.05);
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .signal-banner.decrease {
+        background: rgba(245, 158, 11, 0.06);
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+      .signal-banner.taper {
+        background: rgba(34, 211, 238, 0.06);
+        border-color: rgba(34, 211, 238, 0.3);
+      }
+      .signal-banner.rest {
+        background: rgba(239, 68, 68, 0.06);
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+      .signal-label {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+      .signal-reason {
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.5;
+        flex: 1;
+        min-width: 200px;
+      }
 
-  window.rejectDay = function (dateIso) {
-    fetch(API + '/adaptive/reject/' + dateIso, { method: 'POST', headers: hdrs })
-      .then(function () { loadWeek(); })
-      .catch(function () {});
-  };
+      /* ── PHASE BANNER ── */
+      .phase-banner {
+        border-radius: 10px;
+        padding: 0.85rem 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .phase-banner.base {
+        background: rgba(14, 165, 233, 0.08);
+        border: 1px solid rgba(14, 165, 233, 0.3);
+      }
+      .phase-banner.build {
+        background: rgba(240, 165, 0, 0.07);
+        border: 1px solid rgba(240, 165, 0, 0.3);
+      }
+      .phase-banner.peak {
+        background: rgba(239, 68, 68, 0.07);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .phase-banner.taper {
+        background: rgba(34, 211, 238, 0.07);
+        border: 1px solid rgba(34, 211, 238, 0.3);
+      }
+      .phase-banner.recovery {
+        background: rgba(16, 185, 129, 0.07);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .phase-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+      .phase-countdown {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .phase-prog {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex: 1;
+      }
+      .phase-prog-bar {
+        flex: 1;
+        height: 6px;
+        background: var(--surface2);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .phase-prog-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.8s ease;
+      }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // COMPLIANCE
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadCompliance() {
-    fetch(API + '/adaptive/compliance?weeks=8', { headers: hdrs })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var avg = d.avg_pct;
-        var trend = d.trend;
-        document.getElementById('compliance-kpis').innerHTML = [
-          { label: _t('adp_kpi_avg8weeks','Promedio 8 semanas'), value: avg ? avg + '%' : '—', color: avg >= 85 ? 'var(--green)' : avg >= 70 ? 'var(--amber)' : 'var(--red)' },
-          { label: _t('adp_kpi_trend','Tendencia'), value: { improving:'↑ '+_t('adp_trend_improving','Mejorando'), stable:'→ '+_t('adp_trend_stable','Estable'), declining:'↓ '+_t('adp_trend_declining','Bajando') }[trend] || trend, color: trend === 'improving' ? 'var(--green)' : trend === 'declining' ? 'var(--red)' : 'var(--muted)' },
-          { label: _t('adp_kpi_weeks_analyzed','Semanas analizadas'), value: (d.history || []).filter(function(h){return h.compliance_pct !== null;}).length, color: 'var(--cyan)' },
-        ].map(function (k) {
-          return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
-        }).join('');
+      /* ── TABS ── */
+      .tabs-bar {
+        display: flex;
+        gap: 3px;
+        background: var(--surface2);
+        border-radius: 8px;
+        padding: 3px;
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.38rem 1rem;
+        border-radius: 6px;
+        color: var(--dim);
+        transition: all var(--ease);
+        white-space: nowrap;
+      }
+      .tab-btn.on {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.on {
+        display: block;
+      }
 
-        // Botón de información (definición + rangos + tu promedio actual)
-        var mountEl = document.getElementById('compliance-info-mount');
-        if (mountEl && window.lxInfo) mountEl.innerHTML = lxInfo.btn('compliance', avg);
+      /* ── SESSION CARD ── */
+      .session-card {
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--border2);
+        margin-bottom: 0.5rem;
+        display: grid;
+        grid-template-columns: 65px 1fr auto;
+        gap: 0.75rem;
+        align-items: start;
+        transition: border-color 0.2s;
+      }
+      .session-card:hover {
+        border-color: var(--border);
+      }
+      .session-card.adapted {
+        border-left: 3px solid var(--amber);
+      }
+      .session-card.window {
+        border-left: 3px solid var(--purple);
+      }
+      .session-card.rest-day {
+        opacity: 0.55;
+      }
+      .session-day {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding-top: 0.1rem;
+      }
+      .session-date {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .session-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+      }
+      .session-detail {
+        font-size: 0.75rem;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .session-reason {
+        font-size: 0.7rem;
+        color: var(--amber);
+        line-height: 1.35;
+        margin-top: 0.3rem;
+        font-style: italic;
+      }
+      .session-window-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        font-family: 'Oswald', sans-serif;
+        letter-spacing: 0.08em;
+        color: var(--purple);
+        background: rgba(168, 85, 247, 0.12);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        margin-top: 0.25rem;
+        display: inline-block;
+      }
+      .session-tss {
+        text-align: right;
+      }
+      .tss-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .tss-orig {
+        font-size: 0.65rem;
+        color: var(--dim);
+        text-decoration: line-through;
+      }
+      .tss-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.55rem;
+        letter-spacing: 0.08em;
+        color: var(--dim);
+      }
+      .session-actions {
+        display: flex;
+        gap: 0.3rem;
+        margin-top: 0.35rem;
+        flex-wrap: wrap;
+      }
+      .accept-btn {
+        font-size: 0.62rem;
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.55rem;
+        border-radius: 4px;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        background: rgba(16, 185, 129, 0.08);
+        color: var(--green);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .accept-btn:hover {
+        background: rgba(16, 185, 129, 0.2);
+      }
+      .reject-btn {
+        font-size: 0.62rem;
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.55rem;
+        border-radius: 4px;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.05);
+        color: var(--red);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .reject-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+      }
+      .accepted-badge {
+        font-size: 0.62rem;
+        font-family: 'Oswald', sans-serif;
+        color: var(--green);
+        letter-spacing: 0.08em;
+      }
+      .rejected-badge {
+        font-size: 0.62rem;
+        font-family: 'Oswald', sans-serif;
+        color: var(--dim);
+        letter-spacing: 0.08em;
+      }
 
-        // Chart
-        var history = d.history || [];
-        var maxTss  = Math.max.apply(null, history.map(function(h){return h.tss_planned || 0;})) || 1;
-        var barHtml = '<div class="comp-week">';
-        history.forEach(function (h) {
-          var pct     = h.compliance_pct;
-          var hasData = pct !== null && pct !== undefined;
-          var barH    = Math.round((h.tss_planned || 0) / maxTss * 130) || 2;
-          var fillH   = hasData ? Math.round(barH * Math.min(pct / 100, 1.05)) : 0;
-          var col     = !hasData ? 'var(--dim)' : pct >= 85 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--red)';
-          var wLabel  = h.week_start ? h.week_start.substring(5) : '';
-          barHtml += '<div class="comp-bar-wrap">' +
-            (hasData ? '<div class="comp-bar-pct" style="color:' + col + '">' + Math.round(pct) + '%</div>' : '') +
-            '<div style="position:relative;width:100%;height:' + barH + 'px;background:var(--surface2);border-radius:3px 3px 0 0;overflow:hidden">' +
-              '<div style="position:absolute;bottom:0;left:0;right:0;height:' + fillH + 'px;background:' + col + ';border-radius:3px 3px 0 0;opacity:.85"></div>' +
+      /* ── KPI box ── */
+      .kpi-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        text-align: center;
+      }
+      .kpi-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .kpi-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-top: 0.2rem;
+      }
+      .kpi-s {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-top: 0.06rem;
+      }
+
+      /* ── COMPLIANCE CHART ── */
+      .comp-hd {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 0.85rem;
+        position: relative;
+      }
+      .comp-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+      .comp-sub {
+        font-size: 0.74rem;
+        color: var(--muted);
+        margin-top: 0.1rem;
+      }
+      .comp-week {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        height: 170px;
+        padding-top: 1.6rem;
+      }
+      .comp-bar-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        flex: 1;
+        min-width: 26px;
+        height: 100%;
+        justify-content: flex-end;
+      }
+      .comp-bar-pct {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .comp-bar {
+        width: 100%;
+        border-radius: 3px 3px 0 0;
+        transition: height 0.6s ease;
+      }
+      .comp-label {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        color: var(--dim);
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        margin-top: 0.15rem;
+      }
+
+      /* ── TAPER CARD ── */
+      .taper-day {
+        display: grid;
+        grid-template-columns: 100px 80px 1fr;
+        gap: 0.6rem;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--border2);
+        align-items: center;
+        font-size: 0.78rem;
+      }
+      .taper-day:last-child {
+        border-bottom: none;
+      }
+      .taper-date {
+        color: var(--dim);
+        font-size: 0.72rem;
+      }
+      .taper-factor {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+      .taper-label {
+        color: var(--muted);
+      }
+
+      /* ── PROJECTION CHART ── */
+      .proj-row {
+        display: grid;
+        grid-template-columns: 75px 1fr 55px 55px;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.3rem 0;
+        font-size: 0.75rem;
+        border-bottom: 1px solid var(--border2);
+      }
+      .proj-row:last-child {
+        border-bottom: none;
+      }
+      .proj-date {
+        color: var(--dim);
+        font-size: 0.68rem;
+      }
+      .proj-bar-wrap {
+        background: var(--surface2);
+        border-radius: 2px;
+        height: 6px;
+      }
+      .proj-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--cyan);
+        transition: width 0.6s;
+      }
+      .proj-ctl {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        text-align: right;
+      }
+      .proj-phase {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--dim);
+        text-align: right;
+      }
+
+      /* ── ALERT CHIP ── */
+      .alert-chip {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.65rem 0.9rem;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+      }
+      .alert-chip.info {
+        background: rgba(14, 165, 233, 0.06);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        color: var(--muted);
+      }
+      .alert-chip.warn {
+        background: rgba(245, 158, 11, 0.07);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        color: var(--amber);
+      }
+      .alert-chip.good {
+        background: rgba(16, 185, 129, 0.06);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: var(--green);
+      }
+
+      footer {
+        border-top: 1px solid var(--border2);
+        padding: 1.5rem 0;
+        text-align: center;
+      }
+      footer div {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.1em;
+      }
+    </style>
+    <link rel="stylesheet" href="nav.css?v=3" />
+    <style>
+      /* Modo embed (?embed=1): vista incrustada en otra página (plan, coach). */
+      .lx-embed body {
+        padding-left: 0 !important;
+      }
+      .lx-embed #sidebar,
+      .lx-embed .sb-topbar {
+        display: none !important;
+      }
+    </style>
+    <script>
+      if (new URLSearchParams(location.search).get('embed') === '1') {
+        document.documentElement.classList.add('lx-embed');
+      }
+    </script>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
+
+    <!-- PAGE HEADER -->
+    <div class="ph">
+      <div class="c">
+        <div class="ph-inner">
+          <div></div>
+          <button
+            class="btn btn-g btn-sm"
+            onclick="loadDashboard()"
+            data-i18n="adp_refresh"
+          >
+            ↻ Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding: 2rem 0 5rem">
+      <div class="c">
+        <!-- ══ PHASE + SIGNAL BANNERS ══ -->
+        <section class="sr" id="sec-banners">
+          <div id="phase-banner-wrap"></div>
+          <div id="signal-banner-wrap"></div>
+        </section>
+
+        <!-- ══ WEEK KPIs ══ -->
+        <section class="sr mt2" id="sec-kpis">
+          <div class="g4" id="week-kpis"></div>
+        </section>
+
+        <!-- ══ TABS ══ -->
+        <section class="sr mt2" id="sec-tabs">
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--purple)"
+                  stroke-width="2.5"
+                >
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                <span data-i18n="adp_title">Análisis Adaptativo</span>
+              </span>
+              <div class="tabs-bar">
+                <button class="tab-btn on" onclick="switchTab('week', this)">
+                  📅 <span data-i18n="adp_tab_week">Semana</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('compliance', this)">
+                  📊 <span data-i18n="adp_tab_compliance">Compliance</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('taper', this)">
+                  🏁 <span data-i18n="adp_tab_taper">Tapering</span>
+                </button>
+                <button
+                  class="tab-btn"
+                  onclick="switchTab('projections', this)"
+                >
+                  📈 <span data-i18n="adp_tab_projections">Proyección CTL</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('history', this)">
+                  📋 <span data-i18n="adp_tab_history">Historial</span>
+                </button>
+              </div>
+            </div>
+            <div style="padding: 1.5rem">
+              <!-- ── TAB: SEMANA ── -->
+              <div class="tab-pane on" id="tab-week">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 1.25rem;
+                    flex-wrap: wrap;
+                    gap: 0.75rem;
+                  "
+                >
+                  <div style="display: flex; gap: 0.5rem; align-items: center">
+                    <button
+                      class="btn btn-g btn-sm"
+                      id="prev-week-btn"
+                      onclick="changeWeek(-1)"
+                      data-i18n="adp_prev_week"
+                    >
+                      ← Anterior
+                    </button>
+                    <span
+                      id="week-label"
+                      style="
+                        font-family: 'Oswald', sans-serif;
+                        font-size: 0.75rem;
+                        color: var(--muted);
+                        letter-spacing: 0.06em;
+                      "
+                    ></span>
+                    <button
+                      class="btn btn-g btn-sm"
+                      id="next-week-btn"
+                      onclick="changeWeek(1)"
+                      data-i18n="adp_next_week"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick="acceptAllWeek()"
+                  >
+                    ✅
+                    <span data-i18n="adp_accept_all_week"
+                      >Aceptar toda la semana</span
+                    >
+                  </button>
+                </div>
+                <div id="week-sessions"></div>
+                <div id="form-windows-week" style="margin-top: 1rem"></div>
+              </div>
+
+              <!-- ── TAB: COMPLIANCE ── -->
+              <div class="tab-pane" id="tab-compliance">
+                <div
+                  class="g3"
+                  id="compliance-kpis"
+                  style="margin-bottom: 1.5rem; gap: 0.75rem"
+                ></div>
+                <div class="comp-hd">
+                  <div>
+                    <div class="comp-title">
+                      📊
+                      <span data-i18n="adp_compliance_title"
+                        >Cumplimiento semanal</span
+                      >
+                    </div>
+                    <div class="comp-sub" data-i18n="adp_compliance_sub">
+                      TSS realmente completado vs. TSS planificado, últimas 8
+                      semanas
+                    </div>
+                  </div>
+                  <span id="compliance-info-mount"></span>
+                </div>
+                <div id="compliance-chart" style="margin-bottom: 1.2rem"></div>
+                <div id="compliance-insights"></div>
+              </div>
+
+              <!-- ── TAB: TAPERING ── -->
+              <div class="tab-pane" id="tab-taper">
+                <div id="taper-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="adp_loading_taper"
+                  >
+                    Cargando protocolo de tapering…
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TAB: PROYECCIÓN CTL ── -->
+              <div class="tab-pane" id="tab-projections">
+                <div id="projections-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="adp_loading_projections"
+                  >
+                    Cargando proyección…
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TAB: HISTORIAL ── -->
+              <div class="tab-pane" id="tab-history">
+                <div id="history-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="adp_loading_history"
+                  >
+                    Cargando historial de adaptaciones…
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TAB: COACH ── -->
+              <div class="tab-pane" id="tab-coach">
+                <div id="coach-queue-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="adp_loading_coach"
+                  >
+                    Cargando cola de aprobaciones…
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="nav.js?v=4" defer></script>
+    <script src="footer.js"></script>
+    <script src="dash-header.js"></script>
+    <script src="lx-upgrade.js"></script>
+    <script src="lx-info.js"></script>
+    <script>
+      (function () {
+        'use strict';
+
+        var _k =
+          JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          ) || {};
+        var API = '/api';
+        var hdrs = {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + (_k.token || ''),
+        };
+
+        function _t(key, fallback) {
+          return (window.i18n ? window.i18n.t(key) : null) || fallback;
+        }
+        function DAYS_ES() {
+          return [
+            _t('app_day_sun', 'Dom'),
+            _t('app_day_mon', 'Lun'),
+            _t('app_day_tue', 'Mar'),
+            _t('app_day_wed', 'Mié'),
+            _t('app_day_thu', 'Jue'),
+            _t('app_day_fri', 'Vie'),
+            _t('app_day_sat', 'Sáb'),
+          ];
+        }
+        var PHASE_COLORS = {
+          base: '#0EA5E9',
+          build: '#F0A500',
+          peak: '#EF4444',
+          taper: '#22D3EE',
+          recovery: '#10B981',
+        };
+
+        // ── Current week state ────────────────────────────────────────────────────
+        var _weekOffset = 0; // 0 = current week, -1 = prev, +1 = next
+
+        function _weekStart(offset) {
+          var today = new Date();
+          var mon = new Date(today);
+          mon.setDate(today.getDate() - today.getDay() + 1 + offset * 7);
+          if (today.getDay() === 0) mon.setDate(mon.getDate() - 6 + offset * 7);
+          return mon.toISOString().slice(0, 10);
+        }
+
+        function pad2(n) {
+          return n < 10 ? '0' + n : '' + n;
+        }
+
+        // ── Reveal on scroll ──────────────────────────────────────────────────────
+        function reveal() {
+          document.querySelectorAll('.sr').forEach(function (el) {
+            if (el.getBoundingClientRect().top < window.innerHeight * 0.93)
+              el.classList.add('vis');
+          });
+        }
+        window.addEventListener('scroll', reveal, { passive: true });
+        setTimeout(reveal, 80);
+
+        // ── Tab switcher ──────────────────────────────────────────────────────────
+        window.switchTab = function (id, btn) {
+          document.querySelectorAll('.tab-pane').forEach(function (p) {
+            p.classList.remove('on');
+          });
+          document.querySelectorAll('.tab-btn').forEach(function (b) {
+            b.classList.remove('on');
+          });
+          var pane = document.getElementById('tab-' + id);
+          if (pane) pane.classList.add('on');
+          if (btn) btn.classList.add('on');
+
+          if (id === 'compliance') loadCompliance();
+          else if (id === 'taper') loadTaper();
+          else if (id === 'projections') loadProjections();
+          else if (id === 'history') loadHistory();
+          else if (id === 'coach') loadCoachQueue();
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DASHBOARD
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadDashboard() {
+          fetch(API + '/adaptive/dashboard', { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              renderPhaseBanner(d.phase);
+              renderSignalBanner(d.today_adaptation);
+              renderWeekKpis(d.week, d.training_load);
+              renderFormWindows(d.form_windows || []);
+            })
+            .catch(function () {
+              document.getElementById('signal-banner-wrap').innerHTML =
+                '<div class="alert-chip warn">⚠️ ' +
+                _t(
+                  'adp_no_data_warn',
+                  'Sin datos suficientes. Sincroniza tu Garmin y registra tu carrera objetivo.',
+                ) +
+                '</div>';
+            });
+          loadWeek();
+        }
+        window.loadDashboard = loadDashboard;
+
+        // ── Phase banner ────────────────────────────────────────────────────────
+        function renderPhaseBanner(phase) {
+          if (!phase) return;
+          var col = PHASE_COLORS[phase.current] || 'var(--cyan)';
+          var pct =
+            phase.phase_week && phase.total_weeks
+              ? Math.round((phase.phase_week / phase.total_weeks) * 100)
+              : 0;
+
+          var html =
+            '<div class="phase-banner ' +
+            (phase.current || 'base') +
+            '">' +
+            '<div>' +
+            '<div class="phase-name" style="color:' +
+            col +
+            '">' +
+            (phase.phase_label || phase.current || '') +
             '</div>' +
-            '<div class="comp-label">' + wLabel + '</div>' +
+            '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' +
+            _t('adp_week_word', 'Semana') +
+            ' ' +
+            (phase.phase_week || 1) +
+            ' ' +
+            _t('adp_of_word', 'de') +
+            ' ' +
+            (phase.total_weeks || '—') +
+            (phase.race_name ? ' · ' + phase.race_name : '') +
+            '</div>' +
+            '<div class="phase-prog mt2" style="margin-top:.5rem;gap:.6rem;display:flex;align-items:center">' +
+            '<div class="phase-prog-bar" style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">' +
+            '<div class="phase-prog-fill" style="width:' +
+            pct +
+            '%;background:' +
+            col +
+            '"></div>' +
+            '</div>' +
+            '<span style="font-family:\'Oswald\',sans-serif;font-size:.6rem;color:var(--dim)">' +
+            pct +
+            '%</span>' +
+            '</div>' +
+            '</div>' +
+            (phase.days_to_race !== null && phase.days_to_race !== undefined
+              ? '<div style="text-align:right">' +
+                '<div class="phase-countdown" style="color:' +
+                col +
+                '">' +
+                phase.days_to_race +
+                '</div>' +
+                '<div style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--dim)">' +
+                _t('adp_days_label', 'DÍAS') +
+                '</div>' +
+                '</div>'
+              : '') +
             '</div>';
-        });
-        barHtml += '</div>';
-        barHtml += '<div style="font-size:.7rem;color:var(--dim);margin-top:.5rem">' +
-          _t('adp_compliance_legend','🟢 ≥85% cumplido &nbsp; 🟡 70-84% &nbsp; 🔴 &lt;70% &nbsp; · &nbsp; altura de la barra = volumen planificado esa semana (TSS), relleno = % realmente completado') +
-          '</div>';
-        document.getElementById('compliance-chart').innerHTML = barHtml;
-
-        // Insights
-        var insHtml = '';
-        if (avg && avg < 70) {
-          insHtml += '<div class="alert-chip warn">📉 ' + _t('adp_insight_low','Compliance bajo ({pct}%). El plan se ha reducido automáticamente para acomodarse a tu ritmo real. Prioriza consistencia sobre volumen: es mejor completar un plan más chico que abandonar uno grande a la mitad.').replace('{pct}',avg) + '</div>';
-        } else if (avg && avg >= 90) {
-          insHtml += '<div class="alert-chip good">✅ ' + _t('adp_insight_high','Excelente consistencia ({pct}%). Estás completando el plan con alta fidelidad — el motor adaptativo puede mantener la carga nominal e incluso subirla si tu recuperación lo permite.').replace('{pct}',avg) + '</div>';
-        } else if (avg) {
-          insHtml += '<div class="alert-chip">🟡 ' + _t('adp_insight_moderate','Cumplimiento moderado ({pct}%). Estás completando la mayoría del plan pero con algunas sesiones incompletas — normal en semanas cargadas, vigila que no se vuelva la tendencia.').replace('{pct}',avg) + '</div>';
-        }
-        if (trend === 'improving') {
-          insHtml += '<div class="alert-chip good">↑ ' + _t('adp_insight_improving','Tu compliance está mejorando semana a semana. La adaptación está funcionando: el plan se está ajustando a un volumen que sí puedes sostener.') + '</div>';
-        } else if (trend === 'declining') {
-          insHtml += '<div class="alert-chip warn">↓ ' + _t('adp_insight_declining','Compliance en descenso semana a semana. Revisa si el volumen del plan es sostenible o si hay factores externos (trabajo, viaje, estrés) — 2-3 semanas seguidas a la baja suelen anticipar un ajuste de plan necesario.') + '</div>';
-        }
-        document.getElementById('compliance-insights').innerHTML = insHtml;
-      }).catch(function () {});
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TAPER
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadTaper() {
-    fetch(API + '/adaptive/taper-protocol', { headers: hdrs })
-      .then(function (r) {
-        if (r.status === 404) return null;
-        return r.json();
-      })
-      .then(function (d) {
-        if (!d) {
-          document.getElementById('taper-content').innerHTML =
-            '<div class="alert-chip warn">' + _t('adp_no_race_taper','Sin carrera objetivo registrada. Agrega una en tu Perfil para activar el protocolo de tapering.') + '</div>';
-          return;
+          document.getElementById('phase-banner-wrap').innerHTML = html;
         }
 
-        var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
-        var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
-          [
-            { label: '🏁 ' + _t('adp_taper_kpi_days','Días para la carrera'), value: d.days_to_race, color: 'var(--cyan)' },
-            { label: '📊 ' + _t('adp_taper_kpi_tsb_now','TSB actual'), value: d.tsb_now !== null ? (d.tsb_now > 0 ? '+' : '') + d.tsb_now : '—', color: (d.tsb_now || 0) > 0 ? 'var(--green)' : 'var(--amber)' },
-            { label: '🎯 ' + _t('adp_taper_kpi_tsb_target','TSB objetivo carrera'), value: '+' + d.tsb_target_race, color: trackCol },
-          ].map(function (k) {
-            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
-          }).join('') + '</div>';
-
-        if (d.on_track) {
-          html += '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' + _t('adp_taper_ontrack','En camino — proyección TSB {tsb} para carrera. Meta: +{target}.').replace('{tsb}',d.tsb_projected).replace('{target}',d.tsb_target_race) + '</div>';
-        } else {
-          html += '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' + _t('adp_taper_offtrack','Ajusta la carga — proyección TSB {tsb} para carrera. Meta: +{target}.').replace('{tsb}',d.tsb_projected).replace('{target}',d.tsb_target_race) + '</div>';
-        }
-
-        // Key rules
-        html += '<div class="panel" style="padding:1rem;margin-bottom:1rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.5rem;color:var(--cyan)">' + _t('adp_taper_rules_title','REGLAS DE TAPERING') + '</div>' +
-          (d.key_rules || []).map(function (r) {
-            return '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0;border-bottom:1px solid var(--border2)">→ ' + r + '</div>';
-          }).join('') + '</div>';
-
-        // Taper curve
-        var curve = (d.taper_curve || []).slice(0, 14);
-        if (curve.length) {
-          html += '<div class="sec-h" style="font-size:.78rem">' + _t('adp_taper_curve_title','Curva de tapering (próximos {n} días)').replace('{n}',curve.length) + '</div>';
-          curve.forEach(function (day) {
-            var col = day.taper_factor >= 0.85 ? 'var(--muted)' : day.taper_factor >= 0.55 ? 'var(--cyan)' : day.taper_factor >= 0.35 ? 'var(--amber)' : 'var(--red)';
-            html += '<div class="taper-day">' +
-              '<div class="taper-date">' + day.date_iso + '</div>' +
-              '<div class="taper-factor" style="color:' + col + '">×' + day.taper_factor.toFixed(2) + '</div>' +
-              '<div class="taper-label">' + (day.label || '') + ' · TSS≤' + day.tss_target + '</div>' +
-              '</div>';
-          });
-        }
-
-        document.getElementById('taper-content').innerHTML = html;
-      }).catch(function () {
-        document.getElementById('taper-content').innerHTML = '<div class="alert-chip warn">' + _t('adp_taper_load_error','Error cargando protocolo de tapering.') + '</div>';
-      });
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PROYECCIÓN CTL
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadProjections() {
-    fetch(API + '/adaptive/projections', { headers: hdrs })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d.error) {
-          document.getElementById('projections-content').innerHTML =
-            '<div class="alert-chip warn">⚠️ ' + d.error + '</div>';
-          return;
-        }
-
-        var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
-        var maxCTL   = Math.max.apply(null, (d.projection || []).map(function(p){return p.ctl_projected;})) || 1;
-
-        var html = '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
-          [
-            { label: _t('adp_ctl_now','CTL actual'),      value: d.ctl_now,       color: 'var(--purple)' },
-            { label: _t('adp_ctl_projected','CTL proyectado'),  value: d.ctl_projected, color: 'var(--cyan)' },
-            { label: _t('adp_ctl_target','CTL objetivo'),    value: d.ctl_target,    color: trackCol },
-          ].map(function (k) {
-            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
-          }).join('') + '</div>';
-
-        html += d.on_track
-          ? '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' + _t('adp_proj_ontrack','En camino. Al ritmo actual llegarás con CTL {ctl} (meta: {target}).').replace('{ctl}',d.ctl_projected).replace('{target}',d.ctl_target) + '</div>'
-          : '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' + _t('adp_proj_gap','Gap de {gap} puntos CTL. Para llegar al objetivo de {target} necesitas aumentar compliance o extender la preparación.').replace('{gap}',d.gap).replace('{target}',d.ctl_target) + '</div>';
-
-        html += '<div class="sec-h" style="font-size:.78rem">' + _t('adp_proj_weekly_title','Proyección semanal de CTL ({n} semanas)').replace('{n}',d.weeks_left) + '</div>';
-        (d.projection || []).forEach(function (p) {
-          var w     = Math.round(p.ctl_projected / maxCTL * 100);
-          var pcol  = { base:'var(--cyan)', build:'var(--gold)', peak:'var(--red)', taper:'var(--aqua)', recovery:'var(--green)' }[p.phase] || 'var(--muted)';
-          html += '<div class="proj-row">' +
-            '<div class="proj-date">' + p.week_start + '</div>' +
-            '<div class="proj-bar-wrap"><div class="proj-fill" style="width:' + w + '%;background:' + pcol + '"></div></div>' +
-            '<div class="proj-ctl" style="color:' + pcol + '">' + p.ctl_projected + '</div>' +
-            '<div class="proj-phase">' + p.phase + '</div>' +
+        // ── Signal banner ────────────────────────────────────────────────────────
+        function renderSignalBanner(adap) {
+          if (!adap) return;
+          var sig = adap.signal || 'maintain';
+          var html =
+            '<div class="signal-banner ' +
+            sig +
+            '">' +
+            '<div>' +
+            '<div class="signal-label">' +
+            (adap.signal_label || '') +
+            '</div>' +
+            '<div style="font-size:.7rem;color:var(--dim);margin-top:.12rem;font-family:\'Oswald\',sans-serif;letter-spacing:.06em">' +
+            _t('adp_recovery_label', 'Recovery') +
+            ': ' +
+            (adap.recovery_score !== null ? adap.recovery_score : '—') +
+            ' · ' +
+            'TSB: ' +
+            (adap.tsb !== null
+              ? (adap.tsb > 0 ? '+' : '') + Math.round(adap.tsb || 0)
+              : '—') +
+            ' · ' +
+            _t('adp_compliance7d_label', 'Compliance 7d') +
+            ': ' +
+            (adap.compliance_7d !== null
+              ? Math.round((adap.compliance_7d || 0) * 100) + '%'
+              : '—') +
+            '</div>' +
+            '</div>' +
+            '<div class="signal-reason">' +
+            (adap.reason_text || '') +
+            '</div>' +
             '</div>';
-        });
-
-        document.getElementById('projections-content').innerHTML = html;
-      }).catch(function () {});
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HISTORIAL
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadHistory() {
-    fetch(API + '/adaptive/history?days=30', { headers: hdrs })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var stats = d.stats || {};
-        var html  = '<div class="g4" style="margin-bottom:1.5rem;gap:.75rem">' +
-          [
-            { label: _t('adp_hist_total_days','Días analizados'), value: stats.total_days || 0,   color: 'var(--muted)' },
-            { label: _t('adp_hist_adapted_days','Días adaptados'),  value: stats.adapted_days || 0, color: 'var(--amber)' },
-            { label: '✅ ' + _t('adp_hist_accepted','Aceptadas'),    value: stats.accepted || 0,      color: 'var(--green)' },
-            { label: '✗ ' + _t('adp_hist_rejected','Rechazadas'),   value: stats.rejected || 0,      color: 'var(--red)' },
-          ].map(function (k) {
-            return '<div class="kpi-box"><div class="kpi-n" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-l">' + k.label + '</div></div>';
-          }).join('') + '</div>';
-
-        var adapted = (d.history || []).filter(function(h){return h.signal && h.signal !== 'maintain';});
-        if (adapted.length) {
-          adapted.forEach(function (a) {
-            var sigCol = a.signal_color || 'var(--muted)';
-            html += '<div style="display:grid;grid-template-columns:90px 1fr auto;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border2);align-items:start;font-size:.78rem">' +
-              '<div style="color:var(--dim);font-size:.7rem">' + a.date_iso + '<br><span style="color:' + sigCol + ';font-family:\'Oswald\',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">' + (a.signal || '') + '</span></div>' +
-              '<div style="color:var(--muted);line-height:1.45">' + (a.reason_text || '') + '</div>' +
-              '<div style="text-align:right">' +
-              (a.accepted === true ? '<span style="color:var(--green);font-size:.65rem">✅</span>' :
-               a.accepted === false? '<span style="color:var(--dim);font-size:.65rem">✗</span>' :
-               '<span style="color:var(--dim);font-size:.65rem">—</span>') +
-              '</div>' +
-              '</div>';
-          });
-        } else {
-          html += '<div style="color:var(--dim);font-size:.82rem">' + _t('adp_no_adaptations_30d','Sin adaptaciones en los últimos 30 días.') + '</div>';
+          document.getElementById('signal-banner-wrap').innerHTML = html;
         }
-        document.getElementById('history-content').innerHTML = html;
-      }).catch(function () {});
-  }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // COACH QUEUE
-  // ═══════════════════════════════════════════════════════════════════════════
-  function loadCoachQueue() {
-    fetch(API + '/adaptive/coach-queue', { headers: hdrs })
-      .then(function (r) {
-        if (r.status === 403) return null;
-        return r.json();
-      })
-      .then(function (d) {
-        if (!d) { document.getElementById('coach-queue-content').innerHTML = ''; return; }
-        var html = '<div style="margin-bottom:.75rem;font-size:.8rem;color:var(--muted)">' + _t('adp_pending_approval_label','Adaptaciones pendientes de aprobación') + ': <strong style="color:var(--text)">' + d.pending_count + '</strong></div>';
-        if (!(d.queue || []).length) {
-          html += '<div class="alert-chip good">✅ ' + _t('adp_no_pending_approval','Sin adaptaciones pendientes de aprobación esta semana.') + '</div>';
-        } else {
-          (d.queue || []).forEach(function (a) {
-            var sigCol = a.signal_color || 'var(--muted)';
-            html += '<div style="padding:.75rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start">' +
+        // ── Week KPIs ─────────────────────────────────────────────────────────────
+        function renderWeekKpis(week, tl) {
+          if (!week) return;
+          var delta = week.tss_delta_pct || 0;
+          var deltaCol =
+            delta < -5
+              ? 'var(--amber)'
+              : delta > 5
+                ? 'var(--purple)'
+                : 'var(--green)';
+          var kpis = [
+            {
+              label: _t('adp_kpi_tss_planned', 'TSS Planificado'),
+              value: week.tss_planned,
+              color: 'var(--muted)',
+              sub: _t('adp_this_week', 'esta semana'),
+            },
+            {
+              label: _t('adp_kpi_tss_adjusted', 'TSS Adaptado'),
+              value: week.tss_adjusted,
+              color: 'var(--cyan)',
+              sub: (delta > 0 ? '+' : '') + delta + '%',
+            },
+            {
+              label: 'CTL',
+              value: tl && tl.ctl ? Math.round(tl.ctl) : '—',
+              color: 'var(--purple)',
+              sub: _t('adp_fitness_word', 'fitness'),
+            },
+            {
+              label: 'TSB',
+              value:
+                tl && tl.tsb !== null
+                  ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0)
+                  : '—',
+              color: tl && (tl.tsb || 0) > 0 ? 'var(--green)' : 'var(--amber)',
+              sub: _t('adp_form_word', 'forma'),
+            },
+          ];
+          document.getElementById('week-kpis').innerHTML = kpis
+            .map(function (k) {
+              return (
+                '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                k.color +
+                '">' +
+                k.value +
+                '</div>' +
+                '<div class="kpi-l">' +
+                k.label +
+                '</div>' +
+                '<div class="kpi-s" style="color:' +
+                (k.sub && k.sub.includes('+')
+                  ? 'var(--purple)'
+                  : k.sub && k.sub.includes('-')
+                    ? 'var(--amber)'
+                    : 'var(--dim)') +
+                '">' +
+                (k.sub || '') +
+                '</div></div>'
+              );
+            })
+            .join('');
+        }
+
+        // ── Form windows ─────────────────────────────────────────────────────────
+        function renderFormWindows(windows) {
+          var el = document.getElementById('form-windows-week');
+          if (!windows || !windows.length) {
+            el.innerHTML = '';
+            return;
+          }
+          el.innerHTML = windows
+            .map(function (w) {
+              return (
+                '<div class="alert-chip info">🎯 <strong>' +
+                w.date_iso +
+                '</strong> — ' +
+                w.label +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // WEEK PLAN
+        // ═══════════════════════════════════════════════════════════════════════════
+        var _weekAdaptations = [];
+
+        function loadWeek() {
+          var ws = _weekStart(_weekOffset);
+          var url = API + '/adaptive/week?week_start=' + ws;
+          fetch(url, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              _weekAdaptations = d.adaptations || [];
+              renderWeekSessions(d);
+              updateWeekLabel(d.week_start, d.week_end);
+            })
+            .catch(function () {
+              document.getElementById('week-sessions').innerHTML =
+                '<div style="color:var(--dim);font-size:.82rem">' +
+                _t('adp_no_week_data', 'Sin datos de plan para esta semana.') +
+                '</div>';
+            });
+        }
+
+        function updateWeekLabel(start, end) {
+          var lbl = document.getElementById('week-label');
+          if (lbl) lbl.textContent = start + ' → ' + (end || '');
+        }
+
+        window.changeWeek = function (delta) {
+          _weekOffset += delta;
+          loadWeek();
+        };
+
+        window.acceptAllWeek = function () {
+          var today = new Date().toISOString().slice(0, 10);
+          var pending = _weekAdaptations.filter(function (a) {
+            return (
+              a.signal !== 'maintain' &&
+              a.accepted === null &&
+              a.date_iso >= today
+            );
+          });
+          if (!pending.length) {
+            alert(
+              _t(
+                'adp_no_pending_adaptations',
+                'No hay adaptaciones pendientes de aceptar esta semana.',
+              ),
+            );
+            return;
+          }
+          var promises = pending.map(function (a) {
+            return fetch(API + '/adaptive/accept/' + a.date_iso, {
+              method: 'POST',
+              headers: hdrs,
+            });
+          });
+          Promise.all(promises)
+            .then(function () {
+              loadWeek();
+            })
+            .catch(function () {});
+        };
+
+        function renderWeekSessions(d) {
+          var el = document.getElementById('week-sessions');
+          var adaptations = d.adaptations || [];
+          if (!adaptations.length) {
+            el.innerHTML =
+              '<div style="color:var(--dim);font-size:.82rem">' +
+              _t(
+                'adp_no_sessions_week',
+                'Sin sesiones planificadas esta semana.',
+              ) +
+              '</div>';
+            return;
+          }
+
+          var intensityColor = {
+            easy: '#10B981',
+            moderate: '#F59E0B',
+            hard: '#EF4444',
+            race: '#EF4444',
+            rest: '#3D6880',
+          };
+          var intensityLabel = {
+            easy: '🟢 ' + _t('adp_int_easy', 'Fácil'),
+            moderate: '🟡 ' + _t('adp_int_moderate', 'Moderado'),
+            hard: '🟠 ' + _t('adp_int_hard', 'Intenso'),
+            race: '🔴 ' + _t('adp_int_race', 'Carrera'),
+            rest: '⚪ ' + _t('adp_int_rest', 'Descanso'),
+          };
+
+          var days = DAYS_ES();
+          var html = '';
+          adaptations.forEach(function (a) {
+            var d_date = new Date(a.date_iso + 'T12:00:00');
+            var dayName = days[d_date.getDay()];
+            var dayN = d_date.getDate();
+            var isAdapted = a.signal && a.signal !== 'maintain';
+            var isWindow = a.signal === 'increase';
+            var isRest =
+              a.signal === 'rest' || !a.adjusted_tss || a.adjusted_tss < 1;
+
+            var cardClass =
+              'session-card' +
+              (isAdapted ? ' adapted' : '') +
+              (isWindow ? ' window' : '') +
+              (isRest ? ' rest-day' : '');
+
+            var adjCol = intensityColor[a.adjusted_intensity] || 'var(--muted)';
+            var adjLabel =
+              intensityLabel[a.adjusted_intensity] ||
+              a.adjusted_intensity ||
+              '—';
+
+            var acceptState = '';
+            if (a.accepted === true)
+              acceptState =
+                '<span class="accepted-badge">✅ ' +
+                _t('adp_accepted_badge', 'ACEPTADO') +
+                '</span>';
+            else if (a.accepted === false)
+              acceptState =
+                '<span class="rejected-badge">✗ ' +
+                _t('adp_rejected_badge', 'RECHAZADO') +
+                '</span>';
+            else if (isAdapted) {
+              acceptState =
+                '<button class="accept-btn" onclick="acceptDay(\'' +
+                a.date_iso +
+                '\')">✅ ' +
+                _t('adp_accept_btn', 'Aceptar') +
+                '</button>' +
+                '<button class="reject-btn" onclick="rejectDay(\'' +
+                a.date_iso +
+                '\')">✗ ' +
+                _t('adp_reject_btn', 'Rechazar') +
+                '</button>';
+            }
+
+            html +=
+              '<div class="' +
+              cardClass +
+              '" id="card-' +
+              a.date_iso +
+              '">' +
               '<div>' +
-              '<div style="font-size:.82rem;font-weight:600">' + (a.athlete_name || a.athlete_id) + ' · <span style="color:' + sigCol + '">' + a.date_iso + '</span></div>' +
-              '<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">' + (a.reason_text || '') + '</div>' +
+              '<div class="session-day">' +
+              dayName +
               '</div>' +
-              '<div style="display:flex;gap:.35rem">' +
-              '<button class="accept-btn" onclick="coachApprove(\'' + a.id + '\')">✅ ' + _t('adp_approve_btn','Aprobar') + '</button>' +
-              '<button class="reject-btn" onclick="coachReject(\'' + a.id + '\')">✗</button>' +
+              '<div class="session-date" style="color:' +
+              adjCol +
+              '">' +
+              dayN +
+              '</div>' +
+              '</div>' +
+              '<div>' +
+              '<div class="session-name" style="color:' +
+              adjCol +
+              '">' +
+              adjLabel +
+              '</div>' +
+              '<div class="session-detail">' +
+              _t('adp_phase_label', 'Fase') +
+              ': ' +
+              (a.phase || '—') +
+              (a.coach_note
+                ? ' · ' +
+                  _t('adp_coach_note_label', 'Coach') +
+                  ': ' +
+                  a.coach_note
+                : '') +
+              '</div>' +
+              (isAdapted
+                ? '<div class="session-reason">' +
+                  (a.reason_text || '') +
+                  '</div>'
+                : '') +
+              (isWindow
+                ? '<span class="session-window-badge">🎯 ' +
+                  _t('adp_window_badge', 'VENTANA DE FORMA') +
+                  '</span>'
+                : '') +
+              '<div class="session-actions">' +
+              acceptState +
+              '</div>' +
+              '</div>' +
+              '<div class="session-tss">' +
+              '<div class="tss-n" style="color:' +
+              adjCol +
+              '">' +
+              Math.round(a.adjusted_tss || 0) +
+              '</div>' +
+              (isAdapted && a.original_tss
+                ? '<div class="tss-orig">' +
+                  Math.round(a.original_tss) +
+                  '</div>'
+                : '') +
+              '<div class="tss-l">TSS</div>' +
               '</div>' +
               '</div>';
           });
+          el.innerHTML = html;
         }
-        document.getElementById('coach-queue-content').innerHTML = html;
-      }).catch(function () {});
-  }
 
-  window.coachApprove = function (id) {
-    fetch(API + '/adaptive/coach-approve/' + id, { method: 'POST', headers: hdrs, body: JSON.stringify({}) })
-      .then(function () { loadCoachQueue(); }).catch(function () {});
-  };
-  window.coachReject = function (id) {
-    var note = prompt(_t('adp_coach_reject_prompt','Nota para el atleta (opcional):')) || '';
-    fetch(API + '/adaptive/coach-reject/' + id, {
-      method: 'POST', headers: hdrs, body: JSON.stringify({ note: note })
-    }).then(function () { loadCoachQueue(); }).catch(function () {});
-  };
+        window.acceptDay = function (dateIso) {
+          fetch(API + '/adaptive/accept/' + dateIso, {
+            method: 'POST',
+            headers: hdrs,
+          })
+            .then(function () {
+              loadWeek();
+            })
+            .catch(function () {});
+        };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INIT
-  // ═══════════════════════════════════════════════════════════════════════════
-  loadDashboard();
+        window.rejectDay = function (dateIso) {
+          fetch(API + '/adaptive/reject/' + dateIso, {
+            method: 'POST',
+            headers: hdrs,
+          })
+            .then(function () {
+              loadWeek();
+            })
+            .catch(function () {});
+        };
 
-  if (_k && (_k.role === 'coach' || _k.role === 'admin')) {
-    var coachBtn = document.getElementById('coach-tab-btn');
-    if (coachBtn) coachBtn.style.display = '';
-  }
+        // ═══════════════════════════════════════════════════════════════════════════
+        // COMPLIANCE
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadCompliance() {
+          fetch(API + '/adaptive/compliance?weeks=8', { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var avg = d.avg_pct;
+              var trend = d.trend;
+              document.getElementById('compliance-kpis').innerHTML = [
+                {
+                  label: _t('adp_kpi_avg8weeks', 'Promedio 8 semanas'),
+                  value: avg ? avg + '%' : '—',
+                  color:
+                    avg >= 85
+                      ? 'var(--green)'
+                      : avg >= 70
+                        ? 'var(--amber)'
+                        : 'var(--red)',
+                },
+                {
+                  label: _t('adp_kpi_trend', 'Tendencia'),
+                  value:
+                    {
+                      improving: '↑ ' + _t('adp_trend_improving', 'Mejorando'),
+                      stable: '→ ' + _t('adp_trend_stable', 'Estable'),
+                      declining: '↓ ' + _t('adp_trend_declining', 'Bajando'),
+                    }[trend] || trend,
+                  color:
+                    trend === 'improving'
+                      ? 'var(--green)'
+                      : trend === 'declining'
+                        ? 'var(--red)'
+                        : 'var(--muted)',
+                },
+                {
+                  label: _t('adp_kpi_weeks_analyzed', 'Semanas analizadas'),
+                  value: (d.history || []).filter(function (h) {
+                    return h.compliance_pct !== null;
+                  }).length,
+                  color: 'var(--cyan)',
+                },
+              ]
+                .map(function (k) {
+                  return (
+                    '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                    k.color +
+                    '">' +
+                    k.value +
+                    '</div><div class="kpi-l">' +
+                    k.label +
+                    '</div></div>'
+                  );
+                })
+                .join('');
 
-  setTimeout(function () {
-    if (typeof KL !== 'undefined' && KL.init) KL.init();
-  }, 200);
+              // Botón de información (definición + rangos + tu promedio actual)
+              var mountEl = document.getElementById('compliance-info-mount');
+              if (mountEl && window.lxInfo)
+                mountEl.innerHTML = lxInfo.btn('compliance', avg);
 
-}());
-</script>
-<script src="lx-audit.js"></script>
-<script>/* Vista de coach (cola de aprobaciones): se abre embebida desde Coach con ?view=coach. */
-window.addEventListener('load', function(){ if(new URLSearchParams(location.search).get('view')==='coach'){ switchTab('coach'); } });</script>
-</body>
+              // Chart
+              var history = d.history || [];
+              var maxTss =
+                Math.max.apply(
+                  null,
+                  history.map(function (h) {
+                    return h.tss_planned || 0;
+                  }),
+                ) || 1;
+              var barHtml = '<div class="comp-week">';
+              history.forEach(function (h) {
+                var pct = h.compliance_pct;
+                var hasData = pct !== null && pct !== undefined;
+                var barH =
+                  Math.round(((h.tss_planned || 0) / maxTss) * 130) || 2;
+                var fillH = hasData
+                  ? Math.round(barH * Math.min(pct / 100, 1.05))
+                  : 0;
+                var col = !hasData
+                  ? 'var(--dim)'
+                  : pct >= 85
+                    ? 'var(--green)'
+                    : pct >= 70
+                      ? 'var(--amber)'
+                      : 'var(--red)';
+                var wLabel = h.week_start ? h.week_start.substring(5) : '';
+                barHtml +=
+                  '<div class="comp-bar-wrap">' +
+                  (hasData
+                    ? '<div class="comp-bar-pct" style="color:' +
+                      col +
+                      '">' +
+                      Math.round(pct) +
+                      '%</div>'
+                    : '') +
+                  '<div style="position:relative;width:100%;height:' +
+                  barH +
+                  'px;background:var(--surface2);border-radius:3px 3px 0 0;overflow:hidden">' +
+                  '<div style="position:absolute;bottom:0;left:0;right:0;height:' +
+                  fillH +
+                  'px;background:' +
+                  col +
+                  ';border-radius:3px 3px 0 0;opacity:.85"></div>' +
+                  '</div>' +
+                  '<div class="comp-label">' +
+                  wLabel +
+                  '</div>' +
+                  '</div>';
+              });
+              barHtml += '</div>';
+              barHtml +=
+                '<div style="font-size:.7rem;color:var(--dim);margin-top:.5rem">' +
+                _t(
+                  'adp_compliance_legend',
+                  '🟢 ≥85% cumplido &nbsp; 🟡 70-84% &nbsp; 🔴 &lt;70% &nbsp; · &nbsp; altura de la barra = volumen planificado esa semana (TSS), relleno = % realmente completado',
+                ) +
+                '</div>';
+              document.getElementById('compliance-chart').innerHTML = barHtml;
+
+              // Insights
+              var insHtml = '';
+              if (avg && avg < 70) {
+                insHtml +=
+                  '<div class="alert-chip warn">📉 ' +
+                  _t(
+                    'adp_insight_low',
+                    'Compliance bajo ({pct}%). El plan se ha reducido automáticamente para acomodarse a tu ritmo real. Prioriza consistencia sobre volumen: es mejor completar un plan más chico que abandonar uno grande a la mitad.',
+                  ).replace('{pct}', avg) +
+                  '</div>';
+              } else if (avg && avg >= 90) {
+                insHtml +=
+                  '<div class="alert-chip good">✅ ' +
+                  _t(
+                    'adp_insight_high',
+                    'Excelente consistencia ({pct}%). Estás completando el plan con alta fidelidad — el motor adaptativo puede mantener la carga nominal e incluso subirla si tu recuperación lo permite.',
+                  ).replace('{pct}', avg) +
+                  '</div>';
+              } else if (avg) {
+                insHtml +=
+                  '<div class="alert-chip">🟡 ' +
+                  _t(
+                    'adp_insight_moderate',
+                    'Cumplimiento moderado ({pct}%). Estás completando la mayoría del plan pero con algunas sesiones incompletas — normal en semanas cargadas, vigila que no se vuelva la tendencia.',
+                  ).replace('{pct}', avg) +
+                  '</div>';
+              }
+              if (trend === 'improving') {
+                insHtml +=
+                  '<div class="alert-chip good">↑ ' +
+                  _t(
+                    'adp_insight_improving',
+                    'Tu compliance está mejorando semana a semana. La adaptación está funcionando: el plan se está ajustando a un volumen que sí puedes sostener.',
+                  ) +
+                  '</div>';
+              } else if (trend === 'declining') {
+                insHtml +=
+                  '<div class="alert-chip warn">↓ ' +
+                  _t(
+                    'adp_insight_declining',
+                    'Compliance en descenso semana a semana. Revisa si el volumen del plan es sostenible o si hay factores externos (trabajo, viaje, estrés) — 2-3 semanas seguidas a la baja suelen anticipar un ajuste de plan necesario.',
+                  ) +
+                  '</div>';
+              }
+              document.getElementById('compliance-insights').innerHTML =
+                insHtml;
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // TAPER
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadTaper() {
+          fetch(API + '/adaptive/taper-protocol', { headers: hdrs })
+            .then(function (r) {
+              if (r.status === 404) return null;
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d) {
+                document.getElementById('taper-content').innerHTML =
+                  '<div class="alert-chip warn">' +
+                  _t(
+                    'adp_no_race_taper',
+                    'Sin carrera objetivo registrada. Agrega una en tu Perfil para activar el protocolo de tapering.',
+                  ) +
+                  '</div>';
+                return;
+              }
+
+              var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
+              var html =
+                '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
+                [
+                  {
+                    label:
+                      '🏁 ' + _t('adp_taper_kpi_days', 'Días para la carrera'),
+                    value: d.days_to_race,
+                    color: 'var(--cyan)',
+                  },
+                  {
+                    label: '📊 ' + _t('adp_taper_kpi_tsb_now', 'TSB actual'),
+                    value:
+                      d.tsb_now !== null
+                        ? (d.tsb_now > 0 ? '+' : '') + d.tsb_now
+                        : '—',
+                    color:
+                      (d.tsb_now || 0) > 0 ? 'var(--green)' : 'var(--amber)',
+                  },
+                  {
+                    label:
+                      '🎯 ' +
+                      _t('adp_taper_kpi_tsb_target', 'TSB objetivo carrera'),
+                    value: '+' + d.tsb_target_race,
+                    color: trackCol,
+                  },
+                ]
+                  .map(function (k) {
+                    return (
+                      '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                      k.color +
+                      '">' +
+                      k.value +
+                      '</div><div class="kpi-l">' +
+                      k.label +
+                      '</div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              if (d.on_track) {
+                html +=
+                  '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' +
+                  _t(
+                    'adp_taper_ontrack',
+                    'En camino — proyección TSB {tsb} para carrera. Meta: +{target}.',
+                  )
+                    .replace('{tsb}', d.tsb_projected)
+                    .replace('{target}', d.tsb_target_race) +
+                  '</div>';
+              } else {
+                html +=
+                  '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' +
+                  _t(
+                    'adp_taper_offtrack',
+                    'Ajusta la carga — proyección TSB {tsb} para carrera. Meta: +{target}.',
+                  )
+                    .replace('{tsb}', d.tsb_projected)
+                    .replace('{target}', d.tsb_target_race) +
+                  '</div>';
+              }
+
+              // Key rules
+              html +=
+                '<div class="panel" style="padding:1rem;margin-bottom:1rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.5rem;color:var(--cyan)">' +
+                _t('adp_taper_rules_title', 'REGLAS DE TAPERING') +
+                '</div>' +
+                (d.key_rules || [])
+                  .map(function (r) {
+                    return (
+                      '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0;border-bottom:1px solid var(--border2)">→ ' +
+                      r +
+                      '</div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              // Taper curve
+              var curve = (d.taper_curve || []).slice(0, 14);
+              if (curve.length) {
+                html +=
+                  '<div class="sec-h" style="font-size:.78rem">' +
+                  _t(
+                    'adp_taper_curve_title',
+                    'Curva de tapering (próximos {n} días)',
+                  ).replace('{n}', curve.length) +
+                  '</div>';
+                curve.forEach(function (day) {
+                  var col =
+                    day.taper_factor >= 0.85
+                      ? 'var(--muted)'
+                      : day.taper_factor >= 0.55
+                        ? 'var(--cyan)'
+                        : day.taper_factor >= 0.35
+                          ? 'var(--amber)'
+                          : 'var(--red)';
+                  html +=
+                    '<div class="taper-day">' +
+                    '<div class="taper-date">' +
+                    day.date_iso +
+                    '</div>' +
+                    '<div class="taper-factor" style="color:' +
+                    col +
+                    '">×' +
+                    day.taper_factor.toFixed(2) +
+                    '</div>' +
+                    '<div class="taper-label">' +
+                    (day.label || '') +
+                    ' · TSS≤' +
+                    day.tss_target +
+                    '</div>' +
+                    '</div>';
+                });
+              }
+
+              document.getElementById('taper-content').innerHTML = html;
+            })
+            .catch(function () {
+              document.getElementById('taper-content').innerHTML =
+                '<div class="alert-chip warn">' +
+                _t(
+                  'adp_taper_load_error',
+                  'Error cargando protocolo de tapering.',
+                ) +
+                '</div>';
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // PROYECCIÓN CTL
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadProjections() {
+          fetch(API + '/adaptive/projections', { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (d.error) {
+                document.getElementById('projections-content').innerHTML =
+                  '<div class="alert-chip warn">⚠️ ' + d.error + '</div>';
+                return;
+              }
+
+              var trackCol = d.on_track ? 'var(--green)' : 'var(--amber)';
+              var maxCTL =
+                Math.max.apply(
+                  null,
+                  (d.projection || []).map(function (p) {
+                    return p.ctl_projected;
+                  }),
+                ) || 1;
+
+              var html =
+                '<div class="g3" style="margin-bottom:1.5rem;gap:.75rem">' +
+                [
+                  {
+                    label: _t('adp_ctl_now', 'CTL actual'),
+                    value: d.ctl_now,
+                    color: 'var(--purple)',
+                  },
+                  {
+                    label: _t('adp_ctl_projected', 'CTL proyectado'),
+                    value: d.ctl_projected,
+                    color: 'var(--cyan)',
+                  },
+                  {
+                    label: _t('adp_ctl_target', 'CTL objetivo'),
+                    value: d.ctl_target,
+                    color: trackCol,
+                  },
+                ]
+                  .map(function (k) {
+                    return (
+                      '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                      k.color +
+                      '">' +
+                      k.value +
+                      '</div><div class="kpi-l">' +
+                      k.label +
+                      '</div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              html += d.on_track
+                ? '<div class="alert-chip good" style="margin-bottom:1rem">✅ ' +
+                  _t(
+                    'adp_proj_ontrack',
+                    'En camino. Al ritmo actual llegarás con CTL {ctl} (meta: {target}).',
+                  )
+                    .replace('{ctl}', d.ctl_projected)
+                    .replace('{target}', d.ctl_target) +
+                  '</div>'
+                : '<div class="alert-chip warn" style="margin-bottom:1rem">⚠️ ' +
+                  _t(
+                    'adp_proj_gap',
+                    'Gap de {gap} puntos CTL. Para llegar al objetivo de {target} necesitas aumentar compliance o extender la preparación.',
+                  )
+                    .replace('{gap}', d.gap)
+                    .replace('{target}', d.ctl_target) +
+                  '</div>';
+
+              html +=
+                '<div class="sec-h" style="font-size:.78rem">' +
+                _t(
+                  'adp_proj_weekly_title',
+                  'Proyección semanal de CTL ({n} semanas)',
+                ).replace('{n}', d.weeks_left) +
+                '</div>';
+              (d.projection || []).forEach(function (p) {
+                var w = Math.round((p.ctl_projected / maxCTL) * 100);
+                var pcol =
+                  {
+                    base: 'var(--cyan)',
+                    build: 'var(--gold)',
+                    peak: 'var(--red)',
+                    taper: 'var(--aqua)',
+                    recovery: 'var(--green)',
+                  }[p.phase] || 'var(--muted)';
+                html +=
+                  '<div class="proj-row">' +
+                  '<div class="proj-date">' +
+                  p.week_start +
+                  '</div>' +
+                  '<div class="proj-bar-wrap"><div class="proj-fill" style="width:' +
+                  w +
+                  '%;background:' +
+                  pcol +
+                  '"></div></div>' +
+                  '<div class="proj-ctl" style="color:' +
+                  pcol +
+                  '">' +
+                  p.ctl_projected +
+                  '</div>' +
+                  '<div class="proj-phase">' +
+                  p.phase +
+                  '</div>' +
+                  '</div>';
+              });
+
+              document.getElementById('projections-content').innerHTML = html;
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // HISTORIAL
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadHistory() {
+          fetch(API + '/adaptive/history?days=30', { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var stats = d.stats || {};
+              var html =
+                '<div class="g4" style="margin-bottom:1.5rem;gap:.75rem">' +
+                [
+                  {
+                    label: _t('adp_hist_total_days', 'Días analizados'),
+                    value: stats.total_days || 0,
+                    color: 'var(--muted)',
+                  },
+                  {
+                    label: _t('adp_hist_adapted_days', 'Días adaptados'),
+                    value: stats.adapted_days || 0,
+                    color: 'var(--amber)',
+                  },
+                  {
+                    label: '✅ ' + _t('adp_hist_accepted', 'Aceptadas'),
+                    value: stats.accepted || 0,
+                    color: 'var(--green)',
+                  },
+                  {
+                    label: '✗ ' + _t('adp_hist_rejected', 'Rechazadas'),
+                    value: stats.rejected || 0,
+                    color: 'var(--red)',
+                  },
+                ]
+                  .map(function (k) {
+                    return (
+                      '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                      k.color +
+                      '">' +
+                      k.value +
+                      '</div><div class="kpi-l">' +
+                      k.label +
+                      '</div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              var adapted = (d.history || []).filter(function (h) {
+                return h.signal && h.signal !== 'maintain';
+              });
+              if (adapted.length) {
+                adapted.forEach(function (a) {
+                  var sigCol = a.signal_color || 'var(--muted)';
+                  html +=
+                    '<div style="display:grid;grid-template-columns:90px 1fr auto;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border2);align-items:start;font-size:.78rem">' +
+                    '<div style="color:var(--dim);font-size:.7rem">' +
+                    a.date_iso +
+                    '<br><span style="color:' +
+                    sigCol +
+                    ";font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase\">" +
+                    (a.signal || '') +
+                    '</span></div>' +
+                    '<div style="color:var(--muted);line-height:1.45">' +
+                    (a.reason_text || '') +
+                    '</div>' +
+                    '<div style="text-align:right">' +
+                    (a.accepted === true
+                      ? '<span style="color:var(--green);font-size:.65rem">✅</span>'
+                      : a.accepted === false
+                        ? '<span style="color:var(--dim);font-size:.65rem">✗</span>'
+                        : '<span style="color:var(--dim);font-size:.65rem">—</span>') +
+                    '</div>' +
+                    '</div>';
+                });
+              } else {
+                html +=
+                  '<div style="color:var(--dim);font-size:.82rem">' +
+                  _t(
+                    'adp_no_adaptations_30d',
+                    'Sin adaptaciones en los últimos 30 días.',
+                  ) +
+                  '</div>';
+              }
+              document.getElementById('history-content').innerHTML = html;
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // COACH QUEUE
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadCoachQueue() {
+          fetch(API + '/adaptive/coach-queue', { headers: hdrs })
+            .then(function (r) {
+              if (r.status === 403) return null;
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d) {
+                document.getElementById('coach-queue-content').innerHTML = '';
+                return;
+              }
+              var html =
+                '<div style="margin-bottom:.75rem;font-size:.8rem;color:var(--muted)">' +
+                _t(
+                  'adp_pending_approval_label',
+                  'Adaptaciones pendientes de aprobación',
+                ) +
+                ': <strong style="color:var(--text)">' +
+                d.pending_count +
+                '</strong></div>';
+              if (!(d.queue || []).length) {
+                html +=
+                  '<div class="alert-chip good">✅ ' +
+                  _t(
+                    'adp_no_pending_approval',
+                    'Sin adaptaciones pendientes de aprobación esta semana.',
+                  ) +
+                  '</div>';
+              } else {
+                (d.queue || []).forEach(function (a) {
+                  var sigCol = a.signal_color || 'var(--muted)';
+                  html +=
+                    '<div style="padding:.75rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start">' +
+                    '<div>' +
+                    '<div style="font-size:.82rem;font-weight:600">' +
+                    (a.athlete_name || a.athlete_id) +
+                    ' · <span style="color:' +
+                    sigCol +
+                    '">' +
+                    a.date_iso +
+                    '</span></div>' +
+                    '<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">' +
+                    (a.reason_text || '') +
+                    '</div>' +
+                    '</div>' +
+                    '<div style="display:flex;gap:.35rem">' +
+                    '<button class="accept-btn" onclick="coachApprove(\'' +
+                    a.id +
+                    '\')">✅ ' +
+                    _t('adp_approve_btn', 'Aprobar') +
+                    '</button>' +
+                    '<button class="reject-btn" onclick="coachReject(\'' +
+                    a.id +
+                    '\')">✗</button>' +
+                    '</div>' +
+                    '</div>';
+                });
+              }
+              document.getElementById('coach-queue-content').innerHTML = html;
+            })
+            .catch(function () {});
+        }
+
+        window.coachApprove = function (id) {
+          fetch(API + '/adaptive/coach-approve/' + id, {
+            method: 'POST',
+            headers: hdrs,
+            body: JSON.stringify({}),
+          })
+            .then(function () {
+              loadCoachQueue();
+            })
+            .catch(function () {});
+        };
+        window.coachReject = function (id) {
+          var note =
+            prompt(
+              _t('adp_coach_reject_prompt', 'Nota para el atleta (opcional):'),
+            ) || '';
+          fetch(API + '/adaptive/coach-reject/' + id, {
+            method: 'POST',
+            headers: hdrs,
+            body: JSON.stringify({ note: note }),
+          })
+            .then(function () {
+              loadCoachQueue();
+            })
+            .catch(function () {});
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════════════════
+        loadDashboard();
+
+        if (_k && (_k.role === 'coach' || _k.role === 'admin')) {
+          var coachBtn = document.getElementById('coach-tab-btn');
+          if (coachBtn) coachBtn.style.display = '';
+        }
+
+        setTimeout(function () {
+          if (typeof KL !== 'undefined' && KL.init) KL.init();
+        }, 200);
+      })();
+    </script>
+    <script src="lx-audit.js"></script>
+    <script>
+      /* Vista de coach (cola de aprobaciones): se abre embebida desde Coach con ?view=coach. */
+      window.addEventListener('load', function () {
+        if (new URLSearchParams(location.search).get('view') === 'coach') {
+          switchTab('coach');
+        }
+      });
+    </script>
+  </body>
 </html>
