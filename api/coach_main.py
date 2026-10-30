@@ -137,9 +137,6 @@ if _IS_PROD:
     # CORS_ORIGINS vacío en producción implica wildcard — inaceptable
     if not os.getenv("CORS_ORIGINS", "").strip():
         _startup_errors.append("  · CORS_ORIGINS no configurada — CORS wildcard (*) en producción es inseguro")
-    # SENTRY_DSN ausente en producción significa errores invisibles
-    if not os.getenv("SENTRY_DSN", "").strip():
-        _startup_errors.append("  · SENTRY_DSN no configurada — los errores de producción no se reportarán")
     if _startup_errors:
         import sys
         logger.critical("STARTUP ABORTADO — Variables inseguras en producción:\n%s", "\n".join(_startup_errors))
@@ -153,8 +150,8 @@ if _IS_PROD:
 
     logger.info("Startup validation: todas las variables críticas configuradas correctamente")
 
-# ── Sentry (si SENTRY_DSN configurado) ────────────────────────
-_sentry_dsn = os.getenv("SENTRY_DSN", "")
+# ── Sentry opcional: si SENTRY_DSN está definida se inicializa; si falta, sigue sin él ──
+_sentry_dsn = os.getenv("SENTRY_DSN", "").strip()
 if _sentry_dsn:
     try:
         import sentry_sdk
@@ -169,10 +166,10 @@ if _sentry_dsn:
         logger.info("Sentry inicializado (env=%s)", os.getenv("APP_ENV"))
     except ImportError:
         logger.warning("sentry-sdk no instalado — pip install sentry-sdk[fastapi]")
-elif _IS_PROD:
+else:
     logger.warning(
-        "SENTRY_DSN no configurada en producción — errores no se reportan a Sentry. "
-        "Configurar SENTRY_DSN para habilitar error tracking."
+        "Sentry deshabilitado: falta SENTRY_DSN — la app arranca sin error tracking. "
+        "Configurar SENTRY_DSN para habilitarlo."
     )
 
 # ── CORS origins desde env ─────────────────────────────────────
