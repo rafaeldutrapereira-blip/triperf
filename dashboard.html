@@ -575,6 +575,25 @@
       .kcr-label-main .lx-term-sigla {
         font-size: 0.62em;
       }
+      /* P11-B2 fix 2: posición única inline del ⓘ en todas las filas.
+       flex-wrap: nowrap evita que sigla+botón (LXTerm, patrón A) se
+       partan del nombre cuando el lado derecho de la fila es ancho
+       (sparkline + valor + badge largo, ej. "Carregada · ontem"). */
+      .kcr-label-main .lx-term,
+      .kcr-label-main .lx-term-text {
+        flex-wrap: nowrap;
+      }
+      /* Filas patrón B (solo-botón: ACWR por deporte, VO2, TSS) y
+       patrón C (sin término: lesión, siesta, CTL proyectado, objetivo):
+       el botón ⓘ es hermano del título dentro de .kcr-label-main o
+       .kcr-label — por defecto ya es inline (.lx-info-btn / .lx-term-info
+       son display:inline-flex), esto solo evita que algún ancestro con
+       clase .kc lo flote si se reutiliza ese patrón en el futuro. */
+      .kcr-label-main > .lx-info-btn,
+      .kcr-label > .lx-info-btn {
+        position: static;
+        vertical-align: middle;
+      }
       /* P11-B: detalle colapsable por deporte + frase de lectura */
       .kcr-details {
         margin: 0.1rem 0 0.2rem;
@@ -3445,9 +3464,13 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="acwr"
-                  data-lx-info-val="#kc-acwr-swim-val"
-                  ><span data-i18n="dash_acwr_swim">ACWR — Natación</span></span
+                  ><span data-i18n="dash_acwr_swim">ACWR — Natación</span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="LXTerm.open('acwr', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
               <span class="kcr-right"
@@ -3474,9 +3497,13 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="acwr"
-                  data-lx-info-val="#kc-acwr-bike-val"
-                  ><span data-i18n="dash_acwr_bike">ACWR — Ciclismo</span></span
+                  ><span data-i18n="dash_acwr_bike">ACWR — Ciclismo</span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="LXTerm.open('acwr', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
               <span class="kcr-right"
@@ -3503,9 +3530,13 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="acwr"
-                  data-lx-info-val="#kc-acwr-run-val"
-                  ><span data-i18n="dash_acwr_run">ACWR — Trote</span></span
+                  ><span data-i18n="dash_acwr_run">ACWR — Trote</span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="LXTerm.open('acwr', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
               <span class="kcr-right"
@@ -3532,11 +3563,14 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="acwr"
-                  data-lx-info-val="#kc-acwr-gym-val"
                   ><span data-i18n="dash_acwr_str"
                     >ACWR — Prep. física</span
-                  ></span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="LXTerm.open('acwr', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
               <span class="kcr-right"
@@ -3907,10 +3941,14 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="vo2max"
-                  data-lx-info-val="#kl-vo2max-val"
                   id="kl-vo2-running-name"
                   >VO2 Max Running</span
+                ><button
+                  type="button"
+                  class="lx-term-info"
+                  aria-label="Info"
+                  onclick="LXTerm.open('vo2max', this)"
+                ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
                 ><span class="kcr-sub"
                   ><span data-i18n="dash_vo2_unit"
                     >ml/kg/min · estimado</span
@@ -3943,10 +3981,14 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-info="vo2max"
-                  data-lx-info-val="#kl-vo2max-cycling-val"
                   id="kl-vo2-cycling-name"
                   >VO2 Max Ciclismo</span
+                ><button
+                  type="button"
+                  class="lx-term-info"
+                  aria-label="Info"
+                  onclick="LXTerm.open('vo2max', this)"
+                ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
                 ><span class="kcr-sub"
                   ><span data-i18n="dash_vo2_unit"
                     >ml/kg/min · estimado</span
