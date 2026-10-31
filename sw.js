@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '224';  // 2026-10-31: P11-B ACWR consolidado + frase de lectura
+var BUILD_VERSION = '225';  // 2026-10-31: P11-B2 cierre (columna 3, tip ACWR, 3 terminos)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

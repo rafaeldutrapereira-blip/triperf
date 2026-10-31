@@ -923,7 +923,10 @@ var SIGLAS = {
   vo2max: 'VO2max',
   rpe: 'RPE',
   compliance: 'COMPL',
-  tapering: 'TAPER'
+  tapering: 'TAPER',
+  resting_hr: 'FC',
+  fatiga_muscular: 'FM',
+  sueno: 'SUEÑO',
 };
 
 var IDS = Object.keys(SIGLAS);
