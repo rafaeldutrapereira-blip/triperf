@@ -554,10 +554,15 @@
       }
       /* El texto y el botón "i" (inyectado por lx-info.js dentro de este span)
    quedan en la misma línea — evita que el ícono caiga a una línea aparte. */
+      /* P11-B2 fix: todos los títulos de fila en el mismo color. Las filas
+         legacy heredaban var(--muted) y las migradas a LXTerm pintaban
+         var(--text); ahora manda esta regla para todas. Los subtítulos
+         (.kcr-sub) siguen en var(--muted). */
       .kcr-label-main {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
+        color: var(--text);
       }
       /* P11-B: el nombre+sigla+icono que inyecta LXTerm hereda el tamaño
          de la fila (si no, usa los tamaños globales del componente). */
@@ -3865,8 +3870,17 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  data-lx-term="tss"
-                  >TSS Semana</span
+                  ><span data-i18n="kpi_tss_week">Carga semanal (TSS)</span
+                  ><!-- Patrón "solo botón": filas cuyo título NO es el nombre del
+                    término (acá el dato es la carga de la SEMANA, no de la
+                    sesión). Se muestra el título propio y el botón abre la
+                    tarjeta del término sin renderizar su nombre. -->
+                  <button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="LXTerm.open('tss', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ><span class="kcr-sub" id="tss-week-meta"></span
               ></span>
               <span class="kcr-right"
@@ -3895,6 +3909,7 @@
                   class="kcr-label-main"
                   data-lx-info="vo2max"
                   data-lx-info-val="#kl-vo2max-val"
+                  id="kl-vo2-running-name"
                   >VO2 Max Running</span
                 ><span class="kcr-sub"
                   ><span data-i18n="dash_vo2_unit"
@@ -9494,12 +9509,13 @@
     <script>
       (function () {
         function _vo2Sport() {
-          var el = document.getElementById('kl-vo2-cycling-name');
-          if (!el) return;
-          var n = window.lxSport ? window.lxSport('Ciclismo') : 'Ciclismo';
-          el.textContent = _t('dash_vo2_sport', 'VO2 Max {sport}')
-            .split('{sport}')
-            .join(n);
+          var tpl = _t('dash_vo2_sport', 'Aerobic capacity · {sport} (VO2 Max)');
+          var bike = document.getElementById('kl-vo2-cycling-name');
+          var run = document.getElementById('kl-vo2-running-name');
+          var bikeName = _t('dash_sport_bike', 'Ciclismo');
+          var runName = _t('dash_sport_run', 'Trote');
+          if (bike) bike.textContent = tpl.split('{sport}').join(bikeName);
+          if (run) run.textContent = tpl.split('{sport}').join(runName);
         }
         _vo2Sport();
         document.addEventListener('lx:i18nready', _vo2Sport);

@@ -926,7 +926,7 @@ var SIGLAS = {
   tapering: 'TAPER',
   resting_hr: 'FC',
   fatiga_muscular: 'FM',
-  sueno: 'SUEÑO',
+  sueno: 'SLEEP',
 };
 
 var IDS = Object.keys(SIGLAS);
