@@ -594,6 +594,23 @@
         position: static;
         vertical-align: middle;
       }
+      /* P11-B2 fix 3: VO2 — el título lo reescribe _vo2Sport() en un
+       span interno (id kl-vo2-*-name); ese span debe poder reducirse
+       (o envolver su texto) sin empujar el ⓘ hermano a su propia línea. */
+      #kl-vo2-running-name,
+      #kl-vo2-cycling-name {
+        min-width: 0;
+      }
+      /* P11-B2 fix 3: ⓘ de Insight inline tras el título, alcance SOLO
+       a #insight-card (no se toca el CSS global de lx-info.js). El
+       botón se crea a mano en el markup, así que autoInit (que busca
+       `.lx-info-btn` ya presente en la tarjeta) no agrega el suyo
+       flotado en la esquina. */
+      #insight-card .insight-top .lx-info-btn {
+        position: static;
+        margin-left: 0.4rem;
+        vertical-align: middle;
+      }
       /* P11-B: detalle colapsable por deporte + frase de lectura */
       .kcr-details {
         margin: 0.1rem 0 0.2rem;
@@ -3088,7 +3105,13 @@
             <div>
               <div class="insight-top">
                 <h3 class="kpi-card-q">
-                  <span data-i18n="dash_insight_title">Insight del día</span>
+                  <span data-i18n="dash_insight_title">Insight del día</span
+                  ><button
+                    type="button"
+                    class="lx-info-btn"
+                    aria-label="Info"
+                    onclick="event.stopPropagation(); lxInfo.showInsightLive();"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>
                 </h3>
                 <div
                   style="
@@ -3469,7 +3492,7 @@
                     type="button"
                     class="lx-term-info"
                     aria-label="Info"
-                    onclick="LXTerm.open('acwr', this)"
+                    onclick="event.stopPropagation(); LXTerm.open('acwr', this)"
                   ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
@@ -3502,7 +3525,7 @@
                     type="button"
                     class="lx-term-info"
                     aria-label="Info"
-                    onclick="LXTerm.open('acwr', this)"
+                    onclick="event.stopPropagation(); LXTerm.open('acwr', this)"
                   ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
@@ -3535,7 +3558,7 @@
                     type="button"
                     class="lx-term-info"
                     aria-label="Info"
-                    onclick="LXTerm.open('acwr', this)"
+                    onclick="event.stopPropagation(); LXTerm.open('acwr', this)"
                   ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
@@ -3569,7 +3592,7 @@
                     type="button"
                     class="lx-term-info"
                     aria-label="Info"
-                    onclick="LXTerm.open('acwr', this)"
+                    onclick="event.stopPropagation(); LXTerm.open('acwr', this)"
                   ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ></span
               >
@@ -3765,7 +3788,7 @@
               class="kcr"
               id="kc-mental"
               style="display: none"
-              onclick="location.href = 'mental.html'"
+              onclick="if (!event.target.closest('.lx-term-info, .lx-info-btn')) location.href = 'mental.html'"
               role="button"
               tabindex="0"
               aria-label="Ver estado mental"
@@ -3913,7 +3936,7 @@
                     type="button"
                     class="lx-term-info"
                     aria-label="Info"
-                    onclick="LXTerm.open('tss', this)"
+                    onclick="event.stopPropagation(); LXTerm.open('tss', this)"
                   ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ><span class="kcr-sub" id="tss-week-meta"></span
               ></span>
@@ -3941,14 +3964,13 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  id="kl-vo2-running-name"
-                  >VO2 Max Running</span
-                ><button
-                  type="button"
-                  class="lx-term-info"
-                  aria-label="Info"
-                  onclick="LXTerm.open('vo2max', this)"
-                ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
+                  ><span id="kl-vo2-running-name">VO2 Max Running</span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="event.stopPropagation(); LXTerm.open('vo2max', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ><span class="kcr-sub"
                   ><span data-i18n="dash_vo2_unit"
                     >ml/kg/min · estimado</span
@@ -3981,14 +4003,13 @@
               <span class="kcr-label"
                 ><span
                   class="kcr-label-main"
-                  id="kl-vo2-cycling-name"
-                  >VO2 Max Ciclismo</span
-                ><button
-                  type="button"
-                  class="lx-term-info"
-                  aria-label="Info"
-                  onclick="LXTerm.open('vo2max', this)"
-                ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
+                  ><span id="kl-vo2-cycling-name">VO2 Max Ciclismo</span
+                  ><button
+                    type="button"
+                    class="lx-term-info"
+                    aria-label="Info"
+                    onclick="event.stopPropagation(); LXTerm.open('vo2max', this)"
+                  ><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button></span
                 ><span class="kcr-sub"
                   ><span data-i18n="dash_vo2_unit"
                     >ml/kg/min · estimado</span
@@ -4425,6 +4446,17 @@
 
       /* -- Navigate to metric detail -- */
       function goMetric(m, sport) {
+        // P11-B2 fix 3: el listener delegado de LXTerm/lx-info corre en
+        // document (bubble) y llega DESPUÉS del onclick de esta fila, así
+        // que un clic en el ⓘ terminaba navegando antes de que la tarjeta
+        // de explicación tuviera chance de abrirse. window.event es el
+        // evento real porque goMetric siempre se invoca síncrono desde un
+        // onclick inline.
+        var ev = window.event;
+        if (ev && ev.target && ev.target.closest &&
+            ev.target.closest('.lx-term-info, .lx-info-btn')) {
+          return;
+        }
         document.body.style.transition = 'opacity .22s';
         document.body.style.opacity = '0';
         var url = 'detalle.html?metric=' + m + (sport ? '&sport=' + sport : '');
