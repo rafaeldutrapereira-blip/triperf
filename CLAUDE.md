@@ -43,6 +43,12 @@ El backend corre en un servidor cloud, **no en la PC de Rafael** — ver [[proje
 - Postura sobre Garmin OAuth vs. credenciales de usuario — Garmin no ofrece OAuth de consumidor para devs independientes; migrar es negociación comercial, no un sprint.
 - Plan multi-marca (Wahoo/Polar/Coros/Apple Health) — auditoría hecha, sprints 48-55 diseñados, no iniciados.
 
+## Estado reciente (oct-2026)
+
+- **Sentry pasó a ser opcional en el arranque** (commit `981e1ba`): con `APP_ENV=production`, la falta de `SENTRY_DSN` ya no aborta el proceso — loguea `Sentry deshabilitado: falta SENTRY_DSN` y sigue sin error tracking. Siguen siendo obligatorios `ADMIN_PASS`, `JWT_SECRET` (>=32 chars, sin default), `FERNET_KEY`, `CORS_ORIGINS` y `DATABASE_URL` no-SQLite. El DSN se normaliza con `.strip()`: un valor en blanco cuenta como ausente (antes pasaba la validación y después rompía en `sentry_sdk.init`). Ojo: `docs/arquitectura-fase3.md` todavía propone lo contrario ("Sentry obligatorio") — es un doc de planificación viejo, no el estado real.
+- **Baseline de la suite (clave para no atribuir falsos positivos):** `make test` da 15 fallos y ~536 errores PREEXISTENTES. Los errores son `fixture 'client' not found` porque ese target usa `--noconftest`, que desactiva `api/tests/conftest.py` (donde vive el fixture); los 15 fallos son asserts de HTML en `test_adaptive_a_plan_b8`, `test_coach_xss_regression`, `test_free_polish`, `test_profile_dedupe_b5` y `test_rendimiento_b7`. Sin `--noconftest` quedan 15 fallos y 15 errores. Antes de culpar a un cambio nuevo, comparar contra este baseline (stashear el cambio y volver a correr).
+- **One-pager de LabX** en `assets_onepager/`: `build_onepager.py` genera el PPTX A4 (21 x 29,7 cm) y de ahí salen el PDF y el PNG. Es material de difusión para amigos, no parte del producto ni del deploy.
+
 ## Detalle histórico completo
 
 El detalle sprint-por-sprint (más de 90 entradas) vive en la memoria personal de Claude en la PC de Rafael, no en este archivo — este archivo es un resumen vivo, no un changelog. Para historia completa de una feature específica, preguntar en la sesión de la PC.
