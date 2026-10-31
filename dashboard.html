@@ -570,6 +570,33 @@
       .kcr-label-main .lx-term-sigla {
         font-size: 0.62em;
       }
+      /* P11-B: detalle colapsable por deporte + frase de lectura */
+      .kcr-details {
+        margin: 0.1rem 0 0.2rem;
+      }
+      .kcr-details-sum {
+        cursor: pointer;
+        list-style: none;
+        font-size: 0.7rem;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+        padding: 0.35rem 0;
+      }
+      .kcr-details-sum::-webkit-details-marker {
+        display: none;
+      }
+      .kcr-details-sum::before {
+        content: '▸ ';
+      }
+      .kcr-details[open] > .kcr-details-sum::before {
+        content: '▾ ';
+      }
+      .kcr-reading {
+        font-size: 0.7rem;
+        line-height: 1.35;
+        color: var(--muted);
+        margin: -0.1rem 0 0.45rem;
+      }
       .kcr-sub {
         font-family: 'Inter', sans-serif;
         font-size: 0.66rem;
@@ -3397,6 +3424,7 @@
                 ></span
               >
             </div>
+            <div class="kcr-reading" id="kc-acwr-tip"></div>
             <!-- ACWR por disciplina — mismo indicador desglosado por deporte
              (pedido explícito: un ACWR agregado óptimo puede esconder un
              pico de carga en una sola disciplina). Mismo estándar que el
@@ -3404,6 +3432,10 @@
              lx-info.js que ACWR — Carga, es la misma métrica filtrada por
              deporte), click → detalle.html?metric=acwr&sport=X (misma
              página que ya tiene la sección "por disciplina" completa). -->
+            <details id="acwr-detail" class="kcr-details">
+              <summary class="kcr-details-sum" data-i18n="dash_acwr_detail">
+                Ver detalle por deporte
+              </summary>
             <div
               class="kcr kcr-child"
               id="kc-acwr-swim"
@@ -3522,6 +3554,7 @@
                 ><span class="badge" id="kc-acwr-gym-badge">—</span></span
               >
             </div>
+            </details>
             <div
               class="kcr"
               id="kc-injury"
@@ -5980,6 +6013,46 @@
               badgeEl.style.background = z.color + '18';
             }
           });
+        }
+
+        // ACWR consolidado (P11-B parte 2): la tarjeta principal muestra el
+        // PEOR valor entre los deportes CON datos — un ACWR agregado óptimo
+        // puede esconder un pico en una sola disciplina. Reutiliza el mismo
+        // mapeo de zonas (label/color) y los mismos tips dash_tip_* que ya usa
+        // el agregado; no define umbrales nuevos.
+        if (d.acwr_by_sport) {
+          var worstAcwr = null;
+          ['swim', 'bike', 'run', 'gym'].forEach(function (sp) {
+            var spInfo = d.acwr_by_sport[sp] || {};
+            if (spInfo.insufficient_data || spInfo.acwr == null) return;
+            if (worstAcwr === null || spInfo.acwr > worstAcwr.acwr) {
+              worstAcwr = spInfo;
+            }
+          });
+          var wZone = worstAcwr
+            ? acwrZones[worstAcwr.zone] || acwrZones.no_data
+            : acwrZones.no_data;
+          var wTipSrc = null;
+          if (typeof zones !== 'undefined' && zones) {
+            wTipSrc =
+              zones[worstAcwr ? worstAcwr.zone : 'no_data'] || zones.no_data;
+          }
+          var wVal = document.getElementById('kc-acwr-val');
+          var wBadge = document.getElementById('kc-acwr-badge');
+          var wCard = document.getElementById('kc-acwr');
+          var wTip = document.getElementById('kc-acwr-tip');
+          if (wVal) {
+            wVal.textContent = worstAcwr ? worstAcwr.acwr : '—';
+            wVal.style.color = wZone.color;
+          }
+          if (wCard) wCard.style.setProperty('--kc', wZone.color);
+          if (wBadge) {
+            wBadge.textContent = wZone.label;
+            wBadge.style.color = wZone.color;
+            wBadge.style.borderColor = wZone.color + '55';
+            wBadge.style.background = wZone.color + '18';
+          }
+          if (wTip && wTipSrc) wTip.textContent = wTipSrc.tip;
         }
 
         // Injury Risk — card "¿Cómo va mi carga?": motor oficial ya consolidado
