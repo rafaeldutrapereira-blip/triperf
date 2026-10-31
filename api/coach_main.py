@@ -432,6 +432,7 @@ def create_app() -> FastAPI:
         version     = "1.3.0",
         docs_url    = "/docs"  if (not _IS_PROD or os.getenv("ENABLE_DOCS") == "1") else None,
         redoc_url   = "/redoc" if (not _IS_PROD or os.getenv("ENABLE_DOCS") == "1") else None,
+        openapi_url = "/openapi.json" if (not _IS_PROD or os.getenv("ENABLE_DOCS") == "1") else None,
         openapi_tags= _OPENAPI_TAGS,
         lifespan    = lifespan,
         contact     = {"name": "LabX Team", "email": "partnerships@labxperformanceapp.com"},
