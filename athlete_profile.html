@@ -144,6 +144,62 @@
         padding: 1.6rem;
       }
 
+      /* Mi plan (P9) */
+      .mp-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.86rem;
+        color: var(--text);
+      }
+      .mp-detail[hidden] {
+        display: none;
+      }
+      .mp-detail:not([hidden]) {
+        margin-top: 1rem;
+      }
+      .mp-group + .mp-group {
+        margin-top: 1.1rem;
+      }
+      .mp-group-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      .mp-soon {
+        font-size: 0.82rem;
+        color: var(--dim);
+      }
+      .mp-price {
+        margin-left: 0.5rem;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .pf-conn-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--border2);
+      }
+      .mp-group-title + .pf-conn-row {
+        border-top: none;
+      }
+      .pf-conn-name {
+        font-size: 0.86rem;
+        color: var(--text);
+      }
+      .pf-conn-meta {
+        font-size: 0.76rem;
+        color: var(--muted);
+      }
+
       /* Forms */
       .form-grid {
         display: grid;
@@ -716,14 +772,6 @@
             </div>
             <div class="card" style="margin-bottom: 1rem">
               <div class="card-head">
-                <div class="card-title" data-i18n="addon_card_title">
-                  Módulos adicionales
-                </div>
-              </div>
-              <div class="card-body" id="addons-list"></div>
-            </div>
-            <div class="card" style="margin-bottom: 1rem">
-              <div class="card-head">
                 <div class="card-title" data-i18n="cmw_privacy_title">
                   Privacidad de mis actividades
                 </div>
@@ -942,6 +990,29 @@
                     </select>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title" data-i18n="addon_card_title">
+                  Mi plan
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="mp-summary">
+                  <span id="myplan-summary">—</span>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    id="myplan-toggle"
+                    onclick="toggleMyPlan()"
+                    aria-expanded="false"
+                    data-i18n="myplan_see_detail"
+                  >
+                    Ver detalle
+                  </button>
+                </div>
+                <div id="addons-list" class="mp-detail" hidden></div>
               </div>
             </div>
 
@@ -2779,6 +2850,28 @@
       }
 
       /* ── Addons (B12): compra por módulo ─────────────────────────── */
+      var MP_ADDON_NAMES = {
+        asistente_ia: 'myplan_addon_asistente_ia',
+        labs: 'myplan_addon_labs',
+        estrategia_carrera: 'myplan_addon_estrategia',
+        protocolos_mentales: 'myplan_addon_mentales',
+        indoor: 'myplan_addon_indoor',
+        ajustes_adaptativos: 'myplan_addon_adaptativos',
+        rendimiento_avanzado: 'myplan_addon_rendimiento',
+        retrospectiva: 'myplan_addon_retrospectiva',
+      };
+      function toggleMyPlan() {
+        var box = document.getElementById('addons-list');
+        var btn = document.getElementById('myplan-toggle');
+        if (!box || !btn) return;
+        var abrir = box.hasAttribute('hidden');
+        if (abrir) box.removeAttribute('hidden');
+        else box.setAttribute('hidden', '');
+        btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        var key = abrir ? 'myplan_hide_detail' : 'myplan_see_detail';
+        btn.setAttribute('data-i18n', key);
+        btn.textContent = _t(key, abrir ? 'Ocultar' : 'Ver detalle');
+      }
       function loadAddons() {
         fetch(API + '/stripe/addons', {
           credentials: 'include',
@@ -2804,30 +2897,100 @@
                 },
               );
             };
-            box.innerHTML = d.addons
-              .map(function (a) {
-                var action = a.included
-                  ? '<span class="pf-conn-meta">' +
-                    _t('addon_included', 'Incluido en tu plan') +
-                    '</span>'
-                  : !a.available || !d.enabled || !a.price_configured
-                    ? '<span class="pf-conn-meta">' +
-                      _t('addon_soon', 'Próximamente') +
-                      '</span>'
-                    : '<button class="btn btn-primary btn-sm" onclick="buyAddon(\'' +
+            // Los nombres llegan en español desde el backend: se traducen acá
+            // por id; si aparece un addon nuevo, cae al nombre del servidor.
+            var nameOf = function (a) {
+              var k = MP_ADDON_NAMES[a.id];
+              return esc(k ? _t(k, a.name) : a.name);
+            };
+            // El payload hoy no trae precio. Si algún día lo agrega, se muestra
+            // sin tocar el endpoint; nunca se inventa un monto.
+            var priceOf = function (a) {
+              var p = a.price;
+              if (!p) return '';
+              var txt =
+                typeof p === 'string'
+                  ? p
+                  : (p.currency ? p.currency + ' ' : '') + p.amount;
+              return '<span class="mp-price">' + esc(txt) + '</span>';
+            };
+
+            var inc = [];
+            var buy = [];
+            var soon = [];
+            d.addons.forEach(function (a) {
+              if (a.included) inc.push(a);
+              else if (a.available && d.enabled && a.price_configured)
+                buy.push(a);
+              else soon.push(a);
+            });
+
+            var html = '';
+            if (inc.length) {
+              html +=
+                '<div class="mp-group"><div class="mp-group-title">' +
+                _t('myplan_included', 'Incluidos en tu plan') +
+                '</div>' +
+                inc
+                  .map(function (a) {
+                    return (
+                      '<div class="pf-conn-row"><div class="pf-conn-name">' +
+                      nameOf(a) +
+                      '</div><div><span class="pf-conn-meta">' +
+                      _t('addon_included', 'Incluido en tu plan') +
+                      '</span></div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+            }
+            if (buy.length) {
+              html +=
+                '<div class="mp-group"><div class="mp-group-title">' +
+                _t('myplan_available', 'Disponibles para agregar') +
+                '</div>' +
+                buy
+                  .map(function (a) {
+                    return (
+                      '<div class="pf-conn-row"><div class="pf-conn-name">' +
+                      nameOf(a) +
+                      priceOf(a) +
+                      '</div><div><button class="btn btn-primary btn-sm" onclick="buyAddon(\'' +
                       esc(a.id) +
                       '\')">' +
                       _t('addon_buy', 'Activar') +
-                      '</button>';
-                return (
-                  '<div class="pf-conn-row"><div class="pf-conn-name">' +
-                  esc(a.name) +
-                  '</div><div>' +
-                  action +
-                  '</div></div>'
-                );
-              })
-              .join('');
+                      '</button></div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+            }
+            if (soon.length) {
+              html +=
+                '<div class="mp-group"><div class="mp-group-title">' +
+                _t('addon_soon', 'Próximamente') +
+                '</div><div class="mp-soon">' +
+                soon.map(nameOf).join(', ') +
+                '</div></div>';
+            }
+            box.innerHTML = html;
+
+            var n = inc.length;
+            var sum = document.getElementById('myplan-summary');
+            if (sum) {
+              sum.textContent =
+                n === 0
+                  ? _t(
+                      'myplan_summary_none',
+                      'Tu plan no incluye módulos adicionales',
+                    )
+                  : n === 1
+                    ? _t('myplan_summary_one', 'Tu plan incluye 1 módulo')
+                    : _t(
+                        'myplan_summary_many',
+                        'Tu plan incluye {n} módulos',
+                      ).replace('{n}', n);
+            }
           })
           .catch(function () {});
       }

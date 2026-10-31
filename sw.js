@@ -1,9 +1,9 @@
-﻿/**
+/**
  * LabX Service Worker â€” offline cache + background sync + GPS tracker
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '220';  // 2026-10-18: B1 gating de plan (routes.config.js: normPlan basico/basic, sidebar:false sí se valida, detalle con plan)
+var BUILD_VERSION = '221';  // 2026-10-30: "Mi plan" en Perfil (colapsado, 3 grupos, nombres i18n) + i18n.js
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
