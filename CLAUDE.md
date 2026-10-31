@@ -46,9 +46,34 @@ El backend corre en un servidor cloud, **no en la PC de Rafael** — ver [[proje
 ## Estado reciente (oct-2026)
 
 - **Sentry pasó a ser opcional en el arranque** (commit `981e1ba`): con `APP_ENV=production`, la falta de `SENTRY_DSN` ya no aborta el proceso — loguea `Sentry deshabilitado: falta SENTRY_DSN` y sigue sin error tracking. Siguen siendo obligatorios `ADMIN_PASS`, `JWT_SECRET` (>=32 chars, sin default), `FERNET_KEY`, `CORS_ORIGINS` y `DATABASE_URL` no-SQLite. El DSN se normaliza con `.strip()`: un valor en blanco cuenta como ausente (antes pasaba la validación y después rompía en `sentry_sdk.init`). Ojo: `docs/arquitectura-fase3.md` todavía propone lo contrario ("Sentry obligatorio") — es un doc de planificación viejo, no el estado real.
-- **Baseline de la suite (2026-10-31): 2503 passed, 0 failed, 0 errors**, cobertura ~75% (el CI exige 70%). `make test` ya NO usa `--noconftest`: esa bandera desactivaba `api/tests/conftest.py` y generaba ~536 errores de `fixture 'client' not found`. Los 15 fallos de asserts de HTML eran tests desactualizados frente al reformateo de Prettier (espacios y comillas), no bugs; se hicieron tolerantes al formato con `api/tests/text_match.py::squash`. Si aparece un fallo nuevo, comparar contra este baseline antes de tocar código.
+- **Baseline de la suite (2026-10-31): 2516 passed, 0 failed, 0 errors**, cobertura ~75% (el CI exige 70%). `make test` ya NO usa `--noconftest`: esa bandera desactivaba `api/tests/conftest.py` y generaba ~536 errores de `fixture 'client' not found`. Los 15 fallos de asserts de HTML eran tests desactualizados frente al reformateo de Prettier (espacios y comillas), no bugs; se hicieron tolerantes al formato con `api/tests/text_match.py::squash`. Si aparece un fallo nuevo, comparar contra este baseline antes de tocar código.
 - **CI (2026-10-31):** el job "Tests Python" moría ANTES de correr pytest porque `setup-python` con `cache: pip` exige `requirements.txt`/`pyproject.toml` en la raíz (acá solo existe `requirements-api.txt`) — se agregó `cache-dependency-path`. El job "Docker Build" se eliminó: no hay Dockerfile y el deploy es `git archive` + systemd. El target `make test` se alineó con el CI (sin `--noconftest`). Deploy sigue en "skipped" si faltan los secrets PROD_HOST/PROD_USER/PROD_SSH_KEY — eso es config del repo, no código.
 - **One-pager de LabX** en `assets_onepager/`: `build_onepager.py` genera el PPTX A4 (21 x 29,7 cm) y de ahí salen el PDF y el PNG. Es material de difusión para amigos, no parte del producto ni del deploy.
+- **Producción (2026-10-31):** BUILD 226, `APP_ENV=production` en la VM, SQLite
+  habilitado por `ALLOW_SQLITE_IN_PROD=1` (excepción explícita; se retira al migrar
+  a PostgreSQL), `ENABLE_DOCS=0` con `/docs`, `/redoc` y `/openapi.json` en 404, y
+  Sentry opcional (sin `SENTRY_DSN` solo warning). Los secrets de deploy ya están
+  cargados: el deploy automático corre en cada push a main con CI verde.
+- **Simplificación de indicadores (P11, en producción):** el diccionario vive en
+  `i18n.js` (`term_<id>_name` / `_short` / `_action`, 19 términos ES/PT/EN) y el
+  componente en `lx-info.js` (`window.LXTerm`: `render`, `mount`, `open`, `autoInit`;
+  rellena `<span data-lx-term="id">` con nombre + sigla + botón ℹ que abre la tarjeta).
+  El dashboard ya usa nombres simples y ACWR consolidado (peor valor entre deportes en
+  la tarjeta principal + `<details>` cerrado con el desglose).
+- **Gotchas de LXTerm (aprendidos a golpes):**
+  - No poner `data-lx-info` y `data-lx-term` en el mismo nodo: se montan **dos** íconos ℹ.
+  - Si el label lo escribe JS (ej. `_vo2Sport()` sobre `#kl-vo2-*-name`), LXTerm lo pisa
+    al renderizar; en esas filas el botón va aparte (patrón "solo botón":
+    `onclick="LXTerm.open('id', this)"`).
+  - LXTerm **no** se re-renderiza al cambiar de idioma (limitación conocida del componente).
+  - Si la etiqueta conserva su `data-i18n` viejo, el cambio de idioma reintroduce el
+    nombre anterior ("CTL — Fitness"): hay que quitarlo al migrar.
+  - Los `dash_tip_*` del ACWR no deben incluir cifras del indicador: compiten con el
+    valor de la tarjeta.
+- **Pendiente de P11:** los ⓘ de los dos títulos VO2 y de `dash_ctl_proj` siguen con el
+  sistema viejo `data-lx-info`; `dash_goal_fitness` no tiene término (solo se renombró).
+  Queda por confirmar en dispositivo que el `<summary>` del detalle ACWR se vea en PT
+  (depende de que el service worker tome el BUILD nuevo).
 
 ## Detalle histórico completo
 
