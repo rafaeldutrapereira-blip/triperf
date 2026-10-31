@@ -1505,7 +1505,7 @@ var DICT = {
     term_tsb_name: 'Forma de hoy',
     term_tsb_short: 'El balance entre tu condición y tu fatiga: positivo = fresco, negativo = cargado.',
     term_tsb_action: 'Si está muy negativo, prioriza descanso o una sesión suave hoy.',
-    term_acwr_name: 'Riesgo de sobrecarga',
+    term_acwr_name: 'Riesgo sobrecarga',
     term_acwr_short: 'Si subiste el entrenamiento demasiado rápido respecto a tu base. Sobre 1,3, cuidado.',
     term_acwr_action: 'Si supera 1,3, no agregues intensidad esta semana: sostén la carga.',
     term_tss_name: 'Carga de la sesión',

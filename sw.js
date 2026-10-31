@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '229';  // 2026-10-31: P11-B2 pulido (VO2 e Insight junto a la 1a linea del titulo tambien a 390px)
+var BUILD_VERSION = '230';  // 2026-10-31: ACWR - "Riesgo sobrecarga" + ocultar frase explicativa del tip
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
