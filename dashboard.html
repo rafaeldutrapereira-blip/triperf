@@ -601,6 +601,16 @@
       #kl-vo2-cycling-name {
         min-width: 0;
       }
+      /* P11-B2 pulido: cuando el título de VO2 envuelve a 2-3 líneas
+       (nombre de deporte largo + "VO2 Max"), align-items:center de
+       .kcr-label-main centraba el ⓘ contra TODO el bloque envuelto
+       en vez de contra la primera línea. flex-start lo ancla arriba,
+       a la altura de esa primera línea, como en el resto de filas de
+       una sola línea (que no se ven afectadas por este selector). */
+      .kcr-label-main:has(> #kl-vo2-running-name),
+      .kcr-label-main:has(> #kl-vo2-cycling-name) {
+        align-items: flex-start;
+      }
       /* P11-B2 fix 3: ⓘ de Insight inline tras el título, alcance SOLO
        a #insight-card (no se toca el CSS global de lx-info.js). El
        botón se crea a mano en el markup, así que autoInit (que busca
@@ -610,6 +620,17 @@
         position: static;
         margin-left: 0.4rem;
         vertical-align: middle;
+      }
+      /* P11-B2 pulido: a 390px el div de la derecha (readiness pill,
+       flex-shrink:0 en su estilo inline) se queda con todo su ancho
+       natural y aprieta al h3 del título, que al no tener
+       flex-shrink:0 se encoge más allá del ancho de su contenido —
+       el ⓘ (fin del contenido inline) se va a una línea propia.
+       Fijar flex-shrink:0 en el h3 y su botón evita que se encojan;
+       es el mismo "no te comprimas" que ya tiene el div de la derecha. */
+      #insight-card .insight-top .kpi-card-q,
+      #insight-card .insight-top .kpi-card-q .lx-info-btn {
+        flex-shrink: 0;
       }
       /* P11-B: detalle colapsable por deporte + frase de lectura */
       .kcr-details {

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '228';  // 2026-10-31: P11-B2 fix 3 (clic en el i no navega; VO2 e Insight en linea)
+var BUILD_VERSION = '229';  // 2026-10-31: P11-B2 pulido (VO2 e Insight junto a la 1a linea del titulo tambien a 390px)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
