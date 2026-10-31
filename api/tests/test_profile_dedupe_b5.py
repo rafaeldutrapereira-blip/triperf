@@ -9,6 +9,8 @@ B5 — Dedupe de perfil.
 import re
 from pathlib import Path
 
+from .text_match import squash
+
 ROOT = Path(__file__).resolve().parents[2]
 COMMUNITY = (ROOT / "community.html").read_text(encoding="utf-8")
 PROFILE = (ROOT / "athlete_profile.html").read_text(encoding="utf-8")
@@ -24,7 +26,8 @@ def test_comunidad_ya_no_tiene_tab_mi_perfil():
 
 
 def test_comunidad_boton_ver_mi_perfil_lleva_a_perfil():
-    assert "location.href='athlete_profile.html'" in COMMUNITY
+    # Prettier agregó espacios alrededor del `=` de la asignación.
+    assert squash("location.href='athlete_profile.html'") in squash(COMMUNITY)
 
 
 def test_perfil_tiene_foto_y_privacidad():

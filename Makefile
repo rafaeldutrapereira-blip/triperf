@@ -51,10 +51,14 @@ prod:
 		--error-logfile - \
 		--preload
 
-# ── Tests (patrón LabX: --noconftest + ignores de suites con credenciales
-#    externas reales — Strava/Stripe/year_in_review) ──────────────────────
+# ── Tests. Se corre CON conftest.py (que define los fixtures `client`, `db`,
+#    `athlete_user`, etc.). El `--noconftest` que había acá desactivaba esos
+#    fixtures y producía ~536 errores "fixture 'client' not found" en vez de
+#    correr los tests — por eso el target no coincidía con el CI (que nunca
+#    usó --noconftest). Las suites que necesitan credenciales externas reales
+#    (Strava/Stripe/year_in_review) se siguen excluyendo con --ignore.
 test:
-	pytest api/tests/ -v --noconftest \
+	pytest api/tests/ -v \
 		--ignore=api/tests/test_strava.py \
 		--ignore=api/tests/test_stripe.py \
 		--ignore=api/tests/test_year_in_review.py \
@@ -62,7 +66,7 @@ test:
 		--cov-report=xml:coverage.xml
 
 test-fast:
-	pytest api/tests/ -x -q --noconftest \
+	pytest api/tests/ -x -q \
 		--ignore=api/tests/test_strava.py \
 		--ignore=api/tests/test_stripe.py \
 		--ignore=api/tests/test_year_in_review.py

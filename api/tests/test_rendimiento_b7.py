@@ -1,10 +1,15 @@
-"""
-B7 — Rendimiento: Analytics + Performance en un solo módulo con pestañas
+﻿"""
+B7 â€” Rendimiento: Analytics + Performance en un solo mÃ³dulo con pestaÃ±as
 Carga / Potencia / Records. Carga es la vista PMC de detalle.html embebida
-con ?embed=1 (decisión aprobada por Rafael).
+con ?embed=1 (decisiÃ³n aprobada por Rafael).
+
+Los asserts de JS/CSS usan `squash()` (ver text_match.py) porque Prettier
+reformateÃ³ esas cadenas (espacios y comillas) sin cambiar el comportamiento.
 """
 import re
 from pathlib import Path
+
+from .text_match import squash
 
 ROOT = Path(__file__).resolve().parents[2]
 ANALYTICS = (ROOT / "analytics.html").read_text(encoding="utf-8")
@@ -14,7 +19,7 @@ I18N = (ROOT / "i18n.js").read_text(encoding="utf-8")
 
 
 def test_analytics_tiene_pestana_carga_embebida_primero():
-    assert "switchAnTab('carga',this)" in ANALYTICS
+    assert squash("switchAnTab('carga',this)") in squash(ANALYTICS)
     assert 'id="pane-carga"' in ANALYTICS
     assert 'src="detalle.html?metric=pmc&amp;embed=1"' in ANALYTICS
     assert ANALYTICS.index("switchAnTab('carga'") < ANALYTICS.index("switchAnTab('power'")
@@ -26,16 +31,16 @@ def test_pestanas_potencia_y_records_siguen():
 
 
 def test_detalle_soporta_modo_embed_sin_cabecera_ni_sidebar():
-    assert 'get("embed")==="1"' in DETALLE
-    assert ".lx-embed #sidebar" in DETALLE
-    assert ".lx-embed body{padding-left:0 !important}" in DETALLE
+    assert squash('get("embed")==="1"') in squash(DETALLE)
+    assert squash(".lx-embed #sidebar") in squash(DETALLE)
+    assert squash(".lx-embed body{padding-left:0 !important") in squash(DETALLE)
 
 
 def test_modulo_se_llama_rendimiento_y_performance_sale_del_sidebar():
     assert "label:   'Rendimiento'" in ROUTES
     perf = re.search(r"id:\s*'performance',.*?\},", ROUTES, re.S).group(0)
     assert "sidebar: false" in perf
-    # El id del módulo no cambia (decisión B3): las URLs y el gating siguen.
+    # El id del mÃ³dulo no cambia (decisiÃ³n B3): las URLs y el gating siguen.
     assert "id:      'analytics'" in ROUTES
 
 

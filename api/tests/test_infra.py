@@ -191,8 +191,20 @@ class TestCICD:
     def test_enforces_coverage(self):
         assert "--cov-fail-under=70" in self._content()
 
-    def test_has_docker_build(self):
-        assert "docker build" in self._content()
+    def test_deploy_no_depende_de_docker(self):
+        """2026-10-31: el repo ya no tiene Dockerfile.
+
+        El deploy real es `git archive` + systemd en el VM (ver deploy.yml), y
+        el job "Docker Build" del CI solo podía fallar para siempre con
+        "failed to read dockerfile: open Dockerfile: no such file or directory".
+        Se verifica el mecanismo que sí existe en vez del que se eliminó.
+        """
+        assert "docker build" not in self._content()
+        deploy = (ROOT / ".github" / "workflows" / "deploy.yml").read_text(
+            encoding="utf-8"
+        )
+        assert "git archive" in deploy
+        assert "systemctl restart labx" in deploy
 
     def test_has_security_scan(self):
         content = self._content()

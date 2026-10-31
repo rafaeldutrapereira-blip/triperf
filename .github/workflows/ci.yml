@@ -29,6 +29,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          # El repo no tiene requirements.txt ni pyproject.toml en la raíz:
+          # sin esta ruta, setup-python falla con "No file ... matched to
+          # [**/requirements.txt or **/pyproject.toml]" y el job muere antes
+          # de correr un solo test.
+          cache-dependency-path: requirements-api.txt
 
       - name: Install dependencies
         run: |
@@ -81,13 +86,10 @@ jobs:
           done
 
   # ── Job 4: Docker Build ─────────────────────────────────────
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t labx-api:ci-${{ github.sha }} .
+  # Eliminado (2026-10-31): el repo ya no tiene Dockerfile ni despliega con
+  # Docker — el deploy real es `git archive` + systemd en el VM (ver
+  # deploy.yml y el Makefile). El job solo podía fallar para siempre con
+  # "failed to read dockerfile: open Dockerfile: no such file or directory".
 
   # ── Job 5: Seguridad — bandit + pip-audit ───────────────────
   security-check:

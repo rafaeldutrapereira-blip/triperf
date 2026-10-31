@@ -33,16 +33,30 @@ REAL_PRODUCTION_PAYLOAD = "<img src=x onerror=alert('XSS')>"
 
 
 def _extract_esc_function() -> str:
-    """Extrae el código fuente real de esc() desde coach.html (no una copia)."""
+    """Extrae el código fuente real de esc() desde coach.html (no una copia).
+
+    Se balancean llaves en vez de usar un regex de cierre: Prettier reindentó
+    el archivo (2026-10-27) y el `}` final ya no está a columna 0, así que un
+    patrón como `\\n}` cortaba antes de tiempo o no encontraba nada.
+    """
     content = COACH_HTML.read_text(encoding="utf-8")
-    matches = re.findall(r"function esc\(s\)\{.*?\n\}", content, re.DOTALL)
-    assert matches, "No se encontró function esc(s){...} en coach.html"
-    return matches[0]
+    match = re.search(r"function esc\(s\)\s*\{", content)
+    assert match, "No se encontró function esc(s) {...} en coach.html"
+    start = match.start()
+    depth = 0
+    for i in range(content.index("{", match.start()), len(content)):
+        if content[i] == "{":
+            depth += 1
+        elif content[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return content[start : i + 1]
+    raise AssertionError("Llaves desbalanceadas al extraer esc() de coach.html")
 
 
 def _esc_count() -> int:
     content = COACH_HTML.read_text(encoding="utf-8")
-    return len(re.findall(r"^function esc\(s\)", content, re.MULTILINE))
+    return len(re.findall(r"^\s*function esc\(s\)\s*\{", content, re.MULTILINE))
 
 
 def _run_node(js_code: str) -> subprocess.CompletedProcess:

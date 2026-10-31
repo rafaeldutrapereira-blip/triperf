@@ -56,7 +56,9 @@ def _load_dict():
 
 def _load_js_message_map():
     html = MENTAL_HTML.read_text(encoding="utf-8")
-    block = re.search(r"var _MSG_KEYS = \{(.*?)\n\};", html, re.S).group(1)
+    # El bloque va indentado dentro de <script> y Prettier reindentó el cierre
+    # (`  };` en vez de `};` a columna 0): se tolera el sangrado.
+    block = re.search(r"var _MSG_KEYS = \{(.*?)\n\s*\};", html, re.S).group(1)
     return {
         k.replace("\\'", "'"): v
         for k, v in re.findall(r"'((?:[^'\\]|\\.)*)':\s*'(\w+)'", block)
