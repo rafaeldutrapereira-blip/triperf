@@ -142,11 +142,21 @@ if _IS_PROD:
         logger.critical("STARTUP ABORTADO — Variables inseguras en producción:\n%s", "\n".join(_startup_errors))
         sys.exit(1)
 
-    # Verificar que SQLite no se use en producción
+    # Verificar que SQLite no se use en producción.
+    # Excepción explícita y registrada: ALLOW_SQLITE_IN_PROD=1 (decisión de
+    # Rafael, 2026-10-31 — la BD real todavía es SQLite; se retira al migrar a
+    # PostgreSQL). Solo el valor exacto "1" habilita; DATABASE_URL vacía aborta
+    # siempre, con o sin flag.
     _db_url = os.getenv("DATABASE_URL", "")
-    if not _db_url or "sqlite" in _db_url:
+    _sqlite_allowed = os.getenv("ALLOW_SQLITE_IN_PROD", "") == "1"
+    if not _db_url or ("sqlite" in _db_url and not _sqlite_allowed):
         logger.critical("STARTUP ABORTADO — DATABASE_URL debe ser PostgreSQL en producción (no SQLite)")
         import sys; sys.exit(1)
+    if "sqlite" in _db_url:
+        logger.warning(
+            "SQLite en producción permitido explícitamente por ALLOW_SQLITE_IN_PROD=1 — "
+            "decisión registrada, pendiente migración a PostgreSQL"
+        )
 
     logger.info("Startup validation: todas las variables críticas configuradas correctamente")
 
