@@ -886,3 +886,239 @@ if(document.readyState==='loading'){
 }
 
 })();
+
+/* ══════════════════════════════════════════════════════════════════════
+   P11-A — Términos: nombre simple + sigla + tarjeta de explicación
+   ──────────────────────────────────────────────────────────────────────
+   El texto vive SOLO en i18n.js (term_<id>_name / _short / _action); acá
+   están la sigla (no se traduce) y el comportamiento del componente.
+
+   Uso:
+     LXTerm.render('ctl')            → HTML (nombre + sigla + botón ℹ)
+     LXTerm.mount(el, 'ctl')         → inyecta ese HTML en `el` y lo conecta
+     LXTerm.open('ctl', boton)       → abre la tarjeta junto al botón
+     <span data-lx-term="ctl"></span>→ autoInit la rellena sola
+
+   Accesible: el disparador es un <button> con aria-expanded/aria-controls,
+   la tarjeta es role="dialog", se cierra con Escape o clic afuera y el foco
+   vuelve al botón. Sin dependencias ni frameworks.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* Sigla técnica por término. Es el subtítulo y no se traduce. */
+var SIGLAS = {
+  ctl: 'CTL',
+  atl: 'ATL',
+  tsb: 'TSB',
+  acwr: 'ACWR',
+  tss: 'TSS',
+  hrv: 'HRV',
+  recovery_score: 'REC',
+  readiness: 'READY',
+  body_battery: 'BODY',
+  fatiga_mental: 'MENTAL',
+  ftp: 'FTP',
+  css: 'CSS',
+  vo2max: 'VO2max',
+  rpe: 'RPE',
+  compliance: 'COMPL',
+  tapering: 'TAPER'
+};
+
+var IDS = Object.keys(SIGLAS);
+var _card = null;   /* tarjeta abierta */
+var _btn = null;    /* botón que la abrió */
+
+function _t(key, fallback){
+  var v = window.i18n ? window.i18n.t(key) : null;
+  return (v && v !== key) ? v : fallback;
+}
+
+function _esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+/* Devuelve los datos ya resueltos en el idioma activo. */
+function data(id){
+  var sigla = SIGLAS[id] || String(id || '').toUpperCase();
+  return {
+    id: id,
+    sigla: sigla,
+    name: _t('term_' + id + '_name', sigla),
+    short: _t('term_' + id + '_short', ''),
+    action: _t('term_' + id + '_action', ''),
+    helpLabel: _t('term_ui_help', '¿Qué significa?'),
+    actionLabel: _t('term_ui_action', 'Qué hacer hoy'),
+    closeLabel: _t('term_ui_close', 'Cerrar')
+  };
+}
+
+var CSS = ''
+  + '.lx-term{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap}'
+  + '.lx-term-text{display:inline-flex;align-items:baseline;gap:.4rem;flex-wrap:wrap}'
+  + '.lx-term-name{font-family:"Barlow Condensed",system-ui,sans-serif;font-weight:700;line-height:1.1;color:var(--text,#f0f9ff)}'
+  + '.lx-term-sigla{font-family:"Oswald",system-ui,sans-serif;font-size:.68em;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#7fb3cc);white-space:nowrap}'
+  + '.lx-term-info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;padding:0;flex-shrink:0;border:1px solid rgba(127,179,204,.35);border-radius:50%;background:transparent;color:rgba(127,179,204,.8);cursor:pointer;line-height:0}'
+  + '.lx-term-info:hover,.lx-term-info:focus-visible{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.55);color:#7dd3fc;outline:none}'
+  + '.lx-term-info svg{width:7px;height:7px;display:block}'
+  + '.lx-term-card{position:fixed;z-index:9000;max-width:300px;padding:.8rem 2rem .85rem .9rem;background:var(--surface,#08121e);border:1px solid var(--border,rgba(8,116,174,.18));border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.5);color:var(--text,#f0f9ff);font-family:"Inter",system-ui,sans-serif;font-size:.82rem;line-height:1.45;text-align:left}'
+  + '.lx-term-card-name{margin:0 0 .45rem;font-family:"Barlow Condensed",system-ui,sans-serif;font-size:1rem;font-weight:700;color:var(--text,#f0f9ff)}'
+  + '.lx-term-card-name .lx-term-sigla{margin-left:.35rem}'
+  + '.lx-term-card-short{margin:0 0 .5rem;color:var(--muted,#7fb3cc)}'
+  + '.lx-term-card-action{margin:0;color:var(--muted,#7fb3cc)}'
+  + '.lx-term-card-action b{display:block;margin-bottom:.15rem;color:var(--orange,#ff6535);font-family:"Oswald",system-ui,sans-serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600}'
+  + '.lx-term-card-close{position:absolute;top:.3rem;right:.35rem;width:20px;height:20px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted,#7fb3cc);font-size:1rem;line-height:1;cursor:pointer}'
+  + '.lx-term-card-close:hover,.lx-term-card-close:focus-visible{color:var(--text,#f0f9ff);outline:none}';
+
+function ensureCss(){
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('lx-term-css')) return;
+  var style = document.createElement('style');
+  style.id = 'lx-term-css';
+  style.textContent = CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+var ICON = '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+  + '<circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/>'
+  + '<rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/>'
+  + '<circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg>';
+
+/* HTML del nombre + sigla + botón ℹ. No abre nada por sí solo. */
+function render(id, opts){
+  ensureCss();
+  var d = data(id);
+  var o = opts || {};
+  var cardId = 'lx-term-card-' + d.id;
+  var nameStyle = o.nameStyle ? ' style="' + _esc(o.nameStyle) + '"' : '';
+  return ''
+    + '<span class="lx-term" data-term="' + _esc(d.id) + '">'
+    +   '<span class="lx-term-text">'
+    +     '<span class="lx-term-name"' + nameStyle + '>' + _esc(d.name) + '</span>'
+    +     '<span class="lx-term-sigla">' + _esc(d.sigla) + '</span>'
+    +   '</span>'
+    +   '<button type="button" class="lx-term-info" aria-expanded="false"'
+    +     ' aria-controls="' + cardId + '"'
+    +     ' aria-label="' + _esc(d.helpLabel + ': ' + d.name) + '">'
+    +     ICON
+    +   '</button>'
+    + '</span>';
+}
+
+function buildCard(d){
+  var h = ''
+    + '<div class="lx-term-card" id="lx-term-card-' + _esc(d.id) + '" role="dialog"'
+    +   ' aria-modal="false" tabindex="-1" aria-labelledby="lx-term-card-' + _esc(d.id) + '-name">'
+    +   '<button type="button" class="lx-term-card-close" aria-label="' + _esc(d.closeLabel) + '">&times;</button>'
+    +   '<p class="lx-term-card-name" id="lx-term-card-' + _esc(d.id) + '-name">'
+    +     _esc(d.name) + '<span class="lx-term-sigla">' + _esc(d.sigla) + '</span>'
+    +   '</p>';
+  if (d.short) h += '<p class="lx-term-card-short">' + _esc(d.short) + '</p>';
+  if (d.action) {
+    h += '<p class="lx-term-card-action"><b>' + _esc(d.actionLabel) + '</b>' + _esc(d.action) + '</p>';
+  }
+  return h + '</div>';
+}
+
+function place(card, btn){
+  var r = btn.getBoundingClientRect();
+  var gap = 8;
+  var w = card.offsetWidth;
+  var h = card.offsetHeight;
+  var top = r.bottom + gap;
+  var left = r.left;
+  if (top + h > window.innerHeight - gap) top = r.top - h - gap;
+  if (top < gap) top = gap;
+  if (left + w > window.innerWidth - gap) left = window.innerWidth - w - gap;
+  if (left < gap) left = gap;
+  card.style.top = Math.round(top) + 'px';
+  card.style.left = Math.round(left) + 'px';
+}
+
+function close(){
+  if (_card && _card.parentNode) _card.parentNode.removeChild(_card);
+  if (_btn) _btn.setAttribute('aria-expanded', 'false');
+  _card = null;
+  _btn = null;
+}
+
+function open(id, btn){
+  if (typeof document === 'undefined') return;
+  close();
+  ensureCss();
+  var d = data(id);
+  var wrap = document.createElement('div');
+  wrap.innerHTML = buildCard(d);
+  var card = wrap.firstChild;
+  document.body.appendChild(card);
+  place(card, btn);
+  _card = card;
+  _btn = btn;
+  btn.setAttribute('aria-expanded', 'true');
+
+  var closeBtn = card.querySelector('.lx-term-card-close');
+  if (closeBtn) closeBtn.addEventListener('click', function(e){ e.preventDefault(); close(); btn.focus(); });
+  card.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') { close(); btn.focus(); }
+  });
+  card.focus();
+}
+
+/* Inyecta el HTML dentro de un contenedor (no toca el resto de la página). */
+function mount(el, id, opts){
+  if (!el) return null;
+  el.innerHTML = render(id, opts);
+  return el.querySelector('.lx-term-info');
+}
+
+/* Rellena los <span data-lx-term="..."> que estén vacíos. */
+function autoInit(){
+  if (typeof document === 'undefined') return;
+  var nodes = document.querySelectorAll('[data-lx-term]');
+  for (var i = 0; i < nodes.length; i++) {
+    var el = nodes[i];
+    if (el.querySelector('.lx-term-info')) continue;
+    var id = el.getAttribute('data-lx-term');
+    if (id && SIGLAS[id]) el.innerHTML = render(id);
+  }
+}
+
+window.LXTerm = {
+  ids: IDS,
+  siglas: SIGLAS,
+  data: data,
+  render: render,
+  mount: mount,
+  open: open,
+  close: close,
+  autoInit: autoInit
+};
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest ? e.target.closest('.lx-term-info') : null;
+    if (btn) {
+      e.preventDefault();
+      var host = btn.closest('.lx-term');
+      var id = (host && host.getAttribute('data-term')) ||
+               (btn.getAttribute('aria-controls') || '').replace('lx-term-card-', '');
+      if (_card && _btn === btn) { close(); return; }
+      open(id, btn);
+      return;
+    }
+    if (_card && !_card.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && _card) close();
+  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoInit);
+  } else {
+    setTimeout(autoInit, 100);
+  }
+}
+
+})();
