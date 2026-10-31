@@ -46,3 +46,19 @@ def test_la_tarjeta_principal_usa_el_peor_valor():
     # mismo mapeo de zonas que el agregado, sin umbrales nuevos
     assert "acwrZones[worstAcwr.zone]" in DASH
     assert "zones[worstAcwr ? worstAcwr.zone : 'no_data']" in DASH
+
+
+def test_fila_principal_sin_valores_estaticos_inventados():
+    """La fila arranca neutra.
+
+    Antes traía 1.18 y el badge Optimo hardcodeados: se veían como dato real
+    hasta que llegaba el payload, y para siempre si el payload no incluía
+    acwr_by_sport.
+    """
+    start = DASH.index('id="kc-acwr"')
+    end = DASH.index('id="kc-acwr-tip"', start)
+    fila = DASH[start:end]
+    assert "1.18" not in fila, "quedó el valor estático 1.18"
+    assert "Óptimo" not in fila, "quedó el badge estático Óptimo"
+    assert 'data-i18n="dash_no_data"' in fila, "falta el placeholder 'Sin datos'"
+    assert ">—</span" in fila, "el valor inicial debe ser —"
