@@ -98,6 +98,20 @@
     },
     {
       group:   'recuperar',
+      id:      'estado',
+      tier:    'core',
+      addonId: null,
+      file:    'estado.html',
+      label:   'Estado',
+      labelI18n: 'nav_estado',
+      icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+      minPlan: 'agegroup',
+      roles:   ['athlete','coach','admin'],
+      sidebar: false,
+      public:  false
+    },
+    {
+      group:   'recuperar',
       id:      'nutrition',
       tier:    'core',
       addonId: null,

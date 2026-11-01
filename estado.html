@@ -1,0 +1,5130 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=9"></script>
+    <script>
+      LX_ROUTES.guard();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Estado de hoy</title>
+    <script>
+      try {
+        var _k = JSON.parse(
+          sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s') ||
+            'null',
+        );
+        if (!_k) throw 0;
+      } catch (e) {
+        location.replace('login.html');
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <script src="i18n.js"></script>
+    <script src="lx-backend-i18n.js"></script>
+    <script src="lx-info.js"></script>
+    <style>
+      /* ═══ Fisico (de recovery.html; tab-btn/tab-pane/tabs-bar -> fis-) ═══ */
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --amber: #f59e0b;
+        --blue: #1d4ed8;
+        --rc-good: #22d3ee;
+        --rc-moderate: #f0a500;
+        --rc-low: #f59e0b;
+        --rc-critical: #ef4444;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%230891b2' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      ul {
+        list-style: none;
+      }
+
+      .c {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 0.7rem 1.5rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all var(--ease);
+      }
+      .btn-g {
+        background: transparent;
+        color: var(--muted);
+        border: 1.5px solid var(--border);
+      }
+      .btn-g:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn-sm {
+        padding: 0.42rem 0.95rem;
+        font-size: 0.74rem;
+      }
+      .btn-primary {
+        background: var(--green);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        opacity: 0.88;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .panel-head {
+        padding: 1rem 1.4rem;
+        border-bottom: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .panel-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .sr {
+        opacity: 0;
+        transform: translateY(20px);
+        transition:
+          opacity 0.5s var(--ease),
+          transform 0.5s var(--ease);
+      }
+      .vis {
+        opacity: 1;
+        transform: none;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+      }
+      .g5 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+      }
+      @media (max-width: 1000px) {
+        .g5 {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .g3 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .g3 {
+          grid-template-columns: 1fr;
+        }
+        .g2 {
+          grid-template-columns: 1fr;
+        }
+        .g5 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .mt2 {
+        margin-top: 1.5rem;
+      }
+      .mt3 {
+        margin-top: 2rem;
+      }
+      .sec-h {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 1rem;
+      }
+
+      /* ── PAGE HEADER ── */
+      .ph {
+        padding-top: 1.5rem;
+        background: linear-gradient(180deg, #060e1c 0%, var(--bg) 100%);
+        border-bottom: 1px solid var(--border2);
+      }
+      .ph-inner {
+        padding: 1.6rem 0 1.4rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      /* ── RECOVERY SCORE WIDGET ── */
+      .rc-hero {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.8rem;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 2rem;
+        align-items: center;
+      }
+      @media (max-width: 600px) {
+        .rc-hero {
+          grid-template-columns: 1fr;
+          text-align: center;
+        }
+      }
+      .rc-dial {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        flex-shrink: 0;
+      }
+      .rc-dial-svg {
+        width: 140px;
+        height: 140px;
+      }
+      .rc-dial-score {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .rc-score-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.8rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .rc-score-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-top: 0.1rem;
+      }
+      .rc-label {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .rc-rec {
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+      .rc-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.35rem;
+        margin-bottom: 0.5rem;
+      }
+      .rc-detail-btn {
+        margin-top: 1rem;
+        padding: 0.5rem 1.1rem;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .rc-detail-btn:hover {
+        border-color: var(--green);
+      }
+      .rc-factors {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .rc-factor {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.18rem;
+        padding: 0.45rem 0.65rem;
+        background: var(--surface2);
+        border-radius: 8px;
+        border: 1px solid var(--border2);
+        min-width: 68px;
+      }
+      .rc-factor-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .rc-factor-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.56rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .rc-factor-bar {
+        width: 100%;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--surface);
+        margin-top: 0.15rem;
+        overflow: hidden;
+      }
+      .rc-factor-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.8s ease;
+      }
+
+      /* ── TABS ── */
+      .fis-tabs-bar {
+        display: flex;
+        gap: 0.2rem;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+      }
+      .fis-tab-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.1rem;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        margin-bottom: -1px;
+      }
+      .fis-tab-btn:hover {
+        color: var(--text);
+      }
+      .fis-tab-btn.on {
+        background: none;
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
+      .proto-tabs {
+        display: flex;
+        gap: 0.2rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .proto-tab {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.1rem;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        margin-bottom: -1px;
+      }
+      .proto-tab:hover {
+        color: var(--text);
+      }
+      .proto-tab.on {
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
+      .fis-tab-pane {
+        display: none;
+      }
+      .fis-tab-pane.on {
+        display: block;
+      }
+
+      /* ── KPI box ── */
+      .kpi-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        text-align: center;
+      }
+      .kpi-n {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .kpi-l {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-top: 0.2rem;
+      }
+      .kpi-s {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-top: 0.06rem;
+      }
+
+      /* ── WELLNESS STARS ── */
+      .well-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--border2);
+        gap: 0.75rem;
+      }
+      .well-row:last-child {
+        border-bottom: none;
+      }
+      .well-label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        flex: 1;
+      }
+      .well-stars {
+        display: flex;
+        gap: 0.25rem;
+      }
+      .star {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        transition: transform 0.15s;
+        font-size: 1.1rem;
+        line-height: 1;
+        border: none;
+        background: none;
+        padding: 0;
+      }
+      .star:hover {
+        transform: scale(1.2);
+      }
+      .star.active {
+        color: var(--gold);
+      }
+      .star.inactive {
+        color: var(--dim);
+      }
+
+      /* ── SLEEP PHASES ── */
+      .phase-bar {
+        display: flex;
+        height: 28px;
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+      }
+      .phase-seg {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.9);
+        overflow: hidden;
+        white-space: nowrap;
+        transition: all 0.6s;
+      }
+
+      /* ── MINI CHART ── */
+      .mini-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 48px;
+      }
+      .mini-bar {
+        flex: 1;
+        border-radius: 2px 2px 0 0;
+        transition: all 0.4s;
+        cursor: default;
+        min-width: 4px;
+      }
+
+      /* ── RECOMMENDATION BOX ── */
+      .rec-box {
+        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        border: 1px solid;
+        margin-bottom: 1rem;
+      }
+      .rec-box.optimal {
+        background: rgba(16, 185, 129, 0.06);
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .rec-box.good {
+        background: rgba(34, 211, 238, 0.06);
+        border-color: rgba(34, 211, 238, 0.3);
+      }
+      .rec-box.moderate {
+        background: rgba(240, 165, 0, 0.06);
+        border-color: rgba(240, 165, 0, 0.3);
+      }
+      .rec-box.low {
+        background: rgba(245, 158, 11, 0.07);
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+      .rec-box.critical {
+        background: rgba(239, 68, 68, 0.06);
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+      .rec-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+      }
+      .rec-text {
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* ── TIMELINE CHART ── */
+      .timeline-row {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+      }
+      .timeline-date {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.6rem;
+        color: var(--dim);
+        text-align: right;
+        letter-spacing: 0.06em;
+      }
+      .timeline-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .timeline-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .timeline-val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 800;
+        width: 28px;
+        text-align: right;
+      }
+
+      /* ── PROTOCOL CARD ── */
+      .proto-day {
+        display: grid;
+        grid-template-columns: 90px 80px 1fr;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border2);
+        align-items: start;
+      }
+      .proto-day:last-child {
+        border-bottom: none;
+      }
+      .proto-phase {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--coral);
+      }
+      .proto-load {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.22rem 0.6rem;
+        border-radius: 4px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .proto-load.rest {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+      .proto-load.easy {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--green);
+      }
+      .proto-load.moderate {
+        background: rgba(240, 165, 0, 0.15);
+        color: var(--gold);
+      }
+      .proto-load.full {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--cyan);
+      }
+      .proto-actions {
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* ── ALERT CHIP ── */
+      .alert-chip {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.65rem 0.9rem;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        color: var(--text);
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+      }
+      .alert-chip.high {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+      .alert-chip.medium {
+        background: rgba(240, 165, 0, 0.07);
+        border: 1px solid rgba(240, 165, 0, 0.25);
+      }
+      .alert-chip.info {
+        background: rgba(14, 165, 233, 0.06);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+      }
+
+      /* ── CORRELATION CHART ── */
+      .corr-item {
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid var(--border2);
+        font-size: 0.78rem;
+      }
+      .corr-item:last-child {
+        border-bottom: none;
+      }
+      .corr-date {
+        color: var(--dim);
+        font-size: 0.7rem;
+      }
+      .corr-bar-wrap {
+        background: var(--surface2);
+        border-radius: 3px;
+        height: 8px;
+        overflow: hidden;
+      }
+      .corr-fill {
+        height: 100%;
+        border-radius: 3px;
+      }
+      .corr-val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      /* ── COACH VIEW ── */
+      .athlete-row {
+        display: grid;
+        grid-template-columns: 36px 1fr 80px 80px 80px auto;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.65rem 0.85rem;
+        border-radius: 8px;
+        margin-bottom: 0.4rem;
+        border: 1px solid var(--border2);
+      }
+      .athlete-row:hover {
+        border-color: var(--border);
+      }
+      .athlete-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+      .athlete-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .score-pill {
+        padding: 0.2rem 0.65rem;
+        border-radius: 20px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      footer {
+        border-top: 1px solid var(--border2);
+        padding: 1.5rem 0;
+        text-align: center;
+      }
+      footer div {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.1em;
+      }
+
+      /* ── PROGRESS BARS (shared) ── */
+      .g-rb {
+        background: var(--surface2);
+        border-radius: 3px;
+        height: 5px;
+        overflow: hidden;
+        margin-top: 0.4rem;
+      }
+      .g-rf {
+        height: 100%;
+        border-radius: 3px;
+        background: var(--gc, var(--green));
+        transition: width 0.8s ease;
+      }
+    
+
+      .men-scope {
+        --card: #08121e;
+        --card2: #0c1d30;
+        --sub: #7fb3cc;
+        --acc: #ff6535;
+        --acc2: #a855f7;
+        --yellow: #f0a500;
+        --blue: #0ea5e9;
+        --teal: #22d3ee;
+        --r: 12px;
+        --r2: 8px;
+      }
+.men-scope .page-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+.men-scope .page-header {
+        margin-bottom: 24px;
+      }
+.men-scope .page-header h1 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+.men-scope .page-header p {
+        color: var(--sub);
+        margin-top: 4px;
+        font-size: 0.9rem;
+      }
+.men-scope .men-tabs {
+        display: flex;
+        gap: 0.2rem;
+        margin-bottom: 24px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--border);
+      }
+.men-scope .men-tab-btn {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.65rem 1.1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        background: transparent;
+        color: var(--sub);
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+        white-space: nowrap;
+        margin-bottom: -1px;
+      }
+.men-scope .men-tab-btn.active {
+        background: none;
+        color: var(--acc);
+        border-bottom-color: var(--acc);
+      }
+.men-scope .men-tab-btn:hover:not(.active) {
+        background: none;
+        color: var(--text);
+      }
+.men-scope .men-tab-panel {
+        display: none;
+      }
+.men-scope .men-tab-panel.active {
+        display: block;
+      }
+.men-scope .card {
+        background: var(--card);
+        border-radius: var(--r);
+        padding: 20px;
+        border: 1px solid var(--border);
+      }
+.men-scope .card-title {
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
+        letter-spacing: 0.01em;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+.men-scope .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+.men-scope .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+@media (max-width: 640px) {
+.men-scope .grid-2,
+.men-scope .grid-3 {
+          grid-template-columns: 1fr;
+        }
+}
+.men-scope .mfs-hero {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+.men-scope .mfs-dial {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        flex-shrink: 0;
+      }
+.men-scope .mfs-dial svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+      }
+.men-scope .mfs-dial-bg {
+        fill: none;
+        stroke: var(--border);
+        stroke-width: 14;
+      }
+.men-scope .mfs-dial-fill {
+        fill: none;
+        stroke-width: 14;
+        stroke-linecap: round;
+        transition:
+          stroke-dashoffset 0.8s ease,
+          stroke 0.4s;
+      }
+.men-scope .mfs-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+.men-scope .mfs-score-num {
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+.men-scope .mfs-label {
+        font-size: 0.72rem;
+        color: var(--sub);
+        margin-top: 2px;
+      }
+.men-scope .mfs-info {
+        flex: 1;
+        min-width: 200px;
+      }
+.men-scope .mfs-level-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+.men-scope .mfs-rec {
+        font-size: 0.88rem;
+        color: var(--sub);
+        line-height: 1.5;
+      }
+.men-scope .mfs-signal {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+.men-scope .signal-train {
+        background: #10b98122;
+        color: #10b981;
+      }
+.men-scope .signal-reduce {
+        background: #f59e0b22;
+        color: #f59e0b;
+      }
+.men-scope .signal-rest {
+        background: #ef444422;
+        color: #ef4444;
+      }
+.men-scope .checkin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+.men-scope .checkin-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+.men-scope .checkin-field label {
+        font-size: 0.8rem;
+        color: var(--sub);
+        font-weight: 500;
+        line-height: 1.35;
+      }
+.men-scope .stars {
+        display: flex;
+        gap: 4px;
+        margin-top: auto;
+      }
+.men-scope .star-btn {
+        width: 32px;
+        height: 32px;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        background: var(--card2);
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        color: var(--sub);
+      }
+.men-scope .star-btn.active {
+        border-color: var(--acc);
+        background: var(--acc);
+        color: #fff;
+      }
+.men-scope .star-btn:hover:not(.active) {
+        border-color: var(--acc);
+        color: var(--acc);
+      }
+.men-scope .checkin-note {
+        width: 100%;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        color: var(--text);
+        font-size: 0.88rem;
+        resize: none;
+        min-height: 64px;
+      }
+.men-scope .checkin-note:focus {
+        outline: none;
+        border-color: var(--acc);
+      }
+.men-scope .btn-primary {
+        padding: 10px 24px;
+        background: var(--acc);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: opacity 0.2s;
+      }
+.men-scope .btn-primary:hover {
+        opacity: 0.85;
+      }
+.men-scope .btn-sm {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        border-radius: 6px;
+      }
+.men-scope .trend-wrap {
+        height: 120px;
+        position: relative;
+        overflow: hidden;
+      }
+.men-scope .trend-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 100%;
+        padding-bottom: 18px;
+      }
+.men-scope .trend-bar-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        height: 100%;
+        justify-content: flex-end;
+      }
+.men-scope .trend-bar {
+        width: 100%;
+        border-radius: 3px 3px 0 0;
+        min-height: 4px;
+        transition: height 0.5s;
+      }
+.men-scope .trend-date {
+        font-size: 0.62rem;
+        color: var(--sub);
+        margin-top: 2px;
+        white-space: nowrap;
+        transform: rotate(-30deg);
+        transform-origin: top center;
+      }
+.men-scope .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+.men-scope .filter-select {
+        padding: 7px 12px;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+.men-scope .filter-select:focus {
+        outline: none;
+        border-color: var(--acc);
+      }
+.men-scope .proto-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+      }
+.men-scope .proto-card {
+        background: var(--card2);
+        border-radius: var(--r2);
+        padding: 14px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+.men-scope .proto-card:hover {
+        border-color: var(--acc);
+      }
+.men-scope .proto-card.done {
+        border-color: var(--green) !important;
+        opacity: 0.8;
+      }
+.men-scope .proto-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 6px;
+      }
+.men-scope .proto-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+      }
+.men-scope .proto-dur {
+        font-size: 0.75rem;
+        color: var(--sub);
+        background: var(--border);
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+.men-scope .proto-cat {
+        display: inline-block;
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-bottom: 6px;
+      }
+.men-scope .cat-breathing {
+        background: #0ea5e922;
+        color: #0ea5e9;
+      }
+.men-scope .cat-visualization {
+        background: #8b5cf622;
+        color: #8b5cf6;
+      }
+.men-scope .cat-mindfulness {
+        background: #14b8a622;
+        color: #14b8a6;
+      }
+.men-scope .cat-cognitive {
+        background: #f59e0b22;
+        color: #f59e0b;
+      }
+.men-scope .cat-activation {
+        background: #f9731622;
+        color: #f97316;
+      }
+.men-scope .cat-pre_race {
+        background: #ef444422;
+        color: #ef4444;
+      }
+.men-scope .cat-recovery_mental {
+        background: #10b98122;
+        color: #10b981;
+      }
+.men-scope .proto-desc {
+        font-size: 0.78rem;
+        color: var(--sub);
+        line-height: 1.4;
+      }
+.men-scope .proto-footer {
+        margin-top: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+.men-scope .goal-tag {
+        font-size: 0.7rem;
+        color: var(--acc);
+        background: var(--acc) 22;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+.men-scope .done-badge {
+        font-size: 0.7rem;
+        color: var(--green);
+        font-weight: 600;
+      }
+.men-scope .breath-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 24px 0;
+      }
+.men-scope .breath-ring-wrap {
+        position: relative;
+        width: 200px;
+        height: 200px;
+      }
+.men-scope .breath-ring-wrap svg {
+        width: 100%;
+        height: 100%;
+      }
+.men-scope .breath-ring-bg {
+        fill: none;
+        stroke: var(--border);
+        stroke-width: 12;
+      }
+.men-scope .breath-ring-fill {
+        fill: none;
+        stroke: var(--acc);
+        stroke-width: 12;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.1s linear;
+      }
+.men-scope .breath-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+.men-scope .breath-phase {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+.men-scope .breath-count {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--acc);
+      }
+.men-scope .breath-cycles {
+        font-size: 0.85rem;
+        color: var(--sub);
+      }
+.men-scope .breath-ctrls {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+.men-scope .breath-select-wrap {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        width: 100%;
+        max-width: 700px;
+      }
+.men-scope .breath-option {
+        background: var(--card2);
+        border: 2px solid var(--border);
+        border-radius: var(--r2);
+        padding: 12px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+.men-scope .breath-option:hover,
+.men-scope .breath-option.selected {
+        border-color: var(--acc);
+        background: var(--acc) 18;
+      }
+.men-scope .breath-option h4 {
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+.men-scope .breath-option p {
+        font-size: 0.75rem;
+        color: var(--sub);
+        line-height: 1.3;
+      }
+.men-scope .btn-accent {
+        padding: 10px 22px;
+        background: linear-gradient(135deg, var(--acc), var(--acc2));
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+.men-scope .btn-ghost {
+        padding: 10px 22px;
+        background: transparent;
+        color: var(--sub);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+.men-scope .corr-insight {
+        background: linear-gradient(135deg, var(--acc) 15, var(--acc2) 15);
+        border: 1px solid var(--acc) 55;
+        border-radius: var(--r);
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+.men-scope .corr-num {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--acc);
+      }
+.men-scope .scatter-wrap {
+        overflow-x: auto;
+      }
+.men-scope .scatter-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+.men-scope .scatter-table th {
+        text-align: left;
+        color: var(--sub);
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+.men-scope .scatter-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border) 22;
+      }
+.men-scope .level-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+      }
+.men-scope .race-countdown {
+        text-align: center;
+        padding: 20px;
+      }
+.men-scope .race-days {
+        font-size: 3.5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+.men-scope .race-name {
+        font-size: 1rem;
+        color: var(--sub);
+        margin-top: 4px;
+      }
+.men-scope .protocol-steps {
+        counter-reset: step;
+      }
+.men-scope .protocol-step {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border) 55;
+      }
+.men-scope .protocol-step:last-child {
+        border-bottom: none;
+      }
+.men-scope .step-num {
+        width: 24px;
+        height: 24px;
+        background: var(--acc);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+.men-scope .step-text {
+        font-size: 0.85rem;
+        color: var(--sub);
+        line-height: 1.5;
+      }
+.men-scope .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: #00000088;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+.men-scope .modal-overlay.hidden {
+        display: none;
+      }
+.men-scope .modal-box {
+        background: var(--card);
+        border-radius: var(--r);
+        padding: 24px;
+        width: 100%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+.men-scope .modal-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: transparent;
+        border: none;
+        color: var(--sub);
+        cursor: pointer;
+        font-size: 1.3rem;
+      }
+.men-scope .modal-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+.men-scope .modal-cat {
+        font-size: 0.78rem;
+        color: var(--sub);
+        margin-bottom: 16px;
+      }
+.men-scope .modal-desc {
+        font-size: 0.88rem;
+        color: var(--sub);
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+.men-scope .modal-steps-list {
+        list-style: none;
+        counter-reset: mstep;
+      }
+.men-scope .modal-steps-list li {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border) 55;
+        font-size: 0.85rem;
+        color: var(--text);
+      }
+.men-scope .modal-steps-list li::before {
+        counter-increment: mstep;
+        content: counter(mstep);
+        width: 22px;
+        height: 22px;
+        background: var(--acc2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+.men-scope .modal-steps-list li:last-child {
+        border-bottom: none;
+      }
+.men-scope .rating-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+.men-scope .rating-star {
+        font-size: 1.4rem;
+        cursor: pointer;
+        opacity: 0.4;
+        transition: opacity 0.15s;
+      }
+.men-scope .rating-star.sel {
+        opacity: 1;
+      }
+.men-scope .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+        font-size: 0.9rem;
+      }
+.men-scope .loader {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+      }
+.men-scope .tag-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+.men-scope .diff-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+.men-scope .diff-beginner {
+        background: #10b98122;
+        color: #10b981;
+      }
+.men-scope .diff-intermediate {
+        background: #f59e0b22;
+        color: #f59e0b;
+      }
+.men-scope .diff-advanced {
+        background: #ef444422;
+        color: #ef4444;
+      }
+.men-scope .completeness {
+        font-size: 0.75rem;
+        color: var(--sub);
+        margin-top: 6px;
+      }
+.men-scope .completeness span {
+        color: var(--acc);
+        font-weight: 600;
+      }
+
+      /* ═══ Estado de hoy: capas 1 y 1b ═══ */
+      .est-hero {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--est-c, var(--dim));
+        border-radius: var(--radius);
+        padding: 1.8rem;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 2rem;
+        align-items: center;
+      }
+      @media (max-width: 600px) {
+        .est-hero {
+          grid-template-columns: 1fr;
+          text-align: center;
+          padding: 1.3rem;
+        }
+        .est-verdict {
+          justify-content: center;
+        }
+        .est-figs {
+          text-align: center;
+        }
+        .rc-factors {
+          justify-content: center;
+        }
+        .rc-dial {
+          margin: 0 auto;
+        }
+      }
+      .est-verdict {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+      }
+      .est-verdict .rc-label {
+        margin-bottom: 0;
+      }
+      .est-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--est-c, var(--dim));
+        flex-shrink: 0;
+      }
+      .est-governs {
+        font-size: 0.74rem;
+        color: var(--muted);
+      }
+      .est-rule {
+        font-size: 0.7rem;
+        color: var(--dim);
+        margin-bottom: 0.6rem;
+      }
+      .est-figs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.6rem;
+        margin: 0.9rem 0;
+      }
+      @media (max-width: 600px) {
+        .est-figs {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .est-reg {
+        margin-top: 1.5rem;
+      }
+      .est-reg-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.1rem 1.2rem;
+        min-width: 0;
+      }
+      .est-reg-card > .sec-h,
+      .est-reg-card .card-title {
+        margin-bottom: 0.4rem;
+      }
+      .est-reg-card .card {
+        border: none;
+        background: transparent;
+        padding: 0;
+      }
+      .est-reg-card .panel {
+        border: none;
+        background: transparent;
+        padding: 0 !important;
+      }
+      .est-done-row {
+        margin-bottom: 0.5rem;
+      }
+      .est-done {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--green);
+        background: rgba(16, 185, 129, 0.12);
+        border-radius: 20px;
+        padding: 2px 10px;
+      }
+      .est-done[hidden] {
+        display: none;
+      }
+      .est-group-h {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin: 1.8rem 0 0.7rem;
+      }
+      .est-group-h:first-child {
+        margin-top: 0;
+      }
+      #est-detail[hidden] {
+        display: none;
+      }
+      .fis-tabs-bar,
+      .men-scope .men-tabs {
+        overflow-x: auto;
+        max-width: 100%;
+      }
+      .men-scope .men-tabs {
+        margin-bottom: 16px;
+      }
+    </style>
+    <link rel="stylesheet" href="nav.css?v=3" />
+  </head>
+  <body>
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
+
+    <div style="padding: 2rem 0 5rem">
+      <div class="c">
+        <!-- ══ CAPA 1: titular ejecutivo ══ -->
+        <section id="est-head">
+          <div class="est-hero" id="est-hero">
+            <div class="rc-dial">
+              <svg class="rc-dial-svg" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--surface2)" stroke-width="12" />
+                <circle
+                  id="est-dial-ring"
+                  cx="70" cy="70" r="58" fill="none"
+                  stroke="var(--dim)" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="364" stroke-dashoffset="364"
+                  transform="rotate(-90 70 70)"
+                  style="transition: stroke-dashoffset 1.2s ease, stroke 0.5s"
+                />
+              </svg>
+              <div class="rc-dial-score">
+                <div class="rc-score-n" id="est-score-n" style="color: var(--dim)">—</div>
+                <div class="rc-score-l" id="est-score-l"></div>
+              </div>
+            </div>
+            <div>
+              <div class="rc-title" data-i18n="est_title">Estado de hoy</div>
+              <div class="est-verdict">
+                <span class="est-dot" id="est-dot"></span>
+                <span class="rc-label" id="est-label"></span>
+                <span class="est-governs" id="est-governs"></span>
+              </div>
+              <div class="rc-rec" id="est-rec"></div>
+              <div class="est-rule" id="est-rule"></div>
+              <div class="est-figs">
+                <div class="kpi-box">
+                  <div class="kpi-n" id="est-fig-rec">—</div>
+                  <div class="kpi-l" data-i18n="nav_recovery">Recuperación</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-n" id="est-fig-men">—</div>
+                  <div class="kpi-l" data-i18n="nav_mental">Mental</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-n" id="est-fig-hrv" style="color: #7c3aed">—</div>
+                  <div class="kpi-l" data-i18n="est_fig_hrv">HRV anoche</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-n" id="est-fig-sleep" style="color: #1d4ed8">—</div>
+                  <div class="kpi-l" data-i18n="rcw_sleep_last_night">Sueño anoche</div>
+                </div>
+              </div>
+              <div class="rc-factors" id="fis-rc-factors"></div>
+              <button
+                type="button"
+                class="rc-detail-btn"
+                id="est-detail-btn"
+                aria-expanded="false"
+                aria-controls="est-detail"
+                onclick="EST.toggleDetail()"
+                data-i18n="myplan_see_detail"
+              >
+                Ver detalle
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ CAPA 1b: registro de hoy (los dos check-ins, integros) ══ -->
+        <section class="est-reg" id="est-reg">
+          <div class="sec-h" data-i18n="est_register_title">Registro de hoy</div>
+          <div class="g2">
+            <div class="est-reg-card" id="est-reg-fis">
+              <div class="sec-h" style="font-size: 0.78rem" data-i18n="app_factor_wellness">Bienestar</div>
+              <div class="est-done-row"><span class="est-done" id="fis-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
+              <div class="panel" style="padding: 1rem">
+                    <div id="fis-wellness-form">
+                      <div class="well-row">
+                        <span class="well-label"
+                          >⚡
+                          <span data-i18n="rcw_energy"
+                            >Energía general</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-energy"
+                          data-field="energy"
+                        ></div>
+                      </div>
+                      <div class="well-row">
+                        <span class="well-label"
+                          >😊
+                          <span data-i18n="rcw_mood"
+                            >Estado de ánimo</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-mood"
+                          data-field="mood"
+                        ></div>
+                      </div>
+                      <div class="well-row">
+                        <span class="well-label"
+                          >💪
+                          <span data-i18n="rcw_soreness"
+                            >Piernas/Músculos (5=sin dolor)</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-soreness"
+                          data-field="soreness"
+                        ></div>
+                      </div>
+                      <div class="well-row">
+                        <span class="well-label"
+                          >🎯
+                          <span data-i18n="rcw_motivation"
+                            >Motivación para entrenar</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-motivation"
+                          data-field="motivation"
+                        ></div>
+                      </div>
+                      <div class="well-row">
+                        <span class="well-label"
+                          >🌡️
+                          <span data-i18n="rcw_stress"
+                            >Estrés externo (5=sin estrés)</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-stress"
+                          data-field="stress"
+                        ></div>
+                      </div>
+                      <div class="well-row" style="border-bottom: none">
+                        <span class="well-label"
+                          >🌙
+                          <span data-i18n="rcw_sleep_subj"
+                            >Calidad del sueño subjetiva</span
+                          ></span
+                        >
+                        <div
+                          class="well-stars"
+                          id="fis-ws-sleep_quality"
+                          data-field="sleep_quality"
+                        ></div>
+                      </div>
+                    </div>
+                    <div style="margin-top: 1rem">
+                      <input
+                        id="fis-well-notes"
+                        type="text"
+                        placeholder="Nota opcional (ej: estrés laboral, viaje)…"
+                        data-i18n-placeholder="rcw_notes_ph"
+                        style="
+                          width: 100%;
+                          padding: 0.45rem 0.7rem;
+                          background: var(--surface2);
+                          border: 1px solid var(--border);
+                          border-radius: 6px;
+                          color: var(--text);
+                          font-size: 0.82rem;
+                        "
+                      />
+                    </div>
+                    <div
+                      style="margin-top: 0.75rem; display: flex; gap: 0.5rem"
+                    >
+                      <button
+                        class="btn btn-primary btn-sm"
+                        onclick="FIS.saveWellness()"
+                        data-i18n="rcw_save_wellness"
+                      >
+                        Guardar bienestar
+                      </button>
+                      <span
+                        id="fis-wellness-save-msg"
+                        style="
+                          font-size: 0.75rem;
+                          color: var(--green);
+                          align-self: center;
+                          opacity: 0;
+                          transition: opacity 0.3s;
+                        "
+                      ></span>
+                    </div>
+                  </div>
+            </div>
+            <div class="est-reg-card men-scope" id="est-reg-men">
+                          <div class="card" style="margin-bottom: 16px">
+              <div class="card-title" data-i18n="ment_card_checkin_today">
+                Check-in Mental de Hoy
+              </div><div class="est-done-row"><span class="est-done" id="men-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
+              <div class="checkin-grid">
+                <div class="checkin-field">
+                  <label data-i18n="ment_label_anxiety"
+                    >Ansiedad — ¿Qué tan calmo te sientes? (5=muy calmo)</label
+                  >
+                  <div
+                    class="stars"
+                    id="men-stars-anxiety"
+                    data-key="anxiety"
+                  ></div>
+                </div>
+                <div class="checkin-field">
+                  <label data-i18n="ment_label_motivation"
+                    >Motivación (5=muy motivado)</label
+                  >
+                  <div
+                    class="stars"
+                    id="men-stars-motivation"
+                    data-key="motivation"
+                  ></div>
+                </div>
+                <div class="checkin-field">
+                  <label data-i18n="ment_label_focus"
+                    >Foco / Concentración (5=muy enfocado)</label
+                  >
+                  <div class="stars" id="men-stars-focus" data-key="focus"></div>
+                </div>
+                <div class="checkin-field">
+                  <label data-i18n="ment_label_confidence"
+                    >Confianza (5=muy confiado)</label
+                  >
+                  <div
+                    class="stars"
+                    id="men-stars-confidence"
+                    data-key="confidence"
+                  ></div>
+                </div>
+                <div class="checkin-field">
+                  <label data-i18n="ment_label_mood"
+                    >Estado de ánimo general (5=excelente)</label
+                  >
+                  <div class="stars" id="men-stars-mood" data-key="mood"></div>
+                </div>
+              </div>
+              <div style="margin-top: 14px">
+                <textarea
+                  class="checkin-note"
+                  id="men-checkin-notes"
+                  placeholder="Notas opcionales (estrés laboral, sueño, emociones...)"
+                  data-i18n-placeholder="ment_ph_notes"
+                ></textarea>
+              </div>
+              <div
+                style="
+                  margin-top: 12px;
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                "
+              >
+                <button
+                  class="btn-primary"
+                  onclick="MEN.submitCheckin()"
+                  data-i18n="ment_btn_save_checkin"
+                >
+                  Guardar Check-in
+                </button>
+                <span
+                  id="men-checkin-saved"
+                  style="font-size: 0.82rem; color: var(--green); display: none"
+                  data-i18n="ment_saved"
+                  >✓ Guardado</span
+                >
+              </div>
+            </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ CAPA 2: detalle progresivo ══ -->
+        <section class="mt2" id="est-detail" hidden>
+          <div class="est-group-h" data-i18n="est_group_phys">Físico</div>
+          <div class="panel" id="est-grp-fis">
+            <div class="panel-head">
+              <span class="panel-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span data-i18n="rcw_title">Análisis de Recuperación</span>
+              </span>
+              <div class="fis-tabs-bar">
+                <button class="fis-tab-btn on" onclick="FIS.switchTab('overview', this)">
+                  📊 <span data-i18n="rcw_tab_overview">Resumen</span>
+                </button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('hrv', this)">🫀 HRV</button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('sleep', this)">
+                  🌙 <span data-i18n="kpi_sleep">Sueño</span>
+                </button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('wellness', this)">
+                  🧘 <span data-i18n="app_factor_wellness">Bienestar</span>
+                </button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('timeline', this)">📈 Timeline</button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('correlations', this)">
+                  🔬 <span data-i18n="rcw_tab_correlations">Correlaciones</span>
+                </button>
+                <button class="fis-tab-btn" onclick="FIS.switchTab('protocol', this)">
+                  📋 <span data-i18n="rcw_tab_protocols">Protocolos</span>
+                </button>
+                <button class="fis-tab-btn" id="fis-tab-coach-btn" style="display: none" onclick="FIS.switchTab('coach', this)">
+                  👥 Coach
+                </button>
+              </div>
+            </div>
+            <div style="padding: 1.5rem">
+<!-- ── TAB: RESUMEN ── -->
+              <div class="fis-tab-pane on" id="fis-tab-overview">
+                <div class="g2" style="margin-bottom: 1.5rem">
+                  <div>
+                    <div
+                      class="sec-h"
+                      style="font-size: 0.78rem"
+                      data-i18n="rcw_today_rec"
+                    >
+                      Recomendación del día
+                    </div>
+                    <div id="fis-rec-box-main"></div>
+                    <div id="fis-rec-alerts"></div>
+                    <div id="fis-rec-priorities"></div>
+                  </div>
+                  <div>
+                    <div
+                      class="sec-h"
+                      style="font-size: 0.78rem"
+                      data-i18n="rcw_garmin_detail"
+                    >
+                      Detalle Garmin
+                    </div>
+                    <div class="g3" id="fis-garmin-kpis" style="gap: 0.75rem"></div>
+                  </div>
+                </div>
+                <div class="g2">
+                  <div>
+                    <div
+                      class="sec-h"
+                      style="font-size: 0.78rem"
+                      data-i18n="rcw_hrv_last7"
+                    >
+                      HRV — últimas 7 noches
+                    </div>
+                    <div id="fis-hrv-mini-chart"></div>
+                  </div>
+                  <div>
+                    <div
+                      class="sec-h"
+                      style="font-size: 0.78rem"
+                      data-i18n="rcw_sleep_last_night"
+                    >
+                      Sueño anoche
+                    </div>
+                    <div id="fis-sleep-mini"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TAB: HRV ── -->
+              <div class="fis-tab-pane" id="fis-tab-hrv">
+                <div
+                  class="g3"
+                  id="fis-hrv-kpis"
+                  style="margin-bottom: 1.5rem; gap: 0.75rem"
+                ></div>
+                <div style="margin-bottom: 1rem">
+                  <label
+                    style="
+                      font-size: 0.65rem;
+                      color: var(--dim);
+                      letter-spacing: 0.1em;
+                    "
+                    data-i18n="rcw_period_label"
+                    >PERÍODO</label
+                  >
+                  <select
+                    id="fis-hrv-days-sel"
+                    onchange="FIS.loadHrvHistory()"
+                    style="
+                      margin-left: 0.5rem;
+                      padding: 0.3rem 0.6rem;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      border-radius: 6px;
+                      color: var(--text);
+                      font-size: 0.8rem;
+                    "
+                  >
+                    <option value="14" data-i18n="rcw_days_14">14 días</option>
+                    <option value="30" selected data-i18n="rcw_days_30">
+                      30 días
+                    </option>
+                    <option value="90" data-i18n="rcw_days_90">90 días</option>
+                  </select>
+                </div>
+                <div id="fis-hrv-bars" style="margin-bottom: 1.5rem"></div>
+                <div id="fis-hrv-zones"></div>
+                <div id="fis-hrv-insights" style="margin-top: 1rem"></div>
+              </div>
+
+              <!-- ── TAB: SUEÑO ── -->
+              <div class="fis-tab-pane" id="fis-tab-sleep">
+                <div
+                  class="g3"
+                  id="fis-sleep-kpis"
+                  style="margin-bottom: 1.5rem; gap: 0.75rem"
+                ></div>
+                <div style="margin-bottom: 1rem">
+                  <label
+                    style="
+                      font-size: 0.65rem;
+                      color: var(--dim);
+                      letter-spacing: 0.1em;
+                    "
+                    data-i18n="rcw_period_label"
+                    >PERÍODO</label
+                  >
+                  <select
+                    id="fis-sleep-days-sel"
+                    onchange="FIS.loadSleepHistory()"
+                    style="
+                      margin-left: 0.5rem;
+                      padding: 0.3rem 0.6rem;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      border-radius: 6px;
+                      color: var(--text);
+                      font-size: 0.8rem;
+                    "
+                  >
+                    <option value="1" data-i18n="app_nav_today">Hoy</option>
+                    <option value="7" data-i18n="app_nav_week">Semana</option>
+                    <option value="14" data-i18n="rcw_days_14">14 días</option>
+                    <option value="30" selected data-i18n="rcw_days_30">
+                      30 días
+                    </option>
+                  </select>
+                </div>
+                <div id="fis-sleep-bars" style="margin-bottom: 1.5rem"></div>
+                <div id="fis-sleep-debt-box"></div>
+              </div>
+
+              <!-- ── TAB: BIENESTAR (detalle) ── -->
+<div class="fis-tab-pane" id="fis-tab-wellness">
+<div>
+                  <div
+                    class="sec-h"
+                    style="font-size: 0.78rem"
+                    data-i18n="rcw_wellness_history_30d"
+                  >
+                    Historial de bienestar (30d)
+                  </div>
+                  <div id="fis-wellness-history"></div>
+                </div>
+</div>
+
+<!-- ── TAB: TIMELINE ── -->
+              <div class="fis-tab-pane" id="fis-tab-timeline">
+                <div style="margin-bottom: 1rem">
+                  <label
+                    style="
+                      font-size: 0.65rem;
+                      color: var(--dim);
+                      letter-spacing: 0.1em;
+                    "
+                    data-i18n="rcw_period_label"
+                    >PERÍODO</label
+                  >
+                  <select
+                    id="fis-tl-days-sel"
+                    onchange="FIS.loadTimeline()"
+                    style="
+                      margin-left: 0.5rem;
+                      padding: 0.3rem 0.6rem;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      border-radius: 6px;
+                      color: var(--text);
+                      font-size: 0.8rem;
+                    "
+                  >
+                    <option value="14" data-i18n="rcw_days_14">14 días</option>
+                    <option value="30" selected data-i18n="rcw_days_30">
+                      30 días
+                    </option>
+                    <option value="60" data-i18n="rcw_days_60">60 días</option>
+                  </select>
+                </div>
+                <div class="sec-h" style="font-size: 0.78rem">
+                  Recovery Score
+                </div>
+                <div id="fis-tl-recovery" style="margin-bottom: 1.2rem"></div>
+                <div class="sec-h" style="font-size: 0.78rem">HRV (ms)</div>
+                <div id="fis-tl-hrv" style="margin-bottom: 1.2rem"></div>
+                <div
+                  class="sec-h"
+                  style="font-size: 0.78rem"
+                  data-i18n="rcw_sleep_score"
+                >
+                  Sueño (Score)
+                </div>
+                <div id="fis-tl-sleep" style="margin-bottom: 1.2rem"></div>
+                <div id="fis-tl-windows"></div>
+              </div>
+
+              <!-- ── TAB: CORRELACIONES ── -->
+              <div class="fis-tab-pane" id="fis-tab-correlations">
+                <div
+                  style="
+                    margin-bottom: 0.75rem;
+                    display: flex;
+                    gap: 0.75rem;
+                    align-items: center;
+                  "
+                >
+                  <select
+                    id="fis-corr-days-sel"
+                    onchange="FIS.loadCorrelations()"
+                    style="
+                      padding: 0.3rem 0.6rem;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      border-radius: 6px;
+                      color: var(--text);
+                      font-size: 0.8rem;
+                    "
+                  >
+                    <option value="60" data-i18n="rcw_days_60">60 días</option>
+                    <option value="90" selected data-i18n="rcw_days_90">
+                      90 días
+                    </option>
+                    <option value="180" data-i18n="rcw_days_180">
+                      180 días
+                    </option>
+                  </select>
+                </div>
+                <div id="fis-corr-insights" style="margin-bottom: 1.2rem"></div>
+                <div id="fis-corr-table"></div>
+              </div>
+
+              <!-- ── TAB: PROTOCOLOS ── -->
+              <div class="fis-tab-pane" id="fis-tab-protocol">
+                <div class="proto-tabs">
+                  <button
+                    class="proto-tab"
+                    onclick="FIS.loadProtocol('post_sprint', this)"
+                  >
+                    ⚡ <span data-i18n="rcw_proto_sprint">Post Sprint</span>
+                  </button>
+                  <button
+                    class="proto-tab"
+                    onclick="FIS.loadProtocol('post_703', this)"
+                  >
+                    🌊 <span data-i18n="rcw_proto_703">Post 70.3</span>
+                  </button>
+                  <button
+                    class="proto-tab"
+                    onclick="FIS.loadProtocol('post_ironman', this)"
+                  >
+                    🔥 <span data-i18n="rcw_proto_ironman">Post Ironman</span>
+                  </button>
+                  <button
+                    class="proto-tab"
+                    onclick="FIS.loadProtocol('illness', this)"
+                  >
+                    🤒
+                    <span data-i18n="rcw_proto_illness">Post Enfermedad</span>
+                  </button>
+                  <button
+                    class="proto-tab"
+                    onclick="FIS.loadProtocol('overtraining', this)"
+                  >
+                    ⚠️
+                    <span data-i18n="rcw_proto_overtraining"
+                      >Sobreentrenamiento</span
+                    >
+                  </button>
+                </div>
+                <div id="fis-protocol-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="rcw_select_protocol"
+                  >
+                    Selecciona un protocolo para ver el plan de recuperación
+                    detallado.
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TAB: COACH ── -->
+              <div class="fis-tab-pane" id="fis-tab-coach">
+                <div id="fis-coach-view-content">
+                  <div
+                    style="color: var(--dim); font-size: 0.82rem"
+                    data-i18n="rcw_loading_athletes"
+                  >
+                    Cargando vista de atletas…
+                  </div>
+                </div>
+              </div>
+            
+            </div>
+          </div>
+
+          <div class="est-group-h" data-i18n="est_group_mental">Mental</div>
+          <div class="men-scope" id="est-grp-men">
+            <div class="men-tabs">
+              <button class="men-tab-btn active" onclick="MEN.switchTab('score', this)" data-i18n="ment_tab_score">Score del Día</button>
+              <button class="men-tab-btn" onclick="MEN.switchTab('protocols', this)" data-i18n="ment_tab_protocols">Protocolos</button>
+              <button class="men-tab-btn" onclick="MEN.switchTab('breathing', this)" data-i18n="ment_tab_breathing">Respiración</button>
+              <button class="men-tab-btn" onclick="MEN.switchTab('correlations', this)" data-i18n="ment_tab_correlations">Correlaciones</button>
+              <button class="men-tab-btn" onclick="MEN.switchTab('prerace', this)" data-i18n="ment_tab_prerace">Pre-Carrera</button>
+            </div>
+            <div class="men-tab-panel active" id="men-tab-score">
+            <div class="grid-2" style="margin-bottom: 16px">
+              <!-- MFS Hero -->
+              <div class="card" style="grid-column: span 2" id="men-mfs-hero-card">
+                <div
+                  class="loader"
+                  id="men-mfs-loader"
+                  data-i18n="ment_loading_mfs"
+                >
+                  Cargando Mental Fatigue Score...
+                </div>
+                <div id="men-mfs-hero-content" style="display: none">
+                  <div class="mfs-hero">
+                    <div class="mfs-dial">
+                      <svg viewBox="0 0 160 160">
+                        <circle class="mfs-dial-bg" cx="80" cy="80" r="64" />
+                        <circle
+                          class="mfs-dial-fill"
+                          id="men-mfs-arc"
+                          cx="80"
+                          cy="80"
+                          r="64"
+                          stroke-dasharray="402"
+                          stroke-dashoffset="402"
+                        />
+                      </svg>
+                      <div class="mfs-center">
+                        <div class="mfs-score-num" id="men-mfs-num">—</div>
+                        <div
+                          class="mfs-label"
+                          data-i18n="ment_mental_score_label"
+                        >
+                          Mental Score
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mfs-info">
+                      <div class="mfs-level-badge" id="men-mfs-badge">—</div>
+                      <div class="mfs-rec" id="men-mfs-rec"></div>
+                      <div class="mfs-signal" id="men-mfs-signal"></div>
+                      <div class="completeness" id="men-mfs-completeness"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="men-mfs-no-data" style="display: none">
+                  <div class="empty-state" data-i18n="ment_no_data_msg">
+                    Completa el check-in mental para calcular tu Mental Fatigue
+                    Score
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" data-i18n="ment_card_trend_7d">
+                Tendencia 7 días
+              </div>
+              <div class="trend-wrap">
+                <div class="trend-bars" id="men-trend-bars">
+                  <div
+                    class="loader"
+                    style="padding: 10px"
+                    data-i18n="ment_loading"
+                  >
+                    Cargando...
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+            <div class="men-tab-panel" id="men-tab-protocols">
+            <div class="card" style="margin-bottom: 16px">
+              <div class="card-title" data-i18n="ment_card_protocol_library">
+                Biblioteca de Protocolos
+              </div>
+              <div class="filter-row">
+                <select
+                  class="filter-select"
+                  id="men-filter-cat"
+                  onchange="MEN.loadProtocols()"
+                >
+                  <option value="" data-i18n="ment_opt_all_categories">
+                    Todas las categorías
+                  </option>
+                  <option value="breathing" data-i18n="ment_cat_breathing">
+                    Respiración
+                  </option>
+                  <option
+                    value="visualization"
+                    data-i18n="ment_cat_visualization"
+                  >
+                    Visualización
+                  </option>
+                  <option value="mindfulness" data-i18n="ment_cat_mindfulness">
+                    Mindfulness
+                  </option>
+                  <option value="cognitive" data-i18n="ment_cat_cognitive">
+                    Cognitivo
+                  </option>
+                  <option value="activation" data-i18n="ment_cat_activation">
+                    Activación
+                  </option>
+                  <option value="pre_race" data-i18n="ment_cat_pre_race">
+                    Pre-Carrera
+                  </option>
+                  <option
+                    value="recovery_mental"
+                    data-i18n="ment_cat_recovery_mental"
+                  >
+                    Recuperación Mental
+                  </option>
+                </select>
+                <select
+                  class="filter-select"
+                  id="men-filter-goal"
+                  onchange="MEN.loadProtocols()"
+                >
+                  <option value="" data-i18n="ment_opt_all_goals">
+                    Todos los objetivos
+                  </option>
+                  <option value="anxiety" data-i18n="ment_goal_anxiety">
+                    Ansiedad
+                  </option>
+                  <option value="focus" data-i18n="ment_goal_focus">
+                    Foco
+                  </option>
+                  <option value="confidence" data-i18n="ment_goal_confidence">
+                    Confianza
+                  </option>
+                  <option value="motivation" data-i18n="ment_goal_motivation">
+                    Motivación
+                  </option>
+                  <option value="stress" data-i18n="ment_goal_stress">
+                    Estrés
+                  </option>
+                  <option value="hrv" data-i18n="ment_goal_hrv">
+                    HRV / Recuperación
+                  </option>
+                  <option value="energy" data-i18n="ment_goal_energy">
+                    Energía
+                  </option>
+                  <option value="recovery" data-i18n="ment_goal_recovery">
+                    Recuperación
+                  </option>
+                </select>
+                <select
+                  class="filter-select"
+                  id="men-filter-diff"
+                  onchange="MEN.loadProtocols()"
+                >
+                  <option value="" data-i18n="ment_opt_all_levels">
+                    Todos los niveles
+                  </option>
+                  <option value="beginner" data-i18n="ment_diff_beginner">
+                    Principiante
+                  </option>
+                  <option
+                    value="intermediate"
+                    data-i18n="ment_diff_intermediate"
+                  >
+                    Intermedio
+                  </option>
+                  <option value="advanced" data-i18n="ment_diff_advanced">
+                    Avanzado
+                  </option>
+                </select>
+                <select
+                  class="filter-select"
+                  id="men-filter-dur"
+                  onchange="MEN.loadProtocols()"
+                >
+                  <option value="" data-i18n="ment_opt_any_duration">
+                    Cualquier duración
+                  </option>
+                  <option value="5" data-i18n="ment_opt_up_to_5">
+                    Hasta 5 min
+                  </option>
+                  <option value="10" data-i18n="ment_opt_up_to_10">
+                    Hasta 10 min
+                  </option>
+                  <option value="15" data-i18n="ment_opt_up_to_15">
+                    Hasta 15 min
+                  </option>
+                </select>
+              </div>
+              <div class="proto-grid" id="men-proto-grid">
+                <div class="loader" data-i18n="ment_loading_protocols">
+                  Cargando protocolos...
+                </div>
+              </div>
+            </div>
+            </div>
+            <div class="men-tab-panel" id="men-tab-breathing">
+            <div class="card">
+              <div class="card-title" data-i18n="ment_card_breathing_timer">
+                Timer de Respiración Guiada
+              </div>
+              <div class="breath-hero">
+                <!-- Protocol selector -->
+                <div class="breath-select-wrap" id="men-breath-selector">
+                  <div
+                    class="breath-option selected"
+                    data-id="box"
+                    onclick="MEN.selectBreath(
+                        this,
+                        'box',
+                        MEN._t('ment_breath_box_label', 'Respiración en Caja'),
+                        4,
+                        4,
+                        4,
+                        4,
+                      )
+                    "
+                  >
+                    <h4 data-i18n="ment_breath_box_name">Caja (4-4-4-4)</h4>
+                    <p data-i18n="ment_breath_box_desc">
+                      Foco y control. Navy SEALs.
+                    </p>
+                  </div>
+                  <div
+                    class="breath-option"
+                    data-id="478"
+                    onclick="MEN.selectBreath(this, '478', '4-7-8', 4, 7, 8, 0)"
+                  >
+                    <h4>4-7-8</h4>
+                    <p data-i18n="ment_breath_478_desc">Ansiedad y sueño.</p>
+                  </div>
+                  <div
+                    class="breath-option"
+                    data-id="resonance"
+                    onclick="MEN.selectBreath(
+                        this,
+                        'resonance',
+                        'Resonancia (5.5s)',
+                        5.5,
+                        0,
+                        5.5,
+                        0,
+                      )
+                    "
+                  >
+                    <h4 data-i18n="ment_breath_resonance_name">
+                      Resonancia (5.5-5.5)
+                    </h4>
+                    <p data-i18n="ment_breath_resonance_desc">Maximiza HRV.</p>
+                  </div>
+                  <div
+                    class="breath-option"
+                    data-id="physiological"
+                    onclick="MEN.selectBreath(
+                        this,
+                        'physio',
+                        MEN._t('ment_breath_phys_label', 'Suspiro Fisiológico'),
+                        3,
+                        1,
+                        8,
+                        0,
+                      )
+                    "
+                  >
+                    <h4 data-i18n="ment_breath_physio_name">
+                      Suspiro Fisiológico
+                    </h4>
+                    <p data-i18n="ment_breath_physio_desc">
+                      Reducción de estrés inmediata.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Ring timer -->
+                <div
+                  class="breath-ring-wrap"
+                  id="men-breath-ring"
+                  style="display: none"
+                >
+                  <svg viewBox="0 0 200 200">
+                    <circle class="breath-ring-bg" cx="100" cy="100" r="82" />
+                    <circle
+                      class="breath-ring-fill"
+                      id="men-breath-arc"
+                      cx="100"
+                      cy="100"
+                      r="82"
+                      stroke-dasharray="515"
+                      stroke-dashoffset="515"
+                      style="
+                        transform-origin: center;
+                        transform: rotate(-90deg);
+                      "
+                    />
+                  </svg>
+                  <div class="breath-center">
+                    <div class="breath-phase" id="men-breath-phase">—</div>
+                    <div class="breath-count" id="men-breath-count">0</div>
+                    <div class="breath-cycles" id="men-breath-cycles">
+                      Ciclo 0/5
+                    </div>
+                  </div>
+                </div>
+
+                <div class="breath-ctrls">
+                  <button
+                    class="btn-accent"
+                    id="men-breath-start-btn"
+                    onclick="MEN.startBreathing()"
+                    data-i18n="ment_btn_start"
+                  >
+                    Comenzar
+                  </button>
+                  <button
+                    class="btn-ghost"
+                    id="men-breath-stop-btn"
+                    onclick="MEN.stopBreathing()"
+                    style="display: none"
+                    data-i18n="ment_btn_stop"
+                  >
+                    Detener
+                  </button>
+                </div>
+                <div
+                  id="men-breath-complete-msg"
+                  style="display: none; text-align: center"
+                >
+                  <div
+                    style="font-size: 1.4rem; margin-bottom: 6px"
+                    data-i18n="ment_session_completed"
+                  >
+                    Sesión completada
+                  </div>
+                  <div
+                    style="
+                      font-size: 0.9rem;
+                      color: var(--sub);
+                      margin-bottom: 12px;
+                    "
+                    data-i18n="ment_rate_effectiveness"
+                  >
+                    ¿Cómo te sientes? Califica la efectividad:
+                  </div>
+                  <div
+                    class="rating-row"
+                    style="justify-content: center"
+                    id="men-breath-rating-stars"
+                  ></div>
+                  <button
+                    class="btn-primary"
+                    style="margin-top: 12px"
+                    onclick="MEN.saveBreathSession()"
+                    data-i18n="ment_btn_save_session"
+                  >
+                    Guardar sesión
+                  </button>
+                </div>
+              </div>
+            </div>
+            </div>
+            <div class="men-tab-panel" id="men-tab-correlations">
+            <div id="men-corr-content">
+              <div class="loader" data-i18n="ment_loading_correlations">
+                Calculando correlaciones...
+              </div>
+            </div>
+            </div>
+            <div class="men-tab-panel" id="men-tab-prerace">
+            <div id="men-prerace-content">
+              <div class="loader" data-i18n="ment_loading_prerace_protocol">
+                Cargando protocolo pre-carrera...
+              </div>
+            </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="men-scope" id="est-modal-host">
+        <div class="modal-overlay hidden" id="men-proto-modal">
+          <div class="modal-box">
+            <button class="modal-close" onclick="MEN.closeProtoModal()">✕</button>
+            <div class="modal-title" id="men-proto-modal-title">—</div>
+            <div class="modal-cat" id="men-proto-modal-cat"></div>
+            <div class="modal-desc" id="men-proto-modal-desc"></div>
+            <ol class="modal-steps-list" id="men-proto-modal-steps"></ol>
+            <div
+              style="
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border);
+              "
+            >
+              <div
+                style="
+                  font-size: 0.82rem;
+                  color: var(--sub);
+                  margin-bottom: 8px;
+                "
+                data-i18n="ment_rate_after_complete"
+              >
+                Calificar efectividad después de completar:
+              </div>
+              <div class="rating-row" id="men-modal-rating-stars"></div>
+              <button
+                class="btn-primary btn-sm"
+                style="margin-top: 12px"
+                onclick="MEN.saveProtocolSession()"
+                data-i18n="ment_btn_mark_completed"
+              >
+                Marcar como completado
+              </button>
+              <span
+                id="men-proto-saved-msg"
+                style="
+                  display: none;
+                  font-size: 0.8rem;
+                  color: var(--green);
+                  margin-left: 10px;
+                "
+                data-i18n="ment_saved"
+                >✓ Guardado</span
+              >
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="nav.js?v=5" defer></script>
+    <script src="footer.js"></script>
+    <script src="dash-header.js"></script>
+    <script src="lx-upgrade.js"></script>
+    <script>
+
+      /* ═══ Titular: veredicto unico = el PEOR entre Recovery Score y MFS ═══
+         Mismo criterio que la pantalla Hoy de la app (semaforo = peor de los
+         indicadores; Recovery: >=70 verde, >=40 ambar, resto rojo). El MFS entra
+         por su nivel (peak/good verde, moderate ambar, low/critical rojo).
+         Empate de severidad: manda el de menor score; si tambien empatan, Recovery.
+         La frase titular es la que ya genera la pagina de origen del score que manda. */
+      (function () {
+        var COLORS = ['#10B981', '#F0A500', '#EF4444'];
+        var S = { rec: null, men: null, hrv: null, sleep: null, got: { rec: false, men: false } };
+        function t(k, f) {
+          var v = window.i18n ? window.i18n.t(k) : null;
+          return v && v !== k ? v : f;
+        }
+        function el(id) {
+          return document.getElementById(id);
+        }
+        function recSev(s) {
+          return s >= 70 ? 0 : s >= 40 ? 1 : 2;
+        }
+        function menSev(m) {
+          var l = m.level;
+          if (l === 'peak' || l === 'good') return 0;
+          if (l === 'moderate') return 1;
+          if (l === 'low' || l === 'critical') return 2;
+          return m.score >= 70 ? 0 : m.score >= 55 ? 1 : 2;
+        }
+        function has(v) {
+          return v !== null && v !== undefined && !isNaN(v);
+        }
+        function setFig(id, txt, col) {
+          var e = el(id);
+          e.textContent = txt;
+          if (col) e.style.color = col;
+        }
+        function paint() {
+          var r = S.rec,
+            m = S.men;
+          var hero = el('est-hero');
+          var ring = el('est-dial-ring');
+          setFig('est-fig-rec', r ? r.score : '—', r ? COLORS[r.sev] : 'var(--dim)');
+          setFig('est-fig-men', m ? m.score : '—', m ? COLORS[m.sev] : 'var(--dim)');
+          setFig('est-fig-hrv', has(S.hrv) ? Math.round(S.hrv) + ' ms' : '—');
+          setFig('est-fig-sleep', has(S.sleep) ? S.sleep + ' h' : '—');
+          var gov = null;
+          if (r && m) {
+            gov = r.sev !== m.sev ? (r.sev > m.sev ? r : m) : m.score < r.score ? m : r;
+          } else gov = r || m;
+          var label = el('est-label'),
+            rec = el('est-rec'),
+            dot = el('est-dot'),
+            governs = el('est-governs'),
+            rule = el('est-rule');
+          if (!gov) {
+            var loading = !(S.got.rec && S.got.men);
+            hero.style.setProperty('--est-c', 'var(--dim)');
+            label.textContent = loading ? t('est_loading', 'Cargando tu estado…') : t('est_empty_label', 'Sin datos de hoy');
+            label.style.color = 'var(--muted)';
+            label.style.background = 'transparent';
+            rec.textContent = loading ? '' : t('est_empty', 'Todavía no hay datos de hoy. Registra tu día abajo (bienestar y estado mental) para ver tu estado.');
+            governs.textContent = '';
+            rule.textContent = '';
+            el('est-score-n').textContent = '—';
+            el('est-score-n').style.color = 'var(--dim)';
+            el('est-score-l').textContent = '';
+            ring.style.stroke = 'var(--dim)';
+            ring.style.strokeDashoffset = 364;
+            dot.style.background = 'var(--dim)';
+            return;
+          }
+          var col = COLORS[gov.sev];
+          hero.style.setProperty('--est-c', col);
+          dot.style.background = col;
+          label.textContent = gov.label;
+          label.style.color = col;
+          label.style.background = col + '22';
+          rec.textContent = gov.text;
+          governs.textContent = gov.src === 'rec' ? t('est_governs_rec', 'Manda: Recuperación') : t('est_governs_men', 'Manda: Mental');
+          rule.textContent = r && m ? t('est_rule', 'El semáforo sigue al peor de los dos indicadores.') : '';
+          el('est-score-n').textContent = gov.score;
+          el('est-score-n').style.color = col;
+          el('est-score-l').textContent = gov.src === 'rec' ? t('nav_recovery', 'Recuperación') : t('nav_mental', 'Mental');
+          ring.style.stroke = col;
+          setTimeout(function () {
+            ring.style.strokeDashoffset = 364 - (Math.max(0, Math.min(100, gov.score)) / 100) * 364;
+          }, 100);
+        }
+        window.ESTADO = {
+          setRecovery: function (o) {
+            S.got.rec = true;
+            S.rec = o && has(o.score) ? { src: 'rec', score: Math.round(o.score), sev: recSev(o.score), label: o.label || '', text: o.text || '' } : null;
+            paint();
+          },
+          setMental: function (o) {
+            S.got.men = true;
+            S.men = o && has(o.score) ? { src: 'men', score: Math.round(o.score), sev: menSev(o), label: o.label || '', text: o.text || '' } : null;
+            paint();
+          },
+          setNight: function (hrv, sleep) {
+            S.hrv = hrv ? hrv.last_night_ms : null;
+            S.sleep = sleep ? sleep.total_h : null;
+            paint();
+          },
+          _state: S,
+        };
+        window.EST = {
+          toggleDetail: function (show) {
+            var sec = el('est-detail'),
+              btn = el('est-detail-btn');
+            var open = typeof show === 'boolean' ? show : sec.hidden;
+            sec.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            btn.setAttribute('data-i18n', open ? 'myplan_hide_detail' : 'myplan_see_detail');
+            btn.textContent = open ? t('myplan_hide_detail', 'Ocultar') : t('myplan_see_detail', 'Ver detalle');
+          },
+        };
+        paint();
+      })();
+    </script>
+    <script>
+      (function () {
+        'use strict';
+        var FIS = (window.FIS = {});
+        function $(id) {
+          return document.getElementById('fis-' + id);
+        }
+
+        var _k =
+          JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          ) || {};
+        var API = '/api';
+        function _authToken() {
+          var direct = localStorage.getItem('lx_co_token');
+          if (direct) return direct;
+          return _k.token || '';
+        }
+        var hdrs = {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + _authToken(),
+        };
+
+        var _wellnessValues = {
+          energy: 0,
+          mood: 0,
+          soreness: 0,
+          motivation: 0,
+          stress: 0,
+          sleep_quality: 0,
+        };
+        var _currentDate = (function () {
+          var d = new Date();
+          return (
+            d.getFullYear() +
+            '-' +
+            pad2(d.getMonth() + 1) +
+            '-' +
+            pad2(d.getDate())
+          );
+        })();
+
+        function pad2(n) {
+          return n < 10 ? '0' + n : '' + n;
+        }
+        function _t(key, fallback) {
+          return (window.i18n ? window.i18n.t(key) : null) || fallback;
+        }
+        // textos que genera el backend en español → idioma activo (lx-backend-i18n.js)
+        function _be(s) {
+          return window.lxBeT && typeof s === 'string' ? window.lxBeT(s) : s;
+        }
+
+        // ── Tab switcher ──────────────────────────────────────────────────────────
+        FIS.switchTab = function (id, btn) {
+          document.querySelectorAll('.fis-tab-pane').forEach(function (p) {
+            p.classList.remove('on');
+          });
+          document.querySelectorAll('.fis-tab-btn').forEach(function (b) {
+            b.classList.remove('on');
+          });
+          var pane = $('tab-' + id);
+          if (pane) pane.classList.add('on');
+          if (btn) btn.classList.add('on');
+
+          if (id === 'hrv') loadHrvHistory();
+          else if (id === 'sleep') loadSleepHistory();
+          else if (id === 'timeline') loadTimeline();
+          else if (id === 'correlations') loadCorrelations();
+          else if (id === 'wellness') loadWellnessHistory();
+          else if (id === 'coach') loadCoachView();
+        };
+
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DASHBOARD PRINCIPAL
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadDashboard() {
+          var url = API + '/recovery/dashboard?date_iso=' + _currentDate;
+          fetch(url, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              renderHero(d.recovery);
+              ESTADO.setNight(d.hrv, d.sleep);
+              renderOverviewDetail(d);
+              updateDateSub(d.date_iso);
+            })
+            .catch(function () {
+              ESTADO.setRecovery(null);
+              ESTADO.setNight(null, null);
+            });
+
+          // Cargar recomendación paralela
+          fetch(API + '/recovery/recommendation?date_iso=' + _currentDate, {
+            headers: hdrs,
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              renderRecommendation(d);
+            })
+            .catch(function () {});
+
+          // Cargar bienestar existente
+          fetch(API + '/recovery/wellness/' + _currentDate, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (w) {
+              if (w.logged) prefillWellness(w);
+            })
+            .catch(function () {});
+        }
+        FIS.loadDashboard = loadDashboard;
+
+        function updateDateSub(diso) {}
+
+        // ── Hero dial ────────────────────────────────────────────────────────────
+        function renderHero(rec) {
+          if (!rec) {
+            ESTADO.setRecovery(null);
+            return;
+          }
+          var score = rec.score;
+          var color = rec.color || 'var(--muted)';
+          var label = _be(rec.label || '');
+          var recs = _be(rec.recommendation || '');
+
+          ESTADO.setRecovery({
+            score: score,
+            label: label,
+            text: recs.substring(0, 200),
+          });
+
+          // Factors
+          var factors = rec.factors || {};
+          var factorDefs = [
+            { key: 'hrv', label: 'HRV', icon: '🫀', color: '#7C3AED' },
+            {
+              key: 'sleep',
+              label: _t('kpi_sleep', 'Sueño'),
+              icon: '🌙',
+              color: '#1D4ED8',
+            },
+            {
+              key: 'tsb',
+              label: _t('app_factor_load', 'Carga'),
+              icon: '⚡',
+              color: '#0EA5E9',
+            },
+            {
+              key: 'stress',
+              label: _t('app_factor_stress', 'Estrés'),
+              icon: '🧘',
+              color: '#10B981',
+            },
+            {
+              key: 'body_battery',
+              label: _t('app_factor_battery', 'Batería'),
+              icon: '🔋',
+              color: '#F59E0B',
+            },
+            {
+              key: 'wellness',
+              label: _t('app_factor_wellness', 'Bienestar'),
+              icon: '❤️',
+              color: '#F43F5E',
+            },
+          ];
+
+          var html = factorDefs
+            .map(function (f) {
+              var val = factors[f.key];
+              if (val === null || val === undefined) return '';
+              var pct = Math.round(val);
+              return (
+                '<div class="rc-factor">' +
+                '<div class="rc-factor-n" style="color:' +
+                f.color +
+                '">' +
+                pct +
+                '</div>' +
+                '<div class="rc-factor-l">' +
+                f.icon +
+                ' ' +
+                f.label +
+                '</div>' +
+                '<div class="rc-factor-bar"><div class="rc-factor-fill" style="width:' +
+                pct +
+                '%;background:' +
+                f.color +
+                '"></div></div>' +
+                '</div>'
+              );
+            })
+            .join('');
+          $('rc-factors').innerHTML = html;
+        }
+
+        // ── Overview detail ────────────────────────────────────────────────────────
+        function renderOverviewDetail(d) {
+          // Garmin KPIs
+          var g = d.garmin || {};
+          var tl = d.training_load || {};
+          var garminKpis = [
+            {
+              label: '🔋 Body Battery',
+              value:
+                g.body_battery_end !== null ? g.body_battery_end + '/100' : '—',
+              color: '#F59E0B',
+            },
+            {
+              label: '💓 ' + _t('kpi_hr_rest', 'FC Reposo'),
+              value: g.resting_hr ? g.resting_hr + ' bpm' : '—',
+              color: '#F43F5E',
+            },
+            {
+              label: '😤 ' + _t('rcw_stress_avg', 'Estrés Avg'),
+              value: g.avg_stress !== null ? g.avg_stress : '—',
+              color: '#7C3AED',
+            },
+            {
+              label: '⚡ TSB',
+              value:
+                tl.tsb !== null
+                  ? (tl.tsb > 0 ? '+' : '') + Math.round(tl.tsb || 0)
+                  : '—',
+              color: '#0EA5E9',
+            },
+            {
+              label: '🎯 CTL',
+              value: tl.ctl ? Math.round(tl.ctl) : '—',
+              color: '#10B981',
+            },
+            {
+              label: '😮‍💨 SpO2',
+              value: g.avg_spo2 ? g.avg_spo2 + '%' : '—',
+              color: '#22D3EE',
+            },
+          ];
+          $('garmin-kpis').innerHTML = garminKpis
+            .map(function (k) {
+              return (
+                '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                k.color +
+                '">' +
+                k.value +
+                '</div>' +
+                '<div class="kpi-l">' +
+                k.label +
+                '</div></div>'
+              );
+            })
+            .join('');
+
+          // HRV mini-chart
+          var hrvTrend = (d.hrv || {}).trend_7d || [];
+          renderMiniChart(
+            'hrv-mini-chart',
+            hrvTrend,
+            'hrv_ms',
+            '#7C3AED',
+            'ms',
+          );
+
+          // Sleep mini
+          var sleep = d.sleep || {};
+          var sleepHtml = '';
+          if (sleep.total_h !== null && sleep.total_h !== undefined) {
+            var deep = sleep.deep_min || 0;
+            var rem = sleep.rem_min || 0;
+            var light = sleep.light_min || 0;
+            var awake = sleep.awake_min || 0;
+            var tot = sleep.total_min || 1;
+            sleepHtml =
+              '<div style="margin-bottom:.5rem;font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--blue)">' +
+              sleep.total_h +
+              'h</div>';
+            sleepHtml += '<div class="phase-bar">';
+            if (deep)
+              sleepHtml +=
+                '<div class="phase-seg" style="width:' +
+                Math.round((deep / tot) * 100) +
+                '%;background:#1D4ED8" title="Deep ' +
+                deep +
+                'min">Deep</div>';
+            if (rem)
+              sleepHtml +=
+                '<div class="phase-seg" style="width:' +
+                Math.round((rem / tot) * 100) +
+                '%;background:#7C3AED" title="REM ' +
+                rem +
+                'min">REM</div>';
+            if (light)
+              sleepHtml +=
+                '<div class="phase-seg" style="width:' +
+                Math.round((light / tot) * 100) +
+                '%;background:#0EA5E9" title="Light ' +
+                light +
+                'min">Light</div>';
+            if (awake)
+              sleepHtml +=
+                '<div class="phase-seg" style="width:' +
+                Math.round((awake / tot) * 100) +
+                '%;background:#3D6880" title="Awake ' +
+                awake +
+                'min">⚡</div>';
+            sleepHtml += '</div>';
+            sleepHtml +=
+              '<div style="display:flex;gap:.5rem;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:.35rem">';
+            if (deep)
+              sleepHtml +=
+                '<span style="color:#1D4ED8">● Deep ' + deep + 'min</span>';
+            if (rem)
+              sleepHtml +=
+                '<span style="color:#7C3AED">● REM ' + rem + 'min</span>';
+            if (light)
+              sleepHtml +=
+                '<span style="color:#0EA5E9">● Light ' + light + 'min</span>';
+            sleepHtml += '</div>';
+            if (sleep.score) {
+              sleepHtml +=
+                '<div style="margin-top:.5rem;font-size:.75rem;color:var(--muted)">' +
+                _t('rcw_garmin_score', 'Score Garmin:') +
+                ' <strong style="color:var(--text)">' +
+                sleep.score +
+                '</strong> · ' +
+                (sleep.quality || '') +
+                '</div>';
+            }
+          } else {
+            sleepHtml =
+              '<div style="color:var(--dim);font-size:.8rem">' +
+              _t(
+                'rcw_no_sleep_data',
+                'Sin datos de sueño Garmin para este día.',
+              ) +
+              '</div>';
+          }
+          $('sleep-mini').innerHTML = sleepHtml;
+        }
+
+        function renderMiniChart(elId, points, field, color, unit) {
+          var el = $(elId);
+          if (!points || !points.length) {
+            el.innerHTML =
+              '<div style="color:var(--dim);font-size:.78rem">' +
+              _t('rcw_no_data_available', 'Sin datos disponibles.') +
+              '</div>';
+            return;
+          }
+          var vals = points.map(function (p) {
+            return p[field] || 0;
+          });
+          var mn =
+            Math.min.apply(
+              null,
+              vals.filter(function (v) {
+                return v > 0;
+              }),
+            ) * 0.92;
+          var mx = Math.max.apply(null, vals) * 1.05;
+
+          var html = '<div class="mini-bars">';
+          points.forEach(function (p) {
+            var v = p[field] || 0;
+            var h = v > 0 ? Math.round(((v - mn) / (mx - mn)) * 40 + 8) : 4;
+            var d = p.date_iso ? p.date_iso.substring(5) : '';
+            html +=
+              '<div class="mini-bar" style="height:' +
+              h +
+              'px;background:' +
+              color +
+              ';opacity:' +
+              (v > 0 ? '.75' : '.2') +
+              '" title="' +
+              d +
+              ': ' +
+              v +
+              (unit ? unit : '') +
+              '"></div>';
+          });
+          html += '</div>';
+          if (points.length) {
+            var last = points[points.length - 1];
+            html +=
+              '<div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">' +
+              _t('rcw_last_word', 'Último:') +
+              ' <strong style="color:' +
+              color +
+              '">' +
+              (last[field] || '—') +
+              '</strong>' +
+              (unit || '') +
+              '</div>';
+          }
+          el.innerHTML = html;
+        }
+
+        // ── Recommendation ────────────────────────────────────────────────────────
+        function renderRecommendation(d) {
+          var level = d.training_suggestion || 'moderate';
+          var box = $('rec-box-main');
+          if (!box) return;
+
+          var sessionLabels = {
+            full: _t('rcw_session_full', 'Sesión completa'),
+            moderate: _t('rcw_session_moderate', 'Sesión moderada'),
+            easy: _t('rcw_session_easy', 'Sesión suave / Z1-Z2'),
+            rest: _t('rcw_session_rest', 'Descanso'),
+          };
+          var icons = { full: '🟢', moderate: '🟡', easy: '🟠', rest: '🔴' };
+
+          box.className = 'rec-box ' + level;
+          box.innerHTML =
+            '<div class="rec-title">' +
+            (icons[level] || '') +
+            ' ' +
+            (sessionLabels[level] || level) +
+            '</div>' +
+            '<div class="rec-text">' +
+            (d.main_recommendation || '') +
+            '</div>' +
+            (d.recommended_tss
+              ? '<div style="margin-top:.6rem;font-size:.78rem;color:var(--muted)">' +
+                _t('rcw_suggested_tss', 'TSS sugerido:') +
+                ' <strong style="color:var(--text)">' +
+                d.recommended_tss +
+                '</strong>' +
+                (d.planned_tss
+                  ? ' (' +
+                    _t('rcw_plan_word', 'plan') +
+                    ': ' +
+                    d.planned_tss +
+                    ')'
+                  : '') +
+                '</div>'
+              : '');
+
+          // Alerts
+          var alertsEl = $('rec-alerts');
+          if (alertsEl && d.alerts && d.alerts.length) {
+            alertsEl.innerHTML = d.alerts
+              .map(function (a) {
+                return (
+                  '<div class="alert-chip ' +
+                  a.level +
+                  '">⚠️ ' +
+                  _be(a.message) +
+                  '</div>'
+                );
+              })
+              .join('');
+          }
+
+          // Priorities
+          var priEl = $('rec-priorities');
+          if (priEl && d.recovery_priorities && d.recovery_priorities.length) {
+            priEl.innerHTML =
+              '<div style="margin-top:.75rem;font-size:.75rem;color:var(--dim);font-family:\'Oswald\',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">' +
+              _t('rcw_for_tonight', 'Para esta noche:') +
+              '</div>' +
+              d.recovery_priorities
+                .map(function (p) {
+                  return (
+                    '<div style="font-size:.78rem;color:var(--muted);padding:.25rem 0">' +
+                    _be(p) +
+                    '</div>'
+                  );
+                })
+                .join('');
+          }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // HRV HISTORY
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadHrvHistory() {
+          var days = $('hrv-days-sel').value || 30;
+          fetch(API + '/recovery/hrv/history?days=' + days, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              // KPIs
+              $('hrv-kpis').innerHTML = [
+                {
+                  label: _t('rcw_hrv_avg', 'HRV Promedio'),
+                  value: d.avg_ms ? d.avg_ms + 'ms' : '—',
+                  color: '#7C3AED',
+                },
+                {
+                  label: _t('rcw_baseline', 'Baseline'),
+                  value: d.baseline_ms ? d.baseline_ms + 'ms' : '—',
+                  color: '#A855F7',
+                },
+                {
+                  label: _t('adp_kpi_trend', 'Tendencia'),
+                  value:
+                    d.trend_ms_week !== null
+                      ? (d.trend_ms_week > 0 ? '+' : '') +
+                        d.trend_ms_week +
+                        'ms/sem'
+                      : '—',
+                  color:
+                    d.trend_direction === 'up'
+                      ? '#10B981'
+                      : d.trend_direction === 'down'
+                        ? '#EF4444'
+                        : '#7FB3CC',
+                },
+              ]
+                .map(function (k) {
+                  return (
+                    '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                    k.color +
+                    '">' +
+                    k.value +
+                    '</div><div class="kpi-l">' +
+                    k.label +
+                    '</div></div>'
+                  );
+                })
+                .join('');
+
+              // Bar chart
+              var pts = (d.points || []).filter(function (p) {
+                return p.hrv_ms;
+              });
+              var base = d.baseline_ms || 0;
+              var mn = 0,
+                mx =
+                  Math.max.apply(
+                    null,
+                    pts.map(function (p) {
+                      return p.hrv_ms;
+                    }),
+                  ) * 1.1;
+              var barHtml =
+                '<div style="display:flex;align-items:flex-end;gap:3px;height:80px;overflow-x:auto">';
+              pts.forEach(function (p) {
+                var h = Math.round((p.hrv_ms / mx) * 72);
+                var col =
+                  base > 0
+                    ? p.hrv_ms >= base * 1.05
+                      ? '#10B981'
+                      : p.hrv_ms >= base * 0.9
+                        ? '#7C3AED'
+                        : '#EF4444'
+                    : '#7C3AED';
+                barHtml +=
+                  '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:8px">' +
+                  '<div style="width:100%;height:' +
+                  h +
+                  'px;background:' +
+                  col +
+                  ';border-radius:2px 2px 0 0;opacity:.8" title="' +
+                  p.date_iso +
+                  ': ' +
+                  p.hrv_ms +
+                  'ms"></div>' +
+                  '</div>';
+              });
+              barHtml += '</div>';
+              if (base) {
+                barHtml +=
+                  '<div style="font-size:.7rem;color:#A855F7;margin-top:.35rem">' +
+                  _t('rcw_baseline', 'Baseline') +
+                  ': ' +
+                  base +
+                  'ms · 🟢 ≥baseline 🟣 ' +
+                  _t('rcw_normal_word', 'normal') +
+                  ' 🔴 ' +
+                  _t('rcw_low_word', 'bajo') +
+                  '</div>';
+              }
+              $('hrv-bars').innerHTML = barHtml;
+
+              // Zones
+              var zp = d.zones_pct || {};
+              $('hrv-zones').innerHTML =
+                '<div class="sec-h" style="font-size:.78rem">' +
+                _t('rcw_zones_distrib', 'Distribución de zonas') +
+                '</div>' +
+                '<div style="display:flex;gap:.75rem;flex-wrap:wrap">' +
+                [
+                  [
+                    'optimal',
+                    '🟢 ' + _t('rcw_zone_optimal', 'Óptimo'),
+                    '#10B981',
+                  ],
+                  [
+                    'normal',
+                    '🟣 ' + _t('rcw_normal_word', 'Normal'),
+                    '#7C3AED',
+                  ],
+                  ['low', '🟡 ' + _t('rcw_low_word', 'Bajo'), '#F59E0B'],
+                  [
+                    'critical',
+                    '🔴 ' + _t('rcw_zone_critical', 'Crítico'),
+                    '#EF4444',
+                  ],
+                ]
+                  .map(function (z) {
+                    return (
+                      '<div class="kpi-box" style="min-width:90px"><div class="kpi-n" style="color:' +
+                      z[2] +
+                      '">' +
+                      (zp[z[0]] || 0) +
+                      '%</div><div class="kpi-l">' +
+                      z[1] +
+                      '</div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              // Insights
+              if (d.trend_direction) {
+                var trendMsg = {
+                  up:
+                    '📈 ' +
+                    _t(
+                      'rcw_hrv_trend_up',
+                      'Tendencia alcista — tu HRV está mejorando. Signo de adaptación positiva.',
+                    ),
+                  down:
+                    '📉 ' +
+                    _t(
+                      'rcw_hrv_trend_down',
+                      'Tendencia bajista — HRV en descenso. Considera reducir carga o revisar recuperación.',
+                    ),
+                  stable:
+                    '→ ' +
+                    _t(
+                      'rcw_hrv_trend_stable',
+                      'HRV estable. Respuesta normal de mantenimiento.',
+                    ),
+                };
+                $('hrv-insights').innerHTML =
+                  '<div class="alert-chip info">' +
+                  (trendMsg[d.trend_direction] || '') +
+                  '</div>';
+              }
+            })
+            .catch(function () {});
+        }
+        FIS.loadHrvHistory = loadHrvHistory;
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // SLEEP HISTORY
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadSleepHistory() {
+          var days = $('sleep-days-sel').value || 30;
+          fetch(API + '/recovery/sleep/history?days=' + days, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              // KPIs
+              var kpiList = [
+                {
+                  label: _t('rcw_avg_hours', 'Promedio horas'),
+                  value: d.avg_hours ? d.avg_hours + 'h' : '—',
+                  color: '#1D4ED8',
+                },
+                {
+                  label: _t('rcw_avg_score', 'Score promedio'),
+                  value: d.avg_score ? d.avg_score : '—',
+                  color: '#7C3AED',
+                },
+                {
+                  label: _t('rcw_debt_7d', 'Deuda 7d'),
+                  value:
+                    d.sleep_debt_7d_h > 0 ? d.sleep_debt_7d_h + 'h' : '✅ 0h',
+                  color: d.sleep_debt_7d_h > 3 ? '#EF4444' : '#10B981',
+                },
+              ];
+              // Siesta -- solo se muestra si hubo al menos una en los últimos 7d
+              // (no todos los usuarios/días tienen). Cuenta para la deuda de
+              // arriba (cantidad total de sueño), pero NO para el score/promedio
+              // (calidad de fases, distinta arquitectura que el sueño nocturno).
+              if (d.nap_h_7d) {
+                kpiList.push({
+                  label: _t('rcw_nap_7d', 'Siesta (7d)'),
+                  value: d.nap_h_7d + 'h',
+                  color: '#F0A500',
+                });
+              }
+              $('sleep-kpis').innerHTML = kpiList
+                .map(function (k) {
+                  return (
+                    '<div class="kpi-box"><div class="kpi-n" style="color:' +
+                    k.color +
+                    '">' +
+                    k.value +
+                    '</div><div class="kpi-l">' +
+                    k.label +
+                    '</div></div>'
+                  );
+                })
+                .join('');
+
+              // Bar chart -- un punto naranja arriba de la barra marca los días
+              // con siesta real (no se suma a la altura de la barra, que sigue
+              // siendo solo sueño nocturno).
+              var pts = (d.points || []).filter(function (p) {
+                return p.total_h;
+              });
+              var barHtml =
+                '<div style="display:flex;align-items:flex-end;gap:3px;height:80px;overflow-x:auto">';
+              pts.forEach(function (p) {
+                var h = Math.round((p.total_h / 10) * 72);
+                var col =
+                  p.total_h >= 8
+                    ? '#10B981'
+                    : p.total_h >= 6
+                      ? '#1D4ED8'
+                      : '#EF4444';
+                var napDot = p.nap_h
+                  ? '<div style="width:5px;height:5px;border-radius:50%;background:#F0A500;margin:0 auto 2px"></div>'
+                  : '';
+                var title =
+                  p.date_iso +
+                  ': ' +
+                  p.total_h +
+                  'h' +
+                  (p.nap_h
+                    ? ' + ' + p.nap_h + 'h ' + _t('rcw_nap_word', 'siesta')
+                    : '');
+                barHtml +=
+                  '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:6px;max-width:20px">' +
+                  napDot +
+                  '<div style="width:100%;height:' +
+                  h +
+                  'px;background:' +
+                  col +
+                  ';border-radius:2px 2px 0 0;opacity:.8" title="' +
+                  title +
+                  '"></div></div>';
+              });
+              barHtml +=
+                '</div><div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">' +
+                _t(
+                  'rcw_sleep_bar_legend',
+                  '🟢 ≥8h &nbsp; 🔵 6-8h &nbsp; 🔴 <6h &nbsp; 🟠 ● con siesta',
+                ) +
+                '</div>';
+              $('sleep-bars').innerHTML = barHtml;
+
+              // Debt -- si hubo siesta en la semana, se aclara que ya está
+              // descontada de la deuda mostrada (evita que el usuario piense
+              // que la deuda no la considera).
+              var debtEl = $('sleep-debt-box');
+              var napNote = d.nap_h_7d
+                ? ' (' +
+                  _t(
+                    'rcw_nap_note',
+                    'ya descuenta {h}h de siesta esta semana',
+                  ).replace('{h}', d.nap_h_7d) +
+                  ')'
+                : '';
+              if (d.sleep_debt_7d_h > 1) {
+                debtEl.innerHTML =
+                  '<div class="alert-chip ' +
+                  (d.sleep_debt_7d_h > 3 ? 'high' : 'medium') +
+                  '">💤 ' +
+                  _t('rcw_sleep_debt_week', 'Deuda de sueño esta semana:') +
+                  ' <strong>' +
+                  d.sleep_debt_7d_h +
+                  'h</strong>' +
+                  napNote +
+                  '. ' +
+                  _t('rcw_target_word', 'Objetivo:') +
+                  ' ' +
+                  d.target_h +
+                  'h/noche. ' +
+                  (d.nights_under_6h
+                    ? d.nights_under_6h +
+                      ' ' +
+                      _t('rcw_nights_under_6h', 'noches con menos de 6h.')
+                    : '') +
+                  '</div>';
+              } else {
+                debtEl.innerHTML =
+                  '<div class="alert-chip info">✅ ' +
+                  _t(
+                    'rcw_no_sleep_debt',
+                    'Sin deuda de sueño significativa esta semana',
+                  ) +
+                  napNote +
+                  '.</div>';
+              }
+            })
+            .catch(function () {});
+        }
+        FIS.loadSleepHistory = loadSleepHistory;
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // WELLNESS
+        // ═══════════════════════════════════════════════════════════════════════════
+        function initWellnessStars() {
+          var fields = [
+            'energy',
+            'mood',
+            'soreness',
+            'motivation',
+            'stress',
+            'sleep_quality',
+          ];
+          fields.forEach(function (f) {
+            var container = $('ws-' + f);
+            if (!container) return;
+            container.innerHTML = '';
+            for (var i = 1; i <= 5; i++) {
+              var btn = document.createElement('button');
+              btn.className = 'star inactive';
+              btn.textContent = '★';
+              btn.dataset.val = i;
+              btn.dataset.field = f;
+              btn.addEventListener(
+                'click',
+                (function (field, val, el) {
+                  return function () {
+                    _wellnessValues[field] = val;
+                    updateStars(field);
+                  };
+                })(f, i, btn),
+              );
+              container.appendChild(btn);
+            }
+          });
+        }
+
+        function updateStars(field) {
+          var val = _wellnessValues[field] || 0;
+          var container = $('ws-' + field);
+          if (!container) return;
+          container.querySelectorAll('.star').forEach(function (s) {
+            var sv = parseInt(s.dataset.val);
+            s.className = 'star ' + (sv <= val ? 'active' : 'inactive');
+          });
+        }
+
+        function prefillWellness(w) {
+          var fields = [
+            'energy',
+            'mood',
+            'soreness',
+            'motivation',
+            'stress',
+            'sleep_quality',
+          ];
+          fields.forEach(function (f) {
+            if (w[f] !== null && w[f] !== undefined) {
+              _wellnessValues[f] = w[f];
+              updateStars(f);
+            }
+          });
+          var notesEl = $('well-notes');
+          if (notesEl && w.notes) notesEl.value = w.notes;
+          if ($('done')) $('done').hidden = false;
+        }
+
+        FIS.saveWellness = function () {
+          var notes = $('well-notes').value || null;
+          var body = { date_iso: _currentDate, notes: notes };
+          Object.keys(_wellnessValues).forEach(function (f) {
+            if (_wellnessValues[f]) body[f] = _wellnessValues[f];
+          });
+
+          fetch(API + '/recovery/wellness', {
+            method: 'POST',
+            headers: hdrs,
+            body: JSON.stringify(body),
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (d.ok) {
+                var msg = $('wellness-save-msg');
+                msg.textContent = _t(
+                  'rcw_wellness_saved',
+                  '✅ Guardado — score recalculado',
+                );
+                msg.style.opacity = 1;
+                if ($('done')) $('done').hidden = false;
+                setTimeout(function () {
+                  msg.style.opacity = 0;
+                  loadDashboard(); // Refrescar con nuevo wellness
+                }, 1800);
+              }
+            })
+            .catch(function () {});
+        };
+
+        function loadWellnessHistory() {
+          fetch(API + '/recovery/wellness/history?days=30', { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var avgs = d.avgs || {};
+              var labels = {
+                energy: '⚡ ' + _t('rcw_energy_short', 'Energía'),
+                mood: '😊 ' + _t('rcw_mood_short', 'Ánimo'),
+                soreness: '💪 ' + _t('rcw_legs_short', 'Piernas'),
+                motivation: '🎯 ' + _t('rcw_motivation_short', 'Motivación'),
+                stress: '🌡️ ' + _t('rcw_stress_inv_short', 'Estrés (inv)'),
+                sleep_quality:
+                  '🌙 ' + _t('rcw_sleep_subj_short', 'Sueño subj.'),
+              };
+              var html = '';
+              Object.keys(labels).forEach(function (f) {
+                var v = avgs[f];
+                html +=
+                  '<div class="well-row"><span class="well-label">' +
+                  labels[f] +
+                  '</span>' +
+                  '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:800;color:var(--gold)">' +
+                  (v !== null && v !== undefined ? v + '/5' : '—') +
+                  '</span>' +
+                  '</div>';
+              });
+              $('wellness-history').innerHTML =
+                html ||
+                '<div style="color:var(--dim);font-size:.8rem">' +
+                  _t(
+                    'rcw_no_wellness_history',
+                    'Sin historial de bienestar. Registra tu bienestar diariamente.',
+                  ) +
+                  '</div>';
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // TIMELINE
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadTimeline() {
+          var days = $('tl-days-sel').value || 30;
+          fetch(API + '/recovery/timeline?days=' + days, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var pts = d.timeline || [];
+
+              function renderTlSeries(elId, field, color, maxVal) {
+                var el = $(elId);
+                var barHtml =
+                  '<div style="display:flex;align-items:flex-end;gap:2px;height:60px;overflow-x:auto;overflow-y:hidden">';
+                pts.forEach(function (p) {
+                  var v = p[field];
+                  if (v === null || v === undefined) {
+                    barHtml +=
+                      '<div style="flex:1;min-width:6px;max-width:16px"></div>';
+                    return;
+                  }
+                  var h = Math.round((v / maxVal) * 54);
+                  var tip = p.date_iso + ': ' + Math.round(v);
+                  barHtml +=
+                    '<div style="flex:1;min-width:6px;max-width:16px;height:' +
+                    h +
+                    'px;background:' +
+                    color +
+                    ';border-radius:2px 2px 0 0;opacity:.75" title="' +
+                    tip +
+                    '"></div>';
+                });
+                barHtml += '</div>';
+                el.innerHTML = barHtml;
+              }
+
+              renderTlSeries(
+                'tl-recovery',
+                'recovery_score',
+                'var(--green)',
+                100,
+              );
+              renderTlSeries('tl-hrv', 'hrv_ms', '#7C3AED', 80);
+              renderTlSeries('tl-sleep', 'sleep_score', '#1D4ED8', 100);
+
+              // Optimal windows
+              var wins = d.optimal_windows || [];
+              var winEl = $('tl-windows');
+              if (wins.length) {
+                winEl.innerHTML =
+                  '<div class="sec-h" style="font-size:.78rem;margin-top:1rem">' +
+                  _t(
+                    'rcw_optimal_windows',
+                    'Ventanas de forma óptima detectadas',
+                  ) +
+                  '</div>' +
+                  wins
+                    .map(function (w) {
+                      return (
+                        '<div class="alert-chip info">🟢 ' +
+                        w.start +
+                        ' — ' +
+                        w.label +
+                        '</div>'
+                      );
+                    })
+                    .join('');
+              } else {
+                winEl.innerHTML = '';
+              }
+            })
+            .catch(function () {});
+        }
+        FIS.loadTimeline = loadTimeline;
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // CORRELACIONES
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadCorrelations() {
+          var days = $('corr-days-sel').value || 90;
+          fetch(API + '/recovery/correlations?days=' + days, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              // Insights
+              var insEl = $('corr-insights');
+              if (d.insights && d.insights.length) {
+                insEl.innerHTML = d.insights
+                  .map(function (msg) {
+                    return (
+                      '<div class="alert-chip info">🔬 ' + _be(msg) + '</div>'
+                    );
+                  })
+                  .join('');
+              } else {
+                insEl.innerHTML =
+                  '<div style="color:var(--dim);font-size:.8rem">' +
+                  _t(
+                    'rcw_no_correlation_data',
+                    'Sin suficientes datos para análisis de correlación.',
+                  ) +
+                  '</div>';
+              }
+
+              // Table
+              var corrs = (d.correlations || []).slice(-20);
+              var maxHrv =
+                Math.max.apply(
+                  null,
+                  corrs.map(function (c) {
+                    return c.hrv_ms || 0;
+                  }),
+                ) || 1;
+              var tableHtml =
+                '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
+                '<thead><tr style="border-bottom:1px solid var(--border2)">' +
+                [
+                  _t('rcw_th_date', 'Fecha'),
+                  _t('rcw_th_sport', 'Deporte'),
+                  'HRV',
+                  'TSS',
+                ]
+                  .map(function (h) {
+                    return (
+                      '<th style="font-family:\'Oswald\',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--dim);padding:.4rem .6rem;text-align:left">' +
+                      h +
+                      '</th>'
+                    );
+                  })
+                  .join('') +
+                '</tr></thead><tbody>';
+              corrs.forEach(function (c) {
+                var barW = c.hrv_ms ? Math.round((c.hrv_ms / maxHrv) * 100) : 0;
+                tableHtml +=
+                  '<tr style="border-bottom:1px solid rgba(8,116,174,.06)">' +
+                  '<td class="corr-date" style="padding:.45rem .6rem">' +
+                  c.date_iso +
+                  '</td>' +
+                  '<td style="padding:.45rem .6rem;color:var(--muted)">' +
+                  (c.sport || '—') +
+                  '</td>' +
+                  '<td style="padding:.45rem .6rem">' +
+                  '<div style="display:flex;align-items:center;gap:.4rem">' +
+                  '<div style="flex:1;background:var(--surface2);border-radius:2px;height:6px;min-width:60px"><div style="width:' +
+                  barW +
+                  '%;height:100%;background:#7C3AED;border-radius:2px"></div></div>' +
+                  '<span style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;color:#7C3AED;min-width:32px;text-align:right">' +
+                  (c.hrv_ms || '—') +
+                  '</span>' +
+                  '</div></td>' +
+                  '<td style="padding:.45rem .6rem;font-family:\'Barlow Condensed\',sans-serif;font-weight:800;color:var(--gold)">' +
+                  (c.tss ? Math.round(c.tss) : '—') +
+                  '</td>' +
+                  '</tr>';
+              });
+              tableHtml += '</tbody></table></div>';
+              $('corr-table').innerHTML = tableHtml;
+            })
+            .catch(function () {});
+        }
+        FIS.loadCorrelations = loadCorrelations;
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // PROTOCOLOS
+        // ═══════════════════════════════════════════════════════════════════════════
+        FIS.loadProtocol = function (ptype, btn) {
+          document.querySelectorAll('.proto-tab').forEach(function (b) {
+            b.classList.remove('on');
+          });
+          if (btn) btn.classList.add('on');
+          fetch(API + '/recovery/protocol/' + ptype, { headers: hdrs })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var p = d.protocol || {};
+              var ctx = d.athlete_context || {};
+              var loadColors = {
+                rest: '#EF4444',
+                easy: '#10B981',
+                moderate: '#F0A500',
+                full: '#0EA5E9',
+              };
+
+              var html =
+                '<div class="panel" style="padding:1.2rem">' +
+                '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:.4rem">' +
+                _be(p.name) +
+                '</div>' +
+                '<div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">' +
+                _t('rcw_estimated_duration', 'Duración estimada:') +
+                ' ' +
+                _be(p.duration) +
+                '</div>';
+
+              if (p.warning) {
+                html +=
+                  '<div class="alert-chip high" style="margin-bottom:1rem">⚠️ ' +
+                  _be(p.warning) +
+                  '</div>';
+              }
+
+              (p.days || []).forEach(function (day) {
+                html +=
+                  '<div class="proto-day">' +
+                  '<div class="proto-phase">' +
+                  _be(day.label) +
+                  '</div>' +
+                  '<div><span class="proto-load ' +
+                  day.load +
+                  '">' +
+                  _t('rcv_load_' + day.load, day.load.toUpperCase()) +
+                  '</span>' +
+                  (day.tss_max !== null && day.tss_max !== undefined
+                    ? '<div style="font-size:.65rem;color:var(--dim);margin-top:.2rem">TSS ≤ ' +
+                      day.tss_max +
+                      '</div>'
+                    : '') +
+                  '</div>' +
+                  '<div class="proto-actions"><ul style="list-style:disc;padding-left:1rem">' +
+                  (day.actions || [])
+                    .map(function (a) {
+                      return '<li>' + _be(a) + '</li>';
+                    })
+                    .join('') +
+                  '</ul></div>' +
+                  '</div>';
+              });
+
+              html +=
+                '<div class="alert-chip info" style="margin-top:1rem">🫀 ' +
+                _be(p.hrv_clearance) +
+                '</div>';
+
+              if (
+                ctx.recovery_score_today !== null &&
+                ctx.recovery_score_today !== undefined
+              ) {
+                html +=
+                  '<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)">' +
+                  _t('rcw_your_score_today', 'Tu Recovery Score hoy:') +
+                  ' <strong style="color:var(--text)">' +
+                  ctx.recovery_score_today +
+                  '</strong> · ' +
+                  (ctx.recommendation || '') +
+                  '</div>';
+              }
+              html += '</div>';
+
+              $('protocol-content').innerHTML = html;
+            })
+            .catch(function () {});
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // COACH VIEW
+        // ═══════════════════════════════════════════════════════════════════════════
+        function loadCoachView() {
+          fetch(API + '/recovery/coach-view', { headers: hdrs })
+            .then(function (r) {
+              if (r.status === 403) return null;
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d) return;
+              var el = $('coach-view-content');
+              var athletes = d.athletes || [];
+              if (!athletes.length) {
+                el.innerHTML =
+                  '<div style="color:var(--dim);font-size:.82rem">' +
+                  _t('rcw_no_active_athletes', 'No tienes atletas activos.') +
+                  '</div>';
+                return;
+              }
+
+              var html =
+                '<div style="margin-bottom:.75rem;display:flex;gap:1rem;font-size:.78rem;color:var(--muted)">' +
+                '<span>🔴 ' +
+                _t('rcw_need_attention', 'Necesitan atención:') +
+                ' <strong style="color:var(--red)">' +
+                (d.red_count || 0) +
+                '</strong></span>' +
+                '<span>🟢 ' +
+                _t('rcw_doing_well', 'Bien:') +
+                ' <strong style="color:var(--green)">' +
+                (d.green_count || 0) +
+                '</strong></span></div>';
+
+              athletes.forEach(function (a) {
+                var initials = (a.name || 'X')
+                  .split(' ')
+                  .map(function (w) {
+                    return w[0];
+                  })
+                  .join('')
+                  .toUpperCase()
+                  .substring(0, 2);
+                var scoreCol = a.color || 'var(--muted)';
+                html +=
+                  '<div class="athlete-row"' +
+                  (a.needs_attention
+                    ? ' style="border-color:rgba(239,68,68,.4)"'
+                    : '') +
+                  '>' +
+                  '<div class="athlete-avatar" style="background:' +
+                  scoreCol +
+                  '20;color:' +
+                  scoreCol +
+                  '">' +
+                  initials +
+                  '</div>' +
+                  '<div>' +
+                  '<div class="athlete-name">' +
+                  a.name +
+                  (a.needs_attention ? ' ⚠️' : '') +
+                  '</div>' +
+                  '<div style="font-size:.68rem;color:var(--dim)">' +
+                  (a.suggestion || '') +
+                  ' · HRV ' +
+                  a.hrv_trend +
+                  '</div>' +
+                  '</div>' +
+                  '<div class="score-pill" style="background:' +
+                  scoreCol +
+                  '20;color:' +
+                  scoreCol +
+                  '">' +
+                  (a.score !== null ? a.score : '—') +
+                  '</div>' +
+                  '<div style="font-size:.72rem;color:var(--dim);text-align:center">' +
+                  (a.factors
+                    ? 'HRV<br>' + Math.round(a.factors.hrv || 0)
+                    : '') +
+                  '</div>' +
+                  '<div style="font-size:.72rem;color:var(--dim);text-align:center">' +
+                  (a.factors
+                    ? _t('kpi_sleep', 'Sleep') +
+                      '<br>' +
+                      Math.round(a.factors.sleep || 0)
+                    : '') +
+                  '</div>' +
+                  '<div style="font-size:.72rem;color:var(--dim);text-align:center;white-space:nowrap">TSB<br>' +
+                  Math.round(a.factors ? a.factors.tsb || 0 : 0) +
+                  '</div>' +
+                  '</div>';
+              });
+              el.innerHTML = html;
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════════════════
+        initWellnessStars();
+        loadDashboard();
+
+        // Show coach tab if role = coach
+        if (_k && (_k.role === 'coach' || _k.role === 'admin')) {
+          var coachBtn = $('tab-coach-btn');
+          if (coachBtn) coachBtn.style.display = '';
+        }
+
+        // Update nav user info
+        setTimeout(function () {
+          if (typeof KL !== 'undefined' && KL.init) KL.init();
+        }, 200);
+      })();
+    </script>
+    <script>
+        (function () {
+          var MEN = (window.MEN = {});
+          function $(id) {
+            return document.getElementById('men-' + id);
+          }
+          var API = '/api';
+          // El JWT real vive en localStorage.lx_co_token. La cookie httponly
+          // lx_access_token (credentials:'include') solo la setea /auth/login, dura
+          // TOKEN_HOURS (8h por defecto) y expira en medio de la sesión del usuario —
+          // sin este header, el check-in "se guarda" (POST con cookie aún viva) pero
+          // al volver más tarde el GET falla en silencio y parece que no se guardó.
+          function _authTok() {
+            var direct = localStorage.getItem('lx_co_token');
+            if (direct) return direct;
+            try {
+              var s = JSON.parse(
+                sessionStorage.getItem('kl_s') ||
+                  localStorage.getItem('kl_s') ||
+                  'null',
+              );
+              return s && s.token ? s.token : '';
+            } catch (e) {
+              return '';
+            }
+          }
+          function _authHeaders(extra) {
+            var h = Object.assign({}, extra || {});
+            var tok = _authTok();
+            if (tok) h.Authorization = 'Bearer ' + tok;
+            return h;
+          }
+          var checkinData = {};
+
+          // Fecha LOCAL del navegador (no UTC) — evita que el "hoy" del servidor
+          // (calculado en UTC) se desfase varias horas del día real del usuario
+          // en husos horarios detrás de UTC (ej. Chile), donde el check-in de la
+          // tarde/noche podía "desaparecer" al cruzar la medianoche UTC.
+          function _localDateISO() {
+            var d = new Date();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + m + '-' + day;
+          }
+          var selectedProtoId = null;
+          var selectedProtoRating = 0;
+          var breathProto = {
+            id: 'box',
+            name: 'Caja',
+            inhale: 4,
+            hold1: 4,
+            exhale: 4,
+            hold2: 4,
+          };
+          var breathTimer = null;
+          var breathCycle = 0;
+          var breathMaxCycles = 5;
+          var breathStep = 0;
+          var breathSec = 0;
+          var breathRating = 0;
+
+          function _termBtn(id) {
+            return (
+              '<button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open(' +
+              String.fromCharCode(39) + id + String.fromCharCode(39) + ', this)">' +
+              '<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>'
+            );
+          }
+
+          function _t(key, fallback) {
+            // window.i18n.t() devuelve la CLAVE CRUDA (no null) cuando falta la
+            // traducción — hay que detectar ese caso para no mostrar "ment_algo" crudo.
+            var v = window.i18n ? window.i18n.t(key) : null;
+            return v && v !== key ? v : fallback;
+          }
+
+          // ─── TABS ───────────────────────────────────────────────────────────────────
+          function _protoT(p) {
+            var k = 'mp_' + p.id;
+            var s = _t(k + '_s', '');
+            return {
+              name: _t(k + '_n', p.name),
+              description: _t(k + '_d', p.description),
+              steps: s ? s.split('|') : p.steps || [],
+            };
+          }
+
+          var _MSG_KEYS = {
+            'Estado mental óptimo. Excelente día para entrenamiento de calidad o competencia.':
+              'mentmsg_mfs_peak',
+            'Buen estado mental. Entrena con confianza.': 'mentmsg_mfs_good',
+            'Fatiga mental moderada. Considera reducir la intensidad o acortar la sesión.':
+              'mentmsg_mfs_moderate',
+            'Fatiga mental alta. Prioriza descanso mental — un entrenamiento suave o día de recuperación.':
+              'mentmsg_mfs_low',
+            'Fatiga mental crítica. El rendimiento y la toma de decisiones están comprometidos. Descansa.':
+              'mentmsg_mfs_critical',
+            'Completa el check-in para obtener tu Mental Fatigue Score.':
+              'mentmsg_need_checkin',
+            'Completa el check-in diario para calcular tu Mental Fatigue Score.':
+              'mentmsg_need_checkin_daily',
+            'Mayor Mental Fatigue Score se correlaciona positivamente con mayor TSS alcanzado.':
+              'mentmsg_corr_pos',
+            'Sin correlación significativa todavía — necesitas más datos (mín. 14 días).':
+              'mentmsg_corr_none',
+            'Sin carrera objetivo registrada. Agrega tu próxima carrera en Perfil.':
+              'mentmsg_no_race',
+            'Es el día de carrera. Confía en tu preparación. 🏁':
+              'mentmsg_race_day',
+            'Tu carrera': 'ment_your_race',
+          };
+
+          function _msgT(text) {
+            if (!text) return text || '';
+            if (_MSG_KEYS[text]) return _t(_MSG_KEYS[text], text);
+            var m =
+              /^A (\d+) días de la carrera\. Sigue el protocolo mental del día\.$/.exec(
+                text,
+              );
+            if (m) return _t('mentmsg_prerace_days', text).replace('{n}', m[1]);
+            return text;
+          }
+
+          function switchTab(name, btn) {
+            document.querySelectorAll('.men-tab-panel').forEach(function (p) {
+              p.classList.remove('active');
+            });
+            document.querySelectorAll('.men-tab-btn').forEach(function (b) {
+              b.classList.remove('active');
+            });
+            $('tab-' + name).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (name === 'protocols') loadProtocols();
+            if (name === 'correlations') loadCorrelations();
+            if (name === 'prerace') loadPreRace();
+          }
+
+          // ─── LOAD DASHBOARD ─────────────────────────────────────────────────────────
+          function loadDashboard() {
+            fetch(API + '/mental/dashboard?date_iso=' + _localDateISO(), {
+              credentials: 'include',
+              headers: _authHeaders(),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderMFS(d.today);
+                renderCheckin(d.checkin);
+                renderTrend(d.trend_7d);
+                if (d.suggested_protocol) {
+                  console.log('Suggested:', d.suggested_protocol.name);
+                }
+              })
+              .catch(function () {
+                $('mfs-loader').textContent = _t(
+                  'ment_err_load_retry',
+                  'Error al cargar. Reintenta.',
+                );
+                ESTADO.setMental(null);
+              });
+          }
+
+          function renderMFS(today) {
+            $('mfs-loader').style.display = 'none';
+            if (!today || today.score === null || today.score === undefined) {
+              $('mfs-no-data').style.display = 'block';
+              ESTADO.setMental(null);
+              return;
+            }
+            $('mfs-hero-content').style.display = 'block';
+
+            var score = today.score;
+            var color = today.color || '#6366F1';
+            var CIRC = 402;
+            var offset = CIRC - (CIRC * score) / 100;
+
+            var arc = $('mfs-arc');
+            arc.style.stroke = color;
+            arc.style.strokeDashoffset = offset;
+
+            $('mfs-num').textContent = score;
+            $('mfs-num').style.color = color;
+
+            var levels = {
+              peak: _t('ment_level_peak', 'Forma Mental Pico'),
+              good: _t('ment_level_good', 'Bueno'),
+              moderate: _t('ment_level_moderate', 'Moderado'),
+              low: _t('ment_level_low', 'Bajo'),
+              critical: _t('ment_level_critical', 'Crítico'),
+            };
+            var badge = $('mfs-badge');
+            badge.textContent = levels[today.level] || today.level;
+            badge.style.background = color + '22';
+            badge.style.color = color;
+
+            $('mfs-rec').textContent = _msgT(
+              today.recommendation || '',
+            );
+
+            var sigCls = {
+              train: 'signal-train',
+              reduce: 'signal-reduce',
+              rest: 'signal-rest',
+            };
+            var sigTxt = {
+              train: _t('ment_signal_train', 'Entrenar ✓'),
+              reduce: _t('ment_signal_reduce', 'Reducir intensidad'),
+              rest: _t('ment_signal_rest', 'Descansar'),
+            };
+            var sig = $('mfs-signal');
+            sig.textContent = sigTxt[today.signal] || today.signal;
+            sig.className =
+              'mfs-signal ' + (sigCls[today.signal] || 'signal-train');
+
+            var pct = Math.round((today.data_completeness || 0) * 100);
+            $('mfs-completeness').innerHTML =
+              escHtml(_t('ment_completeness_prefix', 'Completitud:')) +
+              ' <span>' +
+              pct +
+              '%</span> ' +
+              escHtml(_t('ment_completeness_suffix', 'de datos disponibles'));
+            ESTADO.setMental({
+              score: score,
+              level: today.level,
+              label: badge.textContent,
+              text: $('mfs-rec').textContent,
+            });
+          }
+
+          function renderCheckin(c) {
+            if (!c) return;
+            var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
+            keys.forEach(function (key) {
+              if (c[key]) {
+                checkinData[key] = c[key];
+                setStars(key, c[key]);
+              }
+            });
+            if (
+              keys.some(function (k) {
+                return c[k];
+              })
+            )
+              $('done').hidden = false;
+            if (c.notes)
+              $('checkin-notes').value = c.notes || '';
+          }
+
+          function renderTrend(trend) {
+            if (!trend || !trend.length) return;
+            var container = $('trend-bars');
+            container.innerHTML = '';
+            var max = Math.max.apply(
+              null,
+              trend.map(function (t) {
+                return t.score || 0;
+              }),
+            );
+            max = max || 100;
+            var colorMap = {
+              peak: '#10B981',
+              good: '#0EA5E9',
+              moderate: '#F59E0B',
+              low: '#F97316',
+              critical: '#EF4444',
+            };
+            trend.forEach(function (t) {
+              var pct = t.score ? Math.round((t.score / max) * 80) : 0;
+              var col = colorMap[t.level] || '#334155';
+              var shortDate = t.date_iso ? t.date_iso.slice(5) : '';
+              var wrap = document.createElement('div');
+              wrap.className = 'trend-bar-wrap';
+              wrap.innerHTML =
+                '<div class="trend-bar" style="height:' +
+                pct +
+                '%;background:' +
+                col +
+                ';min-height:' +
+                (t.score ? 6 : 2) +
+                'px" title="' +
+                (t.score || '—') +
+                '"></div>' +
+                '<div class="trend-date">' +
+                shortDate +
+                '</div>';
+              container.appendChild(wrap);
+            });
+          }
+
+          // ─── CHECKIN ─────────────────────────────────────────────────────────────────
+          function buildStars() {
+            var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
+            keys.forEach(function (key) {
+              var container = $('stars-' + key);
+              if (!container) return;
+              container.innerHTML = '';
+              for (var i = 1; i <= 5; i++) {
+                var btn = document.createElement('button');
+                btn.className = 'star-btn';
+                btn.textContent = i;
+                btn.dataset.val = i;
+                btn.dataset.key = key;
+                btn.onclick = (function (k, v, b) {
+                  return function () {
+                    checkinData[k] = v;
+                    setStars(k, v);
+                  };
+                })(key, i, btn);
+                container.appendChild(btn);
+              }
+            });
+          }
+
+          function setStars(key, val) {
+            var container = $('stars-' + key);
+            if (!container) return;
+            container.querySelectorAll('.star-btn').forEach(function (b) {
+              b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+            });
+          }
+
+          function submitCheckin() {
+            var payload = {
+              date_iso: _localDateISO(),
+              anxiety: checkinData.anxiety || null,
+              motivation: checkinData.motivation || null,
+              focus: checkinData.focus || null,
+              confidence: checkinData.confidence || null,
+              mood: checkinData.mood || null,
+              notes: $('checkin-notes').value || null,
+            };
+            fetch(API + '/mental/checkin', {
+              method: 'POST',
+              credentials: 'include',
+              headers: _authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify(payload),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                $('done').hidden = false;
+                $('checkin-saved').style.display =
+                  'inline';
+                setTimeout(function () {
+                  $('checkin-saved').style.display =
+                    'none';
+                }, 2500);
+                renderMFS({
+                  score: d.mfs_score,
+                  level: d.mfs_level,
+                  color: d.mfs_color,
+                  signal: null,
+                  recommendation: d.recommendation,
+                  data_completeness: 1.0,
+                });
+              })
+              .catch(function () {});
+          }
+
+          // ─── PROTOCOLS ───────────────────────────────────────────────────────────────
+          function loadProtocols() {
+            var cat = $('filter-cat').value;
+            var goal = $('filter-goal').value;
+            var diff = $('filter-diff').value;
+            var dur = $('filter-dur').value;
+            var qs = [];
+            if (cat) qs.push('category=' + cat);
+            if (goal) qs.push('goal=' + goal);
+            if (diff) qs.push('difficulty=' + diff);
+            if (dur) qs.push('max_duration=' + dur);
+            var url =
+              API + '/mental/protocols' + (qs.length ? '?' + qs.join('&') : '');
+            fetch(url, { credentials: 'include' })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderProtocols(d.protocols || []);
+              })
+              .catch(function () {
+                $('proto-grid').innerHTML =
+                  '<div class="empty-state">' +
+                  escHtml(_t('ment_err_load_generic', 'Error al cargar.')) +
+                  '</div>';
+              });
+          }
+
+          function renderProtocols(protocols) {
+            var grid = $('proto-grid');
+            if (!protocols.length) {
+              grid.innerHTML =
+                '<div class="empty-state">' +
+                escHtml(
+                  _t(
+                    'ment_no_protocols_filtered',
+                    'Sin protocolos con estos filtros.',
+                  ),
+                ) +
+                '</div>';
+              return;
+            }
+            var catLabels = {
+              breathing: _t('ment_cat_breathing', 'Respiración'),
+              visualization: _t('ment_cat_visualization', 'Visualización'),
+              mindfulness: _t('ment_cat_mindfulness', 'Mindfulness'),
+              cognitive: _t('ment_cat_cognitive', 'Cognitivo'),
+              activation: _t('ment_cat_activation', 'Activación'),
+              pre_race: _t('ment_cat_pre_race', 'Pre-Carrera'),
+              recovery_mental: _t(
+                'ment_cat_recovery_mental',
+                'Recuperación Mental',
+              ),
+            };
+            var diffLabels = {
+              beginner: _t('ment_diff_beginner', 'Principiante'),
+              intermediate: _t('ment_diff_intermediate', 'Intermedio'),
+              advanced: _t('ment_diff_advanced', 'Avanzado'),
+            };
+            var doneLbl = escHtml(_t('ment_done_this_week', '✓ Esta semana'));
+            grid.innerHTML = protocols
+              .map(function (p) {
+                p = Object.assign({}, p, _protoT(p));
+                var done = p.completed_this_week ? ' done' : '';
+                return (
+                  '<div class="proto-card' +
+                  done +
+                  '" onclick="MEN.openProtoModal(\'' +
+                  p.id +
+                  '\')">' +
+                  '<div class="proto-header"><div class="proto-name">' +
+                  escHtml(p.name) +
+                  '</div>' +
+                  '<div class="proto-dur">' +
+                  p.duration_min +
+                  ' min</div></div>' +
+                  '<span class="proto-cat cat-' +
+                  p.category +
+                  '">' +
+                  (catLabels[p.category] || p.category) +
+                  '</span>' +
+                  '<div class="proto-desc">' +
+                  escHtml(p.description) +
+                  '</div>' +
+                  '<div class="proto-footer">' +
+                  '<span class="goal-tag">' +
+                  escHtml(_t('ment_goal_' + p.goal, p.goal)) +
+                  '</span>' +
+                  '<span class="diff-badge diff-' +
+                  p.difficulty +
+                  '">' +
+                  (diffLabels[p.difficulty] || p.difficulty) +
+                  '</span>' +
+                  (done
+                    ? '<span class="done-badge">' + doneLbl + '</span>'
+                    : '') +
+                  '</div></div>'
+                );
+              })
+              .join('');
+          }
+
+          function openProtoModal(id) {
+            selectedProtoId = id;
+            selectedProtoRating = 0;
+            fetch(API + '/mental/protocols/' + id, {
+              credentials: 'include',
+              headers: _authHeaders(),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (p) {
+                p = Object.assign({}, p, _protoT(p));
+                $('proto-modal-title').textContent =
+                  p.name;
+                $('proto-modal-cat').textContent =
+                  _t('ment_cat_' + (p.category || ''), p.category || '') +
+                  ' · ' +
+                  p.duration_min +
+                  ' min';
+                $('proto-modal-desc').textContent =
+                  p.description;
+                var stepsHtml = (p.steps || [])
+                  .map(function (s) {
+                    return '<li>' + escHtml(s) + '</li>';
+                  })
+                  .join('');
+                $('proto-modal-steps').innerHTML =
+                  stepsHtml;
+                buildRatingStars('modal-rating-stars', function (v) {
+                  selectedProtoRating = v;
+                });
+                $('proto-saved-msg').style.display =
+                  'none';
+                $('proto-modal')
+                  .classList.remove('hidden');
+              })
+              .catch(function () {});
+          }
+
+          function closeProtoModal() {
+            $('proto-modal').classList.add('hidden');
+          }
+
+          function saveProtocolSession() {
+            if (!selectedProtoId) return;
+            fetch(API + '/mental/protocols/' + selectedProtoId + '/complete', {
+              method: 'POST',
+              credentials: 'include',
+              headers: _authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({
+                protocol_id: selectedProtoId,
+                rating: selectedProtoRating || null,
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function () {
+                $('proto-saved-msg').style.display =
+                  'inline';
+                loadProtocols();
+              })
+              .catch(function () {});
+          }
+
+          // ─── BREATHING TIMER ─────────────────────────────────────────────────────────
+          function selectBreath(el, id, name, inhale, hold1, exhale, hold2) {
+            document.querySelectorAll('.breath-option').forEach(function (o) {
+              o.classList.remove('selected');
+            });
+            el.classList.add('selected');
+            breathProto = {
+              id: id,
+              name: name,
+              inhale: inhale,
+              hold1: hold1,
+              exhale: exhale,
+              hold2: hold2,
+            };
+          }
+
+          function startBreathing() {
+            var PHASES = [];
+            if (breathProto.inhale)
+              PHASES.push({
+                label: _t('ment_breath_inhale', 'Inhala'),
+                secs: breathProto.inhale,
+              });
+            if (breathProto.hold1)
+              PHASES.push({
+                label: _t('ment_breath_hold', 'Retén'),
+                secs: breathProto.hold1,
+              });
+            if (breathProto.exhale)
+              PHASES.push({
+                label: _t('ment_breath_exhale', 'Exhala'),
+                secs: breathProto.exhale,
+              });
+            if (breathProto.hold2)
+              PHASES.push({
+                label: _t('ment_breath_hold', 'Retén'),
+                secs: breathProto.hold2,
+              });
+
+            $('breath-selector').style.display = 'none';
+            $('breath-ring').style.display = 'block';
+            $('breath-start-btn').style.display = 'none';
+            $('breath-stop-btn').style.display = 'block';
+            $('breath-complete-msg').style.display =
+              'none';
+
+            breathCycle = 0;
+            breathMaxCycles = 5;
+            breathStep = 0;
+            breathSec = 0;
+            var CIRC = 515;
+
+            function tick() {
+              var phase = PHASES[breathStep];
+              if (!phase) return;
+              $('breath-phase').textContent = phase.label;
+              $('breath-count').textContent = Math.ceil(
+                phase.secs - breathSec,
+              );
+              $('breath-cycles').textContent =
+                _t('ment_cycle_label', 'Ciclo') +
+                ' ' +
+                (breathCycle + 1) +
+                '/' +
+                breathMaxCycles;
+              var progress = breathSec / phase.secs;
+              var offset = CIRC - CIRC * progress;
+              $('breath-arc').style.strokeDashoffset =
+                offset;
+
+              breathSec += 0.1;
+              if (breathSec >= phase.secs) {
+                breathSec = 0;
+                breathStep++;
+                if (breathStep >= PHASES.length) {
+                  breathStep = 0;
+                  breathCycle++;
+                  if (breathCycle >= breathMaxCycles) {
+                    stopBreathing();
+                    finishBreathing();
+                    return;
+                  }
+                }
+              }
+              breathTimer = setTimeout(tick, 100);
+            }
+            tick();
+          }
+
+          function stopBreathing() {
+            if (breathTimer) {
+              clearTimeout(breathTimer);
+              breathTimer = null;
+            }
+            $('breath-start-btn').style.display = 'block';
+            $('breath-stop-btn').style.display = 'none';
+          }
+
+          function finishBreathing() {
+            $('breath-ring').style.display = 'none';
+            var comp = $('breath-complete-msg');
+            comp.style.display = 'block';
+            buildRatingStars('breath-rating-stars', function (v) {
+              breathRating = v;
+            });
+          }
+
+          function saveBreathSession() {
+            var protoMap = {
+              box: 'breath_box',
+              478: 'breath_478',
+              resonance: 'breath_resonance',
+              physio: 'breath_physiological',
+            };
+            var pid = protoMap[breathProto.id] || 'breath_box';
+            fetch(API + '/mental/protocols/' + pid + '/complete', {
+              method: 'POST',
+              credentials: 'include',
+              headers: _authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({
+                protocol_id: pid,
+                duration_min: breathMaxCycles * 2,
+                rating: breathRating || null,
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function () {
+                $('breath-complete-msg').innerHTML =
+                  '<div style="color:var(--green);font-size:1rem;font-weight:600">' +
+                  escHtml(_t('ment_session_saved', '✓ Sesión guardada')) +
+                  '</div>';
+                setTimeout(function () {
+                  $('breath-selector').style.display =
+                    'grid';
+                  $('breath-complete-msg').style.display =
+                    'none';
+                  $('breath-start-btn').style.display =
+                    'block';
+                }, 2000);
+              })
+              .catch(function () {});
+          }
+
+          // ─── CORRELATIONS ───────────────────────────────────────────────────────────
+          function loadCorrelations() {
+            var container = $('corr-content');
+            container.innerHTML =
+              '<div class="loader">' +
+              escHtml(
+                _t('ment_loading_correlations', 'Calculando correlaciones...'),
+              ) +
+              '</div>';
+            fetch(API + '/mental/correlations?days=30', {
+              credentials: 'include',
+              headers: _authHeaders(),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderCorrelations(d);
+              })
+              .catch(function () {
+                container.innerHTML =
+                  '<div class="empty-state">' +
+                  escHtml(
+                    _t(
+                      'ment_err_load_correlations',
+                      'Error al cargar correlaciones.',
+                    ),
+                  ) +
+                  '</div>';
+              });
+          }
+
+          function renderCorrelations(d) {
+            var container = $('corr-content');
+            var corr = d.correlation_mfs_tss;
+            var corrDisplay =
+              corr !== null && corr !== undefined ? corr.toFixed(2) : '—';
+            var byLevel = d.tss_by_mfs_level || {};
+            var levelOrder = ['peak', 'good', 'moderate', 'low', 'critical'];
+            var levelLabels = {
+              peak: _t('ment_corr_level_peak', 'Pico Mental'),
+              good: _t('ment_level_good', 'Bueno'),
+              moderate: _t('ment_level_moderate', 'Moderado'),
+              low: _t('ment_level_low', 'Bajo'),
+              critical: _t('ment_level_critical', 'Crítico'),
+            };
+            var levelColors = {
+              peak: '#10B981',
+              good: '#0EA5E9',
+              moderate: '#F59E0B',
+              low: '#F97316',
+              critical: '#EF4444',
+            };
+
+            var levelRows = levelOrder
+              .filter(function (l) {
+                return byLevel[l];
+              })
+              .map(function (l) {
+                return (
+                  '<tr><td><span class="level-dot" style="background:' +
+                  levelColors[l] +
+                  '"></span>' +
+                  levelLabels[l] +
+                  '</td>' +
+                  '<td>' +
+                  byLevel[l] +
+                  '</td></tr>'
+                );
+              })
+              .join('');
+
+            var pointRows = (d.data_points || [])
+              .slice(0, 20)
+              .map(function (dp) {
+                var col = levelColors[dp.mfs_level] || '#94A3B8';
+                return (
+                  '<tr><td>' +
+                  (dp.date_iso || '') +
+                  '</td>' +
+                  '<td><span class="level-dot" style="background:' +
+                  col +
+                  '"></span>' +
+                  (dp.mfs_score || '—') +
+                  '</td>' +
+                  '<td>' +
+                  (dp.tss || '—') +
+                  '</td>' +
+                  '<td>' +
+                  (dp.activity_type || '—') +
+                  '</td></tr>'
+                );
+              })
+              .join('');
+
+            container.innerHTML =
+              '<div class="corr-insight" style="margin-bottom:16px">' +
+              '<div style="font-size:.8rem;color:var(--sub);margin-bottom:4px">' +
+              escHtml(_t('ment_corr_mfs_tss', 'Correlación MFS × TSS')) +
+              _termBtn('fatiga_mental') +
+              ' (' +
+              (d.days_analyzed || 30) +
+              ' ' +
+              escHtml(_t('ment_days', 'días')) +
+              ')</div>' +
+              '<div class="corr-num">' +
+              corrDisplay +
+              '</div>' +
+              '<div style="font-size:.85rem;color:var(--sub);margin-top:4px">' +
+              escHtml(_msgT(d.insight || '')) +
+              '</div>' +
+              '<div style="font-size:.75rem;color:var(--sub);margin-top:6px">' +
+              (d.data_points_count || 0) +
+              ' ' +
+              escHtml(
+                _t('ment_trainings_analyzed', 'entrenamientos analizados'),
+              ) +
+              '</div>' +
+              '</div>' +
+              '<div class="grid-2">' +
+              '<div class="card">' +
+              '<div class="card-title">' +
+              escHtml(
+                _t('ment_card_tss_by_level', 'TSS Promedio por Nivel Mental'),
+              ) +
+              _termBtn('tss') +
+              '</div>' +
+              '<table class="scatter-table"><tr><th>' +
+              escHtml(_t('ment_th_mental_level', 'Nivel Mental')) +
+              '</th><th>' +
+              escHtml(_t('ment_th_tss_avg', 'TSS Prom.')) +
+              '</th></tr>' +
+              levelRows +
+              '</table>' +
+              '</div>' +
+              '<div class="card">' +
+              '<div class="card-title">' +
+              escHtml(
+                _t('ment_card_last_20_days', 'Últimos 20 días con datos'),
+              ) +
+              '</div>' +
+              '<div class="scatter-wrap"><table class="scatter-table"><tr><th>' +
+              escHtml(_t('ment_th_date', 'Fecha')) +
+              '</th><th>MFS</th><th>TSS</th><th>' +
+              escHtml(_t('ment_th_sport', 'Deporte')) +
+              '</th></tr>' +
+              pointRows +
+              '</table></div>' +
+              '</div>' +
+              '</div>';
+          }
+
+          // ─── PRE-RACE ────────────────────────────────────────────────────────────────
+          function loadPreRace() {
+            var container = $('prerace-content');
+            container.innerHTML =
+              '<div class="loader">' +
+              escHtml(
+                _t(
+                  'ment_loading_prerace_protocol',
+                  'Cargando protocolo pre-carrera...',
+                ),
+              ) +
+              '</div>';
+            fetch(API + '/mental/pre-race', {
+              credentials: 'include',
+              headers: _authHeaders(),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                renderPreRace(d);
+              })
+              .catch(function () {
+                container.innerHTML =
+                  '<div class="empty-state">' +
+                  escHtml(_t('ment_err_load_generic', 'Error al cargar.')) +
+                  '</div>';
+              });
+          }
+
+          function renderPreRace(d) {
+            var container = $('prerace-content');
+            if (!d.protocol) {
+              container.innerHTML =
+                '<div class="card"><div class="empty-state">' +
+                escHtml(_msgT(d.message)) +
+                '</div></div>';
+              return;
+            }
+            var race = d.race || {};
+            var protos = (d.protocols_today || []).concat(
+              d.extra_if_anxious || [],
+            );
+
+            var raceSec =
+              '<div class="card" style="margin-bottom:16px"><div class="race-countdown">' +
+              '<div class="race-days">' +
+              (race.days_to_race !== null ? race.days_to_race : '—') +
+              '</div>' +
+              '<div style="font-size:.75rem;color:var(--sub)">' +
+              escHtml(_t('ment_days_to_race', 'días para la carrera')) +
+              '</div>' +
+              '<div class="race-name">' +
+              escHtml(_msgT(race.name || 'Tu carrera')) +
+              ' · ' +
+              (race.date || '') +
+              '</div>' +
+              '<div style="margin-top:10px;font-size:.85rem;color:var(--sub)">' +
+              escHtml(_msgT(d.message || '')) +
+              '</div>' +
+              '</div></div>';
+
+            var mfsSec = d.mfs_today
+              ? '<div class="card" style="margin-bottom:16px"><div class="card-title">' +
+                escHtml(
+                  _t('ment_card_mental_state_today', 'Estado Mental Hoy'),
+                ) +
+                '</div>' +
+                '<div style="font-size:1.5rem;font-weight:700">' +
+                d.mfs_today +
+                '<span style="font-size:.9rem;font-weight:400;color:var(--sub);margin-left:6px">' +
+                (d.mfs_level || '') +
+                '</span></div></div>'
+              : '';
+
+            var protosSec = protos.length
+              ? '<div class="card"><div class="card-title">' +
+                escHtml(_t('ment_card_protocols_today', 'Protocolos de hoy')) +
+                '</div>' +
+                protos
+                  .map(function (p) {
+                    p = Object.assign({}, p, _protoT(p));
+                    return (
+                      '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)55">' +
+                      '<div style="font-weight:600;margin-bottom:4px;cursor:pointer;color:var(--acc)" onclick="MEN.openProtoModal(\'' +
+                      escHtml(p.id) +
+                      '\')">' +
+                      escHtml(p.name) +
+                      ' → ' +
+                      p.duration_min +
+                      ' min</div>' +
+                      '<div style="font-size:.82rem;color:var(--sub)">' +
+                      escHtml(p.description) +
+                      '</div>' +
+                      '<div class="protocol-steps">' +
+                      (p.steps || [])
+                        .map(function (s, i) {
+                          return (
+                            '<div class="protocol-step"><div class="step-num">' +
+                            (i + 1) +
+                            '</div><div class="step-text">' +
+                            escHtml(s) +
+                            '</div></div>'
+                          );
+                        })
+                        .join('') +
+                      '</div></div>'
+                    );
+                  })
+                  .join('') +
+                '</div>'
+              : '<div class="card"><div class="empty-state">' +
+                escHtml(
+                  _t(
+                    'ment_no_specific_protocol',
+                    'No hay protocolo específico para hoy. Mantén la rutina normal.',
+                  ),
+                ) +
+                '</div></div>';
+
+            container.innerHTML = raceSec + mfsSec + protosSec;
+          }
+
+          // ─── UTILS ───────────────────────────────────────────────────────────────────
+          function buildRatingStars(containerId, onSelect) {
+            var container = $(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            for (var i = 1; i <= 5; i++) {
+              var s = document.createElement('span');
+              s.className = 'rating-star';
+              s.textContent = '★';
+              s.dataset.val = i;
+              s.onclick = (function (v, el) {
+                return function () {
+                  onSelect(v);
+                  el.parentElement
+                    .querySelectorAll('.rating-star')
+                    .forEach(function (rs) {
+                      rs.classList.toggle('sel', parseInt(rs.dataset.val) <= v);
+                    });
+                };
+              })(i, s);
+              container.appendChild(s);
+            }
+          }
+
+          function escHtml(str) {
+            if (!str) return '';
+            return String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+          }
+
+          // ─── INIT ────────────────────────────────────────────────────────────────────
+          buildStars();
+          loadDashboard();
+
+          MEN._t = _t;
+          MEN.switchTab = switchTab;
+          MEN.submitCheckin = submitCheckin;
+          MEN.loadProtocols = loadProtocols;
+          MEN.openProtoModal = openProtoModal;
+          MEN.closeProtoModal = closeProtoModal;
+          MEN.saveProtocolSession = saveProtocolSession;
+          MEN.selectBreath = selectBreath;
+          MEN.startBreathing = startBreathing;
+          MEN.stopBreathing = stopBreathing;
+          MEN.saveBreathSession = saveBreathSession;
+
+        })();
+    </script>
+    <script src="lx-audit.js"></script>
+  </body>
+</html>

@@ -51,6 +51,7 @@ MODULES: dict[str, ModuleSpec] = {
     "performance":      ModuleSpec("core", "basico"),     # Carga (PMC/ACWR); B7 lo fusiona en Rendimiento
     "recovery":         ModuleSpec("core", "agegroup"),   # Free NO accede (decisión)
     "mental":           ModuleSpec("core", "agegroup"),
+    "estado":           ModuleSpec("core", "agegroup"),   # S12: Estado de hoy (fusiona recovery + mental)
     "nutrition":        ModuleSpec("core", "agegroup"),
     "race_day":         ModuleSpec("core", "agegroup"),   # pronóstico; estrategia = addon
     "community":        ModuleSpec("core", "basico"),     # Free: lectura; escrituras agegroup+
