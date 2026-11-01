@@ -158,6 +158,26 @@
         color: var(--muted);
         margin-bottom: 0.3rem;
       }
+      /* S5: visibilidad por disciplina (body.sport-run) y por objetivo (body.run-hr) */
+      body.sport-run .sport-bike-only { display: none !important; }
+      body:not(.sport-run) .sport-run-only { display: none !important; }
+      body.run-hr .run-pace-only { display: none !important; }
+      body:not(.run-hr) .run-hr-only { display: none !important; }
+      .iw-sportbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 0.7rem 1.25rem; margin-bottom: 0.75rem;
+      }
+      .iw-sportbar .lbl {
+        font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--muted); margin-right: 0.5rem;
+      }
+      .iw-seg { display: inline-flex; border: 1px solid var(--border2); border-radius: var(--radius-sm); overflow: hidden; }
+      .iw-seg button {
+        background: transparent; border: 0; color: var(--muted); cursor: pointer;
+        font-family: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      }
+      .iw-seg button.on { background: rgba(255, 101, 53, 0.15); color: var(--orange); }
       .iw-ftp-badge {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -785,6 +805,24 @@
         </div>
       </div>
 
+      <!-- Disciplina (S5): ciclismo / running -->
+      <div class="iw-sportbar" id="iw-sportbar">
+        <div>
+          <span class="lbl" data-i18n="iw_sport_label">Disciplina</span>
+          <span class="iw-seg" role="group" aria-label="Disciplina">
+            <button type="button" id="sport-btn-bike" class="on" onclick="setSport('bike')" data-i18n="iw_sport_bike">Ciclismo</button>
+            <button type="button" id="sport-btn-run" onclick="setSport('run')" data-i18n="iw_sport_run">Running</button>
+          </span>
+        </div>
+        <div class="sport-run-only">
+          <span class="lbl" data-i18n="iw_run_target_label">Objetivo de los bloques</span>
+          <span class="iw-seg" role="group">
+            <button type="button" id="mode-btn-pace" class="on" onclick="setRunMode('pace')" data-i18n="iw_run_target_pace">Ritmo (min/km)</button>
+            <button type="button" id="mode-btn-hr" onclick="setRunMode('hr')" data-i18n="iw_run_target_hr">Frecuencia cardíaca</button>
+          </span>
+        </div>
+      </div>
+
       <!-- Meta bar -->
       <div class="iw-meta">
         <div class="iw-meta-field">
@@ -813,7 +851,23 @@
             data-i18n-aria="iw_label_planned_date"
           />
         </div>
-        <div>
+        <div class="sport-run-only">
+          <div
+            style="
+              font-size: 0.62rem;
+              font-weight: 600;
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              color: var(--muted);
+              margin-bottom: 0.3rem;
+            "
+            data-i18n="iw_label_run_ref"
+          >
+            Ritmo umbral y FC máxima de referencia
+          </div>
+          <div class="iw-ftp-badge" id="run-ref-badge" style="font-size: 1rem">—</div>
+        </div>
+        <div class="sport-bike-only">
           <div
             style="
               font-size: 0.62rem;
@@ -895,7 +949,7 @@
               + Ramp
             </button>
             <button
-              class="iw-add-btn"
+              class="iw-add-btn sport-bike-only"
               onclick="addBlock('freeride')"
               style="
                 border-color: rgba(168, 85, 247, 0.35);
@@ -921,7 +975,7 @@
           <!-- Power chart -->
           <div class="iw-chart-panel">
             <div class="iw-chart-hd">
-              <h3 data-i18n="iw_chart_title">Curva de Potencia</h3>
+              <h3><span class="sport-bike-only" data-i18n="iw_chart_title">Curva de Potencia</span><span class="sport-run-only" data-i18n="iw_chart_title_run">Curva de Intensidad</span></h3>
               <div class="legend">
                 <div class="leg-item">
                   <div class="leg-dot" style="background: var(--z1)"></div>
@@ -989,15 +1043,15 @@
             </div>
             <div>
               <div class="iw-stat-val" id="stat-np">0</div>
-              <div class="iw-stat-lbl" data-i18n="iw_stat_np">
-                NP estimado (W)
+              <div class="iw-stat-lbl">
+                <span class="sport-bike-only" data-i18n="iw_stat_np">NP estimado (W)</span><span class="sport-run-only run-pace-only" data-i18n="iw_stat_avg_pace">Ritmo medio</span><span class="sport-run-only run-hr-only" data-i18n="iw_stat_avg_hr">FC media (% FC máx)</span>
               </div>
             </div>
           </div>
 
           <!-- Zone legend -->
           <div class="iw-zones">
-            <h3 data-i18n="iw_zones_title">Zonas de Potencia (% FTP)</h3>
+            <h3><span class="sport-bike-only" data-i18n="iw_zones_title">Zonas de Potencia (% FTP)</span><span class="sport-run-only" data-i18n="iw_zones_title_run">Intensidad relativa al umbral</span></h3>
             <div class="iw-zones-grid">
               <div
                 class="zone-pill"
@@ -1095,13 +1149,31 @@
                   </svg>
                   <span data-i18n="iw_btn_send_garmin">Enviar a mi Garmin</span>
                 </button>
-                <div class="iw-exp-path" data-i18n="iw_exp_garmin_note">
+                <div class="iw-exp-path sport-bike-only" data-i18n="iw_exp_garmin_note">
                   Necesitás tu cuenta Garmin conectada y tu FTP configurado en
                   tu Perfil
                 </div>
+                <div class="iw-exp-path sport-run-only" data-i18n="iw_exp_garmin_note_run">
+                  Necesitás tu cuenta Garmin conectada (y tu FC máx. en el Perfil si usás objetivos por FC)
+                </div>
               </div>
 
-              <div class="iw-exp-card">
+              <div class="iw-exp-card sport-run-only">
+                <div class="iw-exp-logo">📄</div>
+                <div class="iw-exp-name" data-i18n="iw_exp_tcx_name">Garmin Connect (archivo)</div>
+                <div class="iw-exp-fmt" data-i18n="iw_exp_tcx_fmt">Workout de running en formato .TCX</div>
+                <button class="iw-exp-btn mrc" onclick="exportTCX()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span data-i18n="iw_btn_download_tcx">Descargar .TCX</span>
+                </button>
+                <div class="iw-exp-path" data-i18n="iw_exp_tcx_note">Importalo en Garmin Connect (Entrenamientos > Importar)</div>
+              </div>
+
+              <div class="iw-exp-card sport-bike-only">
                 <div class="iw-exp-logo">🟠</div>
                 <div class="iw-exp-name">Zwift</div>
                 <div class="iw-exp-fmt" data-i18n="iw_exp_zwift_fmt">
@@ -1135,7 +1207,7 @@
                 </div>
               </div>
 
-              <div class="iw-exp-card">
+              <div class="iw-exp-card sport-bike-only">
                 <div class="iw-exp-logo">🔵</div>
                 <div class="iw-exp-name">TrainerRoad / Wahoo</div>
                 <div class="iw-exp-fmt" data-i18n="iw_exp_erg_fmt">
@@ -1161,7 +1233,7 @@
                 </div>
               </div>
 
-              <div class="iw-exp-card">
+              <div class="iw-exp-card sport-bike-only">
                 <div class="iw-exp-logo">🟢</div>
                 <div class="iw-exp-name">MRC / Garmin</div>
                 <div class="iw-exp-fmt" data-i18n="iw_exp_mrc_fmt">
@@ -1264,6 +1336,85 @@
         var FTP_IS_REAL = false;
         var blocks = []; /* array of block objects */
         var editId = null; /* currently editing saved workout id */
+        /* S5: disciplina del workout en edición. 'bike' = comportamiento de siempre. */
+        var SPORT = 'bike'; /* 'bike' | 'run' */
+        var RUN_MODE = 'pace'; /* objetivo de los bloques de running: 'pace' | 'hr' */
+        var THR_PACE = null; /* ritmo umbral real del atleta (s/km), si lo tiene */
+        var FCMAX = null; /* FC máxima real del atleta, si la tiene */
+
+        function runCtx() {
+          return { thresholdPace: THR_PACE || undefined, fcmax: FCMAX || undefined };
+        }
+        function _applyRunProfile(p) {
+          if (!p) return;
+          var pace = p.run_pace ? WorkoutBlocks.parsePace(p.run_pace) : null;
+          if (pace) THR_PACE = pace;
+          if (p.fcmax && parseInt(p.fcmax) > 0) FCMAX = parseInt(p.fcmax);
+        }
+        function _renderRunRef() {
+          var el = document.getElementById('run-ref-badge');
+          if (!el) return;
+          var link =
+            ' <a href="athlete_profile.html" style="color:var(--orange);font-size:.7rem">' +
+            esc(_t('iw_link_configure_run', 'configurar en el perfil')) +
+            '</a>';
+          el.innerHTML =
+            esc(_t('iw_run_thr_label', 'Ritmo umbral')) + ' ' +
+            (THR_PACE ? WorkoutBlocks.fmtPace(THR_PACE) + '/km' : '—') +
+            ' · ' + esc(_t('iw_run_fcmax_label', 'FC máx')) + ' ' +
+            (FCMAX ? FCMAX : '—') +
+            (THR_PACE && FCMAX ? '' : link);
+          if (typeof renderChart === 'function') renderChart();
+        }
+        function _syncSportUi() {
+          document.body.classList.toggle('sport-run', SPORT === 'run');
+          document.body.classList.toggle('run-hr', SPORT === 'run' && RUN_MODE === 'hr');
+          var on = function (id, v) {
+            var e = document.getElementById(id);
+            if (e) e.classList.toggle('on', !!v);
+          };
+          on('sport-btn-bike', SPORT === 'bike');
+          on('sport-btn-run', SPORT === 'run');
+          on('mode-btn-pace', RUN_MODE === 'pace');
+          on('mode-btn-hr', RUN_MODE === 'hr');
+          _renderRunRef();
+        }
+
+        /* Cambiar de disciplina empieza un workout nuevo (no pisa el guardado). */
+        window.setSport = function (sp) {
+          if (sp === SPORT) return;
+          if (
+            blocks.length &&
+            !confirm(
+              _t(
+                'iw_confirm_switch_sport',
+                'Cambiar de disciplina borra los bloques actuales. ¿Continuar?',
+              ),
+            )
+          )
+            return;
+          SPORT = sp;
+          editId = null;
+          blocks = [];
+          _syncSportUi();
+          renderBlocks();
+          renderChart();
+          saveDraft();
+        };
+
+        /* Cambia el objetivo de todos los bloques (ritmo <-> FC) conservando
+           la intensidad relativa de cada uno. */
+        window.setRunMode = function (m) {
+          if (m === RUN_MODE) return;
+          RUN_MODE = m;
+          blocks.forEach(function (b) {
+            WorkoutBlocks.convertRunBlock(b, m, runCtx());
+          });
+          _syncSportUi();
+          renderBlocks();
+          renderChart();
+          saveDraft();
+        };
 
         function _renderFtp() {
           document.getElementById('ftp-display').textContent = FTP_IS_REAL
@@ -1315,6 +1466,7 @@
               FTP = parseInt(prof.ftp) || FTP;
               FTP_IS_REAL = true;
             }
+            _applyRunProfile(prof);
           } catch (e) {}
           _renderFtp();
 
@@ -1333,6 +1485,8 @@
                   FTP_IS_REAL = true;
                   _renderFtp();
                 }
+                _applyRunProfile(p);
+                _renderRunRef();
               })
               .catch(function () {});
           }
@@ -1355,9 +1509,14 @@
               document.getElementById('wk-desc').value = d.desc || '';
               document.getElementById('wk-date').value =
                 d.date || document.getElementById('wk-date').value;
+              if (d.sport === 'run') {
+                SPORT = 'run';
+                RUN_MODE = d.runMode === 'hr' ? 'hr' : 'pace';
+              }
             }
           } catch (e) {}
 
+          _syncSportUi();
           renderBlocks();
           renderChart();
           renderSaved();
@@ -1376,7 +1535,13 @@
         var _bid = 0;
         function makeBlock(type) {
           _bid++;
-          return WorkoutBlocks.makeBlock(type, 'b' + _bid);
+          return WorkoutBlocks.makeBlock(
+            type,
+            'b' + _bid,
+            SPORT === 'run'
+              ? { sport: 'run', mode: RUN_MODE, thresholdPace: THR_PACE || undefined }
+              : undefined,
+          );
         }
 
         window.addBlock = function (type) {
@@ -1500,10 +1665,69 @@
         }
 
         function blockSummary(b) {
-          return WorkoutBlocks.blockSummaryText(b, fmtDur);
+          return WorkoutBlocks.blockSummaryText(b, fmtDur, runCtx());
         }
 
+        /* S5: campos de un bloque de running (objetivo por ritmo o por FC). */
+        function runBlockFields(b) {
+          var hr = b.mode === 'hr';
+          var id = b.id;
+          function durF(label, key, val) {
+            return (
+              '<div class="iw-field-sm"><label>' + esc(label) +
+              '</label><input type="text" value="' + fmtDur(val) +
+              '" oninput="updateBlock(\'' + id + '\',\'' + key +
+              '\',parseDur(this.value));renderChart()"></div>'
+            );
+          }
+          function tgtF(label, key, val) {
+            return hr
+              ? '<div class="iw-field-sm"><label>' + esc(label) +
+                  '</label><input type="number" min="40" max="110" value="' +
+                  Math.round(val * 100) + '" oninput="updateBlock(\'' + id + '\',\'' + key +
+                  '\',+this.value/100);renderChart()"></div>'
+              : '<div class="iw-field-sm"><label>' + esc(label) +
+                  '</label><input type="text" placeholder="m:ss" value="' +
+                  WorkoutBlocks.fmtPace(val) + '" oninput="updateRunPace(\'' + id + '\',\'' +
+                  key + '\',this.value)"></div>';
+          }
+          var T = function (kp, fp, kh, fh) {
+            return hr ? _t(kh, fh) : _t(kp, fp);
+          };
+          var f = '';
+          if (b.type === 'intervals') {
+            f +=
+              '<div class="iw-field-sm"><label>' + esc(_t('iw_fld_reps', 'Repeticiones')) +
+              '</label><input type="number" min="1" value="' + b.repeat +
+              '" oninput="updateBlock(\'' + id + '\',\'repeat\',+this.value);renderChart()"></div>';
+            f += '<div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">';
+            f += durF(_t('iw_fld_dur_work', 'Duración trabajo'), 'on_duration', b.on_duration);
+            f += tgtF(T('iw_fld_pace_work', 'Ritmo trabajo (min/km)', 'iw_fld_hr_work', '% FC máx trabajo'), 'on_val', b.on_val);
+            f += durF(_t('iw_fld_dur_rest', 'Duración descanso'), 'off_duration', b.off_duration);
+            f += tgtF(T('iw_fld_pace_rest', 'Ritmo descanso (min/km)', 'iw_fld_hr_rest', '% FC máx descanso'), 'off_val', b.off_val);
+            f += '</div>';
+          } else if (b.type === 'steady') {
+            f += durF(_t('iw_fld_duration', 'Duración (mm:ss)'), 'duration', b.duration);
+            f += tgtF(T('iw_fld_pace', 'Ritmo (min/km)', 'iw_fld_hr', '% FC máx'), 'val', b.val);
+          } else {
+            f += durF(_t('iw_fld_duration', 'Duración (mm:ss)'), 'duration', b.duration);
+            f += '<div class="iw-field-sm" style="visibility:hidden"></div>';
+            f += tgtF(T('iw_fld_pace_start', 'Ritmo inicio (min/km)', 'iw_fld_hr_start', '% FC máx inicio'), 'val_low', b.val_low);
+            f += tgtF(T('iw_fld_pace_end', 'Ritmo fin (min/km)', 'iw_fld_hr_end', '% FC máx fin'), 'val_high', b.val_high);
+          }
+          return f;
+        }
+
+        /* Ritmo mm:ss: un texto a medio escribir no se commitea (igual que parseDur). */
+        window.updateRunPace = function (id, key, str) {
+          var sec = WorkoutBlocks.parsePace(str);
+          if (sec === null) return;
+          updateBlock(id, key, sec);
+          renderChart();
+        };
+
         function blockFields(b) {
+          if (b.mode) return runBlockFields(b);
           var f = '';
           if (b.type === 'intervals') {
             f +=
@@ -1623,65 +1847,13 @@
               '<text x="400" y="85" text-anchor="middle" fill="#3D6880" font-family="Oswald,sans-serif" font-size="11" letter-spacing="2">' +
               esc(_t('iw_chart_empty', 'AÑADE BLOQUES PARA VER LA CURVA')) +
               '</text>';
-            updateStats(0, 0, 0, 0);
+            updateStats(0, 0, 0, SPORT === 'run' ? '--' : '0W');
             return;
           }
 
-          /* Build segments: [{t_start, t_end, p_start, p_end}] */
-          var segs = [];
-          var t = 0;
-          blocks.forEach(function (b) {
-            switch (b.type) {
-              case 'warmup':
-              case 'cooldown':
-              case 'ramp':
-                segs.push({
-                  ts: t,
-                  te: t + b.duration,
-                  ps: b.power_low,
-                  pe: b.power_high,
-                });
-                t += b.duration;
-                break;
-              case 'steady':
-                segs.push({
-                  ts: t,
-                  te: t + b.duration,
-                  ps: b.power,
-                  pe: b.power,
-                });
-                t += b.duration;
-                break;
-              case 'freeride':
-                segs.push({
-                  ts: t,
-                  te: t + b.duration,
-                  ps: 0.65,
-                  pe: 0.65,
-                  free: true,
-                });
-                t += b.duration;
-                break;
-              case 'intervals':
-                for (var r = 0; r < b.repeat; r++) {
-                  segs.push({
-                    ts: t,
-                    te: t + b.on_duration,
-                    ps: b.on_power,
-                    pe: b.on_power,
-                  });
-                  t += b.on_duration;
-                  segs.push({
-                    ts: t,
-                    te: t + b.off_duration,
-                    ps: b.off_power,
-                    pe: b.off_power,
-                  });
-                  t += b.off_duration;
-                }
-                break;
-            }
-          });
+          /* Segmentos desde el motor compartido (bici idéntico; running normaliza al umbral) */
+          var segs = WorkoutBlocks.buildSegments(blocks, runCtx());
+          var t = segs.length ? segs[segs.length - 1].te : 0;
 
           var totalSec = t;
           var W = 800,
@@ -1764,17 +1936,19 @@
           labels +=
             '<text x="4" y="' +
             (ftpY - 3) +
-            '" fill="rgba(255,101,53,.7)" font-family="Oswald,sans-serif" font-size="9">FTP</text>';
+            '" fill="rgba(255,101,53,.7)" font-family="Oswald,sans-serif" font-size="9">' +
+            (SPORT === 'run' ? esc(_t('iw_run_thr_label', 'Ritmo umbral')) : 'FTP') +
+            '</text>';
 
           svg.innerHTML = paths + labels;
 
           /* Stats */
-          var ss = calcStats(segs, totalSec);
-          updateStats(totalSec, ss.tss, ss.IF, ss.NP);
+          var ss = calcStats(segs, totalSec, SPORT);
+          updateStats(totalSec, ss.tss, ss.IF, statFourth(ss, SPORT, RUN_MODE));
         }
 
-        function calcStats(segs, totalSec) {
-          if (!totalSec) return { tss: 0, IF: 0, NP: 0 };
+        function calcStats(segs, totalSec, sport) {
+          if (!totalSec) return { tss: 0, IF: 0, NP: 0, avgInt: 0 };
           /* Normalized Power: 4th power mean of 30s rolling avg → approximate as weighted RMS of segments */
           var sum4 = 0,
             sumT = 0;
@@ -1789,17 +1963,33 @@
           var NP_W = NP_pct * FTP;
           var IF_val = NP_pct;
           var TSS = Math.round(((totalSec * NP_pct * IF_val) / 3600) * 100);
-          return { tss: TSS, IF: IF_val, NP: Math.round(NP_W) };
+          /* intensidad media ponderada por tiempo (para ritmo/FC medios en running) */
+          var sumI = 0;
+          segs.forEach(function (s) {
+            sumI += ((s.ps + s.pe) / 2) * (s.te - s.ts);
+          });
+          return { tss: TSS, IF: IF_val, NP: Math.round(NP_W), avgInt: sumI / sumT };
         }
 
-        function updateStats(totalSec, tss, IF_val, NP) {
+        /* 4º indicador: NP (W) en bici; ritmo medio o FC media (%) en running. */
+        function statFourth(ss, sport, mode) {
+          if (sport !== 'run') return ss.NP + 'W';
+          if (!ss.avgInt) return '--';
+          if (mode === 'hr') {
+            return Math.round(ss.avgInt * WorkoutBlocks.RUN_LTHR_FRAC * 100) + '%';
+          }
+          var thr = THR_PACE || WorkoutBlocks.RUN_DEFAULT_THR;
+          return WorkoutBlocks.fmtPace(thr / ss.avgInt) + '/km';
+        }
+
+        function updateStats(totalSec, tss, IF_val, fourth) {
           document.getElementById('stat-time').textContent = fmtDur(
             totalSec,
             true,
           );
           document.getElementById('stat-tss').textContent = tss;
           document.getElementById('stat-if').textContent = IF_val.toFixed(2);
-          document.getElementById('stat-np').textContent = NP + 'W';
+          document.getElementById('stat-np').textContent = fourth;
         }
 
         /* ─────────── SAVE / LOAD ────────────────────────────────────── */
@@ -1810,6 +2000,8 @@
               name: document.getElementById('wk-name').value,
               desc: document.getElementById('wk-desc').value,
               date: document.getElementById('wk-date').value,
+              sport: SPORT,
+              runMode: RUN_MODE,
               blocks: blocks,
             }),
           );
@@ -1831,7 +2023,7 @@
 
           var payload = {
             name: name,
-            sport: 'bike',
+            sport: SPORT,
             description: document.getElementById('wk-desc').value.trim(),
             planned_date: document.getElementById('wk-date').value || null,
             blocks: JSON.parse(JSON.stringify(blocks)),
@@ -1872,6 +2064,7 @@
             desc: w.description || '',
             date: w.planned_date || '',
             ftp: FTP,
+            sport: w.sport || 'bike',
             blocks: w.blocks || [],
           };
         }
@@ -1981,6 +2174,12 @@
           if (!wo) return;
           editId = wo.id;
           blocks = JSON.parse(JSON.stringify(wo.blocks));
+          /* S5: se respeta la disciplina (y el objetivo) con la que se guardó */
+          SPORT = wo.sport === 'run' ? 'run' : 'bike';
+          if (SPORT === 'run' && blocks[0] && blocks[0].mode) {
+            RUN_MODE = blocks[0].mode === 'hr' ? 'hr' : 'pace';
+          }
+          _syncSportUi();
           document.getElementById('wk-name').value = wo.name;
           document.getElementById('wk-desc').value = wo.desc || '';
           document.getElementById('wk-date').value = wo.date || '';
@@ -2047,10 +2246,10 @@
           var totalSec = wo.blocks.reduce(function (acc, b) {
             return acc + totalBlockDuration(b);
           }, 0);
-          var ss = calcStats(buildSegs(wo.blocks), totalSec);
+          var ss = calcStats(buildSegs(wo.blocks), totalSec, wo.sport);
           plans.push({
             id: 'plan-' + Date.now(),
-            sport: 'bike',
+            sport: wo.sport === 'run' ? 'run' : 'bike',
             name: wo.name,
             date_iso: date,
             dur_min: Math.max(1, Math.round(totalSec / 60)),
@@ -2103,13 +2302,31 @@
                 return acc + totalBlockDuration(b);
               }, 0);
               var segs = buildSegs(wo.blocks);
-              var ss = calcStats(segs, totalSec);
+              var ss = calcStats(segs, totalSec, wo.sport);
+              var isRunWo = wo.sport === 'run';
+              var sportLbl = esc(
+                isRunWo
+                  ? _t('iw_sport_run', 'Running')
+                  : _t('iw_sport_bike', 'Ciclismo'),
+              );
+              var exportBtns = isRunWo
+                ? '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--green)" onclick="exportTCX(\'' +
+                  wo.id +
+                  '\')">TCX</button>'
+                : '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--orange)" onclick="exportZWO(\'' +
+                  wo.id +
+                  '\')">ZWO</button>' +
+                  '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--cyan)" onclick="exportERG(\'' +
+                  wo.id +
+                  '\')">ERG</button>';
               return (
                 '<div class="iw-saved-row">' +
                 '<div class="iw-saved-name">' +
                 esc(wo.name) +
                 '</div>' +
                 '<div class="iw-saved-meta">' +
+                sportLbl +
+                ' · ' +
                 fmtDur(totalSec, true) +
                 ' · TSS ' +
                 ss.tss +
@@ -2123,12 +2340,7 @@
                 '\')">' +
                 editLbl +
                 '</button>' +
-                '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--orange)" onclick="exportZWO(\'' +
-                wo.id +
-                '\')">ZWO</button>' +
-                '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--cyan)" onclick="exportERG(\'' +
-                wo.id +
-                '\')">ERG</button>' +
+                exportBtns +
                 '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem" onclick="addToPlan(\'' +
                 wo.id +
                 '\')">' +
@@ -2161,9 +2373,33 @@
             desc: document.getElementById('wk-desc').value.trim(),
             date: document.getElementById('wk-date').value,
             ftp: FTP,
+            sport: SPORT,
             blocks: blocks,
           };
         }
+
+        /* S5: TCX de entrenamiento para running (Sport="Running"). */
+        window.exportTCX = function (id) {
+          var wo = getWorkoutData(id || null);
+          if (!wo || !wo.blocks.length || wo.sport !== 'run') {
+            toast(
+              _t('iw_toast_no_blocks_export', 'Sin bloques para exportar'),
+              false,
+            );
+            return;
+          }
+          var xml = WorkoutBlocks.blocksToTcxXml(wo.blocks, wo.name, {
+            fcmax: FCMAX || undefined,
+          });
+          download(safeName(wo.name) + '.tcx', xml, 'application/xml');
+          toast(
+            _t(
+              'iw_toast_downloaded_tcx',
+              '✓ Descargado .TCX — importalo en Garmin Connect',
+            ),
+            true,
+          );
+        };
 
         window.exportZWO = function (id) {
           var wo = getWorkoutData(id || null);
@@ -2238,7 +2474,7 @@
 
         /* ─────────── HELPERS ────────────────────────────────────────── */
         function buildSegs(bls) {
-          return WorkoutBlocks.buildSegments(bls);
+          return WorkoutBlocks.buildSegments(bls, runCtx());
         }
 
         function totalBlockDuration(b) {
@@ -2323,7 +2559,23 @@
             toast(_t('iw_toast_pick_date', 'Elegí una fecha primero'), false);
             return;
           }
-          if (!FTP_IS_REAL) {
+          if (
+            wo.sport === 'run' &&
+            !FCMAX &&
+            wo.blocks.some(function (b) {
+              return b.mode === 'hr';
+            })
+          ) {
+            toast(
+              _t(
+                'iw_toast_need_fcmax',
+                'Configurá tu FC máxima en tu Perfil para enviar objetivos por FC',
+              ),
+              false,
+            );
+            return;
+          }
+          if (wo.sport !== 'run' && !FTP_IS_REAL) {
             toast(
               _t(
                 'iw_toast_need_real_ftp',
@@ -2348,6 +2600,7 @@
             body: JSON.stringify({
               name: wo.name,
               date: wo.date,
+              sport: wo.sport === 'run' ? 'run' : 'bike',
               blocks: wo.blocks,
             }),
           })

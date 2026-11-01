@@ -27,7 +27,91 @@
     cooldown:  { label: 'Vuelta Calma',  color: '#64B5F6', zwotag: 'Cooldown',    hasRepeat: false, hasRamp: true  },
   };
 
-  function makeBlock(type, id) {
+  // ── Running (S5) ───────────────────────────────────────────────────────────
+  // Los bloques de running usan los MISMOS tipos y la misma estructura que los
+  // de bici (warmup/steady/intervals/ramp/cooldown, duraciones en segundos),
+  // pero el objetivo no es potencia: cada bloque lleva mode:'pace'|'hr' y sus
+  // valores van en val / val_low / val_high / on_val / off_val.
+  //   pace -> segundos por km (270 = 4:30/km). Mas bajo = mas rapido.
+  //   hr   -> fraccion de la FC maxima (0.85 = 85% FCmax).
+  // Para curva/TSS/IF todo se normaliza a "intensidad relativa al umbral"
+  // (mismo eje que %FTP en bici): pace -> ritmoUmbral / ritmo; hr -> fc / 0.90.
+  var RUN_LTHR_FRAC = 0.90;      // FC de umbral ~ 90% de la FC maxima
+  var RUN_DEFAULT_THR = 300;     // 5:00/km, solo como referencia matematica
+  function isRun(sport) { return sport === 'run'; }
+
+  function _r5(v) { return Math.round(v / 5) * 5; }
+
+  function makeRunBlock(type, id, opts) {
+    opts = opts || {};
+    var mode = opts.mode === 'hr' ? 'hr' : 'pace';
+    var thr = opts.thresholdPace > 0 ? opts.thresholdPace : RUN_DEFAULT_THR;
+    var D = mode === 'hr'
+      ? { wu: [0.60, 0.70], steady: 0.75, on: 0.90, off: 0.65, cd: [0.70, 0.60], ramp: [0.65, 0.88] }
+      : { wu: [_r5(thr * 1.30), _r5(thr * 1.15)], steady: _r5(thr * 1.10), on: _r5(thr * 0.97),
+          off: _r5(thr * 1.40), cd: [_r5(thr * 1.15), _r5(thr * 1.35)], ramp: [_r5(thr * 1.20), _r5(thr * 0.95)] };
+    switch (type) {
+      case 'warmup':
+        return { id: id, type: type, mode: mode, duration: 600, val_low: D.wu[0], val_high: D.wu[1] };
+      case 'cooldown':
+        return { id: id, type: type, mode: mode, duration: 600, val_low: D.cd[0], val_high: D.cd[1] };
+      case 'ramp':
+        return { id: id, type: type, mode: mode, duration: 600, val_low: D.ramp[0], val_high: D.ramp[1] };
+      case 'intervals':
+        return { id: id, type: type, mode: mode, repeat: 4, on_duration: 240, on_val: D.on, off_duration: 120, off_val: D.off };
+      default:
+        return { id: id, type: 'steady', mode: mode, duration: 600, val: D.steady };
+    }
+  }
+
+  // valor de un bloque de running -> intensidad relativa al umbral (0..~1.3)
+  function runIntensity(mode, v, ctx) {
+    if (mode === 'hr') return v / RUN_LTHR_FRAC;
+    var thr = ctx && ctx.thresholdPace > 0 ? ctx.thresholdPace : RUN_DEFAULT_THR;
+    return v > 0 ? thr / v : 0;
+  }
+  // inversa: intensidad -> valor del modo (para convertir pace <-> hr)
+  function runValueFromIntensity(mode, inten, ctx) {
+    if (mode === 'hr') return Math.round(inten * RUN_LTHR_FRAC * 100) / 100;
+    var thr = ctx && ctx.thresholdPace > 0 ? ctx.thresholdPace : RUN_DEFAULT_THR;
+    return inten > 0 ? _r5(thr / inten) : thr;
+  }
+  var RUN_VALUE_KEYS = ['val', 'val_low', 'val_high', 'on_val', 'off_val'];
+  // Cambia el modo de un bloque de running conservando la intensidad relativa.
+  function convertRunBlock(b, toMode, ctx) {
+    if (!b) return b;
+    if (!b.mode || b.mode === toMode) { b.mode = toMode; return b; }
+    var from = b.mode;
+    RUN_VALUE_KEYS.forEach(function (k) {
+      if (typeof b[k] === 'number') b[k] = runValueFromIntensity(toMode, runIntensity(from, b[k], ctx), ctx);
+    });
+    b.mode = toMode;
+    return b;
+  }
+
+  function fmtPace(sec) {
+    sec = Math.round(sec);
+    if (!(sec > 0)) return '--:--';
+    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  }
+  // '4:30' | '4.30' | '4,30' -> 270; invalido -> null
+  function parsePace(str) {
+    var m = /^\s*(\d{1,2})\s*[:.,]\s*([0-5]?\d)\s*$/.exec(String(str == null ? '' : str));
+    if (!m) return null;
+    var sec = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    return sec >= 120 && sec <= 900 ? sec : null; // 2:00-15:00/km
+  }
+
+  function _runVal(mode, v, ctx) {
+    if (mode === 'hr') {
+      var pct = Math.round(v * 100) + '% FCmax';
+      return ctx && ctx.fcmax ? pct + ' (' + Math.round(v * ctx.fcmax) + ' bpm)' : pct;
+    }
+    return fmtPace(v) + '/km';
+  }
+
+  function makeBlock(type, id, opts) {
+    if (opts && isRun(opts.sport)) return makeRunBlock(type, id, opts);
     switch (type) {
       case 'warmup':
       case 'cooldown':
@@ -48,7 +132,23 @@
     return b.duration || 0;
   }
 
-  function blockSummaryText(b, fmtDurFn) {
+  function _runSummaryText(b, fmtDurFn, ctx) {
+    var f = function (x) { return fmtDurFn ? fmtDurFn(x) : x + 's'; };
+    var d = f(totalBlockDuration(b));
+    switch (b.type) {
+      case 'warmup': case 'cooldown': case 'ramp':
+        return d + ' · ' + _runVal(b.mode, b.val_low, ctx) + ' → ' + _runVal(b.mode, b.val_high, ctx);
+      case 'steady':
+        return d + ' · ' + _runVal(b.mode, b.val, ctx);
+      case 'intervals':
+        return b.repeat + '×(' + f(b.on_duration) + ' @ ' + _runVal(b.mode, b.on_val, ctx) +
+               ' / ' + f(b.off_duration) + ' @ ' + _runVal(b.mode, b.off_val, ctx) + ')';
+    }
+    return d;
+  }
+
+  function blockSummaryText(b, fmtDurFn, ctx) {
+    if (b.mode) return _runSummaryText(b, fmtDurFn, ctx);
     var d = fmtDurFn ? fmtDurFn(totalBlockDuration(b)) : totalBlockDuration(b) + 's';
     switch (b.type) {
       case 'warmup':
@@ -70,10 +170,34 @@
   // inicio/fin en segundos, potencia inicio/fin como fracción de FTP) —
   // usado para generar .erg/.mrc, que necesitan puntos minuto-a-minuto en
   // vez de la estructura por bloques.
-  function buildSegments(blocks) {
+  // ctx (solo running): {thresholdPace} — los bloques con mode se normalizan a
+  // intensidad relativa al umbral, asi curva/TSS/IF usan el mismo motor que bici.
+  function _runSegments(b, t, ctx, segs) {
+    var I = function (v) { return runIntensity(b.mode, v, ctx); };
+    switch (b.type) {
+      case 'warmup': case 'cooldown': case 'ramp':
+        segs.push({ ts: t, te: t + b.duration, ps: I(b.val_low), pe: I(b.val_high) });
+        return t + b.duration;
+      case 'steady':
+        segs.push({ ts: t, te: t + b.duration, ps: I(b.val), pe: I(b.val) });
+        return t + b.duration;
+      case 'intervals':
+        for (var r = 0; r < b.repeat; r++) {
+          segs.push({ ts: t, te: t + b.on_duration, ps: I(b.on_val), pe: I(b.on_val) });
+          t += b.on_duration;
+          segs.push({ ts: t, te: t + b.off_duration, ps: I(b.off_val), pe: I(b.off_val) });
+          t += b.off_duration;
+        }
+        return t;
+    }
+    return t;
+  }
+
+  function buildSegments(blocks, ctx) {
     var segs = [];
     var t = 0;
     blocks.forEach(function (b) {
+      if (b.mode) { t = _runSegments(b, t, ctx, segs); return; }
       switch (b.type) {
         case 'warmup': case 'cooldown': case 'ramp':
           segs.push({ ts: t, te: t + b.duration, ps: b.power_low, pe: b.power_high });
@@ -109,14 +233,14 @@
   // email de entrega automática; esta corre client-side para la descarga
   // instantánea de indoor_workout.html. Dos runtimes, un solo algoritmo:
   // si se cambia acá, cambiar también allá (y viceversa).
-  function blocksToZwoXml(blocks, name, description) {
+  function blocksToZwoXml(blocks, name, description, sport) {
     var lines = [
       '<?xml version="1.0" encoding="utf-8"?>',
       '<workout_file>',
       '  <author>LabX Coach</author>',
       '  <name>' + _escXml(name) + '</name>',
       '  <description>' + _escXml(description || name) + '</description>',
-      '  <sportType>bike</sportType>',
+      '  <sportType>' + (sport === 'run' ? 'run' : 'bike') + '</sportType>',
       '  <tags/>',
       '  <workout>',
     ];
@@ -145,6 +269,61 @@
     });
     lines.push('  </workout>', '</workout_file>');
     return lines.join('\n');
+  }
+
+  // TCX de entrenamiento (Training Center) para running: Sport="Running",
+  // objetivos de ritmo como Speed_t (m/s) y de FC como HeartRate_t (bpm).
+  // Garmin Connect lo importa tal cual. Solo running — bici sigue en ZWO/ERG/MRC.
+  // ctx: {fcmax} para convertir % de FCmax a bpm absolutos.
+  function blocksToTcxXml(blocks, name, ctx) {
+    ctx = ctx || {};
+    var id = 0;
+    function target(mode, lo, hi) {
+      if (lo === hi) { // objetivo puntual -> zona con tolerancia (±3 s/km, ±2% FCmax)
+        if (mode === 'hr') { lo -= 0.02; hi += 0.02; } else { lo -= 3; hi += 3; }
+      }
+      if (mode === 'hr') {
+        var a = Math.min(lo, hi), b = Math.max(lo, hi);
+        var k = ctx.fcmax || 100; // sin FCmax real: el valor queda como porcentaje
+        return '<Target xsi:type="HeartRate_t"><HeartRateZone xsi:type="Custom_t"><Low xsi:type="HeartRateInBeatsPerMinute_t"><Value>' +
+               Math.round(a * k) + '</Value></Low><High xsi:type="HeartRateInBeatsPerMinute_t"><Value>' +
+               Math.round(b * k) + '</Value></High></HeartRateZone></Target>';
+      }
+      // pace s/km -> m/s; mas lento = menor velocidad
+      var slow = 1000 / Math.max(lo, hi), fast = 1000 / Math.min(lo, hi);
+      return '<Target xsi:type="Speed_t"><SpeedZone xsi:type="CustomSpeedZone_t"><LowInMetersPerSecond>' + slow.toFixed(3) +
+             '</LowInMetersPerSecond><HighInMetersPerSecond>' + fast.toFixed(3) + '</HighInMetersPerSecond></SpeedZone></Target>';
+    }
+    function step(label, secs, intensity, mode, lo, hi) {
+      id++;
+      return '<Step xsi:type="Step_t"><StepId>' + id + '</StepId><Name>' + _escXml(label) + '</Name>' +
+        '<Duration xsi:type="Time_t"><Seconds>' + Math.round(secs) + '</Seconds></Duration>' +
+        '<Intensity>' + intensity + '</Intensity>' + target(mode, lo, hi) + '</Step>';
+    }
+    var body = '';
+    blocks.forEach(function (b) {
+      switch (b.type) {
+        case 'warmup':
+          body += step('Warmup', b.duration, 'Warmup', b.mode, b.val_low, b.val_high); break;
+        case 'cooldown':
+          body += step('Cooldown', b.duration, 'Cooldown', b.mode, b.val_low, b.val_high); break;
+        case 'ramp':
+          body += step('Ramp', b.duration, 'Active', b.mode, b.val_low, b.val_high); break;
+        case 'steady':
+          body += step('Steady', b.duration, 'Active', b.mode, b.val, b.val); break;
+        case 'intervals':
+          id++;
+          body += '<Step xsi:type="Repeat_t"><StepId>' + id + '</StepId><Repetitions>' + b.repeat + '</Repetitions>' +
+            step('Work', b.on_duration, 'Active', b.mode, b.on_val, b.on_val) +
+            step('Recovery', b.off_duration, 'Resting', b.mode, b.off_val, b.off_val) + '</Step>';
+          break;
+      }
+    });
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" ' +
+      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
+      '<Workouts><Workout Sport="Running"><Name>' + _escXml(String(name).slice(0, 15)) + '</Name>' +
+      body + '</Workout></Workouts></TrainingCenterDatabase>';
   }
 
   function blocksToErgText(blocks, name, ftp) {
@@ -247,6 +426,14 @@
   global.WorkoutBlocks = {
     TYPES: WORKOUT_BLOCK_TYPES,
     makeBlock: makeBlock,
+    isRun: isRun,
+    convertRunBlock: convertRunBlock,
+    runIntensity: runIntensity,
+    fmtPace: fmtPace,
+    parsePace: parsePace,
+    RUN_LTHR_FRAC: RUN_LTHR_FRAC,
+    RUN_DEFAULT_THR: RUN_DEFAULT_THR,
+    blocksToTcxXml: blocksToTcxXml,
     totalBlockDuration: totalBlockDuration,
     blockSummaryText: blockSummaryText,
     buildSegments: buildSegments,

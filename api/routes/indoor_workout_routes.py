@@ -25,7 +25,8 @@ router = APIRouter(
     dependencies=[Depends(require_feature("indoor_workout"))],
 )
 
-_SPORTS = {"bike"}  # S4: solo ciclismo; el multideporte llega en S5
+_SPORTS = {"bike", "run"}  # S5: ciclismo + running (natación queda fuera de v1)
+_RUN_MODES = {"pace", "hr"}
 _MAX_BLOCKS = 300
 _MAX_BLOCKS_BYTES = 256 * 1024
 _MAX_PER_USER = 500
@@ -87,6 +88,11 @@ def _clean(body: dict, partial: bool = False) -> dict:
         if len(raw.encode("utf-8")) > _MAX_BLOCKS_BYTES:
             raise HTTPException(400, "El workout es demasiado grande")
         out["blocks_json"] = raw
+    # Running: cada bloque declara su objetivo (ritmo o FC). Se valida cuando
+    # se conoce el deporte en el mismo payload (alta o PUT con sport+blocks).
+    if out.get("sport") == "run" and "blocks_json" in out:
+        if any(b.get("mode") not in _RUN_MODES for b in blocks):
+            raise HTTPException(400, "Los bloques de running necesitan mode: 'pace' o 'hr'")
     return out
 
 

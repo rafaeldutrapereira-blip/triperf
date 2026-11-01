@@ -1942,6 +1942,7 @@ class _SendToGarminIn(BaseModel):
     name:   str
     date:   str  # YYYY-MM-DD
     blocks: list
+    sport:  str = "bike"  # S5: "bike" | "run" (natación fuera de v1)
 
 
 def _blocks_total_duration_sec(blocks: list) -> int:
@@ -1964,23 +1965,31 @@ def send_indoor_workout_to_garmin(
     Garmin del propio atleta logueado — sin descargar ni importar archivos."""
     if not me.garmin_email or not me.garmin_password:
         raise HTTPException(400, "Conectá tu cuenta Garmin desde tu Perfil antes de poder enviar entrenamientos.")
-    if not me.ftp:
+    if body.sport not in ("bike", "run"):
+        raise HTTPException(400, "Deporte no soportado para envío: use bike o run.")
+    if body.sport == "bike" and not me.ftp:
         raise HTTPException(400, "Configurá tu FTP en tu Perfil para calcular los objetivos de potencia.")
     if not body.blocks:
         raise HTTPException(400, "El entrenamiento no tiene bloques.")
+    if body.sport == "run" and any(b.get("mode") == "hr" for b in body.blocks) and not me.fcmax:
+        raise HTTPException(400, "Configurá tu FC máxima en tu Perfil para enviar objetivos por frecuencia cardíaca.")
 
     from garmin_connector import schedule_workout_for_athlete
     from ..crypto import decrypt_credential
 
     session = {
         "name":        body.name or "LabX Indoor Workout",
-        "sport":       "bike",
+        "sport":       body.sport,
         "dur_min":     _blocks_total_duration_sec(body.blocks) / 60,
         "dist_km":     0,
         "notes":       "",
         "blocks_json": json.dumps(body.blocks),
         "ftp":         me.ftp,
     }
+    if body.sport == "run":
+        # formato del builder Indoor (mode pace|hr), distinto del de coach.html
+        session["blocks_format"] = "indoor"
+        session["fcmax"] = me.fcmax
     try:
         result = schedule_workout_for_athlete(
             session          = session,

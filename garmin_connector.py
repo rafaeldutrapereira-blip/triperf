@@ -520,6 +520,87 @@ def _run_blocks_to_garmin_steps(blocks: list, fcmax: int | None) -> list:
     return steps
 
 
+def _indoor_run_step(step_order: int, step_kind: str, duration_seconds: float,
+                     mode: str, lo: float, hi: float, fcmax: int | None):
+    """
+    Paso de running del builder Indoor (S5). Objetivo por ritmo (lo/hi en s/km)
+    -> PACE_ZONE en m/s, o por FC (lo/hi = fracción de FCmax) -> HEART_RATE_ZONE
+    en bpm. Un objetivo puntual (lo == hi) se abre con la misma tolerancia que
+    usan los demás pasos de carrera (±3 s/km, ±2% FCmax).
+    """
+    from garminconnect.workout import ExecutableStep, ConditionType, TargetType
+
+    step_type_id, step_type_key, display_order = _STEP_TYPE_META[step_kind]
+    kwargs = dict(
+        stepOrder=step_order,
+        stepType={"stepTypeId": step_type_id, "stepTypeKey": step_type_key, "displayOrder": display_order},
+        endCondition={
+            "conditionTypeId": ConditionType.TIME, "conditionTypeKey": "time",
+            "displayOrder": 2, "displayable": True,
+        },
+        endConditionValue=duration_seconds,
+    )
+    no_target = {"workoutTargetTypeId": TargetType.NO_TARGET, "workoutTargetTypeKey": "no.target", "displayOrder": 1}
+    if mode == "pace" and lo and hi:
+        if lo == hi:
+            lo, hi = lo + 3, max(hi - 3, 1)
+        slow, fast = max(lo, hi), min(lo, hi)
+        kwargs["targetType"] = {
+            "workoutTargetTypeId": TargetType.PACE_ZONE,
+            "workoutTargetTypeKey": "pace.zone",
+            "displayOrder": TargetType.PACE_ZONE,
+        }
+        kwargs["targetValueOne"] = round(1000.0 / slow, 3)
+        kwargs["targetValueTwo"] = round(1000.0 / fast, 3)
+    elif mode == "hr" and fcmax and lo and hi:
+        if lo == hi:
+            lo, hi = lo - 0.02, hi + 0.02
+        kwargs["targetType"] = {
+            "workoutTargetTypeId": TargetType.HEART_RATE_ZONE,
+            "workoutTargetTypeKey": "heart.rate.zone",
+            "displayOrder": TargetType.HEART_RATE_ZONE,
+        }
+        kwargs["targetValueOne"] = round(min(lo, hi) * fcmax)
+        kwargs["targetValueTwo"] = round(max(lo, hi) * fcmax)
+    else:
+        kwargs["targetType"] = no_target
+    return ExecutableStep(**kwargs)
+
+
+def _indoor_run_blocks_to_garmin_steps(blocks: list, fcmax: int | None) -> list:
+    """
+    blocks_json del builder Indoor para running (S5): mismos tipos que bici
+    (warmup/steady/intervals/ramp/cooldown, duraciones en segundos) pero con
+    mode 'pace' (s/km) o 'hr' (fracción de FCmax) y valores val*/on_val/off_val.
+    """
+    from garminconnect.workout import create_repeat_group
+
+    steps = []
+    order = 1
+    for b in blocks:
+        t = b.get("type", "steady")
+        mode = b.get("mode", "pace")
+        if t in ("warmup", "cooldown"):
+            steps.append(_indoor_run_step(order, t, b.get("duration", 300), mode,
+                                          b.get("val_low"), b.get("val_high"), fcmax))
+            order += 1
+        elif t == "ramp":
+            steps.append(_indoor_run_step(order, "interval", b.get("duration", 300), mode,
+                                          b.get("val_low"), b.get("val_high"), fcmax))
+            order += 1
+        elif t == "steady":
+            v = b.get("val")
+            steps.append(_indoor_run_step(order, "interval", b.get("duration", 300), mode, v, v, fcmax))
+            order += 1
+        elif t == "intervals":
+            on_v, off_v = b.get("on_val"), b.get("off_val")
+            on_step = _indoor_run_step(1, "interval", b.get("on_duration", 240), mode, on_v, on_v, fcmax)
+            off_step = _indoor_run_step(2, "recovery", b.get("off_duration", 120), mode, off_v, off_v, fcmax)
+            steps.append(create_repeat_group(b.get("repeat", 1), [on_step, off_step], order))
+            order += 1
+    return steps
+
+
 def _build_workout_body(session: dict) -> dict:
     """
     Build Garmin workout JSON with required segment/step structure.
@@ -547,7 +628,10 @@ def _build_workout_body(session: dict) -> dict:
                 workout_steps = [s.model_dump(exclude_none=True, mode="json") for s in garmin_steps]
         elif session.get("sport") == "run" and blocks_json:
             blocks = json.loads(blocks_json)
-            garmin_steps = _run_blocks_to_garmin_steps(blocks, fcmax)
+            if session.get("blocks_format") == "indoor":
+                garmin_steps = _indoor_run_blocks_to_garmin_steps(blocks, fcmax)
+            else:
+                garmin_steps = _run_blocks_to_garmin_steps(blocks, fcmax)
             if garmin_steps:
                 workout_steps = [s.model_dump(exclude_none=True, mode="json") for s in garmin_steps]
     except Exception as e:

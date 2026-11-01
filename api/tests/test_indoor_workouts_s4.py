@@ -64,7 +64,7 @@ def test_validation(client, db):
     assert client.post(BASE, json={"name": "", "blocks": BLOCKS}, headers=h).status_code == 400
     assert client.post(BASE, json={"name": "x", "blocks": []}, headers=h).status_code == 400
     assert client.post(BASE, json={"name": "x", "blocks": ["no-dict"]}, headers=h).status_code == 400
-    assert client.post(BASE, json={"name": "x", "blocks": BLOCKS, "sport": "run"}, headers=h).status_code == 400
+    assert client.post(BASE, json={"name": "x", "blocks": BLOCKS, "sport": "swim"}, headers=h).status_code == 400
     assert client.post(BASE, json={"name": "x", "blocks": BLOCKS, "planned_date": "mañana"}, headers=h).status_code == 400
 
 
