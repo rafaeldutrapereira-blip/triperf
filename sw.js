@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '236';  // 2026-11-01: paginas publicas en lenguaje simple, sin jerga CTL/ATL/TSB/PMC/ACWR (P11-E)
+var BUILD_VERSION = '237';  // 2026-11-01: analisis del atleta con nombres completos en primera mencion y textos de interpretacion unificados (P11-F1)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

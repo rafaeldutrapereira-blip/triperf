@@ -1059,6 +1059,10 @@ window.LXTerm = {
   autoInit: autoInit
 };
 
+/* Los botones solo-icono estáticos (onclick="LXTerm.open(...)") no pasan por
+   render(): inyectar el CSS al cargar para que no se vean como botón nativo. */
+ensureCss();
+
 if (typeof document !== 'undefined') {
   document.addEventListener('click', function(e){
     var btn = e.target && e.target.closest ? e.target.closest('.lx-term-info') : null;
