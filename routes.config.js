@@ -79,7 +79,7 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
       minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
-      sidebar: true,
+      sidebar: false, /* S13 2026-11-01: reemplazado por 'estado' en el menú */
       public:  false
     },
     {
@@ -93,7 +93,7 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
       minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
-      sidebar: true,
+      sidebar: false, /* S13 2026-11-01: reemplazado por 'estado' en el menú */
       public:  false
     },
     {
@@ -107,7 +107,7 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
       minPlan: 'agegroup',
       roles:   ['athlete','coach','admin'],
-      sidebar: false,
+      sidebar: true,
       public:  false
     },
     {

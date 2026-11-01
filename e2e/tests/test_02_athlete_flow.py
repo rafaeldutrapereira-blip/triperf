@@ -210,7 +210,8 @@ def test_recovery_carga(page: Page, athlete_api):
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
 
-    page.goto(f"{BASE_URL}/recovery.html")
+    # S13 (2026-11-01): recovery.html redirige a estado.html para el atleta
+    page.goto(f"{BASE_URL}/estado.html")
     page.wait_for_load_state("networkidle")
 
     assert not errors, f"JS errors: {errors}"
@@ -376,7 +377,8 @@ def test_mental_carga(page: Page, athlete_api):
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
 
-    page.goto(f"{BASE_URL}/mental.html")
+    # S13 (2026-11-01): mental.html redirige a estado.html (grupo Mental)
+    page.goto(f"{BASE_URL}/estado.html#est-reg-men")
     page.wait_for_load_state("networkidle")
 
     assert not errors, f"JS errors: {errors}"

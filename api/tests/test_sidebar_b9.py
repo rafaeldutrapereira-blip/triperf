@@ -17,7 +17,8 @@ EXPECTED = [
     ("entrenar", "dashboard"), ("entrenar", "training_plan"),
     # S1: ai_coach salió del sidebar (solo coach/admin por URL directa).
     ("entrenar", "indoor_workout"),
-    ("recuperar", "recovery"), ("recuperar", "mental"),
+    # S13 (2026-11-01): Recuperacion y Mental salen del menu; entra Estado (estado.html).
+    ("recuperar", "estado"),
     ("recuperar", "nutrition"), ("recuperar", "blood_labs"),
     ("planear", "race_day"), ("planear", "huella"),
     ("analizar", "analytics"),
