@@ -2267,6 +2267,7 @@ class IndoorWorkout(Base):
     planned_date = Column(String(10), nullable=True)
     blocks_json  = Column(Text, nullable=False, default="[]")
     legacy_id    = Column(String, nullable=True)
+    intervals_event_id = Column(String, nullable=True)  # S15: evento enlazado en intervals.icu
     created_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
                           onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

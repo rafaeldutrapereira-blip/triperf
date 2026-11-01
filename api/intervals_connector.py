@@ -213,9 +213,12 @@ def blocks_to_intervals_dsl(blocks: list[dict], sport: str) -> str:
 # ── Envio del evento ─────────────────────────────────────────────────────
 
 async def send_workout_event(user: "User", name: str, sport: str, blocks: list[dict],
-                             date_iso: str, description: str = "") -> dict:
-    """Crea el evento WORKOUT en el calendario del atleta. Lanza IntervalsError
-    con un mensaje claro si algo falla -- nunca devuelve exito si la API falló."""
+                             date_iso: str, description: str = "",
+                             event_id: "str | int | None" = None) -> dict:
+    """Crea (o, con `event_id`, ACTUALIZA) el evento WORKOUT en el calendario del
+    atleta. Si el PUT responde 404 (el evento ya no existe alla) crea uno nuevo.
+    Lanza IntervalsError con un mensaje claro si algo falla -- nunca devuelve
+    exito si la API falló."""
     token = read_access_token(user)
     if not token:
         raise IntervalsError("Tu reloj no esta conectado a intervals.icu")
@@ -231,15 +234,24 @@ async def send_workout_event(user: "User", name: str, sport: str, blocks: list[d
         "description":       body_desc,
     }
 
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    events_url = f"{API_BASE}/athlete/0/events"
+
     async with httpx.AsyncClient(timeout=15) as client:
-        try:
-            r = await client.post(
-                f"{API_BASE}/athlete/0/events",
-                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                content=json.dumps(payload),
-            )
-        except httpx.HTTPError as exc:
-            raise IntervalsError(f"No se pudo contactar a intervals.icu: {exc}") from exc
+        async def _call(method: str, url: str):
+            try:
+                return await getattr(client, method)(url, headers=headers, content=json.dumps(payload))
+            except httpx.HTTPError as exc:
+                raise IntervalsError(f"No se pudo contactar a intervals.icu: {exc}") from exc
+
+        r = None
+        if event_id:
+            r = await _call("put", f"{events_url}/{event_id}")
+            if r.status_code == 404:
+                logger.info("Evento intervals.icu %s ya no existe; se crea uno nuevo", event_id)
+                r = None
+        if r is None:
+            r = await _call("post", events_url)
 
         if r.status_code in (401, 403):
             raise IntervalsError("intervals.icu rechazo el token -- reconecta tu reloj")
@@ -247,4 +259,28 @@ async def send_workout_event(user: "User", name: str, sport: str, blocks: list[d
             raise IntervalsError(f"intervals.icu rechazo el workout ({r.status_code})")
 
         data = r.json() if r.content else {}
-        return {"ok": True, "event_id": data.get("id"), "description": body_desc}
+        new_id = data.get("id")
+        if new_id is None and event_id and r.status_code < 300:
+            new_id = event_id  # PUT sin cuerpo: el id sigue siendo el mismo
+        return {"ok": True, "event_id": new_id, "description": body_desc}
+
+
+async def delete_workout_event(user: "User", event_id: "str | int") -> bool:
+    """Borra el evento remoto. Best-effort: nunca lanza; devuelve True si se
+    borro (o ya no existia) y False si fallo (queda en el log)."""
+    try:
+        token = read_access_token(user)
+        if not token:
+            logger.warning("DELETE evento intervals.icu %s omitido: sin token", event_id)
+            return False
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.delete(
+                f"{API_BASE}/athlete/0/events/{event_id}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if r.status_code in (404, 410) or r.status_code < 300:
+            return True
+        logger.warning("DELETE evento intervals.icu %s fallo (%s)", event_id, r.status_code)
+    except Exception as exc:  # noqa: BLE001 -- la baja local no depende del remoto
+        logger.warning("DELETE evento intervals.icu %s fallo: %s", event_id, exc)
+    return False

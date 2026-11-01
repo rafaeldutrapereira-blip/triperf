@@ -155,11 +155,14 @@ def update_workout(workout_id: str, body: dict, db: Session = Depends(get_db),
 
 
 @router.delete("/{workout_id}")
-def delete_workout(workout_id: str, db: Session = Depends(get_db),
-                   me: User = Depends(get_current_user)):
+async def delete_workout(workout_id: str, db: Session = Depends(get_db),
+                         me: User = Depends(get_current_user)):
     w = _owned(db, me, workout_id)
+    event_id = w.intervals_event_id
     db.delete(w)
     db.commit()
+    if event_id:  # S15: best-effort, la baja local ya esta hecha
+        await ic.delete_workout_event(me, event_id)
     return {"ok": True}
 
 
@@ -181,7 +184,12 @@ async def send_workout_to_watch(workout_id: str, body: dict | None = None,
         result = await ic.send_workout_event(
             user=me, name=w.name, sport=w.sport, blocks=blocks,
             date_iso=str(date_iso), description=w.description or "",
+            event_id=w.intervals_event_id,
         )
     except ic.IntervalsError as exc:
         raise HTTPException(502, str(exc))
+    new_id = result.get("event_id")
+    if new_id is not None and str(new_id) != (w.intervals_event_id or ""):
+        w.intervals_event_id = str(new_id)
+        db.commit()
     return {"ok": True, "event_id": result.get("event_id")}
