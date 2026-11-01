@@ -4419,13 +4419,23 @@
           // 2026-08-11, Gap #1).
           var editable = s.editable !== false && !s.api_assignment_id;
           var canLogManual = editable || !!s.api_assignment_id;
+          var editDetailBtn =
+            '<button class="btn btn-g btn-sm" onclick="openLogModal(' +
+            jsArg(id) +
+            ')" data-i18n="tp_edit_detail">' +
+            _t('tp_edit_detail', 'Editar detalle') +
+            '</button>';
           var logBtn = !canLogManual
             ? ''
             : s.status !== 'done'
-              ? '<button class="btn btn-p btn-sm" onclick="openLogModal(' +
+              ? '<button class="btn btn-p btn-sm" style="white-space:nowrap" onclick="tpMarkDone(' +
                 jsArg(id) +
-                ')" data-i18n="btn_register_result">Registrar resultado</button>'
-              : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>';
+                ')" data-i18n="tp_done_btn">' +
+                _t('tp_done_btn', 'Hecha ✓') +
+                '</button>' +
+                editDetailBtn
+              : '<span style="color:var(--green);font-size:.8rem">✓ Completada</span>' +
+                editDetailBtn;
           var zwiftBtn = '';
           if (s.sport === 'bike' && s.status !== 'done') {
             if (s.blocks_json) {
@@ -4902,6 +4912,211 @@
         window._tpRender = render; // expuesto para el bridge API
 
         // ──────────────────────────────────────
+        // REGISTRO DE SESIÓN (S3)
+        // "Hecha ✓" registra en un gesto con los valores del propio plan;
+        // "Editar detalle" abre el formulario completo. Vive FUERA del bloque
+        // Coach API: no depende de que exista token (las sesiones locales se
+        // marcan sin red; solo las asignadas por el coach hacen POST).
+        // ──────────────────────────────────────
+        // RPE labels
+        function rpeLabels() {
+          return [
+            '',
+            _t('tp_rpe_1', 'Muy fácil'),
+            _t('tp_rpe_2', 'Fácil'),
+            _t('tp_rpe_3', 'Moderado-suave'),
+            _t('tp_rpe_4', 'Moderado'),
+            _t('tp_rpe_5', 'Moderado-duro'),
+            _t('tp_rpe_6', 'Duro'),
+            _t('tp_rpe_7', 'Muy duro'),
+            _t('tp_rpe_8', 'Extremo'),
+            _t('tp_rpe_9', 'Máximo'),
+            _t('tp_rpe_10', 'Límite absoluto'),
+          ];
+        }
+        var RPE_COLORS = [
+          '',
+          '#10B981',
+          '#10B981',
+          '#22D3EE',
+          '#0EA5E9',
+          '#F0A500',
+          '#F0A500',
+          '#FF6535',
+          '#EF4444',
+          '#EF4444',
+          '#7C3AED',
+        ];
+
+        var _logTargetId = null;
+        var _logBusy = false;
+
+        function logToast(msg) {
+          var t = document.getElementById('t-rs-msg');
+          if (t) t.textContent = msg;
+          var el = document.getElementById('toast-rs');
+          if (el) {
+            el.style.display = 'flex';
+            setTimeout(function () {
+              el.style.display = 'none';
+            }, 2800);
+          }
+        }
+
+        function findPlanned(id) {
+          return getPlanned().filter(function (p) {
+            return p.id === id;
+          })[0];
+        }
+
+        // POST /athlete/log (endpoint existente). Rechaza ante falta de token,
+        // error de red o respuesta no-2xx: el llamador NO debe marcar hecha.
+        function postLog(assignmentId, v) {
+          var token =
+            localStorage.getItem('lx_ath_token') ||
+            localStorage.getItem('lx_co_token');
+          if (!token) return Promise.reject(new Error('no-token'));
+          var api =
+            window.location.protocol === 'file:'
+              ? 'http://localhost:8000/api'
+              : window.location.origin + '/api';
+          return fetch(api + '/athlete/log', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token,
+            },
+            body: JSON.stringify({
+              assignment_id: assignmentId,
+              tss_real: v.tss || null,
+              dist_real: v.dist || null,
+              dur_real: v.dur || null,
+              rpe: v.rpe || null,
+              notas: v.notas || null,
+              completado: true,
+            }),
+          }).then(function (r) {
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+          });
+        }
+
+        // Registra la sesión: primero el servidor (si es del coach) y SOLO si
+        // responde bien se marca como hecha en local. Resuelve true/false.
+        function commitLog(sessionId, v) {
+          if (_logBusy) return Promise.resolve(false);
+          var s = findPlanned(sessionId);
+          if (!s) return Promise.resolve(false);
+          _logBusy = true;
+          var send = s.api_assignment_id
+            ? postLog(s.api_assignment_id, v)
+            : Promise.resolve();
+          return send.then(
+            function () {
+              _logBusy = false;
+              var plans = getPlanned();
+              var idx = plans.findIndex(function (p) {
+                return p.id === sessionId;
+              });
+              if (idx >= 0) {
+                plans[idx].status = 'done';
+                plans[idx].tss_real = v.tss || null;
+                plans[idx].dist_real = v.dist || null;
+                plans[idx].dur_real = v.dur || null;
+                plans[idx].rpe = v.rpe || null;
+                plans[idx].notas_log = v.notas || null;
+                savePlanned(plans);
+              }
+              closeModal('modal-log');
+              closeModal('modal-detail');
+              render();
+              logToast(_t('tp_log_ok', 'Sesión registrada'));
+              return true;
+            },
+            function () {
+              _logBusy = false;
+              logToast(
+                _t(
+                  'tp_log_fail',
+                  'No se pudo registrar la sesión. Revisa tu conexión e inténtalo de nuevo.',
+                ),
+              );
+              return false;
+            },
+          );
+        }
+
+        // Un gesto: usa los valores de la propia sesión planificada.
+        // RPE y notas quedan vacíos (no se inventan; van en "Editar detalle").
+        window.tpMarkDone = function (sessionId) {
+          var s = findPlanned(sessionId);
+          if (!s) return Promise.resolve(false);
+          return commitLog(sessionId, {
+            tss: s.tss || null,
+            dist: s.dist_km || null,
+            dur: s.dur_min ? Math.round(s.dur_min) : null,
+            rpe: null,
+            notas: null,
+          });
+        };
+
+        // Formulario completo ("Editar detalle"). Precarga el plan, o los
+        // valores ya registrados si la sesión está hecha.
+        window.openLogModal = function (sessionId) {
+          _logTargetId = sessionId;
+          var s = findPlanned(sessionId);
+          if (!s) return;
+          var done = s.status === 'done';
+          var rpe = (done && s.rpe) || 5;
+          document.getElementById('log-title').textContent =
+            'Registrar — ' + s.name;
+          document.getElementById('log-tss').value =
+            (done ? s.tss_real : s.tss) || '';
+          document.getElementById('log-dist').value =
+            (done ? s.dist_real : s.dist_km) || '';
+          document.getElementById('log-dur').value =
+            (done ? s.dur_real : s.dur_min) || '';
+          document.getElementById('log-rpe').value = rpe;
+          document.getElementById('log-rpe-val').textContent = rpe;
+          document.getElementById('log-rpe-label').textContent =
+            rpeLabels()[rpe];
+          document.getElementById('log-rpe-label').style.color =
+            RPE_COLORS[rpe];
+          document.getElementById('log-notas').value =
+            (done && s.notas_log) || '';
+          closeModal('modal-detail');
+          document.getElementById('modal-log').classList.add('open');
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+          var slider = document.getElementById('log-rpe');
+          if (slider) {
+            slider.addEventListener('input', function () {
+              var v = parseInt(this.value);
+              document.getElementById('log-rpe-val').textContent = v;
+              document.getElementById('log-rpe-val').style.color =
+                RPE_COLORS[v] || 'var(--orange)';
+              document.getElementById('log-rpe-label').textContent =
+                rpeLabels()[v] || '';
+              document.getElementById('log-rpe-label').style.color =
+                RPE_COLORS[v] || 'var(--muted)';
+            });
+          }
+        });
+
+        window.submitLog = function () {
+          if (!_logTargetId) return;
+          commitLog(_logTargetId, {
+            tss: parseInt(document.getElementById('log-tss').value) || null,
+            dist: parseFloat(document.getElementById('log-dist').value) || null,
+            dur: parseInt(document.getElementById('log-dur').value) || null,
+            rpe: parseInt(document.getElementById('log-rpe').value) || null,
+            notas: document.getElementById('log-notas').value.trim() || null,
+          });
+        };
+
+
+        // ──────────────────────────────────────
         // COACH API INTEGRATION
         // Pull assigned workouts and merge into local plan
         // Usa lx_ath_token (cuenta atleta) si existe, sino lx_co_token (coach)
@@ -5065,161 +5280,6 @@
 
           pullAssignments();
 
-          // RPE labels
-          function rpeLabels() {
-            return [
-              '',
-              _t('tp_rpe_1', 'Muy fácil'),
-              _t('tp_rpe_2', 'Fácil'),
-              _t('tp_rpe_3', 'Moderado-suave'),
-              _t('tp_rpe_4', 'Moderado'),
-              _t('tp_rpe_5', 'Moderado-duro'),
-              _t('tp_rpe_6', 'Duro'),
-              _t('tp_rpe_7', 'Muy duro'),
-              _t('tp_rpe_8', 'Extremo'),
-              _t('tp_rpe_9', 'Máximo'),
-              _t('tp_rpe_10', 'Límite absoluto'),
-            ];
-          }
-          var RPE_COLORS = [
-            '',
-            '#10B981',
-            '#10B981',
-            '#22D3EE',
-            '#0EA5E9',
-            '#F0A500',
-            '#F0A500',
-            '#FF6535',
-            '#EF4444',
-            '#EF4444',
-            '#7C3AED',
-          ];
-
-          // Log modal
-          var _logTargetId = null;
-          window.openLogModal = function (sessionId) {
-            _logTargetId = sessionId;
-            var s = getPlanned().filter(function (p) {
-              return p.id === sessionId;
-            })[0];
-            if (!s) return;
-            document.getElementById('log-title').textContent =
-              'Registrar — ' + s.name;
-            document.getElementById('log-tss').value = s.tss || '';
-            document.getElementById('log-dist').value = s.dist_km || '';
-            document.getElementById('log-dur').value = s.dur_min || '';
-            document.getElementById('log-rpe').value = 5;
-            document.getElementById('log-rpe-val').textContent = 5;
-            document.getElementById('log-rpe-label').textContent =
-              rpeLabels()[5];
-            document.getElementById('log-rpe-label').style.color =
-              RPE_COLORS[5];
-            document.getElementById('log-notas').value = '';
-            closeModal('modal-detail');
-            document.getElementById('modal-log').classList.add('open');
-          };
-
-          document.addEventListener('DOMContentLoaded', function () {
-            var slider = document.getElementById('log-rpe');
-            if (slider) {
-              slider.addEventListener('input', function () {
-                var v = parseInt(this.value);
-                document.getElementById('log-rpe-val').textContent = v;
-                document.getElementById('log-rpe-val').style.color =
-                  RPE_COLORS[v] || 'var(--orange)';
-                document.getElementById('log-rpe-label').textContent =
-                  rpeLabels()[v] || '';
-                document.getElementById('log-rpe-label').style.color =
-                  RPE_COLORS[v] || 'var(--muted)';
-              });
-            }
-          });
-
-          window.submitLog = function () {
-            if (!_logTargetId) return;
-            var s = getPlanned().filter(function (p) {
-              return p.id === _logTargetId;
-            })[0];
-            if (!s) return;
-            var tss =
-              parseInt(document.getElementById('log-tss').value) || null;
-            var dist =
-              parseFloat(document.getElementById('log-dist').value) || null;
-            var dur =
-              parseInt(document.getElementById('log-dur').value) || null;
-            var rpe =
-              parseInt(document.getElementById('log-rpe').value) || null;
-            var notas =
-              document.getElementById('log-notas').value.trim() || null;
-
-            // Actualizar localmente
-            var plans = getPlanned();
-            var idx = plans.findIndex(function (p) {
-              return p.id === _logTargetId;
-            });
-            if (idx >= 0) {
-              plans[idx].status = 'done';
-              plans[idx].tss_real = tss;
-              plans[idx].dist_real = dist;
-              plans[idx].dur_real = dur;
-              plans[idx].rpe = rpe;
-              plans[idx].notas_log = notas;
-              savePlanned(plans);
-              render();
-            }
-
-            // Si tiene assignment_id de API, enviar al servidor incluyendo RPE
-            if (s.api_assignment_id) {
-              logToCoachAPI(s.api_assignment_id, tss, dist, dur, rpe, notas);
-            }
-            closeModal('modal-log');
-          };
-
-          // Expose global log function for workouts with api_assignment_id
-          window.logToCoachAPI = function (
-            assignmentId,
-            tss,
-            distKm,
-            durMin,
-            rpe,
-            notas,
-          ) {
-            return coPost('/athlete/log', {
-              assignment_id: assignmentId,
-              tss_real: tss || null,
-              dist_real: distKm || null,
-              dur_real: durMin || null,
-              rpe: rpe || null,
-              notas: notas || null,
-              completado: true,
-            })
-              .then(function () {
-                var t = document.getElementById('t-rs-msg');
-                if (t) t.textContent = 'Registrado en Coach';
-                var el = document.getElementById('toast-rs');
-                if (el) {
-                  el.style.display = 'flex';
-                  setTimeout(function () {
-                    el.style.display = 'none';
-                  }, 2800);
-                }
-              })
-              .catch(function () {
-                var t = document.getElementById('t-rs-msg');
-                if (t)
-                  t.textContent = _t(
-                    'tp_no_coach_api',
-                    'Sin conexión Coach API',
-                  );
-                var el = document.getElementById('toast-rs');
-                if (el) {
-                  el.style.display = 'flex';
-                  setTimeout(function () {
-                    el.style.display = 'none';
-                  }, 2800);
-                }
-              });
-          };
         })();
 
         // ── Zwift .zwo download (called from showDetail) ──────────────
