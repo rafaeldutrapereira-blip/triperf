@@ -289,7 +289,7 @@
     if(w) w.textContent=_nt('shell_ai_welcome','Hola! Soy tu Asistente IA. Pregúntame sobre tu entrenamiento, carga, nutrición o estrategia de carrera.');
     var inp=document.getElementById('lx-ai-inp');
     if(inp) inp.placeholder=_nt('shell_ai_placeholder','Pregunta algo sobre tu entrenamiento…');
-    var fb=document.getElementById('lx-ai-btn');
+    var fb=document.getElementById('lx-ai-btn');
     if(fb) fb.title=_nt('shell_ai_btn','Asistente IA');
   }
   document.addEventListener('lx:i18nready', _refreshI18n);
@@ -383,7 +383,7 @@
       var u=typeof url==='string'?url:(url&&url.url)||'';
       if(u.indexOf('/api/')>=0){ opts=Object.assign({},opts||{}); opts.credentials=opts.credentials||'include'; }
       return _f(url,opts).then(function(r){
-        if(r.status===401){ lxToast.warn('Sesi\xf3n expirada — vuelve a ingresar'); setTimeout(function(){ sessionStorage.setItem('lx_next_url',window.location.href); location.replace('login.html'); },2200); }
+        if(r.status===401){ lxToast.warn('Sesi\xf3n expirada — vuelve a ingresar'); if(window.KL&&window.KL.clearSession) window.KL.clearSession(); setTimeout(function(){ sessionStorage.setItem('lx_next_url',window.location.href); location.replace('login.html'); },2200); }
         return r;
       }).catch(function(err){
         var us=typeof url==='string'?url:url.url;

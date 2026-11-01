@@ -155,8 +155,7 @@
 
   function logout() {
     /* Llamar al API para revocar token y limpiar cookie HttpOnly */
-    var API = window._LX_API || 'http://localhost:8000/api';
-    fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' })
+    fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' })
       .catch(function(){})
       .finally(function(){
         clearSession();
@@ -270,6 +269,43 @@
       headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+tok},
       body: JSON.stringify({lang: e.detail.lang})
     }).catch(function(){});
+  });
+
+  /* ── Revalidación al volver a la pestaña ─────────────────────
+     Ninguna página comprobaba la sesión al reabrir/volver del
+     segundo plano: una pestaña dejada abierta horas con el JWT ya
+     vencido quedaba con `kl_s` vigente en el cliente hasta que el
+     usuario tocara algo (ver diagnóstico 2026-10-31, punto "Sobre
+     volver a una pestaña abierta"). Solo actúa ante un 401 EXPLÍCITO
+     de /auth/me; un error de red (offline) no toca la sesión. */
+  function _revalidateSession() {
+    var s = getSession();
+    if (!s) return; /* nada que revalidar: ya no hay sesión local */
+    var page = window.location.pathname.split('/').pop();
+    if (page === 'login.html' || page === 'landing.html') return;
+
+    var tok = localStorage.getItem('lx_co_token');
+    fetch(API_BASE + '/auth/me', {
+      method: 'GET',
+      credentials: 'include',
+      headers: tok ? { 'Authorization': 'Bearer ' + tok } : {}
+    }).then(function(r) {
+      if (r.status !== 401) return;
+      clearSession();
+      if (window.lxToast && typeof window.lxToast.warn === 'function') {
+        window.lxToast.warn('Sesión expirada — vuelve a ingresar');
+        setTimeout(function(){ window.location.replace('login.html'); }, 2200);
+      } else {
+        window.location.replace('login.html');
+      }
+    }).catch(function() { /* offline: no desloguear por un error de red */ });
+  }
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') _revalidateSession();
+  });
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) _revalidateSession();
   });
 
   /* ── Public API ───────────────────────────────────────────── */

@@ -6596,6 +6596,11 @@
           cache: 'no-store',
         })
           .then(function (r) {
+            if (r.status === 401) {
+              if (window.KL && window.KL.clearSession) window.KL.clearSession();
+              window.location.replace('login.html');
+              return null;
+            }
             return r.ok ? r.json() : null;
           })
           .then(function (fresh) {
@@ -8492,6 +8497,11 @@
           credentials: 'include',
         })
           .then(function (r) {
+            if (r.status === 401) {
+              KL.clearSession();
+              window.location.replace('login.html');
+              return null;
+            }
             return r.ok ? r.json() : null;
           })
           .then(function (u) {
@@ -9581,7 +9591,7 @@
       })();
     </script>
 
-    <script src="nav.js?v=4"></script>
+    <script src="nav.js?v=5"></script>
     <script src="footer.js"></script>
 
     <script src="i18n.js"></script>

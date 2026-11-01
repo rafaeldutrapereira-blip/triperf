@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '234';  // 2026-11-01: recovery y race day: resumen primero, detalle progresivo (P11-D)
+var BUILD_VERSION = '235';  // 2026-11-01: fix sesion -- 401 limpia y redirige sin bucle, revalidacion al volver a la pestana
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
