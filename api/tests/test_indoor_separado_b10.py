@@ -22,7 +22,7 @@ ROUTES = (ROOT / "routes.config.js").read_text(encoding="utf-8")
 def test_indoor_y_gps_son_paginas_distintas_con_funcion_distinta():
     assert "indoor_workout.html" in ROUTES
     assert "gps_tracker.html" in ROUTES
-    assert "send-to-garmin" in INDOOR          # Indoor construye y envía workouts
+    assert "send-to-watch" in INDOOR           # Indoor construye y envía workouts (S11: vía intervals.icu)
     assert "workout-log" in GPS                 # GPS registra una actividad real
 
 
