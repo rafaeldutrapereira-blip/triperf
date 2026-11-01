@@ -136,6 +136,11 @@ STRAVA_CLIENT_ID=<COMPLETAR>
 STRAVA_CLIENT_SECRET=<COMPLETAR>
 STRAVA_REDIRECT_URI=https://beta.labx.app/api/strava/callback
 
+# ── intervals.icu OAuth (S6) ──────────────────────────
+INTERVALS_CLIENT_ID=<COMPLETAR>
+INTERVALS_CLIENT_SECRET=<COMPLETAR>
+INTERVALS_REDIRECT_URI=https://beta.labx.app/api/integrations/intervals/callback
+
 # ── AI Coach (Anthropic) ──────────────────────────────
 ANTHROPIC_API_KEY=<COMPLETAR: sk-ant-xxxx — obtener en console.anthropic.com>
 ANTHROPIC_MODEL=claude-haiku-4-5-20251001

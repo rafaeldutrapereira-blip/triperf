@@ -68,6 +68,11 @@ class User(Base):
     strava_refresh_token   = Column(String,  nullable=True)
     strava_athlete_id      = Column(String,  nullable=True)
     strava_token_expires_at = Column(DateTime, nullable=True)
+    # intervals.icu OAuth (S6) -- envio de workouts al reloj. Tokens de
+    # intervals.icu no expiran y no tienen refresh_token (ver forum oficial).
+    intervals_access_token = Column(String,  nullable=True)  # Fernet-cifrado
+    intervals_athlete_id   = Column(String,  nullable=True)  # id numerico del atleta en intervals.icu
+    intervals_connected_at = Column(DateTime, nullable=True)
     # Stripe â€” S15: customer_id para portal de facturaciÃ³n
     stripe_customer_id      = Column(String,  nullable=True, index=True)
     stripe_subscription_id  = Column(String,  nullable=True, index=True)

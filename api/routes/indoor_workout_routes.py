@@ -14,6 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from .. import intervals_connector as ic
 from ..auth import get_current_user
 from ..database import get_db
 from ..models import IndoorWorkout, User
@@ -160,3 +161,27 @@ def delete_workout(workout_id: str, db: Session = Depends(get_db),
     db.delete(w)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/{workout_id}/send-to-watch")
+async def send_workout_to_watch(workout_id: str, body: dict | None = None,
+                                db: Session = Depends(get_db),
+                                me: User = Depends(get_current_user)):
+    """Envia el workout al calendario del atleta en intervals.icu (S6).
+    Nunca marca exito si la API externa falla; el workout local no se altera."""
+    w = _owned(db, me, workout_id)
+    date_iso = (body or {}).get("date") or w.planned_date
+    if not date_iso:
+        raise HTTPException(400, "El workout necesita una fecha planificada para enviarlo")
+    try:
+        blocks = json.loads(w.blocks_json or "[]")
+    except ValueError:
+        blocks = []
+    try:
+        result = await ic.send_workout_event(
+            user=me, name=w.name, sport=w.sport, blocks=blocks,
+            date_iso=str(date_iso), description=w.description or "",
+        )
+    except ic.IntervalsError as exc:
+        raise HTTPException(502, str(exc))
+    return {"ok": True, "event_id": result.get("event_id")}

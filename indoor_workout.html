@@ -798,6 +798,29 @@
             style="font-size: 0.7rem; color: var(--dim)"
           ></span>
         </div>
+        <div
+          id="intervals-status-bar"
+          style="padding: 0.6rem 1rem; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; font-size: 0.78rem"
+        >
+          <span id="intervals-status-txt" style="color: var(--dim)"
+            data-i18n="iw_watch_checking">Reloj: comprobando conexión…</span>
+          <span style="display: flex; gap: 0.5rem">
+            <button
+              id="btn-intervals-connect"
+              class="btn btn-ghost"
+              style="font-size: 0.7rem; padding: 0.25rem 0.6rem; display: none"
+              onclick="connectIntervals()"
+              data-i18n="iw_watch_connect"
+            >Conectar mi reloj</button>
+            <button
+              id="btn-intervals-disconnect"
+              class="btn btn-ghost"
+              style="font-size: 0.7rem; padding: 0.25rem 0.6rem; color: var(--red); display: none"
+              onclick="disconnectIntervals()"
+              data-i18n="iw_watch_disconnect"
+            >Desconectar</button>
+          </span>
+        </div>
         <div id="saved-list">
           <div class="iw-empty" data-i18n="iw_no_saved_workouts">
             Sin workouts guardados — crea el primero abajo.
@@ -1525,6 +1548,24 @@
             migrateLegacy()
               .then(refreshSaved)
               .catch(function () {});
+            checkIntervalsStatus();
+          }
+
+          /* S6: toast tras volver del flujo OAuth de intervals.icu */
+          var intervalsParam = params.get('intervals');
+          if (intervalsParam === 'connected') {
+            toast(_t('iw_watch_oauth_ok', '✓ Reloj conectado vía intervals.icu'), true);
+          } else if (intervalsParam === 'denied') {
+            toast(_t('iw_watch_oauth_denied', 'Conexión cancelada'), false);
+          } else if (intervalsParam === 'error') {
+            toast(
+              _t('iw_watch_oauth_error', 'No se pudo conectar tu reloj — intenta de nuevo'),
+              false,
+            );
+          }
+          if (intervalsParam) {
+            var cleanUrl = window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
           }
         })();
 
@@ -2192,6 +2233,141 @@
           );
         };
 
+        /* ─────────── INTERVALS.ICU (S6): envío de workouts al reloj ──── */
+        function _setWatchStatus(connected, available) {
+          var txt = document.getElementById('intervals-status-txt');
+          var btnConnect = document.getElementById('btn-intervals-connect');
+          var btnDisconnect = document.getElementById('btn-intervals-disconnect');
+          if (!txt) return;
+          if (!available) {
+            txt.textContent = _t(
+              'iw_watch_unavailable',
+              'Reloj: función no disponible todavía',
+            );
+            btnConnect.style.display = 'none';
+            btnDisconnect.style.display = 'none';
+            return;
+          }
+          if (connected) {
+            txt.textContent = _t(
+              'iw_watch_connected',
+              'Reloj: conectado vía intervals.icu',
+            );
+            btnConnect.style.display = 'none';
+            btnDisconnect.style.display = '';
+          } else {
+            txt.textContent = _t('iw_watch_not_connected', 'Reloj: no conectado');
+            btnConnect.style.display = '';
+            btnDisconnect.style.display = 'none';
+          }
+        }
+
+        function checkIntervalsStatus() {
+          if (!_iwApiToken()) return;
+          _iwApi('GET', '/integrations/intervals/status')
+            .then(function (s) {
+              _setWatchStatus(s.connected, s.available);
+            })
+            .catch(function () {
+              _setWatchStatus(false, false);
+            });
+        }
+
+        window.connectIntervals = function () {
+          toast(
+            _t(
+              'iw_watch_connect_hint',
+              'En intervals.icu, conecta tu reloj y activa la subida de workouts planificados a tu dispositivo. Te llevamos a autorizar el acceso…',
+            ),
+            true,
+          );
+          var url = _iwApiBase() + '/integrations/intervals/connect';
+          /* Mismo patrón que stravaConnect() en athlete_profile.html: un GET
+             directo navegaría de página completa y mostraría el JSON crudo
+             del error si la función no está disponible (503) o el plan no
+             alcanza (403) -- con redirect:'manual' distinguimos "hay que
+             redirigir a intervals.icu" (funciona) de un error real. */
+          setTimeout(function () {
+            fetch(url, {
+              credentials: 'include',
+              headers: { Authorization: 'Bearer ' + (_iwApiToken() || '') },
+              redirect: 'manual',
+            })
+              .then(function (r) {
+                if (r.type === 'opaqueredirect' || r.status === 0) {
+                  window.location.href = url;
+                  return;
+                }
+                return r.json().then(function (d) {
+                  toast(
+                    _iwErrMsg(d, _t('iw_watch_connect_err', 'No se pudo conectar tu reloj')),
+                    false,
+                  );
+                });
+              })
+              .catch(function () {
+                toast(_t('iw_watch_connect_err', 'No se pudo conectar tu reloj'), false);
+              });
+          }, 600);
+        };
+
+        window.disconnectIntervals = function () {
+          if (
+            !confirm(
+              _t(
+                'iw_watch_confirm_disconnect',
+                '¿Desconectar tu reloj de intervals.icu?',
+              ),
+            )
+          )
+            return;
+          _iwApi('DELETE', '/integrations/intervals/disconnect')
+            .then(function () {
+              _setWatchStatus(false, true);
+              toast(_t('iw_watch_disconnected', 'Reloj desconectado'), true);
+            })
+            .catch(function (e) {
+              toast(
+                _iwErrMsg(e, _t('iw_watch_disconnect_err', 'No se pudo desconectar')),
+                false,
+              );
+            });
+        };
+
+        window.sendToWatch = function (id) {
+          var wo = loadSaved().find(function (w) {
+            return w.id === id;
+          });
+          if (!wo) return;
+          if (!wo.date) {
+            toast(
+              _t(
+                'iw_watch_need_date',
+                'Este workout necesita una fecha planificada antes de enviarlo',
+              ),
+              false,
+            );
+            return;
+          }
+          _iwApi('POST', '/athlete/indoor-workouts/' + id + '/send-to-watch', {
+            date: wo.date,
+          })
+            .then(function () {
+              toast(
+                _t('iw_watch_sent_prefix', '✓ Enviado a tu reloj — programado para') +
+                  ' ' +
+                  wo.date,
+                true,
+              );
+            })
+            .catch(function (e) {
+              toast(
+                _iwErrMsg(e, _t('iw_watch_send_err', 'No se pudo enviar a tu reloj')),
+                false,
+              );
+            });
+        };
+
         window.deleteWorkout = function (id) {
           if (
             !confirm(_t('iw_confirm_delete_workout', '¿Eliminar este workout?'))
@@ -2296,6 +2472,7 @@
           }
           var editLbl = esc(_t('iw_btn_edit', 'Editar'));
           var planLbl = esc(_t('iw_btn_add_plan', '+ Mi Plan'));
+          var watchLbl = esc(_t('iw_btn_send_watch', 'Enviar a mi reloj'));
           el.innerHTML = list
             .map(function (wo) {
               var totalSec = wo.blocks.reduce(function (acc, b) {
@@ -2345,6 +2522,11 @@
                 wo.id +
                 '\')">' +
                 planLbl +
+                '</button>' +
+                '<button class="btn btn-ghost btn-send-watch" style="font-size:.65rem;padding:.2rem .55rem;color:var(--cyan)" onclick="sendToWatch(\'' +
+                wo.id +
+                '\')">' +
+                watchLbl +
                 '</button>' +
                 '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--red)" onclick="deleteWorkout(\'' +
                 wo.id +
