@@ -1488,41 +1488,7 @@
         <div class="ph-inner">
           <div class="ph-main">
             <h1 class="ph-title" id="ph-title" data-i18n="nav_plan">Mi Plan</h1>
-            <div class="ph-summary" id="plan-hdr" aria-live="polite"></div>
             <div class="ph-sub" id="ph-sub"></div>
-            <div class="ph-chips" id="ph-chips"></div>
-          </div>
-          <div class="ph-actions">
-            <button class="btn btn-g btn-sm" onclick="openModal()">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span data-i18n="tp_add_session">Agregar Sesión</span>
-            </button>
-            <button class="garmin-btn garmin-btn-2" onclick="showGarminModal()">
-              <span class="garmin-dot"></span>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-              Garmin Sync
-            </button>
           </div>
         </div>
       </div>
@@ -2438,75 +2404,7 @@
         // ──────────────────────────────────────
         // RENDER: PAGE HEADER
         // ──────────────────────────────────────
-        // Resumen simple del encabezado: solo presentacion. Usa lo que render() ya
-        // calcula (sessionsInRange + pairPlanAndReal, el mismo emparejamiento del
-        // calendario, dia por dia); no hace fetch ni toca la fusion de fuentes.
-        function renderPlanSummary(range, all, done, plan) {
-          var el = document.getElementById('plan-hdr');
-          if (!el) return;
-          var sD = new Date(range.start + 'T00:00:00'),
-            eD = new Date(range.end + 'T00:00:00');
-          var rangeLbl =
-            sD.getDate() +
-            ' ' +
-            monthsS()[sD.getMonth()] +
-            ' – ' +
-            eD.getDate() +
-            ' ' +
-            monthsS()[eD.getMonth()];
-          var viewLbl =
-            S.view === 'week'
-              ? _t('tp_view_week', 'Semana')
-              : S.view === 'month'
-                ? _t('tp_view_month', 'Mes')
-                : _t('tp_view_period', 'Período');
-          var byDay = {};
-          all.forEach(function (s) {
-            (byDay[s.date_iso] = byDay[s.date_iso] || []).push(s);
-          });
-          var matched = 0;
-          Object.keys(byDay).forEach(function (d) {
-            matched += Object.keys(pairPlanAndReal(byDay[d]).actByPlanId).length;
-          });
-          var extra = Math.max(0, done.length - matched);
-          var sep = '<span class="ph-sum-sep">·</span>';
-          var html =
-            '<span class="ph-sum-range">' +
-            viewLbl +
-            ' ' +
-            rangeLbl +
-            '</span>' +
-            sep;
-          if (plan.length) {
-            html +=
-              (plan.length === 1
-                ? _t('tp_hdr_planned_one', '{n} sesión planificada')
-                : _t('tp_hdr_planned_many', '{n} sesiones planificadas')
-              ).replace('{n}', plan.length) +
-              sep +
-              '<span class="ph-sum-done">' +
-              _t('tp_hdr_done_of', 'Hechas: {d} de {n}')
-                .replace('{d}', Math.min(matched, plan.length))
-                .replace('{n}', plan.length) +
-              '</span>';
-          } else {
-            html += _t('tp_hdr_none', 'Sin sesiones planificadas');
-          }
-          if (extra)
-            html += sep + _t('tp_hdr_extra', '{n} extra').replace('{n}', extra);
-          el.innerHTML = html;
-        }
-
         function renderHeader() {
-          var range = currentRange();
-          var all = applyFilter(sessionsInRange(range.start, range.end));
-          var done = all.filter(function (s) {
-            return s.status === 'done';
-          });
-          var plan = all.filter(function (s) {
-            return s.status === 'planned';
-          });
-
           var filterLbl = S.filters.length
             ? S.filters
                 .map(function (f) {
@@ -2514,32 +2412,7 @@
                 })
                 .join(', ')
             : '';
-          renderPlanSummary(range, all, done, plan);
           document.getElementById('ph-sub').textContent = filterLbl; // fecha removida: ya se muestra en el nav del calendario
-
-          var totalMin = done.reduce(function (t, s) {
-            return t + (s.dur_min || 0);
-          }, 0);
-          var totalKm = done.reduce(function (t, s) {
-            return t + (s.dist_km || 0);
-          }, 0);
-          var totalTss = done.reduce(function (t, s) {
-            return t + (s.tss || 0);
-          }, 0);
-
-          var chips = '';
-          if (totalMin > 0)
-            chips +=
-              '<span class="chip">⏱ ' +
-              fmtDur(Math.round(totalMin)) +
-              '</span>';
-          if (totalKm > 0)
-            chips +=
-              '<span class="chip">📍 ' + totalKm.toFixed(1) + ' km</span>';
-          if (totalTss > 0)
-            chips +=
-              '<span class="chip">⚡ ' + Math.round(totalTss) + ' TSS</span>';
-          document.getElementById('ph-chips').innerHTML = chips;
         }
 
         // ──────────────────────────────────────
