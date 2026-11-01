@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="theme-vars.css" />
     <script src="i18n.js"></script>
     <script src="lx-backend-i18n.js"></script>
+    <script src="lx-info.js"></script>
     <style>
       *,
       *::before,
@@ -268,6 +269,26 @@
         color: var(--muted);
         line-height: 1.6;
         margin-bottom: 1rem;
+      }
+      .rc-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.35rem;
+        margin-bottom: 0.5rem;
+      }
+      .rc-detail-btn {
+        margin-top: 1rem;
+        padding: 0.5rem 1.1rem;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .rc-detail-btn:hover {
+        border-color: var(--green);
       }
       .rc-factors {
         display: flex;
@@ -848,6 +869,7 @@
             </div>
             <!-- Info -->
             <div>
+              <div class="rc-title" data-lx-term="recovery_score"></div>
               <div class="rc-label" id="rc-label" data-i18n="status_loading">
                 Cargando...
               </div>
@@ -855,12 +877,23 @@
                 Sincronizando datos Garmin…
               </div>
               <div class="rc-factors" id="rc-factors"></div>
+              <button
+                type="button"
+                class="rc-detail-btn"
+                id="rc-detail-btn"
+                aria-expanded="false"
+                aria-controls="sec-tabs"
+                onclick="toggleRecDetail()"
+                data-i18n="myplan_see_detail"
+              >
+                Ver detalle
+              </button>
             </div>
           </div>
         </section>
 
         <!-- ══ TABS ══ -->
-        <section class="sr mt2" id="sec-tabs">
+        <section class="sr mt2" id="sec-tabs" hidden>
           <div class="panel">
             <div class="panel-head">
               <span class="panel-title">
@@ -1403,6 +1436,24 @@
           _currentDate = dp.value;
           loadDashboard();
         });
+
+        // ── Resumen primero / detalle progresivo (P11-D) ─────────────────────────
+        window.toggleRecDetail = function (show) {
+          var sec = document.getElementById('sec-tabs');
+          var btn = document.getElementById('rc-detail-btn');
+          if (!sec || !btn) return;
+          var open = typeof show === 'boolean' ? show : sec.hidden;
+          sec.hidden = !open;
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          btn.setAttribute(
+            'data-i18n',
+            open ? 'myplan_hide_detail' : 'myplan_see_detail',
+          );
+          btn.textContent = open
+            ? _t('myplan_hide_detail', 'Ocultar')
+            : _t('myplan_see_detail', 'Ver detalle');
+          if (open) sec.classList.add('vis');
+        };
 
         // ── Tab switcher ──────────────────────────────────────────────────────────
         window.switchTab = function (id, btn) {
@@ -2691,6 +2742,7 @@
       /* Vista de coach (atletas): se abre embebida desde Coach con ?view=coach. */
       window.addEventListener('load', function () {
         if (new URLSearchParams(location.search).get('view') === 'coach') {
+          toggleRecDetail(true);
           switchTab('coach');
         }
       });

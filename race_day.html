@@ -305,6 +305,12 @@
         color: var(--sub);
         margin-top: 2px;
       }
+      .term-hint {
+        margin-top: 4px;
+        font-size: 0.75rem;
+        color: var(--sub);
+        line-height: 1.4;
+      }
       .chip-ctl {
         border-color: var(--blue);
       }
@@ -751,25 +757,19 @@
                 <div class="chips">
                   <div class="chip chip-ctl">
                     <div class="chip-val" id="dash-ctl">—</div>
-                    <div class="chip-label" data-i18n="rd_label_ctl">
-                      CTL (Fitness)
-                    </div>
+                    <div class="chip-label" data-lx-term="ctl"></div>
                   </div>
                   <div class="chip" id="dash-tsb-chip">
                     <div class="chip-val" id="dash-tsb">—</div>
-                    <div class="chip-label" data-i18n="rd_label_tsb">
-                      TSB (Forma)
-                    </div>
+                    <div class="chip-label" data-lx-term="tsb"></div>
                   </div>
                   <div class="chip">
                     <div class="chip-val" id="dash-atl">—</div>
-                    <div class="chip-label" data-i18n="rd_label_atl">
-                      ATL (Fatiga)
-                    </div>
+                    <div class="chip-label" data-lx-term="atl"></div>
                   </div>
                   <div class="chip chip-rec">
                     <div class="chip-val" id="dash-rec">—</div>
-                    <div class="chip-label">Recovery</div>
+                    <div class="chip-label" data-lx-term="recovery_score"></div>
                   </div>
                 </div>
               </div>
@@ -844,8 +844,22 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label data-i18n="rd_label_ftp_optional"
-                    >FTP (Watts) — opcional</label
+                  <label
+                    ><span data-i18n="rd_label_ftp_optional"
+                      >FTP (Watts) — opcional</span
+                    >
+                    <button
+                      type="button"
+                      class="lx-term-info"
+                      aria-label="FTP"
+                      onclick="event.stopPropagation(); event.preventDefault(); LXTerm.open('ftp', this)"
+                    >
+                      <svg viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                        <circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25" />
+                        <rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor" />
+                        <circle cx="5" cy="2.85" r=".65" fill="currentColor" />
+                      </svg>
+                    </button></label
                   >
                   <input
                     type="number"
@@ -855,6 +869,10 @@
                     min="50"
                     max="500"
                   />
+                  <div class="term-hint" data-i18n="term_ftp_short">
+                    La potencia máxima que puedes sostener ~1 hora. Define tus
+                    zonas de ciclismo.
+                  </div>
                 </div>
                 <div class="form-group">
                   <label data-i18n="rd_label_weight_optional"
@@ -2103,10 +2121,10 @@
               '</div></div>' +
               '<div class="chip"><div class="chip-val">' +
               (d.tsb_used !== null ? d.tsb_used : '—') +
-              '</div><div class="chip-label">TSB</div></div>' +
+              '</div><div class="chip-label"><span data-lx-term="tsb"></span></div></div>' +
               '<div class="chip"><div class="chip-val">' +
               (d.recovery || '—') +
-              '</div><div class="chip-label">Recovery</div></div>' +
+              '</div><div class="chip-label"><span data-lx-term="recovery_score"></span></div></div>' +
               '<div class="chip"><div class="chip-val">' +
               (d.perf_mod || '—') +
               '</div><div class="chip-label">' +
@@ -2120,6 +2138,7 @@
                   '</div></div>'
                 : '') +
               '</div>';
+            if (window.LXTerm) LXTerm.autoInit();
           }
 
           // ─── NUTRITION (redirige a nutrition.html, ver switchTab) ─────────────────────
@@ -2351,6 +2370,7 @@
         <script src="dash-header.js"></script>
         <script src="lx-upgrade.js"></script>
         <script src="i18n.js"></script>
+        <script src="lx-info.js"></script>
       </main>
     </div>
   </body>

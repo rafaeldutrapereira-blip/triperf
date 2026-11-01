@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '233';  // 2026-11-01: pantalla Hoy en 3 bloques + Más detalle y nombres simples (P11-C)
+var BUILD_VERSION = '234';  // 2026-11-01: recovery y race day: resumen primero, detalle progresivo (P11-D)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
