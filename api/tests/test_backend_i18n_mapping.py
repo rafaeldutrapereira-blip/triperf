@@ -145,7 +145,7 @@ FRONT_KEYS = [
 def _acwr_block():
     src = LX_INFO_JS.read_text(encoding="utf-8")
     i = src.index("  acwr: {")
-    j = src.index("  ctl_projected:")
+    j = src.index("  compliance:")
     return src[i:j]
 
 

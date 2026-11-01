@@ -39,6 +39,7 @@ VALID_TERMS = {
     "readiness", "body_battery", "fatiga_mental", "ftp", "css",
     "vo2max", "rpe", "compliance", "tapering", "resting_hr",
     "fatiga_muscular", "sueno",
+    "ctl_projected", "goal_race_ctl", "injury_risk",
 }
 
 # Badges anchos reales de la app (PT es el caso más ancho: "Carregada
@@ -203,8 +204,8 @@ def test_vo2_rows_survive_sport_rewrite(logged_in_page: Page):
 @pytest.mark.dashboard
 def test_info_buttons_open_real_content(logged_in_page: Page):
     """TC-P11B2F2-004: muestra de cada patrón (A: ctl term; B: acwr
-    solo-botón; C: injury_risk sin término) — el clic abre una tarjeta
-    con título y texto reales, no vacía."""
+    solo-botón; C: nap sin término, sistema viejo) — el clic abre una
+    tarjeta con título y texto reales, no vacía."""
     page = logged_in_page
     page.set_viewport_size({"width": 1280, "height": 900})
 
@@ -228,10 +229,10 @@ def test_info_buttons_open_real_content(logged_in_page: Page):
     assert len(card_text2.strip()) > 10
     page.locator(".lx-term-card-close").click()
 
-    # Patrón C: injury_risk (data-lx-info, sistema viejo)
-    injury_btn = page.locator("#kc-injury .lx-info-btn")
-    if injury_btn.count():
-        injury_btn.click()
+    # Patrón C: Siesta/nap (data-lx-info, sistema viejo)
+    nap_btn = page.locator("#kc-nap .lx-info-btn")
+    if nap_btn.count():
+        nap_btn.click()
         page.wait_for_timeout(300)
         # El panel viejo usa #lx-info-panel / #lx-info-body
         body_text = page.locator("#lx-info-body").inner_text()

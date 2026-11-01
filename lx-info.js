@@ -77,33 +77,6 @@ var METRICS = {
     unidad: 'ratio (sin unidad)',
   },
 
-  ctl_projected: {
-    nombre: 'CTL Proyectado (28 días)',
-    emoji: '📈',
-    definicion: 'Proyecta tu <strong>Fitness (CTL) a 28 días</strong> si mantenés la carga de esta semana. Es una simulación, no una predicción garantizada — si tu carga real cambia, la proyección cambia con ella.',
-    compacto: true,
-    rangos: [
-      {min:-999, max:0,   label:'Bajando',   color:'#EF4444', advice:'A este ritmo tu fitness va a caer. Si es una semana de descarga intencional, está bien — si no, subí el volumen.'},
-      {min:0,    max:3,   label:'Estable',   color:'#0EA5E9', advice:'Mantenés tu nivel de fitness actual, sin construir ni perder.'},
-      {min:3,    max:999, label:'Construyendo ✓', color:'#10B981', advice:'Estás en fase de construcción real de fitness — buen ritmo de progresión.'},
-    ],
-    pro_tip: 'Este número asume carga CONSTANTE — una sola semana muy dura o muy floja puede moverlo mucho. Mirá la tendencia, no un solo valor.',
-    unidad: 'puntos CTL',
-  },
-
-  goal_race_ctl: {
-    nombre: 'Fitness Objetivo — Carrera Meta',
-    emoji: '🎯',
-    definicion: 'Compara tu <strong>CTL actual contra el CTL que necesitás</strong> el día de tu carrera objetivo (marcada como meta en Race Day), según la distancia y los días que quedan.',
-    compacto: true,
-    rangos: [
-      {min:0,   max:0,   label:'Listo ✓',        color:'#10B981', advice:'Ya alcanzaste el CTL objetivo — el foco ahora es mantener y planificar bien el taper.'},
-      {min:0.01,max:999, label:'En construcción', color:'#F0A500', advice:'Todavía falta CTL para llegar a tu objetivo — revisá el TSS semanal sugerido.'},
-    ],
-    pro_tip: 'Si la brecha es grande y quedan pocas semanas, subir el volumen de golpe es más riesgoso que ajustar el objetivo de la carrera.',
-    unidad: 'puntos CTL',
-  },
-
   compliance: {
     nombre: 'Cumplimiento Semanal',
     emoji: '📊',
@@ -246,21 +219,6 @@ var METRICS = {
     ],
     pro_tip: 'Como es un derivado directo de TSB, el histórico real (con la misma línea de tendencia) está en la card "¿Cómo va mi carga?" → TSB — Forma.',
     unidad: '% (0-100, invertido: más alto = más fatiga)',
-  },
-
-  injury_risk: {
-    nombre: 'Riesgo de Lesión',
-    emoji: '🛡',
-    definicion: 'Score compuesto que combina <strong>varios factores reales</strong> — ACWR, caída de HRV vs tu baseline, monotonía de entrenamiento y marcadores de sangre si tenés análisis recientes — para estimar tu riesgo de lesión.',
-    compacto: true,
-    rangos: [
-      {min:0,  max:30, label:'Bajo ✓',      color:'#10B981', advice:'Carga bien gestionada. Podés continuar con el plan habitual.'},
-      {min:30, max:55, label:'Moderado',     color:'#F0A500', advice:'Monitorea recuperación. Prioriza sueño y nutrición esta semana.'},
-      {min:55, max:75, label:'Alto',         color:'#F97316', advice:'Reduce intensidad y volumen al 70% esta semana.'},
-      {min:75, max:999,label:'Crítico ⚠',   color:'#EF4444', advice:'Descansa hoy. Consulta con tu coach antes de entrenar mañana.'},
-    ],
-    pro_tip: 'Mismo motor que usa la pestaña "Lesiones" del Asistente IA — un solo número real en toda la app, no una aproximación distinta por pantalla.',
-    unidad: 'puntos (0-100)',
   },
 
   vo2max: {
@@ -654,10 +612,8 @@ function _render(metricId, currentValue){
     html += '<div class="li-def" style="font-size:.8rem">'+m.dimensiones+'</div>';
   }
 
-  // Rangos (tabla de referencia completa — se omite en métricas "compacto":
-  // el usuario ya ve su rango activo interpretado en la caja de arriba,
-  // repetir las 3-4 bandas completas era ruido redundante).
-  if(m.rangos && m.rangos.length && !m.compacto){
+  // Rangos
+  if(m.rangos && m.rangos.length){
     html += '<div class="li-section-title">'+_lxInfoT('info_rangos_ref','Rangos de referencia')+'</div>';
     html += '<div class="li-range-bar">';
     m.rangos.forEach(function(r, ridx){
@@ -927,6 +883,9 @@ var SIGLAS = {
   resting_hr: 'FC',
   fatiga_muscular: 'FM',
   sueno: 'SLEEP',
+  ctl_projected: '28D',
+  goal_race_ctl: 'GOAL',
+  injury_risk: 'RISK',
 };
 
 var IDS = Object.keys(SIGLAS);

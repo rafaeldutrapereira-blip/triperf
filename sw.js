@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '231';  // 2026-11-01: simplifica el i de CTL proyectado, Fitness objetivo y Riesgo de Lesion
+var BUILD_VERSION = '232';  // 2026-11-01: CTL proyectado, Fitness objetivo y Riesgo de Lesion migrados al estandar LXTerm (mismo formato que ACWR)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
