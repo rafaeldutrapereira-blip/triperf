@@ -1215,6 +1215,7 @@
 
         /* ─────────── CONSTANTS ─────────────────────────────────────── */
         var LS_KEY = 'kl_indoor_workouts';
+        var savedCache = []; /* lista del servidor en memoria (no se persiste) */
         var LS_DRAFT = 'kl_iw_draft';
 
         var BLOCK_TYPES = WorkoutBlocks.TYPES;
@@ -1360,6 +1361,12 @@
           renderBlocks();
           renderChart();
           renderSaved();
+          /* Fuente de verdad = API: migra lo legacy (si hay) y luego lista. */
+          if (_iwApiToken()) {
+            migrateLegacy()
+              .then(refreshSaved)
+              .catch(function () {});
+          }
         })();
 
         /* ─────────── BLOCK MANAGEMENT ──────────────────────────────── */
@@ -1822,41 +1829,148 @@
             return;
           }
 
-          var list = loadSaved();
-          var now = Date.now();
-          var wo = {
-            id: editId || 'wo-' + now,
+          var payload = {
             name: name,
-            desc: document.getElementById('wk-desc').value.trim(),
-            date: document.getElementById('wk-date').value,
-            ftp: FTP,
+            sport: 'bike',
+            description: document.getElementById('wk-desc').value.trim(),
+            planned_date: document.getElementById('wk-date').value || null,
             blocks: JSON.parse(JSON.stringify(blocks)),
-            updated: now,
           };
-
-          if (editId) {
-            var idx = list.findIndex(function (w) {
-              return w.id === editId;
+          var req = editId
+            ? _iwApi('PUT', '/athlete/indoor-workouts/' + editId, payload)
+            : _iwApi('POST', '/athlete/indoor-workouts', payload);
+          req
+            .then(function (w) {
+              var wo = _fromApi(w);
+              var idx = savedCache.findIndex(function (x) {
+                return x.id === wo.id;
+              });
+              if (idx >= 0) savedCache[idx] = wo;
+              else savedCache.unshift(wo);
+              editId = wo.id;
+              localStorage.removeItem(LS_DRAFT);
+              renderSaved();
+              toast(_t('iw_toast_saved', '✓ Workout guardado'), true);
+            })
+            .catch(function (e) {
+              toast(
+                _iwErrMsg(
+                  e,
+                  _t('iw_toast_save_err', 'No se pudo guardar el workout'),
+                ),
+                false,
+              );
             });
-            if (idx >= 0) list[idx] = wo;
-            else list.push(wo);
-          } else {
-            list.push(wo);
-            editId = wo.id;
-          }
-
-          localStorage.setItem(LS_KEY, JSON.stringify(list));
-          localStorage.removeItem(LS_DRAFT);
-          renderSaved();
-          toast(_t('iw_toast_saved', '✓ Workout guardado'), true);
         };
 
+        /* Fuente de verdad = API. savedCache es solo la copia en memoria de la
+           última lista leída del servidor (nunca se persiste en localStorage). */
+        function _fromApi(w) {
+          return {
+            id: w.id,
+            name: w.name,
+            desc: w.description || '',
+            date: w.planned_date || '',
+            ftp: FTP,
+            blocks: w.blocks || [],
+          };
+        }
+
+        function _iwErrMsg(e, fallback) {
+          return (
+            (e && e.errors && e.errors[0] && e.errors[0].message) || fallback
+          );
+        }
+
+        function _iwApi(method, path, body) {
+          return fetch(_iwApiBase() + path, {
+            method: method,
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + _iwApiToken(),
+            },
+            body: body ? JSON.stringify(body) : undefined,
+          }).then(function (r) {
+            return r.json().then(
+              function (j) {
+                return r.ok ? j : Promise.reject(j);
+              },
+              function () {
+                return r.ok ? {} : Promise.reject({});
+              },
+            );
+          });
+        }
+
         function loadSaved() {
+          return savedCache;
+        }
+
+        function refreshSaved() {
+          return _iwApi('GET', '/athlete/indoor-workouts')
+            .then(function (j) {
+              savedCache = (j.workouts || []).map(_fromApi);
+              renderSaved();
+            })
+            .catch(function (e) {
+              renderSaved();
+              toast(
+                _iwErrMsg(
+                  e,
+                  _t('iw_toast_load_err', 'No se pudieron cargar tus workouts'),
+                ),
+                false,
+              );
+            });
+        }
+
+        /* Migración suave (una vez): sube a la cuenta los workouts que la
+           versión anterior guardó en localStorage. Idempotente: el servidor
+           deduplica por legacy_id, así que repetir la carga no duplica. La copia
+           local se borra solo si TODOS subieron bien. */
+        function migrateLegacy() {
+          var legacy = [];
           try {
-            return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-          } catch (e) {
-            return [];
+            legacy = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+          } catch (e) {}
+          if (!Array.isArray(legacy) || !legacy.length) {
+            return Promise.resolve();
           }
+          var ok = 0;
+          var chain = Promise.resolve();
+          legacy.forEach(function (wo) {
+            if (!wo || !wo.name || !wo.blocks || !wo.blocks.length) {
+              ok++; /* entrada inválida: nada que subir */
+              return;
+            }
+            chain = chain.then(function () {
+              return _iwApi('POST', '/athlete/indoor-workouts', {
+                name: wo.name,
+                sport: 'bike',
+                description: wo.desc || '',
+                planned_date: wo.date || null,
+                blocks: wo.blocks,
+                legacy_id: wo.id ? String(wo.id) : undefined,
+              })
+                .then(function () {
+                  ok++;
+                })
+                .catch(function () {});
+            });
+          });
+          return chain.then(function () {
+            if (ok === legacy.length) {
+              localStorage.removeItem(LS_KEY);
+              toast(
+                _t(
+                  'iw_toast_migrated',
+                  'Tus workouts guardados se subieron a tu cuenta',
+                ),
+                true,
+              );
+            }
+          });
         }
 
         window.loadWorkout = function (id) {
@@ -1884,16 +1998,74 @@
             !confirm(_t('iw_confirm_delete_workout', '¿Eliminar este workout?'))
           )
             return;
-          var list = loadSaved().filter(function (w) {
-            return w.id !== id;
+          _iwApi('DELETE', '/athlete/indoor-workouts/' + id)
+            .then(function () {
+              savedCache = savedCache.filter(function (w) {
+                return w.id !== id;
+              });
+              if (editId === id) {
+                editId = null;
+                newWorkout();
+              }
+              renderSaved();
+              toast(_t('iw_toast_deleted', 'Workout eliminado'), true);
+            })
+            .catch(function (e) {
+              toast(
+                _iwErrMsg(
+                  e,
+                  _t('iw_toast_delete_err', 'No se pudo eliminar el workout'),
+                ),
+                false,
+              );
+            });
+        };
+
+        /* Inserta el workout como sesión propia en Mi Plan, con el mismo
+           mecanismo de sesiones propias de training_plan.html
+           (localStorage.kl_training_plan, ids 'plan-…'). */
+        window.addToPlan = function (id) {
+          var wo = loadSaved().find(function (w) {
+            return w.id === id;
           });
-          localStorage.setItem(LS_KEY, JSON.stringify(list));
-          if (editId === id) {
-            editId = null;
-            newWorkout();
+          if (!wo) return;
+          var date = wo.date || new Date().toISOString().slice(0, 10);
+          var plans = [];
+          try {
+            plans = JSON.parse(localStorage.getItem('kl_training_plan') || '[]');
+          } catch (e) {}
+          var dup = plans.some(function (p) {
+            return p.indoor_workout_id === id && p.date_iso === date;
+          });
+          if (dup) {
+            toast(
+              _t('iw_toast_already_in_plan', 'Ya está en Mi Plan ese día'),
+              false,
+            );
+            return;
           }
-          renderSaved();
-          toast(_t('iw_toast_deleted', 'Workout eliminado'), true);
+          var totalSec = wo.blocks.reduce(function (acc, b) {
+            return acc + totalBlockDuration(b);
+          }, 0);
+          var ss = calcStats(buildSegs(wo.blocks), totalSec);
+          plans.push({
+            id: 'plan-' + Date.now(),
+            sport: 'bike',
+            name: wo.name,
+            date_iso: date,
+            dur_min: Math.max(1, Math.round(totalSec / 60)),
+            dist_km: null,
+            tss: ss.tss,
+            notes: wo.desc || null,
+            calories: null,
+            created: new Date().toISOString(),
+            indoor_workout_id: id,
+          });
+          localStorage.setItem('kl_training_plan', JSON.stringify(plans));
+          toast(
+            _t('iw_toast_added_plan', '✓ Añadido a Mi Plan') + ' · ' + date,
+            true,
+          );
         };
 
         window.newWorkout = function () {
@@ -1924,6 +2096,7 @@
             return;
           }
           var editLbl = esc(_t('iw_btn_edit', 'Editar'));
+          var planLbl = esc(_t('iw_btn_add_plan', '+ Mi Plan'));
           el.innerHTML = list
             .map(function (wo) {
               var totalSec = wo.blocks.reduce(function (acc, b) {
@@ -1956,6 +2129,11 @@
                 '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--cyan)" onclick="exportERG(\'' +
                 wo.id +
                 '\')">ERG</button>' +
+                '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem" onclick="addToPlan(\'' +
+                wo.id +
+                '\')">' +
+                planLbl +
+                '</button>' +
                 '<button class="btn btn-ghost" style="font-size:.65rem;padding:.2rem .55rem;color:var(--red)" onclick="deleteWorkout(\'' +
                 wo.id +
                 '\')">✕</button>' +

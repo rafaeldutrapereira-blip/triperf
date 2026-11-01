@@ -2241,3 +2241,27 @@ class AiUsageDaily(Base):
     user_id  = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     date_iso = Column(String(10), nullable=False)
     count    = Column(Integer, nullable=False, default=0)
+
+
+class IndoorWorkout(Base):
+    """Workout indoor propio del atleta (S4). Antes vivia solo en localStorage.
+    `blocks_json` guarda la estructura de bloques tal cual la arma
+    indoor_workout.html. `legacy_id` es el id local de la version anterior:
+    permite subir una sola vez los workouts de localStorage sin duplicar."""
+    __tablename__ = "indoor_workouts"
+    __table_args__ = (
+        Index("ix_indoor_workouts_user", "user_id"),
+        UniqueConstraint("user_id", "legacy_id", name="uq_indoor_workouts_user_legacy"),
+    )
+
+    id           = Column(String, primary_key=True, default=_uuid)
+    user_id      = Column(String, ForeignKey("users.id"), nullable=False)
+    name         = Column(String, nullable=False)
+    sport        = Column(String, nullable=False, default="bike")
+    description  = Column(Text, nullable=True)
+    planned_date = Column(String(10), nullable=True)
+    blocks_json  = Column(Text, nullable=False, default="[]")
+    legacy_id    = Column(String, nullable=True)
+    created_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                          onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
