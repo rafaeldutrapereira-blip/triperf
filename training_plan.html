@@ -520,6 +520,72 @@
         letter-spacing: 0.05em;
       }
 
+      /* Ajustes adaptativos (S14): enlace simple a adaptive.html, ya no
+   incrustada en Mi Plan. */
+      .tp-adp-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.9rem 1.2rem;
+        color: var(--text);
+        text-decoration: none;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        transition: background var(--ease);
+      }
+      .tp-adp-link:hover {
+        background: rgba(8, 116, 174, 0.05);
+      }
+
+      /* Aviso adaptativo (S14) -- patrón "Adaptations Pending": descartable,
+   solo aparece cuando el motor propone un ajuste real para hoy. */
+      .adp-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: rgba(255, 101, 53, 0.06);
+        border: 1px solid rgba(255, 101, 53, 0.3);
+        border-radius: var(--radius);
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 1.4rem;
+      }
+      .adp-banner-ico {
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        line-height: 1;
+      }
+      .adp-banner-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .adp-banner-text {
+        font-size: 0.86rem;
+        color: var(--text);
+      }
+      .adp-banner-err {
+        font-size: 0.78rem;
+        color: var(--red);
+        margin-top: 0.3rem;
+      }
+      .adp-banner-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+      @media (max-width: 600px) {
+        .adp-banner {
+          flex-wrap: wrap;
+        }
+        .adp-banner-actions {
+          width: 100%;
+        }
+        .adp-banner-actions .btn {
+          flex: 1;
+        }
+      }
+
       /* Cumplimiento semanal — donuts real vs plan por deporte (mismo estándar
    dinámico que el gauge "Estado del Atleta" del dashboard: arco con
    gradiente + glow, número animado en Barlow Condensed, texto con
@@ -1495,6 +1561,35 @@
     <!-- MAIN CONTENT -->
     <div class="main">
       <div class="c">
+        <!-- AVISO ADAPTATIVO (S14): reemplaza la sección incrustada de S10.
+         Solo visible cuando GET /adaptive/signal/{hoy} propone un ajuste
+         real (ver JS). Oculto por defecto -- nunca se muestra en blanco. -->
+        <div class="adp-banner" id="adp-banner" style="display: none">
+          <div class="adp-banner-ico" aria-hidden="true">⚙️</div>
+          <div class="adp-banner-body">
+            <div class="adp-banner-text" id="adp-banner-text"></div>
+            <div class="adp-banner-err" id="adp-banner-err" style="display: none"></div>
+          </div>
+          <div class="adp-banner-actions">
+            <button
+              type="button"
+              class="btn btn-p btn-sm"
+              id="adp-banner-apply"
+              data-i18n="adp_banner_apply"
+            >
+              Aplicar ajuste
+            </button>
+            <button
+              type="button"
+              class="btn btn-g btn-sm"
+              id="adp-banner-dismiss"
+              data-i18n="adp_banner_dismiss"
+            >
+              Ahora no
+            </button>
+          </div>
+        </div>
+
         <!-- SESIONES (S10: primer bloque tras el encabezado. Progreso
          Semanal se mudó a detalle.html/Rendimiento; Cumplimiento semanal,
          la vista Mes/Período y los filtros avanzados viven en "Ver más"
@@ -1648,37 +1743,21 @@
               <div id="cal-area"></div>
             </div>
 
-            <!-- AJUSTES ADAPTATIVOS (S10: deja de ser pestaña permanente.
-             Esta página no carga hoy ninguna señal de "adaptaciones
-             pendientes" — adaptive.html usa endpoints propios
-             (/adaptive/dashboard, /adaptive/week) que training_plan.html
-             nunca llama — así que, por la regla de no agregar lógica
-             nueva, NO se agregó un fetch para decidir un aviso
-             descartable: la pestaña queda aquí dentro de "Ver más",
-             reportado en el cierre del sprint. -->
-            <div class="panel sr" id="s-adaptive">
-              <div class="panel-head">
-                <div class="panel-title">
-                  <span data-i18n="adp_tab_adjustments"
-                    >⚙️ Ajustes adaptativos</span
-                  >
-                </div>
-              </div>
-              <div style="padding: 1rem">
-                <iframe
-                  id="tp-adaptive-frame"
-                  data-src="adaptive.html?embed=1"
-                  title="Ajustes adaptativos"
-                  style="
-                    width: 100%;
-                    height: 900px;
-                    border: 0;
-                    border-radius: 12px;
-                    background: transparent;
-                  "
-                ></iframe>
-              </div>
-            </div>
+            <!-- AJUSTES ADAPTATIVOS (S14: la sección incrustada de S10 sale
+             de Mi Plan. El valor llega como aviso ocasional sobre la lista
+             de sesiones (ver #adp-banner, solo cuando el motor propone un
+             ajuste real para hoy); acá queda solo un enlace a la página
+             completa, que sigue viva e intacta. -->
+            <a
+              class="panel sr tp-adp-link"
+              id="s-adaptive-link"
+              href="adaptive.html"
+            >
+              <span data-i18n="adp_tab_adjustments"
+                >⚙️ Ajustes adaptativos</span
+              >
+              <span aria-hidden="true">→</span>
+            </a>
           </div>
         </details>
       </div>
@@ -4173,20 +4252,6 @@
           });
 
         // ──────────────────────────────────────
-        // VER MÁS (S10): Ajustes adaptativos deja de ser pestaña permanente
-        // y pasa a vivir dentro de esta zona secundaria (ver comentario en
-        // el HTML). El iframe sigue cargando recién al abrirse, igual que
-        // antes con la pestaña — no de entrada con la página.
-        // ──────────────────────────────────────
-        var tpMoreEl = document.getElementById('tp-more');
-        if (tpMoreEl)
-          tpMoreEl.addEventListener('toggle', function () {
-            if (!tpMoreEl.open) return;
-            var fr = document.getElementById('tp-adaptive-frame');
-            if (fr && !fr.getAttribute('src'))
-              fr.setAttribute('src', fr.getAttribute('data-src'));
-          });
-
         // ──────────────────────────────────────
         // MODAL: Agregar Sesión
         // ──────────────────────────────────────
@@ -5244,6 +5309,127 @@
 
           pullAssignments();
 
+        })();
+
+        // ──────────────────────────────────────
+        // AVISO ADAPTATIVO (S14) — reemplaza la sección incrustada que
+        // S10 dejó dentro de "Ver más" (iframe a adaptive.html). El motor
+        // (api/routes/adaptive_routes.py) y adaptive.html NO se tocan:
+        // esto solo consulta GET /adaptive/signal/{hoy} (mismo endpoint
+        // que ya usa adaptive.html) y, si hay un ajuste real, muestra un
+        // aviso descartable arriba de la lista de sesiones.
+        //
+        // "Hay ajuste real" = signal.signal !== 'maintain' (ese es
+        // exactamente el valor neutro que ya calcula el motor en
+        // _signal(), ver adaptive_routes.py) Y todavía no fue aceptado
+        // (signal.accepted !== true, para no re-mostrar un ajuste que el
+        // propio atleta ya aplicó en una carga anterior).
+        //
+        // "Ahora no" es deliberadamente solo local (no llama
+        // POST /adaptive/reject): el pedido original distingue "Aplicar
+        // ajuste" (acción real sobre el motor, un solo POST accept) de
+        // "Ahora no" (ocultar el aviso de HOY sin tocar el backend) —
+        // mañana, si la señal sigue proponiendo, el aviso vuelve.
+        //
+        // Falla silenciosa: sin token, 403 (plan sin acceso a "adaptive",
+        // mismo require_feature que protege adaptive.html), 404/500 o
+        // error de red -> la página queda exactamente como hoy, sin aviso
+        // y sin nada roto.
+        // ──────────────────────────────────────
+        (function () {
+          var API =
+            window.location.protocol === 'file:'
+              ? 'http://localhost:8000/api'
+              : window.location.origin + '/api';
+          var TOKEN =
+            localStorage.getItem('lx_ath_token') ||
+            localStorage.getItem('lx_co_token');
+          if (!TOKEN) return;
+
+          var ADP_DISMISS_KEY = 'kl_adp_dismissed_date';
+          var dateIso = todayIso();
+
+          function dismissedToday() {
+            try {
+              return localStorage.getItem(ADP_DISMISS_KEY) === dateIso;
+            } catch (e) {
+              return false;
+            }
+          }
+          function dismissToday() {
+            try {
+              localStorage.setItem(ADP_DISMISS_KEY, dateIso);
+            } catch (e) {}
+          }
+
+          function hideAdpBanner() {
+            var el = document.getElementById('adp-banner');
+            if (el) el.style.display = 'none';
+          }
+
+          if (dismissedToday()) return;
+
+          fetch(API + '/adaptive/signal/' + dateIso, {
+            headers: { Authorization: 'Bearer ' + TOKEN },
+          })
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (signal) {
+              if (!signal) return; // 403/404/etc — sin acceso o sin datos, sin aviso
+              if (!signal.signal || signal.signal === 'maintain') return;
+              if (signal.accepted === true) return;
+
+              var el = document.getElementById('adp-banner');
+              var txt = document.getElementById('adp-banner-text');
+              var err = document.getElementById('adp-banner-err');
+              var applyBtn = document.getElementById('adp-banner-apply');
+              var dismissBtn = document.getElementById('adp-banner-dismiss');
+              if (!el || !txt || !applyBtn || !dismissBtn) return;
+
+              txt.textContent = signal.reason_text || signal.signal_label || '';
+              el.style.display = 'flex';
+
+              var busy = false;
+              applyBtn.onclick = function () {
+                if (busy) return;
+                busy = true;
+                applyBtn.disabled = true;
+                if (err) err.style.display = 'none';
+                fetch(API + '/adaptive/accept/' + dateIso, {
+                  method: 'POST',
+                  headers: { Authorization: 'Bearer ' + TOKEN },
+                })
+                  .then(function (r) {
+                    if (!r.ok) throw new Error('status ' + r.status);
+                    return r.json();
+                  })
+                  .then(function () {
+                    hideAdpBanner();
+                    if (typeof window._tpRender === 'function')
+                      window._tpRender();
+                  })
+                  .catch(function () {
+                    busy = false;
+                    applyBtn.disabled = false;
+                    if (err) {
+                      err.textContent = _t(
+                        'adp_banner_err',
+                        'No se pudo aplicar el ajuste. Intenta de nuevo.',
+                      );
+                      err.style.display = 'block';
+                    }
+                  });
+              };
+
+              dismissBtn.onclick = function () {
+                dismissToday();
+                hideAdpBanner();
+              };
+            })
+            .catch(function () {
+              // red/CORS/lo que sea — misma falla silenciosa que un 403/500.
+            });
         })();
 
         // ── Zwift .zwo download (called from showDetail) ──────────────

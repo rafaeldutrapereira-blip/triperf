@@ -34,16 +34,41 @@ def test_modo_embed_en_ambas_paginas():
         assert squash('get("embed")==="1"') in squash(page)
 
 
-def test_plan_tiene_ajustes_adaptativos_perezosos():
-    # S10 (2026-11-01): Ajustes Adaptativos deja de ser pestaña permanente
-    # de Mi Plan -- vive dentro de "Ver más" (<details id="tp-more">,
-    # cerrado por defecto) y el iframe sigue cargando recién al abrirse esa
-    # zona, no de entrada con la página.
+def test_plan_sin_seccion_adaptativa_incrustada():
+    # S14 (2026-11-01): la sección incrustada que S10 (2026-11-01) dejó
+    # dentro de "Ver más" (iframe perezoso a adaptive.html) sale de Mi
+    # Plan. El motor (adaptive_routes.py) y adaptive.html no se tocan --
+    # ya no hay iframe ni panel #s-adaptive en training_plan.html.
+    assert 'id="s-adaptive"' not in PLAN
+    assert 'id="tp-adaptive-frame"' not in PLAN
+    assert 'data-src="adaptive.html?embed=1"' not in PLAN
+
+
+def test_plan_tiene_enlace_a_ajustes_adaptativos():
+    # S14: en su lugar, dentro de "Ver más" queda un enlace simple a la
+    # página completa (que sigue viva e intacta, ya no incrustada).
     assert 'id="tp-more"' in PLAN
-    assert 'id="s-adaptive"' in PLAN
-    assert 'id="tp-adaptive-frame"' in PLAN
-    assert 'data-src="adaptive.html?embed=1"' in PLAN
-    assert "tpMoreEl.addEventListener('toggle'" in PLAN
+    assert 'id="s-adaptive-link"' in PLAN
+    assert 'href="adaptive.html"' in PLAN
+
+
+def test_plan_tiene_aviso_adaptativo_ocasional():
+    # S14: el valor de Ajustes Adaptativos llega como aviso descartable
+    # SOLO cuando el motor propone un ajuste real para hoy (patrón
+    # "Adaptations Pending" de TrainerRoad) -- consulta GET
+    # /adaptive/signal/{hoy} (mismo endpoint real que ya usa
+    # adaptive.html, sin inventar ninguno nuevo) y decide con los campos
+    # que esa respuesta ya trae: signal.signal !== 'maintain' (el valor
+    # neutro del propio motor) y signal.accepted !== true.
+    assert 'id="adp-banner"' in PLAN
+    assert "/adaptive/signal/" in PLAN
+    assert "signal.signal === 'maintain'" in PLAN
+    assert "signal.accepted === true" in PLAN
+    # "Aplicar ajuste" hace el POST real sobre el motor (accept); "Ahora
+    # no" es deliberadamente solo local, no reject -- no toca el backend.
+    assert "/adaptive/accept/" in PLAN
+    assert "/adaptive/reject/" not in PLAN
+    assert "kl_adp_dismissed_date" in PLAN
 
 
 def test_coach_embebe_las_dos_vistas():
