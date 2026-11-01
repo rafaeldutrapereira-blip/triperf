@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '244';  // 2026-11-01: S6 envio de workouts al reloj via intervals.icu; previo: 2026-11-01: S5 Indoor multideporte v1 (running con bloques por ritmo y FC); previo: 2026-11-01: S4 workouts de Indoor persistidos en backend (CRUD + migracion desde localStorage); previo: 2026-11-01: S3 registro de sesion en un gesto (Hecha) en Mi Plan; previo: 2026-11-01: S2 Mi Plan con encabezado propio y resumen de la semana; previo: 2026-11-01: S1 AI Coach fuera del frente para atletas; previo: 2026-11-01: coach y pantallas de entrenamiento con nombres completos en primera mencion (P11-F2)
+var BUILD_VERSION = '245';  // 2026-11-01: S10 Mi Plan liviana (sesiones primero) + Progreso Semanal se muda a Rendimiento; previo: 2026-11-01: S6 envio de workouts al reloj via intervals.icu; previo: 2026-11-01: S5 Indoor multideporte v1 (running con bloques por ritmo y FC); previo: 2026-11-01: S4 workouts de Indoor persistidos en backend (CRUD + migracion desde localStorage); previo: 2026-11-01: S3 registro de sesion en un gesto (Hecha) en Mi Plan; previo: 2026-11-01: S2 Mi Plan con encabezado propio y resumen de la semana; previo: 2026-11-01: S1 AI Coach fuera del frente para atletas; previo: 2026-11-01: coach y pantallas de entrenamiento con nombres completos en primera mencion (P11-F2)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

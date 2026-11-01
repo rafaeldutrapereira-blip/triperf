@@ -34,10 +34,16 @@ def test_modo_embed_en_ambas_paginas():
         assert squash('get("embed")==="1"') in squash(page)
 
 
-def test_plan_tiene_pestana_ajustes_adaptativos_perezosa():
-    assert 'data-tab="adaptive"' in PLAN
+def test_plan_tiene_ajustes_adaptativos_perezosos():
+    # S10 (2026-11-01): Ajustes Adaptativos deja de ser pestaña permanente
+    # de Mi Plan -- vive dentro de "Ver más" (<details id="tp-more">,
+    # cerrado por defecto) y el iframe sigue cargando recién al abrirse esa
+    # zona, no de entrada con la página.
+    assert 'id="tp-more"' in PLAN
+    assert 'id="s-adaptive"' in PLAN
     assert 'id="tp-adaptive-frame"' in PLAN
     assert 'data-src="adaptive.html?embed=1"' in PLAN
+    assert "tpMoreEl.addEventListener('toggle'" in PLAN
 
 
 def test_coach_embebe_las_dos_vistas():
