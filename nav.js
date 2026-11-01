@@ -371,7 +371,11 @@
         .catch(function(){ loading.textContent=_nt('shell_ai_conn_error','Error de conexi\xf3n. Intenta de nuevo.'); loading.style.color='#FCA5A5'; })
         .finally(function(){ btn.disabled=false; inp.focus(); });
     };
-    injectWidget();
+    /* S1: el widget solo se inyecta si el usuario puede acceder a ai_coach
+       (hoy: coach/admin). Atletas sin sesión o sin acceso no lo ven. */
+    var _aiSess = null;
+    try{ _aiSess = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null'); }catch(e){}
+    if(_aiSess && _canAccess(_aiSess, 'ai_coach')) injectWidget();
   })();
 
   /* ═══════════════════════════════════════════════════════════════

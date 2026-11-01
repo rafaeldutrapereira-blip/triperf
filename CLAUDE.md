@@ -75,6 +75,8 @@ El backend corre en un servidor cloud, **no en la PC de Rafael** — ver [[proje
   Queda por confirmar en dispositivo que el `<summary>` del detalle ACWR se vea en PT
   (depende de que el service worker tome el BUILD nuevo).
 
+- **S1 (2026-11-01, BUILD 239): AI Coach fuera del frente para atletas.** `ai_coach` en `routes.config.js` pasó a `roles:['coach','admin']` y `sidebar:false`; `ai_coach` salió del set Élite en `plan_features.py` (todo `/ai/*` da 403 a atletas; coach/admin entran por bypass de rol). El widget de `nav.js` y el FAB/menú de `athlete-app.html` solo se muestran si `LX_ROUTES.canAccess(sess,'ai_coach')`. No se tocó `module_catalog.py` (addon `asistente_ia` queda modelado) ni `ai_coach.html`. Ojo: el entitlement del addon sigue otorgando la feature en el servidor, pero el cliente la oculta a atletas por rol.
+
 ## Detalle histórico completo
 
 El detalle sprint-por-sprint (más de 90 entradas) vive en la memoria personal de Claude en la PC de Rafael, no en este archivo — este archivo es un resumen vivo, no un changelog. Para historia completa de una feature específica, preguntar en la sesión de la PC.

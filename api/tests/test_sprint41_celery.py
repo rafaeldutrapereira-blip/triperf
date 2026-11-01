@@ -23,10 +23,12 @@ def _register_and_login(client, email: str, password: str = "Test1234!", db=None
     })
     assert r.status_code in (200, 201), f"Register failed: {r.text}"
     if db is not None:
-        # AI Coach es feature de plan Elite (ver api/plan_features.py)
+        # S1: /ai/* ya no es feature de plan Elite para atletas; coach/admin
+        # entran por bypass de rol (ver api/plan_features.py).
         from api.models import User
         u = db.query(User).filter(User.email == email).first()
         u.plan_nivel = "elite"
+        u.rol = "coach"
         db.commit()
     r2 = client.post("/api/auth/login", json={"email": email, "password": password})
     assert r2.status_code == 200, f"Login failed: {r2.text}"
@@ -147,6 +149,20 @@ class TestAiCoachAsync:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.json()["errors"][0]["code"] == "ai_not_configured"
+
+    def test_coach_suggest_forbidden_for_elite_athlete(self, client, db):
+        """S1: atleta Elite recibe 403 en /ai/* (IA fuera del frente)."""
+        from api.models import User
+        token = _register_and_login(client, "aitest_ath@test.com")
+        u = db.query(User).filter(User.email == "aitest_ath@test.com").first()
+        u.plan_nivel = "elite"
+        db.commit()
+        resp = client.post(
+            "/api/ai/coach-suggest",
+            json={"message": "hola"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
 
     def test_coach_suggest_requires_auth(self, client):
         resp = client.post("/api/ai/coach-suggest", json={"message": "hello"})

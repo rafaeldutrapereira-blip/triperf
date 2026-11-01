@@ -33,7 +33,7 @@ _PLAN_FEATURES: dict[str, set[str]] = {
         "training_plan", "nutrition", "analytics", "recovery", "mental",
         "race_day", "race_predictor", "community", "community_write", "year_in_review", "gear",
         "calendar", "periodization",
-        "blood_labs", "training_detail", "adaptive", "ai_coach", "indoor_workout",
+        "blood_labs", "training_detail", "adaptive", "indoor_workout",
     },
 }
 # "coach" no es un nivel de acceso real (has_feature() ya da acceso total

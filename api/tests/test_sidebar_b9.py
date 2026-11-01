@@ -15,7 +15,8 @@ NODE = shutil.which("node")
 
 EXPECTED = [
     ("entrenar", "dashboard"), ("entrenar", "training_plan"),
-    ("entrenar", "indoor_workout"), ("entrenar", "ai_coach"),
+    # S1: ai_coach salió del sidebar (solo coach/admin por URL directa).
+    ("entrenar", "indoor_workout"),
     ("recuperar", "recovery"), ("recuperar", "mental"),
     ("recuperar", "nutrition"), ("recuperar", "blood_labs"),
     ("planear", "race_day"), ("planear", "huella"),

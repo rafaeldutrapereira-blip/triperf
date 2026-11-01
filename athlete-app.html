@@ -262,6 +262,12 @@
    chat (evita el botón flotando sobre sí mismo). Es un chat, el caso
    de uso más naturalmente mobile-first de todos los módulos que
    faltaban en la app. */
+      /* S1: IA fuera del frente para atletas (la pantalla y los endpoints
+         se conservan; coach/admin siguen viéndola). */
+      body.lx-no-ai #aicoach-fab,
+      body.lx-no-ai .menu-item[data-ai-menu] {
+        display: none !important;
+      }
       #aicoach-fab {
         position: fixed;
         right: calc(50% - 195px);
@@ -8352,6 +8358,18 @@
           />
         </svg>
       </button>
+      <script>
+        /* S1: oculta FAB y entrada de menú de IA salvo coach/admin, con la
+           misma regla de acceso que la web (LX_ROUTES.canAccess('ai_coach')). */
+        (function () {
+          var rol = localStorage.getItem('lx_co_rol') || 'atleta';
+          var ok =
+            window.LX_ROUTES && LX_ROUTES.canAccess
+              ? LX_ROUTES.canAccess({ api_rol: rol, plan: 'elite' }, 'ai_coach')
+              : rol === 'coach' || rol === 'admin';
+          if (!ok) document.body.classList.add('lx-no-ai');
+        })();
+      </script>
 
       <!-- BOTTOM NAV -->
       <nav id="bottom-nav">
@@ -8507,7 +8525,11 @@
             Herramientas
           </div>
           <div class="menu-grid">
-            <button class="menu-item" onclick="menuGo('screen-aicoach')">
+            <button
+              class="menu-item"
+              data-ai-menu
+              onclick="menuGo('screen-aicoach')"
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
