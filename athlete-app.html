@@ -978,6 +978,121 @@
         color: #f0a500;
       }
 
+      /* P11-C — Hoy en 3 bloques + "Más detalle" */
+      .today-block {
+        margin: 0.9rem 0 0;
+      }
+      .today-block-title {
+        margin: 0 1rem 0.35rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      #today-block-c:has(> #insight-strip[style*='display: none']) {
+        display: none;
+      }
+      .today-how {
+        margin: 0 1rem;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-left-width: 4px;
+        border-radius: 12px;
+        padding: 0.85rem 0.9rem;
+      }
+      .today-how-head {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+      }
+      .today-how-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .today-how-state {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .today-how-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+      }
+      .today-how-item {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.2rem;
+      }
+      .today-how-val {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .today-how-val .u {
+        font-size: 0.7rem;
+        color: var(--dim);
+        font-weight: 500;
+      }
+      .today-how-sub {
+        font-size: 0.66rem;
+        font-weight: 600;
+      }
+      .today-how-read {
+        margin: 0.7rem 0 0;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .today-more {
+        margin: 1rem 0 0;
+      }
+      .today-more > summary {
+        margin: 0 1rem;
+        padding: 0.7rem 0.9rem;
+        cursor: pointer;
+        list-style: none;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.84rem;
+        font-weight: 700;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .today-more > summary::-webkit-details-marker {
+        display: none;
+      }
+      .today-more > summary::after {
+        content: '▾';
+        color: var(--dim);
+        transition: transform 0.2s;
+      }
+      .today-more[open] > summary::after {
+        transform: rotate(180deg);
+      }
+      .lx-sigla2 {
+        margin-left: 0.3em;
+        font-size: 0.8em;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        color: var(--dim);
+      }
+      .mkc-lbl .lx-term-name {
+        font-family: inherit;
+        font-size: inherit;
+        font-weight: 600;
+      }
       .mkc {
         margin: 0.75rem 1rem 0;
         background: var(--bg2);
@@ -6069,20 +6184,6 @@
             >
           </div>
 
-          <div
-            id="insight-strip"
-            class="insight-mob"
-            style="display: none"
-          ></div>
-          <div id="status-strip" class="mkc" style="display: none"></div>
-          <div id="health-strip" class="mkc" style="display: none"></div>
-          <div id="goal-strip" class="mkc" style="display: none"></div>
-          <div
-            id="race-card-mini"
-            class="race-card-mini"
-            style="display: none"
-          ></div>
-
           <button
             class="today-refresh-btn"
             id="today-refresh-btn"
@@ -6108,15 +6209,57 @@
             >
           </button>
 
-          <div id="today-content">
-            <!-- Filled by JS -->
-            <div class="no-workout">
-              <div class="no-workout-ico">⏳</div>
-              <div class="no-workout-lbl" data-i18n="aa_loading_plan">
-                Cargando plan del día...
+          <!-- P11-C · BLOQUE 1 — Tu entrenamiento de hoy -->
+          <section class="today-block" id="today-block-a">
+            <h2 class="today-block-title" data-i18n="today_a_title">
+              Tu entrenamiento de hoy
+            </h2>
+            <div id="today-content">
+              <!-- Filled by JS -->
+              <div class="no-workout">
+                <div class="no-workout-ico">⏳</div>
+                <div class="no-workout-lbl" data-i18n="aa_loading_plan">
+                  Cargando plan del día...
+                </div>
               </div>
             </div>
-          </div>
+          </section>
+
+          <!-- P11-C · BLOQUE 2 — Cómo estás hoy (lo llena renderTodayHowAmI;
+           oculto hasta tener TSB o Recovery Score ya calculados) -->
+          <section class="today-block" id="today-block-b" style="display: none">
+            <h2 class="today-block-title" data-i18n="today_b_title">
+              Cómo estás hoy
+            </h2>
+            <div class="today-how" id="today-how"></div>
+          </section>
+
+          <!-- P11-C · BLOQUE 3 — Una sola recomendación principal. El bloque
+           se oculta solo (CSS :has) mientras #insight-strip está oculto. -->
+          <section class="today-block" id="today-block-c">
+            <h2 class="today-block-title" data-i18n="today_c_title">
+              Recomendación del día
+            </h2>
+            <div
+              id="insight-strip"
+              class="insight-mob"
+              style="display: none"
+            ></div>
+          </section>
+
+          <!-- P11-C · Más detalle — todas las demás tarjetas de Hoy, cerrado
+           por defecto. Los ids no cambian: el JS sigue escribiendo igual. -->
+          <details class="today-more" id="today-more">
+            <summary data-i18n="today_more">Más detalle</summary>
+            <div id="status-strip" class="mkc" style="display: none"></div>
+            <div id="health-strip" class="mkc" style="display: none"></div>
+            <div id="goal-strip" class="mkc" style="display: none"></div>
+            <div
+              id="race-card-mini"
+              class="race-card-mini"
+              style="display: none"
+            ></div>
+          </details>
         </div>
 
         <!-- SCREEN 4: MI SEMANA -->
@@ -6145,9 +6288,19 @@
            ejecutado contra planificado, no mostrar solo un número. -->
           <div class="wk-summary" id="wk-summary">
             <div class="wk-summary-head">
-              <span class="wk-summary-title" data-i18n="app_weekly_compliance"
-                >Cumplimiento semanal</span
-              >
+              <span class="wk-summary-title"
+                ><span data-i18n="app_weekly_compliance"
+                  >Cumplimiento semanal</span
+                >
+                <!-- P11-C: el título es propio (no es el término), patrón solo-botón -->
+                <button
+                  type="button"
+                  class="lx-term-info"
+                  aria-label="Info"
+                  onclick="event.stopPropagation(); LXTerm.open('compliance', this)"
+                >
+                  <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
+              ></span>
               <span class="wk-summary-days" id="wk-summary-days"></span>
             </div>
             <div class="wk-rings-grid">
@@ -6167,7 +6320,10 @@
                   </svg>
                   <div class="wk-ring-center" id="wk-tss-pct">—</div>
                 </div>
-                <div class="wk-ring-lbl">TSS</div>
+                <div class="wk-ring-lbl">
+                  <span data-i18n="kpi_load">Carga</span
+                  ><span class="lx-sigla2">TSS</span>
+                </div>
                 <div class="wk-ring-nums" id="wk-tss">—</div>
               </div>
               <div class="wk-ring">
@@ -10540,6 +10696,40 @@
         );
       }
 
+      /* P11-C — diccionario de términos (LXTerm) en las filas de Hoy.
+   _mkcTerm: el título de la fila ES el nombre del término → data-lx-term
+   (LXTerm.autoInit lo rellena con nombre + sigla + ⓘ).
+   _mkcOwn: el título es propio (ej. "Riesgo sobrecarga — Natación", "Carga
+   semanal (TSS)") → patrón "solo botón": el texto queda como está y el ⓘ
+   abre la tarjeta del término. stopPropagation: tocar el ⓘ no navega. */
+      var _LX_INFO_ICON =
+        '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg>';
+      function _mkcTerm(termId) {
+        return (
+          '<span class="mkc-lbl"><span class="mkc-lbl-main" data-lx-term="' +
+          termId +
+          '"></span></span>'
+        );
+      }
+      function _mkcOwn(text, termId) {
+        return (
+          '<span class="mkc-lbl"><span class="mkc-lbl-main">' +
+          text +
+          '<button type="button" class="lx-term-info" aria-label="Info" data-term-id="' +
+          termId +
+          '" onclick="event.stopPropagation(); LXTerm.open(this.dataset.termId, this)">' +
+          _LX_INFO_ICON +
+          '</button></span></span>'
+        );
+      }
+      /* TSS por sesión: "Carga de la sesión" + sigla secundaria. */
+      function _tssLbl() {
+        return (
+          _t('term_tss_name', 'Carga de la sesión') +
+          '<span class="lx-sigla2">TSS</span>'
+        );
+      }
+
       /* Sparklines de las filas de Hoy — mismo estándar que dashboard.html
    (updateLoadSparklines/drawSparkline/_sparkPoints), portado literal:
    mismas fuentes de datos (pmc/acwr_history/hrv_history/rhr_history/
@@ -10863,6 +11053,101 @@
         }
       }
 
+      /* P11-C · BLOQUE 2 "Cómo estás hoy" — SOLO presenta valores ya
+   calculados: TSB (d.tsb, de /athlete/dashboard) y Recovery Score
+   (score de /recovery/dashboard, el mismo endpoint de Bienestar → Resumen,
+   gateado por plan: sin acceso/sin dato se muestra solo la Forma).
+   Semáforo = el peor de los dos con los umbrales ya usados en la app
+   (TSB: >5 verde, >-20 ámbar; Recovery: >=70 verde, >=40 ámbar). */
+      function _howSev(color) {
+        return color === '#EF4444' ? 2 : color === '#F0A500' ? 1 : 0;
+      }
+      function renderTodayHowAmI(d) {
+        var block = document.getElementById('today-block-b');
+        var box = document.getElementById('today-how');
+        if (!block || !box) return;
+        var tsbOk = d && d.tsb != null;
+        function paint(rec) {
+          var recOk = rec && rec.score != null;
+          if (!tsbOk && !recOk) {
+            block.style.display = 'none';
+            return;
+          }
+          var worst = 0;
+          var items = '';
+          if (recOk) {
+            var rs = Math.round(rec.score);
+            var rCol = rs >= 70 ? '#10B981' : rs >= 40 ? '#F0A500' : '#EF4444';
+            worst = Math.max(worst, _howSev(rCol));
+            items +=
+              '<div class="today-how-item"><div data-lx-term="recovery_score"></div>' +
+              '<div class="today-how-val" style="color:' +
+              rCol +
+              '">' +
+              rs +
+              '<span class="u">/100</span></div></div>';
+          }
+          if (tsbOk) {
+            var tsb = d.tsb;
+            var tCol = tsb > 5 ? '#10B981' : tsb > -20 ? '#F0A500' : '#EF4444';
+            worst = Math.max(worst, _howSev(tCol));
+            items +=
+              '<div class="today-how-item"><div data-lx-term="tsb"></div>' +
+              '<div class="today-how-val" style="color:' +
+              tCol +
+              '">' +
+              (tsb >= 0 ? '+' : '') +
+              Math.round(tsb) +
+              '</div></div>';
+          }
+          var sev = ['good', 'caution', 'reduce'][worst];
+          var col = _sevColor(sev);
+          var read = [
+            _t(
+              'today_read_good',
+              'Llegas bien: tu cuerpo está listo para entrenar como está planificado.',
+            ),
+            _t(
+              'today_read_caution',
+              'Vas con algo de cansancio: entrena, pero escucha a tu cuerpo y no subas la intensidad.',
+            ),
+            _t(
+              'today_read_reduce',
+              'Tu cuerpo pide descanso: prioriza recuperarte y baja la intensidad hoy.',
+            ),
+          ][worst];
+          box.style.borderLeftColor = col;
+          box.innerHTML =
+            '<div class="today-how-head"><span class="today-how-dot" style="background:' +
+            col +
+            '"></span><span class="today-how-state" style="color:' +
+            col +
+            '">' +
+            _sevLabel(sev) +
+            '</span></div><div class="today-how-grid">' +
+            items +
+            '</div><p class="today-how-read">' +
+            read +
+            '</p>';
+          block.style.display = '';
+          if (window.LXTerm) LXTerm.autoInit();
+        }
+        if (!_token) {
+          paint(null);
+          return;
+        }
+        apiFetch('/recovery/dashboard?date_iso=' + todayIso())
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .catch(function () {
+            return null;
+          })
+          .then(function (j) {
+            paint(j && j.recovery);
+          });
+      }
+
       function renderStatusHealth(d) {
         renderInsightMobile(
           d.insight,
@@ -10929,13 +11214,13 @@
 
           var rows =
             '<div class="mkc-row tap" onclick="openMetricDetail(\'ctl\')">' +
-            _mkcLbl('Fitness (CTL)', 'ctl', 'mv-ctl') +
+            _mkcTerm('ctl') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-ctl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-ctl" style="color:#22D3EE">' +
             Math.round(d.ctl) +
             (d.trends ? _trendArrow(d.trends.ctl) : '') +
             '</span></span></div>' +
             '<div class="mkc-row tap" onclick="openMetricDetail(\'atl\')">' +
-            _mkcLbl('Fatiga (ATL)', 'atl', 'mv-atl') +
+            _mkcTerm('atl') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-atl" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-atl" style="color:' +
             atlCol +
             '">' +
@@ -10948,7 +11233,7 @@
             atlLabel +
             '</span></span></div>' +
             '<div class="mkc-row tap" onclick="openMetricDetail(\'tsb\')">' +
-            _mkcLbl('Forma (TSB)', 'tsb', 'mv-tsb') +
+            _mkcTerm('tsb') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-tsb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tsb" style="color:' +
             tsbCol +
             '">' +
@@ -10964,7 +11249,7 @@
           if (az && d.acwr != null) {
             rows +=
               '<div class="mkc-row tap" onclick="openMetricDetail(\'acwr\')">' +
-              _mkcLbl('ACWR (Carga)', 'acwr', 'mv-acwr') +
+              _mkcTerm('acwr') +
               '<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr" style="color:' +
               az.color +
               '">' +
@@ -11002,7 +11287,12 @@
                 '<div class="mkc-row mkc-row-child tap" onclick="openMetricDetail(\'acwr\',\'' +
                 sp +
                 '\')">' +
-                _mkcLbl('ACWR — ' + acwrSportLbl[sp], 'acwr', 'mv-acwr-' + sp) +
+                _mkcOwn(
+                  _t('term_acwr_name', 'Riesgo sobrecarga') +
+                    ' — ' +
+                    acwrSportLbl[sp],
+                  'acwr',
+                ) +
                 '<span class="mkc-right"><svg class="mkc-spark" id="mspark-acwr-' +
                 sp +
                 '" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-acwr-' +
@@ -11076,7 +11366,7 @@
         if (d.hrv_last_night != null) {
           hItems +=
             '<div class="mkc-row tap" onclick="openMetricDetail(\'hrv\')">' +
-            _mkcLbl('HRV Score', 'hrv', 'mv-hrv') +
+            _mkcTerm('hrv') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-hrv" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-hrv" style="color:#22D3EE">' +
             Math.round(d.hrv_last_night) +
             (d.trends ? _trendArrow(d.trends.hrv) : '') +
@@ -11085,7 +11375,7 @@
         if (d.resting_hr != null) {
           hItems +=
             '<div class="mkc-row">' +
-            _mkcLbl('FC Reposo', 'resting_hr', 'mv-rhr') +
+            _mkcTerm('resting_hr') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-rhr" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-rhr" style="color:#FB7185">' +
             Math.round(d.resting_hr) +
             '<span class="u">bpm</span></span></span></div>';
@@ -11093,7 +11383,7 @@
         if (d.body_battery != null) {
           hItems +=
             '<div class="mkc-row">' +
-            _mkcLbl('Body Battery', 'body_battery', 'mv-bb') +
+            _mkcTerm('body_battery') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-bb" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-bb" style="color:#F0A500">' +
             Math.round(d.body_battery) +
             '<span class="u">%</span></span></span></div>';
@@ -11126,8 +11416,8 @@
           };
           var mCol = MFS_UI_MOB[d.mental_level] || '#9CA3AF';
           hItems +=
-            '<div class="mkc-row tap" onclick="goScreen(\'screen-mental\')">' +
-            _mkcLbl('Fatiga Mental', 'mental_fatigue') +
+            '<div class="mkc-row tap" onclick="if (event.target.closest(\'.lx-term-info, .lx-info-btn\')) return; goScreen(\'screen-mental\')">' +
+            _mkcTerm('fatiga_mental') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-mental" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-mental" style="color:' +
             mCol +
             '">' +
@@ -11139,7 +11429,7 @@
             m = Math.round((d.sleep_total_h - h) * 60);
           hItems +=
             '<div class="mkc-row">' +
-            _mkcLbl(_t('dash_sleep', 'Sueño'), 'sleep') +
+            _mkcTerm('sueno') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-sleep" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:#A855F7">' +
             h +
             'h' +
@@ -11187,7 +11477,7 @@
                   : '#EF4444';
           hItems +=
             '<div class="mkc-row">' +
-            _mkcLbl('Fatiga muscular', 'muscle_fatigue') +
+            _mkcTerm('fatiga_muscular') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-fatmusc" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" style="color:' +
             fatCol +
             '">' +
@@ -11220,7 +11510,7 @@
         if (d.tss_week != null) {
           gItems +=
             '<div class="mkc-row tap" onclick="openMetricDetail(\'tss\')">' +
-            _mkcLbl(_t('kpi_tss_week', 'TSS Semana'), 'tss', 'mv-tss') +
+            _mkcOwn(_t('kpi_tss_week', 'Carga semanal (TSS)'), 'tss') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-tss" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-tss" style="color:var(--purple)">' +
             Math.round(d.tss_week) +
             '</span></span></div>';
@@ -11228,11 +11518,7 @@
         if (d.vo2max_running_garmin != null) {
           gItems +=
             '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'running\')">' +
-            _mkcLbl(
-              _t('aa_vo2_running', 'VO2 Max Running'),
-              'vo2max',
-              'mv-vo2run',
-            ) +
+            _mkcOwn(_t('aa_vo2_running', 'VO2 Max Running'), 'vo2max') +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-vo2-run" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-vo2run" style="color:#22D3EE">' +
             d.vo2max_running_garmin +
             '</span></span></div>';
@@ -11240,12 +11526,11 @@
         if (d.vo2max_cycling_garmin != null) {
           gItems +=
             '<div class="mkc-row tap" onclick="openMetricDetail(\'vo2\',\'cycling\')">' +
-            _mkcLbl(
+            _mkcOwn(
               _t('dash_vo2_sport', 'VO2 Max {sport}')
                 .split('{sport}')
                 .join(window.lxSport ? window.lxSport('Ciclismo') : 'Ciclismo'),
               'vo2max',
-              'mv-vo2bike',
             ) +
             '<span class="mkc-right"><svg class="mkc-spark" id="mspark-vo2-bike" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-vo2bike" style="color:#FF6535">' +
             d.vo2max_cycling_garmin +
@@ -11258,11 +11543,19 @@
         // el payload de /athlete/dashboard que ya trajo el resto de esta card.
         gItems +=
           '<div class="mkc-row" id="mkc-ctlproj-row" style="display:none">' +
-          _mkcLbl('CTL Proyectado (28d)', 'ctl_projected', 'mv-ctlproj') +
+          _mkcLbl(
+            _t('dash_ctl_proj', 'Condición física proyectada (28d)'),
+            'ctl_projected',
+            'mv-ctlproj',
+          ) +
           '<span class="mkc-right"><svg class="mkc-spark" id="mspark-ctlproj" width="46" height="20" viewBox="0 0 46 20"></svg><span class="mkc-val" id="mv-ctlproj">—</span><span class="mkc-pill" id="mv-ctlproj-badge"></span></span></div>';
         gItems +=
           '<div class="mkc-row" id="mkc-goalrace-row" style="display:none">' +
-          _mkcLbl('Fitness objetivo', 'goal_race_ctl', 'mv-goalrace') +
+          _mkcLbl(
+            _t('dash_goal_fitness', 'Objetivo de condición física'),
+            'goal_race_ctl',
+            'mv-goalrace',
+          ) +
           '<span class="mkc-right"><span class="mkc-val" id="mv-goalrace">—</span><span class="mkc-pill" id="mv-goalrace-badge"></span></span></div>';
 
         if (gItems) {
@@ -11346,6 +11639,8 @@
         // [data-lx-info] recién existen en el DOM en este punto).
         updateMobileSparklines(d);
         if (window.lxInfo) lxInfo.autoInit();
+        if (window.LXTerm) LXTerm.autoInit();
+        renderTodayHowAmI(d);
       }
 
       /* ── Detalle de indicador (al tocar una fila en Hoy) ────────────────
@@ -11433,6 +11728,17 @@
         _mdChart = null;
 
       function openMetricDetail(metric, sport) {
+        /* P11-C: un clic en el ⓘ de la fila abre la explicación SIN abrir el
+       detalle (el listener global de LXTerm corre DESPUÉS del onclick de
+       la fila). window.event: siempre se invoca síncrono desde un onclick. */
+        var ev = window.event;
+        if (
+          ev &&
+          ev.target &&
+          ev.target.closest &&
+          ev.target.closest('.lx-term-info, .lx-info-btn')
+        )
+          return;
         if (!MD_MC[metric] || !window._lxDashData) return;
         _mdMetric = metric;
         _mdSport = sport || null;
@@ -12136,7 +12442,7 @@
             real.dist_km,
             2,
           ) +
-          row('TSS', '', t.tss, real.tss) +
+          row(_tssLbl(), '', t.tss, real.tss) +
           '</div>'
         );
       }
@@ -12203,7 +12509,9 @@
           (act.tss
             ? '<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">' +
               Math.round(act.tss) +
-              '</div><div class="th-meta-lbl">TSS</div></div>'
+              '</div><div class="th-meta-lbl">' +
+              _tssLbl() +
+              '</div></div>'
             : '') +
           '</div>';
         document.getElementById('wo-detail-body').innerHTML =
@@ -12764,7 +13072,7 @@
         var meta = [];
         if (t.dur_min) meta.push(t.dur_min + ' min');
         if (t.dist_km) meta.push(t.dist_km + ' km');
-        if (t.tss) meta.push(t.tss + ' TSS');
+        if (t.tss) meta.push(_tssLbl() + ' ' + t.tss);
 
         return (
           '<div class="today-card-compact" onclick="showTodayWorkoutDetail(' +
@@ -12875,7 +13183,9 @@
           (t.tss
             ? '<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">' +
               t.tss +
-              '</div><div class="th-meta-lbl">TSS</div></div>'
+              '</div><div class="th-meta-lbl">' +
+              _tssLbl() +
+              '</div></div>'
             : '') +
           '</div>';
         html += '</div>';
@@ -13168,7 +13478,7 @@
                 (t.nombre || sp) +
                 '</div>' +
                 (t.tss
-                  ? '<div class="wk-wo-tss">' + t.tss + ' TSS</div>'
+                  ? '<div class="wk-wo-tss">' + _tssLbl() + ' ' + t.tss + '</div>'
                   : '') +
                 '<div class="wk-wo-status">' +
                 (done ? '✅' : '⏳') +
@@ -13276,7 +13586,9 @@
           (t.tss
             ? '<div class="th-meta-item"><div class="th-meta-val" style="color:var(--purple)">' +
               t.tss +
-              '</div><div class="th-meta-lbl">TSS</div></div>'
+              '</div><div class="th-meta-lbl">' +
+              _tssLbl() +
+              '</div></div>'
             : '') +
           '</div>';
 
@@ -21230,6 +21542,11 @@
      renderStatusHealth() cada vez (es idempotente, ver mount.querySelector
      guard adentro de lx-info.js). -->
     <script src="lx-info.js"></script>
+    <script>
+      /* P11-C: inyecta el CSS de LXTerm de entrada (el ⓘ estático de Semana
+         existe antes de que cualquier fila lo renderice). */
+      if (window.LXTerm) LXTerm.render("tss");
+    </script>
     <script src="lx-audit.js"></script>
     <script src="workout-blocks.js?v=3"></script>
     <!-- Sprint 55: puente a HealthKit/Health Connect. window.Capacitor ya lo
