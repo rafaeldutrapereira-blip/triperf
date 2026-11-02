@@ -2673,7 +2673,7 @@ var DICT = {
     dtw_no_data: 'Sin datos disponibles',
     dtw_no_historical_data: 'Sin datos históricos disponibles. Sincroniza tu Garmin para ver el histórico de {name}.',
     dtw_historical_page_title: 'Histórico {name} · LabX',
-    dtw_period_avg: 'Promedio del período', dtw_vs: 'vs',
+    dtw_period_avg: 'Promedio del período', dtw_last_record: 'Último registro', dtw_vs: 'vs',
     dtw_muscle_fatigue: 'Fatiga Muscular', dtw_insufficient_data: 'Datos insuficientes',
     /* detalle.html (web) — Sprint 4b: gráficos de bienestar/ACWR/comparador de ciclos */
     dtw_score_prefix: 'Score:', dtw_ds_hours: 'Horas', dtw_ds_score: 'Score',
@@ -5911,7 +5911,7 @@ var DICT = {
     dtw_no_data: 'Sem dados disponíveis',
     dtw_no_historical_data: 'Sem dados históricos disponíveis. Sincronize seu Garmin para ver o histórico de {name}.',
     dtw_historical_page_title: 'Histórico {name} · LabX',
-    dtw_period_avg: 'Média do período', dtw_vs: 'vs',
+    dtw_period_avg: 'Média do período', dtw_last_record: 'Último registro', dtw_vs: 'vs',
     dtw_muscle_fatigue: 'Fadiga Muscular', dtw_insufficient_data: 'Dados insuficientes',
     /* detalle.html (web) — Sprint 4b: gráficos de bienestar/ACWR/comparador de ciclos */
     dtw_score_prefix: 'Score:', dtw_ds_hours: 'Horas', dtw_ds_score: 'Score',
@@ -9149,7 +9149,7 @@ var DICT = {
     dtw_no_data: 'No data available',
     dtw_no_historical_data: 'No historical data available. Sync your Garmin to see your {name} history.',
     dtw_historical_page_title: '{name} History · LabX',
-    dtw_period_avg: 'Period average', dtw_vs: 'vs',
+    dtw_period_avg: 'Period average', dtw_last_record: 'Last record', dtw_vs: 'vs',
     dtw_muscle_fatigue: 'Muscle Fatigue', dtw_insufficient_data: 'Insufficient data',
     /* detalle.html (web) — Sprint 4b: gráficos de bienestar/ACWR/comparador de ciclos */
     dtw_score_prefix: 'Score:', dtw_ds_hours: 'Hours', dtw_ds_score: 'Score',

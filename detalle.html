@@ -1398,10 +1398,11 @@
           Mes
         </button>
         <button
-          class="ptab"
+          class="ptab on"
           data-p="90"
           onclick="setPeriod(90)"
           role="tab"
+          aria-selected="true"
           data-i18n="dtw_period_3months"
         >
           3 Meses
@@ -1425,11 +1426,10 @@
           Año
         </button>
         <button
-          class="ptab on"
+          class="ptab"
           data-p="0"
           onclick="setPeriod(0)"
           role="tab"
-          aria-selected="true"
           data-i18n="dtw_period_all"
         >
           Todo
@@ -2571,7 +2571,8 @@
 
       // ─── STATE ────────────────────────────────────────────────────────────────────
       var metric = 'ctl';
-      var period = 365;
+      var DEFAULT_PERIOD = 90;
+      var period = DEFAULT_PERIOD;
       var customStart = null; // 'YYYY-MM-DD' — solo se usa cuando period === 'custom'
       var customEnd = null;
       var CHART = null;
@@ -2851,6 +2852,7 @@
         var cfg = MC[metric];
         if (!cfg) return;
         renderInfoBtn(metric);
+        if (window.syncProgressPanel) window.syncProgressPanel();
 
         var acwrSportSection = document.getElementById('acwr-sport-section');
         if (acwrSportSection)
@@ -2916,9 +2918,18 @@
 
         var d = getData();
         // Fallback: si el período actual no tiene datos, mostrar todo el histórico disponible
-        if (!d.length && period > 0) {
+        // Solo si la serie completa SÍ tiene datos (antes de que llegue la API
+        // la serie está vacía y el fallback pisaba el período por defecto).
+        var _hasFull =
+          metric === 'pmc' ? KL_PMC_ALL.length > 0 : (ALL[metric] || []).length > 0;
+        if (!d.length && period > 0 && _hasFull) {
           period = 0;
           d = getData();
+          document.querySelectorAll('.ptab').forEach(function (b) {
+            var on = b.dataset.p === '0';
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+          });
         }
         if (!d.length) {
           // BUG (encontrado 2026-07-11 con Playwright): este branch nunca limpiaba
@@ -2969,42 +2980,75 @@
           cfg.eyebrow.toUpperCase();
         document.getElementById('hero-accent').textContent = cfg.title;
         document.getElementById('hero-sub').textContent = cfg.sub;
+        // Hero en dos niveles (S22): el número principal es el VALOR ACTUAL
+        // (último registro de la serie completa, el mismo que enlaza el
+        // Dashboard) y NO cambia con el período; debajo, en secundario, el
+        // promedio de la ventana activa.
+        var todayISO = new Date().toISOString().slice(0, 10);
+        var rangeTxt = fmtDate(d[0].date) + ' – ' + fmtDate(d[d.length - 1].date);
+        function heroCurrentLine(lastDate) {
+          return (
+            _t('dtw_default_val_sub', 'Valor actual') +
+            ' · ' +
+            (lastDate >= todayISO
+              ? _t('dtw_today', 'Hoy')
+              : _t('dtw_last_record', 'Último registro') +
+                ' ' +
+                fmtDate(lastDate))
+          );
+        }
+        function heroAvgLine(txt) {
+          return (
+            '<span class="hero-avg" style="font-size:0.85em;opacity:0.8">' +
+            _t('dtw_period_avg', 'Promedio del período') +
+            ': ' +
+            txt +
+            ' (' +
+            rangeTxt +
+            ')</span>'
+          );
+        }
         if (metric === 'pmc') {
-          // Mismo criterio que la rama de métrica individual (ver else abajo):
-          // el hero muestra el PROMEDIO del período seleccionado, no el último
-          // dato — antes usaba siempre ALL.ctl/atl/tsb (arrays completos, sin
-          // filtrar), ignorando el botón de período por completo.
+          var pAll = KL_PMC_ALL.length ? KL_PMC_ALL[KL_PMC_ALL.length - 1] : null;
           var avgCTL = calcAvg(filterPeriod(ALL.ctl));
           var avgATL = calcAvg(filterPeriod(ALL.atl));
           var avgTSB = calcAvg(filterPeriod(ALL.tsb));
-          document.getElementById('hero-val').textContent = avgCTL;
+          var curTSB = pAll ? Math.round((pAll.ctl - pAll.atl) * 10) / 10 : null;
+          document.getElementById('hero-val').textContent = pAll
+            ? pAll.ctl
+            : last;
           document.getElementById('hero-unit').textContent = ' CTL';
           document.getElementById('hero-val-sub').innerHTML =
-            'ATL ' +
-            avgATL +
-            ' · TSB ' +
-            (avgTSB >= 0 ? '+' : '') +
-            avgTSB +
+            (pAll
+              ? 'ATL ' +
+                pAll.atl +
+                ' · TSB ' +
+                (curTSB >= 0 ? '+' : '') +
+                curTSB +
+                '<br>'
+              : '') +
+            heroCurrentLine(pAll ? pAll.dt : d[d.length - 1].date) +
             '<br>' +
-            fmtDate(d[0].date) +
-            ' – ' +
-            fmtDate(d[d.length - 1].date);
+            heroAvgLine(
+              'CTL ' +
+                avgCTL +
+                ' · ATL ' +
+                avgATL +
+                ' · TSB ' +
+                (avgTSB >= 0 ? '+' : '') +
+                avgTSB,
+            );
         } else {
-          // El número grande refleja el PERÍODO seleccionado (promedio de la
-          // ventana), no un snapshot fijo — antes mostraba "Último registro",
-          // que es el mismo valor sin importar el período elegido porque todos
-          // los períodos terminan hoy (pedido explícito del usuario: el número
-          // debe cambiar al cambiar de período, ver detalle.html?metric=ctl).
-          document.getElementById('hero-val').textContent = avg;
+          var fullSeries = ALL[metric] && ALL[metric].length ? ALL[metric] : d;
+          var curPt = fullSeries[fullSeries.length - 1];
+          document.getElementById('hero-val').textContent = curPt.value;
           document.getElementById('hero-unit').textContent = cfg.unit
             ? ' ' + cfg.unit
             : '';
           document.getElementById('hero-val-sub').innerHTML =
-            _t('dtw_period_avg', 'Promedio del período') +
+            heroCurrentLine(curPt.date) +
             '<br>' +
-            fmtDate(d[0].date) +
-            ' – ' +
-            fmtDate(d[d.length - 1].date);
+            heroAvgLine(avg + (cfg.unit ? ' ' + cfg.unit : ''));
         }
 
         document.getElementById('chart-metric-name').textContent = cfg.name;
@@ -4987,7 +5031,7 @@
 
       function switchMetric(m) {
         metric = m;
-        period = 0; // sin tope — mismo default que la carga inicial (ver init())
+        period = DEFAULT_PERIOD; // mismo default que la carga inicial (ver init())
         document.querySelectorAll('.ptab').forEach(function (b) {
           var bp = b.dataset.p === '0' ? 0 : parseInt(b.dataset.p);
           var on = bp === period;
@@ -5771,7 +5815,10 @@
             // Progreso Semanal (movida de training_plan.html, S10) — misma
             // respuesta, sin fetch adicional.
             try {
-              if (typeof window.renderWeeklyProgress === 'function')
+              if (
+                typeof window.renderWeeklyProgress === 'function' &&
+                document.getElementById('wp-chart')
+              )
                 window.renderWeeklyProgress(window._wpSport || 'all');
               if (d.streak_days != null) {
                 var streakWrap = document.getElementById('wp-streak-wrap');
@@ -5801,9 +5848,14 @@
         var params = new URLSearchParams(location.search);
         var m = params.get('metric') || 'ctl';
         metric = MC[m] ? m : 'ctl';
-        // Sin tope por defecto para ningún indicador — "Todo" el histórico real
-        // disponible. El usuario puede acotar manualmente con las pestañas de período.
-        period = 0;
+        // Período por defecto: 90 días (S22). "Todo" sigue en el selector. Si la
+        // URL trae ?period= explícito (7|30|90|180|365|0|all) se respeta.
+        period = DEFAULT_PERIOD;
+        var pp = params.get('period');
+        if (pp !== null) {
+          var ppn = pp === 'all' ? 0 : parseInt(pp, 10);
+          if ([0, 7, 30, 90, 180, 365].indexOf(ppn) !== -1) period = ppn;
+        }
 
         if (
           metric === 'vo2' &&
@@ -6353,8 +6405,26 @@
             btn.classList.add('on');
             renderWeeklyProgress(btn.dataset.sport);
           });
-        renderWeeklyProgress('all');
+        if (document.getElementById('wp-chart')) renderWeeklyProgress('all');
       });
+
+      // Progreso Semanal solo en métricas de carga (S22): en el resto el
+      // bloque se saca del DOM (no solo oculto) y se reinserta al volver.
+      var WP_LOAD_METRICS = ['ctl', 'atl', 'tsb', 'tss', 'acwr', 'pmc'];
+      var _wpNode = document.querySelector('.wp-panel');
+      var _wpMark = document.createComment('wp-panel');
+      window.syncProgressPanel = function () {
+        if (!_wpNode) return;
+        var want = WP_LOAD_METRICS.indexOf(metric) !== -1;
+        var attached = !!_wpNode.parentNode;
+        if (want && !attached && _wpMark.parentNode) {
+          _wpMark.parentNode.replaceChild(_wpNode, _wpMark);
+          renderWeeklyProgress(window._wpSport || 'all');
+        } else if (!want && attached) {
+          _wpNode.parentNode.replaceChild(_wpMark, _wpNode);
+        }
+      };
+      window.syncProgressPanel();
     </script>
     <script src="lx-info.js"></script>
     <script src="auth.js"></script>
