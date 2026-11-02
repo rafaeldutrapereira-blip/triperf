@@ -31,6 +31,7 @@
     <script src="i18n.js"></script>
     <script src="lx-backend-i18n.js"></script>
     <script src="lx-info.js"></script>
+    <script src="estado-checkin.js"></script>
     <style>
       /* ═══ Fisico (de recovery.html; tab-btn/tab-pane/tabs-bar -> fis-) ═══ */
 
@@ -1618,6 +1619,97 @@
       .est-done[hidden] {
         display: none;
       }
+      .reg-group + .reg-group {
+        margin-top: 0.9rem;
+      }
+      .reg-group-h {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin-bottom: 0.2rem;
+      }
+      .reg-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border2);
+      }
+      .reg-group .reg-row:last-child {
+        border-bottom: none;
+      }
+      .reg-label {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.8rem;
+        line-height: 1.35;
+        color: var(--muted);
+      }
+      .reg-scale {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .reg-btn {
+        width: 34px;
+        height: 34px;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface2);
+        color: var(--muted);
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .reg-btn:hover:not(.active) {
+        border-color: var(--orange);
+        color: var(--orange);
+      }
+      .reg-btn.active {
+        border-color: var(--orange);
+        background: var(--orange);
+        color: #fff;
+      }
+      .reg-note {
+        width: 100%;
+        margin-top: 0.9rem;
+        padding: 0.5rem 0.7rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 0.82rem;
+        font-family: inherit;
+        resize: none;
+      }
+      .reg-actions {
+        margin-top: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .reg-msg {
+        font-size: 0.78rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      @media (max-width: 480px) {
+        .reg-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.4rem;
+        }
+        .reg-scale {
+          width: 100%;
+        }
+        .reg-btn {
+          flex: 1;
+          height: 38px;
+        }
+      }
       .est-group-h {
         font-family: 'Barlow Condensed', sans-serif;
         font-size: 1.15rem;
@@ -1714,214 +1806,63 @@
           </div>
         </section>
 
-        <!-- ══ CAPA 1b: registro de hoy (los dos check-ins, integros) ══ -->
+        <!-- ══ CAPA 1b: registro de hoy (S28: UN check-in de 9 campos para Recuperación y Mental) ══ -->
         <section class="est-reg" id="est-reg">
           <div class="sec-h" data-i18n="est_register_title">Registro de hoy</div>
-          <div class="g2">
-            <div class="est-reg-card" id="est-reg-fis">
-              <div class="sec-h" style="font-size: 0.78rem" data-i18n="app_factor_wellness">Bienestar</div>
-              <div class="est-done-row"><span class="est-done" id="fis-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
-              <div class="panel" style="padding: 1rem">
-                    <div id="fis-wellness-form">
-                      <div class="well-row">
-                        <span class="well-label"
-                          >⚡
-                          <span data-i18n="rcw_energy"
-                            >Energía general</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-energy"
-                          data-field="energy"
-                        ></div>
-                      </div>
-                      <div class="well-row">
-                        <span class="well-label"
-                          >😊
-                          <span data-i18n="rcw_mood"
-                            >Estado de ánimo</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-mood"
-                          data-field="mood"
-                        ></div>
-                      </div>
-                      <div class="well-row">
-                        <span class="well-label"
-                          >💪
-                          <span data-i18n="rcw_soreness"
-                            >Piernas/Músculos (5=sin dolor)</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-soreness"
-                          data-field="soreness"
-                        ></div>
-                      </div>
-                      <div class="well-row">
-                        <span class="well-label"
-                          >🎯
-                          <span data-i18n="rcw_motivation"
-                            >Motivación para entrenar</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-motivation"
-                          data-field="motivation"
-                        ></div>
-                      </div>
-                      <div class="well-row">
-                        <span class="well-label"
-                          >🌡️
-                          <span data-i18n="rcw_stress"
-                            >Estrés externo (5=sin estrés)</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-stress"
-                          data-field="stress"
-                        ></div>
-                      </div>
-                      <div class="well-row" style="border-bottom: none">
-                        <span class="well-label"
-                          >🌙
-                          <span data-i18n="rcw_sleep_subj"
-                            >Calidad del sueño subjetiva</span
-                          ></span
-                        >
-                        <div
-                          class="well-stars"
-                          id="fis-ws-sleep_quality"
-                          data-field="sleep_quality"
-                        ></div>
-                      </div>
-                    </div>
-                    <div style="margin-top: 1rem">
-                      <input
-                        id="fis-well-notes"
-                        type="text"
-                        placeholder="Nota opcional (ej: estrés laboral, viaje)…"
-                        data-i18n-placeholder="rcw_notes_ph"
-                        style="
-                          width: 100%;
-                          padding: 0.45rem 0.7rem;
-                          background: var(--surface2);
-                          border: 1px solid var(--border);
-                          border-radius: 6px;
-                          color: var(--text);
-                          font-size: 0.82rem;
-                        "
-                      />
-                    </div>
-                    <div
-                      style="margin-top: 0.75rem; display: flex; gap: 0.5rem"
-                    >
-                      <button
-                        class="btn btn-primary btn-sm"
-                        onclick="FIS.saveWellness()"
-                        data-i18n="rcw_save_wellness"
-                      >
-                        Guardar bienestar
-                      </button>
-                      <span
-                        id="fis-wellness-save-msg"
-                        style="
-                          font-size: 0.75rem;
-                          color: var(--green);
-                          align-self: center;
-                          opacity: 0;
-                          transition: opacity 0.3s;
-                        "
-                      ></span>
-                    </div>
-                  </div>
-            </div>
-            <div class="est-reg-card men-scope" id="est-reg-men">
-                          <div class="card" style="margin-bottom: 16px">
-              <div class="card-title" data-i18n="ment_card_checkin_today">
-                Check-in Mental de Hoy
-              </div><div class="est-done-row"><span class="est-done" id="men-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
-              <div class="checkin-grid">
-                <div class="checkin-field">
-                  <label data-i18n="ment_label_anxiety"
-                    >Ansiedad — ¿Qué tan calmo te sientes? (5=muy calmo)</label
-                  >
-                  <div
-                    class="stars"
-                    id="men-stars-anxiety"
-                    data-key="anxiety"
-                  ></div>
+          <div class="est-reg-card" id="est-reg-fis">
+            <span id="est-reg-men"></span>
+            <div class="est-done-row"><span class="est-done" id="reg-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
+            <div class="reg-form" id="reg-form">
+              <div class="reg-group">
+                <div class="reg-group-h" data-i18n="est_group_phys">Físico</div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-energy" data-i18n="rcw_energy">Energía general</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-energy" data-reg-field="energy"></div>
                 </div>
-                <div class="checkin-field">
-                  <label data-i18n="ment_label_motivation"
-                    >Motivación (5=muy motivado)</label
-                  >
-                  <div
-                    class="stars"
-                    id="men-stars-motivation"
-                    data-key="motivation"
-                  ></div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-soreness" data-i18n="rcw_soreness">Piernas/Músculos (5=sin dolor)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-soreness" data-reg-field="soreness"></div>
                 </div>
-                <div class="checkin-field">
-                  <label data-i18n="ment_label_focus"
-                    >Foco / Concentración (5=muy enfocado)</label
-                  >
-                  <div class="stars" id="men-stars-focus" data-key="focus"></div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-sleep_quality" data-i18n="rcw_sleep_subj">Calidad del sueño subjetiva</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-sleep_quality" data-reg-field="sleep_quality"></div>
                 </div>
-                <div class="checkin-field">
-                  <label data-i18n="ment_label_confidence"
-                    >Confianza (5=muy confiado)</label
-                  >
-                  <div
-                    class="stars"
-                    id="men-stars-confidence"
-                    data-key="confidence"
-                  ></div>
-                </div>
-                <div class="checkin-field">
-                  <label data-i18n="ment_label_mood"
-                    >Estado de ánimo general (5=excelente)</label
-                  >
-                  <div class="stars" id="men-stars-mood" data-key="mood"></div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-stress" data-i18n="rcw_stress">Estrés externo (5=sin estrés)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-stress" data-reg-field="stress"></div>
                 </div>
               </div>
-              <div style="margin-top: 14px">
-                <textarea
-                  class="checkin-note"
-                  id="men-checkin-notes"
-                  placeholder="Notas opcionales (estrés laboral, sueño, emociones...)"
-                  data-i18n-placeholder="ment_ph_notes"
-                ></textarea>
+              <div class="reg-group">
+                <div class="reg-group-h" data-i18n="est_reg_grp_both">Físico y mental</div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-mood" data-i18n="ment_label_mood">Estado de ánimo general (5=excelente)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-mood" data-reg-field="mood"></div>
+                </div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-motivation" data-i18n="ment_label_motivation">Motivación (5=muy motivado)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-motivation" data-reg-field="motivation"></div>
+                </div>
               </div>
-              <div
-                style="
-                  margin-top: 12px;
-                  display: flex;
-                  gap: 10px;
-                  align-items: center;
-                "
-              >
-                <button
-                  class="btn-primary"
-                  onclick="MEN.submitCheckin()"
-                  data-i18n="ment_btn_save_checkin"
-                >
-                  Guardar Check-in
-                </button>
-                <span
-                  id="men-checkin-saved"
-                  style="font-size: 0.82rem; color: var(--green); display: none"
-                  data-i18n="ment_saved"
-                  >✓ Guardado</span
-                >
+              <div class="reg-group">
+                <div class="reg-group-h" data-i18n="est_group_mental">Mental</div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-anxiety" data-i18n="ment_label_anxiety">Ansiedad — ¿Qué tan calmo te sientes? (5=muy calmo)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-anxiety" data-reg-field="anxiety"></div>
+                </div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-focus" data-i18n="ment_label_focus">Foco / Concentración (5=muy enfocado)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-focus" data-reg-field="focus"></div>
+                </div>
+                <div class="reg-row">
+                  <span class="reg-label" id="reg-l-confidence" data-i18n="ment_label_confidence">Confianza (5=muy confiado)</span>
+                  <div class="reg-scale" role="radiogroup" aria-labelledby="reg-l-confidence" data-reg-field="confidence"></div>
+                </div>
               </div>
             </div>
+            <textarea class="reg-note" id="reg-notes" rows="2" placeholder="Nota opcional (ej: estrés laboral, viaje)…" data-i18n-placeholder="rcw_notes_ph"></textarea>
+            <div class="reg-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="reg-save" onclick="REG.save()" data-i18n="est_reg_save">Guardar registro</button>
+              <span class="reg-msg" id="reg-msg" role="status" aria-live="polite"></span>
             </div>
           </div>
         </section>
@@ -2813,6 +2754,193 @@
       })();
     </script>
     <script>
+      /* S28: check-in unico de 9 campos (alimenta Recuperacion y Mental). La
+         logica de reparto vive en estado-checkin.js (pura, con tests). */
+      (function () {
+        'use strict';
+        var API = '/api';
+        var EC = window.EstadoCheckin;
+        var answers = {};
+        var touched = {};
+        var stored = { well: {}, men: {} };
+        var storedNotes = { well: '', men: '' };
+        var notesTouched = false;
+        var busy = false;
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+        function _t(key, fallback) {
+          var v = window.i18n ? window.i18n.t(key) : null;
+          return v && v !== key ? v : fallback;
+        }
+        function has(v) {
+          return v !== null && v !== undefined && v !== 0 && v !== '';
+        }
+        function _tok() {
+          var direct = localStorage.getItem('lx_co_token');
+          if (direct) return direct;
+          try {
+            var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+            return s && s.token ? s.token : '';
+          } catch (e) {
+            return '';
+          }
+        }
+        function _hdrs() {
+          var h = { 'Content-Type': 'application/json' };
+          var tk = _tok();
+          if (tk) h.Authorization = 'Bearer ' + tk;
+          return h;
+        }
+        // Fecha LOCAL del navegador (no UTC), igual que los dos formularios anteriores.
+        function _dateISO() {
+          var d = new Date();
+          var m = String(d.getMonth() + 1).padStart(2, '0');
+          var day = String(d.getDate()).padStart(2, '0');
+          return d.getFullYear() + '-' + m + '-' + day;
+        }
+
+        function paint(field) {
+          var box = document.querySelector('[data-reg-field="' + field + '"]');
+          if (!box) return;
+          var val = answers[field] || 0;
+          box.querySelectorAll('.reg-btn').forEach(function (b) {
+            var n = parseInt(b.dataset.val, 10);
+            b.classList.toggle('active', n <= val);
+            b.setAttribute('aria-checked', n === val ? 'true' : 'false');
+          });
+        }
+        function build() {
+          document.querySelectorAll('[data-reg-field]').forEach(function (box) {
+            var field = box.getAttribute('data-reg-field');
+            for (var i = 1; i <= 5; i++) {
+              var b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'reg-btn';
+              b.textContent = i;
+              b.dataset.val = i;
+              b.setAttribute('role', 'radio');
+              b.setAttribute('aria-checked', 'false');
+              b.addEventListener('click', function () {
+                answers[field] = parseInt(this.dataset.val, 10);
+                touched[field] = true;
+                paint(field);
+              });
+              box.appendChild(b);
+            }
+          });
+          $('reg-notes').addEventListener('input', function () {
+            notesTouched = true;
+          });
+        }
+
+        function showNote() {
+          var el = $('reg-notes');
+          if (!notesTouched && !el.value) el.value = storedNotes.well || storedNotes.men || '';
+        }
+        function markDone() {
+          $('reg-done').hidden = false;
+        }
+
+        function setWellness(w) {
+          if (!w) return;
+          EC.WELL_FIELDS.forEach(function (f) {
+            if (has(w[f])) {
+              stored.well[f] = w[f];
+              if (!touched[f]) answers[f] = w[f];
+              paint(f);
+            }
+          });
+          storedNotes.well = w.notes || '';
+          showNote();
+          markDone();
+        }
+        function setMental(c) {
+          if (!c) return;
+          var any = false;
+          EC.MEN_FIELDS.forEach(function (f) {
+            if (!has(c[f])) return;
+            any = true;
+            stored.men[f] = c[f];
+            var shared = EC.BOTH.indexOf(f) !== -1;
+            // en campos compartidos manda el valor de bienestar si ya existe
+            if (!touched[f] && !(shared && has(stored.well[f]))) answers[f] = c[f];
+            paint(f);
+          });
+          storedNotes.men = c.notes || '';
+          showNote();
+          if (any) markDone();
+        }
+
+        function msg(text, ok) {
+          var el = $('reg-msg');
+          el.textContent = text;
+          el.style.color = ok ? 'var(--green)' : '#ef4444';
+          el.style.opacity = 1;
+          clearTimeout(msg._t);
+          msg._t = setTimeout(function () {
+            el.style.opacity = 0;
+          }, 2500);
+        }
+        function post(url, body) {
+          return fetch(API + url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: _hdrs(),
+            body: JSON.stringify(body),
+          }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          });
+        }
+        function refresh() {
+          if (window.FIS) FIS.loadDashboard();
+          if (window.MEN) MEN.loadDashboard();
+        }
+
+        function save() {
+          if (busy) return;
+          var p = EC.buildPayloads(answers, {
+            dateIso: _dateISO(),
+            touched: touched,
+            stored: stored,
+            notes: $('reg-notes').value,
+            notesTouched: notesTouched,
+            storedNotes: storedNotes,
+          });
+          if (!p.well && !p.men) {
+            msg(_t('est_reg_empty', 'Elige al menos una respuesta.'), false);
+            return;
+          }
+          busy = true;
+          $('reg-save').disabled = true;
+          // Bienestar primero: el MFS toma el Recovery del dia, que ya debe incluirlo.
+          var chain = Promise.resolve();
+          if (p.well) chain = chain.then(function () { return post('/recovery/wellness', p.well); });
+          if (p.men) chain = chain.then(function () { return post('/mental/checkin', p.men); });
+          chain
+            .then(function () {
+              touched = {};
+              notesTouched = false;
+              markDone();
+              msg(_t('ment_saved', '✓ Guardado'), true);
+            })
+            .catch(function () {
+              msg(_t('est_reg_err', 'No se pudo guardar. Reintenta.'), false);
+            })
+            .then(function () {
+              busy = false;
+              $('reg-save').disabled = false;
+              refresh();
+            });
+        }
+
+        build();
+        window.REG = { setWellness: setWellness, setMental: setMental, save: save };
+      })();
+    </script>
+    <script>
       (function () {
         'use strict';
         var FIS = (window.FIS = {});
@@ -2837,14 +2965,6 @@
           Authorization: 'Bearer ' + _authToken(),
         };
 
-        var _wellnessValues = {
-          energy: 0,
-          mood: 0,
-          soreness: 0,
-          motivation: 0,
-          stress: 0,
-          sleep_quality: 0,
-        };
         var _currentDate = (function () {
           var d = new Date();
           return (
@@ -3618,101 +3738,10 @@
         // ═══════════════════════════════════════════════════════════════════════════
         // WELLNESS
         // ═══════════════════════════════════════════════════════════════════════════
-        function initWellnessStars() {
-          var fields = [
-            'energy',
-            'mood',
-            'soreness',
-            'motivation',
-            'stress',
-            'sleep_quality',
-          ];
-          fields.forEach(function (f) {
-            var container = $('ws-' + f);
-            if (!container) return;
-            container.innerHTML = '';
-            for (var i = 1; i <= 5; i++) {
-              var btn = document.createElement('button');
-              btn.className = 'star inactive';
-              btn.textContent = '★';
-              btn.dataset.val = i;
-              btn.dataset.field = f;
-              btn.addEventListener(
-                'click',
-                (function (field, val, el) {
-                  return function () {
-                    _wellnessValues[field] = val;
-                    updateStars(field);
-                  };
-                })(f, i, btn),
-              );
-              container.appendChild(btn);
-            }
-          });
-        }
-
-        function updateStars(field) {
-          var val = _wellnessValues[field] || 0;
-          var container = $('ws-' + field);
-          if (!container) return;
-          container.querySelectorAll('.star').forEach(function (s) {
-            var sv = parseInt(s.dataset.val);
-            s.className = 'star ' + (sv <= val ? 'active' : 'inactive');
-          });
-        }
-
+        // S28: el formulario de bienestar vive ahora en el check-in unico (REG).
         function prefillWellness(w) {
-          var fields = [
-            'energy',
-            'mood',
-            'soreness',
-            'motivation',
-            'stress',
-            'sleep_quality',
-          ];
-          fields.forEach(function (f) {
-            if (w[f] !== null && w[f] !== undefined) {
-              _wellnessValues[f] = w[f];
-              updateStars(f);
-            }
-          });
-          var notesEl = $('well-notes');
-          if (notesEl && w.notes) notesEl.value = w.notes;
-          if ($('done')) $('done').hidden = false;
+          if (window.REG) REG.setWellness(w);
         }
-
-        FIS.saveWellness = function () {
-          var notes = $('well-notes').value || null;
-          var body = { date_iso: _currentDate, notes: notes };
-          Object.keys(_wellnessValues).forEach(function (f) {
-            if (_wellnessValues[f]) body[f] = _wellnessValues[f];
-          });
-
-          fetch(API + '/recovery/wellness', {
-            method: 'POST',
-            headers: hdrs,
-            body: JSON.stringify(body),
-          })
-            .then(function (r) {
-              return r.json();
-            })
-            .then(function (d) {
-              if (d.ok) {
-                var msg = $('wellness-save-msg');
-                msg.textContent = _t(
-                  'rcw_wellness_saved',
-                  '✅ Guardado — score recalculado',
-                );
-                msg.style.opacity = 1;
-                if ($('done')) $('done').hidden = false;
-                setTimeout(function () {
-                  msg.style.opacity = 0;
-                  loadDashboard(); // Refrescar con nuevo wellness
-                }, 1800);
-              }
-            })
-            .catch(function () {});
-        };
 
         function loadWellnessHistory() {
           fetch(API + '/recovery/wellness/history?days=30', { headers: hdrs })
@@ -4111,7 +4140,6 @@
         // ═══════════════════════════════════════════════════════════════════════════
         // INIT
         // ═══════════════════════════════════════════════════════════════════════════
-        initWellnessStars();
         loadDashboard();
 
         // Show coach tab if role = coach
@@ -4158,8 +4186,6 @@
             if (tok) h.Authorization = 'Bearer ' + tok;
             return h;
           }
-          var checkinData = {};
-
           // Fecha LOCAL del navegador (no UTC) — evita que el "hoy" del servidor
           // (calculado en UTC) se desfase varias horas del día real del usuario
           // en husos horarios detrás de UTC (ej. Chile), donde el check-in de la
@@ -4356,23 +4382,9 @@
             });
           }
 
+          // S28: el check-in mental se captura en el formulario unico (REG).
           function renderCheckin(c) {
-            if (!c) return;
-            var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
-            keys.forEach(function (key) {
-              if (c[key]) {
-                checkinData[key] = c[key];
-                setStars(key, c[key]);
-              }
-            });
-            if (
-              keys.some(function (k) {
-                return c[k];
-              })
-            )
-              $('done').hidden = false;
-            if (c.notes)
-              $('checkin-notes').value = c.notes || '';
+            if (c && window.REG) REG.setMental(c);
           }
 
           function renderTrend(trend) {
@@ -4414,77 +4426,6 @@
                 '</div>';
               container.appendChild(wrap);
             });
-          }
-
-          // ─── CHECKIN ─────────────────────────────────────────────────────────────────
-          function buildStars() {
-            var keys = ['anxiety', 'motivation', 'focus', 'confidence', 'mood'];
-            keys.forEach(function (key) {
-              var container = $('stars-' + key);
-              if (!container) return;
-              container.innerHTML = '';
-              for (var i = 1; i <= 5; i++) {
-                var btn = document.createElement('button');
-                btn.className = 'star-btn';
-                btn.textContent = i;
-                btn.dataset.val = i;
-                btn.dataset.key = key;
-                btn.onclick = (function (k, v, b) {
-                  return function () {
-                    checkinData[k] = v;
-                    setStars(k, v);
-                  };
-                })(key, i, btn);
-                container.appendChild(btn);
-              }
-            });
-          }
-
-          function setStars(key, val) {
-            var container = $('stars-' + key);
-            if (!container) return;
-            container.querySelectorAll('.star-btn').forEach(function (b) {
-              b.classList.toggle('active', parseInt(b.dataset.val) <= val);
-            });
-          }
-
-          function submitCheckin() {
-            var payload = {
-              date_iso: _localDateISO(),
-              anxiety: checkinData.anxiety || null,
-              motivation: checkinData.motivation || null,
-              focus: checkinData.focus || null,
-              confidence: checkinData.confidence || null,
-              mood: checkinData.mood || null,
-              notes: $('checkin-notes').value || null,
-            };
-            fetch(API + '/mental/checkin', {
-              method: 'POST',
-              credentials: 'include',
-              headers: _authHeaders({ 'Content-Type': 'application/json' }),
-              body: JSON.stringify(payload),
-            })
-              .then(function (r) {
-                return r.json();
-              })
-              .then(function (d) {
-                $('done').hidden = false;
-                $('checkin-saved').style.display =
-                  'inline';
-                setTimeout(function () {
-                  $('checkin-saved').style.display =
-                    'none';
-                }, 2500);
-                renderMFS({
-                  score: d.mfs_score,
-                  level: d.mfs_level,
-                  color: d.mfs_color,
-                  signal: null,
-                  recommendation: d.recommendation,
-                  data_completeness: 1.0,
-                });
-              })
-              .catch(function () {});
           }
 
           // ─── PROTOCOLS ───────────────────────────────────────────────────────────────
@@ -5108,12 +5049,11 @@
           }
 
           // ─── INIT ────────────────────────────────────────────────────────────────────
-          buildStars();
           loadDashboard();
 
           MEN._t = _t;
           MEN.switchTab = switchTab;
-          MEN.submitCheckin = submitCheckin;
+          MEN.loadDashboard = loadDashboard;
           MEN.loadProtocols = loadProtocols;
           MEN.openProtoModal = openProtoModal;
           MEN.closeProtoModal = closeProtoModal;
