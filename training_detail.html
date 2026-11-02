@@ -1118,9 +1118,8 @@
               return {};
             }
           })();
-          var FTP = ATHLETE.ftp || 240;
-          var LTHR = ATHLETE.css || 168; // using css field as proxy for LTHR
-          var CSS = ATHLETE.css || 110; // seg/100m
+          // FTP solo si es real (> 0); sin FTP no se calcula IF/TSS ni se imprime ninguno.
+          var FTP = +ATHLETE.ftp > 0 ? +ATHLETE.ftp : null;
 
           // ─────────────────────────────────────────────────────
           // HELPERS
@@ -1170,26 +1169,12 @@
                 icon: '🏋️',
                 location: _t('tdw_loc_gym', 'Gimnasio'),
               };
-            if (nm.indexOf('las condes') >= 0 || nm.indexOf('condes') >= 0)
-              return {
-                type: 'outdoor',
-                lat: -33.408,
-                lng: -70.583,
-                location: 'Las Condes, Santiago',
-              };
-            if (nm.indexOf('colina') >= 0)
-              return {
-                type: 'outdoor',
-                lat: -33.19,
-                lng: -70.695,
-                location: 'Colina, Chile',
-              };
-            // generic outdoor Santiago
+            // Outdoor: el lugar solo se muestra si la actividad lo trae (dato real).
             return {
               type: 'outdoor',
-              lat: -33.45,
-              lng: -70.65,
-              location: 'Santiago, Chile',
+              location: String(
+                act.location_name || act.location || act.city || '',
+              ),
             };
           }
 
@@ -1453,11 +1438,18 @@
           // KPI Cards (sport-specific)
           var kpis = [];
           if (ACT.sport === 'bike') {
-            var np = ACT.avg_power ? Math.round(ACT.avg_power * 1.07) : null;
-            var ifv = np ? (np / FTP).toFixed(2) : null;
+            // NP solo si viene de la actividad/telemetria; nunca se deriva de avg_power.
+            var npRaw = +(
+              ACT.norm_power ||
+              ACT.normalized_power ||
+              ACT.np ||
+              0
+            );
+            var np = npRaw > 0 ? Math.round(npRaw) : null;
+            var ifv = np && FTP ? (np / FTP).toFixed(2) : null;
             var tss =
               ACT.tss ||
-              (np
+              (np && FTP
                 ? Math.round(
                     ((ACT.dur_min * 60 * np * ifv) / (FTP * 3600)) * 100,
                   )
@@ -1468,14 +1460,19 @@
             kpis = [
               {
                 lbl: _t('tdw_kpi_power_np', 'Potencia NP'),
-                val: np || '—',
+                val: np || '???',
                 unit: _t('tdw_unit_watts', 'Watts'),
                 col: 'var(--orange)',
               },
               {
                 lbl: _t('tdw_kpi_if', 'IF'),
-                val: ifv || '—',
-                unit: _t('term_ftp_name', 'Potencia umbral (bici)') + ' (FTP) ' + FTP + 'W',
+                val: ifv || '???',
+                unit: FTP
+                  ? _t('term_ftp_name', 'Potencia umbral (bici)') +
+                    ' (FTP) ' +
+                    FTP +
+                    'W'
+                  : '',
                 col: 'var(--gold)',
               },
               {
@@ -1486,8 +1483,7 @@
               },
               {
                 lbl: _t('tdw_kpi_speed_avg', 'Velocidad Media'),
-                val:
-                  spd || (ACT.avg_power ? Math.round(ACT.avg_power / 8) : ' —'),
+                val: spd || '???',
                 unit: _t('tdw_unit_kmh', 'km/h'),
                 col: 'var(--aqua)',
               },
@@ -1759,9 +1755,7 @@
             var locEl = document.getElementById('map-loc');
             if (ACT.sport === 'bike' && ACT.avg_power) {
               badge.innerHTML =
-                '<strong>' +
-                cfg.location +
-                '</strong>' +
+                (cfg.location ? '<strong>' + cfg.location + '</strong>' : '') +
                 '⚡ ' +
                 ACT.avg_power +
                 'W avg<br>' +
@@ -1774,9 +1768,7 @@
                 ? fmtPace(Math.round((ACT.dur_min * 60) / ACT.dist_km))
                 : '—';
               badge.innerHTML =
-                '<strong>' +
-                cfg.location +
-                '</strong>' +
+                (cfg.location ? '<strong>' + cfg.location + '</strong>' : '') +
                 '🏃 ' +
                 rPace +
                 '<br>' +
@@ -1786,6 +1778,7 @@
                 (ACT.avg_hr ? '❤️ ' + ACT.avg_hr + ' bpm' : '');
             }
             locEl.textContent = cfg.location;
+            if (!cfg.location) locEl.style.display = 'none';
 
             leafletMap = L.map('map-leaflet', {
               zoomControl: true,
@@ -1926,8 +1919,8 @@
               .bindPopup(
                 '<b>' +
                   _t('tdw_map_start', 'Inicio') +
-                  '</b><br>' +
-                  cfg.location,
+                  '</b>' +
+                  (cfg.location ? '<br>' + cfg.location : ''),
               )
               .addTo(leafletMap);
             L.marker(route[route.length - 1], { icon: circleIcon('#EF4444') })
