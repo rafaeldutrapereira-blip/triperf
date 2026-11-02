@@ -450,3 +450,95 @@ def test_distribution_pct_sums_100(client, auth_headers):
     if sports:
         total_pct = sum(s["pct_tss"] for s in sports)
         assert abs(total_pct - 100.0) < 2.0   # tolerancia de redondeo
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# S23-B: /summary acepta days_back con agregación real del período
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _seed_period_acts(db, user):
+    """Fixture determinista: fechas relativas a hoy, fcmax del atleta = 182."""
+    from datetime import date, timedelta
+    from api.models import GarminActivity
+    today = date.today()
+    rows = [
+        # dentro de 90 d
+        ("a1", "bike", 30, 60, 150, 200, 80.0),
+        ("a2", "run",  60, 45, 120, None, 40.0),
+        # entre 91 y 180 d
+        ("a3", "bike", 120, 60, 150, 220, 100.0),
+        # entre 181 y 365 d
+        ("a4", "run",  300, 50, 120, None, 60.0),
+    ]
+    for aid, sp, ago, dur, hr, pw, tss in rows:
+        db.add(GarminActivity(
+            user_id=user.id, activity_id=aid, sport=sp,
+            date_iso=(today - timedelta(days=ago)).isoformat(),
+            dur_min=dur, dist_km=10.0, avg_hr=hr, avg_power=pw, tss=tss,
+        ))
+    db.commit()
+
+
+def test_summary_without_days_back_is_legacy_shape(client, db, athlete_user, auth_headers):
+    _seed_period_acts(db, athlete_user)
+    data = client.get("/api/analytics/summary", headers=auth_headers).json()
+    assert set(data) == {"power_curve", "vo2max", "personal_records",
+                         "training_distribution", "zone_calibration"}
+    assert data["training_distribution"]["days_back"] == 365
+    assert data["zone_calibration"]["period"] == "últimos 90 días"
+
+
+def test_summary_days_back_aggregates_real_period(client, db, athlete_user, auth_headers):
+    from datetime import date, timedelta
+    _seed_period_acts(db, athlete_user)
+    r90 = client.get("/api/analytics/summary?days_back=90", headers=auth_headers)
+    r365 = client.get("/api/analytics/summary?days_back=365", headers=auth_headers)
+    assert r90.status_code == 200 and r365.status_code == 200
+    d90, d365 = r90.json(), r365.json()
+
+    # Rango y valor aplicado
+    today = date.today()
+    assert d90["days_back"] == 90
+    assert d90["period_end"] == today.isoformat()
+    assert d90["period_start"] == (today - timedelta(days=90)).isoformat()
+    assert d365["period_start"] == (today - timedelta(days=365)).isoformat()
+
+    # 90 d: a1 (80) + a2 (40) -> 120 TSS, 2 act, (60+45)/60 = 1.75 h
+    t90 = d90["training_distribution"]
+    assert t90["days_back"] == 90
+    assert t90["total_acts"] == 2
+    assert t90["total_tss"] == 120.0
+    assert t90["total_hours"] == 1.8  # round(1.75, 1)
+    sp90 = {s["sport"]: s for s in t90["by_sport"]}
+    assert sp90["bike"]["tss"] == 80.0 and sp90["run"]["tss"] == 40.0
+
+    # 365 d: las 4 actividades -> 280 TSS, 4 act
+    t365 = d365["training_distribution"]
+    assert t365["total_acts"] == 4
+    assert t365["total_tss"] == 280.0
+    sp365 = {s["sport"]: s for s in t365["by_sport"]}
+    assert sp365["bike"]["tss"] == 180.0 and sp365["run"]["tss"] == 100.0
+
+    # zone_calibration sigue la ventana: mejor bike de 60 min = a1 (200 W, hace 30 d)
+    # en 90 d; a3 (220 W, hace 120 d) solo entra con 365.
+    assert d90["zone_calibration"]["period"] == "últimos 90 días"
+    assert d90["zone_calibration"]["cycling"]["ftp_watts"] == 200
+    assert d365["zone_calibration"]["period"] == "últimos 365 días"
+    assert d365["zone_calibration"]["cycling"]["ftp_watts"] == 220
+
+    # Campos históricos/estado actual: misma semántica con cualquier ventana
+    assert d90["power_curve"] == d365["power_curve"]
+    assert d90["personal_records"] == d365["personal_records"]
+
+
+def test_summary_days_back_180_excludes_older(client, db, athlete_user, auth_headers):
+    _seed_period_acts(db, athlete_user)
+    d = client.get("/api/analytics/summary?days_back=180", headers=auth_headers).json()
+    assert d["training_distribution"]["total_acts"] == 3
+    assert d["training_distribution"]["total_tss"] == 220.0
+
+
+@pytest.mark.parametrize("bad", ["0", "30", "100", "1000", "abc", "-90"])
+def test_summary_days_back_invalid_rejected(client, auth_headers, bad):
+    resp = client.get(f"/api/analytics/summary?days_back={bad}", headers=auth_headers)
+    assert resp.status_code in (400, 422)

@@ -16,6 +16,7 @@ Todos los endpoints requieren JWT.
 from __future__ import annotations
 
 import logging
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -115,28 +116,52 @@ def get_zone_calibration(
     return compute_zone_calibration(me.id, db, days_back=days_back)
 
 
+SUMMARY_ALLOWED_DAYS = (90, 180, 365, 730)
+
+
 @router.get("/summary")
 def get_analytics_summary(
+    days_back: Optional[int] = Query(
+        None,
+        description="Período en días para los agregados de ventana (90, 180, 365 o 730). "
+                    "Sin el parámetro: respuesta legacy (365 d distribución, 90 d calibración).",
+    ),
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
     """
     Resumen completo de analytics en un solo request.
     Útil para el dashboard inicial de la página de analytics.
+
+    Con `days_back`, training_distribution y zone_calibration se calculan sobre
+    las actividades reales de ese período y la respuesta añade `days_back`,
+    `period_start` y `period_end`. power_curve, vo2max y personal_records
+    conservan su semántica (curva/histórico/récords) y NO se fuerzan a la ventana.
     """
+    if days_back is not None and days_back not in SUMMARY_ALLOWED_DAYS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"days_back debe ser uno de {list(SUMMARY_ALLOWED_DAYS)}",
+        )
     power     = compute_power_curve(me.id, db, days_back=365, sport="bike")
     vo2max    = compute_vo2max_history(me.id, db, days_back=365)
     records   = compute_personal_records(me.id, db)
-    distrib   = compute_training_distribution(me.id, db, days_back=365)
-    zones     = compute_zone_calibration(me.id, db, days_back=90)
+    distrib   = compute_training_distribution(me.id, db, days_back=days_back or 365)
+    zones     = compute_zone_calibration(me.id, db, days_back=days_back or 90)
 
-    return {
+    out = {
         "power_curve":           power,
         "vo2max":                vo2max,
         "personal_records":      records,
         "training_distribution": distrib,
         "zone_calibration":      zones,
     }
+    if days_back is not None:
+        today = date.today()
+        out["days_back"]    = days_back
+        out["period_start"] = (today - timedelta(days=days_back)).isoformat()
+        out["period_end"]   = today.isoformat()
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
