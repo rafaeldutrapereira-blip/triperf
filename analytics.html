@@ -19,6 +19,62 @@
     <link rel="stylesheet" href="nav.css?v=3" />
     <style>
       /* ── Analytics layout ───────────────────────────────────── */
+      .an-sum {
+        margin-bottom: 1.25rem;
+        padding: 1rem 1.2rem;
+        border: 1px solid var(--border, rgba(8, 116, 174, 0.18));
+        border-radius: 12px;
+        background: var(--surface, #08121e);
+      }
+      .an-sum[hidden],
+      .an-sum-insight[hidden] {
+        display: none;
+      }
+      .an-sum-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.3rem 1rem;
+        align-items: baseline;
+      }
+      .an-sum-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--orange, #ff6535);
+      }
+      .an-sum-period {
+        font-size: 0.74rem;
+        color: var(--dim, #94a3b8);
+      }
+      .an-sum-headline {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0.45rem 0 0.8rem;
+        color: var(--text);
+      }
+      .an-sum-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.7rem;
+      }
+      .an-sum-stat .v {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .an-sum-stat .l {
+        font-size: 0.72rem;
+        color: var(--dim, #94a3b8);
+      }
+      .an-sum-insight {
+        margin-top: 0.8rem;
+        font-size: 0.82rem;
+        color: var(--text);
+        border-top: 1px solid var(--border, rgba(8, 116, 174, 0.18));
+        padding-top: 0.6rem;
+      }
       .an-tab-bar {
         display: flex;
         gap: 0.2rem;
@@ -388,6 +444,17 @@
             </option>
           </select>
         </div>
+
+        <!-- Resumen (S23-F): portada sobre las pestañas; oculto hasta tener datos reales -->
+        <section class="an-sum" id="an-summary" hidden aria-live="polite">
+          <div class="an-sum-head">
+            <span class="an-sum-title" id="an-sum-title"></span>
+            <span class="an-sum-period" id="an-sum-period"></span>
+          </div>
+          <div class="an-sum-headline" id="an-sum-headline"></div>
+          <div class="an-sum-stats" id="an-sum-stats"></div>
+          <div class="an-sum-insight" id="an-sum-insight" hidden></div>
+        </section>
 
         <!-- Tab bar -->
         <div class="an-tab-bar">
@@ -876,6 +943,7 @@
          (se avisa con una nota). Zonas: acepta days_back 30-365 (se recorta). */
       function reloadAll(fromUser) {
         _data = {};
+        loadSummary();
         var activeName = _anActiveName();
         if (fromUser) {
           var rn = document.getElementById('an-note-records');
@@ -1665,8 +1733,219 @@
         );
       }
 
+      /* ─────────────────────────────────────────────────────────────────
+   0. RESUMEN (portada, S23-F)
+   Cifras del período = /analytics/summary?days_back=<rango> (agregado real).
+   ACWR/riesgo = /analytics/ramp-rate (definición fija 7 d vs 28 d).
+   Si algo falla o viene vacío, el bloque queda oculto (sin errores visibles).
+───────────────────────────────────────────────────────────────── */
+      var SUM_TXT = {
+        es: {
+          title: 'Resumen',
+          last: 'Últimos {n} días',
+          head: 'Entrenaste {h} h en {s} {ses} ({tss} de carga)',
+          ses1: 'sesión',
+          sesN: 'sesiones',
+          sessions: 'Sesiones',
+          hours: 'Horas entrenadas',
+          tss: 'Carga total',
+          acwr: 'Riesgo de sobrecarga (7 d vs 28 d)',
+        },
+        pt: {
+          title: 'Resumo',
+          last: 'Últimos {n} dias',
+          head: 'Você treinou {h} h em {s} {ses} ({tss} de carga)',
+          ses1: 'sessão',
+          sesN: 'sessões',
+          sessions: 'Sessões',
+          hours: 'Horas treinadas',
+          tss: 'Carga total',
+          acwr: 'Risco de sobrecarga (7 d vs 28 d)',
+        },
+        en: {
+          title: 'Summary',
+          last: 'Last {n} days',
+          head: 'You trained {h} h across {s} {ses} ({tss} load)',
+          ses1: 'session',
+          sesN: 'sessions',
+          sessions: 'Sessions',
+          hours: 'Hours trained',
+          tss: 'Total load',
+          acwr: 'Overload risk (7 d vs 28 d)',
+        },
+      };
+      var _sumSeq = 0;
+      var _sumLast = null; // {sum, ramp, insights} para re-render al cambiar idioma
+      var _sumSide = null; // ramp-rate + insights (no dependen del rango): una sola vez
+
+      function _sumLang() {
+        var l = window.i18n && window.i18n.lang;
+        return l === 'pt' || l === 'en' ? l : 'es';
+      }
+      function _sumGet(path) {
+        return fetch(API + path, { headers: hdrs() })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .catch(function () {
+            return null;
+          });
+      }
+      function _sumNum(n, dec) {
+        var loc = { es: 'es', pt: 'pt-BR', en: 'en' }[_sumLang()];
+        try {
+          return Number(n).toLocaleString(loc, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: dec,
+          });
+        } catch (e) {
+          return String(n);
+        }
+      }
+      function _sumDate(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+        if (!m) return '';
+        var loc = { es: 'es', pt: 'pt-BR', en: 'en' }[_sumLang()];
+        try {
+          return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString(loc, {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          });
+        } catch (e) {
+          return iso;
+        }
+      }
+      // true si el texto del backend se puede mostrar en el idioma activo
+      function _sumShowable(orig) {
+        return _sumLang() === 'es' || _be(orig) !== orig;
+      }
+      function _sumInfoBtn(id) {
+        return (
+          '<button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open(\'' +
+          id +
+          '\', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>'
+        );
+      }
+
+      function renderSummary(st) {
+        var box = document.getElementById('an-summary');
+        if (!box) return;
+        var sum = st && st.sum;
+        var dist = sum && sum.training_distribution;
+        if (
+          !dist ||
+          dist.message ||
+          !(dist.total_acts > 0) ||
+          typeof dist.total_tss !== 'number' ||
+          typeof dist.total_hours !== 'number'
+        ) {
+          box.hidden = true;
+          return;
+        }
+        var T = SUM_TXT[_sumLang()];
+        var days = sum.days_back || dist.days_back;
+        var period = T.last.replace('{n}', days);
+        var a = _sumDate(sum.period_start);
+        var b = _sumDate(sum.period_end);
+        if (a && b) period += ' · ' + a + ' – ' + b;
+        document.getElementById('an-sum-title').textContent = T.title;
+        document.getElementById('an-sum-period').textContent = period;
+
+        var n = dist.total_acts;
+        var hrs = _sumNum(dist.total_hours, 1);
+        var tss = _sumNum(dist.total_tss, 0);
+        document.getElementById('an-sum-headline').textContent = T.head
+          .replace('{h}', hrs)
+          .replace('{s}', n)
+          .replace('{ses}', n === 1 ? T.ses1 : T.sesN)
+          .replace('{tss}', tss);
+
+        var stats =
+          '<div class="an-sum-stat"><div class="v">' + n + '</div><div class="l">' + esc(T.sessions) + '</div></div>' +
+          '<div class="an-sum-stat"><div class="v">' + hrs + ' h</div><div class="l">' + esc(T.hours) + '</div></div>' +
+          '<div class="an-sum-stat"><div class="v">' + tss + '</div><div class="l">' + esc(T.tss) + _sumInfoBtn('tss') + '</div></div>';
+        var ramp = st.ramp;
+        if (
+          ramp &&
+          typeof ramp.acwr === 'number' &&
+          ramp.risk_level &&
+          ramp.risk_level !== 'Sin datos' &&
+          (_sumShowable(ramp.risk_level) ||
+            (_sumLang() === 'pt' && /^(Seguro|Moderado|Elevado)$/.test(ramp.risk_level)))
+        ) {
+          var clr = /^#[0-9a-fA-F]{3,8}$/.test(ramp.risk_color || '') ? ramp.risk_color : 'var(--text)';
+          stats +=
+            '<div class="an-sum-stat"><div class="v" style="color:' + clr + '">' +
+            _sumNum(ramp.acwr, 2) + ' · ' + esc(_be(ramp.risk_level)) +
+            '</div><div class="l">' + esc(T.acwr) + _sumInfoBtn('acwr') + '</div></div>';
+        }
+        document.getElementById('an-sum-stats').innerHTML = stats;
+
+        // UNA línea de insight: /insights (warning/critical) o, si no, la acción del ACWR
+        var line = '';
+        var ins = st.insights && st.insights.insights;
+        if (ins && ins.length) {
+          for (var i = 0; i < ins.length && !line; i++) {
+            var it = ins[i];
+            if (
+              it &&
+              (it.severity === 'critical' || it.severity === 'warning') &&
+              typeof it.title === 'string' &&
+              it.title &&
+              _sumShowable(it.title)
+            ) {
+              line = _be(it.title);
+            }
+          }
+        }
+        if (
+          !line &&
+          ramp &&
+          ramp.risk_level !== 'Sin datos' &&
+          typeof ramp.risk_action === 'string' &&
+          ramp.risk_action &&
+          _sumShowable(ramp.risk_action)
+        ) {
+          line = _be(ramp.risk_action);
+        }
+        var il = document.getElementById('an-sum-insight');
+        il.textContent = line;
+        il.hidden = !line;
+        box.hidden = false;
+      }
+
+      function loadSummary() {
+        var seq = ++_sumSeq;
+        var days = getDays();
+        var side = _sumSide
+          ? Promise.resolve(_sumSide)
+          : Promise.all([_sumGet('/analytics/ramp-rate'), _sumGet('/analytics/insights')]).then(
+              function (r) {
+                _sumSide = { ramp: r[0], insights: r[1] };
+                return _sumSide;
+              },
+            );
+        Promise.all([_sumGet('/analytics/summary?days_back=' + days), side])
+          .then(function (r) {
+            if (seq !== _sumSeq) return; // llegó una respuesta de un rango anterior
+            _sumLast = { sum: r[0], ramp: r[1].ramp, insights: r[1].insights };
+            renderSummary(_sumLast);
+          })
+          .catch(function () {
+            if (seq === _sumSeq) renderSummary(null);
+          });
+      }
+      document.addEventListener('lx:langchange', function () {
+        if (_sumLast) renderSummary(_sumLast);
+      });
+      document.addEventListener('lx:i18nready', function () {
+        if (_sumLast) renderSummary(_sumLast);
+      });
+
       /* ── Init ───────────────────────────────────────────────────── */
       document.addEventListener('DOMContentLoaded', function () {
+        loadSummary();
         // Solo la pestaña activa (por hash, o Carga); el resto carga al primer clic
         var n = _anNameFromHash(location.hash) || 'carga';
         _anActivate(n, null, false);
