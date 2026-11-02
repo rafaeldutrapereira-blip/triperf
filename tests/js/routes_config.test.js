@@ -94,3 +94,31 @@ test('App Móvil sigue accesible para basico', () => {
   routes.guard();
   assert.deepEqual(redirects, []);
 });
+
+// W4 — Mi Huella deshabilitada para TODOS los roles (incluido admin).
+test('W4: canAccess(huella) es false para atleta, coach y admin', () => {
+  const { routes } = load();
+  const sesiones = [athleteBasic, athleteAg, athleteElite,
+    { api_rol: 'coach', plan: 'elite' }, { api_rol: 'admin', plan: 'elite' }];
+  for (const sess of sesiones) {
+    assert.equal(routes.canAccess(sess, 'huella'), false, JSON.stringify(sess));
+  }
+  assert.equal(routes.canAccess({ api_rol: 'admin' }, 'race_day'), true);
+});
+
+test('W4: huella no aparece en el sidebar ni en allowedForPlan', () => {
+  const { routes } = load();
+  assert.equal(routes.modules.some(m => m.sidebar && m.id === 'huella'), false);
+  for (const p of ['basic', 'agegroup', 'elite']) {
+    assert.equal(routes.allowedForPlan(p).includes('huella'), false);
+  }
+});
+
+test('W4: guard redirige a dashboard?locked=huella a atleta, coach y admin', () => {
+  const sesiones = [athleteElite, { api_rol: 'coach', plan: 'elite' }, { api_rol: 'admin', plan: 'elite' }];
+  for (const sess of sesiones) {
+    const { routes, redirects } = load('/huella.html', sess);
+    routes.guard();
+    assert.deepEqual(redirects, ['dashboard.html?locked=huella'], JSON.stringify(sess));
+  }
+});

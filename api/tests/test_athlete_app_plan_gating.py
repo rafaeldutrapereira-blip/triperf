@@ -38,6 +38,7 @@ def test_mapeo_de_visibilidad_por_plan():
         ("nav-community", "community"),
         ("menu-item-raceday", "race_day"),
         ("menu-item-gear", "gear"),
+        ("pgr-tab-huella", "huella"),  # W4: deshabilitada para todos
     ]
 
 

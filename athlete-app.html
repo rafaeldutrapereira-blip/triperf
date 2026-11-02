@@ -8915,7 +8915,19 @@
         { el: 'nav-community', mod: 'community' },
         { el: 'menu-item-raceday', mod: 'race_day' },
         { el: 'menu-item-gear', mod: 'gear' },
+        { el: 'pgr-tab-huella', mod: 'huella' },
       ];
+      /* W4: la pestaña Huella (deshabilitada para todos) se oculta de inmediato,
+         sin esperar al perfil. El código de loadProgressHuella se conserva. */
+      (function () {
+        var t = document.getElementById('pgr-tab-huella');
+        if (
+          t &&
+          window.LX_ROUTES &&
+          !LX_ROUTES.canAccess({ api_rol: 'atleta', plan: 'elite' }, 'huella')
+        )
+          t.style.display = 'none';
+      })();
       function _applyPlanVisibility(plan) {
         if (!window.LX_ROUTES) return;
         var sess = { api_rol: 'atleta', plan: plan };

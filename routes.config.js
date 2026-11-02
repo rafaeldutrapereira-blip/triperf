@@ -163,7 +163,10 @@
       icon:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-7 13C8 15 5 13 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
       minPlan: 'agegroup', /* antes 'basic' — Básico ahora es solo Dashboard+Perfil */
       roles:   ['athlete','coach','admin'],
-      sidebar: true,
+      sidebar: false,
+      /* W4 (2026-11-02): oculta para TODOS los roles, admin incluido. `disabled`
+         lo respeta canAccess ANTES del bypass coach/admin. Código y endpoints intactos. */
+      disabled: true,
       public:  false
     },
     {
@@ -357,6 +360,7 @@
     var planIdx = PLAN_HIERARCHY.indexOf(normPlan(plan));
     if (planIdx === -1) planIdx = 0; /* fallback a basic */
     return MODULES.filter(function(m) {
+      if (m.disabled) return false;
       if (!m.minPlan) return true;
       return PLAN_HIERARCHY.indexOf(m.minPlan) <= planIdx;
     }).map(function(m){ return m.id; });
@@ -367,6 +371,9 @@
     if (!session) return false;
     var mod = _byId[moduleId];
     if (!mod) return false; /* módulo desconocido → denegar */
+
+    /* Módulo deshabilitado (W4): nadie entra, ni siquiera coach/admin */
+    if (mod.disabled) return false;
 
     var apiRol = session.api_rol || '';
 

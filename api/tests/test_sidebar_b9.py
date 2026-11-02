@@ -20,7 +20,7 @@ EXPECTED = [
     # S13 (2026-11-01): Recuperacion y Mental salen del menu; entra Estado (estado.html).
     ("recuperar", "estado"),
     ("recuperar", "nutrition"), ("recuperar", "blood_labs"),
-    ("planear", "race_day"), ("planear", "huella"),
+    ("planear", "race_day"),  # W4: huella deshabilitada para todos
     ("analizar", "analytics"),
     ("cuenta", "athlete_profile"), ("cuenta", "gear"), ("cuenta", "community"),
     ("coach", "coach"),
