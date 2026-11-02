@@ -123,16 +123,39 @@ def test_sweat_fuera_de_rango_se_acota(client, db, athlete_user):
     assert report[0]["status"] == "migrado"
 
 
-# ── nutrition.html ──
-def test_nutrition_html_lee_de_race_day_y_no_guarda():
-    html = (ROOT / "nutrition.html").read_text(encoding="utf-8")
+# ── nutrition.html (S25: página completa restaurada; Race Day sigue siendo la fuente) ──
+def _html():
+    return (ROOT / "nutrition.html").read_text(encoding="utf-8")
+
+
+def test_nutrition_html_tarjeta_lee_de_race_day_y_no_guarda():
+    html = _html()
     assert "/races/nutrition/latest" in html
     assert "saveNutritionPlanToAPI" not in html
-    assert "method: 'POST'" not in html.split("function loadNutritionPlanFromAPI")[1][:1200]
-
-
-def test_nutrition_html_sin_simulador():
-    html = (ROOT / "nutrition.html").read_text(encoding="utf-8")
-    for resto in ("nutCalc", "setRace", 'id="sel-sweat"', "chart.umd", 'class="race-tabs"'):
-        assert resto not in html, resto
+    cuerpo = html.split("function loadNutritionPlanFromAPI")[1][:1200]
+    assert "method: 'POST'" not in cuerpo and 'method: "POST"' not in cuerpo
+    # estados explícitos de la tarjeta (S19)
+    for estado in ("loading", "empty", "error", "ok"):
+        assert f"'{estado}'" in html, estado
+    assert 'id="nut-retry"' in html
     assert 'href="race_day.html"' in html
+
+
+def test_nutrition_html_pagina_completa_restaurada():
+    html = _html()
+    for pieza in ("function nutCalc", "function setRace", 'id="sel-sweat"', "chart.umd",
+                  'class="race-tabs"', 'id="ch-weekly"', 'id="ch-pie"',
+                  'id="ch-cho-fluid"', 'id="plan-tbody"'):
+        assert pieza in html, pieza
+
+
+def test_nutrition_html_simulador_no_persiste_plan_propio():
+    html = _html()
+    assert "api + '/nutrition/plan'" not in html
+    assert "/nutrition/plan" not in html.replace("/nutrition/precise-splits", "")
+
+
+def test_nutrition_html_shell_actual():
+    html = _html()
+    assert "routes.config.js?v=10" in html
+    assert "nav.js?v=5" in html
