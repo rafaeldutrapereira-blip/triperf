@@ -364,7 +364,7 @@
         <div id="ph-controls-src" style="display: none">
           <select
             id="an-days"
-            onchange="reloadAll()"
+            onchange="reloadAll(true)"
             style="
               font-size: 0.72rem;
               background: var(--surface2, #0f172a);
@@ -413,6 +413,7 @@
 
         <!-- ── PANE: CARGA (PMC/CTL/ATL/TSB, vista embebida de detalle.html) ── -->
         <div class="an-pane active" id="pane-carga">
+          <div id="an-note-carga" data-i18n="an_note_carga_own" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem">Esta vista usa su propio período; el selector de rango no la afecta.</div>
           <iframe
             id="an-carga-frame"
             src="detalle.html?metric=pmc&amp;embed=1"
@@ -576,6 +577,7 @@
         <!-- ── PANE: PERSONAL RECORDS ────────────────────────────── -->
         <div class="an-pane" id="pane-records">
           <div>
+            <div id="an-note-records" data-i18n="an_note_records_own" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem; display: none">Los récords son de toda tu historia; el selector de rango no los afecta.</div>
             <div class="pr-tabs" id="pr-tabs"></div>
             <div id="pr-panes"></div>
             <div
@@ -681,6 +683,7 @@
         <!-- ── PANE: ZONAS ───────────────────────────────────────── -->
         <div class="an-pane" id="pane-zones">
           <div>
+            <div id="an-note-zones" data-i18n="an_note_zones_cap" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem; display: none">Las zonas se calibran con hasta 1 año de datos (máximo del cálculo).</div>
             <div
               style="
                 display: grid;
@@ -815,24 +818,69 @@
       var _data = {}; // cache by tab
 
       /* ── Tab switching ────────────────────────────────────────────── */
-      function switchAnTab(name, btn) {
+      var AN_TABS = ['carga', 'power', 'vo2max', 'records', 'distrib', 'zones'];
+      var AN_HASH = {
+        carga: 'carga',
+        power: 'potencia',
+        vo2max: 'vo2max',
+        records: 'records',
+        distrib: 'distribucion',
+        zones: 'zonas',
+      };
+
+      function _anNameFromHash(h) {
+        h = String(h || '').replace(/^#/, '').toLowerCase();
+        for (var i = 0; i < AN_TABS.length; i++) {
+          if (AN_HASH[AN_TABS[i]] === h || AN_TABS[i] === h) return AN_TABS[i];
+        }
+        return null;
+      }
+
+      function _anActiveName() {
+        var activeBtn = document.querySelector('.an-tab.active');
+        var m = activeBtn && activeBtn.getAttribute('onclick').match(/'(\w+)'/);
+        return m ? m[1] : 'carga';
+      }
+
+      function _anActivate(name, btn, updateHash) {
         document.querySelectorAll('.an-tab').forEach(function (b) {
           b.classList.remove('active');
         });
         document.querySelectorAll('.an-pane').forEach(function (p) {
           p.classList.remove('active');
         });
-        btn.classList.add('active');
+        if (!btn) {
+          btn = document.querySelector(
+            ".an-tab[onclick^=\"switchAnTab('" + name + "'\"]",
+          );
+        }
+        if (btn) btn.classList.add('active');
         document.getElementById('pane-' + name).classList.add('active');
+        if (updateHash && history.replaceState) {
+          history.replaceState(null, '', '#' + AN_HASH[name]);
+        }
         _loadTab(name);
       }
 
-      function reloadAll() {
+      function switchAnTab(name, btn) {
+        _anActivate(name, btn, true);
+      }
+
+      /* Deep-link: la pestaña activa vive en el hash */
+      window.addEventListener('hashchange', function () {
+        var n = _anNameFromHash(location.hash);
+        if (n && n !== _anActiveName()) _anActivate(n, null, false);
+      });
+
+      /* Cambio del selector global. Récords: su endpoint no acepta rango
+         (se avisa con una nota). Zonas: acepta days_back 30-365 (se recorta). */
+      function reloadAll(fromUser) {
         _data = {};
-        var activeBtn = document.querySelector('.an-tab.active');
-        var activeName = activeBtn
-          ? activeBtn.getAttribute('onclick').match(/'(\w+)'/)[1]
-          : 'power';
+        var activeName = _anActiveName();
+        if (fromUser) {
+          var rn = document.getElementById('an-note-records');
+          if (rn) rn.style.display = 'block';
+        }
         _loadTab(activeName);
       }
 
@@ -1496,12 +1544,19 @@
       /* ─────────────────────────────────────────────────────────────────
    5. ZONAS
 ───────────────────────────────────────────────────────────────── */
+      function _zonesDays() {
+        var d = Math.min(getDays(), 365); // el endpoint acepta 30-365
+        var n = document.getElementById('an-note-zones');
+        if (n) n.style.display = getDays() > 365 ? 'block' : 'none';
+        return d;
+      }
+
       function loadZones() {
         if (_data.zones) {
           renderZones(_data.zones);
           return;
         }
-        fetch(API + '/analytics/zone-calibration?days_back=90', {
+        fetch(API + '/analytics/zone-calibration?days_back=' + _zonesDays(), {
           headers: hdrs(),
         })
           .then(function (r) {
@@ -1612,7 +1667,9 @@
 
       /* ── Init ───────────────────────────────────────────────────── */
       document.addEventListener('DOMContentLoaded', function () {
-        loadPowerCurve();
+        // Solo la pestaña activa (por hash, o Carga); el resto carga al primer clic
+        var n = _anNameFromHash(location.hash) || 'carga';
+        _anActivate(n, null, false);
       });
 
       window.addEventListener('resize', function () {
