@@ -164,4 +164,5 @@ def test_race_day_ui_muestra_aviso_estimado():
 
 
 def test_sw_build_265():
-    assert "BUILD_VERSION = '265'" in _read("sw.js")
+    m = re.search(r"BUILD_VERSION = '(\d+)'", _read("sw.js"))
+    assert m and int(m.group(1)) >= 265

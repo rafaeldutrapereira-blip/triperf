@@ -1080,7 +1080,7 @@ var DICT = {
     rd_chip_ctl_used: 'CTL usado', rd_chip_modifier: 'Modificador', rd_chip_avg_bike_speed: 'Vel. media bici',
     rd_saved_result_prefix: '✓ Guardado — Tiempo:', rd_exec_label: 'Exec:', rd_vs_prediction_suffix: 'vs predicción',
     rd_chip_final_time: 'Tiempo final', rd_chip_pacing_score: 'Pacing Score', rd_chip_vs_prediction: 'vs Predicción',
-    rd_err_save_result: 'Error al guardar resultado.', rd_err_load_history: 'Error al cargar historial.',
+    rd_err_save_result: 'Error al guardar resultado.', rd_err_http: 'Error del servidor (código', rd_saved_no_race: 'sin carrera vinculada: no se pudo comparar con un plan', rd_err_load_history: 'Error al cargar historial.',
     rd_no_races_registered: 'Sin carreras registradas.',
     /* Indoor Workout Builder (indoor_workout.html) */
     iw_btn_new: 'Nuevo', iw_btn_save: 'Guardar', iw_panel_my_workouts: 'Mis Workouts',
@@ -4423,7 +4423,7 @@ var DICT = {
     rd_chip_ctl_used: 'CTL usado', rd_chip_modifier: 'Modificador', rd_chip_avg_bike_speed: 'Vel. média bike',
     rd_saved_result_prefix: '✓ Salvo — Tempo:', rd_exec_label: 'Exec:', rd_vs_prediction_suffix: 'vs previsão',
     rd_chip_final_time: 'Tempo final', rd_chip_pacing_score: 'Pacing Score', rd_chip_vs_prediction: 'vs Previsão',
-    rd_err_save_result: 'Erro ao salvar resultado.', rd_err_load_history: 'Erro ao carregar histórico.',
+    rd_err_save_result: 'Erro ao salvar resultado.', rd_err_http: 'Erro do servidor (código', rd_saved_no_race: 'sem corrida vinculada: não foi possível comparar com um plano', rd_err_load_history: 'Erro ao carregar histórico.',
     rd_no_races_registered: 'Nenhuma corrida registrada.',
     /* Indoor Workout Builder (indoor_workout.html) */
     iw_btn_new: 'Novo', iw_btn_save: 'Salvar', iw_panel_my_workouts: 'Meus Treinos',
@@ -7762,7 +7762,7 @@ var DICT = {
     rd_chip_ctl_used: 'CTL used', rd_chip_modifier: 'Modifier', rd_chip_avg_bike_speed: 'Avg. bike speed',
     rd_saved_result_prefix: '✓ Saved — Time:', rd_exec_label: 'Exec:', rd_vs_prediction_suffix: 'vs prediction',
     rd_chip_final_time: 'Final time', rd_chip_pacing_score: 'Pacing Score', rd_chip_vs_prediction: 'vs Prediction',
-    rd_err_save_result: 'Error saving result.', rd_err_load_history: 'Error loading history.',
+    rd_err_save_result: 'Error saving result.', rd_err_http: 'Server error (code', rd_saved_no_race: 'no linked race: could not compare against a plan', rd_err_load_history: 'Error loading history.',
     rd_no_races_registered: 'No races registered.',
     /* Indoor Workout Builder (indoor_workout.html) */
     iw_btn_new: 'New', iw_btn_save: 'Save', iw_panel_my_workouts: 'My Workouts',

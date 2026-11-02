@@ -724,7 +724,7 @@ def race_dashboard_s19(
         },
         "fitness": {
             "ctl": round(load.ctl, 1) if load and load.ctl else None,
-            "tsb": round(load.tsb, 1) if load and load.tsb else None,
+            "tsb": round(load.tsb, 1) if load and load.tsb is not None else None,
             "atl": round(load.atl, 1) if load and load.atl else None,
             "recovery_score": rec.score if rec else None,
         },

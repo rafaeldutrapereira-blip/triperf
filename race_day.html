@@ -1586,22 +1586,45 @@
           }
 
           // ─── DASHBOARD ───────────────────────────────────────────────────────────────
+          // Chequea r.ok: un 403/500 ya no se renderiza como datos vacíos.
+          function _okJson(r) {
+            if (!r.ok) {
+              var e = new Error('http_' + r.status);
+              e.status = r.status;
+              throw e;
+            }
+            return r.json();
+          }
+          function _httpErrMsg(err, fallbackKey, fallback) {
+            var base = _t(fallbackKey, fallback);
+            if (err && err.status)
+              return (
+                base +
+                ' ' +
+                _t('rd_err_http', 'Error del servidor (código') +
+                ' ' +
+                err.status +
+                ').'
+              );
+            return base;
+          }
+
           function loadDashboard() {
             fetch(API + '/races/dashboard-s19', {
               credentials: 'include',
               headers: { Authorization: 'Bearer ' + _authTok() },
             })
-              .then(function (r) {
-                return r.json();
-              })
+              .then(_okJson)
               .then(function (d) {
                 renderDashboard(d);
               })
-              .catch(function () {
-                document.getElementById('dash-loader').textContent = _t(
-                  'rd_err_load_retry',
-                  'Error al cargar. Reintenta.',
-                );
+              .catch(function (err) {
+                document.getElementById('dash-loader').textContent =
+                  _httpErrMsg(
+                    err,
+                    'rd_err_load_retry',
+                    'Error al cargar. Reintenta.',
+                  );
               });
           }
 
@@ -1610,6 +1633,7 @@
             document.getElementById('dash-content').style.display = 'block';
 
             var nr = d.next_race || {};
+            window._rdNextRaceId = nr.id || null;
             document.getElementById('dash-days').textContent =
               nr.days_to_race !== null ? nr.days_to_race : '—';
             document.getElementById('dash-race-name').textContent =
@@ -2210,6 +2234,10 @@
                 document.getElementById('res-dnf-reason').value || null,
               notes: document.getElementById('res-notes').value || null,
             };
+            // Vincula el resultado con la carrera objetivo del dashboard:
+            // sin race_id el backend no encuentra el plan ni calcula el score.
+            var linkedRaceId = window._rdNextRaceId || null;
+            if (linkedRaceId) payload.race_id = linkedRaceId;
 
             fetch(API + '/races/record-result', {
               method: 'POST',
@@ -2220,13 +2248,12 @@
               },
               body: JSON.stringify(payload),
             })
-              .then(function (r) {
-                return r.json();
-              })
+              .then(_okJson)
               .then(function (d) {
                 var msg = document.getElementById('res-saved-msg');
                 msg.style.display = 'inline';
                 msg.className = 'success-msg';
+                msg.style.color = '';
                 msg.textContent =
                   escHtml(
                     _t('rd_saved_result_prefix', '✓ Guardado — Tiempo:'),
@@ -2245,7 +2272,10 @@
                       d.pred_error_fmt +
                       ' ' +
                       escHtml(_t('rd_vs_prediction_suffix', 'vs predicción'))
-                    : '');
+                    : '') +
+                  (linkedRaceId
+                    ? ''
+                    : ' · ' + _t('rd_saved_no_race', 'sin carrera vinculada'));
 
                 var box = document.getElementById('res-analysis-box');
                 var content = document.getElementById('res-analysis-content');
@@ -2275,8 +2305,16 @@
                     : '') +
                   '</div>';
               })
-              .catch(function () {
-                alert(_t('rd_err_save_result', 'Error al guardar resultado.'));
+              .catch(function (err) {
+                var m = document.getElementById('res-saved-msg');
+                m.style.display = 'inline';
+                m.className = 'success-msg';
+                m.style.color = '#EF4444';
+                m.textContent = _httpErrMsg(
+                  err,
+                  'rd_err_save_result',
+                  'Error al guardar resultado.',
+                );
               });
           }
 
@@ -2291,17 +2329,19 @@
               credentials: 'include',
               headers: { Authorization: 'Bearer ' + _authTok() },
             })
-              .then(function (r) {
-                return r.json();
-              })
+              .then(_okJson)
               .then(function (d) {
                 renderHistory(d.races || d || []);
               })
-              .catch(function () {
+              .catch(function (err) {
                 container.innerHTML =
                   '<div class="empty-state">' +
                   escHtml(
-                    _t('rd_err_load_history', 'Error al cargar historial.'),
+                    _httpErrMsg(
+                      err,
+                      'rd_err_load_history',
+                      'Error al cargar historial.',
+                    ),
                   ) +
                   '</div>';
               });
