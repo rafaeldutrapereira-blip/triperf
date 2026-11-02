@@ -1617,8 +1617,9 @@
             d = JSON.parse(localStorage.getItem('kl_athlete_data') || '{}');
           } catch (e) {}
         }
-        ATH.ftpReal = !!(PROFILE.ftp || d.ftp);
-        if (ATH.ftpReal) ATH.ftp = parseInt(PROFILE.ftp || d.ftp) || ATH.ftp;
+        var ftpIn = parseInt(PROFILE.ftp || d.ftp) || 0;
+        ATH.ftpReal = ftpIn > 0;
+        if (ATH.ftpReal) ATH.ftp = ftpIn;
 
         ATH.cssReal = !!(PROFILE.css || d.css);
         if (ATH.cssReal)
@@ -1628,9 +1629,9 @@
         if (ATH.runReal)
           ATH.run = parsePaceSec(PROFILE.run_pace || d.runPace) || ATH.run;
 
-        ATH.weightReal = !!(PROFILE.weight_kg || d.weight);
-        if (ATH.weightReal)
-          ATH.weight = parseFloat(PROFILE.weight_kg || d.weight) || ATH.weight;
+        var wIn = parseFloat(PROFILE.weight_kg || d.weight) || 0;
+        ATH.weightReal = wIn > 0;
+        if (ATH.weightReal) ATH.weight = wIn;
 
         if (PROFILE.nombre) ATH.name = PROFILE.nombre;
         else if (d.name) ATH.name = d.name;
@@ -3040,7 +3041,52 @@
               )
             : '';
       }
+      // W2: sin FTP ni peso reales NO se calcula nada (la semilla ATH no se
+      // muestra ni se envia al backend): estado "Completa tu perfil".
+      function nutProfileReady() {
+        return !!(ATH.ftpReal && ATH.weightReal);
+      }
+      function nutRenderIncomplete() {
+        var msg = _t('nut_complete_profile', 'Completa tu perfil');
+        var link =
+          '<a href="athlete_profile.html" class="nut-complete-profile" ' +
+          'style="color:inherit;text-decoration:underline">' +
+          msg +
+          '</a>';
+        ['ch-time', 'kpi-time'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.innerHTML = link;
+        });
+        ['ch-energy', 'ch-cph', 'ch-ratio'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = '—';
+        });
+        ['kpi-kcal', 'kpi-cho', 'kpi-fluid', 'kpi-na', 'kpi-ratio'].forEach(
+          function (id) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = '—';
+          },
+        );
+        ['kpi-kcal-s', 'kpi-cho-s', 'kpi-fluid-s', 'kpi-na-s', 'kpi-ratio-s'].forEach(
+          function (id) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = '';
+          },
+        );
+        var s = document.getElementById('kpi-kcal-s');
+        if (s)
+          s.textContent = _t(
+            'nut_complete_profile_hint',
+            'Necesitamos tu FTP y tu peso para calcular tu plan',
+          );
+        var badge = document.getElementById('if-precision-badge');
+        if (badge) badge.textContent = '';
+      }
       function nutCalcLocal() {
+        if (!nutProfileReady()) {
+          nutRenderIncomplete();
+          return;
+        }
         // Modelo simple (cancha plana, sin viento) — respuesta instantánea, siempre disponible
         var rk = ST.race;
         var d = DIST[rk];
@@ -3077,6 +3123,7 @@
       function fetchPreciseSplits() {
         var tok = nutAuthTok();
         if (!tok) return;
+        if (!nutProfileReady()) return; // W2: nunca enviar la semilla
         var rk = ST.race;
         var rf = getEffectiveIF(rk);
         var course = getEffectiveCourse(rk);

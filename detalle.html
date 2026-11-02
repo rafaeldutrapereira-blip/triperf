@@ -2050,6 +2050,25 @@
     </footer>
 
     <script>
+      // W2: insight de carrera objetivo solo si el atleta tiene una carrera real
+      // con fecha futura en su perfil (KL_DATA.race_goal_date). Sin dato => null.
+      function dtwRaceTargetInsight() {
+        var kd = window.KL_DATA || {};
+        var iso = kd.race_goal_date;
+        if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(String(iso))) return null;
+        var dt = new Date(String(iso).slice(0, 10) + 'T12:00:00');
+        if (isNaN(dt.getTime())) return null;
+        var days = Math.ceil((dt.getTime() - Date.now()) / 86400000);
+        if (days < 0) return null;
+        var name = kd.race_goal_name ? String(kd.race_goal_name) : '';
+        return _t(
+          'dtw_race_target_dated',
+          'Tu carrera objetivo{name} es el {date} (en {days} días). Usa tu CTL y TSB actuales para planificar la llegada en forma.',
+        )
+          .replace('{name}', name ? ' (' + name + ')' : '')
+          .replace('{date}', String(iso).slice(0, 10))
+          .replace('{days}', days);
+      }
       function _t(key, fallback) {
         return (window.i18n && window.i18n.t(key)) || fallback;
       }
@@ -2418,7 +2437,8 @@
                     : tsb > -35
                       ? _t('dtw_forma_high', 'fatiga acumulada alta')
                       : _t('dtw_forma_rest', 'sobrecarga — descansa');
-            return [
+            var raceInsight = dtwRaceTargetInsight();
+            var out = [
               'CTL <em>' +
                 ctl +
                 '</em> · ATL <em>' +
@@ -2446,11 +2466,11 @@
                         'dtw_ratio_ok',
                         'Relación equilibrada. Condiciones ideales para entrenar con calidad.',
                       )),
-              _t(
-                'dtw_race_target',
-                'Para tu próxima carrera objetivo: apunta a CTL ≥ 85 con TSB entre +5 y +15 en la semana de carrera. Inicia tapering 18–20 días antes.',
-              ),
             ];
+            // W2: sin meta fija universal; solo con una carrera objetivo real
+            // (con fecha futura) del atleta.
+            if (raceInsight) out.push(raceInsight);
+            return out;
           },
         },
         wellbeing: {

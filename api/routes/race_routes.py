@@ -1506,6 +1506,7 @@ def auto_race_plan(
     rec  = db.query(RecoveryScore).filter_by(user_id=me.id, date_iso=today).first()
 
     ctl = load.ctl if load else 50
+    ctl_estimated = load is None  # W2: sin carga real, CTL=50 es un respaldo generico
     tsb = load.tsb if load else None
     recovery_score = rec.score if rec else None
 
@@ -1613,6 +1614,7 @@ def auto_race_plan(
     return {
         "race_type":  race_type,
         "ctl_used":   round(float(ctl), 1) if ctl else None,
+        "ctl_estimated": ctl_estimated,
         "tsb_used":   round(float(tsb), 1) if tsb else None,
         "recovery":   recovery_score,
         "perf_mod":   splits["mod"],

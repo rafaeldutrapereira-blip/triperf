@@ -2115,7 +2115,7 @@
             basis.innerHTML =
               '<div class="chips">' +
               '<div class="chip"><div class="chip-val" style="color:var(--blue)">' +
-              (d.ctl_used || '—') +
+              (d.ctl_used ? (d.ctl_estimated ? '≈' : '') + d.ctl_used : '—') +
               '</div><div class="chip-label">' +
               escHtml(_t('rd_chip_ctl_used', 'CTL usado')) +
               '</div></div>' +
@@ -2137,7 +2137,17 @@
                   escHtml(_t('rd_chip_avg_bike_speed', 'Vel. media bici')) +
                   '</div></div>'
                 : '') +
-              '</div>';
+              '</div>' +
+              (d.ctl_estimated
+                ? '<div class="ctl-estimated-note" style="margin-top:8px;font-size:12px;opacity:.85">⚠ ' +
+                  escHtml(
+                    _t(
+                      'rd_ctl_estimated_note',
+                      'Predicción genérica: aún no hay datos de carga (CTL) tuyos, se usó un CTL estimado. Sincroniza tu entrenamiento para una predicción personal.',
+                    ),
+                  ) +
+                  '</div>'
+                : '');
             if (window.LXTerm) LXTerm.autoInit();
           }
 
