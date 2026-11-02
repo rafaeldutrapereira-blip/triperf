@@ -8,7 +8,7 @@
     </script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analytics — LabX</title>
+    <title>Rendimiento — LabX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -439,15 +439,21 @@
               </div>
               <div class="cp-badge">
                 <div class="val" id="cp-ftp-wkg">—</div>
-                <div class="lbl">W/kg</div>
+                <div class="lbl">
+                  <span data-i18n="an_wkg">Potencia por kilo (W/kg)</span><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('wkg', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>
+                </div>
               </div>
               <div class="cp-badge">
                 <div class="val" id="cp-model-cp">—</div>
-                <div class="lbl">CP (W)</div>
+                <div class="lbl">
+                  <span data-i18n="an_cp">Potencia crítica — CP (W)</span><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('cp', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>
+                </div>
               </div>
               <div class="cp-badge">
                 <div class="val" id="cp-model-wp">—</div>
-                <div class="lbl">W' (kJ)</div>
+                <div class="lbl">
+                  <span data-i18n="an_wprime">Reserva anaeróbica — W′ (kJ)</span><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('wprime', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>
+                </div>
               </div>
               <div class="cp-badge">
                 <div class="val" id="cp-n-acts">—</div>
@@ -790,6 +796,12 @@
           return '';
         }
       }
+      // i18n: clave → texto del idioma activo (fallback ES). Antes no existía
+      // y todo _t(...) de la página lanzaba ReferenceError (S20).
+      function _t(key, fallback) {
+        var v = window.i18n && window.i18n.t ? window.i18n.t(key) : null;
+        return v && v !== key ? v : fallback;
+      }
       function hdrs() {
         return { Authorization: 'Bearer ' + tok() };
       }
@@ -1091,9 +1103,12 @@
 
         sources.textContent =
           (d.garmin_readings || 0) +
-          ' lecturas Garmin, ' +
+          ' ' +
+          _t('an_vo2_garmin', 'lecturas Garmin') +
+          ', ' +
           (d.estimated_readings || 0) +
-          ' estimados';
+          ' ' +
+          _t('an_vo2_estimated', 'estimados');
 
         if (!d.timeline || !d.timeline.length) {
           msg.textContent = _t(
@@ -1191,11 +1206,15 @@
         bike: '&#128691;',
         swim: '&#127946;',
       };
-      var SPORT_LABELS = {
-        run: 'Running',
-        bike: 'Ciclismo',
-        swim: 'Nataci&#243;n',
+      var SPORT_LABEL_KEYS = {
+        run: ['an_sport_run', 'Running'],
+        bike: ['an_sport_bike', 'Ciclismo'],
+        swim: ['an_sport_swim', 'Natación'],
       };
+      function sportLabel(sp) {
+        var k = SPORT_LABEL_KEYS[sp];
+        return k ? _t(k[0], k[1]) : sp;
+      }
 
       function loadRecords() {
         if (_data.records) {
@@ -1242,7 +1261,7 @@
               '\',this)">' +
               (SPORT_ICONS[sp] || '&#127942;') +
               ' ' +
-              (SPORT_LABELS[sp] || sp) +
+              sportLabel(sp) +
               '</button>'
             );
           })
@@ -1274,16 +1293,20 @@
                   (pr.best_power
                     ? '<div class="sub">&#128294; ' +
                       pr.best_power.watts +
-                      'W pico</div>'
+                      ' ' +
+                      _t('an_peak_w', 'W pico') +
+                      '</div>'
                     : '') +
                   (pr.best_speed_kmh
                     ? '<div class="sub">' +
                       pr.best_speed_kmh +
-                      ' km/h m&#225;x</div>'
+                      ' ' +
+                      _t('an_kmh_max', 'km/h máx') +
+                      '</div>'
                     : '') +
                   '<div class="sub" style="color:var(--dim);font-size:.6rem">' +
                   esc(bt.date || '') +
-                  (pr.n_attempts ? ' · ' + pr.n_attempts + ' intentos' : '') +
+                  (pr.n_attempts ? ' · ' + pr.n_attempts + ' ' + _t('an_attempts', 'intentos') : '') +
                   '</div>' +
                   '</div>'
                 );
@@ -1465,7 +1488,9 @@
           _t('an_acts_word', 'actividades') +
           ' &#183; ' +
           Math.round(d.total_tss || 0) +
-          ' TSS total</div>';
+          ' ' +
+          _t('an_tss_total', 'TSS total') +
+          '</div>';
       }
 
       /* ─────────────────────────────────────────────────────────────────
@@ -1575,7 +1600,11 @@
           })
           .join('');
         return (
-          '<table class="zone-table"><thead><tr><th>Zona</th><th>Rango</th></tr></thead><tbody>' +
+          '<table class="zone-table"><thead><tr><th>' +
+          _t('an_col_zone', 'Zona') +
+          '</th><th>' +
+          _t('an_col_range', 'Rango') +
+          '</th></tr></thead><tbody>' +
           rows +
           '</tbody></table>'
         );

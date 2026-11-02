@@ -16,6 +16,7 @@ const IDS = [
   'compliance', 'tapering',
   'resting_hr', 'fatiga_muscular', 'sueno',
   'ctl_projected', 'goal_race_ctl', 'injury_risk',
+  'wkg', 'cp', 'wprime',
 ];
 
 // Extrae el literal `var DICT = {...}` de i18n.js respetando strings y comentarios.

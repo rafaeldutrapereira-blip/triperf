@@ -232,7 +232,7 @@ function loadGarminSync(){
   fetch(apiBase() + '/athlete/garmin/sync-status', { headers: { Authorization: 'Bearer ' + tok }, credentials: 'include' })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      if(!d || !d.last_sync){ el.textContent = 'sin sync'; return; }
+      if(!d || !d.last_sync){ el.textContent = _nt('dash_no_sync','sin sync'); return; }
       var diff = Math.round((Date.now() - new Date(d.last_sync).getTime()) / 60000);
       var label = diff < 1 ? _nt('dh_now','ahora') : diff < 60 ? _fmt(_nt('dh_ago_min','hace {n}min'),{n:diff}) : diff < 1440 ? _fmt(_nt('dh_ago_h','hace {n}h'),{n:Math.round(diff/60)}) : _fmt(_nt('dh_ago_d','hace {n}d'),{n:Math.round(diff/1440)});
       el.textContent = label;

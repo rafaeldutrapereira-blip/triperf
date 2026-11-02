@@ -886,6 +886,9 @@ var SIGLAS = {
   ctl_projected: '28D',
   goal_race_ctl: 'GOAL',
   injury_risk: 'RISK',
+  wkg: 'W/kg',
+  cp: 'CP',
+  wprime: 'W′',
 };
 
 var IDS = Object.keys(SIGLAS);
