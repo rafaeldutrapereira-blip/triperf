@@ -146,3 +146,66 @@ class TestRememberMe:
             "password": "AthlPass123",
         })
         assert r.status_code == 200
+
+    # ── S26: vigencia real de la sesión con y sin "Recordarme" ──────────
+    @staticmethod
+    def _login_full(client, remember):
+        body = {"email": "athlete@test.com", "password": "AthlPass123"}
+        if remember is not None:
+            body["remember_me"] = remember
+        r = client.post("/api/auth/login", json=body)
+        assert r.status_code == 200
+        cookie = next(h for h in r.headers.get_list("set-cookie")
+                      if h.startswith("lx_access_token="))
+        return r.json()["access_token"], cookie
+
+    @staticmethod
+    def _lifetime_seconds(token):
+        import time
+        import jwt as _jwt
+        from api.auth import SECRET_KEY, ALGORITHM
+        p = _jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM],
+                        options={"verify_exp": False, "verify_aud": False})
+        # exp es UTC naive -> epoch UTC
+        import calendar
+        return p["exp"] - calendar.timegm(time.gmtime())
+
+    def test_remember_true_session_lasts_30_days(self, client, athlete_user):
+        token, cookie = self._login_full(client, True)
+        assert "Max-Age=2592000" in cookie
+        assert "httponly" in cookie.lower()
+        life = self._lifetime_seconds(token)
+        assert 30 * 86400 - 120 <= life <= 30 * 86400 + 5
+
+    @pytest.mark.parametrize("remember", [False, None])
+    def test_without_remember_lifetime_unchanged(self, client, athlete_user, remember):
+        from api.auth import TOKEN_HOURS
+        token, cookie = self._login_full(client, remember)
+        assert f"Max-Age={TOKEN_HOURS * 3600}" in cookie
+        assert "httponly" in cookie.lower()
+        life = self._lifetime_seconds(token)
+        assert TOKEN_HOURS * 3600 - 120 <= life <= TOKEN_HOURS * 3600 + 5
+
+    @pytest.mark.parametrize("remember", [True, False])
+    def test_logout_invalidates_immediately(self, client, athlete_user, remember):
+        token, _ = self._login_full(client, remember)
+        h = auth_headers(token)
+        assert client.get("/api/athlete/profile", headers=h).status_code == 200
+        assert client.post("/api/auth/logout", headers=h).status_code == 200
+        client.cookies.clear()
+        assert client.get("/api/athlete/profile", headers=h).status_code == 401
+
+    def test_logout_blacklist_covers_full_30_days(self, client, athlete_user, db):
+        """El token revocado de 30 días no debe volver a ser válido a las 8 h."""
+        from datetime import datetime, timedelta, timezone
+        from api.models import RevokedToken
+        token, _ = self._login_full(client, True)
+        client.post("/api/auth/logout", headers=auth_headers(token))
+        row = db.query(RevokedToken).one()
+        left = row.expires_at - datetime.now(timezone.utc).replace(tzinfo=None)
+        assert left > timedelta(days=29)
+
+    def test_login_page_sends_remember_me(self):
+        import pathlib, re
+        html = pathlib.Path(__file__).resolve().parents[2].joinpath("login.html").read_text(encoding="utf-8")
+        assert re.search(r"remember_me:\s*rem[,\s]", html)

@@ -103,7 +103,7 @@ def revoke_token(token: str, db: Optional[Session] = None) -> None:
         try:
             # Decodificar sin validar para obtener exp
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM],
-                                 options={"verify_exp": False})
+                                 options={"verify_exp": False, "verify_aud": False})
             exp = datetime.utcfromtimestamp(payload.get("exp", 0))
         except Exception:
             exp = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=TOKEN_HOURS)
