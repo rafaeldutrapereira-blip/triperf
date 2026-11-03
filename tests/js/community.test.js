@@ -71,6 +71,18 @@ test('tarjeta: nombre, titulo y caption con HTML salen escapados (sin <img> inye
   assert.ok(html.includes('data-act="kudo"'));
 });
 
+test('CC5: comentarios abiertos escapan autor y cuerpo con HTML', () => {
+  const state = {
+    comments: { p1: [{ author: EVIL, body: '<script>alert(2)</script>' }] },
+    openComments: { p1: true }, drafts: {},
+  };
+  const html = C.cardHtml(card(), { t: (k, f) => f, canWrite: true }, state);
+  assert.ok(html.includes('lxc-comment'), 'el comentario se renderiza');
+  assert.ok(!html.includes('<script>'), 'cuerpo sin <script> crudo');
+  assert.ok(!html.includes('<img src=x'), 'autor sin <img> crudo');
+  assert.ok(html.includes('&lt;script&gt;alert(2)&lt;/script&gt;'));
+});
+
 test('tarjeta en modo lectura: sin kudo, sin fotos nuevas, sin borrar foto', () => {
   const html = C.cardHtml(card(), { t: (k, f) => f, canWrite: false });
   assert.ok(!html.includes('data-act="kudo"'));
