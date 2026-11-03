@@ -151,4 +151,4 @@ def test_i18n_claves_w14_en_tres_idiomas():
               "adp_title_simple", "adp_simple_intro", "cmw_share_btn",
               "gear_bikes_upgrade_msg", "gear_bikes_upgrade_btn"):
         assert len(re.findall(rf"\b{k}:", i)) == 3, k
-    assert "var BUILD_VERSION = '277';" in _read("sw.js")
+    assert "var BUILD_VERSION = '278';" in _read("sw.js")

@@ -392,15 +392,13 @@ def get_trs(user_id: str, db: "Session") -> Optional[float]:
             return None
 
         values = json.loads(exam.values_json)
-        sex = "M"
         user = db.query(User).filter(User.id == user_id).first()
-        if user and hasattr(user, "sexo") and user.sexo == "F":
-            sex = "F"
-        elif user and hasattr(user, "sex") and user.sex == "F":
-            sex = "F"
-
-        from ..services.blood_labs_impact_service import compute_training_impact
-        report = compute_training_impact(values=values, sex=sex)
+        from ..services.blood_labs_impact_service import compute_training_impact, declared_sex
+        sex = declared_sex(user)
+        if sex is None:
+            # W15: los rangos dependen del sexo; sin declararlo no hay TRS (no se asume 'M').
+            return None
+        report = compute_training_impact(values=values, sex=sex.upper())
         return float(report.trs)
     except Exception:
         return None

@@ -72,6 +72,23 @@ class TrainingImpactReport:
     warnings: list[str]
 
 
+def declared_sex(user) -> Optional[str]:
+    """Sexo declarado de un User: 'f' | 'm' | None (sin declarar). W11/W15.
+
+    Valor guardado en User.sexo (minuscula). Nunca asume 'm' en silencio:
+    quien dependa del sexo debe tratar None como "sin ajuste / sin calculo".
+    """
+    raw = getattr(user, "sexo", None)
+    if not raw:
+        return None
+    v = str(raw).strip().lower()
+    if v in ("f", "female", "femenino", "mujer"):
+        return "f"
+    if v in ("m", "male", "masculino", "hombre"):
+        return "m"
+    return None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Marker evaluation rules (sport-science based, sex-aware)
 # ─────────────────────────────────────────────────────────────────────────────

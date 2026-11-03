@@ -53,6 +53,7 @@ from ..models import (
     CustomFood, FavoriteFood, NutritionInsight,
 )
 from ..plan_features import require_feature
+from ..services.blood_labs_impact_service import declared_sex
 from models.bike_physics import predict_bike, BikePhysicsParams
 from models.run_physics import predict_run, RunPhysicsParams
 
@@ -156,13 +157,17 @@ def _compute_kcal_targets(me: User, tier: str) -> dict:
     weight  = getattr(me, "peso_kg",   75.0) or 75.0
     height  = getattr(me, "altura_cm", 175.0) or 175.0
     age     = getattr(me, "edad",       35)   or 35
-    sex     = getattr(me, "sexo",       "m")  or "m"
+    sex     = declared_sex(me)
 
-    # BMR Mifflin-St Jeor
+    # BMR Mifflin-St Jeor. Sin sexo declarado NO se asume hombre (W15): se usa
+    # la constante neutra (promedio de +5 y -161 = -78), igual que /nutrition
+    # "BMR promedio sexo-neutral".
     if sex == "f":
         bmr = 10 * weight + 6.25 * height - 5 * age - 161
-    else:
+    elif sex == "m":
         bmr = 10 * weight + 6.25 * height - 5 * age + 5
+    else:
+        bmr = 10 * weight + 6.25 * height - 5 * age - 78
 
     tdee = bmr * 1.55  # factor actividad moderada
 
@@ -1474,7 +1479,7 @@ def get_labs_nutrition_sync(
     Diferenciador exclusivo de LabX: ningún competidor hace esta integración.
     """
     from ..models import BloodLabExam, SupplementLog
-    from ..services.blood_labs_impact_service import compute_training_impact
+    from ..services.blood_labs_impact_service import compute_training_impact, declared_sex
     from ..services.nutrition_intelligence_service import compute_lab_nutrition_bridge
 
     # Último examen de sangre (últimos 90 días)
@@ -1498,8 +1503,15 @@ def get_labs_nutrition_sync(
     except Exception:
         values = {}
 
-    sex = "F" if (getattr(me, "sexo", None) == "F" or getattr(me, "sex", None) == "F") else "M"
-    trs_report = compute_training_impact(values=values, sex=sex)
+    sex = declared_sex(me)
+    if sex is None:
+        # W15: rangos de labs dependen del sexo; sin declararlo no se asume 'M'.
+        return {
+            "has_labs": False,
+            "sex_missing": True,
+            "message": "Declara tu sexo en tu Perfil: los rangos de referencia de tus examenes dependen de el.",
+        }
+    trs_report = compute_training_impact(values=values, sex=sex.upper())
 
     markers_data = [
         {
