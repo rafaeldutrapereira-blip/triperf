@@ -318,7 +318,6 @@
     { id:'login',      file:'login.html',      sidebar:false, public:true  },
     { id:'registro',   file:'registro.html',   sidebar:false, public:true  },
     { id:'onboarding', file:'onboarding.html', sidebar:false, public:false },
-    { id:'gps_tracker',file:'gps_tracker.html',sidebar:false, public:false },
     { id:'detalle',    file:'detalle.html',    minPlan:'basic', sidebar:false, public:false },
     { id:'privacy',    file:'privacy.html',    sidebar:false, public:true  },
     { id:'tos',        file:'tos.html',        sidebar:false, public:true  }

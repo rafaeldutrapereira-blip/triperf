@@ -23,7 +23,6 @@
 | 11 | `community.html` | test_02_athlete.py | MEDIUM | ✅ | TC-ATH-008 | Covered |
 | 12 | `year_in_review.html` | test_02_athlete.py | LOW | ✅ | TC-ATH-009 | Covered |
 | 13 | `profile.html` | test_02_athlete.py | HIGH | ✅ | TC-ATH-010 | Covered |
-| 14 | `gps_tracker.html` | test_02_athlete.py | MEDIUM | ✅ (no GPS) | TC-ATH-011 | Partial |
 | 15 | `race_day.html` | test_02_athlete.py | HIGH | ✅ | TC-ATH-012 | Covered |
 | 16 | `race_predictor.html` | test_02_athlete.py | MEDIUM | ✅ | TC-ATH-013 | Covered |
 | 17 | `mental.html` | test_02_athlete.py | MEDIUM | ✅ | TC-ATH-014 | Covered |

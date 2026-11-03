@@ -18,7 +18,7 @@ from api.routes.mental_routes import PROTOCOL_LIBRARY
 
 REPO = Path(__file__).resolve().parents[2]
 MENTAL_ROUTES = REPO / "api" / "routes" / "mental_routes.py"
-MENTAL_HTML = REPO / "mental.html"
+MENTAL_HTML = REPO / "estado.html"  # W12: mental.html quedo solo como redireccion; el mapa vive en Estado
 I18N_JS = REPO / "i18n.js"
 
 BACKEND_MESSAGES = {
@@ -84,7 +84,7 @@ def test_backend_messages_still_exist_in_source(backend_src):
     missing = [t for t in BACKEND_MESSAGES if t not in backend_src]
     assert not missing, (
         "Frases del backend cambiaron o desaparecieron. Actualiza BACKEND_MESSAGES "
-        "y el mapeo _MSG_KEYS de mental.html y las claves mentmsg_* en i18n.js: "
+        "y el mapeo _MSG_KEYS de estado.html y las claves mentmsg_* en i18n.js: "
         f"{missing}"
     )
 
@@ -92,7 +92,7 @@ def test_backend_messages_still_exist_in_source(backend_src):
 def test_js_mapping_covers_every_backend_message(js_map):
     for text, key in BACKEND_MESSAGES.items():
         assert js_map.get(text) == key, (
-            f"Falta o está desalineado en _MSG_KEYS de mental.html: {text!r} -> {key}"
+            f"Falta o está desalineado en _MSG_KEYS de estado.html: {text!r} -> {key}"
         )
 
 

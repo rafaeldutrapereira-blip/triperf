@@ -310,26 +310,7 @@ def test_athlete_profile_ftp(athlete_api):
     assert data.get("ftp") == 285 or r.status_code == 200
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TC-ATH-011 — GPS Tracker — carga sin activar sensor
-# ─────────────────────────────────────────────────────────────────────────────
-@pytest.mark.athlete
-def test_gps_tracker_carga(page: Page, athlete_api):
-    """
-    NOTE: Actual GPS requires device sensor. This tests that the page
-    loads and shows start button. GPS activation is manual.
-    """
-    page.goto(f"{BASE_URL}/login.html")
-    _inject_auth(page, athlete_api._token)
-
-    page.goto(f"{BASE_URL}/gps_tracker.html")
-    page.wait_for_load_state("networkidle")
-
-    # Should have a start/begin tracking button
-    start_btn = page.locator(
-        "button:has-text('Iniciar'), button:has-text('Start'), button:has-text('Begin'), [class*='start']"
-    ).first
-    expect(start_btn).to_be_visible(timeout=5000)
+# TC-ATH-011 (GPS Tracker) retirado en W12: la pagina ya no existe.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
