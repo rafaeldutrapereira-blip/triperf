@@ -1577,6 +1577,17 @@ def _owner_shares_route(owner) -> bool:
     return _get_share_prefs(owner)["share_route"]
 
 
+def _owner_shares_health(owner, post) -> bool:
+    """True si un tercero puede ver recovery/training_load del dueno:
+    visibilidad del post publica o de seguidores, y privacidad del dueno con
+    share_details y share_hr activos."""
+    if not owner or post.visibility not in ("public", "followers"):
+        return False
+    from .athlete_routes import _get_share_prefs
+    prefs = _get_share_prefs(owner)
+    return bool(prefs["share_details"] and prefs["share_hr"])
+
+
 def _build_activity_card_s17(act, viewer_id, db):
     owner    = db.query(User).filter_by(id=act.user_id).first()
     act_date = act.date_iso
@@ -1585,14 +1596,20 @@ def _build_activity_card_s17(act, viewer_id, db):
     my_kudo    = db.query(Kudo).filter(Kudo.post_id == post.id, Kudo.user_id == viewer_id).first()
     n_comments = db.query(Comment).filter(Comment.post_id == post.id, Comment.deleted_at.is_(None)).count()
 
+    # CC1: recovery/training_load son datos de salud. En una actividad AJENA
+    # solo se exponen si el post es publico/seguidores Y el dueno comparte
+    # detalle + FC (community-privacy). Lo propio va siempre completo.
+    is_own = act.user_id == viewer_id
+    share_health = is_own or _owner_shares_health(owner, post)
+
     rec = None
-    if act_date:
+    if act_date and share_health:
         rec = db.query(RecoveryScore).filter_by(
             user_id=act.user_id, date_iso=act_date
         ).first()
 
     tl = None
-    if act_date:
+    if act_date and share_health:
         tl = (
             db.query(GarminTrainingLoad)
             .filter_by(user_id=act.user_id, date_iso=act_date)
@@ -1681,19 +1698,34 @@ def garmin_activity_feed(
     ]
     feed_ids = [me.id] + followed_ids
 
-    q = db.query(GarminActivity).filter(
-        GarminActivity.user_id.in_(feed_ids),
-        GarminActivity.date_iso.isnot(None),
+    # CC1: respeta post.visibility. Los posts ajenos "private"/"coach_only"
+    # no aparecen; los propios siempre. Se filtra en SQL para que
+    # limit/offset paginen sobre el conjunto ya permitido. Actividades sin
+    # post aun se crean luego como "followers", asi que pasan.
+    q = (
+        db.query(GarminActivity)
+        .outerjoin(CommunityPost, CommunityPost.activity_id == GarminActivity.id)
+        .filter(
+            GarminActivity.user_id.in_(feed_ids),
+            GarminActivity.date_iso.isnot(None),
+            or_(
+                GarminActivity.user_id == me.id,
+                CommunityPost.id.is_(None),
+                CommunityPost.visibility.in_(["public", "followers"]),
+            ),
+        )
     )
     if sport:
         q = q.filter(GarminActivity.sport.ilike(f"%{sport}%"))
 
     acts = (
-        q.order_by(GarminActivity.date_iso.desc())
+        q.order_by(GarminActivity.date_iso.desc(), GarminActivity.id.desc())
         .offset(offset)
-        .limit(limit)
+        .limit(limit + 1)
         .all()
     )
+    has_more = len(acts) > limit
+    acts = acts[:limit]
 
     cards = [_build_activity_card_s17(a, me.id, db) for a in acts]
     db.commit()  # persiste cualquier CommunityPost creado on-the-fly en _get_or_create_post_for_activity
@@ -1701,7 +1733,10 @@ def garmin_activity_feed(
         "feed":            cards,
         "count":           len(cards),
         "following_count": len(followed_ids),
-        "has_more":        len(acts) == limit,
+        "has_more":        has_more,
+        "limit":           limit,
+        "offset":          offset,
+        "next_offset":     offset + len(cards) if has_more else None,
     }
 
 
