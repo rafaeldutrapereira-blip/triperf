@@ -30,15 +30,34 @@
               localStorage.getItem('kl_s') ||
               'null',
           );
-          if (s && s.plan === 'basic')
+          // D9: 'basic' (cliente) y 'basico' (BD) son el mismo plan
+          if (s && (s.plan === 'basic' || s.plan === 'basico'))
             document.documentElement.classList.add('lx-free');
         } catch (e) {}
       })();
     </script>
     <style>
-      .lx-free [data-main='bikes'],
-      .lx-free #pane-bikes {
-        display: none !important;
+      /* D9: Bicicletas es de plan superior (el servidor responde 403 a Basico).
+         El tab queda visible, pero con la invitacion a subir de plan en vez
+         de cargar datos y mostrar un error. */
+      #bikes-upgrade {
+        display: none;
+        text-align: center;
+        padding: 2.5rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      #bikes-upgrade p {
+        color: var(--muted);
+        margin: 0.5rem 0 1rem;
+        font-size: 0.9rem;
+      }
+      .lx-free #bikes-upgrade {
+        display: block;
+      }
+      .lx-free #bikes-body {
+        display: none;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -653,6 +672,21 @@
 
       <!-- ── BICICLETAS ── -->
       <div class="main-pane" id="pane-bikes">
+        <div id="bikes-upgrade" role="note">
+          <div style="font-size: 2rem">🚲</div>
+          <p data-i18n="gear_bikes_upgrade_msg">
+            El seguimiento de bicicletas (cadena, cubiertas y más) está en un
+            plan superior. Mejora tu plan para usarlo.
+          </p>
+          <button
+            class="btn btn-p btn-sm"
+            onclick="if (window.openUpgrade) openUpgrade(); else location.href = 'landing.html#planes';"
+            data-i18n="gear_bikes_upgrade_btn"
+          >
+            Ver planes
+          </button>
+        </div>
+        <div id="bikes-body">
         <div class="sub-tabs">
           <div class="pill-tabs">
             <button
@@ -677,6 +711,7 @@
           </button>
         </div>
         <div class="gear-grid" id="bikes-grid"></div>
+        </div>
       </div>
     </div>
 
@@ -1324,9 +1359,11 @@
         return fetch(GEAR_API + path, opts).then(function (r) {
           if (!r.ok)
             return r.json().then(function (e) {
-              throw new Error(
+              var err = new Error(
                 (e.errors && e.errors[0] && e.errors[0].message) || 'Error',
               );
+              err.status = r.status;
+              throw err;
             });
           return r.json();
         });
@@ -1872,13 +1909,21 @@
       // ── BICICLETAS ──────────────────────────────────────────────
 
       function loadBikes() {
+        // D9: plan Basico = invitacion a subir de plan, sin llamar al servidor
+        if (document.documentElement.classList.contains('lx-free')) {
+          checkSummaryAlerts();
+          return;
+        }
         gearFetch('/gear/bikes?status=' + ST.bikeStatus)
           .then(function (d) {
             ST.bikes = d.bikes || [];
             renderBikes();
           })
-          .catch(function () {
-            renderBikesError();
+          .catch(function (e) {
+            // 403 = el plan no incluye Bicicletas (sesion con plan desactualizado)
+            if (e && e.status === 403)
+              document.documentElement.classList.add('lx-free');
+            else renderBikesError();
           });
         checkSummaryAlerts();
       }
@@ -2304,5 +2349,6 @@
     </script>
     <script src="nav.js?v=5"></script>
     <script src="footer.js"></script>
+    <script src="lx-upgrade.js"></script>
   </body>
 </html>

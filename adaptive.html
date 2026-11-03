@@ -711,11 +711,47 @@
       .lx-embed .sb-topbar {
         display: none !important;
       }
+      /* W14: vista unica "Esta semana" para el atleta. Solo aplica con
+         html.lx-simple, que NO se pone en el embed del coach
+         (?view=coach / ?embed=1): ahi todo queda exactamente igual. */
+      .adp-title-simple,
+      .adp-simple-intro {
+        display: none;
+      }
+      .lx-simple .adp-title-simple {
+        display: inline;
+      }
+      .lx-simple .adp-simple-intro {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+      .lx-simple .adp-title-full,
+      .lx-simple #sec-kpis,
+      .lx-simple #sec-tabs .tabs-bar,
+      .lx-simple #prev-week-btn,
+      .lx-simple #next-week-btn,
+      .lx-simple #form-windows-week,
+      .lx-simple #tab-compliance,
+      .lx-simple #tab-taper,
+      .lx-simple #tab-projections,
+      .lx-simple #tab-history,
+      .lx-simple #tab-coach {
+        display: none !important;
+      }
     </style>
     <script>
-      if (new URLSearchParams(location.search).get('embed') === '1') {
-        document.documentElement.classList.add('lx-embed');
-      }
+      (function () {
+        var q = new URLSearchParams(location.search);
+        if (q.get('embed') === '1') {
+          document.documentElement.classList.add('lx-embed');
+        }
+        if (q.get('embed') !== '1' && q.get('view') !== 'coach') {
+          document.documentElement.classList.add('lx-simple');
+        }
+      })();
     </script>
   </head>
   <body>
@@ -768,7 +804,8 @@
                 >
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-                <span data-i18n="adp_title">Análisis Adaptativo</span>
+                <span class="adp-title-full" data-i18n="adp_title">Análisis Adaptativo</span>
+                <span class="adp-title-simple" data-i18n="adp_title_simple">Esta semana</span>
               </span>
               <div class="tabs-bar">
                 <button class="tab-btn on" onclick="switchTab('week', this)">
@@ -794,7 +831,12 @@
             <div style="padding: 1.5rem">
               <!-- ── TAB: SEMANA ── -->
               <div class="tab-pane on" id="tab-week">
+                <p class="adp-simple-intro" data-i18n="adp_simple_intro">
+                  Estos son los ajustes que te propone LabX para esta semana.
+                  Acepta los que te sirvan y rechaza los demás.
+                </p>
                 <div
+                  id="week-nav"
                   style="
                     display: flex;
                     align-items: center;

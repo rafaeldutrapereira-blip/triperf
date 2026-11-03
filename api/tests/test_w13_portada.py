@@ -161,7 +161,7 @@ def test_perfil_rendimiento_y_records_plegados_en_mis_datos():
 # ── Release ──────────────────────────────────────────────────────────────────
 def test_sw_build_276_y_i18n_trilingue():
     sw = _read("sw.js")
-    assert "var BUILD_VERSION = '276'" in sw
+    assert int(re.search(r"var BUILD_VERSION = '(\d+)'", sw).group(1)) >= 276
     i18n = _read("i18n.js")
     for key in ("dash_w13_today_q", "est_checkin_done", "prof_tab_mydata", "prof_tab_account"):
         assert i18n.count(key + ":") == 3, key

@@ -218,7 +218,7 @@
       /* ── 3-COLUMN LAYOUT (estilo Strava/Instagram) ── */
       .community-layout {
         display: grid;
-        grid-template-columns: 240px minmax(0, 1fr) 280px;
+        grid-template-columns: 240px minmax(0, 1fr);
         gap: 1.5rem;
         align-items: start;
       }
@@ -1255,6 +1255,12 @@
         letter-spacing: 0.1em;
       }
 
+      .share-bar {
+        margin-bottom: 1rem;
+      }
+      .lx-free #share-bar {
+        display: none;
+      }
       .lb-controls {
         display: flex;
         gap: 0.5rem;
@@ -1367,7 +1373,17 @@
                 Plan Básico: estás viendo la comunidad en modo lectura. Mejora tu
                 plan para publicar, dar kudos y participar.
               </div>
-              <div class="post-form sr" id="post-form-wrap">
+              <div class="share-bar sr" id="share-bar">
+                <button
+                  class="btn btn-orange"
+                  id="btn-share-toggle"
+                  onclick="toggleShareForm()"
+                  data-i18n="cmw_share_btn"
+                >
+                  📤 Compartir
+                </button>
+              </div>
+              <div class="post-form sr" id="post-form-wrap" style="display: none">
                 <div
                   style="
                     font-family: 'Barlow Condensed', sans-serif;
@@ -1463,9 +1479,6 @@
                       <option value="social" data-i18n="cmw_scope_social">
                         Mis seguidos
                       </option>
-                      <option value="club" data-i18n="cmw_scope_club">
-                        Mi club
-                      </option>
                       <option value="country" data-i18n="cmw_scope_country">
                         Mi país
                       </option>
@@ -1473,29 +1486,9 @@
                         Global
                       </option>
                     </select>
-                    <select
-                      class="lb-sel"
-                      id="lb-club"
-                      onchange="loadLeaderboard()"
-                      style="display: none"
-                    ></select>
-                    <select
-                      class="lb-sel"
-                      id="lb-metric"
-                      onchange="loadLeaderboard()"
-                    >
-                      <option value="tss" data-i18n="cmw_metric_tss">TSS</option>
-                      <option value="distance_km">Km</option>
-                      <option
-                        value="elevation_m"
-                        data-i18n="cmw_metric_elevation"
-                      >
-                        Elevación
-                      </option>
-                      <option value="duration_h" data-i18n="cmw_metric_hours">
-                        Horas
-                      </option>
-                    </select>
+                    <!-- W14: metrica (TSS) y club (ninguno) quedan en su valor por defecto -->
+                    <input type="hidden" id="lb-club" value="" />
+                    <input type="hidden" id="lb-metric" value="tss" />
                     <select
                       class="lb-sel"
                       id="lb-period"
@@ -1627,21 +1620,6 @@
           </div>
           <!-- fin .cl-center -->
 
-          <!-- ══ RIGHT SIDEBAR: sugerencias + leaderboard ══ -->
-          <aside class="cl-side cl-side-right">
-            <div class="panel cl-mini-panel">
-              <div class="cl-mini-head" data-i18n="cmw_suggestions_follow">
-                Sugerencias para seguir
-              </div>
-              <div id="cl-suggestions"></div>
-            </div>
-            <div class="panel cl-mini-panel">
-              <div class="cl-mini-head" data-i18n="cmw_top_weekly_tss">
-                Top Semanal · TSS
-              </div>
-              <div id="cl-mini-leaderboard"></div>
-            </div>
-          </aside>
         </div>
         <!-- fin .community-layout -->
       </div>
@@ -2759,6 +2737,11 @@
         // LEADERBOARD
         // ═════════════════════════════════════════════════════════════════════════
 
+        window.toggleShareForm = function () {
+          var f = document.getElementById('post-form-wrap');
+          if (f) f.style.display = f.style.display === 'none' ? '' : 'none';
+        };
+
         window.onLbScopeChange = function () {
           var scope = document.getElementById('lb-scope').value;
           var clubSel = document.getElementById('lb-club');
@@ -3412,8 +3395,6 @@
         loadRecentActivities();
         loadFeed(true);
         loadSidebarProfile();
-        loadSidebarSuggestions();
-        loadSidebarLeaderboard();
 
         setTimeout(function () {
           document.getElementById('tabs-bar').classList.add('vis');

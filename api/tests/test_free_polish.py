@@ -17,11 +17,12 @@ COMMUNITY = (ROOT / "community.html").read_text(encoding="utf-8")
 I18N = (ROOT / "i18n.js").read_text(encoding="utf-8")
 
 
-def test_gear_oculta_bicis_para_free():
-    assert (
-        squash('.lx-free [data-main="bikes"],.lx-free #pane-bikes{display:none !important')
-        in squash(GEAR)
-    )
+def test_gear_bicis_para_free_muestra_invitacion_no_oculta():
+    # W14/D9: el tab de Bicicletas ya no se oculta; Basico ve la invitacion a subir de plan
+    g = squash(GEAR)
+    assert squash('.lx-free [data-main="bikes"]') not in g
+    assert squash(".lx-free #bikes-upgrade{display:block") in g
+    assert squash(".lx-free #bikes-body{display:none") in g
 
 
 def test_community_oculta_escritura_para_free():

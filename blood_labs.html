@@ -186,6 +186,37 @@
         letter-spacing: 0.07em;
         margin-top: 0.3rem;
       }
+      .bl-disclaimer {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .bl-plain {
+        padding: 1rem 1.2rem;
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+      }
+      .bl-plain-h {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .bl-plain-s {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 0.3rem;
+      }
+      .bl-all > summary {
+        cursor: pointer;
+        font-weight: 600;
+        padding: 0.6rem 0;
+      }
+      .bl-step {
+        font-size: 0.78rem;
+        color: var(--dim);
+        margin-bottom: 0.6rem;
+      }
       .bl-beta {
         display: inline-block;
         margin-left: 0.5rem;
@@ -931,6 +962,9 @@
                 <strong id="chip-exams">—</strong></span
               >
             </div>
+            <p class="bl-disclaimer" id="bl-disclaimer" role="note">
+              ⚕️ <span data-i18n="bl_disclaimer">Esto no sustituye el consejo de tu médico.</span>
+            </p>
           </div>
         </div>
       </div>
@@ -981,7 +1015,34 @@
           </div>
 
           <div id="resumen-content">
-            <!-- TRS + discipline chips -->
+            <!-- W14: primera vista en lenguaje llano -->
+            <div class="bl-plain sr" id="bl-plain" aria-live="polite">
+              <div class="bl-plain-h" id="bl-plain-h">—</div>
+              <div class="bl-plain-s" id="bl-plain-s"></div>
+            </div>
+            <div class="sr mt2" id="bl-first">
+              <div>
+                <div class="sec-h">
+                  <span data-i18n="bl_notable_changes">Alertas Activas</span>
+                  <span id="alerts-date-label"></span>
+                </div>
+                <div id="alerts-container"></div>
+                <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">
+                  Impacto en Entrenamiento
+                </div>
+                <div
+                  id="clinical-summary"
+                  style="
+                    font-size: 0.8rem;
+                    color: var(--muted);
+                    line-height: 1.7;
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <details class="bl-all sr mt3" id="bl-ver-todo">
+              <summary data-i18n="bl_see_all">Ver todo (TRS, radar y tabla completa)</summary>
             <div class="g3 sr" id="kpi-section">
               <div class="kpi" id="kpi-trs">
                 <div class="kpi-icon">🏥</div>
@@ -1022,7 +1083,7 @@
             </div>
 
             <!-- Radar chart + Alerts -->
-            <div class="g2 sr mt2">
+            <div class="sr mt2">
               <div class="radar-box">
                 <div class="ch-title" data-i18n="bl_radar_title">
                   Radar de Rendimiento Bioquímico
@@ -1032,26 +1093,7 @@
                 </div>
                 <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
               </div>
-              <div>
-                <div class="sec-h">
-                  <span data-i18n="bl_notable_changes">Alertas Activas</span>
-                  <span id="alerts-date-label"></span>
-                </div>
-                <div id="alerts-container"></div>
-                <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">
-                  Impacto en Entrenamiento
-                </div>
-                <div
-                  id="clinical-summary"
-                  style="
-                    font-size: 0.8rem;
-                    color: var(--muted);
-                    line-height: 1.7;
-                  "
-                ></div>
-              </div>
             </div>
-
             <!-- Interpretación IA -->
             <div class="sr mt3">
               <div
@@ -1096,6 +1138,7 @@
               </div>
               <div id="bm-table-container"></div>
             </div>
+            </details>
           </div>
         </div>
 
@@ -1188,6 +1231,7 @@
                       />
                     </div>
                   </div>
+                  <div class="bl-step" id="import-step1-lbl" data-i18n="bl_step1">Paso 1 de 2 · Carga los valores</div>
                   <div class="form-field" style="margin-bottom: 0.75rem">
                     <label class="form-label" data-i18n="bl_context_label"
                       >Contexto / Motivo</label
@@ -1209,14 +1253,26 @@
                       flex-wrap: wrap;
                     "
                   >
-                    <button class="btn btn-primary" onclick="saveExam()">
-                      💾 <span data-i18n="bl_save_exam">Guardar Examen</span>
+                    <button class="btn btn-primary" id="btn-review-exam" onclick="reviewExam()">
+                      <span data-i18n="bl_review_exam">Revisar</span> →
                     </button>
                     <button class="btn btn-g" onclick="clearForm()">
                       ✕ <span data-i18n="bl_clear">Limpiar</span>
                     </button>
                   </div>
                   <div class="save-msg" id="save-msg"></div>
+                  <div id="import-review" style="display: none">
+                    <div class="bl-step" data-i18n="bl_step2">Paso 2 de 2 · Revisa y guarda</div>
+                    <div id="import-review-list" style="font-size: 0.82rem; line-height: 1.7"></div>
+                    <div style="margin-top: 1.2rem; display: flex; gap: 0.75rem; flex-wrap: wrap">
+                      <button class="btn btn-primary" id="btn-save-exam" onclick="saveExam()">
+                        💾 <span data-i18n="bl_save_exam">Guardar Examen</span>
+                      </button>
+                      <button class="btn btn-g" onclick="backToLoad()">
+                        ← <span data-i18n="bl_back_edit">Volver a editar</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1919,6 +1975,7 @@
             cur.ai_interpretation && cur.ai_interpretation.text
               ? cur.ai_interpretation.text
               : '—';
+          renderPlainSummary(cur);
           renderRadar(cur);
           renderBMTable(cur, comp);
         });
@@ -2000,6 +2057,51 @@
             },
           },
         });
+      }
+
+      // W14: primera vista en lenguaje llano. N = valores del examen actual
+      // con estado distinto de "ok" (warning/critical); sin sexo declarado no
+      // se cuenta nada (gate de W11).
+      function plainReviewCount(cur) {
+        var ms = (cur && cur.markers) || {};
+        return Object.keys(ms).filter(function (k) {
+          return ms[k].status === 'warning' || ms[k].status === 'critical';
+        }).length;
+      }
+      function renderPlainSummary(cur) {
+        var h = document.getElementById('bl-plain-h');
+        var sub = document.getElementById('bl-plain-s');
+        if (!h) return;
+        if (sexMissing()) {
+          h.textContent = _t(
+            'bl_plain_sex_missing',
+            'Falta un dato para revisar tus valores',
+          );
+          sub.textContent = _t(
+            'bl_sex_missing_msg',
+            'Declara tu sexo en tu Perfil: los rangos de referencia dependen de él.',
+          );
+          return;
+        }
+        var n = plainReviewCount(cur);
+        var total = Object.keys((cur && cur.markers) || {}).length;
+        if (n === 0) {
+          h.textContent = _t(
+            'bl_plain_none',
+            'Todos tus valores están dentro de rango',
+          );
+        } else {
+          h.textContent = _t(
+            n === 1 ? 'bl_plain_n_one' : 'bl_plain_n_many',
+            n === 1
+              ? 'Tienes {n} valor para revisar'
+              : 'Tienes {n} valores para revisar',
+          ).replace('{n}', n);
+        }
+        sub.textContent = _t(
+          'bl_plain_sub',
+          'De {total} valores del examen. Abajo, las alertas y cómo afectan a tu entrenamiento.',
+        ).replace('{total}', total);
       }
 
       function renderBMTable(cur, comp) {
@@ -2621,6 +2723,8 @@
             });
           })
           .then(function () {
+            clearForm();
+            backToLoad();
             showSaveMsg(
               '✅ ' +
                 _t(
@@ -2642,6 +2746,57 @@
               'err',
             );
           });
+      }
+
+      function collectExamValues() {
+        var values = {};
+        Object.keys(MARKERS_CATALOG).forEach(function (k) {
+          var el = document.getElementById('fi-' + k);
+          if (el && el.value !== '') values[k] = parseFloat(el.value);
+        });
+        return values;
+      }
+      // Paso 1 -> 2: valida y muestra lo cargado antes de guardar
+      function reviewExam() {
+        var dateVal = document.getElementById('inp-date').value;
+        if (!dateVal) {
+          showSaveMsg(
+            '⚠️ ' + _t('bl_select_date', 'Selecciona la fecha del examen'),
+            'err',
+          );
+          return;
+        }
+        var values = collectExamValues();
+        var keys = Object.keys(values);
+        if (!keys.length) {
+          showSaveMsg(
+            '⚠️ ' +
+              _t('bl_enter_one_value', 'Ingresa al menos un valor de marcador'),
+            'err',
+          );
+          return;
+        }
+        var rows = keys
+          .map(function (k) {
+            var m = MARKERS_CATALOG[k] || {};
+            return (
+              '<div>' + esc(m.name || k) + ': <strong>' + values[k] +
+              '</strong> ' + esc(m.unit || '') + '</div>'
+            );
+          })
+          .join('');
+        document.getElementById('import-review-list').innerHTML =
+          '<div style="margin-bottom:.5rem;color:var(--muted)">' +
+          esc(dateVal) + ' · ' + keys.length + ' ' +
+          esc(_t('bl_values_word', 'valores')) + '</div>' + rows;
+        document.getElementById('form-cats-container').style.display = 'none';
+        document.getElementById('btn-review-exam').parentNode.style.display = 'none';
+        document.getElementById('import-review').style.display = '';
+      }
+      function backToLoad() {
+        document.getElementById('form-cats-container').style.display = '';
+        document.getElementById('btn-review-exam').parentNode.style.display = 'flex';
+        document.getElementById('import-review').style.display = 'none';
       }
 
       function clearForm() {
