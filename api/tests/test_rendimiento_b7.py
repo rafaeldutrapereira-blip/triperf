@@ -18,16 +18,17 @@ ROUTES = (ROOT / "routes.config.js").read_text(encoding="utf-8")
 I18N = (ROOT / "i18n.js").read_text(encoding="utf-8")
 
 
-def test_analytics_tiene_pestana_carga_embebida_primero():
+def test_analytics_tiene_pestana_carga_nativa_primero():
+    # W7: Carga ya no es un iframe de detalle.html sino una tarjeta nativa.
     assert squash("switchAnTab('carga',this)") in squash(ANALYTICS)
     assert 'id="pane-carga"' in ANALYTICS
-    assert 'src="detalle.html?metric=pmc&amp;embed=1"' in ANALYTICS
+    assert "<iframe" not in ANALYTICS
     assert ANALYTICS.index("switchAnTab('carga'") < ANALYTICS.index("switchAnTab('power'")
 
 
 def test_pestanas_potencia_y_records_siguen():
     assert "switchAnTab('power'" in ANALYTICS
-    assert "switchAnTab('records'" in ANALYTICS
+    assert "switchAnTab('records')" in ANALYTICS  # sub-vista de Mas analisis (W7)
 
 
 def test_detalle_soporta_modo_embed_sin_cabecera_ni_sidebar():

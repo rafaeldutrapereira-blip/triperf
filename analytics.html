@@ -114,6 +114,64 @@
       .an-pane.active {
         display: block;
       }
+      .an-sub {
+        display: none;
+      }
+      .an-sub.active {
+        display: block;
+      }
+      .an-subnav {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .an-subtab {
+        font-size: 0.74rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--border2, rgba(8, 116, 174, 0.3));
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .an-subtab.active {
+        color: var(--orange, #ff6535);
+        border-color: var(--orange, #ff6535);
+      }
+      .an-range-slot {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.8rem;
+      }
+      .an-load {
+        padding: 1.1rem;
+      }
+      .an-load-status {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+      }
+      .an-load-sub {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-bottom: 0.8rem;
+      }
+      .an-load-chart {
+        position: relative;
+        width: 100%;
+        height: 240px;
+      }
+      .an-load-legend {
+        font-size: 0.7rem;
+        color: var(--dim);
+        margin: 0.5rem 0 0.8rem;
+      }
+      .an-load-link {
+        font-size: 0.8rem;
+        color: var(--orange, #ff6535);
+        text-decoration: none;
+      }
 
       /* ── Power curve ────────────────────────────────────────── */
       .cp-canvas-wrap {
@@ -462,41 +520,30 @@
             <span data-i18n="an_tab_load">&#128200; Carga</span>
           </button>
           <button class="an-tab" onclick="switchAnTab('power', this)">
-            <span data-i18n="an_tab_power">&#9889; Curva Potencia</span>
+            <span data-i18n="an_tab_power">&#9889; Potencia en bici</span>
           </button>
           <button class="an-tab" onclick="switchAnTab('vo2max', this)">
-            <span data-i18n="an_tab_vo2">&#128165; VO2max</span>
+            <span data-i18n="an_tab_vo2">&#128165; Capacidad aer&#243;bica</span>
           </button>
-          <button class="an-tab" onclick="switchAnTab('records', this)">
-            <span data-i18n="an_tab_records">&#127942; R&#233;cords</span>
-          </button>
-          <button class="an-tab" onclick="switchAnTab('distrib', this)">
-            <span data-i18n="an_tab_dist">&#128200; Distribuci&#243;n</span>
-          </button>
-          <button class="an-tab" onclick="switchAnTab('zones', this)">
-            <span data-i18n="an_tab_zones">&#9881; Zonas</span>
+          <button class="an-tab" onclick="switchAnTab('more', this)">
+            <span data-i18n="an_tab_more">&#10133; M&#225;s an&#225;lisis</span>
           </button>
         </div>
 
-        <!-- ── PANE: CARGA (PMC/CTL/ATL/TSB, vista embebida de detalle.html) ── -->
+        <!-- ── PANE: CARGA (tarjeta nativa, W7): frase de estado + un grafico ── -->
         <div class="an-pane active" id="pane-carga">
-          <div id="an-note-carga" data-i18n="an_note_carga_own" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem">Esta vista usa su propio período; el selector de rango no la afecta.</div>
-          <iframe
-            id="an-carga-frame"
-            src="detalle.html?metric=pmc&amp;embed=1"
-            title="Carga"
-            style="
-              width: 100%;
-              height: 820px;
-              border: 0;
-              border-radius: 12px;
-              background: transparent;
-            "
-          ></iframe>
+          <div class="card an-load" id="an-load-card">
+            <div class="an-load-status" id="an-load-status" aria-live="polite"></div>
+            <div class="an-load-sub" id="an-load-sub"></div>
+            <div class="an-load-chart"><canvas id="an-load-canvas"></canvas></div>
+            <div class="an-load-legend" id="an-load-legend"></div>
+            <a class="an-load-link" href="detalle.html?metric=pmc" data-i18n="an_load_full">Ver historial completo</a>
+          </div>
         </div>
 
         <!-- ── PANE: POWER CURVE ──────────────────────────────────── -->
         <div class="an-pane" id="pane-power">
+          <div class="an-range-slot" id="an-range-power"></div>
           <div>
             <div id="cp-meta" class="cp-meta">
               <div class="cp-badge">
@@ -578,6 +625,7 @@
 
         <!-- ── PANE: VO2MAX ───────────────────────────────────────── -->
         <div class="an-pane" id="pane-vo2max">
+          <div class="an-range-slot" id="an-range-vo2max"></div>
           <div>
             <div class="vo2-score">
               <div class="vo2-circle" id="vo2-circle">
@@ -641,10 +689,22 @@
           </div>
         </div>
 
+        <!-- ── PANE: MAS ANALISIS (capa 3): Records, Distribucion, Zonas ── -->
+        <div class="an-pane" id="pane-more">
+          <div class="an-subnav" id="an-subnav">
+            <button type="button" class="an-subtab active" data-sub="records" onclick="switchAnTab('records')">
+              <span data-i18n="an_tab_records">&#127942; R&#233;cords</span>
+            </button>
+            <button type="button" class="an-subtab" data-sub="distrib" onclick="switchAnTab('distrib')">
+              <span data-i18n="an_tab_dist">&#128200; Distribuci&#243;n</span>
+            </button>
+            <button type="button" class="an-subtab" data-sub="zones" onclick="switchAnTab('zones')">
+              <span data-i18n="an_tab_zones">&#9881; Zonas</span>
+            </button>
+          </div>
         <!-- ── PANE: PERSONAL RECORDS ────────────────────────────── -->
-        <div class="an-pane" id="pane-records">
+        <div class="an-sub" id="pane-records">
           <div>
-            <div id="an-note-records" data-i18n="an_note_records_own" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem; display: none">Los récords son de toda tu historia; el selector de rango no los afecta.</div>
             <div class="pr-tabs" id="pr-tabs"></div>
             <div id="pr-panes"></div>
             <div
@@ -661,7 +721,8 @@
         </div>
 
         <!-- ── PANE: DISTRIBUCIÓN ─────────────────────────────────── -->
-        <div class="an-pane" id="pane-distrib">
+        <div class="an-sub" id="pane-distrib">
+          <div class="an-range-slot" id="an-range-distrib"></div>
           <div>
             <div class="dist-grid">
               <div class="card" style="padding: 0.9rem">
@@ -748,9 +809,8 @@
         </div>
 
         <!-- ── PANE: ZONAS ───────────────────────────────────────── -->
-        <div class="an-pane" id="pane-zones">
+        <div class="an-sub" id="pane-zones">
           <div>
-            <div id="an-note-zones" data-i18n="an_note_zones_cap" style="font-size: 0.74rem; color: var(--dim); margin: 0 0 0.6rem; display: none">Las zonas se calibran con hasta 1 año de datos (máximo del cálculo).</div>
             <div
               style="
                 display: grid;
@@ -843,6 +903,7 @@
         </div>
 
         <div style="height: 3rem"></div>
+        </div>
       </main>
     </div>
 
@@ -885,15 +946,20 @@
       var _data = {}; // cache by tab
 
       /* ── Tab switching ────────────────────────────────────────────── */
-      var AN_TABS = ['carga', 'power', 'vo2max', 'records', 'distrib', 'zones'];
+      /* 4 pestañas visibles: carga, power, vo2max, more. Records/Distribución/Zonas
+         son sub-vistas de "more" pero conservan su nombre y hash (#records, ...). */
+      var AN_TABS = ['carga', 'power', 'vo2max', 'more', 'records', 'distrib', 'zones'];
+      var AN_SUBS = ['records', 'distrib', 'zones'];
       var AN_HASH = {
         carga: 'carga',
         power: 'potencia',
         vo2max: 'vo2max',
+        more: 'mas',
         records: 'records',
         distrib: 'distribucion',
         zones: 'zonas',
       };
+      var _anSub = 'records';
 
       function _anNameFromHash(h) {
         h = String(h || '').replace(/^#/, '').toLowerCase();
@@ -902,27 +968,63 @@
         }
         return null;
       }
+      // Entrada inicial: hash y, si no hay, ?tab= (enlaces externos)
+      function _anInitialName() {
+        var n = _anNameFromHash(location.hash);
+        if (n) return n;
+        try {
+          return _anNameFromHash(new URLSearchParams(location.search).get('tab'));
+        } catch (e) {
+          return null;
+        }
+      }
 
-      function _anActiveName() {
+      function _anTop() {
         var activeBtn = document.querySelector('.an-tab.active');
         var m = activeBtn && activeBtn.getAttribute('onclick').match(/'(\w+)'/);
         return m ? m[1] : 'carga';
       }
+      function _anActiveName() {
+        return _anTop() === 'more' ? _anSub : _anTop();
+      }
+
+      // El selector de rango vive dentro de la pestaña que lo usa (Potencia, VO2max, Distribución)
+      function _anPlaceRange(name) {
+        var box = document.getElementById('ph-controls-src');
+        var slot = document.getElementById('an-range-' + name);
+        if (!box) return;
+        if (slot) {
+          slot.appendChild(box);
+          box.style.display = 'flex';
+        } else {
+          box.style.display = 'none';
+        }
+      }
 
       function _anActivate(name, btn, updateHash) {
+        if (name === 'more') name = _anSub;
+        var top = AN_SUBS.indexOf(name) >= 0 ? 'more' : name;
+        if (AN_SUBS.indexOf(name) >= 0) _anSub = name;
         document.querySelectorAll('.an-tab').forEach(function (b) {
           b.classList.remove('active');
         });
         document.querySelectorAll('.an-pane').forEach(function (p) {
           p.classList.remove('active');
         });
-        if (!btn) {
-          btn = document.querySelector(
-            ".an-tab[onclick^=\"switchAnTab('" + name + "'\"]",
-          );
+        var tb = document.querySelector(
+          ".an-tab[onclick^=\"switchAnTab('" + top + "'\"]",
+        );
+        if (tb) tb.classList.add('active');
+        document.getElementById('pane-' + top).classList.add('active');
+        if (top === 'more') {
+          document.querySelectorAll('.an-sub').forEach(function (p) {
+            p.classList.toggle('active', p.id === 'pane-' + _anSub);
+          });
+          document.querySelectorAll('.an-subtab').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-sub') === _anSub);
+          });
         }
-        if (btn) btn.classList.add('active');
-        document.getElementById('pane-' + name).classList.add('active');
+        _anPlaceRange(name);
         if (updateHash && history.replaceState) {
           history.replaceState(null, '', '#' + AN_HASH[name]);
         }
@@ -945,16 +1047,12 @@
         _data = {};
         loadSummary();
         var activeName = _anActiveName();
-        if (fromUser) {
-          var rn = document.getElementById('an-note-records');
-          if (rn) rn.style.display = 'block';
-        }
         _loadTab(activeName);
       }
 
       function _loadTab(name) {
-        if (name === 'carga') return; // el iframe carga su propia vista
-        if (name === 'power') loadPowerCurve();
+        if (name === 'carga') loadLoad();
+        else         if (name === 'power') loadPowerCurve();
         else if (name === 'vo2max') loadVo2max();
         else if (name === 'records') loadRecords();
         else if (name === 'distrib') loadDistrib();
@@ -1614,8 +1712,6 @@
 ───────────────────────────────────────────────────────────────── */
       function _zonesDays() {
         var d = Math.min(getDays(), 365); // el endpoint acepta 30-365
-        var n = document.getElementById('an-note-zones');
-        if (n) n.style.display = getDays() > 365 ? 'block' : 'none';
         return d;
       }
 
@@ -1732,6 +1828,149 @@
           '</tbody></table>'
         );
       }
+
+      /* ─────────────────────────────────────────────────────────────────
+   LOAD. Tarjeta de carga nativa (W7): una frase de estado + un gráfico.
+   Datos: /athlete/dashboard (ctl/tsb/ctl_change y serie pmc), el mismo origen
+   que usa la vista PMC de detalle.html. Sin siglas en la primera vista.
+───────────────────────────────────────────────────────────────── */
+      var _loadData = null;
+      var _loadSeq = 0;
+
+      function loadLoad() {
+        if (_loadData) {
+          renderLoad(_loadData);
+          return;
+        }
+        var seq = ++_loadSeq;
+        fetch(API + '/athlete/dashboard', { headers: hdrs(), cache: 'no-store' })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (seq !== _loadSeq) return;
+            _loadData = d || {};
+            renderLoad(_loadData);
+          })
+          .catch(function () {
+            if (seq === _loadSeq) renderLoad({});
+          });
+      }
+
+      function _loadSeries(d) {
+        return (d.pmc || []).filter(function (p) {
+          return p && typeof p.ctl === 'number' && p.ctl > 0 && p.dt;
+        });
+      }
+
+      function renderLoad(d) {
+        var st = document.getElementById('an-load-status');
+        if (!st) return;
+        var sub = document.getElementById('an-load-sub');
+        var leg = document.getElementById('an-load-legend');
+        var canvas = document.getElementById('an-load-canvas');
+        var series = _loadSeries(d);
+        if (!series.length) {
+          st.textContent = _t(
+            'an_load_empty',
+            'Aún no hay datos de carga suficientes. Sincroniza tus actividades para verla.',
+          );
+          sub.textContent = '';
+          leg.textContent = '';
+          canvas.parentElement.style.display = 'none';
+          return;
+        }
+        canvas.parentElement.style.display = '';
+        var last = series[series.length - 1];
+        var change = typeof d.ctl_change === 'number' ? d.ctl_change : null;
+        if (change === null) {
+          var prev = series[Math.max(0, series.length - 5)];
+          change = last.ctl - prev.ctl;
+        }
+        var tsb = typeof d.tsb === 'number' ? d.tsb : last.tsb;
+        var trend =
+          change > 0.5
+            ? _t('an_load_up', 'Tu condición física sube')
+            : change < -0.5
+              ? _t('an_load_down', 'Tu condición física baja')
+              : _t('an_load_flat', 'Tu condición física se mantiene');
+        var state = '';
+        if (typeof tsb === 'number') {
+          state =
+            tsb > 5
+              ? _t('an_load_fresh', 'hoy estás fresco')
+              : tsb < -10
+                ? _t('an_load_tired', 'hoy estás cansado')
+                : _t('an_load_even', 'hoy estás en equilibrio');
+        }
+        st.textContent = trend + (state ? '; ' + state : '');
+        sub.textContent = _t('an_load_now', 'Condición física actual') + ': ' + Math.round(last.ctl);
+        leg.textContent = _t('an_load_legend', 'Evolución de tu condición física');
+        _drawLoadChart(canvas, series);
+      }
+
+      function _drawLoadChart(canvas, series) {
+        var W = canvas.parentElement.offsetWidth;
+        var H = canvas.parentElement.offsetHeight;
+        if (!W || !H) return;
+        canvas.width = W;
+        canvas.height = H;
+        var ctx = canvas.getContext('2d');
+        var pad = { top: 12, right: 14, bottom: 28, left: 38 };
+        var cw = W - pad.left - pad.right;
+        var ch = H - pad.top - pad.bottom;
+        var vals = series.map(function (p) {
+          return p.ctl;
+        });
+        var maxV = Math.max.apply(null, vals) + 3;
+        var minV = Math.max(0, Math.min.apply(null, vals) - 3);
+        var n = series.length;
+        function xp(i) {
+          return pad.left + (n > 1 ? i / (n - 1) : 0.5) * cw;
+        }
+        function yp(v) {
+          return pad.top + (1 - (v - minV) / (maxV - minV || 1)) * ch;
+        }
+        ctx.clearRect(0, 0, W, H);
+        var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+        grad.addColorStop(0, 'rgba(16,185,129,.3)');
+        grad.addColorStop(1, 'rgba(16,185,129,.02)');
+        ctx.beginPath();
+        ctx.moveTo(xp(0), pad.top + ch);
+        series.forEach(function (p, i) {
+          ctx.lineTo(xp(i), yp(p.ctl));
+        });
+        ctx.lineTo(xp(n - 1), pad.top + ch);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        series.forEach(function (p, i) {
+          if (i === 0) ctx.moveTo(xp(i), yp(p.ctl));
+          else ctx.lineTo(xp(i), yp(p.ctl));
+        });
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(148,163,184,.6)';
+        ctx.font = '10px Inter';
+        ctx.textAlign = 'right';
+        for (var k = 0; k <= 3; k++) {
+          var v = minV + ((maxV - minV) * k) / 3;
+          ctx.fillText(Math.round(v), pad.left - 4, yp(v) + 4);
+        }
+        ctx.textAlign = 'center';
+        [0, Math.floor((n - 1) / 2), n - 1].forEach(function (idx) {
+          ctx.fillText(String(series[idx].dt).slice(0, 7), xp(idx), pad.top + ch + 16);
+        });
+      }
+      document.addEventListener('lx:langchange', function () {
+        if (_loadData) renderLoad(_loadData);
+      });
+      document.addEventListener('lx:i18nready', function () {
+        if (_loadData) renderLoad(_loadData);
+      });
 
       /* ─────────────────────────────────────────────────────────────────
    0. RESUMEN (portada, S23-F)
@@ -1861,10 +2100,7 @@
           .replace('{ses}', n === 1 ? T.ses1 : T.sesN)
           .replace('{tss}', tss);
 
-        var stats =
-          '<div class="an-sum-stat"><div class="v">' + n + '</div><div class="l">' + esc(T.sessions) + '</div></div>' +
-          '<div class="an-sum-stat"><div class="v">' + hrs + ' h</div><div class="l">' + esc(T.hours) + '</div></div>' +
-          '<div class="an-sum-stat"><div class="v">' + tss + '</div><div class="l">' + esc(T.tss) + _sumInfoBtn('tss') + '</div></div>';
+        var stats = '';
         var ramp = st.ramp;
         if (
           ramp &&
@@ -1880,7 +2116,9 @@
             _sumNum(ramp.acwr, 2) + ' · ' + esc(_be(ramp.risk_level)) +
             '</div><div class="l">' + esc(T.acwr) + _sumInfoBtn('acwr') + '</div></div>';
         }
-        document.getElementById('an-sum-stats').innerHTML = stats;
+        var sbox = document.getElementById('an-sum-stats');
+        sbox.innerHTML = stats;
+        sbox.hidden = !stats;
 
         // UNA línea de insight: /insights (warning/critical) o, si no, la acción del ACWR
         var line = '';
@@ -1947,13 +2185,14 @@
       document.addEventListener('DOMContentLoaded', function () {
         loadSummary();
         // Solo la pestaña activa (por hash, o Carga); el resto carga al primer clic
-        var n = _anNameFromHash(location.hash) || 'carga';
+        var n = _anInitialName() || 'carga';
         _anActivate(n, null, false);
       });
 
       window.addEventListener('resize', function () {
         if (_data.power) renderPowerCurve(_data.power);
         if (_data.vo2) renderVo2max(_data.vo2);
+        if (_loadData) renderLoad(_loadData);
       });
     </script>
 
@@ -1982,19 +2221,6 @@
     <script>
       document.getElementById('yr') &&
         (document.getElementById('yr').textContent = new Date().getFullYear());
-    </script>
-    <script>
-      // Reubica el selector de rango a la altura de "Ir a Elite" / "Perfil del Atleta"
-      // (fila .dhx-right del header compartido, montado por dash-header.js)
-      document.addEventListener('DOMContentLoaded', function () {
-        var dhxRight = document.querySelector('#dhx-root .dhx-right');
-        var src = document.getElementById('ph-controls-src');
-        if (dhxRight && src) {
-          src.style.display = 'flex';
-          src.style.alignItems = 'center';
-          dhxRight.appendChild(src);
-        }
-      });
     </script>
     <script src="lx-audit.js"></script>
   </body>
