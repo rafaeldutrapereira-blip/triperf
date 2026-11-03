@@ -228,6 +228,47 @@
         color: var(--muted);
         margin-left: 0.15rem;
       }
+      .hero-headline {
+        margin: 0.6rem 0 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .hero-detail {
+        margin: 0.9rem 0 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .hero-detail summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .hero-detail-body {
+        margin-top: 0.5rem;
+        line-height: 1.6;
+      }
+      .period-more {
+        display: inline-block;
+      }
+      .period-more > summary {
+        list-style: none;
+        display: inline-block;
+      }
+      .period-more > summary::-webkit-details-marker {
+        display: none;
+      }
+      .period-more-list {
+        display: inline-flex;
+        gap: 0.45rem;
+        margin-left: 0.45rem;
+      }
+      .cc-fold > summary {
+        cursor: pointer;
+        list-style: none;
+      }
+      .cc-fold > summary::-webkit-details-marker {
+        display: none;
+      }
       .hero-sub {
         font-size: 0.78rem;
         color: var(--muted);
@@ -1366,6 +1407,7 @@
             ></span>
           </h1>
           <p class="hero-sub" id="hero-sub">—</p>
+          <p class="hero-headline" id="hero-headline" style="display: none"></p>
         </div>
         <div class="hero-right">
           <div class="hero-val" id="hero-val-wrap">
@@ -1382,6 +1424,11 @@
           </div>
         </div>
       </div>
+      <!-- Capa 2 del heroe PMC (W5): las siglas viven aqui, con su nombre llano -->
+      <details class="hero-detail" id="hero-detail" style="display: none">
+        <summary data-i18n="dtw_hero_see_detail">Ver detalle</summary>
+        <div class="hero-detail-body" id="hero-detail-body"></div>
+      </details>
     </div>
 
     <!-- PERIOD TABS -->
@@ -1392,24 +1439,6 @@
         aria-label="Período de tiempo"
         data-i18n-aria="dtw_aria_period"
       >
-        <button
-          class="ptab"
-          data-p="7"
-          onclick="setPeriod(7)"
-          role="tab"
-          data-i18n="dtw_period_week"
-        >
-          Semana
-        </button>
-        <button
-          class="ptab"
-          data-p="30"
-          onclick="setPeriod(30)"
-          role="tab"
-          data-i18n="dtw_period_month"
-        >
-          Mes
-        </button>
         <button
           class="ptab on"
           data-p="90"
@@ -1447,6 +1476,29 @@
         >
           Todo
         </button>
+        <details class="period-more" id="period-more">
+          <summary class="ptab" data-i18n="dtw_period_more">Más</summary>
+          <span class="period-more-list">
+            <button
+              class="ptab"
+              data-p="7"
+              onclick="setPeriod(7)"
+              role="tab"
+              data-i18n="dtw_period_week"
+            >
+              Semana
+            </button>
+            <button
+              class="ptab"
+              data-p="30"
+              onclick="setPeriod(30)"
+              role="tab"
+              data-i18n="dtw_period_month"
+            >
+              Mes
+            </button>
+          </span>
+        </details>
         <div class="period-custom-wrap">
           <button
             class="ptab"
@@ -1514,6 +1566,10 @@
 
       <!-- Comparar Ciclos de Entrenamiento (visible solo para metric=pmc) -->
       <div id="cycle-compare-section" style="display: none">
+       <details class="cc-fold" id="cc-fold">
+        <summary class="section-title" data-i18n="dtw_cc_fold_title">
+          Comparar con otra temporada
+        </summary>
         <div class="section-title" data-i18n="dtw_cc_title">
           Comparar Ciclos de Entrenamiento
         </div>
@@ -1621,6 +1677,7 @@
         >
           Elegí dos fechas y tocá "Comparar".
         </div>
+       </details>
       </div>
 
       <!-- ACWR por disciplina (visible solo para metric=acwr) -->
@@ -2034,10 +2091,12 @@
       </div>
 
       <!-- Related metrics -->
-      <div class="section-title" data-i18n="dtw_other_metrics">
-        Otras métricas
+      <div id="related-wrap">
+        <div class="section-title" data-i18n="dtw_other_metrics">
+          Otras métricas
+        </div>
+        <div class="related-grid" id="related-grid"></div>
       </div>
-      <div class="related-grid" id="related-grid"></div>
     </div>
 
     <footer>
@@ -2439,23 +2498,31 @@
                       : _t('dtw_forma_rest', 'sobrecarga — descansa');
             var raceInsight = dtwRaceTargetInsight();
             var out = [
-              'CTL <em>' +
+              _t('dtw_mc_ctl_name', 'Condición física (CTL)') +
+                ' <em>' +
                 ctl +
-                '</em> · ATL <em>' +
+                '</em> · ' +
+                _t('dtw_mc_atl_name', 'Fatiga reciente (ATL)') +
+                ' <em>' +
                 atl +
-                '</em> · TSB <em>' +
+                '</em> · ' +
+                _t('dtw_mc_tsb_name', 'Forma de hoy (TSB)') +
+                ' <em>' +
                 (tsb >= 0 ? '+' : '') +
                 tsb +
-                '</em> · Forma: <em>' +
+                '</em> · ' +
+                _t('dtw_insight_form_lbl', 'Estado') +
+                ': <em>' +
                 forma +
                 '</em>.',
-              'Ratio ATL/CTL actual: <em>' +
+              _t('dtw_insight_ratio_lbl', 'Relación fatiga/condición (ATL/CTL) actual') +
+                ': <em>' +
                 ratio +
                 '</em>. ' +
                 (ratio > 1.3
                   ? _t(
                       'dtw_ratio_over',
-                      'ATL excede 1.3× CTL — riesgo de sobreentrenamiento, reduce carga esta semana.',
+                      'Tu fatiga reciente supera 1.3 veces tu condición física — riesgo de sobreentrenamiento, reduce carga esta semana.',
                     )
                   : ratio > 1.1
                     ? _t(
@@ -2880,6 +2947,51 @@
         }
       }
 
+      // ─── HEROE PMC EN LENGUAJE LLANO (W5) ───────────────────────────────────────
+      function pmcHeadline(tsb) {
+        return tsb > 10
+          ? _t('dtw_hero_h_fresh', 'Estás fresco: buen momento para competir o hacer un test')
+          : tsb > -5
+            ? _t('dtw_hero_h_ready', 'Estás en forma para entrenar fuerte')
+            : tsb > -20
+              ? _t('dtw_hero_h_build', 'Estás acumulando fatiga, normal en una fase de construcción')
+              : tsb > -35
+                ? _t('dtw_hero_h_high', 'Llevas mucha fatiga acumulada: cuida la recuperación')
+                : _t('dtw_hero_h_over', 'Sobrecarga: prioriza el descanso');
+      }
+      // pAll = último punto PMC real, o null (oculta titular y capa 2).
+      function heroPmcExtras(pAll) {
+        var h = document.getElementById('hero-headline');
+        var det = document.getElementById('hero-detail');
+        var body = document.getElementById('hero-detail-body');
+        if (!h || !det || !body) return;
+        if (!pAll) {
+          h.style.display = 'none';
+          h.textContent = '';
+          det.style.display = 'none';
+          body.innerHTML = '';
+          return;
+        }
+        var tsb = Math.round((pAll.ctl - pAll.atl) * 10) / 10;
+        h.textContent = pmcHeadline(tsb);
+        h.style.display = '';
+        body.innerHTML =
+          _t('dtw_mc_atl_name', 'Fatiga reciente (ATL)') +
+          ': <strong>' +
+          pAll.atl +
+          '</strong><br>' +
+          _t('dtw_mc_tsb_name', 'Forma de hoy (TSB)') +
+          ': <strong>' +
+          (tsb >= 0 ? '+' : '') +
+          tsb +
+          '</strong><br>' +
+          _t('dtw_mc_ctl_name', 'Condición física (CTL)') +
+          ': <strong>' +
+          pAll.ctl +
+          '</strong>';
+        det.style.display = '';
+      }
+
       // ─── RENDER ──────────────────────────────────────────────────────────────────
       function render() {
         var cfg = MC[metric];
@@ -2914,6 +3026,7 @@
             cfg.eyebrow.toUpperCase();
           document.getElementById('hero-accent').textContent = cfg.title;
           document.getElementById('hero-sub').textContent = cfg.sub;
+          heroPmcExtras(null);
           var d0 = window.KL_DATA || {};
           var tsbArr = d0.tsb_history || [];
           var lastTsb = tsbArr.length ? tsbArr[tsbArr.length - 1].tsb : null;
@@ -2970,6 +3083,7 @@
           // gráfico — quedaban con los datos sintéticos del primer render (el que
           // corre antes de que la respuesta real de la API llegue), mostrando
           // "82ms" y un año de rango falso aunque ALL[metric] ya estuviera vacío.
+          heroPmcExtras(null);
           document.getElementById('hero-val').textContent = '—';
           document.getElementById('hero-unit').textContent = '';
           document.getElementById('hero-val-sub').textContent = _t(
@@ -3018,7 +3132,6 @@
         // Dashboard) y NO cambia con el período; debajo, en secundario, el
         // promedio de la ventana activa.
         var todayISO = new Date().toISOString().slice(0, 10);
-        var rangeTxt = fmtDate(d[0].date) + ' – ' + fmtDate(d[d.length - 1].date);
         function heroCurrentLine(lastDate) {
           return (
             _t('dtw_default_val_sub', 'Valor actual') +
@@ -3030,47 +3143,33 @@
                 fmtDate(lastDate))
           );
         }
-        function heroAvgLine(txt) {
-          return (
-            '<span class="hero-avg" style="font-size:0.85em;opacity:0.8">' +
-            _t('dtw_period_avg', 'Promedio del período') +
-            ': ' +
-            txt +
-            ' (' +
-            rangeTxt +
-            ')</span>'
-          );
-        }
+        heroPmcExtras(null);
         if (metric === 'pmc') {
+          // W5 (P11): titular en lenguaje llano + UNA cifra (condición física)
+          // con su variación del período; ATL/TSB pasan a la capa 2.
           var pAll = KL_PMC_ALL.length ? KL_PMC_ALL[KL_PMC_ALL.length - 1] : null;
-          var avgCTL = calcAvg(filterPeriod(ALL.ctl));
-          var avgATL = calcAvg(filterPeriod(ALL.atl));
-          var avgTSB = calcAvg(filterPeriod(ALL.tsb));
-          var curTSB = pAll ? Math.round((pAll.ctl - pAll.atl) * 10) / 10 : null;
-          document.getElementById('hero-val').textContent = pAll
-            ? pAll.ctl
-            : last;
-          document.getElementById('hero-unit').textContent = ' CTL';
+          var ctlWin = filterPeriod(ALL.ctl);
+          var ctlNow = pAll ? pAll.ctl : last;
+          var ctlDelta =
+            ctlWin.length > 1
+              ? Math.round((ctlNow - ctlWin[0].value) * 10) / 10
+              : null;
+          document.getElementById('hero-val').textContent = ctlNow;
+          document.getElementById('hero-unit').textContent = '';
           document.getElementById('hero-val-sub').innerHTML =
-            (pAll
-              ? 'ATL ' +
-                pAll.atl +
-                ' · TSB ' +
-                (curTSB >= 0 ? '+' : '') +
-                curTSB +
-                '<br>'
+            '<strong>' +
+            _t('dtw_hero_fitness_label', 'Condición física') +
+            '</strong>' +
+            (ctlDelta !== null
+              ? '<br>' +
+                (ctlDelta >= 0 ? '+' : '') +
+                ctlDelta +
+                ' ' +
+                _t('dtw_hero_delta_sub', 'en el período')
               : '') +
-            heroCurrentLine(pAll ? pAll.dt : d[d.length - 1].date) +
             '<br>' +
-            heroAvgLine(
-              'CTL ' +
-                avgCTL +
-                ' · ATL ' +
-                avgATL +
-                ' · TSB ' +
-                (avgTSB >= 0 ? '+' : '') +
-                avgTSB,
-            );
+            heroCurrentLine(pAll ? pAll.dt : d[d.length - 1].date);
+          heroPmcExtras(pAll);
         } else {
           var fullSeries = ALL[metric] && ALL[metric].length ? ALL[metric] : d;
           var curPt = fullSeries[fullSeries.length - 1];
@@ -3078,10 +3177,9 @@
           document.getElementById('hero-unit').textContent = cfg.unit
             ? ' ' + cfg.unit
             : '';
-          document.getElementById('hero-val-sub').innerHTML =
-            heroCurrentLine(curPt.date) +
-            '<br>' +
-            heroAvgLine(avg + (cfg.unit ? ' ' + cfg.unit : ''));
+          document.getElementById('hero-val-sub').innerHTML = heroCurrentLine(
+            curPt.date,
+          );
         }
 
         document.getElementById('chart-metric-name').textContent = cfg.name;
@@ -4976,6 +5074,9 @@
       }
 
       function renderRelated() {
+        // W5: la vista PMC queda limpia (sin "Otras métricas").
+        var rw = document.getElementById('related-wrap');
+        if (rw) rw.style.display = metric === 'pmc' ? 'none' : '';
         var others = Object.keys(MC).filter(function (k) {
           return k !== metric;
         });
@@ -6443,7 +6544,7 @@
 
       // Progreso Semanal solo en métricas de carga (S22): en el resto el
       // bloque se saca del DOM (no solo oculto) y se reinserta al volver.
-      var WP_LOAD_METRICS = ['ctl', 'atl', 'tsb', 'tss', 'acwr', 'pmc'];
+      var WP_LOAD_METRICS = ['ctl', 'atl', 'tsb', 'tss', 'acwr']; // W5: PMC sin Progreso Semanal
       var _wpNode = document.querySelector('.wp-panel');
       var _wpMark = document.createComment('wp-panel');
       window.syncProgressPanel = function () {

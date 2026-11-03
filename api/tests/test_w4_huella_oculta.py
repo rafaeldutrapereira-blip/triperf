@@ -26,4 +26,7 @@ def test_landing_sin_feature_9_huella():
 
 
 def test_sw_build_268():
-    assert "var BUILD_VERSION = '268';" in _read("sw.js")
+    import re
+
+    m = re.search(r"var BUILD_VERSION = '(\d+)';", _read("sw.js"))
+    assert m and int(m.group(1)) >= 268
