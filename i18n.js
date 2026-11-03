@@ -1023,6 +1023,7 @@ var DICT = {
     ment_no_specific_protocol: 'No hay protocolo específico para hoy. Mantén la rutina normal.',
     ment_err_load_correlations: 'Error al cargar correlaciones.',
     /* Race Day Intelligence (race_day.html) */
+    rd_tab_main: 'Mi carrera', rd_tab_races: 'Mis carreras', rd_btn_generate_update: 'Generar / Actualizar mi plan', rd_advanced: 'Ajustes avanzados', rd_btn_generate_adjusted: 'Generar con estos ajustes', rd_link_nutrition_plan: 'Ver mi plan de nutrición', rd_empty_title: 'Aún no tienes una carrera objetivo', rd_empty_desc: 'Con tu carrera objetivo te decimos cuánto falta y a qué ritmo salir.', rd_empty_cta: 'Define tu carrera objetivo',
     rd_tab_dashboard: 'Dashboard', rd_tab_plan: 'Generar Plan', rd_tab_nutrition: 'Nutrición',
     rd_tab_result: 'Registrar Resultado', rd_tab_history: 'Historial',
     rd_loading_dashboard: 'Cargando Race Day Dashboard...', rd_days_to_race: 'días para la carrera',
@@ -4381,6 +4382,7 @@ var DICT = {
     ment_no_specific_protocol: 'Não há protocolo específico para hoje. Mantenha a rotina normal.',
     ment_err_load_correlations: 'Erro ao carregar correlações.',
     /* Race Day Intelligence (race_day.html) */
+    rd_tab_main: 'Minha corrida', rd_tab_races: 'Minhas corridas', rd_btn_generate_update: 'Gerar / Atualizar meu plano', rd_advanced: 'Ajustes avançados', rd_btn_generate_adjusted: 'Gerar com estes ajustes', rd_link_nutrition_plan: 'Ver meu plano de nutrição', rd_empty_title: 'Você ainda não tem uma corrida-alvo', rd_empty_desc: 'Com sua corrida-alvo dizemos quanto falta e em que ritmo largar.', rd_empty_cta: 'Defina sua corrida-alvo',
     rd_tab_dashboard: 'Dashboard', rd_tab_plan: 'Gerar Plano', rd_tab_nutrition: 'Nutrição',
     rd_tab_result: 'Registrar Resultado', rd_tab_history: 'Histórico',
     rd_loading_dashboard: 'Carregando Race Day Dashboard...', rd_days_to_race: 'dias para a corrida',
@@ -7735,6 +7737,7 @@ var DICT = {
     ment_no_specific_protocol: 'No specific protocol for today. Keep your normal routine.',
     ment_err_load_correlations: 'Error loading correlations.',
     /* Race Day Intelligence (race_day.html) */
+    rd_tab_main: 'My race', rd_tab_races: 'My races', rd_btn_generate_update: 'Generate / Update my plan', rd_advanced: 'Advanced settings', rd_btn_generate_adjusted: 'Generate with these settings', rd_link_nutrition_plan: 'See my nutrition plan', rd_empty_title: 'You do not have a goal race yet', rd_empty_desc: 'With your goal race we tell you how long to go and what pace to start at.', rd_empty_cta: 'Set your goal race',
     rd_tab_dashboard: 'Dashboard', rd_tab_plan: 'Generate Plan', rd_tab_nutrition: 'Nutrition',
     rd_tab_result: 'Record Result', rd_tab_history: 'History',
     rd_loading_dashboard: 'Loading Race Day Dashboard...', rd_days_to_race: 'days to race',

@@ -686,134 +686,70 @@
           <div class="tabs">
             <button
               class="tab-btn active"
-              onclick="switchTab('dashboard')"
-              data-i18n="rd_tab_dashboard"
+              onclick="switchTab('main')"
+              data-i18n="rd_tab_main"
             >
-              Dashboard
+              Mi carrera
             </button>
             <button
               class="tab-btn"
-              onclick="switchTab('plan')"
-              data-i18n="rd_tab_plan"
+              onclick="switchTab('races')"
+              data-i18n="rd_tab_races"
             >
-              Generar Plan
-            </button>
-            <button
-              class="tab-btn"
-              onclick="switchTab('nutrition')"
-              data-i18n="rd_tab_nutrition"
-            >
-              Nutrición
-            </button>
-            <button
-              class="tab-btn"
-              onclick="switchTab('result')"
-              data-i18n="rd_tab_result"
-            >
-              Registrar Resultado
-            </button>
-            <button
-              class="tab-btn"
-              onclick="switchTab('history')"
-              data-i18n="rd_tab_history"
-            >
-              Historial
+              Mis carreras
             </button>
           </div>
 
-          <!-- ═══════════ TAB: DASHBOARD ═══════════ -->
-          <div class="tab-panel active" id="tab-dashboard">
-            <div
-              id="dash-loader"
-              class="loader"
-              data-i18n="rd_loading_dashboard"
-            >
+          <!-- TAB 1: MI CARRERA (una sola pantalla) -->
+          <div class="tab-panel active" id="tab-main">
+            <div id="dash-loader" class="loader" data-i18n="rd_loading_dashboard">
               Cargando Race Day Dashboard...
             </div>
             <div id="dash-content" style="display: none">
-              <!-- Countdown -->
-              <div class="card" style="margin-bottom: 16px" id="countdown-card">
-                <div class="countdown-hero">
-                  <div class="countdown-days" id="dash-days">—</div>
-                  <div class="countdown-label" data-i18n="rd_days_to_race">
-                    días para la carrera
-                  </div>
-                  <div
-                    class="race-name-big"
-                    id="dash-race-name"
-                    data-i18n="rd_no_race_registered"
-                  >
-                    Sin carrera registrada
-                  </div>
-                  <div class="race-date-sub" id="dash-race-date"></div>
+              <!-- Estado vacio: sin carrera objetivo, un solo CTA -->
+              <div class="card" id="rd-empty" style="display: none; text-align: center; padding: 40px 24px">
+                <div style="font-size: 2.2rem; margin-bottom: 12px">🏁</div>
+                <div class="card-title" style="margin-bottom: 8px" data-i18n="rd_empty_title">
+                  Aún no tienes una carrera objetivo
                 </div>
+                <p style="font-size: 0.85rem; color: var(--sub); max-width: 420px; margin: 0 auto 20px" data-i18n="rd_empty_desc">
+                  Con tu carrera objetivo te decimos cuánto falta y a qué ritmo salir.
+                </p>
+                <a id="rd-empty-cta" class="btn-primary" style="display: inline-flex; text-decoration: none" href="athlete_profile.html" data-i18n="rd_empty_cta">Define tu carrera objetivo</a>
               </div>
 
-              <!-- Fitness -->
-              <div class="card" style="margin-bottom: 16px">
-                <div class="card-title" data-i18n="rd_card_fitness_state">
-                  Estado de Forma
-                </div>
-                <div class="chips">
-                  <div class="chip chip-ctl">
-                    <div class="chip-val" id="dash-ctl">—</div>
-                    <div class="chip-label" data-lx-term="ctl"></div>
-                  </div>
-                  <div class="chip" id="dash-tsb-chip">
-                    <div class="chip-val" id="dash-tsb">—</div>
-                    <div class="chip-label" data-lx-term="tsb"></div>
-                  </div>
-                  <div class="chip">
-                    <div class="chip-val" id="dash-atl">—</div>
-                    <div class="chip-label" data-lx-term="atl"></div>
-                  </div>
-                  <div class="chip chip-rec">
-                    <div class="chip-val" id="dash-rec">—</div>
-                    <div class="chip-label" data-lx-term="recovery_score"></div>
+              <div id="rd-race-section" style="display: none">
+                <!-- Cuenta regresiva -->
+                <div class="card" style="margin-bottom: 16px" id="countdown-card">
+                  <div class="countdown-hero">
+                    <div class="countdown-days" id="dash-days">—</div>
+                    <div class="countdown-label" data-i18n="rd_days_to_race">días para la carrera</div>
+                    <div class="race-name-big" id="dash-race-name"></div>
+                    <div class="race-date-sub" id="dash-race-date"></div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Current Plan -->
-              <div class="card" style="margin-bottom: 16px" id="dash-plan-card">
-                <div class="card-title" data-i18n="rd_card_current_plan">
-                  Plan de Carrera Actual
-                </div>
-                <div id="dash-plan-content"></div>
-              </div>
-
-              <!-- Recent History -->
-              <div class="card">
-                <div class="card-title" data-i18n="rd_card_recent_races">
-                  Últimas Carreras
-                </div>
-                <div id="dash-history-list">
-                  <div class="empty-state" data-i18n="rd_no_race_history">
-                    Sin historial de carreras.
+                <!-- Tiempo predicho + 2 targets + boton unico -->
+                <div class="card" style="margin-bottom: 16px" id="dash-plan-card">
+                  <div class="card-title" data-i18n="rd_card_current_plan">Plan de Carrera Actual</div>
+                  <div id="dash-plan-content"></div>
+                  <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px">
+                    <button class="btn-primary" id="btn-auto-plan" onclick="generatePlan(false)" data-i18n="rd_btn_generate_update">
+                      Generar / Actualizar mi plan
+                    </button>
+                    <span id="plan-gen-msg" style="display: none; font-size: 0.85rem; color: var(--green)" data-i18n="rd_plan_generated">✓ Plan generado</span>
+                    <span id="plan-method-badge" style="display: none; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.3rem 0.7rem; border-radius: 20px"></span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- ═══════════ TAB: PLAN ═══════════ -->
-          <div class="tab-panel" id="tab-plan">
-            <div class="card" style="margin-bottom: 16px">
-              <div class="card-title" data-i18n="rd_card_gen_plan_auto">
-                Generar Plan de Carrera Automático
-              </div>
-              <p
-                style="
-                  font-size: 0.85rem;
-                  color: var(--sub);
-                  margin-bottom: 16px;
-                "
-                data-i18n="rd_plan_desc"
-              >
-                El motor usa tu CTL, TSB y Recovery Score actuales para predecir
-                splits y generar targets de pacing. Opcionalmente ingresa tu FTP
-                para targets de potencia más precisos.
-              </p>
+                <!-- Ajustes avanzados (plegado) -->
+                <details class="card" id="rd-advanced" style="margin-bottom: 16px">
+                  <summary class="card-title" style="cursor: pointer; margin-bottom: 0" data-i18n="rd_advanced">Ajustes avanzados</summary>
+                  <p style="font-size: 0.85rem; color: var(--sub); margin: 12px 0 16px" data-i18n="rd_plan_desc">
+                    El motor usa tu CTL, TSB y Recovery Score actuales para predecir
+                    splits y generar targets de pacing. Opcionalmente ingresa tu FTP
+                    para targets de potencia más precisos.
+                  </p>
               <div class="plan-form">
                 <div class="form-group">
                   <label data-i18n="rd_label_race_type">Tipo de carrera</label>
@@ -1180,173 +1116,122 @@
                   </div>
                 </div>
               </div>
+                  <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px">
+                    <button class="btn-outline" id="btn-plan-advanced" onclick="generatePlan(true)" data-i18n="rd_btn_generate_adjusted">
+                      Generar con estos ajustes
+                    </button>
+                  </div>
+                </details>
 
-              <div
-                style="
-                  display: flex;
-                  gap: 10px;
-                  align-items: center;
-                  flex-wrap: wrap;
-                "
-              >
-                <button
-                  class="btn-primary"
-                  onclick="generatePlan()"
-                  data-i18n="rd_btn_generate_plan"
-                >
-                  Generar Plan
-                </button>
-                <span
-                  id="plan-gen-msg"
-                  style="display: none; font-size: 0.85rem; color: var(--green)"
-                  data-i18n="rd_plan_generated"
-                  >✓ Plan generado</span
-                >
-                <span
-                  id="plan-method-badge"
-                  style="
-                    display: none;
-                    font-size: 0.72rem;
-                    font-weight: 700;
-                    letter-spacing: 0.05em;
-                    text-transform: uppercase;
-                    padding: 0.3rem 0.7rem;
-                    border-radius: 20px;
-                  "
-                ></span>
-              </div>
-            </div>
-
-            <!-- Results -->
-            <div id="plan-results" style="display: none">
-              <div
-                id="plan-confidence-row"
-                style="display: none; margin-bottom: 16px"
-              >
-                <div class="card" style="text-align: center">
-                  <div
-                    style="
-                      font-size: 0.78rem;
-                      color: var(--sub);
-                      margin-bottom: 4px;
-                    "
-                  >
-                    <span data-i18n="rd_label_confidence">Confianza:</span>
-                    <strong id="plan-conf-pct" style="color: var(--acc)"
-                      >—</strong
+                <!-- Detalle del plan generado -->
+                  <div id="plan-results" style="display: none">
+                    <div
+                      id="plan-confidence-row"
+                      style="display: none; margin-bottom: 16px"
                     >
-                    &nbsp;·&nbsp;
-                    <span data-i18n="rd_label_estimated_range"
-                      >Rango estimado:</span
-                    >
-                    <strong id="plan-range" style="color: var(--text)"
-                      >—</strong
-                    >
-                  </div>
-                </div>
-              </div>
-              <div
-                id="plan-goal-row"
-                style="display: none; margin-bottom: 16px"
-              >
-                <div class="card">
-                  <div
-                    class="card-title"
-                    style="font-size: 0.85rem"
-                    data-i18n="rd_card_goal_vs_pred"
-                  >
-                    Meta vs Predicción
-                  </div>
-                  <div class="chips" style="margin-top: 8px">
-                    <div class="chip">
-                      <div
-                        class="chip-val"
-                        style="color: var(--green)"
-                        id="plan-goal-val"
-                      >
-                        —
-                      </div>
-                      <div class="chip-label" data-i18n="rd_chip_your_goal">
-                        Tu meta
+                      <div class="card" style="text-align: center">
+                        <div
+                          style="
+                            font-size: 0.78rem;
+                            color: var(--sub);
+                            margin-bottom: 4px;
+                          "
+                        >
+                          <span data-i18n="rd_label_confidence">Confianza:</span>
+                          <strong id="plan-conf-pct" style="color: var(--acc)"
+                            >—</strong
+                          >
+                          &nbsp;·&nbsp;
+                          <span data-i18n="rd_label_estimated_range"
+                            >Rango estimado:</span
+                          >
+                          <strong id="plan-range" style="color: var(--text)"
+                            >—</strong
+                          >
+                        </div>
                       </div>
                     </div>
-                    <div class="chip">
-                      <div class="chip-val" id="plan-goal-pred">—</div>
-                      <div class="chip-label" data-i18n="rd_chip_prediction">
-                        Predicción
+                    <div
+                      id="plan-goal-row"
+                      style="display: none; margin-bottom: 16px"
+                    >
+                      <div class="card">
+                        <div
+                          class="card-title"
+                          style="font-size: 0.85rem"
+                          data-i18n="rd_card_goal_vs_pred"
+                        >
+                          Meta vs Predicción
+                        </div>
+                        <div class="chips" style="margin-top: 8px">
+                          <div class="chip">
+                            <div
+                              class="chip-val"
+                              style="color: var(--green)"
+                              id="plan-goal-val"
+                            >
+                              —
+                            </div>
+                            <div class="chip-label" data-i18n="rd_chip_your_goal">
+                              Tu meta
+                            </div>
+                          </div>
+                          <div class="chip">
+                            <div class="chip-val" id="plan-goal-pred">—</div>
+                            <div class="chip-label" data-i18n="rd_chip_prediction">
+                              Predicción
+                            </div>
+                          </div>
+                          <div class="chip">
+                            <div class="chip-val" id="plan-goal-gap">—</div>
+                            <div class="chip-label" data-i18n="rd_chip_difference">
+                              Diferencia
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="chip">
-                      <div class="chip-val" id="plan-goal-gap">—</div>
-                      <div class="chip-label" data-i18n="rd_chip_difference">
-                        Diferencia
+                    <div class="grid-2" style="margin-bottom: 16px">
+                      <!-- Splits -->
+                      <div class="card">
+                        <div class="card-title" data-i18n="rd_card_predicted_splits">
+                          Splits Predichos
+                        </div>
+                        <table class="splits-table" id="splits-table-plan"></table>
+                      </div>
+                      <!-- Pacing -->
+                      <div class="card">
+                        <div class="card-title" data-i18n="rd_card_pacing_targets">
+                          Targets de Pacing
+                        </div>
+                        <div id="pacing-targets-plan"></div>
                       </div>
                     </div>
+                    <div class="card" style="margin-bottom: 16px">
+                      <div class="card-title" data-i18n="rd_card_prediction_basis">
+                        Base de la Predicción
+                      </div>
+                      <div id="plan-basis"></div>
+                    </div>
+                    <div class="card" style="margin-bottom: 16px; text-align: center">
+                      <a id="nutrition-link" class="btn-outline" style="display: inline-flex; text-decoration: none" href="nutrition.html" data-i18n="rd_link_nutrition_plan">Ver mi plan de nutrición</a>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div class="grid-2" style="margin-bottom: 16px">
-                <!-- Splits -->
-                <div class="card">
-                  <div class="card-title" data-i18n="rd_card_predicted_splits">
-                    Splits Predichos
-                  </div>
-                  <table class="splits-table" id="splits-table-plan"></table>
-                </div>
-                <!-- Pacing -->
-                <div class="card">
-                  <div class="card-title" data-i18n="rd_card_pacing_targets">
-                    Targets de Pacing
-                  </div>
-                  <div id="pacing-targets-plan"></div>
-                </div>
-              </div>
-              <div class="card" style="margin-bottom: 16px">
-                <div class="card-title" data-i18n="rd_card_prediction_basis">
-                  Base de la Predicción
-                </div>
-                <div id="plan-basis"></div>
               </div>
             </div>
           </div>
 
-          <!-- ═══════════ TAB: NUTRITION ═══════════ -->
-          <div class="tab-panel" id="tab-nutrition">
-            <div class="card" style="text-align: center; padding: 40px 24px">
-              <div style="font-size: 2.2rem; margin-bottom: 12px">🍽️</div>
-              <div
-                class="card-title"
-                style="margin-bottom: 8px"
-                data-i18n="rd_nutrition_title"
-              >
-                La calculadora de nutrición vive en su propia página
+          <!-- TAB 2: MIS CARRERAS (historial + resultado) -->
+          <div class="tab-panel" id="tab-races">
+            <div class="card">
+              <div class="card-title" data-i18n="rd_card_race_history">
+                Historial de Carreras
               </div>
-              <p
-                style="
-                  font-size: 0.85rem;
-                  color: var(--sub);
-                  max-width: 480px;
-                  margin: 0 auto 20px;
-                "
-                data-i18n="rd_nutrition_desc"
-              >
-                Usa tu perfil real (FTP/CSS/ritmo/peso), física precisa de
-                splits, condiciones del día y planes pre/post-carrera — más
-                completo que un cálculo rápido acá.
-              </p>
-              <a
-                id="nutrition-link"
-                class="btn-primary"
-                style="display: inline-flex; text-decoration: none"
-                href="nutrition.html"
-                data-i18n="rd_btn_go_nutrition"
-                >Ir a Nutrición →</a
-              >
+              <div id="history-list">
+                <div class="loader" data-i18n="rd_loading">Cargando...</div>
+              </div>
             </div>
-          </div>
-
-          <!-- ═══════════ TAB: RESULT ═══════════ -->
-          <div class="tab-panel" id="tab-result">
+            <div style="height:16px"></div>
             <div class="card">
               <div class="card-title" data-i18n="rd_card_record_result">
                 Registrar Resultado de Carrera
@@ -1523,18 +1408,6 @@
               </div>
             </div>
           </div>
-
-          <!-- ═══════════ TAB: HISTORY ═══════════ -->
-          <div class="tab-panel" id="tab-history">
-            <div class="card">
-              <div class="card-title" data-i18n="rd_card_race_history">
-                Historial de Carreras
-              </div>
-              <div id="history-list">
-                <div class="loader" data-i18n="rd_loading">Cargando...</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <script>
@@ -1571,18 +1444,11 @@
               b.classList.remove('active');
             });
             document.getElementById('tab-' + name).classList.add('active');
-            var tabs = {
-              dashboard: 0,
-              plan: 1,
-              nutrition: 2,
-              result: 3,
-              history: 4,
-            };
+            var tabs = { main: 0, races: 1 };
             document
               .querySelectorAll('.tab-btn')
               [tabs[name] || 0].classList.add('active');
-            if (name === 'history') loadHistory();
-            if (name === 'nutrition') updateNutritionLink();
+            if (name === 'races') loadHistory();
           }
 
           // ─── DASHBOARD ───────────────────────────────────────────────────────────────
@@ -1628,107 +1494,76 @@
               });
           }
 
+          var VALID_RACE_TYPES = ['sprint', 'olympic', '703', 'full', '21k', '42k'];
+
+          function renderPlanSummary(totalFmt, bikePower, runPace) {
+            var pc = document.getElementById('dash-plan-content');
+            if (!totalFmt) {
+              pc.innerHTML =
+                '<div class="empty-state">' +
+                escHtml(
+                  _t('rd_no_plan_generated', 'Sin plan generado.'),
+                ) +
+                '</div>';
+              return;
+            }
+            pc.innerHTML =
+              '<div class="chips">' +
+              '<div class="chip"><div class="chip-val" style="color:var(--acc)">' +
+              escHtml(totalFmt) +
+              '</div><div class="chip-label">' +
+              escHtml(_t('rd_chip_predicted_time', 'Tiempo Predicho')) +
+              '</div></div>' +
+              (bikePower
+                ? '<div class="chip"><div class="chip-val">' +
+                  escHtml(bikePower) +
+                  'W</div><div class="chip-label">' +
+                  escHtml(_t('rd_chip_bike_target', 'Target Bici')) +
+                  '</div></div>'
+                : '') +
+              (runPace
+                ? '<div class="chip"><div class="chip-val">' +
+                  escHtml(runPace) +
+                  '</div><div class="chip-label">' +
+                  escHtml(_t('rd_chip_run_pace_label', 'Pace Carrera')) +
+                  '</div></div>'
+                : '') +
+              '</div>';
+          }
+
           function renderDashboard(d) {
             document.getElementById('dash-loader').style.display = 'none';
             document.getElementById('dash-content').style.display = 'block';
 
             var nr = d.next_race || {};
             window._rdNextRaceId = nr.id || null;
+            // Sin carrera objetivo: un solo CTA, nada de paneles vacios.
+            document.getElementById('rd-empty').style.display = nr.id
+              ? 'none'
+              : 'block';
+            document.getElementById('rd-race-section').style.display = nr.id
+              ? 'block'
+              : 'none';
+            if (!nr.id) return;
+
             document.getElementById('dash-days').textContent =
-              nr.days_to_race !== null ? nr.days_to_race : '—';
-            document.getElementById('dash-race-name').textContent =
-              nr.name || _t('rd_no_race_registered', 'Sin carrera registrada');
+              nr.days_to_race !== null && nr.days_to_race !== undefined
+                ? nr.days_to_race
+                : '—';
+            document.getElementById('dash-race-name').textContent = nr.name || '';
             document.getElementById('dash-race-date').textContent =
               nr.date || '';
 
-            var fit = d.fitness || {};
-            document.getElementById('dash-ctl').textContent =
-              fit.ctl !== null ? fit.ctl : '—';
-            document.getElementById('dash-tsb').textContent =
-              fit.tsb !== null ? fit.tsb : '—';
-            document.getElementById('dash-atl').textContent =
-              fit.atl !== null ? fit.atl : '—';
-            document.getElementById('dash-rec').textContent =
-              fit.recovery_score !== null ? fit.recovery_score : '—';
-            var tsbChip = document.getElementById('dash-tsb-chip');
-            tsbChip.className =
-              'chip ' + ((fit.tsb || 0) >= 0 ? 'chip-tsb' : 'chip-tsb-neg');
+            // El selector avanzado parte del tipo de la carrera objetivo.
+            if (nr.distance && VALID_RACE_TYPES.indexOf(nr.distance) >= 0) {
+              document.getElementById('plan-race-type').value = nr.distance;
+              syncPlanIFSliders();
+              syncPlanGoalInput();
+            }
+            updateNutritionLink();
 
             var plan = d.plan || {};
-            var pc = document.getElementById('dash-plan-content');
-            if (plan.total_fmt) {
-              pc.innerHTML =
-                '<div class="chips">' +
-                '<div class="chip"><div class="chip-val" style="color:var(--acc)">' +
-                plan.total_fmt +
-                '</div><div class="chip-label">' +
-                escHtml(_t('rd_chip_predicted_time', 'Tiempo Predicho')) +
-                '</div></div>' +
-                (plan.bike_power
-                  ? '<div class="chip"><div class="chip-val">' +
-                    plan.bike_power +
-                    'W</div><div class="chip-label">' +
-                    escHtml(_t('rd_chip_bike_target', 'Target Bici')) +
-                    '</div></div>'
-                  : '') +
-                (plan.run_pace
-                  ? '<div class="chip"><div class="chip-val">' +
-                    escHtml(plan.run_pace) +
-                    '</div><div class="chip-label">' +
-                    escHtml(_t('rd_chip_run_pace_label', 'Pace Carrera')) +
-                    '</div></div>'
-                  : '') +
-                '</div>' +
-                '<div style="margin-top:12px"><button class="btn-outline btn-sm" onclick="switchTab(\'plan\')">' +
-                escHtml(_t('rd_btn_regenerate_plan', 'Regenerar plan')) +
-                '</button></div>';
-            } else {
-              pc.innerHTML =
-                '<div class="empty-state">' +
-                escHtml(_t('rd_no_plan_generated', 'Sin plan generado.')) +
-                ' <button class="btn-primary btn-sm" onclick="switchTab(\'plan\')" style="margin-left:10px">' +
-                escHtml(_t('rd_btn_generate_now', 'Generar ahora')) +
-                '</button></div>';
-            }
-
-            var hist = d.history || [];
-            var hl = document.getElementById('dash-history-list');
-            if (!hist.length) {
-              hl.innerHTML =
-                '<div class="empty-state">' +
-                escHtml(
-                  _t('rd_no_races_yet', 'Sin carreras registradas aún.'),
-                ) +
-                '</div>';
-              return;
-            }
-            hl.innerHTML = hist
-              .map(function (r) {
-                var scoreHtml = r.pacing_score
-                  ? '<span class="score-pill ' +
-                    scoreCls(r.pacing_score) +
-                    '">' +
-                    r.pacing_score +
-                    ' ' +
-                    escHtml(_t('rd_exec_suffix', 'exec')) +
-                    '</span>'
-                  : '';
-                var dnfHtml = r.dnf ? '<span class="dnf-badge">DNF</span>' : '';
-                return (
-                  '<div class="history-row">' +
-                  '<div><div class="hist-name">' +
-                  escHtml(r.race_name) +
-                  '</div></div>' +
-                  '<div style="display:flex;gap:10px;align-items:center">' +
-                  '<span class="hist-time">' +
-                  escHtml(r.total_fmt || '—') +
-                  '</span>' +
-                  scoreHtml +
-                  dnfHtml +
-                  '</div></div>'
-                );
-              })
-              .join('');
+            renderPlanSummary(plan.total_fmt, plan.bike_power, plan.run_pace);
           }
 
           // ─── RUTA REAL (GPX) ─────────────────────────────────────────────────────────
@@ -1902,7 +1737,14 @@
           });
 
           // ─── GENERATE PLAN ───────────────────────────────────────────────────────────
-          function generatePlan() {
+          // advanced=false: auto-plan SIN formulario (el servidor usa CTL/TSB/FTP/peso
+          // del perfil y la proxima carrera). advanced=true: lee Ajustes avanzados.
+          function generatePlan(advanced) {
+            var payload = advanced ? buildAdvancedPayload() : {};
+            postAutoPlan(payload);
+          }
+
+          function buildAdvancedPayload() {
             var payload = {
               race_type:
                 document.getElementById('plan-race-type').value || null,
@@ -1951,7 +1793,10 @@
             );
             if (effIF.bike != null) payload.bike_if_override = effIF.bike;
             if (effIF.run != null) payload.run_fraction_override = effIF.run;
+            return payload;
+          }
 
+          function postAutoPlan(payload) {
             fetch(API + '/races/auto-plan', {
               method: 'POST',
               credentials: 'include',
@@ -1961,9 +1806,7 @@
               },
               body: JSON.stringify(payload),
             })
-              .then(function (r) {
-                return r.json();
-              })
+              .then(_okJson)
               .then(function (d) {
                 currentPlan = d;
                 document.getElementById('plan-gen-msg').style.display =
@@ -1992,9 +1835,10 @@
                 }
                 renderPlanResults(d);
               })
-              .catch(function () {
+              .catch(function (err) {
                 alert(
-                  _t(
+                  _httpErrMsg(
+                    err,
                     'rd_err_generate_plan',
                     'Error al generar plan. Verifica tus datos.',
                   ),
@@ -2005,6 +1849,12 @@
           function renderPlanResults(d) {
             document.getElementById('plan-results').style.display = 'block';
             var splits = d.splits || {};
+            renderPlanSummary(
+              splits.total_fmt,
+              (d.pacing || {}).bike_power,
+              (d.pacing || {}).run_pace,
+            );
+            updateNutritionLink();
 
             // Confianza + rango (rescatado de race_predictor.html)
             if (d.confidence) {
@@ -2277,6 +2127,7 @@
                     ? ''
                     : ' · ' + _t('rd_saved_no_race', 'sin carrera vinculada'));
 
+                loadHistory();
                 var box = document.getElementById('res-analysis-box');
                 var content = document.getElementById('res-analysis-content');
                 box.style.display = 'block';
@@ -2407,6 +2258,7 @@
 
           document.addEventListener('DOMContentLoaded', function () {
             loadDashboard();
+            loadHistory();
             syncPlanIFSliders();
             syncPlanGoalInput();
           });

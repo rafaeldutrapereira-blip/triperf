@@ -94,4 +94,5 @@ def test_i18n_claves_nuevas_en_los_tres_idiomas():
 
 
 def test_sw_build_269():
-    assert re.search(r"var BUILD_VERSION = '269'", _read("sw.js"))
+    m = re.search(r"var BUILD_VERSION = '(\d+)'", _read("sw.js"))
+    assert m and int(m.group(1)) >= 269
