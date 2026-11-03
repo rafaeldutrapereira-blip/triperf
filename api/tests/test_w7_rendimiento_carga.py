@@ -68,4 +68,6 @@ def test_claves_i18n_nuevas_en_tres_idiomas():
 
 
 def test_build_version_271():
-    assert "BUILD_VERSION = '271'" in SW
+    import re
+    m = re.search(r"BUILD_VERSION = '(\d+)'", SW)
+    assert m and int(m.group(1)) >= 271

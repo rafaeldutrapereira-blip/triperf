@@ -81,7 +81,7 @@ def test_nutrition_sin_perfil_no_produce_cifras(tmp_path):
     nutCalcLocal();
     fetchPreciseSplits();
     var out = JSON.stringify({ calls: calls, kpiTime: els['kpi-time'].innerHTML,
-      chTime: els['ch-time'].innerHTML, kcal: els['kpi-kcal'].textContent });
+      choHr: els['kpi-cho-hr'].textContent, kcal: els['kpi-kcal'].textContent });
     console.log(out);
     """) % code
     f = tmp_path / "t.js"
@@ -92,7 +92,7 @@ def test_nutrition_sin_perfil_no_produce_cifras(tmp_path):
     import json
     o =json.loads(r.stdout.strip().splitlines()[-1])
     assert o["calls"] == {"render": 0, "fetch": 0}
-    assert "Completa tu perfil" in o["kpiTime"] and "Completa tu perfil" in o["chTime"]
+    assert "Completa tu perfil" in o["kpiTime"] and o["choHr"] == chr(0x2014)
     assert o["kcal"] == chr(0x2014)
     assert not re.search(r"\d", o["kpiTime"].replace("athlete_profile.html", ""))
 

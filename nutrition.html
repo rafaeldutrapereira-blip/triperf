@@ -139,6 +139,37 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 1.2rem;
       }
+      .more-figs > summary {
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-bottom: 0.7rem;
+      }
+      .if-fine > summary {
+        cursor: pointer;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-top: 0.7rem;
+      }
+      .if-quick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.4rem;
+        margin-top: 0.7rem;
+      }
+      .if-quick select {
+        padding: 0.35rem 0.5rem;
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border2);
+        border-radius: 5px;
+      }
       .g6 {
         display: grid;
         grid-template-columns: repeat(6, 1fr);
@@ -914,14 +945,33 @@
             data-i18n-title="nutr_if_toggle_title"
             title="Ajustar intensidad de bici y carrera"
           >
-            🎚 Intensidad<span
+            🎚 Ajustar mi plan<span
               id="if-badge"
               style="display: none; margin-left: 0.35rem; color: var(--gold)"
               >●</span
             >
           </button>
         </div>
-        <div class="if-panel" id="if-panel" style="display: none">
+        <div class="if-quick" id="if-quick">
+          <div class="if-row">
+            <label for="if-terrain-quick" data-i18n="nut_terrain">Terreno</label>
+            <select id="if-terrain-quick" class="cfg-sel" onchange="onQuickCourse()">
+              <option value="flat" data-i18n="nut_terrain_flat">Plano</option>
+              <option value="rolling" data-i18n="nut_terrain_rolling">Ondulado</option>
+              <option value="hilly" data-i18n="nut_terrain_hilly">Montañoso</option>
+            </select>
+          </div>
+          <div class="if-row">
+            <label for="if-heat-quick" data-i18n="nut_heat">Calor</label>
+            <select id="if-heat-quick" class="cfg-sel" onchange="onQuickCourse()">
+              <option value="normal" data-i18n="nut_heat_normal">Normal</option>
+              <option value="high" data-i18n="nut_heat_high">Alto</option>
+            </select>
+          </div>
+        </div>
+        <details class="if-fine" id="if-fine" ontoggle="onFineToggle()">
+        <summary data-i18n="nut_fine_tune">Ajuste fino</summary>
+        <div class="if-panel" id="if-panel">
           <p class="if-note">
             <span data-i18n="nutr_if_note"
               >Los % estándar asumen un atleta age-grouper típico. Ajustalos si
@@ -1134,6 +1184,7 @@
             "
           ></span>
         </div>
+        </details>
       </div>
     </div>
 
@@ -1142,23 +1193,6 @@
       <div class="c">
         <div class="ph-inner">
           <div>
-            <div class="ph-chips">
-              <span class="chip chip-c"
-                ><span data-i18n="nut_chip_time">Tiempo est.:</span>
-                <strong id="ch-time">—</strong></span
-              >
-              <span class="chip chip-o"
-                ><span data-i18n="nutr_chip_energy">Energía:</span>
-                <strong id="ch-energy">—</strong></span
-              >
-              <span class="chip chip-g"
-                >CHO/h: <strong id="ch-cph">—</strong></span
-              >
-              <span class="chip chip-gg"
-                ><span data-i18n="nut_chip_ratio">Ratio:</span>
-                <strong id="ch-ratio">—</strong></span
-              >
-            </div>
           </div>
           <button class="btn btn-g btn-sm" onclick="window.print()">
             <svg
@@ -1184,129 +1218,99 @@
     <!-- �?�? MAIN �?�? -->
     <div style="padding: 2rem 0 4rem">
       <div class="c">
-        <!-- GASTO CALÓRICO SEMANAL -->
-        <section class="sr">
-          <div class="sec-h">
-            <span style="color: var(--green)">01</span> &nbsp;
-            <span data-i18n="nutr_weekly_kcal">Gasto Calórico Semanal</span>
-            <span
-              style="font-size: 0.75em; color: var(--dim); font-weight: 400"
-              data-i18n="nutr_weekly_kcal_sub"
-              >· por deporte · datos Garmin</span
-            >
-          </div>
-          <div class="panel">
-            <div class="panel-head">
-              <span class="panel-title" data-lx-info="diet_plan">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--orange)"
-                  stroke-width="2.5"
-                >
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-                <span data-i18n="nutr_kcal_8w"
-                  >Calorías Quemadas — Últimas 8 Semanas</span
-                >
-              </span>
-              <span
-                id="weekly-sync-info"
-                style="
-                  font-family: 'Oswald', sans-serif;
-                  font-size: 0.65rem;
-                  color: var(--dim);
-                  letter-spacing: 0.08em;
-                "
-              ></span>
-            </div>
-            <div style="padding: 1rem 1.2rem">
-              <div class="ch-inner" id="weekly-chart-wrap">
-                <div
-                  class="weekly-empty"
-                  id="weekly-empty"
-                  data-i18n="nutr_loading_garmin"
-                >
-                  Cargando datos Garmin…
-                </div>
-                <canvas id="ch-weekly" style="display: none"></canvas>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- RACE NUTRITION CALCULATOR -->
         <section class="sr mt3">
           <div class="sec-h">
-            <span style="color: var(--orange)">02</span> &nbsp;
+            <span style="color: var(--orange)">01</span> &nbsp;
             <span data-i18n="nut_calc_title">Race Nutrition Calculator</span>
           </div>
 
-          <!-- 6 KPI cards -->
-          <div class="g6" id="kpi-grid">
+          <!-- Carrera próxima (fuente: Race Day), primero -->
+          <div id="race-src-card-host"></div>
+
+          <!-- W8: 3 cifras grandes -->
+          <div class="g3" id="kpi-grid">
             <div class="kpi">
               <div class="kpi-n" style="color: var(--cyan)" id="kpi-time">
                 —
               </div>
-              <div class="kpi-l" data-i18n="nut_kpi_time">⏱ Tiempo est.</div>
+              <div class="kpi-l" data-i18n="nut_kpi_time">Tiempo estimado</div>
             </div>
             <div class="kpi">
-              <div class="kpi-n" style="color: var(--orange)" id="kpi-kcal">
-                —
-              </div>
-              <div class="kpi-l" data-i18n="nutr_kpi_energy">🔥 Energía</div>
-              <div class="kpi-s" id="kpi-kcal-s"></div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-n" style="color: var(--gold)" id="kpi-cho">—</div>
-              <div
-                class="kpi-l"
-                data-lx-info="nutricion_cho"
-                data-lx-info-val="#kpi-cho"
-                data-i18n="nut_kpi_cho_total"
-              >
-                ⏱ CHO total
-              </div>
-              <div class="kpi-s" id="kpi-cho-s"></div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-n" style="color: var(--aqua)" id="kpi-fluid">
-                —
-              </div>
-              <div class="kpi-l" data-i18n="nut_kpi_fluid">💧 Fluidos</div>
-              <div class="kpi-s" id="kpi-fluid-s"></div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-n" style="color: var(--coral)" id="kpi-na">—</div>
-              <div
-                class="kpi-l"
-                data-lx-info="nutricion_sodio"
-                data-lx-info-val="#kpi-na"
-                data-i18n="nut_kpi_sodium"
-              >
-                🧂 Sodio
-              </div>
-              <div class="kpi-s" id="kpi-na-s"></div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-n" style="color: var(--purple)" id="kpi-ratio">
+              <div class="kpi-n" style="color: var(--gold)" id="kpi-cho-hr">
                 —
               </div>
               <div
                 class="kpi-l"
                 data-lx-info="nutricion_cho"
-                data-i18n="nut_kpi_ratio"
+                data-lx-info-val="#kpi-cho-hr"
+                data-i18n="nut_kpi_cho_hr"
               >
-                ⚡ Ratio CHO
+                Carbohidratos por hora
               </div>
-              <div class="kpi-s" id="kpi-ratio-s"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-n" style="color: var(--aqua)" id="kpi-fluid-hr">
+                —
+              </div>
+              <div class="kpi-l" data-i18n="nut_kpi_fluid_hr">
+                Líquido por hora
+              </div>
             </div>
           </div>
 
-          <!-- Plan de la carrera próxima (fuente: Race Day) -->
-          <div id="race-src-card-host" class="mt2"></div>
+          <!-- Más cifras (plegado) -->
+          <details class="more-figs mt2" id="kpi-more">
+            <summary data-i18n="nut_more_figures">Más cifras de tu plan</summary>
+            <div class="g6" id="kpi-more-grid">
+              <div class="kpi">
+                <div class="kpi-n" style="color: var(--orange)" id="kpi-kcal">
+                  —
+                </div>
+                <div class="kpi-l" data-i18n="nutr_kpi_energy">Energía</div>
+                <div class="kpi-s" id="kpi-kcal-s"></div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-n" style="color: var(--gold)" id="kpi-cho">—</div>
+                <div class="kpi-l" data-i18n="nut_kpi_cho_total">
+                  Carbohidratos (CHO) total
+                </div>
+                <div class="kpi-s" id="kpi-cho-s"></div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-n" style="color: var(--aqua)" id="kpi-fluid">
+                  —
+                </div>
+                <div class="kpi-l" data-i18n="nut_kpi_fluid">Líquido total</div>
+                <div class="kpi-s" id="kpi-fluid-s"></div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-n" style="color: var(--coral)" id="kpi-na">—</div>
+                <div
+                  class="kpi-l"
+                  data-lx-info="nutricion_sodio"
+                  data-lx-info-val="#kpi-na"
+                  data-i18n="nut_kpi_sodium"
+                >
+                  Sal (sodio)
+                </div>
+                <div class="kpi-s" id="kpi-na-s"></div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-n" style="color: var(--purple)" id="kpi-ratio">
+                  —
+                </div>
+                <div
+                  class="kpi-l"
+                  data-lx-info="nutricion_cho"
+                  data-i18n="nut_kpi_ratio"
+                >
+                  Mezcla de carbohidratos
+                </div>
+                <div class="kpi-s" id="kpi-ratio-s"></div>
+              </div>
+            </div>
+          </details>
 
           <!-- Tabs -->
           <div class="panel mt2">
@@ -1398,7 +1402,7 @@
                         <tr>
                           <th data-i18n="nut_th_seg">Seg</th>
                           <th>Checkpoint</th>
-                          <th>CHO (g)</th>
+                          <th data-i18n="nut_th_cho">Carbohidratos (g)</th>
                           <th data-i18n="nut_th_fluid">Fluidos (ml)</th>
                           <th data-i18n="nut_th_sodium">Sodio (mg)</th>
                           <th data-i18n="nut_th_cho_cum">CHO acum.</th>
@@ -1426,6 +1430,59 @@
                   style="margin-bottom: 1.2rem"
                 ></div>
                 <div id="post-race-content"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GASTO CALÓRICO SEMANAL -->
+        <section class="sr mt3" id="sec-my-week">
+          <div class="sec-h">
+            <span style="color: var(--green)">02</span> &nbsp;
+            <span data-i18n="nutr_weekly_kcal">Gasto Calórico Semanal</span>
+            <span
+              style="font-size: 0.75em; color: var(--dim); font-weight: 400"
+              data-i18n="nutr_weekly_kcal_sub"
+              >· por deporte · datos Garmin</span
+            >
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-lx-info="diet_plan">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--orange)"
+                  stroke-width="2.5"
+                >
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+                <span data-i18n="nutr_kcal_8w"
+                  >Calorías Quemadas — Últimas 8 Semanas</span
+                >
+              </span>
+              <span
+                id="weekly-sync-info"
+                style="
+                  font-family: 'Oswald', sans-serif;
+                  font-size: 0.65rem;
+                  color: var(--dim);
+                  letter-spacing: 0.08em;
+                "
+              ></span>
+            </div>
+            <div style="padding: 1rem 1.2rem">
+              <div class="ch-inner" id="weekly-chart-wrap">
+                <div
+                  class="weekly-empty"
+                  id="weekly-empty"
+                  data-i18n="nutr_loading_garmin"
+                >
+                  Cargando datos Garmin…
+                </div>
+                <canvas id="ch-weekly" style="display: none"></canvas>
               </div>
             </div>
           </div>
@@ -2804,13 +2861,47 @@
         };
       }
       function toggleIFPanel() {
-        var p = document.getElementById('if-panel');
-        var show = p.style.display === 'none';
-        p.style.display = show ? 'flex' : 'none';
-        if (show) {
+        var d = document.getElementById('if-fine');
+        d.open = !d.open;
+        onFineToggle();
+      }
+      function onFineToggle() {
+        var d = document.getElementById('if-fine');
+        if (d && d.open) {
           syncIFSliders();
           syncCourseSliders();
         }
+      }
+      /* W8: capa 1 de Intensidad. Terreno y Calor escriben sobre los mismos
+         controles finos (desnivel y temperatura) y reutilizan onCourseChange(). */
+      var QUICK_TERRAIN = { flat: [0, 0], rolling: [8, 8], hilly: [18, 20] }; // m de subida por km: [bici, run]
+      function onQuickCourse() {
+        var d = DIST[ST.race];
+        var t = document.getElementById('if-terrain-quick').value;
+        var perKm = QUICK_TERRAIN[t] || QUICK_TERRAIN.flat;
+        function fit(id, km, rate) {
+          var el = document.getElementById(id);
+          var step = parseInt(el.step) || 1;
+          var max = parseInt(el.max) || 0;
+          var v = Math.round((km * rate) / step) * step;
+          el.value = Math.min(max, v);
+        }
+        fit('if-elev-bike-slider', d.bike / 1000, perKm[0]);
+        fit('if-elev-run-slider', d.run / 1000, perKm[1]);
+        document.getElementById('if-temp-slider').value =
+          document.getElementById('if-heat-quick').value === 'high' ? 32 : 22;
+        onCourseChange();
+      }
+      function syncQuickCourse() {
+        var c = getEffectiveCourse(ST.race);
+        var d = DIST[ST.race];
+        var perKm = d.bike ? c.elevBike / (d.bike / 1000) : 0;
+        if (!c.elevBike && c.elevRun) perKm = c.elevRun / (d.run / 1000);
+        var t = perKm < 4 ? 'flat' : perKm < 13 ? 'rolling' : 'hilly';
+        var tq = document.getElementById('if-terrain-quick');
+        var hq = document.getElementById('if-heat-quick');
+        if (tq) tq.value = t;
+        if (hq) hq.value = c.temp >= 28 ? 'high' : 'normal';
       }
       function updateOverrideBadge() {
         var rk = ST.race;
@@ -2906,6 +2997,7 @@
         document.getElementById('if-temp-slider').value = c.temp;
         document.getElementById('if-temp-val').textContent = c.temp + '°C';
         document.getElementById('if-surface').value = c.surface;
+        syncQuickCourse();
         updateOverrideBadge();
       }
       function onCourseChange() {
@@ -3015,7 +3107,6 @@
         var totKcal = sKcal + bKcal + rKcal;
         var t = computeNutritionTargets(rk, totalH, sweatMl, heatF);
         var plan = buildPlan(rk, pred, sweatMl, heatF);
-        updateHeader(rk, fmtHM(totalSec), totKcal, t.choHr);
         updateKpis(
           fmtHM(totalSec),
           totKcal,
@@ -3053,15 +3144,11 @@
           'style="color:inherit;text-decoration:underline">' +
           msg +
           '</a>';
-        ['ch-time', 'kpi-time'].forEach(function (id) {
+        ['kpi-time'].forEach(function (id) {
           var el = document.getElementById(id);
           if (el) el.innerHTML = link;
         });
-        ['ch-energy', 'ch-cph', 'ch-ratio'].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) el.textContent = '—';
-        });
-        ['kpi-kcal', 'kpi-cho', 'kpi-fluid', 'kpi-na', 'kpi-ratio'].forEach(
+        ['kpi-cho-hr', 'kpi-fluid-hr', 'kpi-kcal', 'kpi-cho', 'kpi-fluid', 'kpi-na', 'kpi-ratio'].forEach(
           function (id) {
             var el = document.getElementById(id);
             if (el) el.textContent = '—';
@@ -3188,19 +3275,6 @@
       // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
       // RENDER FUNCTIONS
       // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
-      function updateHeader(rk, timeStr, kcal, choHr) {
-        document.getElementById('ch-time').textContent = timeStr;
-        document.getElementById('ch-energy').textContent =
-          Math.round(kcal).toLocaleString(nutLoc()) + ' kcal';
-        document.getElementById('ch-cph').textContent = CHO_HR[rk] + 'g/h';
-        document.getElementById('ch-ratio').textContent =
-          getHeatFactor() *
-            parseFloat(document.getElementById('sel-sweat').value || 600) &&
-          choHr > 60
-            ? '2:1'
-            : '1:1';
-      }
-
       function updateKpis(
         time,
         kcal,
@@ -3214,6 +3288,8 @@
         h,
       ) {
         document.getElementById('kpi-time').textContent = time;
+        document.getElementById('kpi-cho-hr').textContent = choHr + ' g/h';
+        document.getElementById('kpi-fluid-hr').textContent = flHr + ' ml/h';
         document.getElementById('kpi-kcal').textContent =
           Math.round(kcal).toLocaleString(nutLoc()) + ' kcal';
         document.getElementById('kpi-kcal-s').textContent = _t(
