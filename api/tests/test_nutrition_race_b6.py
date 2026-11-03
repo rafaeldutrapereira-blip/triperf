@@ -157,5 +157,5 @@ def test_nutrition_html_simulador_no_persiste_plan_propio():
 
 def test_nutrition_html_shell_actual():
     html = _html()
-    assert "routes.config.js?v=10" in html
+    assert "routes.config.js?v=11" in html
     assert "nav.js?v=5" in html
