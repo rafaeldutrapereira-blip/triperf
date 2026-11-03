@@ -3589,19 +3589,9 @@
 
         /* ---------- Pieza 1: frase de hoy ---------- */
         var COLORS = ['#10B981', '#F0A500', '#EF4444'];
-        var S = { rec: null, men: null };
-        function recSev(sc) { return sc >= 70 ? 0 : sc >= 40 ? 1 : 2; }
-        function menSev(m) {
-          var l = m.level;
-          if (l === 'peak' || l === 'good') return 0;
-          if (l === 'moderate') return 1;
-          if (l === 'low' || l === 'critical') return 2;
-          return m.score >= 70 ? 0 : m.score >= 55 ? 1 : 2;
-        }
+        var S = { gov: null };
         function paintPhrase() {
-          var r = S.rec, m = S.men, gov = null;
-          if (r && m) gov = r.sev !== m.sev ? (r.sev > m.sev ? r : m) : m.score < r.score ? m : r;
-          else gov = r || m;
+          var gov = S.gov;
           var lab = $('w13-phrase-label'), txt = $('w13-phrase-text'), dot = $('w13-dot');
           if (!lab) return;
           lab.removeAttribute('data-i18n');
@@ -3617,30 +3607,13 @@
           dot.style.background = COLORS[gov.sev];
         }
         var diso = todayISO();
-        var pRec = getJSON('/recovery/dashboard?date_iso=' + diso).then(function (d) {
-          var rec = d && d.recovery;
-          if (rec && rec.score != null && !isNaN(rec.score)) {
-            S.rec = {
-              score: Math.round(rec.score), sev: recSev(rec.score),
-              label: be(rec.label || ''), text: be(rec.recommendation || '').substring(0, 200),
-            };
+        /* Veredicto unico: lo decide el servidor (GET /athlete/estado-hoy, A1). */
+        getJSON('/athlete/estado-hoy?date_iso=' + diso).then(function (v) {
+          if (v && v.status === 'ok' && (v.sev === 0 || v.sev === 1 || v.sev === 2)) {
+            S.gov = { sev: v.sev, label: be(v.label || ''), text: be(v.text || '') };
           }
+          paintPhrase();
         });
-        var pMen = getJSON('/mental/dashboard?date_iso=' + diso).then(function (d) {
-          var t = d && d.today;
-          if (t && t.score != null && !isNaN(t.score)) {
-            var levels = {
-              peak: tr('ment_level_peak', 'Forma Mental Pico'), good: tr('ment_level_good', 'Bueno'),
-              moderate: tr('ment_level_moderate', 'Moderado'), low: tr('ment_level_low', 'Bajo'),
-              critical: tr('ment_level_critical', 'Crítico'),
-            };
-            S.men = {
-              score: Math.round(t.score), sev: menSev(t),
-              label: levels[t.level] || t.level || '', text: be(t.recommendation || ''),
-            };
-          }
-        });
-        Promise.all([pRec, pMen]).then(paintPhrase);
 
         /* ---------- Pieza 3: que toca hoy ---------- */
         var EMO = { swim: '🏊', bike: '🚴', run: '🏃', strength: '💪', gym: '💪' };

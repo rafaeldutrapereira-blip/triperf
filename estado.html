@@ -2654,31 +2654,19 @@
     <script src="lx-upgrade.js"></script>
     <script>
 
-      /* ═══ Titular: veredicto unico = el PEOR entre Recovery Score y MFS ═══
-         Mismo criterio que la pantalla Hoy de la app (semaforo = peor de los
-         indicadores; Recovery: >=70 verde, >=40 ambar, resto rojo). El MFS entra
-         por su nivel (peak/good verde, moderate ambar, low/critical rojo).
-         Empate de severidad: manda el de menor score; si tambien empatan, Recovery.
-         La frase titular es la que ya genera la pagina de origen del score que manda. */
+      /* ═══ Titular: veredicto unico ═══
+         Lo decide el servidor (GET /api/athlete/estado-hoy, A1): peor severidad entre
+         Recovery y Mental. Esta pagina solo lo pinta; sin respuesta o sin datos muestra
+         el estado vacio, nunca un calculo local. */
       (function () {
         var COLORS = ['#10B981', '#F0A500', '#EF4444'];
-        var S = { rec: null, men: null, hrv: null, sleep: null, got: { rec: false, men: false } };
+        var S = { rec: null, men: null, hrv: null, sleep: null, verdict: null, gotVerdict: false };
         function t(k, f) {
           var v = window.i18n ? window.i18n.t(k) : null;
           return v && v !== k ? v : f;
         }
         function el(id) {
           return document.getElementById(id);
-        }
-        function recSev(s) {
-          return s >= 70 ? 0 : s >= 40 ? 1 : 2;
-        }
-        function menSev(m) {
-          var l = m.level;
-          if (l === 'peak' || l === 'good') return 0;
-          if (l === 'moderate') return 1;
-          if (l === 'low' || l === 'critical') return 2;
-          return m.score >= 70 ? 0 : m.score >= 55 ? 1 : 2;
         }
         function has(v) {
           return v !== null && v !== undefined && !isNaN(v);
@@ -2697,17 +2685,14 @@
           setFig('est-fig-men', m ? m.score : '—', m ? COLORS[m.sev] : 'var(--dim)');
           setFig('est-fig-hrv', has(S.hrv) ? Math.round(S.hrv) + ' ms' : '—');
           setFig('est-fig-sleep', has(S.sleep) ? S.sleep + ' h' : '—');
-          var gov = null;
-          if (r && m) {
-            gov = r.sev !== m.sev ? (r.sev > m.sev ? r : m) : m.score < r.score ? m : r;
-          } else gov = r || m;
+          var gov = S.verdict; /* veredicto unico: lo decide el servidor (GET /athlete/estado-hoy) */
           var label = el('est-label'),
             rec = el('est-rec'),
             dot = el('est-dot'),
             governs = el('est-governs'),
             rule = el('est-rule');
           if (!gov) {
-            var loading = !(S.got.rec && S.got.men);
+            var loading = !S.gotVerdict;
             hero.style.setProperty('--est-c', 'var(--dim)');
             label.textContent = loading ? t('est_loading', 'Cargando tu estado…') : t('est_empty_label', 'Sin datos de hoy');
             label.style.color = 'var(--muted)';
@@ -2731,7 +2716,7 @@
           label.style.background = col + '22';
           rec.textContent = gov.text;
           governs.textContent = gov.src === 'rec' ? t('est_governs_rec', 'Manda: Recuperación') : t('est_governs_men', 'Manda: Mental');
-          rule.textContent = r && m ? t('est_rule', 'El semáforo sigue al peor de los dos indicadores.') : '';
+          rule.textContent = gov.both ? t('est_rule', 'El semáforo sigue al peor de los dos indicadores.') : '';
           el('est-score-n').textContent = gov.score;
           el('est-score-n').style.color = col;
           el('est-score-l').textContent = gov.src === 'rec' ? t('nav_recovery', 'Recuperación') : t('nav_mental', 'Mental');
@@ -2741,15 +2726,40 @@
           }, 100);
         }
         window.ESTADO = {
-          setRecovery: function (o) {
-            S.got.rec = true;
-            S.rec = o && has(o.score) ? { src: 'rec', score: Math.round(o.score), sev: recSev(o.score), label: o.label || '', text: o.text || '' } : null;
+          /* Los bloques de Recovery y Mental pintan lo suyo; el titular solo lo decide setVerdict. */
+          setRecovery: function () {},
+          setMental: function () {},
+          setVerdict: function (v) {
+            S.gotVerdict = true;
+            var ok = v && v.status === 'ok' && (v.sev === 0 || v.sev === 1 || v.sev === 2) && has(v.score) && (v.governs === 'rec' || v.governs === 'men');
+            S.verdict = ok
+              ? {
+                  src: v.governs,
+                  score: Math.round(v.score),
+                  sev: v.sev,
+                  label: window.lxBeT ? window.lxBeT(v.label || '') : v.label || '',
+                  text: window.lxBeT ? window.lxBeT(v.text || '') : v.text || '',
+                  both: !!(v.recovery && v.mental),
+                }
+              : null;
+            S.rec = ok && v.recovery && has(v.recovery.score) ? { score: Math.round(v.recovery.score), sev: v.recovery.sev } : null;
+            S.men = ok && v.mental && has(v.mental.score) ? { score: Math.round(v.mental.score), sev: v.mental.sev } : null;
             paint();
           },
-          setMental: function (o) {
-            S.got.men = true;
-            S.men = o && has(o.score) ? { src: 'men', score: Math.round(o.score), sev: menSev(o), label: o.label || '', text: o.text || '' } : null;
-            paint();
+          refresh: function () {
+            var tk = localStorage.getItem('lx_co_token') || '';
+            var d = new Date();
+            var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            fetch('/api/athlete/estado-hoy?date_iso=' + iso, { credentials: 'include', headers: { Authorization: 'Bearer ' + tk } })
+              .then(function (r) {
+                return r.ok ? r.json() : null;
+              })
+              .catch(function () {
+                return null;
+              })
+              .then(function (v) {
+                window.ESTADO.setVerdict(v);
+              });
           },
           setNight: function (hrv, sleep) {
             S.hrv = hrv ? hrv.last_night_ms : null;
@@ -2758,6 +2768,7 @@
           },
           _state: S,
         };
+        ESTADO.refresh();
         window.EST = {
           toggleMore: function (id, btn) {
             var row = el(id);
@@ -2925,6 +2936,7 @@
           });
         }
         function refresh() {
+          if (window.ESTADO) ESTADO.refresh();
           if (window.FIS) FIS.loadDashboard();
           if (window.MEN) MEN.loadDashboard();
         }

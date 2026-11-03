@@ -24,13 +24,12 @@ def test_dashboard_tres_piezas_en_orden():
     assert i_phrase < i_race < i_today < i_insight
 
 
-def test_dashboard_frase_enlaza_a_estado_con_misma_regla():
+def test_dashboard_frase_enlaza_a_estado_con_misma_fuente():
     h = _read("dashboard.html")
     assert 'id="w13-phrase" href="estado.html"' in h
-    assert "/recovery/dashboard?date_iso=" in h
-    assert "/mental/dashboard?date_iso=" in h
-    # peor de los dos indicadores (mismo criterio que estado.html)
-    assert "r.sev > m.sev ? r : m" in h
+    # misma fuente que estado.html: el veredicto unico lo decide el servidor (A2)
+    assert "/athlete/estado-hoy?date_iso=" in h
+    assert "r.sev > m.sev ? r : m" not in h
 
 
 def test_dashboard_que_toca_hoy_lee_coach_y_mi_plan_propio():
@@ -113,7 +112,9 @@ def test_estado_checkin_se_pliega_tras_guardar_y_conserva_9_campos():
 
 def test_estado_veredicto_intacto():
     h = _read("estado.html")
-    assert "gov = r.sev !== m.sev ? (r.sev > m.sev ? r : m) : m.score < r.score ? m : r;" in h
+    # A2: el veredicto viene del servidor; la regla de fusion ya no vive en la pagina
+    assert "/athlete/estado-hoy?date_iso=" in h
+    assert "r.sev > m.sev" not in h
 
 
 # ── Perfil ───────────────────────────────────────────────────────────────────
