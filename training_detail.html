@@ -63,6 +63,27 @@
         margin: 0 auto;
         padding: 0 clamp(1rem, 4vw, 2.5rem);
       }
+      .ah-more {
+        margin-top: 0.7rem;
+      }
+      .ah-more > summary {
+        cursor: pointer;
+        font-size: 0.78rem;
+        color: var(--dim);
+        padding: 0.3rem 0;
+      }
+      .ah-more > .ah-stats {
+        margin-top: 0.5rem;
+      }
+      .charts-more {
+        margin-top: 0.8rem;
+      }
+      .charts-more > summary {
+        cursor: pointer;
+        font-size: 0.82rem;
+        color: var(--dim);
+        padding: 0.4rem 0;
+      }
       .badge {
         display: inline-block;
         font-family: 'Oswald', sans-serif;
@@ -887,8 +908,12 @@
           <div class="ah-title" id="act-title">—</div>
           <div class="ah-meta" id="act-meta"></div>
           <div class="ah-stats" id="act-kpis"></div>
+          <details class="ah-more" id="act-more">
+            <summary data-i18n="tdw_more_data">Ver más datos</summary>
+            <div class="ah-stats" id="act-kpis-more"></div>
+            <div id="act-te" style="display: none"></div>
+          </details>
           <div id="act-shoe-picker" style="display: none"></div>
-          <div id="act-te" style="display: none"></div>
         </div>
       </div>
     </div>
@@ -1427,13 +1452,7 @@
                 ' ' +
                 _t('tdw_bpm_avg_suffix', 'bpm avg') +
                 '</span>'
-              : '') +
-            '<span class="ah-meta-sep">·</span>' +
-            '<span class="badge ' +
-            sp.badge +
-            '">' +
-            sp.label +
-            '</span>';
+              : '');
 
           // KPI Cards (sport-specific)
           var kpis = [];
@@ -1459,13 +1478,13 @@
               : null;
             kpis = [
               {
-                lbl: _t('tdw_kpi_power_np', 'Potencia NP'),
+                lbl: _t('tdw_kpi_power_np', 'Potencia sostenida (NP)'),
                 val: np || '???',
                 unit: _t('tdw_unit_watts', 'Watts'),
                 col: 'var(--orange)',
               },
               {
-                lbl: _t('tdw_kpi_if', 'IF'),
+                lbl: _t('tdw_kpi_if', 'Intensidad vs. tu umbral (IF)'),
                 val: ifv || '???',
                 unit: FTP
                   ? _t('term_ftp_name', 'Potencia umbral (bici)') +
@@ -1591,25 +1610,60 @@
             ];
           }
 
-          document.getElementById('act-kpis').innerHTML = kpis
-            .map(function (k) {
-              return (
-                '<div class="ah-stat">' +
-                '<div class="ah-stat-lbl">' +
-                k.lbl +
-                '</div>' +
-                '<div class="ah-stat-val" style="color:' +
-                k.col +
-                '">' +
-                k.val +
-                '</div>' +
-                '<div class="ah-stat-unit">' +
-                k.unit +
-                '</div>' +
-                '</div>'
-              );
-            })
-            .join('');
+          function _kpiHtml(list) {
+            return list
+              .map(function (k) {
+                return (
+                  '<div class="ah-stat">' +
+                  '<div class="ah-stat-lbl">' +
+                  k.lbl +
+                  '</div>' +
+                  '<div class="ah-stat-val" style="color:' +
+                  k.col +
+                  '">' +
+                  k.val +
+                  '</div>' +
+                  '<div class="ah-stat-unit">' +
+                  k.unit +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('');
+          }
+          // Capa 1: 3 cifras llanas (Duracion, Distancia, Esfuerzo real).
+          var effortKpi =
+            ACT.sport === 'bike' && ACT.avg_power
+              ? {
+                  lbl: _t('tdw_kpi_power_avg', 'Potencia media'),
+                  val: Math.round(ACT.avg_power),
+                  unit: _t('tdw_unit_watts', 'Watts'),
+                  col: 'var(--orange)',
+                }
+              : {
+                  lbl: _t('tdw_kpi_hr_avg', 'FC Media'),
+                  val: ACT.avg_hr || '—',
+                  unit: _t('tdw_unit_bpm', 'bpm'),
+                  col: 'var(--coral)',
+                };
+          var mainKpis = [
+            {
+              lbl: _t('tdw_kpi_duration', 'Duración'),
+              val: durStr,
+              unit: '',
+              col: 'var(--purple)',
+            },
+            {
+              lbl: _t('tdw_kpi_distance', 'Distancia'),
+              val: ACT.dist_km ? ACT.dist_km.toFixed(1) : '—',
+              unit: ACT.dist_km ? 'km' : '',
+              col: 'var(--aqua)',
+            },
+            effortKpi,
+          ];
+          document.getElementById('act-kpis').innerHTML = _kpiHtml(mainKpis);
+          // Capa 2: el detalle tecnico completo (NP, IF, cadencia, etc.).
+          document.getElementById('act-kpis-more').innerHTML = _kpiHtml(kpis);
 
           // Selector manual de zapatilla — solo carreras propias, solo si el
           // atleta tiene al menos una zapatilla activa registrada en Mi Equipo.
@@ -1643,6 +1697,8 @@
               'display:flex;gap:1.5rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border2)';
             teEl.innerHTML =
               '<div><div class="ah-stat-lbl">' +
+              _t('tdw_kpi_te', 'Efecto del entrenamiento (TE)') +
+              ': ' +
               teName +
               '</div>' +
               '<div class="ah-stat-val" style="color:var(--orange);font-size:1.1rem">' +
@@ -3177,6 +3233,7 @@
                   zb.hr,
                   hrZoneColors,
                 );
+                var _pEnd = blocks.length; // graficos por defecto: potencia/FC (bici, natacion)
                 if (ACT.sport === 'bike')
                   blocks += renderChartBlock(
                     _t('tdw_chart_name_cadence', 'Cadencia'),
@@ -3195,6 +3252,7 @@
                     'm/s',
                     null,
                   );
+                  _pEnd = blocks.length; // carrera: FC + ritmo/velocidad
                   // Dinámica de carrera + Stamina real de Garmin — cada bloque se
                   // omite solo si esta actividad no tiene ese dato cacheado (ver
                   // _try_download_telemetry, campos agregados 2026-07-31/08-01).
@@ -3309,6 +3367,16 @@
                   );
                 }
                 if (chartsInner) {
+                  var _moreCharts = blocks.slice(_pEnd);
+                  if (_pEnd > 0 && _moreCharts) {
+                    blocks =
+                      blocks.slice(0, _pEnd) +
+                      '<details class="charts-more" id="charts-more"><summary>' +
+                      _t('tdw_more_charts', 'Más gráficos') +
+                      '</summary>' +
+                      _moreCharts +
+                      '</details>';
+                  }
                   chartsInner.innerHTML =
                     blocks ||
                     noDataBlock(
