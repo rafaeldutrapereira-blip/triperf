@@ -257,11 +257,52 @@ MARKERS: dict[str, dict] = {
 # Helpers de análisis de marcadores
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _sex(user: User) -> str:
-    """Retorna 'm' o 'f' según el sexo del usuario."""
-    if hasattr(user, "sexo") and user.sexo:
-        return "f" if user.sexo.lower() in ("f", "female", "femenino", "mujer") else "m"
-    return "m"
+def _sex(user: User) -> str | None:
+    """Sexo declarado: 'f' | 'm' | None (sin declarar).
+
+    Nunca se asume 'm' en silencio: los rangos de referencia dependen del
+    sexo, asi que sin declararlo no se calculan alertas ni TRS (W11).
+    """
+    raw = getattr(user, "sexo", None)
+    if not raw:
+        return None
+    v = str(raw).strip().lower()
+    if v in ("f", "female", "femenino", "mujer"):
+        return "f"
+    if v in ("m", "male", "masculino", "hombre"):
+        return "m"
+    return None
+
+
+SEX_MISSING_MSG = ("Declara tu sexo en tu Perfil: los rangos de referencia "
+                   "dependen de el")
+
+
+def regenerate_alerts_for_user(user: User, db: Session) -> int:
+    """Recalcula las alertas de todos los examenes del usuario con su sexo
+    actual (se llama al cambiar el sexo en el Perfil). Conserva las ya
+    descartadas (exam_id + marker_key). Sin sexo, borra las generadas.
+    """
+    sex = _sex(user)
+    exams = db.query(BloodLabExam).filter(BloodLabExam.user_id == user.id).all()
+    n = 0
+    for exam in exams:
+        old = db.query(BloodLabAlert).filter(BloodLabAlert.exam_id == exam.id).all()
+        dismissed = {a.marker_key for a in old if a.dismissed_at}
+        for a in old:
+            db.delete(a)
+        if not sex:
+            continue
+        try:
+            values = json.loads(exam.values_json)
+        except Exception:
+            continue
+        for a in _generate_alerts(exam, values, sex, None, db):
+            if a.marker_key in dismissed:
+                continue
+            db.add(a)
+            n += 1
+    return n
 
 
 def _analyze_marker(key: str, value: float, sex: str) -> dict:
@@ -451,7 +492,7 @@ def create_exam(
     # Generar alertas automáticas
     sex = _sex(me)
     recent_ctl = _get_recent_ctl(me.id, db)
-    alerts = _generate_alerts(exam, clean_values, sex, recent_ctl, db)
+    alerts = _generate_alerts(exam, clean_values, sex, recent_ctl, db) if sex else []
     for a in alerts:
         db.add(a)
 
@@ -464,6 +505,7 @@ def create_exam(
         "exam_id":  exam.id,
         "markers":  len(clean_values),
         "alerts":   len(alerts),
+        "sex_missing": sex is None,
     }
 
 
@@ -488,10 +530,10 @@ def list_exams(
             values = json.loads(e.values_json)
         except Exception:
             values = {}
-        n_alerts = sum(
+        n_alerts = 0 if sex is None else sum(
             1 for a in (e.alerts or []) if not a.dismissed_at
         )
-        n_critical = sum(
+        n_critical = 0 if sex is None else sum(
             1 for a in (e.alerts or [])
             if a.severity == "critical" and not a.dismissed_at
         )
@@ -538,7 +580,7 @@ def get_exam(
         if not isinstance(val, (int, float)):
             continue
         marker_def = MARKERS.get(key, {})
-        analysis   = _analyze_marker(key, float(val), sex)
+        analysis   = _analyze_marker(key, float(val), sex) if sex else {}
         analyzed[key] = {
             "key":    key,
             "name":   marker_def.get("name", key),
@@ -559,7 +601,7 @@ def get_exam(
             "correlation_note": a.correlation_note,
             "dismissed":        bool(a.dismissed_at),
         }
-        for a in (exam.alerts or [])
+        for a in ((exam.alerts or []) if sex else [])
     ]
 
     # Interpretación IA
@@ -578,6 +620,8 @@ def get_exam(
         "notes":            exam.notes,
         "markers":          analyzed,
         "alerts":           exam_alerts,
+        "sex_missing":      sex is None,
+        "sex_missing_message": SEX_MISSING_MSG if sex is None else None,
         "ai_interpretation": ai_interpretation,
         "ai_interpreted_at": exam.ai_interpreted_at.isoformat() if exam.ai_interpreted_at else None,
     }
@@ -612,6 +656,9 @@ def analyze_exam_with_ai(
     Usa el contexto fisiológico completo del atleta (CTL/ATL/TSB/HRV/readiness)
     para generar una interpretación personalizada y con correlaciones reales.
     """
+    if not _sex(me):
+        raise HTTPException(422, SEX_MISSING_MSG)
+
     # Rate limit: 10 análisis IA por usuario por hora (endpoint costoso)
     allowed, _ = check_rate_limit_redis(f"rl:lab_ai:{me.id}", max_count=10, window_seconds=3600, strict=True)
     if not allowed:
@@ -701,7 +748,12 @@ def get_active_alerts(
     db:    Session = Depends(get_db),
     me:    User    = Depends(require_feature("blood_labs")),
 ):
-    """Retorna las alertas activas de labs del atleta, ordenadas por severidad."""
+    """Retorna las alertas activas de labs del atleta, ordenadas por severidad.
+
+    Sin sexo declarado no hay alertas: los rangos dependen de el (W11).
+    """
+    if _sex(me) is None:
+        return []
     q = (
         db.query(BloodLabAlert)
         .filter(BloodLabAlert.user_id == me.id)
@@ -863,6 +915,8 @@ def get_labs_summary(
     sex = _sex(me)
     counts = {"ok": 0, "warning": 0, "critical": 0}
     for key, val in values.items():
+        if sex is None:
+            break
         if not isinstance(val, (int, float)):
             continue
         analysis = _analyze_marker(key, float(val), sex)
@@ -902,10 +956,12 @@ def get_labs_summary(
         "days_since":        days_since,
         "next_recommended_in_days": next_recommended,
         "total_markers":     len(values),
-        "markers_ok":        counts["ok"],
-        "markers_warning":   counts["warning"],
-        "markers_critical":  counts["critical"],
-        "active_alerts":     active_alerts,
+        "markers_ok":        counts["ok"] if sex else None,
+        "markers_warning":   counts["warning"] if sex else None,
+        "markers_critical":  counts["critical"] if sex else None,
+        "active_alerts":     active_alerts if sex else 0,
+        "sex_missing":       sex is None,
+        "sex_missing_message": SEX_MISSING_MSG if sex is None else None,
         "total_exams":       db.query(BloodLabExam).filter(BloodLabExam.user_id == me.id).count(),
     }
 
@@ -1010,12 +1066,20 @@ def get_labs_training_impact(
     ctl = float(load.ctl) if load and load.ctl else None
 
     sex = _sex(me)
+    if not sex:
+        return {
+            "has_labs":    True,
+            "sex_missing": True,
+            "message":     SEX_MISSING_MSG,
+            "exam_date":   latest.date_iso,
+            "trs":         None,
+        }
 
     from ..services.blood_labs_impact_service import compute_training_impact
 
     report = compute_training_impact(
         values=values,
-        sex=sex,
+        sex=sex.upper(),
         ctl=ctl,
         exam_date=latest.date_iso,
     )
@@ -1098,6 +1162,7 @@ def get_team_labs_status(
     from ..models import GarminTrainingLoad
 
     athletes_data = []
+    sex_missing_names: list[str] = []
     for aid in athlete_ids:
         athlete = db.query(User).filter(User.id == aid).first()
         if not athlete:
@@ -1119,10 +1184,16 @@ def get_team_labs_status(
             .first()
         )
 
+        a_sex = _sex(athlete)
+        if not a_sex:
+            sex_missing_names.append(
+                (getattr(athlete, "nombre", "") or "").strip() or athlete.email)
+            continue
+
         athletes_data.append({
             "user_id":    aid,
             "name":       f"{getattr(athlete, 'nombre', '') or ''} {getattr(athlete, 'apellido', '') or ''}".strip() or athlete.email,
-            "sex":        _sex(athlete),
+            "sex":        a_sex.upper(),
             "values_json": latest_exam.values_json,
             "exam_date":  latest_exam.date_iso,
             "ctl":        float(load.ctl) if load and load.ctl else None,
@@ -1130,14 +1201,20 @@ def get_team_labs_status(
 
     if not athletes_data:
         return {
-            "team_avg_trs":      100,
+            "team_avg_trs":      100 if not sex_missing_names else None,
             "athletes_count":    len(athlete_ids),
             "critical_athletes": [],
             "warning_athletes":  [],
             "ok_athletes":       [],
             "alerts":            [],
-            "message":           "Ningún atleta tiene análisis de sangre registrados",
+            "sex_missing_athletes": sex_missing_names,
+            "message":           ("Los atletas con examenes no declararon su sexo: sin rangos no se calcula TRS"
+                                  if sex_missing_names
+                                  else "Ningún atleta tiene análisis de sangre registrados"),
         }
 
     from ..services.blood_labs_impact_service import compute_team_labs_status
-    return compute_team_labs_status(athletes_data)
+    result = compute_team_labs_status(athletes_data)
+    if isinstance(result, dict):
+        result["sex_missing_athletes"] = sex_missing_names
+    return result

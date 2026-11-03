@@ -51,6 +51,7 @@ class User(Base):
     weight_kg      = Column(Float,   nullable=True)
     height_cm      = Column(Integer, nullable=True)
     age            = Column(Integer, nullable=True)
+    sexo           = Column(String,  nullable=True)   # 'f' | 'm' | NULL = sin declarar (rangos de examenes)
     vo2max         = Column(Float,   nullable=True)
     fcmax          = Column(Integer, nullable=True)   # FC mÃ¡xima (bpm)
     css            = Column(String,  nullable=True)   # Critical Swim Speed "1:48"

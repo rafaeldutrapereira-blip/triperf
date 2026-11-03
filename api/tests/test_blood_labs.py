@@ -93,10 +93,11 @@ class TestSexHelper:
             sexo = "femenino"
         assert _sex(FakeUser()) == "f"
 
-    def test_no_sexo_defaults_male(self):
+    def test_no_sexo_is_none_not_male(self):
+        # W11: sin sexo declarado ya NO se asume 'm' en silencio
         class FakeUser:
             sexo = None
-        assert _sex(FakeUser()) == "m"
+        assert _sex(FakeUser()) is None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ class TestSexHelper:
 def auth_headers(client, db, athlete_user):
     # Blood Labs es feature de plan Elite (ver api/plan_features.py)
     athlete_user.plan_nivel = "elite"
+    athlete_user.sexo = "m"   # W11: los rangos exigen sexo declarado
     db.commit()
     token = login(client, "athlete@test.com", "AthlPass123")
     return {"Authorization": f"Bearer {token}"}

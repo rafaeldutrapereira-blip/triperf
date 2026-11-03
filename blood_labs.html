@@ -186,6 +186,33 @@
         letter-spacing: 0.07em;
         margin-top: 0.3rem;
       }
+      .bl-beta {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        vertical-align: middle;
+        color: var(--amber);
+        border: 1px solid var(--amber);
+        border-radius: 4px;
+      }
+      .sex-banner {
+        margin: 0.9rem 0 0;
+        padding: 0.7rem 1rem;
+        font-size: 0.85rem;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--amber);
+        border-radius: 8px;
+      }
+      .sex-banner a {
+        color: var(--cyan);
+        font-weight: 600;
+      }
       .ph-chips {
         display: flex;
         align-items: center;
@@ -883,6 +910,13 @@
       <div class="c">
         <div class="ph-inner">
           <div>
+            <div class="bl-title" id="bl-title" style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:.04em">
+              Blood Labs<span class="bl-beta" data-i18n="bl_beta_badge">Beta</span>
+            </div>
+            <div class="sex-banner" id="sex-missing-banner" style="display: none" role="status">
+              <span data-i18n="bl_sex_missing_msg">Declara tu sexo en tu Perfil: los rangos de referencia dependen de él.</span>
+              <a href="athlete_profile.html#p-sexo" data-i18n="bl_sex_missing_link">Ir al Perfil</a>
+            </div>
             <div class="ph-chips" id="ph-chips">
               <span class="chip chip-g"
                 ><span data-i18n="bl_chip_trs">TRS:</span>
@@ -1591,7 +1625,20 @@
         return renderExamDependent();
       }
 
+      // W11: sin sexo declarado no hay semaforos, alertas ni TRS
+      function sexMissing() {
+        return !!(
+          (SUMMARY && SUMMARY.sex_missing) ||
+          (TRAINING_IMPACT && TRAINING_IMPACT.sex_missing)
+        );
+      }
+      function renderSexBanner() {
+        document.getElementById('sex-missing-banner').style.display =
+          EXAMS.length && sexMissing() ? '' : 'none';
+      }
+
       function renderSummaryChips() {
+        renderSexBanner();
         document.getElementById('chip-exams').textContent = EXAMS.length;
         var trs =
           TRAINING_IMPACT && TRAINING_IMPACT.has_labs
@@ -1599,7 +1646,8 @@
             : null;
         document.getElementById('chip-score').textContent =
           trs != null ? trs + '/100' : '—';
-        document.getElementById('chip-alerts').style.display = ALERTS.length
+        document.getElementById('chip-alerts').style.display = ALERTS.length &&
+          !sexMissing()
           ? 'inline-flex'
           : 'none';
         document.getElementById('chip-alert-n').textContent = ALERTS.length;
@@ -1610,6 +1658,10 @@
       // ══════════════════════════════════════════════════════════════
       function renderAlertsPanel() {
         var el = document.getElementById('alerts-container');
+        if (sexMissing()) {
+          el.innerHTML = '';
+          return;
+        }
         if (!ALERTS.length) {
           el.innerHTML =
             '<div class="alert-box alert-ok"><div class="alert-title">✅ ' +
@@ -1728,6 +1780,21 @@
             _t(
               'bl_load_first_exam',
               'Registra tu primer examen para ver el impacto en tu entrenamiento.',
+            ) +
+            '</span>';
+          return;
+        }
+        if (ti.sex_missing) {
+          setKpi('trs', '—');
+          setKpi('markers', sm && sm.total_markers ? sm.total_markers : '—');
+          setKpi('next', '—');
+          document.getElementById('clinical-summary').innerHTML =
+            '<span style="color:var(--dim)">' +
+            esc(
+              _t(
+                'bl_sex_missing_msg',
+                'Declara tu sexo en tu Perfil: los rangos de referencia dependen de él.',
+              ),
             ) +
             '</span>';
           return;
@@ -1858,6 +1925,11 @@
       }
 
       function renderRadar(exam) {
+        if (exam.sex_missing) {
+          if (CH.radar) CH.radar.destroy();
+          CH.radar = null;
+          return;
+        }
         var cm = catMeta();
         var byCat = {};
         CAT_ORDER.forEach(function (c) {

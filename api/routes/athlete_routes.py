@@ -287,6 +287,16 @@ def update_profile(
     if body.weight_kg is not None: me.weight_kg = body.weight_kg
     if body.height_cm is not None: me.height_cm = body.height_cm
     if body.age       is not None: me.age       = body.age
+    if body.sexo      is not None:
+        _new_sexo = (body.sexo or "").strip().lower() or None
+        if _new_sexo not in (None, "f", "m"):
+            raise HTTPException(422, "sexo debe ser 'f', 'm' o vacio")
+        _sexo_changed = _new_sexo != (me.sexo or None)
+        me.sexo = _new_sexo
+        if _sexo_changed:
+            # Las alertas de Blood Labs dependen del sexo: se recalculan
+            from .blood_lab_routes import regenerate_alerts_for_user
+            regenerate_alerts_for_user(me, db)
     if body.vo2max    is not None: me.vo2max    = body.vo2max
     if body.fcmax     is not None: me.fcmax     = body.fcmax
     if body.css       is not None: me.css       = body.css or None

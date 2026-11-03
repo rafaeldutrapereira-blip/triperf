@@ -98,6 +98,7 @@ class UserOut(BaseModel):
     weight_kg:       Optional[float] = None
     height_cm:       Optional[int]   = None
     age:             Optional[int]   = None
+    sexo:            Optional[str]   = None
     vo2max:          Optional[float] = None
     fcmax:           Optional[int]   = None
     css:             Optional[str]   = None
@@ -289,6 +290,7 @@ class AthleteProfileUpdate(BaseModel):
     weight_kg:      Optional[float] = None
     height_cm:      Optional[int]   = None
     age:            Optional[int]   = None
+    sexo:           Optional[str]   = None  # "f"|"m"|"" (vacio = sin declarar)
     vo2max:         Optional[float] = None
     fcmax:          Optional[int]   = None
     css:            Optional[str]   = None

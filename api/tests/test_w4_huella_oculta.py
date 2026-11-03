@@ -25,5 +25,5 @@ def test_landing_sin_feature_9_huella():
     assert "huella" not in s.lower()
 
 
-def test_sw_build_267():
-    assert "var BUILD_VERSION = '267';" in _read("sw.js")
+def test_sw_build_268():
+    assert "var BUILD_VERSION = '268';" in _read("sw.js")
