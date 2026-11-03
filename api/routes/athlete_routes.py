@@ -3140,6 +3140,22 @@ def get_activity_telemetry(
     }
 
 
+@router.get("/estado-hoy", dependencies=[Depends(require_feature("dashboard"))])
+def estado_hoy(
+    date_iso: Optional[str] = Query(None, description="Fecha local del cliente (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    """A1: veredicto unico de estado (peor de Recovery y Mental). Ver services/estado_veredicto."""
+    from ..services.estado_veredicto import build_estado_hoy
+    if date_iso:
+        try:
+            _date.fromisoformat(date_iso)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="date_iso invalido (YYYY-MM-DD)")
+    return build_estado_hoy(me, db, date_iso)
+
+
 @router.get("/year-in-review", dependencies=[Depends(require_feature("year_in_review"))])
 def year_in_review(
     year: int       = Query(None),
