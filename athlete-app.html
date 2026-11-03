@@ -253,104 +253,12 @@
         backdrop-filter: blur(12px);
         border-top: 1px solid var(--border);
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         padding-bottom: env(safe-area-inset-bottom, 8px);
         z-index: 100;
       }
-      /* FAB de AI Coach (Sprint 6 del roadmap app↔web) — flotante sobre el
-   bottom nav, visible en todas las pantallas salvo dentro del propio
-   chat (evita el botón flotando sobre sí mismo). Es un chat, el caso
-   de uso más naturalmente mobile-first de todos los módulos que
-   faltaban en la app. */
-      /* S1: IA fuera del frente para atletas (la pantalla y los endpoints
-         se conservan; coach/admin siguen viéndola). */
-      body.lx-no-ai #aicoach-fab,
-      body.lx-no-ai .menu-item[data-ai-menu] {
-        display: none !important;
-      }
-      #aicoach-fab {
-        position: fixed;
-        right: calc(50% - 195px);
-        bottom: calc(72px + env(safe-area-inset-bottom, 8px));
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--orange), #e8490a);
-        border: none;
-        color: #fff;
-        cursor: pointer;
-        z-index: 99;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 16px rgba(255, 101, 53, 0.4);
-      }
-      @media (max-width: 430px) {
-        #aicoach-fab {
-          right: 14px;
-        }
-      }
-
-      /* ── Menú (bottom sheet) — reemplaza el grid "Más módulos" que vivía
-   adentro de Perfil (feedback del usuario: "los nombres están dentro
-   de la guía perfil", quería algo separado y más prolijo). El botón
-   "Perfil" del nav inferior pasa a ser "Menú"; Perfil vuelve a ser
-   solo el formulario de datos, y ahora es un ítem más DENTRO del
-   menú, agrupado exactamente como el sidebar de la web (routes.
-   config.js: daily/health/goal/account). */
-      #menu-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        z-index: 200;
-        display: none;
-      }
-      #menu-backdrop.open {
-        display: block;
-        animation: menuFade 0.18s ease;
-      }
-      @keyframes menuFade {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      #menu-sheet {
-        position: fixed;
-        left: 50%;
-        transform: translateX(-50%) translateY(100%);
-        bottom: 0;
-        width: 100%;
-        max-width: 430px;
-        max-height: 82vh;
-        background: var(--bg);
-        border-top: 1px solid var(--border);
-        border-radius: 20px 20px 0 0;
-        z-index: 201;
-        overflow-y: auto;
-        padding-bottom: env(safe-area-inset-bottom, 12px);
-        transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
-      }
-      #menu-sheet.open {
-        transform: translateX(-50%) translateY(0);
-      }
-      .menu-sheet-grip {
-        width: 36px;
-        height: 4px;
-        background: var(--border);
-        border-radius: 2px;
-        margin: 0.7rem auto 0.3rem;
-      }
-      .menu-sheet-header {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        padding: 0.7rem 1.2rem 1.1rem;
-        border-bottom: 1px solid var(--border);
-      }
+      /* B1: pantalla Mas (lista simple). El avatar/nombre/plan del encabezado
+         reusan las clases menu-sheet-*. */
       .menu-sheet-avatar {
         width: 42px;
         height: 42px;
@@ -385,54 +293,47 @@
         border-radius: 20px;
         margin-top: 0.2rem;
       }
-      .menu-sheet-body {
-        padding: 0.6rem 1.2rem 1.2rem;
+      .mas-list {
+        padding: 0.6rem 1rem 6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
-      .menu-group-title {
-        font-size: 0.64rem;
-        font-weight: 700;
-        color: var(--dim);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin: 1.1rem 0 0.5rem;
-      }
-      .menu-group-title:first-child {
-        margin-top: 0.9rem;
-      }
-      .menu-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.55rem;
-      }
-      .menu-item {
+      .mas-row {
+        position: relative;
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.7rem 0.8rem;
+        gap: 0.8rem;
+        padding: 0.85rem 0.9rem;
         background: var(--bg2);
         border: 1px solid var(--border);
         border-radius: 12px;
         color: var(--text);
         cursor: pointer;
         text-align: left;
+        width: 100%;
       }
-      .menu-item:active {
+      .mas-row:active {
         opacity: 0.7;
       }
-      .menu-item svg {
-        width: 19px;
-        height: 19px;
+      .mas-row svg {
+        width: 20px;
+        height: 20px;
         color: var(--orange);
         flex-shrink: 0;
       }
-      .menu-item span {
-        font-size: 0.8rem;
+      .mas-row .mas-row-label {
+        flex: 1;
+        font-size: 0.88rem;
         font-weight: 600;
       }
-      .menu-item.logout {
+      .mas-row .mas-chev {
+        width: 16px;
+        height: 16px;
         color: var(--dim);
       }
-      .menu-item.logout svg {
+      .mas-row.logout,
+      .mas-row.logout svg {
         color: var(--dim);
       }
       .nav-btn {
@@ -481,13 +382,10 @@
       .nav-menu-dot.on {
         display: block;
       }
-      .menu-item-notif {
-        position: relative;
-      }
-      .menu-item-notif .menu-item-badge {
-        position: absolute;
-        top: 0.3rem;
-        right: 0.5rem;
+      .mas-row-notif .menu-item-badge {
+        position: static;
+        margin-left: auto;
+        margin-right: 0.2rem;
         min-width: 16px;
         height: 16px;
         padding: 0 3px;
@@ -500,7 +398,7 @@
         align-items: center;
         justify-content: center;
       }
-      .menu-item-notif .menu-item-badge.on {
+      .mas-row-notif .menu-item-badge.on {
         display: flex;
       }
       .notif-row {
@@ -8338,289 +8236,87 @@
           </div>
         </div>
       </div>
+        <!-- B1: Mas - reemplaza la hoja modal de menu. Los destinos que
+             salieron de la barra viven aca; los ids menu-item-* conservan el
+             gating por plan (_PLAN_GATED_ITEMS). -->
+        <div class="screen" id="screen-mas">
+          <div class="screen-sticky-head">
+            <div class="topbar">
+              <div style="display:flex;align-items:center;gap:.7rem;min-width:0">
+                <div class="menu-sheet-avatar" id="menu-avatar">?</div>
+                <div style="min-width:0">
+                  <div class="menu-sheet-name" id="menu-name">Atleta</div>
+                  <span class="menu-sheet-plan" id="menu-plan">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mas-list">
+            <button class="mas-row" id="mas-item-progress" onclick="goScreen('screen-progress')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_progress">Progreso</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row" id="menu-item-raceday" onclick="goScreen('screen-raceday')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_raceday">Race Day</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row" id="mas-item-wellness" onclick="goScreen('screen-wellness')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              <span class="mas-row-label" data-i18n="nav_recovery">Recovery</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row" id="mas-item-mental" onclick="goScreen('screen-mental')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_mental">Mental</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row" id="menu-item-gear" onclick="goScreen('screen-gear')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_gear">Mi Equipo</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row" id="mas-item-profile" onclick="goScreen('screen-profile')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_profile">Perfil</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row mas-row-notif" id="mas-item-notif" onclick="showNotifications()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_notifications">Notificaciones</span>
+              <span class="menu-item-badge" id="menu-notif-badge">0</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="mas-row logout" id="mas-item-logout" onclick="doLogout()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span class="mas-row-label" data-i18n="app_menu_logout">Salir</span>
+              <svg class="mas-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
       <!-- /screens -->
 
-      <button
-        id="aicoach-fab"
-        onclick="goScreen('screen-aicoach')"
-        aria-label="Asistente IA"
-      >
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-          />
-        </svg>
-      </button>
-      <script>
-        /* S1: oculta FAB y entrada de menú de IA salvo coach/admin, con la
-           misma regla de acceso que la web (LX_ROUTES.canAccess('ai_coach')). */
-        (function () {
-          var rol = localStorage.getItem('lx_co_rol') || 'atleta';
-          var ok =
-            window.LX_ROUTES && LX_ROUTES.canAccess
-              ? LX_ROUTES.canAccess({ api_rol: rol, plan: 'elite' }, 'ai_coach')
-              : rol === 'coach' || rol === 'admin';
-          if (!ok) document.body.classList.add('lx-no-ai');
-        })();
-      </script>
-
-      <!-- BOTTOM NAV -->
+      <!-- BOTTOM NAV (B1): Hoy / Plan / Comunidad / Mas -->
       <nav id="bottom-nav">
-        <button
-          class="nav-btn active"
-          onclick="goScreen('screen-today')"
-          id="nav-today"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+        <button class="nav-btn active" onclick="goScreen('screen-today')" id="nav-today">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span data-i18n="app_nav_today">Hoy</span>
         </button>
         <button class="nav-btn" onclick="goScreen('screen-week')" id="nav-week">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-          <span data-i18n="app_nav_week">Semana</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span data-i18n="app_nav_plan">Plan</span>
         </button>
-        <button
-          class="nav-btn"
-          onclick="goScreen('screen-wellness')"
-          id="nav-wellness"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-            />
-          </svg>
-          <span data-i18n="nav_recovery">Recovery</span>
-        </button>
-        <button
-          class="nav-btn"
-          onclick="goScreen('screen-community')"
-          id="nav-community"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87" />
-            <path d="M16 3.13a4 4 0 010 7.75" />
-          </svg>
+        <button class="nav-btn" onclick="goScreen('screen-community')" id="nav-community">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           <span data-i18n="app_nav_community">Comunidad</span>
         </button>
-        <button class="nav-btn" onclick="openMenuSheet()" id="nav-menu">
+        <button class="nav-btn" onclick="goScreen('screen-mas')" id="nav-menu">
           <span class="nav-menu-dot" id="nav-menu-dot"></span>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-          </svg>
-          <span data-i18n="app_nav_menu">Menú</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span data-i18n="app_nav_more">Más</span>
         </button>
       </nav>
-
-      <!-- Menú (bottom sheet) — reemplaza el grid que vivía dentro de
-       Perfil. Agrupado igual que el sidebar web (daily/health/goal/
-       account). -->
-      <div id="menu-backdrop" onclick="closeMenuSheet()"></div>
-      <div id="menu-sheet">
-        <div class="menu-sheet-grip"></div>
-        <div class="menu-sheet-header">
-          <div class="menu-sheet-avatar" id="menu-avatar">?</div>
-          <div>
-            <div class="menu-sheet-name" id="menu-name">Atleta</div>
-            <span class="menu-sheet-plan" id="menu-plan">—</span>
-          </div>
-        </div>
-        <div class="menu-sheet-body">
-          <div class="menu-group-title" data-i18n="app_menu_health">
-            Seguimiento y salud
-          </div>
-          <div class="menu-grid">
-            <button class="menu-item" onclick="menuGo('screen-mental')">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                <line x1="9" y1="9" x2="9.01" y2="9" />
-                <line x1="15" y1="9" x2="15.01" y2="9" />
-              </svg>
-              <span data-i18n="app_menu_mental">Mental</span>
-            </button>
-          </div>
-
-          <div class="menu-group-title" data-i18n="app_menu_goal">Objetivo</div>
-          <div class="menu-grid">
-            <button
-              class="menu-item"
-              id="menu-item-raceday"
-              onclick="menuGo('screen-raceday')"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              <span data-i18n="app_menu_raceday">Race Day</span>
-            </button>
-            <button class="menu-item" onclick="menuGo('screen-progress')">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-              <span data-i18n="app_menu_progress">Progreso</span>
-            </button>
-          </div>
-
-          <div class="menu-group-title" data-i18n="app_menu_tools">
-            Herramientas
-          </div>
-          <div class="menu-grid">
-            <button
-              class="menu-item"
-              data-ai-menu
-              onclick="menuGo('screen-aicoach')"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <rect x="2" y="3" width="20" height="14" rx="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-              <span data-i18n="app_menu_aicoach">Asistente IA</span>
-            </button>
-            <button
-              class="menu-item"
-              id="menu-item-gear"
-              onclick="menuGo('screen-gear')"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <circle cx="5.5" cy="17.5" r="3.5" />
-                <circle cx="18.5" cy="17.5" r="3.5" />
-                <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
-                <path d="M12 17.5V14l-3-3 4-3 2 3h2" />
-              </svg>
-              <span data-i18n="app_menu_gear">Mi Equipo</span>
-            </button>
-          </div>
-
-          <div class="menu-group-title" data-i18n="app_menu_account">
-            Cuenta
-          </div>
-          <div class="menu-grid">
-            <button
-              class="menu-item menu-item-notif"
-              onclick="showNotifications()"
-            >
-              <span class="menu-item-badge" id="menu-notif-badge">0</span>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <span data-i18n="app_menu_notifications">Notificaciones</span>
-            </button>
-            <button class="menu-item" onclick="menuGo('screen-profile')">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
-              <span data-i18n="app_menu_profile">Perfil</span>
-            </button>
-            <button
-              class="menu-item logout"
-              onclick="
-                closeMenuSheet();
-                doLogout();
-              "
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span data-i18n="app_menu_logout">Salir</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
     <!-- /app -->
 
@@ -8938,8 +8634,8 @@
               ? ''
               : 'none';
         });
-        /* La barra es un grid de 5 columnas: con items ocultos, usar tantas columnas
-     como botones visibles (5 normal, 4 para Básico) para no dejar un hueco. */
+        /* La barra tiene 4 destinos fijos: con Comunidad oculta, usar tantas
+     columnas como botones visibles para no dejar un hueco. */
         var bar = document.getElementById('bottom-nav');
         if (bar) {
           var visibles = Array.prototype.filter.call(
@@ -8952,29 +8648,8 @@
         }
       }
 
-      function openMenuSheet() {
-        document.getElementById('menu-backdrop').classList.add('open');
-        document.getElementById('menu-sheet').classList.add('open');
-        var fab = document.getElementById('aicoach-fab');
-        if (fab) fab.style.display = 'none';
-        if (!_menuHeaderLoaded) loadMenuHeader();
-      }
-
-      function closeMenuSheet() {
-        document.getElementById('menu-backdrop').classList.remove('open');
-        document.getElementById('menu-sheet').classList.remove('open');
-        var fab = document.getElementById('aicoach-fab');
-        if (
-          fab &&
-          !document
-            .getElementById('screen-aicoach')
-            .classList.contains('active')
-        )
-          fab.style.display = 'flex';
-      }
-
+      /* B1: la hoja modal se retiro; "Mas" es la pantalla screen-mas. */
       function menuGo(id) {
-        closeMenuSheet();
         goScreen(id);
       }
 
@@ -9053,7 +8728,6 @@
           .catch(function () {});
       }
       function showNotifications() {
-        closeMenuSheet();
         document.getElementById('wo-detail-body').innerHTML =
           '<div style="display:flex;align-items:center;justify-content:space-between">' +
           '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase">Notificaciones</span>' +
@@ -10315,14 +9989,13 @@
         var navMap = {
           'screen-today': 'nav-today',
           'screen-week': 'nav-week',
-          'screen-wellness': 'nav-wellness',
           'screen-community': 'nav-community',
+          'screen-mas': 'nav-menu',
         };
         var nb = document.getElementById(navMap[id]);
         if (nb) nb.classList.add('active');
 
-        var fab = document.getElementById('aicoach-fab');
-        if (fab) fab.style.display = id === 'screen-aicoach' ? 'none' : 'flex';
+        if (id === 'screen-mas' && !_menuHeaderLoaded) loadMenuHeader();
 
         /* Comunidad se carga recién al abrirla por primera vez (no en
      initApp()) — es la pantalla con más llamadas de red de toda la app

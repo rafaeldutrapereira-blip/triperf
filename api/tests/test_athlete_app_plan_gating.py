@@ -62,3 +62,45 @@ def test_visibilidad_usa_canaccess_de_la_web():
 def test_barra_inferior_ajusta_columnas_a_botones_visibles():
     assert "getElementById('bottom-nav')" in APP
     assert "repeat(' + visibles + ', 1fr)" in APP
+
+
+def _nav_block():
+    m = re.search(r'<nav id="bottom-nav">(.*?)</nav>', APP, re.S)
+    assert m, "falta #bottom-nav"
+    return m.group(1)
+
+
+def test_b1_barra_de_4_destinos_fijos():
+    nav = _nav_block()
+    destinos = re.findall(r'onclick="goScreen\(\'([^\']+)\'\)" id="([^"]+)"', nav)
+    assert destinos == [
+        ("screen-today", "nav-today"),
+        ("screen-week", "nav-week"),
+        ("screen-community", "nav-community"),
+        ("screen-mas", "nav-menu"),
+    ]
+    assert "repeat(4, 1fr)" in APP
+    for gone in ("nav-wellness", "openMenuSheet", "aicoach-fab"):
+        assert gone not in APP
+
+
+def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
+    assert APP.count('id="screen-mas"') == 1
+    mas = APP[APP.index('id="screen-mas"'):]
+    mas = mas[: mas.index("<!-- /screens -->")]
+    for dest in ("progress", "raceday", "wellness", "mental", "gear", "profile"):
+        assert f"goScreen('screen-{dest}')" in mas
+    assert "showNotifications()" in mas and "doLogout()" in mas
+    # Race Day y Mi Equipo conservan su gating por plan, ahora dentro de Más
+    assert 'id="menu-item-raceday"' in mas and 'id="menu-item-gear"' in mas
+    assert 'id="nav-community"' not in mas
+
+
+def test_b1_goscreen_conserva_pantallas_y_mapea_la_barra():
+    for sid in ("today", "week", "wellness", "community", "profile", "mental",
+                "raceday", "progress", "gear", "aicoach", "mas"):
+        assert APP.count(f'id="screen-{sid}"') == 1
+    nav_map = re.search(r"var navMap = \{(.*?)\};", APP, re.S).group(1)
+    for sid, nid in (("today", "nav-today"), ("week", "nav-week"),
+                     ("community", "nav-community"), ("mas", "nav-menu")):
+        assert f"'screen-{sid}': '{nid}'" in nav_map
