@@ -383,7 +383,13 @@
         color: var(--dim);
       }
 
-      /* Role selector */
+      .role-note {
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--dim, #8a94a6);
+        margin-bottom: 14px;
+      }
+      /* Role selector (legacy styles) */
       .role-sel {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1143,43 +1149,9 @@
             </div>
           </div>
 
-          <!-- Role selector -->
-          <div class="role-sel" id="role-sel">
-            <label class="role-opt active-atleta" id="opt-atleta">
-              <input
-                type="radio"
-                name="rol"
-                value="atleta"
-                checked
-                onchange="selectRole('atleta')"
-              />
-              <span class="role-ico">🏃</span>
-              <span class="role-info">
-                <span class="role-name" data-i18n="reg_role_athlete"
-                  >Atleta</span
-                >
-                <span class="role-hint" data-i18n="reg_role_athlete_hint"
-                  >Dashboard personal</span
-                >
-              </span>
-              <span class="role-check"></span>
-            </label>
-            <label class="role-opt" id="opt-coach">
-              <input
-                type="radio"
-                name="rol"
-                value="coach"
-                onchange="selectRole('coach')"
-              />
-              <span class="role-ico">🧑‍💼</span>
-              <span class="role-info">
-                <span class="role-name" data-i18n="reg_role_coach">Coach</span>
-                <span class="role-hint" data-i18n="reg_role_coach_hint"
-                  >Gestiona tu equipo</span
-                >
-              </span>
-              <span class="role-check"></span>
-            </label>
+          <!-- Registro: siempre crea cuenta de atleta (el servidor fija el rol) -->
+          <div class="role-note" data-i18n="reg_athlete_note">
+            Cuenta de atleta · Dashboard personal
           </div>
 
           <!-- Plan badge -->
@@ -1486,18 +1458,6 @@
         if (b2) b2.setAttribute('aria-label', ariaLabel);
       })();
 
-      var _currentRole = 'atleta';
-
-      function selectRole(r) {
-        _currentRole = r;
-        var optA = document.getElementById('opt-atleta');
-        var optC = document.getElementById('opt-coach');
-        optA.classList.remove('active-atleta', 'active-coach');
-        optC.classList.remove('active-atleta', 'active-coach');
-        if (r === 'atleta') optA.classList.add('active-atleta');
-        else optC.classList.add('active-coach');
-      }
-
       function togglePw(id, showId, hideId) {
         var inp = document.getElementById(id);
         var show = document.getElementById(showId);
@@ -1608,7 +1568,7 @@
               nombre: nombre,
               email: email,
               password: pw,
-              rol: _currentRole,
+              rol: 'atleta',
               lang: (function () {
                 try {
                   return localStorage.getItem('lx_lang') || 'es';

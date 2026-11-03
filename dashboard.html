@@ -757,6 +757,13 @@
    el mockup Dashboard B. Los badges de ESTADO (ATL/TSB/ACWR/VO2, que llevan
    una palabra, no un número) se quedan como pill. Se apunta por id porque
    el JS reescribe el className del badge en cada refresh. */
+      #kl-greeting-name:not(:empty)::before {
+        content: ', ';
+        font-style: normal;
+      }
+      #badge-ctl-change:empty {
+        display: none;
+      }
       #badge-ctl-change,
       #badge-hrv,
       #badge-tss,
@@ -2990,7 +2997,7 @@
             <h1 class="dh-h1">
               <span id="kl-greeting-txt"
                 ><span data-i18n="app_greet_morning">Buenos días</span></span
-              >, <em id="kl-greeting-name">Rafael</em>
+              ><em id="kl-greeting-name"></em>
             </h1>
           </div>
           <div
@@ -3383,7 +3390,7 @@
                 ></svg
                 ><span class="kcr-val"
                   ><span class="cu" data-kl="ctl" data-t="0">0</span></span
-                ><span class="badge b-up" id="badge-ctl-change"
+                ><span class="badge" id="badge-ctl-change"
                   ><svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3391,7 +3398,7 @@
                     stroke-width="3"
                   >
                     <polyline points="18 15 12 9 6 15" /></svg
-                  >+3.2</span
+                  ></span
                 ></span
               >
             </div>
@@ -5098,8 +5105,9 @@
           strength: 'FUE',
         };
         var DAYS_ES = _dayAbbrs();
-        var FTP = window._athleteFTP || 240;
-        var FCMax = window._athleteFCMax || 180;
+        // Solo valores reales del perfil; sin ellos no se estima TSS (nunca 240/180).
+        var FTP = window._athleteFTP || null;
+        var FCMax = window._athleteFCMax || null;
 
         /* ── 1. Compute current Mon-Sun ──────────────────────────────── */
         var today = new Date();
@@ -5171,13 +5179,13 @@
           if (a.sport === 'gym' || a.sport === 'str') return estStrengthTSS(a);
           var h = (a.dur_min || 0) / 60,
             IF;
-          if (a.sport === 'bike')
-            IF = a.avg_power
-              ? a.avg_power / FTP
-              : (a.avg_hr || 120) / (0.88 * FCMax);
-          else if (a.sport === 'run') IF = (a.avg_hr || 140) / (0.89 * FCMax);
-          else if (a.sport === 'swim') IF = (a.avg_hr || 120) / (0.82 * FCMax);
-          else IF = (a.avg_hr || 110) / (0.75 * FCMax); // fallback genérico (deportes sin mapeo)
+          // Sin potencia+FTP ni FC real+FCmax real no hay base: null (desconocido).
+          if (a.sport === 'bike' && a.avg_power && FTP) IF = a.avg_power / FTP;
+          else if (!a.avg_hr || !FCMax) return null;
+          else if (a.sport === 'bike') IF = a.avg_hr / (0.88 * FCMax);
+          else if (a.sport === 'run') IF = a.avg_hr / (0.89 * FCMax);
+          else if (a.sport === 'swim') IF = a.avg_hr / (0.82 * FCMax);
+          else IF = a.avg_hr / (0.75 * FCMax); // fallback genérico (deportes sin mapeo)
           return Math.round(h * Math.min(1.25, Math.max(0.4, IF)) ** 2 * 100);
         }
 
@@ -5209,7 +5217,7 @@
           day.plan = plan;
           day.actual = {
             tss: day.acts.reduce(function (s, a) {
-              return s + a.tss;
+              return s + (a.tss || 0);
             }, 0),
             dist_km: day.acts.reduce(function (s, a) {
               return s + a.dist_km;
@@ -5271,6 +5279,13 @@
           );
         }
         var hasPlan = weekPlanFull.tss > 0 || weekPlanFull.dist > 0;
+        // TSS desconocido (sin FTP/FC reales): la cifra es un mínimo, se marca con ≥
+        var tssPartial = pastDays.some(function (d) {
+          return d.acts.some(function (a) {
+            return a.tss == null;
+          });
+        });
+        var tssPre = tssPartial ? '≥' : '';
         var mets = [
           {
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
@@ -5279,11 +5294,13 @@
             plan: Math.round(planTotal.tss),
             fullPlan: Math.round(weekPlanFull.tss),
             valStr: hasPlan
-              ? Math.round(actualTotal.tss) +
+              ? tssPre +
+                Math.round(actualTotal.tss) +
                 ' <small>/ ' +
                 Math.round(weekPlanFull.tss) +
                 '</small>'
-              : Math.round(actualTotal.tss) +
+              : tssPre +
+                Math.round(actualTotal.tss) +
                 _t(
                   'dash_no_plan_tag',
                   ' <small style="color:var(--dim)">sin plan</small>',
@@ -5517,7 +5534,7 @@
         days.forEach(function (day) {
           day.acts.forEach(function (a) {
             if (tssBySport.hasOwnProperty(a.sport))
-              tssBySport[a.sport] += a.tss;
+              tssBySport[a.sport] += a.tss || 0;
             if (a.sport !== 'swim' && a.sport !== 'bike' && a.sport !== 'run') {
               if (!lastGymDate || day.date > lastGymDate) {
                 lastGymDate = day.date;
@@ -6751,8 +6768,8 @@
               runPace: profile.run_pace || '—',
             });
             // Guardar para estTSS en renderWeekAdherence
-            window._athleteFTP = profile.ftp || 240;
-            window._athleteFCMax = profile.fcmax || 180;
+            window._athleteFTP = profile.ftp || null;
+            window._athleteFCMax = profile.fcmax || null;
 
             // Carrera objetivo
             if (!profile.race_goal_date) return;
@@ -7248,19 +7265,20 @@
           // página. Solo se usa como último recurso: si a.tss ya viene del
           // backend (caso normal tras el fix de _extract_tss), se usa directo.
           if (a.tss != null) return Math.round(a.tss);
-          var FTP = window._athleteFTP || 240,
-            FC = window._athleteFCMax || 180,
+          // Sin tss real ni FTP/FC reales del atleta: '???' (nunca 240/180 ni h*50).
+          var FTP = window._athleteFTP || null,
+            FC = window._athleteFCMax || null,
             h = (a.dur_min || 0) / 60;
           if (!h) return 0;
-          if (a.avg_power && nSp(a.sport) === 'bike') {
+          if (a.avg_power && FTP && nSp(a.sport) === 'bike') {
             var IF = a.avg_power / FTP;
             return Math.round(h * IF * IF * 100);
           }
-          if (a.avg_hr) {
+          if (a.avg_hr && FC) {
             var IF2 = a.avg_hr / (FC * 0.89);
             return Math.round(h * IF2 * IF2 * 100);
           }
-          return Math.round(h * 50);
+          return '???';
         }
         function escX(s) {
           return String(s)
@@ -7421,7 +7439,7 @@
         o += '<g clip-path="url(#pmcClip)">';
         allDots.forEach(function (a) {
           if (!a.date_iso || a.date_iso < pS || a.date_iso > pE) return;
-          var tss = a.tss || 0;
+          var tss = typeof a.tss === 'number' ? a.tss : 0;
           if (tss <= 0) return;
           var cx = +xDate(a.date_iso),
             cy = +yS(tss);

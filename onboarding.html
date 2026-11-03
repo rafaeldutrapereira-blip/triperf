@@ -724,9 +724,21 @@
 
         <ul class="done-list" id="done-list"></ul>
 
+        <div
+          id="finish-err"
+          role="alert"
+          style="
+            display: none;
+            text-align: center;
+            color: #ef4444;
+            margin-top: 20px;
+            font-size: 0.9rem;
+          "
+        ></div>
         <div class="btn-row" style="justify-content: center; margin-top: 32px">
           <button
             class="btn btn-primary"
+            id="btn-finish"
             onclick="finish()"
             data-i18n="onb_go_dashboard"
           >
@@ -967,17 +979,36 @@
         if (data.fcmax) patch.fcmax = data.fcmax;
         if (data.weight_kg) patch.weight_kg = data.weight_kg;
         try {
-          await fetch(API + '/api/athlete/profile', {
+          const r = await fetch(API + '/api/athlete/profile', {
             method: 'PATCH',
             headers: authH(),
             credentials: 'include',
             body: JSON.stringify(patch),
           });
-        } catch (e) {}
+          return r.ok;
+        } catch (e) {
+          return false;
+        }
       }
 
       async function finish() {
-        await saveProfileData();
+        const btn = document.getElementById('btn-finish');
+        const err = document.getElementById('finish-err');
+        if (btn) btn.disabled = true;
+        if (err) err.style.display = 'none';
+        const saved = await saveProfileData();
+        if (!saved) {
+          /* No avanzar como si hubiera guardado: avisar y dejar reintentar. */
+          if (err) {
+            const k = 'onb_save_error';
+            const tr = window.i18n && window.i18n.t ? window.i18n.t(k) : k;
+            err.textContent =
+              tr && tr !== k ? tr : 'No se pudo guardar; reintenta.';
+            err.style.display = 'block';
+          }
+          if (btn) btn.disabled = false;
+          return;
+        }
         localStorage.setItem('lx_onboarding_done', '1');
         /* Si se registró desde el celular (ej. escaneando el QR de una invitación),
      lo mandamos directo a la app móvil en vez del dashboard de escritorio —
