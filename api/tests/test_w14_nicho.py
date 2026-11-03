@@ -96,29 +96,31 @@ def test_adaptive_embed_del_coach_intacto():
 
 
 # ── Comunidad ────────────────────────────────────────────────────────────────
+# CC4: community.html es una cascara que monta community.js; el ranking y el
+# formulario de publicar viven en el modulo (la intencion de W14 se conserva).
 def test_community_leaderboard_dos_selectores():
-    h = _read("community.html")
-    a = h.index('id="leaderboard-panel"')
-    b = h.index("<!-- Suggestions -->")
-    block = h[a:b]
+    js = _read("community.js")
+    m = re.search(r"function rankingView\(\) \{(.*?)function loadRanking", js, re.S)
+    assert m, "rankingView no encontrado"
+    block = m.group(1)
     assert len(re.findall(r"<select", block)) == 2
-    assert 'id="lb-scope"' in block and 'id="lb-period"' in block
-    # metrica y club quedan en su valor por defecto
-    assert '<input type="hidden" id="lb-metric" value="tss"' in block
-    assert '<input type="hidden" id="lb-club" value=""' in block
+    assert 'data-act="rank-scope"' in block and 'data-act="rank-period"' in block
+    # metrica fija TSS: sin selector de metrica
+    assert "rank-metric" not in block and "lb-metric" not in block
 
 
 def test_community_sin_duplicacion_de_escritorio_y_feed_primero():
     h = _read("community.html")
-    assert "cl-side-right" not in h.split("</style>")[-1]
-    assert 'id="cl-mini-leaderboard"' not in h
-    assert "loadSidebarLeaderboard();" not in h
-    i_share = h.index('id="btn-share-toggle"')
-    i_feed = h.index('id="feed-container"')
-    assert i_share < i_feed
-    # el formulario de publicar arranca plegado
-    assert 'id="post-form-wrap" style="display: none"' in h
-    assert "window.toggleShareForm" in h
+    js = _read("community.js")
+    # la cascara no arrastra paneles laterales ni codigo muerto
+    for dead in ("cl-side-right", "cl-mini-leaderboard", "loadSidebarLeaderboard",
+                 "loadSidebarSuggestions", "loadStats", "loadFeed", "loadClubs",
+                 "loadChallenges", "submitCreateChallenge"):
+        assert dead not in h, dead
+    assert 'id="community-mount"' in h and "community.js?v=" in h
+    assert "LXCommunity.mount" in h and "view: 'feed'" in h
+    # Compartir plegado: el formulario solo se dibuja con share.open
+    assert "share.open" in js
 
 
 # ── Gear ─────────────────────────────────────────────────────────────────────

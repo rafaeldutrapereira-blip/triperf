@@ -25,18 +25,21 @@ def test_gear_bicis_para_free_muestra_invitacion_no_oculta():
     assert squash(".lx-free #bikes-body{display:none") in g
 
 
+COMMUNITY_JS = (ROOT / "community.js").read_text(encoding="utf-8")
+
+
 def test_community_oculta_escritura_para_free():
-    for sel in ("#post-form-wrap", ".kudo-btn", ".comment-toggle", ".follow-btn",
-                '[onclick*="openCreate"]', '[onclick*="joinChallenge"]'):
-        assert squash(f".lx-free {sel}") in squash(COMMUNITY), sel
+    # CC4: el modo lectura lo impone community.js (sin controles de escritura
+    # cuando canWrite es false); la cascara le pasa el plan de la sesion.
+    assert "canWrite" in COMMUNITY_JS and "com_readonly_note" in COMMUNITY_JS
+    assert squash("canWrite:s.plan!=='basic'") in squash(COMMUNITY)
 
 
 def test_community_muestra_aviso_de_lectura():
-    assert (
-        squash('class="lx-free-note" data-i18n="cmw_free_read_only"')
-        in squash(COMMUNITY)
-    )
-    assert squash(".lx-free .lx-free-note{display:block") in squash(COMMUNITY)
+    # La nota la dibuja el modulo; el texto W10 ("Plan Basico: estas viendo...")
+    # sigue fijado en i18n (cmw_free_read_only, ver test_integridad_w10).
+    assert "com_readonly_note" in COMMUNITY_JS
+    assert len(re.findall(r"^\s*com_readonly_note:", I18N, re.M)) == 3
 
 
 def test_deteccion_free_usa_el_plan_de_la_sesion():
