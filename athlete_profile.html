@@ -76,6 +76,9 @@
       .tabs::-webkit-scrollbar {
         display: none;
       }
+      .prof-fold { margin: 1rem 0; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; padding: 0.2rem 1rem; }
+      .prof-fold > summary { cursor: pointer; padding: 0.8rem 0; font-weight: 600; }
+      .prof-fold > .prof-fold-body { padding-bottom: 0.8rem; }
       .tab-btn {
         font-family: 'Oswald', sans-serif;
         font-size: 0.78rem;
@@ -691,16 +694,9 @@
             <button
               class="tab-btn active"
               onclick="switchTab('perfil')"
-              data-i18n="prof_tab_profile"
+              data-i18n="prof_tab_mydata"
             >
-              Perfil
-            </button>
-            <button
-              class="tab-btn"
-              onclick="switchTab('rendimiento')"
-              data-i18n="prof_tab_performance"
-            >
-              Rendimiento
+              Mis datos
             </button>
             <button
               class="tab-btn"
@@ -711,21 +707,14 @@
             </button>
             <button
               class="tab-btn"
-              onclick="switchTab('records')"
-              data-i18n="prof_tab_records"
-            >
-              Records
-            </button>
-            <button
-              class="tab-btn"
               onclick="switchTab('seguridad')"
-              data-i18n="prof_tab_security"
+              data-i18n="prof_tab_account"
             >
-              Seguridad
+              Cuenta
             </button>
           </div>
 
-          <!-- ════════════════════ TAB: PERFIL ════════════════════════ -->
+          <!-- ════════════════════ TAB: MIS DATOS (perfil + marcas + records) ════ -->
           <div id="tab-perfil" class="tab-pane active">
             <div class="card" style="margin-bottom: 1rem">
               <div class="card-head">
@@ -773,83 +762,6 @@
                 </button>
               </div>
             </div>
-            <div class="card" style="margin-bottom: 1rem">
-              <div class="card-head">
-                <div class="card-title" data-i18n="cmw_privacy_title">
-                  Privacidad de mis actividades
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="priv-desc" data-i18n="cmw_privacy_desc">
-                  Elegí qué puede ver la gente que te sigue cuando abre el
-                  detalle de una de tus actividades en Comunidad.
-                </div>
-                <label class="priv-row"
-                  ><input
-                    type="checkbox"
-                    id="priv-details"
-                    onchange="privToggleMaster()"
-                  />
-                  <span data-i18n="cmw_privacy_allow"
-                    >Permitir que mis seguidores vean el detalle de mis
-                    actividades</span
-                  ></label
-                >
-                <div class="priv-sub" id="priv-sub">
-                  <label class="priv-row"
-                    ><input type="checkbox" id="priv-route" />
-                    <span data-i18n="cmw_priv_route"
-                      >Mapa / recorrido</span
-                    ></label
-                  >
-                  <label class="priv-row"
-                    ><input type="checkbox" id="priv-hr" />
-                    <span data-i18n="cmw_priv_hr"
-                      >Frecuencia cardíaca</span
-                    ></label
-                  >
-                  <label class="priv-row"
-                    ><input type="checkbox" id="priv-power" />
-                    <span data-i18n="cmw_priv_power"
-                      >Potencia / cadencia</span
-                    ></label
-                  >
-                  <label class="priv-row"
-                    ><input type="checkbox" id="priv-pace" />
-                    <span data-i18n="cmw_priv_pace"
-                      >Ritmo / velocidad / parciales</span
-                    ></label
-                  >
-                </div>
-                <div
-                  style="
-                    margin-top: 1rem;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                  "
-                >
-                  <button
-                    class="btn btn-primary btn-sm"
-                    onclick="savePrivacyPrefs()"
-                    data-i18n="btn_save"
-                  >
-                    Guardar
-                  </button>
-                  <span
-                    id="priv-saved-msg"
-                    style="
-                      display: none;
-                      color: var(--green);
-                      font-size: 0.78rem;
-                    "
-                    data-i18n="cmw_saved"
-                    >✓ Guardado</span
-                  >
-                </div>
-              </div>
-            </div>
-
             <div class="card">
               <div class="card-head">
                 <span class="card-title" data-i18n="prof_card_personal_data">
@@ -1008,29 +920,6 @@
               </div>
             </div>
 
-            <div class="card">
-              <div class="card-head">
-                <div class="card-title" data-i18n="addon_card_title">
-                  Mi plan
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="mp-summary">
-                  <span id="myplan-summary">—</span>
-                  <button
-                    class="btn btn-secondary btn-sm"
-                    id="myplan-toggle"
-                    onclick="toggleMyPlan()"
-                    aria-expanded="false"
-                    data-i18n="myplan_see_detail"
-                  >
-                    Ver detalle
-                  </button>
-                </div>
-                <div id="addons-list" class="mp-detail" hidden></div>
-              </div>
-            </div>
-
             <div
               style="
                 display: flex;
@@ -1063,10 +952,10 @@
                 <span data-i18n="prof_btn_save_changes">Guardar cambios</span>
               </button>
             </div>
-          </div>
-
-          <!-- ════════════════════ TAB: RENDIMIENTO ═══════════════════ -->
-          <div id="tab-rendimiento" class="tab-pane">
+          
+          <details class="prof-fold" id="fold-rendimiento">
+            <summary data-i18n="prof_fold_perf">Mis marcas y zonas</summary>
+          <div id="tab-rendimiento" class="prof-fold-body">
             <div class="card">
               <div class="card-head">
                 <span class="card-title" data-i18n="prof_card_benchmarks">
@@ -1273,6 +1162,157 @@
                 </p>
               </div>
             </div>
+          </div>
+          </details>
+
+          <details class="prof-fold" id="fold-records">
+            <summary data-i18n="prof_fold_records">Mis récords</summary>
+          <div id="tab-records" class="prof-fold-body">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_records">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
+                    />
+                  </svg>
+                  Records Personales
+                </span>
+                <button
+                  class="btn btn-primary btn-sm"
+                  onclick="showPRForm()"
+                  data-i18n="prof_btn_new_record"
+                >
+                  + Nuevo Record
+                </button>
+              </div>
+              <div class="card-body" style="padding: 0">
+                <table class="pr-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="prof_label_sport">Deporte</th>
+                      <th data-i18n="prof_th_event">Evento</th>
+                      <th data-i18n="prof_th_mark">Marca</th>
+                      <th data-i18n="prof_label_date">Fecha</th>
+                      <th data-i18n="prof_th_place">Lugar</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="pr-tbody">
+                    <tr>
+                      <td
+                        colspan="6"
+                        style="
+                          text-align: center;
+                          color: var(--dim);
+                          padding: 2rem;
+                          font-size: 0.82rem;
+                        "
+                        data-i18n="prof_loading_records"
+                      >
+                        Cargando records…
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="pr-form-card" class="card" style="display: none">
+              <div class="card-head">
+                <span class="card-title" data-i18n="prof_card_new_record"
+                  >Nuevo Record Personal</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="form-grid" style="margin-bottom: 1rem">
+                  <div class="field">
+                    <label data-i18n="prof_label_sport">Deporte</label>
+                    <select id="pr-sport">
+                      <option value="swim" data-i18n="prof_sport_swim">
+                        Natación
+                      </option>
+                      <option value="bike" data-i18n="prof_sport_bike">
+                        Ciclismo
+                      </option>
+                      <option value="run" data-i18n="prof_sport_run">
+                        Running
+                      </option>
+                      <option value="triathlon" data-i18n="prof_sport_tri">
+                        Triatlón
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_event_distance"
+                      >Evento / Distancia</label
+                    >
+                    <input
+                      id="pr-event"
+                      type="text"
+                      placeholder="Ej: Ironman 70.3, 10K, 400m…"
+                      data-i18n-placeholder="prof_ph_event_example"
+                    />
+                  </div>
+                </div>
+                <div class="form-grid three">
+                  <div class="field">
+                    <label data-i18n="prof_label_mark_hms"
+                      >Marca (hh:mm:ss)</label
+                    ><input id="pr-time" type="text" placeholder="4:32:10" />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_date">Fecha</label
+                    ><input
+                      id="pr-date"
+                      type="date"
+                      data-i18n-aria="prof_aria_record_date"
+                    />
+                  </div>
+                  <div class="field">
+                    <label data-i18n="prof_label_place_opt"
+                      >Lugar (opcional)</label
+                    ><input
+                      id="pr-place"
+                      type="text"
+                      placeholder="Ej: Pucón, Chile"
+                      data-i18n-placeholder="prof_ph_place_example"
+                    />
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.6rem;
+                    justify-content: flex-end;
+                    margin-top: 1rem;
+                  "
+                >
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    onclick="hidePRForm()"
+                    data-i18n="prof_btn_cancel"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick="addPR()"
+                    data-i18n="prof_btn_save_record"
+                  >
+                    Guardar Record
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </details>
+
           </div>
 
           <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
@@ -1590,154 +1630,109 @@
             </div>
           </div>
 
-          <!-- ════════════════════ TAB: RECORDS ═══════════════════════ -->
-          <div id="tab-records" class="tab-pane">
+          <!-- ════════════════════ TAB: CUENTA ═════════════════════ -->
+          <div id="tab-seguridad" class="tab-pane">
             <div class="card">
               <div class="card-head">
-                <span class="card-title" data-i18n="prof_card_records">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
-                    />
-                  </svg>
-                  Records Personales
-                </span>
-                <button
-                  class="btn btn-primary btn-sm"
-                  onclick="showPRForm()"
-                  data-i18n="prof_btn_new_record"
-                >
-                  + Nuevo Record
-                </button>
+                <div class="card-title" data-i18n="addon_card_title">
+                  Mi plan
+                </div>
               </div>
-              <div class="card-body" style="padding: 0">
-                <table class="pr-table">
-                  <thead>
-                    <tr>
-                      <th data-i18n="prof_label_sport">Deporte</th>
-                      <th data-i18n="prof_th_event">Evento</th>
-                      <th data-i18n="prof_th_mark">Marca</th>
-                      <th data-i18n="prof_label_date">Fecha</th>
-                      <th data-i18n="prof_th_place">Lugar</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody id="pr-tbody">
-                    <tr>
-                      <td
-                        colspan="6"
-                        style="
-                          text-align: center;
-                          color: var(--dim);
-                          padding: 2rem;
-                          font-size: 0.82rem;
-                        "
-                        data-i18n="prof_loading_records"
-                      >
-                        Cargando records…
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="card-body">
+                <div class="mp-summary">
+                  <span id="myplan-summary">—</span>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    id="myplan-toggle"
+                    onclick="toggleMyPlan()"
+                    aria-expanded="false"
+                    data-i18n="myplan_see_detail"
+                  >
+                    Ver detalle
+                  </button>
+                </div>
+                <div id="addons-list" class="mp-detail" hidden></div>
               </div>
             </div>
 
-            <div id="pr-form-card" class="card" style="display: none">
+
+            <div class="card" style="margin-bottom: 1rem">
               <div class="card-head">
-                <span class="card-title" data-i18n="prof_card_new_record"
-                  >Nuevo Record Personal</span
-                >
+                <div class="card-title" data-i18n="cmw_privacy_title">
+                  Privacidad de mis actividades
+                </div>
               </div>
               <div class="card-body">
-                <div class="form-grid" style="margin-bottom: 1rem">
-                  <div class="field">
-                    <label data-i18n="prof_label_sport">Deporte</label>
-                    <select id="pr-sport">
-                      <option value="swim" data-i18n="prof_sport_swim">
-                        Natación
-                      </option>
-                      <option value="bike" data-i18n="prof_sport_bike">
-                        Ciclismo
-                      </option>
-                      <option value="run" data-i18n="prof_sport_run">
-                        Running
-                      </option>
-                      <option value="triathlon" data-i18n="prof_sport_tri">
-                        Triatlón
-                      </option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_event_distance"
-                      >Evento / Distancia</label
-                    >
-                    <input
-                      id="pr-event"
-                      type="text"
-                      placeholder="Ej: Ironman 70.3, 10K, 400m…"
-                      data-i18n-placeholder="prof_ph_event_example"
-                    />
-                  </div>
+                <div class="priv-desc" data-i18n="cmw_privacy_desc">
+                  Elegí qué puede ver la gente que te sigue cuando abre el
+                  detalle de una de tus actividades en Comunidad.
                 </div>
-                <div class="form-grid three">
-                  <div class="field">
-                    <label data-i18n="prof_label_mark_hms"
-                      >Marca (hh:mm:ss)</label
-                    ><input id="pr-time" type="text" placeholder="4:32:10" />
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_date">Fecha</label
-                    ><input
-                      id="pr-date"
-                      type="date"
-                      data-i18n-aria="prof_aria_record_date"
-                    />
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_place_opt"
-                      >Lugar (opcional)</label
-                    ><input
-                      id="pr-place"
-                      type="text"
-                      placeholder="Ej: Pucón, Chile"
-                      data-i18n-placeholder="prof_ph_place_example"
-                    />
-                  </div>
+                <label class="priv-row"
+                  ><input
+                    type="checkbox"
+                    id="priv-details"
+                    onchange="privToggleMaster()"
+                  />
+                  <span data-i18n="cmw_privacy_allow"
+                    >Permitir que mis seguidores vean el detalle de mis
+                    actividades</span
+                  ></label
+                >
+                <div class="priv-sub" id="priv-sub">
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-route" />
+                    <span data-i18n="cmw_priv_route"
+                      >Mapa / recorrido</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-hr" />
+                    <span data-i18n="cmw_priv_hr"
+                      >Frecuencia cardíaca</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-power" />
+                    <span data-i18n="cmw_priv_power"
+                      >Potencia / cadencia</span
+                    ></label
+                  >
+                  <label class="priv-row"
+                    ><input type="checkbox" id="priv-pace" />
+                    <span data-i18n="cmw_priv_pace"
+                      >Ritmo / velocidad / parciales</span
+                    ></label
+                  >
                 </div>
                 <div
                   style="
-                    display: flex;
-                    gap: 0.6rem;
-                    justify-content: flex-end;
                     margin-top: 1rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
                   "
                 >
                   <button
-                    class="btn btn-secondary btn-sm"
-                    onclick="hidePRForm()"
-                    data-i18n="prof_btn_cancel"
-                  >
-                    Cancelar
-                  </button>
-                  <button
                     class="btn btn-primary btn-sm"
-                    onclick="addPR()"
-                    data-i18n="prof_btn_save_record"
+                    onclick="savePrivacyPrefs()"
+                    data-i18n="btn_save"
                   >
-                    Guardar Record
+                    Guardar
                   </button>
+                  <span
+                    id="priv-saved-msg"
+                    style="
+                      display: none;
+                      color: var(--green);
+                      font-size: 0.78rem;
+                    "
+                    data-i18n="cmw_saved"
+                    >✓ Guardado</span
+                  >
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- ════════════════════ TAB: SEGURIDAD ═════════════════════ -->
-          <div id="tab-seguridad" class="tab-pane">
             <!-- Cambiar contraseña -->
             <div class="card">
               <div class="card-head">
@@ -2112,14 +2107,27 @@
       }
 
       /* ── Tabs ─────────────────────────────────────────────────────── */
-      var TAB_ORDER = [
-        'perfil',
-        'rendimiento',
-        'conexiones',
-        'records',
-        'seguridad',
-      ];
+      var TAB_ORDER = ['perfil', 'conexiones', 'seguridad'];
+      // W13: rendimiento y records viven plegados dentro de "Mis datos".
+      var TAB_ALIAS = { rendimiento: 'perfil', records: 'perfil' };
+      var _foldLoaded = {};
+      function _loadFold(name) {
+        if (name === 'rendimiento' && !_foldLoaded.r) {
+          _foldLoaded.r = true;
+          loadZones();
+          loadBenchmarks();
+        }
+        if (name === 'records' && !_foldLoaded.k) {
+          _foldLoaded.k = true;
+          loadPRs();
+        }
+      }
       function switchTab(name) {
+        var fold = null;
+        if (TAB_ALIAS[name]) {
+          fold = name;
+          name = TAB_ALIAS[name];
+        }
         document.querySelectorAll('.tab-pane').forEach(function (p) {
           p.classList.remove('active');
         });
@@ -2130,16 +2138,14 @@
         document
           .querySelectorAll('.tab-btn')
           [TAB_ORDER.indexOf(name)].classList.add('active');
-        if (name === 'rendimiento') {
-          loadZones();
-          loadBenchmarks();
+        if (fold) {
+          var f = document.getElementById('fold-' + fold);
+          if (f) f.open = true;
+          _loadFold(fold);
         }
         if (name === 'conexiones') {
           loadGarminStatus();
           loadStravaStatus();
-        }
-        if (name === 'records') {
-          loadPRs();
         }
         if (name === 'seguridad') {
           loadSessions();
@@ -2147,6 +2153,11 @@
           render2FAStatus();
         }
       }
+      document.addEventListener('toggle', function (e) {
+        var t = e.target;
+        if (t && t.open && t.id === 'fold-rendimiento') _loadFold('rendimiento');
+        if (t && t.open && t.id === 'fold-records') _loadFold('records');
+      }, true);
 
       /* ── Profile ──────────────────────────────────────────────────── */
       /* PC-BEGIN */

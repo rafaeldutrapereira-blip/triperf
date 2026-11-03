@@ -1722,6 +1722,14 @@
       .est-group-h:first-child {
         margin-top: 0;
       }
+      .est-more-row { display: contents; }
+      .est-more-row[hidden] { display: none; }
+      .est-more-btn { opacity: 0.85; }
+      .reg-fold > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.6rem; font-weight: 600; margin-bottom: 0.6rem; }
+      .reg-fold > summary::-webkit-details-marker { display: none; }
+      .reg-fold > summary .reg-fold-edit { margin-left: auto; font-size: 0.75rem; color: var(--orange); font-weight: 500; }
+      .reg-fold:not([open]) > summary { margin-bottom: 0; }
+      .reg-fold[open] > summary .reg-fold-edit { display: none; }
       #est-detail[hidden] {
         display: none;
       }
@@ -1812,6 +1820,8 @@
           <div class="est-reg-card" id="est-reg-fis">
             <span id="est-reg-men"></span>
             <div class="est-done-row"><span class="est-done" id="reg-done" hidden data-i18n="est_done_today">✓ Ya registrado hoy</span></div>
+            <details class="reg-fold" id="reg-fold" open>
+              <summary id="reg-fold-sum"><span id="reg-sum-state" data-state="pending" data-i18n="est_checkin_pending">Check-in de hoy: pendiente</span><span class="reg-fold-edit" data-i18n="est_checkin_edit">Editar</span></summary>
             <div class="reg-form" id="reg-form">
               <div class="reg-group">
                 <div class="reg-group-h" data-i18n="est_group_phys">Físico</div>
@@ -1864,6 +1874,7 @@
               <button type="button" class="btn btn-primary btn-sm" id="reg-save" onclick="REG.save()" data-i18n="est_reg_save">Guardar registro</button>
               <span class="reg-msg" id="reg-msg" role="status" aria-live="polite"></span>
             </div>
+            </details>
           </div>
         </section>
 
@@ -1883,6 +1894,10 @@
                 <button class="fis-tab-btn" onclick="FIS.switchTab('sleep', this)">
                   🌙 <span data-i18n="kpi_sleep">Sueño</span>
                 </button>
+                <button type="button" class="est-more-btn fis-more-btn" id="fis-more-btn" aria-expanded="false" onclick="EST.toggleMore('fis-more', this)">
+                  <span data-i18n="est_more">Más</span> ▾
+                </button>
+                <span class="est-more-row" id="fis-more" hidden>
                 <button class="fis-tab-btn" onclick="FIS.switchTab('wellness', this)">
                   🧘 <span data-i18n="app_factor_wellness">Bienestar</span>
                 </button>
@@ -1896,6 +1911,7 @@
                 <button class="fis-tab-btn" id="fis-tab-coach-btn" style="display: none" onclick="FIS.switchTab('coach', this)">
                   👥 Coach
                 </button>
+                </span>
               </div>
             </div>
             <div style="padding: 1.5rem">
@@ -2201,8 +2217,11 @@
               <button class="men-tab-btn active" onclick="MEN.switchTab('score', this)" data-i18n="ment_tab_score">Score del Día</button>
               <button class="men-tab-btn" onclick="MEN.switchTab('protocols', this)" data-i18n="ment_tab_protocols">Protocolos</button>
               <button class="men-tab-btn" onclick="MEN.switchTab('breathing', this)" data-i18n="ment_tab_breathing">Respiración</button>
+              <button type="button" class="est-more-btn men-tab-btn" id="men-more-btn" aria-expanded="false" onclick="EST.toggleMore('men-more', this)"><span data-i18n="est_more">Más</span> ▾</button>
+              <span class="est-more-row" id="men-more" hidden>
               <button class="men-tab-btn" onclick="MEN.switchTab('correlations', this)" data-i18n="ment_tab_correlations">Correlaciones</button>
               <button class="men-tab-btn" onclick="MEN.switchTab('prerace', this)" data-i18n="ment_tab_prerace">Pre-Carrera</button>
+              </span>
             </div>
             <div class="men-tab-panel active" id="men-tab-score">
             <div class="grid-2" style="margin-bottom: 16px">
@@ -2740,6 +2759,11 @@
           _state: S,
         };
         window.EST = {
+          toggleMore: function (id, btn) {
+            var row = el(id);
+            row.hidden = !row.hidden;
+            btn.setAttribute('aria-expanded', row.hidden ? 'false' : 'true');
+          },
           toggleDetail: function (show) {
             var sec = el('est-detail'),
               btn = el('est-detail-btn');
@@ -2841,6 +2865,12 @@
         }
         function markDone() {
           $('reg-done').hidden = false;
+          // W13: tras guardar, el formulario se pliega y queda el resumen.
+          var st = $('reg-sum-state');
+          st.dataset.state = 'done';
+          st.setAttribute('data-i18n', 'est_checkin_done');
+          st.textContent = _t('est_checkin_done', 'Check-in de hoy: hecho');
+          $('reg-fold').open = false;
         }
 
         function setWellness(w) {

@@ -19,13 +19,11 @@ def test_perfil_tiene_tarjeta_mi_plan():
     assert 'id="myplan-toggle"' in PROFILE
 
 
-def test_tarjeta_va_despues_de_season_goal_y_antes_de_guardar():
-    assert PROFILE.index('data-i18n="prof_card_season_goal"') < PROFILE.index(
-        'id="addons-list"'
-    )
-    assert PROFILE.index('id="addons-list"') < PROFILE.index(
-        'id="btn-save-profile"'
-    )
+def test_tarjeta_vive_en_cuenta_fuera_de_mis_datos():
+    # W13: "Mi plan"/addons salen de la primera pantalla y van a la pestana Cuenta.
+    assert PROFILE.index('id="tab-seguridad"') < PROFILE.index('id="addons-list"')
+    mis_datos = PROFILE[PROFILE.index('id="tab-perfil"'):PROFILE.index('id="tab-conexiones"')]
+    assert 'id="addons-list"' not in mis_datos
 
 
 def test_addons_usan_los_endpoints_de_stripe():

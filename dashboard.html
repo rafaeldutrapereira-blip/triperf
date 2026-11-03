@@ -507,6 +507,30 @@
         }
       }
 
+      /* W13: portada en tres piezas */
+      .w13-front { padding: 1rem 0 0; }
+      .w13-phrase { display: flex; align-items: center; gap: 0.9rem; padding: 1.1rem 1.3rem; text-decoration: none; color: inherit; margin-bottom: 1rem; }
+      .w13-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--dim, #666); flex-shrink: 0; }
+      .w13-phrase-body { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
+      .w13-phrase-label { font-weight: 700; font-size: 1.05rem; }
+      .w13-phrase-text { font-size: 0.85rem; color: var(--muted, #aaa); }
+      .w13-phrase-cta { font-size: 0.75rem; color: var(--orange); white-space: nowrap; }
+      .w13-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; align-items: stretch; }
+      @media (max-width: 800px) { .w13-pair { grid-template-columns: 1fr; } }
+      .w13-today { padding: 1.4rem 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+      .w13-today-list { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+      .w13-item { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+      .w13-item-name { font-weight: 600; }
+      .w13-item-meta, .w13-item-src { font-size: 0.72rem; color: var(--dim, #888); }
+      .w13-item-done { color: var(--green); font-size: 0.72rem; }
+      .w13-empty { color: var(--muted, #aaa); font-size: 0.9rem; }
+      .w13-today-link { font-size: 0.75rem; color: var(--orange); text-decoration: none; }
+      .w13-fold { margin: 0 auto; max-width: 1280px; padding: 0 1rem; }
+      .w13-fold > summary { cursor: pointer; padding: 0.8rem 0; font-weight: 600; color: var(--muted, #aaa); }
+      .kpi-cluster-row3 { grid-template-columns: 1fr; gap: 0.8rem; }
+      .w13-row > summary { list-style: none; cursor: pointer; margin-bottom: 0; }
+      .w13-row > summary::-webkit-details-marker { display: none; }
+      .w13-row[open] > summary { margin-bottom: 0.8rem; }
       .kpi-card {
         padding: 1.4rem 1.5rem 1rem;
       }
@@ -2452,6 +2476,90 @@
       </div>
     </div>
 
+    <!-- ───────────── W13: PORTADA EN TRES PIEZAS ───────────── -->
+    <section class="w13-front" id="w13-front" aria-label="Hoy" data-i18n-aria="dash_w13_front_aria">
+      <div class="c">
+        <!-- Pieza 1: la frase de hoy (veredicto de Estado) -->
+        <a class="panel sr w13-phrase" id="w13-phrase" href="estado.html">
+          <span class="w13-dot" id="w13-dot"></span>
+          <span class="w13-phrase-body">
+            <span class="w13-phrase-label" id="w13-phrase-label" data-i18n="dh_loading">Cargando...</span>
+            <span class="w13-phrase-text" id="w13-phrase-text"></span>
+          </span>
+          <span class="w13-phrase-cta" data-i18n="dash_w13_phrase_cta">Ver Estado →</span>
+        </a>
+        <div class="w13-pair">
+          <!-- Pieza 2: la proxima carrera en dias -->
+          <!-- RACE COUNTDOWN card (Meta A) -->
+          <div
+            class="kc kc-race"
+            id="kc-race"
+            onclick="location.href = 'athlete_profile.html'"
+            role="button"
+            tabindex="0"
+            aria-label="Countdown próxima carrera — editar en Perfil"
+            data-i18n-aria="dash_aria_countdown"
+          >
+            <div id="kc-race-content">
+              <div class="kc-race-head">
+                <h3 class="kpi-card-q">
+                  <span data-i18n="dash_next_race">Próxima Carrera</span>
+                </h3>
+              </div>
+              <div class="kc-cd">
+                <div class="kc-cd-unit">
+                  <span class="kc-cd-val" id="cd-d">--</span>
+                  <span class="kc-cd-lbl"
+                    ><span id="cd-unit" data-i18n="dash_unit_days">días</span></span
+                  >
+                </div>
+              </div>
+              <div class="kc-race-name" id="kc-race-name">
+                <span data-i18n="dh_loading">Cargando...</span>
+              </div>
+              <div class="kc-race-date" id="kc-race-date"></div>
+              <div class="kc-race-goal" id="kc-race-goal"></div>
+            </div>
+            <div id="kc-race-empty" style="display: none" class="kc-race-empty">
+              <div class="kc-race-empty-ico">🏁</div>
+              <div class="kc-race-empty-lbl">
+                <span data-i18n="dash_no_goal">Sin carrera objetivo</span>
+              </div>
+              <button
+                class="kc-race-empty-cta"
+                onclick="location.href = 'athlete_profile.html'"
+              >
+                <span data-i18n="dash_setup_profile"
+                  >Configurar en Perfil →</span
+                >
+              </button>
+            </div>
+            <div style="flex: 1"></div>
+            <div class="kc-hint" style="cursor: pointer">
+              <svg
+                width="8"
+                height="8"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="9 18 15 12 9 6" /></svg
+              ><span data-i18n="dash_edit_profile">Editar en Perfil</span>
+            </div>
+          </div>
+          <!-- Pieza 3: que toca hoy (plan del coach + Mi Plan propio) -->
+          <div class="panel sr w13-today" id="w13-today">
+            <h3 class="kpi-card-q"><span data-i18n="dash_w13_today_q">¿Qué toca hoy?</span></h3>
+            <div id="w13-today-list" class="w13-today-list"></div>
+            <a class="w13-today-link" href="training_plan.html" data-i18n="dash_w13_see_plan">Ver mi plan →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details class="w13-fold" id="w13-insight-fold">
+      <summary data-i18n="dash_w13_insight_fold">Insight del día y detalle</summary>
     <!-- ---------------------- INSIGHT DEL DÍA + META A ------------------------- -->
     <section
       class="hero-sec"
@@ -2590,89 +2698,13 @@
             </div>
           </div>
 
-          <!-- RACE COUNTDOWN card (Meta A) -->
-          <div
-            class="kc kc-race"
-            id="kc-race"
-            onclick="location.href = 'athlete_profile.html'"
-            role="button"
-            tabindex="0"
-            aria-label="Countdown próxima carrera — editar en Perfil"
-            data-i18n-aria="dash_aria_countdown"
-          >
-            <div id="kc-race-content">
-              <div class="kc-race-head">
-                <h3 class="kpi-card-q">
-                  <span data-i18n="dash_next_race">Próxima Carrera</span>
-                </h3>
-              </div>
-              <div class="kc-cd">
-                <div class="kc-cd-unit">
-                  <span class="kc-cd-val" id="cd-d">--</span>
-                  <span class="kc-cd-lbl"
-                    ><span data-i18n="dash_unit_days">días</span></span
-                  >
-                </div>
-                <div class="kc-cd-sep">:</div>
-                <div class="kc-cd-unit">
-                  <span class="kc-cd-val" id="cd-h">--</span>
-                  <span class="kc-cd-lbl"
-                    ><span data-i18n="dash_unit_hrs">hrs</span></span
-                  >
-                </div>
-                <div class="kc-cd-sep">:</div>
-                <div class="kc-cd-unit">
-                  <span class="kc-cd-val" id="cd-m">--</span>
-                  <span class="kc-cd-lbl">min</span>
-                </div>
-                <div class="kc-cd-sep kc-cd-sep-s">:</div>
-                <div class="kc-cd-unit">
-                  <span class="kc-cd-val" id="cd-s">--</span>
-                  <span class="kc-cd-lbl"
-                    ><span data-i18n="dash_unit_sec">seg</span></span
-                  >
-                </div>
-              </div>
-              <div class="kc-race-name" id="kc-race-name">
-                <span data-i18n="dh_loading">Cargando...</span>
-              </div>
-              <div class="kc-race-date" id="kc-race-date"></div>
-              <div class="kc-race-goal" id="kc-race-goal"></div>
-            </div>
-            <div id="kc-race-empty" style="display: none" class="kc-race-empty">
-              <div class="kc-race-empty-ico">🏁</div>
-              <div class="kc-race-empty-lbl">
-                <span data-i18n="dash_no_goal">Sin carrera objetivo</span>
-              </div>
-              <button
-                class="kc-race-empty-cta"
-                onclick="location.href = 'athlete_profile.html'"
-              >
-                <span data-i18n="dash_setup_profile"
-                  >Configurar en Perfil →</span
-                >
-              </button>
-            </div>
-            <div style="flex: 1"></div>
-            <div class="kc-hint" style="cursor: pointer">
-              <svg
-                width="8"
-                height="8"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <polyline points="9 18 15 12 9 6" /></svg
-              ><span data-i18n="dash_edit_profile">Editar en Perfil</span>
-            </div>
-          </div>
         </div>
         <!-- /hero-row -->
       </div>
       <!-- /.c -->
     </section>
     <!-- /hero-sec -->
+    </details>
 
     <!-- ---------------------------- KPI CARDS --------------------------------- -->
     <section
@@ -2683,15 +2715,15 @@
       <div class="c">
         <div class="kpi-cluster-row3">
           <!-- CARD 1: ¿Cómo va mi carga? — CTL, ATL, TSB, ACWR -->
-          <div class="panel sr kpi-card">
-            <div class="kpi-card-head">
+          <details class="panel sr kpi-card w13-row">
+            <summary class="kpi-card-head">
               <h3 class="kpi-card-q">
                 <span data-i18n="dash_kpi_load">¿Cómo va mi carga?</span>
               </h3>
               <span class="insight-severity sev-neutral" id="cluster-carga-pill"
                 ><span class="cp-label">—</span></span
               >
-            </div>
+            </summary>
 
             <div
               class="kcr"
@@ -2994,18 +3026,18 @@
                 ><span class="badge" id="kc-injury-badge">—</span></span
               >
             </div>
-          </div>
+          </details>
 
           <!-- CARD 2: ¿Cómo estoy hoy? — HRV, FC Reposo -->
-          <div class="panel sr kpi-card">
-            <div class="kpi-card-head">
+          <details class="panel sr kpi-card w13-row">
+            <summary class="kpi-card-head">
               <h3 class="kpi-card-q">
                 <span data-i18n="dash_how_today">¿Cómo estoy hoy?</span>
               </h3>
               <span class="insight-severity sev-neutral" id="cluster-hoy-pill"
                 ><span class="cp-label">—</span></span
               >
-            </div>
+            </summary>
 
             <div
               class="kcr"
@@ -3262,11 +3294,11 @@
                 >Ver histórico de bienestar completo →</span
               ></a
             >
-          </div>
+          </details>
 
           <!-- CARD 3: ¿Hacia dónde voy? — TSS Semana, VO2 Max -->
-          <div class="panel sr kpi-card">
-            <div class="kpi-card-head">
+          <details class="panel sr kpi-card w13-row">
+            <summary class="kpi-card-head">
               <h3 class="kpi-card-q">
                 <span data-i18n="dash_where_going">¿Hacia dónde voy?</span>
               </h3>
@@ -3275,7 +3307,7 @@
                 id="cluster-objetivo-pill"
                 ><span class="cp-label">—</span></span
               >
-            </div>
+            </summary>
 
             <div
               class="kcr"
@@ -3439,7 +3471,7 @@
                 ><span id="badge-goalrace" class="badge">—</span></span
               >
             </div>
-          </div>
+          </details>
         </div>
         <!-- /kpi-cluster-row3 -->
       </div>
@@ -3450,6 +3482,8 @@
     <!-- ──────────────── PLAN DEL COACH (Fase 2) ─────────────────────────── -->
     <section class="ms" id="coach-plan-sec" style="display: none">
       <div class="c">
+        <details class="w13-fold">
+          <summary><span data-i18n="dash_week_plan">Plan de la Semana</span></summary>
         <div class="panel sr" style="padding: 0; overflow: hidden">
           <div
             class="ph"
@@ -3503,6 +3537,7 @@
             <!-- Filled by JS -->
           </div>
         </div>
+        </details>
       </div>
     </section>
 
@@ -3510,6 +3545,170 @@
     <!-- --------------------------- FOOTER ------------------------------------ -->
 
     <!-- --------------------------- JS ----------------------------------------- -->
+    <script>
+      /* W13: portada. (1) frase de hoy = veredicto de Estado (mismo criterio:
+         el peor entre Recovery y MFS), (2) carrera en dias (ver tick), (3) que
+         toca hoy = plan del coach + Mi Plan propio (kl_training_plan). */
+      (function () {
+        'use strict';
+        function tr(k, f) {
+          var v = window.i18n ? window.i18n.t(k) : null;
+          return v && v !== k ? v : f;
+        }
+        function be(x) {
+          return window.lxBeT && typeof x === 'string' ? window.lxBeT(x) : x;
+        }
+        function $(id) {
+          return document.getElementById(id);
+        }
+        var API = location.protocol === 'file:' ? 'http://localhost:8000/api' : location.origin + '/api';
+        function tok() {
+          var d = localStorage.getItem('lx_co_token');
+          if (d) return d;
+          try {
+            var s = JSON.parse(sessionStorage.getItem('kl_s') || localStorage.getItem('kl_s') || 'null');
+            return s && s.token ? s.token : '';
+          } catch (e) {
+            return '';
+          }
+        }
+        function hdr() {
+          return { Authorization: 'Bearer ' + tok() };
+        }
+        function todayISO() {
+          var d = new Date();
+          var m = String(d.getMonth() + 1).padStart(2, '0');
+          var dd = String(d.getDate()).padStart(2, '0');
+          return d.getFullYear() + '-' + m + '-' + dd;
+        }
+        function getJSON(path) {
+          return fetch(API + path, { headers: hdr(), credentials: 'include' }).then(function (r) {
+            return r.ok ? r.json() : null;
+          }).catch(function () { return null; });
+        }
+
+        /* ---------- Pieza 1: frase de hoy ---------- */
+        var COLORS = ['#10B981', '#F0A500', '#EF4444'];
+        var S = { rec: null, men: null };
+        function recSev(sc) { return sc >= 70 ? 0 : sc >= 40 ? 1 : 2; }
+        function menSev(m) {
+          var l = m.level;
+          if (l === 'peak' || l === 'good') return 0;
+          if (l === 'moderate') return 1;
+          if (l === 'low' || l === 'critical') return 2;
+          return m.score >= 70 ? 0 : m.score >= 55 ? 1 : 2;
+        }
+        function paintPhrase() {
+          var r = S.rec, m = S.men, gov = null;
+          if (r && m) gov = r.sev !== m.sev ? (r.sev > m.sev ? r : m) : m.score < r.score ? m : r;
+          else gov = r || m;
+          var lab = $('w13-phrase-label'), txt = $('w13-phrase-text'), dot = $('w13-dot');
+          if (!lab) return;
+          lab.removeAttribute('data-i18n');
+          if (!gov) {
+            lab.textContent = tr('dash_w13_phrase_empty', 'Registra tu día en Estado para ver cómo estás hoy.');
+            txt.textContent = '';
+            dot.style.background = '';
+            return;
+          }
+          lab.textContent = gov.label;
+          lab.style.color = COLORS[gov.sev];
+          txt.textContent = gov.text;
+          dot.style.background = COLORS[gov.sev];
+        }
+        var diso = todayISO();
+        var pRec = getJSON('/recovery/dashboard?date_iso=' + diso).then(function (d) {
+          var rec = d && d.recovery;
+          if (rec && rec.score != null && !isNaN(rec.score)) {
+            S.rec = {
+              score: Math.round(rec.score), sev: recSev(rec.score),
+              label: be(rec.label || ''), text: be(rec.recommendation || '').substring(0, 200),
+            };
+          }
+        });
+        var pMen = getJSON('/mental/dashboard?date_iso=' + diso).then(function (d) {
+          var t = d && d.today;
+          if (t && t.score != null && !isNaN(t.score)) {
+            var levels = {
+              peak: tr('ment_level_peak', 'Forma Mental Pico'), good: tr('ment_level_good', 'Bueno'),
+              moderate: tr('ment_level_moderate', 'Moderado'), low: tr('ment_level_low', 'Bajo'),
+              critical: tr('ment_level_critical', 'Crítico'),
+            };
+            S.men = {
+              score: Math.round(t.score), sev: menSev(t),
+              label: levels[t.level] || t.level || '', text: be(t.recommendation || ''),
+            };
+          }
+        });
+        Promise.all([pRec, pMen]).then(paintPhrase);
+
+        /* ---------- Pieza 3: que toca hoy ---------- */
+        var EMO = { swim: '🏊', bike: '🚴', run: '🏃', strength: '💪', gym: '💪' };
+        function ownToday() {
+          var arr = [];
+          try { arr = JSON.parse(localStorage.getItem('kl_training_plan') || '[]'); } catch (e) {}
+          return (Array.isArray(arr) ? arr : []).filter(function (x) {
+            return x && x.date_iso === diso && !x.api_assignment_id;
+          }).map(function (x) {
+            return { src: 'own', sport: x.sport, name: x.name || x.nombre || '', dur: x.dur_min, dist: x.dist_km, done: false };
+          });
+        }
+        function coachToday(list) {
+          return (list || []).filter(function (a) { return a && a.date_iso === diso; }).map(function (a) {
+            var t = a.template || {};
+            return { src: 'coach', sport: t.sport, name: t.nombre || '', dur: t.dur_min, dist: t.dist_km, done: !!(a.logs && a.logs.length) };
+          });
+        }
+        function renderToday(items) {
+          var box = $('w13-today-list');
+          if (!box) return;
+          box.textContent = '';
+          if (!items.length) {
+            var e = document.createElement('div');
+            e.className = 'w13-empty';
+            e.textContent = tr('dash_w13_nothing', 'Hoy no tienes sesión planificada.');
+            box.appendChild(e);
+            return;
+          }
+          items.forEach(function (it) {
+            var row = document.createElement('div');
+            row.className = 'w13-item';
+            var nm = document.createElement('span');
+            nm.className = 'w13-item-name';
+            nm.textContent = (EMO[it.sport] || '🏋') + ' ' + (it.name || it.sport || '');
+            row.appendChild(nm);
+            var meta = [];
+            if (it.dur) meta.push(it.dur + ' min');
+            if (it.dist) meta.push(it.dist + ' km');
+            if (meta.length) {
+              var mt = document.createElement('span');
+              mt.className = 'w13-item-meta';
+              mt.textContent = meta.join(' · ');
+              row.appendChild(mt);
+            }
+            var sr = document.createElement('span');
+            sr.className = 'w13-item-src';
+            sr.textContent = it.src === 'coach' ? tr('dash_w13_src_coach', 'Coach') : tr('dash_w13_src_own', 'Mi plan');
+            row.appendChild(sr);
+            if (it.done) {
+              var dn = document.createElement('span');
+              dn.className = 'w13-item-done';
+              dn.textContent = '✓ ' + tr('dash_w13_done', 'Hecha');
+              row.appendChild(dn);
+            }
+            box.appendChild(row);
+          });
+        }
+        // Mi Plan propio se ve de inmediato; el plan del coach se suma al llegar.
+        renderToday(ownToday());
+        if (tok()) {
+          getJSON('/athlete/plan?start=' + diso + '&end=' + diso).then(function (assigns) {
+            renderToday(coachToday(assigns).concat(ownToday()));
+          });
+        }
+        window.W13 = { todayISO: todayISO, ownToday: ownToday, coachToday: coachToday, renderToday: renderToday };
+      })();
+    </script>
     <script>
       /* i18n helpers (dashboard) */
       window._t = function (k, fb) {
@@ -3663,7 +3862,7 @@
         if (emptyBox) emptyBox.style.display = 'none';
       })();
 
-      /* -- Countdown -- */
+      /* -- Countdown (W13: solo dias, sin horas/min/seg) -- */
       function tick() {
         var t = window._raceDate;
         function _set(id, v) {
@@ -3671,57 +3870,47 @@
           if (el) el.textContent = v;
         }
         if (!t) {
-          ['cd-d', 'cd-h', 'cd-m', 'cd-s'].forEach(function (i) {
-            _set(i, '--');
-          });
+          _set('cd-d', '--');
           return;
         }
-        var diff = t - new Date();
-        if (diff <= 0) {
-          var nameEl = document.getElementById('kc-race-name');
-          var goalEl = document.getElementById('kc-race-goal');
-          // Bug real reportado en una auditoría externa (26/09/2026): una
-          // carrera de hace SEMANAS seguía mostrando "00:00:00:00" para
-          // siempre, como si fuera el día de la carrera -- el atleta nunca
-          // actualizó su objetivo de temporada tras correrla. Se distingue
-          // "hoy es el día" (diff entre -1 día y 0, se mantiene el 00 en
-          // verde) de "ya pasó hace rato" (más de 1 día): ahí se reemplaza el
-          // countdown por un CTA para actualizar el objetivo, en vez de dejar
-          // un reloj en cero indefinidamente.
-          if (-diff > 86400000) {
-            ['cd-d', 'cd-h', 'cd-m', 'cd-s'].forEach(function (i) {
-              _set(i, '—');
-            });
-            if (nameEl) {
-              nameEl.textContent = _fmt(
-                _t('dash_race_finished', '{name} ya finalizó'),
-                {
-                  name: window._raceName || _t('dash_your_race', 'Tu carrera'),
-                },
-              );
-              nameEl.style.color = 'var(--dim)';
-            }
-            if (goalEl)
-              goalEl.innerHTML =
-                '<a href="athlete_profile.html" style="color:var(--orange)">' +
-                _t('dash_update_goal', 'Actualizar objetivo de temporada →') +
-                '</a>';
-            return;
+        var nameEl = document.getElementById('kc-race-name');
+        var goalEl = document.getElementById('kc-race-goal');
+        // dias de calendario locales (hoy 23:59 -> carrera manana = 1 dia)
+        var t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        var n0 = new Date();
+        n0 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate());
+        var d = Math.round((t0 - n0) / 86400000);
+        if (d < 0) {
+          // Carrera ya pasada: se reemplaza la cuenta por un CTA para
+          // actualizar el objetivo (bug auditoria 26/09/2026: antes quedaba un
+          // reloj en cero indefinidamente).
+          _set('cd-d', '—');
+          if (nameEl) {
+            nameEl.textContent = _fmt(
+              _t('dash_race_finished', '{name} ya finalizó'),
+              { name: window._raceName || _t('dash_your_race', 'Tu carrera') },
+            );
+            nameEl.style.color = 'var(--dim)';
           }
-          ['cd-d', 'cd-h', 'cd-m', 'cd-s'].forEach(function (i) {
-            _set(i, '00');
-          });
-          if (nameEl) nameEl.style.color = 'var(--green)';
+          if (goalEl)
+            goalEl.innerHTML =
+              '<a href="athlete_profile.html" style="color:var(--orange)">' +
+              _t('dash_update_goal', 'Actualizar objetivo de temporada →') +
+              '</a>';
           return;
         }
-        var d = Math.floor(diff / 86400000);
-        var hh = Math.floor((diff % 86400000) / 3600000);
-        var m = Math.floor((diff % 3600000) / 60000);
-        var s = Math.floor((diff % 60000) / 1000);
-        _set('cd-d', String(d).padStart(2, '0'));
-        _set('cd-h', String(hh).padStart(2, '0'));
-        _set('cd-m', String(m).padStart(2, '0'));
-        _set('cd-s', String(s).padStart(2, '0'));
+        _set('cd-d', String(d));
+        var unit = document.getElementById('cd-unit');
+        if (unit) {
+          unit.removeAttribute('data-i18n');
+          unit.textContent =
+            d === 0
+              ? _t('dash_w13_race_today', '¡es hoy!')
+              : d === 1
+                ? _t('dash_w13_day', 'día')
+                : _t('dash_unit_days', 'días');
+        }
+        if (d === 0 && nameEl) nameEl.style.color = 'var(--green)';
         /* colour cd-d: orange<30d, gold<60d, else default */
         var dEl = document.getElementById('cd-d');
         if (dEl)
@@ -3731,7 +3920,7 @@
       try {
         tick();
       } catch (e) {}
-      setInterval(tick, 1000);
+      setInterval(tick, 60000);
 
       /* -- Sync -- */
       function syncGarmin(btn) {
