@@ -917,6 +917,33 @@ class WebHandoff(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class GarminOAuthToken(Base):
+    """Tokens de la integracion OFICIAL Garmin (OAuth2 + PKCE), cifrados con Fernet.
+    Independiente de la via no oficial (users.garmin_email / token-store)."""
+    __tablename__ = "garmin_oauth_tokens"
+
+    id             = Column(String, primary_key=True, default=_uuid)
+    user_id        = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    garmin_user_id = Column(String, nullable=True, index=True)
+    access_token   = Column(Text, nullable=False)
+    refresh_token  = Column(Text, nullable=True)
+    expires_at     = Column(DateTime, nullable=True)
+    scope          = Column(String, nullable=True)
+    updated_at     = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
+class GarminOAuthState(Base):
+    """State + code_verifier PKCE de un connect en curso. Solo se guarda el hash del state."""
+    __tablename__ = "garmin_oauth_states"
+
+    id            = Column(String, primary_key=True, default=_uuid)
+    state_hash    = Column(String, nullable=False, unique=True)
+    user_id       = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    code_verifier = Column(String, nullable=False)
+    expires_at    = Column(DateTime, nullable=False)
+    created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class PasswordResetToken(Base):
     """
     Tokens de reset de contraseÃ±a persistentes en DB (reemplaza dict in-memory).

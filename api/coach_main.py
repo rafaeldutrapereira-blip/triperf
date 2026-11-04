@@ -46,6 +46,7 @@ from .routes.message_routes         import router as message_router
 from .routes.notification_routes    import router as notification_router
 from .routes.strava_routes          import router as strava_router
 from .routes.intervals_routes        import router as intervals_router
+from .routes.garmin_official_routes  import router as garmin_official_router
 from .routes.provider_routes         import router as provider_router
 from .routes.events_routes          import router as events_router
 from .routes.blood_lab_routes       import router as blood_lab_router
@@ -526,6 +527,7 @@ def create_app() -> FastAPI:
     _app.include_router(notification_router,  prefix="/api")
     _app.include_router(strava_router,        prefix="/api")
     _app.include_router(intervals_router,      prefix="/api")
+    _app.include_router(garmin_official_router, prefix="/api")
     _app.include_router(provider_router,      prefix="/api")
     _app.include_router(events_router,        prefix="/api")
     _app.include_router(blood_lab_router,     prefix="/api")
