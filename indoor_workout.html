@@ -163,6 +163,21 @@
       body:not(.sport-run) .sport-run-only { display: none !important; }
       body.run-hr .run-pace-only { display: none !important; }
       body:not(.run-hr) .run-hr-only { display: none !important; }
+      /* W19: natación -- panel propio (reps x distancia), sin curva ni bloques de rodillo */
+      body.sport-swim .sport-bike-only,
+      body.sport-swim .sport-run-only,
+      body.sport-swim .iw-builder { display: none !important; }
+      body:not(.sport-swim) .sport-swim-only,
+      body:not(.sport-swim) #iw-swim { display: none !important; }
+      #iw-swim { margin-top: 1rem; }
+      .sw-blk { border: 1px solid var(--border, #1f3a52); border-radius: 10px; padding: .7rem .8rem; margin-bottom: .6rem; background: rgba(255,255,255,.02); }
+      .sw-blk-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; font-weight: 600; font-size: .8rem; }
+      .sw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: .5rem; }
+      .sw-grid label { display: block; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+      .sw-grid input, .sw-grid select { width: 100%; box-sizing: border-box; }
+      .sw-total { display: flex; gap: 1.5rem; margin-top: .8rem; font-size: .85rem; }
+      .sw-total b { font-size: 1.1rem; }
+      .sw-err { color: var(--red); font-size: .72rem; margin-top: .4rem; }
       .iw-sportbar {
         display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem;
         background: var(--surface); border: 1px solid var(--border);
@@ -782,6 +797,7 @@
           <span class="iw-seg" role="group" aria-label="Disciplina">
             <button type="button" id="sport-btn-bike" class="on" onclick="setSport('bike')" data-i18n="iw_sport_bike">Ciclismo</button>
             <button type="button" id="sport-btn-run" onclick="setSport('run')" data-i18n="iw_sport_run">Running</button>
+            <button type="button" id="sport-btn-swim" onclick="setSport('swim')" data-i18n="iw_sport_swim">Natación</button>
           </span>
         </div>
         <div class="sport-run-only">
@@ -844,6 +860,22 @@
             Ritmo umbral y FC máxima de referencia
           </div>
           <div class="iw-ftp-badge" id="run-ref-badge" style="font-size: 1rem">—</div>
+        </div>
+        <div class="sport-swim-only">
+          <div
+            style="
+              font-size: 0.62rem;
+              font-weight: 600;
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              color: var(--muted);
+              margin-bottom: 0.3rem;
+            "
+            data-i18n="iw_swim_css_label"
+          >
+            CSS de referencia
+          </div>
+          <div class="iw-ftp-badge" id="swim-ref-badge" style="font-size: 1rem">—</div>
         </div>
         <div class="sport-bike-only">
           <div
@@ -1102,6 +1134,25 @@
         <!-- /iw-right -->
       </div>
       <!-- /iw-builder -->
+
+      <!-- W19: constructor de natación (reps x distancia, descanso, ritmo/100 m) -->
+      <div id="iw-swim">
+        <div class="iw-panel-hd">
+          <h3 data-i18n="iw_swim_title">Bloques de natación</h3>
+        </div>
+        <div id="swim-list"></div>
+        <div class="iw-add-row">
+          <button class="iw-add-btn" onclick="addSwimBlock('warmup')" style="border-color: rgba(100, 181, 246, 0.35); color: var(--z1)" data-i18n="iw_swim_add_warmup">+ Calentamiento</button>
+          <button class="iw-add-btn" onclick="addSwimBlock('main')" style="border-color: rgba(239, 68, 68, 0.35); color: var(--z5)" data-i18n="iw_swim_add_main">+ Serie principal</button>
+          <button class="iw-add-btn" onclick="addSwimBlock('drill')" style="border-color: rgba(16, 185, 129, 0.35); color: var(--z3)" data-i18n="iw_swim_add_drill">+ Técnica</button>
+          <button class="iw-add-btn" onclick="addSwimBlock('cooldown')" style="border-color: rgba(100, 181, 246, 0.35); color: var(--z1)" data-i18n="iw_swim_add_cooldown">+ Vuelta a la calma</button>
+        </div>
+        <div class="sw-total">
+          <div><span data-i18n="iw_swim_total_dist">Distancia total</span><br /><b id="swim-total-dist">0 m</b></div>
+          <div><span data-i18n="iw_swim_total_time">Duración estimada</span><br /><b id="swim-total-time">0:00</b></div>
+        </div>
+        <div class="sw-err" id="swim-err"></div>
+      </div>
       </div>
       <!-- /iw-editor -->
     </div>
@@ -1176,7 +1227,8 @@
         var blocks = []; /* array of block objects */
         var editId = null; /* currently editing saved workout id */
         /* S5: disciplina del workout en edición. 'bike' = comportamiento de siempre. */
-        var SPORT = 'bike'; /* 'bike' | 'run' */
+        var SPORT = 'bike'; /* 'bike' | 'run' | 'swim' (W19) */
+        var CSS_PACE = null; /* CSS real del atleta (s/100 m), si lo tiene */
         var RUN_MODE = 'pace'; /* objetivo de los bloques de running: 'pace' | 'hr' */
         var THR_PACE = null; /* ritmo umbral real del atleta (s/km), si lo tiene */
         var FCMAX = null; /* FC máxima real del atleta, si la tiene */
@@ -1202,6 +1254,8 @@
           var pace = p.run_pace ? WorkoutBlocks.parsePace(p.run_pace) : null;
           if (pace) THR_PACE = pace;
           if (p.fcmax && parseInt(p.fcmax) > 0) FCMAX = parseInt(p.fcmax);
+          var css = p.css ? parseSwimPace(String(p.css)) : null;
+          if (css) CSS_PACE = css;
         }
         function _renderRunRef() {
           var el = document.getElementById('run-ref-badge');
@@ -1220,6 +1274,7 @@
         }
         function _syncSportUi() {
           document.body.classList.toggle('sport-run', SPORT === 'run');
+          document.body.classList.toggle('sport-swim', SPORT === 'swim');
           document.body.classList.toggle('run-hr', SPORT === 'run' && RUN_MODE === 'hr');
           var on = function (id, v) {
             var e = document.getElementById(id);
@@ -1227,9 +1282,11 @@
           };
           on('sport-btn-bike', SPORT === 'bike');
           on('sport-btn-run', SPORT === 'run');
+          on('sport-btn-swim', SPORT === 'swim');
           on('mode-btn-pace', RUN_MODE === 'pace');
           on('mode-btn-hr', RUN_MODE === 'hr');
           _renderRunRef();
+          _renderSwimRef();
           _syncEditorUi();
         }
 
@@ -1237,9 +1294,11 @@
         function _syncEditorUi() {
           var tp = document.getElementById('tpl-panel');
           var ed = document.getElementById('iw-editor');
-          if (tp) tp.style.display = showTpl ? '' : 'none';
-          if (ed) ed.style.display = showTpl ? 'none' : '';
-          if (showTpl) renderTemplates();
+          var tplOn = showTpl && SPORT !== 'swim'; /* natación no usa plantillas */
+          if (tp) tp.style.display = tplOn ? '' : 'none';
+          if (ed) ed.style.display = tplOn ? 'none' : '';
+          if (tplOn) renderTemplates();
+          if (SPORT === 'swim') renderSwim();
         }
 
         function _nextBlockId(extra) {
@@ -1348,7 +1407,7 @@
           SPORT = sp;
           editId = null;
           blocks = [];
-          showTpl = true;
+          showTpl = sp !== 'swim';
           selectedId = null;
           detailId = null;
           _syncSportUi();
@@ -1465,6 +1524,7 @@
               document.getElementById('wk-desc').value = d.desc || '';
               document.getElementById('wk-date').value =
                 d.date || document.getElementById('wk-date').value;
+              if (d.sport === 'swim') SPORT = 'swim';
               if (d.sport === 'run') {
                 SPORT = 'run';
                 RUN_MODE = d.runMode === 'hr' ? 'hr' : 'pace';
@@ -1602,6 +1662,7 @@
 
         /* ─────────── RENDER BLOCKS ─────────────────────────────────── */
         function renderBlocks() {
+          if (SPORT === 'swim') return renderSwim();
           var list = document.getElementById('blocks-list');
           var empty = document.getElementById('blocks-empty');
           if (empty) empty.style.display = blocks.length ? 'none' : '';
@@ -1850,6 +1911,7 @@
 
         /* ─────────── CHART ──────────────────────────────────────────── */
         function renderChart() {
+          if (SPORT === 'swim') return;
           var svg = document.getElementById('iw-svg');
           if (!blocks.length) {
             svg.innerHTML =
@@ -2150,6 +2212,10 @@
             toast(_t('iw_toast_need_block', 'Añade al menos un bloque'), false);
             return;
           }
+          if (SPORT === 'swim' && swimError()) {
+            toast(swimError(), false);
+            return;
+          }
 
           var payload = {
             name: name,
@@ -2343,7 +2409,7 @@
           detailId = null;
           selectedId = blocks.length ? blocks[0].id : null;
           /* S5: se respeta la disciplina (y el objetivo) con la que se guardó */
-          SPORT = wo.sport === 'run' ? 'run' : 'bike';
+          SPORT = _spOf(wo.sport);
           if (SPORT === 'run' && blocks[0] && blocks[0].mode) {
             RUN_MODE = blocks[0].mode === 'hr' ? 'hr' : 'pace';
           }
@@ -2567,7 +2633,7 @@
           if (!wo) return;
           _iwApi('POST', '/athlete/indoor-workouts', {
             name: wo.name + ' ' + _t('iw_copy_suffix', '(copia)'),
-            sport: wo.sport === 'run' ? 'run' : 'bike',
+            sport: _spOf(wo.sport),
             description: wo.desc || '',
             planned_date: null,
             blocks: JSON.parse(JSON.stringify(wo.blocks)),
@@ -2639,17 +2705,20 @@
             );
             return;
           }
-          var totalSec = wo.blocks.reduce(function (acc, b) {
-            return acc + totalBlockDuration(b);
-          }, 0);
-          var ss = calcStats(buildSegs(wo.blocks), totalSec, wo.sport);
+          var swimT = wo.sport === 'swim' ? swimTotals(wo.blocks) : null;
+          var totalSec = swimT
+            ? swimT.duration_s
+            : wo.blocks.reduce(function (acc, b) {
+                return acc + totalBlockDuration(b);
+              }, 0);
+          var ss = swimT ? { tss: null } : calcStats(buildSegs(wo.blocks), totalSec, wo.sport);
           plans.push({
             id: 'plan-' + Date.now(),
-            sport: wo.sport === 'run' ? 'run' : 'bike',
+            sport: _spOf(wo.sport),
             name: wo.name,
             date_iso: date,
             dur_min: Math.max(1, Math.round(totalSec / 60)),
-            dist_km: null,
+            dist_km: swimT ? swimT.distance_m / 1000 : null,
             tss: ss.tss,
             notes: wo.desc || null,
             calories: null,
@@ -2725,21 +2794,26 @@
           var bs = 'font-size:.65rem;padding:.2rem .55rem';
           el.innerHTML = list
             .map(function (wo) {
-              var totalSec = wo.blocks.reduce(function (acc, b) {
-                return acc + totalBlockDuration(b);
-              }, 0);
-              var segs = buildSegs(wo.blocks);
-              var ss = calcStats(segs, totalSec, wo.sport);
+              var isSwim = wo.sport === 'swim';
+              var swimT = isSwim ? swimTotals(wo.blocks) : null;
+              var totalSec = isSwim
+                ? swimT.duration_s
+                : wo.blocks.reduce(function (acc, b) {
+                    return acc + totalBlockDuration(b);
+                  }, 0);
+              var ss = isSwim ? null : calcStats(buildSegs(wo.blocks), totalSec, wo.sport);
               var sportLbl = esc(
-                wo.sport === 'run'
-                  ? _t('iw_sport_run', 'Running')
-                  : _t('iw_sport_bike', 'Ciclismo'),
+                isSwim
+                  ? _t('iw_sport_swim', 'Natación')
+                  : wo.sport === 'run'
+                    ? _t('iw_sport_run', 'Running')
+                    : _t('iw_sport_bike', 'Ciclismo'),
               );
               return (
                 '<div class="iw-saved-row" data-wid="' + wo.id + '">' +
                 '<div class="iw-saved-main"><div class="iw-saved-name">' + esc(wo.name) + '</div>' +
-                '<div class="iw-saved-meta">' + sportLbl + ' · ' + fmtDur(totalSec, true) +
-                ' · TSS ' + ss.tss + ' · IF ' + ss.IF.toFixed(2) + (wo.date ? ' · ' + wo.date : '') + '</div>' +
+                '<div class="iw-saved-meta">' + sportLbl + ' · ' + (isSwim ? swimT.distance_m + ' m · ' : '') + fmtDur(totalSec, true) +
+                (isSwim ? '' : ' · TSS ' + ss.tss + ' · IF ' + ss.IF.toFixed(2)) + (wo.date ? ' · ' + wo.date : '') + '</div>' +
                 _stateHtml(wo) + '</div>' +
                 '<div class="iw-saved-btns">' +
                 '<button class="btn btn-ghost" style="' + bs + '" onclick="loadWorkout(\'' + wo.id + '\')">' + editLbl + '</button>' +
@@ -2766,6 +2840,10 @@
           var wo = getWorkoutData(id || null);
           if (!wo || !wo.blocks.length) {
             toast(_t('iw_toast_no_blocks_export', 'Sin bloques para exportar'), false);
+            return;
+          }
+          if (wo.sport === 'swim') {
+            toast(_t('iw_swim_no_export', 'La natación llega a tu reloj vía intervals.icu (no hay archivo para exportar)'), true);
             return;
           }
           var run = wo.sport === 'run';
@@ -2921,6 +2999,178 @@
             true,
           );
         };
+
+        /* ─────────── NATACIÓN (W19) ─────────────────────────────────── */
+        /* Bloque: {id, type: warmup|main|drill|cooldown, reps, dist (m), rest (s),
+           pace (s/100 m | null), stroke: full|drill|kick|pull, equipment}.
+           Mismas reglas que validate_swim_blocks() del backend. */
+        var SWIM_STROKES = ['full', 'drill', 'kick', 'pull'];
+        var SWIM_EQUIP = ['', 'fins', 'paddles', 'buoy', 'snorkel'];
+        var SWIM_DEF = {
+          warmup: { reps: 1, dist: 400, rest: 0, stroke: 'full', k: 1.15 },
+          main: { reps: 8, dist: 100, rest: 20, stroke: 'full', k: 1 },
+          drill: { reps: 4, dist: 50, rest: 15, stroke: 'drill', k: 1.2 },
+          cooldown: { reps: 1, dist: 200, rest: 0, stroke: 'full', k: 1.2 },
+        };
+
+        function _spOf(sp) {
+          return sp === 'run' || sp === 'swim' ? sp : 'bike';
+        }
+        function fmtSwimPace(sec) {
+          return Math.floor(sec / 60) + ':' + String(Math.round(sec % 60)).padStart(2, '0');
+        }
+        /* "1:48" -> 108 (s/100 m); vacío o inválido -> null */
+        function parseSwimPace(str) {
+          var m = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(str || '');
+          if (!m || parseInt(m[2], 10) > 59) return null;
+          var v = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+          return v >= 40 && v <= 400 ? v : null;
+        }
+        function swimTotals(bls) {
+          var dist = 0,
+            secs = 0;
+          (bls || []).forEach(function (b) {
+            var reps = +b.reps || 1,
+              d = +b.dist || 0,
+              pace = b.pace || CSS_PACE || 120;
+            dist += reps * d;
+            secs += ((reps * d) / 100) * pace + Math.max(0, reps - 1) * (+b.rest || 0);
+          });
+          return { distance_m: dist, duration_s: Math.round(secs) };
+        }
+        function swimError() {
+          var msg = _t('iw_swim_err_invalid', 'Revisa las distancias (múltiplos de 25 m), repeticiones y descansos');
+          var okInt = function (v, lo, hi) {
+            return v === Math.floor(v) && v >= lo && v <= hi;
+          };
+          var total = 0;
+          for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            if (
+              !okInt(+b.reps, 1, 100) ||
+              !okInt(+b.dist, 25, 10000) ||
+              +b.dist % 25 ||
+              !okInt(+b.rest || 0, 0, 1800) ||
+              (b.pace != null && !okInt(+b.pace, 40, 400))
+            )
+              return msg;
+            total += b.reps * b.dist;
+          }
+          return total > 50000 ? msg : '';
+        }
+        function _renderSwimRef() {
+          var el = document.getElementById('swim-ref-badge');
+          if (!el) return;
+          el.innerHTML = CSS_PACE
+            ? fmtSwimPace(CSS_PACE) + ' /100 m'
+            : '— <a href="athlete_profile.html" style="color:var(--orange);font-size:.7rem">' +
+              esc(_t('iw_swim_css_configure', 'configurar en el perfil')) +
+              '</a>';
+        }
+        window.addSwimBlock = function (type) {
+          var d = SWIM_DEF[type];
+          blocks.push({
+            id: _nextBlockId(),
+            type: type,
+            reps: d.reps,
+            dist: d.dist,
+            rest: d.rest,
+            pace: CSS_PACE ? Math.round((CSS_PACE * d.k) / 5) * 5 : null,
+            stroke: d.stroke,
+            equipment: '',
+          });
+          renderSwim();
+          saveDraft();
+        };
+        window.removeSwimBlock = function (id) {
+          blocks = blocks.filter(function (b) {
+            return b.id !== id;
+          });
+          renderSwim();
+          saveDraft();
+        };
+        window.moveSwimBlock = function (id, dir) {
+          var i = blocks.findIndex(function (b) {
+            return b.id === id;
+          });
+          var j = i + dir;
+          if (i < 0 || j < 0 || j >= blocks.length) return;
+          var t = blocks[i];
+          blocks[i] = blocks[j];
+          blocks[j] = t;
+          renderSwim();
+          saveDraft();
+        };
+        window.updateSwimBlock = function (id, field, val) {
+          var b = blocks.find(function (x) {
+            return x.id === id;
+          });
+          if (!b) return;
+          if (field === 'pace') b.pace = parseSwimPace(val);
+          else if (field === 'stroke' || field === 'equipment') b[field] = val;
+          else b[field] = parseInt(val, 10) || 0;
+          renderSwim();
+          saveDraft();
+        };
+        function renderSwim() {
+          var list = document.getElementById('swim-list');
+          if (!list) return;
+          var opt = function (vals, cur, lblFn) {
+            return vals
+              .map(function (v) {
+                return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + esc(lblFn(v)) + '</option>';
+              })
+              .join('');
+          };
+          var strokeLbl = function (v) {
+            var f = { full: 'Nado completo', drill: 'Técnica', kick: 'Piernas', pull: 'Brazos' }[v];
+            return _t('iw_swim_stroke_' + v, f);
+          };
+          var equipLbl = function (v) {
+            var f = { '': 'Sin material', fins: 'Aletas', paddles: 'Palas', buoy: 'Pull buoy', snorkel: 'Snorkel' }[v];
+            return _t('iw_swim_equip_' + (v || 'none'), f);
+          };
+          var typeLbl = function (v) {
+            var f = { warmup: 'Calentamiento', main: 'Serie principal', drill: 'Técnica', cooldown: 'Vuelta a la calma' }[v];
+            return _t('iw_swim_type_' + v, f);
+          };
+          var ibtn = 'font-size:.65rem;padding:.2rem .5rem';
+          list.innerHTML = blocks.length
+            ? blocks
+                .map(function (b, i) {
+                  var id = b.id;
+                  var num = function (f, lbl, min, step) {
+                    return (
+                      '<div><label>' + esc(lbl) + '</label><input type="number" min="' + min + '" step="' + step +
+                      '" value="' + (b[f] == null ? '' : b[f]) + '" onchange="updateSwimBlock(\'' + id + "','" + f + "', this.value)\"></div>"
+                    );
+                  };
+                  return (
+                    '<div class="sw-blk" data-bid="' + id + '"><div class="sw-blk-hd"><span>' + (i + 1) + '. ' +
+                    esc(typeLbl(b.type)) + ' — ' + b.reps * b.dist + ' m</span><span>' +
+                    '<button class="btn btn-ghost" style="' + ibtn + '" onclick="moveSwimBlock(\'' + id + '\',-1)" aria-label="' + esc(_t('iw_title_move_up', 'Subir')) + '">↑</button> ' +
+                    '<button class="btn btn-ghost" style="' + ibtn + '" onclick="moveSwimBlock(\'' + id + '\',1)" aria-label="' + esc(_t('iw_title_move_down', 'Bajar')) + '">↓</button> ' +
+                    '<button class="btn btn-ghost" style="' + ibtn + ';color:var(--red)" onclick="removeSwimBlock(\'' + id + '\')" aria-label="' + esc(_t('iw_title_delete', 'Eliminar')) + '">✕</button></span></div>' +
+                    '<div class="sw-grid">' +
+                    num('reps', _t('iw_swim_reps', 'Repeticiones'), 1, 1) +
+                    num('dist', _t('iw_swim_dist', 'Distancia (m)'), 25, 25) +
+                    num('rest', _t('iw_swim_rest', 'Descanso (s)'), 0, 5) +
+                    '<div><label>' + esc(_t('iw_swim_pace', 'Ritmo /100 m')) + '</label><input type="text" placeholder="' +
+                    esc(_t('iw_swim_pace_auto', 'auto (CSS)')) + '" value="' + (b.pace ? fmtSwimPace(b.pace) : '') +
+                    '" onchange="updateSwimBlock(\'' + id + '\',\'pace\', this.value)"></div>' +
+                    '<div><label>' + esc(_t('iw_swim_stroke', 'Estilo')) + '</label><select onchange="updateSwimBlock(\'' + id + '\',\'stroke\', this.value)">' +
+                    opt(SWIM_STROKES, b.stroke || 'full', strokeLbl) + '</select></div>' +
+                    '<div><label>' + esc(_t('iw_swim_equip', 'Material')) + '</label><select onchange="updateSwimBlock(\'' + id + '\',\'equipment\', this.value)">' +
+                    opt(SWIM_EQUIP, b.equipment || '', equipLbl) + '</select></div></div></div>'
+                  );
+                })
+                .join('')
+            : '<div class="iw-empty">' + esc(_t('iw_swim_empty', 'Sin bloques de natación — añade uno abajo.')) + '</div>';
+          var t = swimTotals(blocks);
+          document.getElementById('swim-total-dist').textContent = t.distance_m + ' m';
+          document.getElementById('swim-total-time').textContent = fmtDur(t.duration_s, true);
+          document.getElementById('swim-err').textContent = blocks.length ? swimError() : '';
+        }
 
         /* ─────────── HELPERS ────────────────────────────────────────── */
         function buildSegs(bls) {

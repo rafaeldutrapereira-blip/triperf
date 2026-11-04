@@ -26,8 +26,66 @@ router = APIRouter(
     dependencies=[Depends(require_feature("indoor_workout"))],
 )
 
-_SPORTS = {"bike", "run"}  # S5: ciclismo + running (natación queda fuera de v1)
+_SPORTS = {"bike", "run", "swim"}  # S5: bici + running; W19: natación
 _RUN_MODES = {"pace", "hr"}
+
+# W19 -- Natación. A diferencia de bici/running (duración + intensidad), un bloque
+# de nado es repeticiones x distancia con descanso entre series:
+#   {id, type, reps, dist (m), rest (s), pace (s/100 m, opcional), stroke, equipment}
+SWIM_TYPES = {"warmup", "main", "drill", "cooldown"}
+SWIM_STROKES = {"full", "drill", "kick", "pull"}  # nado completo, técnica, piernas, brazos
+SWIM_EQUIPMENT = {"", "fins", "paddles", "buoy", "snorkel"}
+SWIM_MAX_REPS = 100
+SWIM_MIN_DIST, SWIM_MAX_DIST = 25, 10000   # m por repetición
+SWIM_MAX_REST = 1800                       # s
+SWIM_MIN_PACE, SWIM_MAX_PACE = 40, 400     # s/100 m
+SWIM_MAX_TOTAL_M = 50000
+
+
+def _int_in(b: dict, key: str, lo: int, hi: int, label: str, default=None) -> int:
+    v = b.get(key, default)
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or v != int(v):
+        raise HTTPException(400, f"Natación: {label} debe ser un número entero")
+    v = int(v)
+    if not lo <= v <= hi:
+        raise HTTPException(400, f"Natación: {label} debe estar entre {lo} y {hi}")
+    return v
+
+
+def validate_swim_blocks(blocks: list) -> None:
+    """Valida bloques de natación (distancias, descansos, ritmo, estilo). 400 si algo no cierra."""
+    total = 0
+    for b in blocks:
+        if b.get("type") not in SWIM_TYPES:
+            raise HTTPException(400, f"Natación: tipo de bloque inválido, usa uno de {sorted(SWIM_TYPES)}")
+        reps = _int_in(b, "reps", 1, SWIM_MAX_REPS, "las repeticiones")
+        dist = _int_in(b, "dist", SWIM_MIN_DIST, SWIM_MAX_DIST, "la distancia (m)")
+        if dist % 25:
+            raise HTTPException(400, "Natación: la distancia debe ser múltiplo de 25 m")
+        _int_in(b, "rest", 0, SWIM_MAX_REST, "el descanso (s)", default=0)
+        if b.get("pace") is not None:
+            _int_in(b, "pace", SWIM_MIN_PACE, SWIM_MAX_PACE, "el ritmo (s/100 m)")
+        if b.get("stroke", "full") not in SWIM_STROKES:
+            raise HTTPException(400, f"Natación: estilo inválido, usa uno de {sorted(SWIM_STROKES)}")
+        if b.get("equipment", "") not in SWIM_EQUIPMENT:
+            raise HTTPException(400, "Natación: material inválido")
+        total += reps * dist
+    if total > SWIM_MAX_TOTAL_M:
+        raise HTTPException(400, f"Natación: la sesión no puede superar {SWIM_MAX_TOTAL_M} m")
+
+
+def swim_totals(blocks: list, default_pace: int = 120) -> dict:
+    """Distancia total (m) y duración estimada (s) de una sesión de natación.
+    Duración = nado a ritmo (default_pace si el bloque no trae uno) + descansos
+    entre repeticiones (reps-1 por bloque)."""
+    dist_m = 0
+    secs = 0.0
+    for b in blocks:
+        reps, dist = int(b.get("reps", 1)), int(b.get("dist", 0))
+        pace = b.get("pace") or default_pace
+        dist_m += reps * dist
+        secs += reps * dist / 100.0 * pace + max(0, reps - 1) * int(b.get("rest", 0) or 0)
+    return {"distance_m": dist_m, "duration_s": int(round(secs))}
 _MAX_BLOCKS = 300
 _MAX_BLOCKS_BYTES = 256 * 1024
 _MAX_PER_USER = 500
@@ -42,7 +100,7 @@ def _out(w: IndoorWorkout) -> dict:
         blocks = json.loads(w.blocks_json or "[]")
     except ValueError:
         blocks = []
-    return {
+    out = {
         "id": w.id,
         "name": w.name,
         "sport": w.sport,
@@ -53,9 +111,15 @@ def _out(w: IndoorWorkout) -> dict:
         "created_at": w.created_at.isoformat() if w.created_at else None,
         "updated_at": w.updated_at.isoformat() if w.updated_at else None,
     }
+    if w.sport == "swim":
+        try:
+            out["totals"] = swim_totals(blocks)
+        except (TypeError, ValueError):
+            out["totals"] = {"distance_m": 0, "duration_s": 0}
+    return out
 
 
-def _clean(body: dict, partial: bool = False) -> dict:
+def _clean(body: dict, partial: bool = False, current_sport: Optional[str] = None) -> dict:
     """Valida y normaliza el payload. Devuelve solo las claves presentes."""
     out: dict = {}
     if "name" in body or not partial:
@@ -94,6 +158,8 @@ def _clean(body: dict, partial: bool = False) -> dict:
     if out.get("sport") == "run" and "blocks_json" in out:
         if any(b.get("mode") not in _RUN_MODES for b in blocks):
             raise HTTPException(400, "Los bloques de running necesitan mode: 'pace' o 'hr'")
+    if (out.get("sport") or current_sport) == "swim" and "blocks_json" in out:
+        validate_swim_blocks(blocks)
     return out
 
 
@@ -146,7 +212,7 @@ def get_workout(workout_id: str, db: Session = Depends(get_db), me: User = Depen
 def update_workout(workout_id: str, body: dict, db: Session = Depends(get_db),
                    me: User = Depends(get_current_user)):
     w = _owned(db, me, workout_id)
-    for k, v in _clean(body, partial=True).items():
+    for k, v in _clean(body, partial=True, current_sport=w.sport).items():
         setattr(w, k, v)
     w.updated_at = _now()
     db.commit()

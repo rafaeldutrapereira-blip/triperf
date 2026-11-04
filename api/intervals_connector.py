@@ -157,10 +157,57 @@ def _ramp_line(label: str, duration: int, lo: str, hi: str) -> str:
     return f"- {label}{_fmt_dur(duration)} ramp {lo}-{hi}"
 
 
+# W19 -- Natación: pasos por DISTANCIA (`400mtr`), ritmo por 100 m, descanso como
+# paso de tiempo. Etiquetas de cue (texto antes de la distancia) por tipo/estilo.
+_SWIM_TYPE_LABEL = {"warmup": "Warmup", "main": "Main", "drill": "Technique", "cooldown": "Cooldown"}
+_SWIM_STROKE_LABEL = {"full": "", "drill": "Drill", "kick": "Kick", "pull": "Pull"}
+_SWIM_EQUIP_LABEL = {"fins": "Fins", "paddles": "Paddles", "buoy": "Buoy", "snorkel": "Snorkel"}
+
+
+def _fmt_swim_pace(sec_per_100: float) -> str:
+    sec_per_100 = max(1, round(sec_per_100))
+    m, s = divmod(sec_per_100, 60)
+    return f"{m}:{s:02d}/100m Pace"
+
+
+def _swim_blocks_to_dsl(blocks: list[dict]) -> str:
+    """Bloque de nado (reps x dist, descanso, ritmo/100 m) -> texto DSL.
+    Con reps>1 se emite una seccion `Nx` con el paso de distancia y el descanso;
+    con reps==1 un unico paso (el descanso entre series no aplica)."""
+    lines: list[str] = []
+    for b in blocks:
+        try:
+            reps = int(b.get("reps", 1))
+            dist = int(b.get("dist", 0))
+            if reps < 1 or dist < 1:
+                continue
+            rest = int(b.get("rest", 0) or 0)
+            cue = " ".join(x for x in (
+                _SWIM_TYPE_LABEL.get(b.get("type"), ""),
+                _SWIM_STROKE_LABEL.get(b.get("stroke", "full"), ""),
+                _SWIM_EQUIP_LABEL.get(b.get("equipment", ""), ""),
+            ) if x)
+            step = f"- {cue + ' ' if cue else ''}{dist}mtr"
+            if b.get("pace"):
+                step += " " + _fmt_swim_pace(float(b["pace"]))
+            if lines:
+                lines.append("")
+            if reps > 1:
+                lines.append(f"{reps}x")
+            lines.append(step)
+            if reps > 1 and rest > 0:
+                lines.append(f"- Rest {_fmt_dur(rest)}")
+        except (TypeError, ValueError) as exc:
+            logger.warning("Bloque de nado %s omitido al armar DSL intervals.icu: %s", b.get("id"), exc)
+    return "\n".join(lines).strip()
+
+
 def blocks_to_intervals_dsl(blocks: list[dict], sport: str) -> str:
     """Convierte blocks_json (mismo formato que ZWO/TCX de workout-blocks.js)
     en el texto DSL de intervals.icu. Nunca lanza -- bloques desconocidos se
     omiten (mejor un workout incompleto que una excepcion a mitad de envio)."""
+    if sport == "swim":
+        return _swim_blocks_to_dsl(blocks)
     lines: list[str] = []
     is_run = sport == "run"
 
@@ -229,7 +276,7 @@ async def send_workout_event(user: "User", name: str, sport: str, blocks: list[d
     payload = {
         "category":         "WORKOUT",
         "start_date_local":  f"{date_iso}T00:00:00",
-        "type":              "Run" if sport == "run" else "Ride",
+        "type":              {"run": "Run", "swim": "Swim"}.get(sport, "Ride"),
         "name":              name[:120] or "Workout LabX",
         "description":       body_desc,
     }
