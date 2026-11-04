@@ -1353,105 +1353,69 @@
         color: var(--dim);
         font-style: italic;
       }
-      /* Resumen semanal en anillos de cumplimiento — pedido explícito del
-   usuario tras ver el mockup (artifact 4ed4a9ee): "real / plan" en
-   texto obligaba a restar mentalmente; un anillo con el % ya calculado
-   se lee en medio segundo. Mismo dato exacto de siempre (real y plan
-   sin redondear "de más"), solo cambia la forma. Un color fijo por
-   métrica (no por bueno/malo — a mitad de semana no llegar al 100%
-   todavía es normal) para poder distinguir los 4 anillos sin leer la
-   etiqueta. */
-      .wk-summary {
-        margin: 0 1rem 0.75rem;
-        background: linear-gradient(165deg, var(--bg2), #060b12);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 0.9rem 0.7rem 0.8rem;
-      }
-      .wk-summary-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.7rem;
-        padding: 0 0.1rem;
-      }
-      .wk-summary-title {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.62rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+      /* B4: línea "N de M sesiones" + tira de 7 días */
+      .wk-plan-line {
+        margin: 0 1rem 0.5rem;
+        font-size: 0.8rem;
         color: var(--muted);
       }
-      .wk-summary-days {
-        font-size: 0.62rem;
-        color: var(--dim);
-      }
-      .wk-rings-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.3rem;
-      }
-      .wk-ring {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.35rem;
-      }
-      .wk-ring-svg {
-        position: relative;
-        width: 56px;
-        height: 56px;
-      }
-      .wk-ring-svg svg {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-      }
-      .wk-ring-track {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.06);
-        stroke-width: 5.5;
-      }
-      .wk-ring-fill {
-        fill: none;
-        stroke-width: 5.5;
-        stroke-linecap: round;
-        stroke-dasharray: 170;
-        transition: stroke-dashoffset 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .wk-ring-center {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 800;
-        font-size: 0.82rem;
-      }
-      .wk-ring-lbl {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.56rem;
-        font-weight: 600;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        color: var(--dim);
-        text-align: center;
-      }
-      .wk-ring-nums {
-        font-size: 0.6rem;
-        color: var(--muted);
-        text-align: center;
-      }
-      .wk-ring-nums b {
+      .wk-plan-line b {
         color: var(--text);
-        font-weight: 600;
       }
-      @media (prefers-reduced-motion: reduce) {
-        .wk-ring-fill {
-          transition: none;
-        }
+      .wk-strip {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.3rem;
+        margin: 0 1rem 0.5rem;
+      }
+      .wk-chip {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.35rem 0.1rem;
+        text-align: center;
+        cursor: pointer;
+      }
+      .wk-chip-today {
+        border-color: rgba(255, 101, 53, 0.4);
+      }
+      .wk-chip-name {
+        font-size: 0.58rem;
+        font-weight: 700;
+        color: var(--dim);
+        text-transform: uppercase;
+      }
+      .wk-chip-num {
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      .wk-chip-dots {
+        min-height: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+        margin-top: 2px;
+      }
+      .wk-chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        border: 1.5px solid;
+        box-sizing: border-box;
+      }
+      .wk-chip-dot.pend {
+        background: transparent !important;
+      }
+      .wk-wo-extra {
+        cursor: pointer;
+      }
+      .wk-wo-tag {
+        font-size: 0.6rem;
+        color: var(--dim);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0 0.3rem;
+        flex-shrink: 0;
       }
 
       /* ── Progreso Semanal (5 semanas móviles, mismo dato/agregación que
@@ -5324,187 +5288,9 @@
             </div>
           </div>
 
-          <!-- Real / plan en cada métrica — pedido explícito: comparar
-           ejecutado contra planificado, no mostrar solo un número. -->
-          <div class="wk-summary" id="wk-summary">
-            <div class="wk-summary-head">
-              <span class="wk-summary-title"
-                ><span data-i18n="app_weekly_compliance"
-                  >Cumplimiento semanal</span
-                >
-                <!-- P11-C: el título es propio (no es el término), patrón solo-botón -->
-                <button
-                  type="button"
-                  class="lx-term-info"
-                  aria-label="Info"
-                  onclick="event.stopPropagation(); LXTerm.open('compliance', this)"
-                >
-                  <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button
-              ></span>
-              <span class="wk-summary-days" id="wk-summary-days"></span>
-            </div>
-            <div class="wk-rings-grid">
-              <div class="wk-ring">
-                <div class="wk-ring-svg">
-                  <svg viewBox="0 0 62 62">
-                    <circle class="wk-ring-track" cx="31" cy="31" r="27" />
-                    <circle
-                      class="wk-ring-fill"
-                      id="wk-tss-ring"
-                      cx="31"
-                      cy="31"
-                      r="27"
-                      stroke="#A855F7"
-                      style="stroke-dashoffset: 170"
-                    />
-                  </svg>
-                  <div class="wk-ring-center" id="wk-tss-pct">—</div>
-                </div>
-                <div class="wk-ring-lbl">
-                  <span data-i18n="kpi_load">Carga</span
-                  ><span class="lx-sigla2">TSS</span>
-                </div>
-                <div class="wk-ring-nums" id="wk-tss">—</div>
-              </div>
-              <div class="wk-ring">
-                <div class="wk-ring-svg">
-                  <svg viewBox="0 0 62 62">
-                    <circle class="wk-ring-track" cx="31" cy="31" r="27" />
-                    <circle
-                      class="wk-ring-fill"
-                      id="wk-dist-ring"
-                      cx="31"
-                      cy="31"
-                      r="27"
-                      stroke="#0EA5E9"
-                      style="stroke-dashoffset: 170"
-                    />
-                  </svg>
-                  <div class="wk-ring-center" id="wk-dist-pct">—</div>
-                </div>
-                <div class="wk-ring-lbl" data-i18n="app_ring_km">Km</div>
-                <div class="wk-ring-nums" id="wk-dist">—</div>
-              </div>
-              <div class="wk-ring">
-                <div class="wk-ring-svg">
-                  <svg viewBox="0 0 62 62">
-                    <circle class="wk-ring-track" cx="31" cy="31" r="27" />
-                    <circle
-                      class="wk-ring-fill"
-                      id="wk-sessions-ring"
-                      cx="31"
-                      cy="31"
-                      r="27"
-                      stroke="#FF6535"
-                      style="stroke-dashoffset: 170"
-                    />
-                  </svg>
-                  <div class="wk-ring-center" id="wk-sessions-pct">—</div>
-                </div>
-                <div class="wk-ring-lbl" data-i18n="app_ring_sessions">
-                  Sesiones
-                </div>
-                <div class="wk-ring-nums" id="wk-sessions">—</div>
-              </div>
-              <div class="wk-ring">
-                <div class="wk-ring-svg">
-                  <svg viewBox="0 0 62 62">
-                    <circle class="wk-ring-track" cx="31" cy="31" r="27" />
-                    <circle
-                      class="wk-ring-fill"
-                      id="wk-hours-ring"
-                      cx="31"
-                      cy="31"
-                      r="27"
-                      stroke="#10B981"
-                      style="stroke-dashoffset: 170"
-                    />
-                  </svg>
-                  <div class="wk-ring-center" id="wk-hours-pct">—</div>
-                </div>
-                <div class="wk-ring-lbl" data-i18n="app_ring_hours">Horas</div>
-                <div class="wk-ring-nums" id="wk-hours">—</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Progreso Semanal — misma ventana móvil de 5 semanas que
-           dashboard.html (pedido explícito: incluir esta card acá, después
-           de la de TSS). Mismos datos (/athlete/dashboard activities),
-           misma agregación, adaptada a un chart angosto de celular. -->
-          <div class="wp-mob-card" id="wp-mob-card" style="display: none">
-            <div class="wp-mob-head">
-              <span class="wp-mob-title" data-i18n="app_weekly_progress"
-                >Progreso Semanal</span
-              >
-              <div class="wp-mob-sport-btns" id="wp-mob-sport-btns">
-                <button
-                  class="wp-mob-sport-btn on"
-                  data-sport="all"
-                  onclick="wpMobSport('all')"
-                  data-i18n="lbl_all_time"
-                >
-                  Todo
-                </button>
-                <button
-                  class="wp-mob-sport-btn"
-                  data-sport="swim"
-                  onclick="wpMobSport('swim')"
-                >
-                  🏊
-                </button>
-                <button
-                  class="wp-mob-sport-btn"
-                  data-sport="bike"
-                  onclick="wpMobSport('bike')"
-                >
-                  🚴
-                </button>
-                <button
-                  class="wp-mob-sport-btn"
-                  data-sport="run"
-                  onclick="wpMobSport('run')"
-                >
-                  🏃
-                </button>
-                <button
-                  class="wp-mob-sport-btn"
-                  data-sport="gym"
-                  onclick="wpMobSport('gym')"
-                >
-                  💪
-                </button>
-              </div>
-            </div>
-            <div class="wp-mob-stats">
-              <div>
-                <div class="wp-mob-stat-lbl" data-i18n="app_stat_this_week">
-                  Esta semana
-                </div>
-                <div class="wp-mob-stat-val" id="wp-mob-dist">—</div>
-              </div>
-              <div>
-                <div class="wp-mob-stat-lbl" data-i18n="app_stat_time">
-                  Tiempo
-                </div>
-                <div class="wp-mob-stat-val" id="wp-mob-time">—</div>
-              </div>
-              <div>
-                <div class="wp-mob-stat-lbl" data-i18n="app_stat_acts">
-                  Acts
-                </div>
-                <div class="wp-mob-stat-val" id="wp-mob-acts">—</div>
-              </div>
-            </div>
-            <div class="wp-mob-chart-wrap">
-              <svg
-                id="wp-mob-chart"
-                viewBox="0 0 340 100"
-                preserveAspectRatio="none"
-              ></svg>
-              <div class="wp-mob-tooltip" id="wp-mob-tooltip"></div>
-            </div>
-          </div>
+          <!-- B4 · Plan: una línea "N de M sesiones" + tira de 7 días (plan real + realizado) -->
+          <div class="wk-plan-line" id="wk-sessions-line"></div>
+          <div class="wk-strip" id="wk-strip"></div>
 
           <div class="week-grid" id="week-grid">
             <!-- Filled by JS -->
@@ -6388,6 +6174,85 @@
           <!-- /screen-sticky-head -->
 
           <div id="pgr-insights-content">
+            <!-- B4: Progreso Semanal (wpMob) se muda aquí desde Plan; base del chip Forma (C1 lo recorta) -->
+          <!-- Progreso Semanal — misma ventana móvil de 5 semanas que
+           dashboard.html (pedido explícito: incluir esta card acá, después
+           de la de TSS). Mismos datos (/athlete/dashboard activities),
+           misma agregación, adaptada a un chart angosto de celular. -->
+          <div class="wp-mob-card" id="wp-mob-card" style="display: none">
+            <div class="wp-mob-head">
+              <span class="wp-mob-title" data-i18n="app_weekly_progress"
+                >Progreso Semanal</span
+              >
+              <div class="wp-mob-sport-btns" id="wp-mob-sport-btns">
+                <button
+                  class="wp-mob-sport-btn on"
+                  data-sport="all"
+                  onclick="wpMobSport('all')"
+                  data-i18n="lbl_all_time"
+                >
+                  Todo
+                </button>
+                <button
+                  class="wp-mob-sport-btn"
+                  data-sport="swim"
+                  onclick="wpMobSport('swim')"
+                >
+                  🏊
+                </button>
+                <button
+                  class="wp-mob-sport-btn"
+                  data-sport="bike"
+                  onclick="wpMobSport('bike')"
+                >
+                  🚴
+                </button>
+                <button
+                  class="wp-mob-sport-btn"
+                  data-sport="run"
+                  onclick="wpMobSport('run')"
+                >
+                  🏃
+                </button>
+                <button
+                  class="wp-mob-sport-btn"
+                  data-sport="gym"
+                  onclick="wpMobSport('gym')"
+                >
+                  💪
+                </button>
+              </div>
+            </div>
+            <div class="wp-mob-stats">
+              <div>
+                <div class="wp-mob-stat-lbl" data-i18n="app_stat_this_week">
+                  Esta semana
+                </div>
+                <div class="wp-mob-stat-val" id="wp-mob-dist">—</div>
+              </div>
+              <div>
+                <div class="wp-mob-stat-lbl" data-i18n="app_stat_time">
+                  Tiempo
+                </div>
+                <div class="wp-mob-stat-val" id="wp-mob-time">—</div>
+              </div>
+              <div>
+                <div class="wp-mob-stat-lbl" data-i18n="app_stat_acts">
+                  Acts
+                </div>
+                <div class="wp-mob-stat-val" id="wp-mob-acts">—</div>
+              </div>
+            </div>
+            <div class="wp-mob-chart-wrap">
+              <svg
+                id="wp-mob-chart"
+                viewBox="0 0 340 100"
+                preserveAspectRatio="none"
+              ></svg>
+              <div class="wp-mob-tooltip" id="wp-mob-tooltip"></div>
+            </div>
+          </div>
+
             <div id="pgr-insights-list" style="margin: 1rem">
               <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
             </div>
@@ -10125,7 +9990,7 @@
         return html;
       }
 
-      /* ── Screen 4: Semana ────────────────────────────────────── */
+      /* ── Screen 4: Plan (B4) ─────────────────────────────────── */
       function loadWeek() {
         var wr = weekRange();
         document.getElementById('s4-week-range').textContent =
@@ -10133,17 +9998,12 @@
 
         if (!_token) return;
 
-        loadWeeklyProgressMobile();
-
-        /* Mismo bug que loadToday() (Gap #5): esta pantalla solo miraba
-     /athlete/plan (AssignedWorkout) — un atleta con su plan sincronizado
-     desde TrainingPeaks/Garmin (/athlete/planned-workouts) veía "Descanso"
-     todos los días aunque tuviera entrenamientos reales esa semana.
-     Misma precedencia día+deporte que ya usa training_plan.html en la
-     web: coach gana sobre TP para ese día+deporte puntual, el resto del
-     plan de TP se conserva. */
+        /* B4: plan real = LabX + Garmin ya deduplicado en el servidor (W17,
+     include_garmin=1) y realizado completo de la semana con Adicionales (W21,
+     /athlete/plan/realizado). Los pasos (steps_json) del plan de Garmin siguen
+     viniendo de /athlete/planned-workouts solo para enriquecer el detalle. */
         var pCoach = apiFetch(
-          '/athlete/plan?start=' + wr.mon + '&end=' + wr.sun,
+          '/athlete/plan?start=' + wr.mon + '&end=' + wr.sun + '&include_garmin=1',
         )
           .then(function (r) {
             return r.ok ? r.json() : [];
@@ -10160,11 +10020,9 @@
           .catch(function () {
             return [];
           });
-        // Real de la semana — pedido explícito: comparar plan vs real en el
-        // resumen de arriba (TSS/km/sesiones/horas), no solo mostrar lo
-        // planificado como pasaba antes. Mismo endpoint que ya usan "Hoy" y
-        // "Progreso Semanal".
-        var pDash = apiFetch('/athlete/dashboard')
+        var pReal = apiFetch(
+          '/athlete/plan/realizado?start=' + wr.mon + '&end=' + wr.sun,
+        )
           .then(function (r) {
             return r.ok ? r.json() : null;
           })
@@ -10172,63 +10030,51 @@
             return null;
           });
 
-        Promise.all([pCoach, pTP, pDash]).then(function (results) {
-          var coachAssigns = results[0],
-            tpRows = results[1],
-            dash = results[2];
-          var covered = {};
-          coachAssigns.forEach(function (a) {
-            var sp = (a.template && a.template.sport) || 'run';
-            covered[a.date_iso + '|' + sp] = true;
+        Promise.all([pCoach, pTP, pReal]).then(function (results) {
+          var assigns = results[0] || [],
+            tpRows = results[1] || [],
+            real = results[2];
+          assigns.forEach(function (a) {
+            if (a.source !== 'garmin' || !a.template) return;
+            var m = tpRows.filter(function (p) {
+              return (
+                p.date_iso === a.date_iso &&
+                p.sport === a.template.sport &&
+                (p.title || '') === (a.template.nombre || '')
+              );
+            })[0];
+            if (m) {
+              a.template.steps_json = m.steps_json || null;
+              a.template.garmin_description = m.description || null;
+            }
           });
-          var tpAsAssigns = (tpRows || [])
-            .filter(function (p) {
-              return !covered[p.date_iso + '|' + p.sport];
-            })
-            .map(_tpRowToAssignShape);
           var realWeek =
-            dash && dash.activities
-              ? dash.activities.filter(function (a) {
+            real && real.activities
+              ? real.activities.filter(function (a) {
                   return a.date_iso >= wr.mon && a.date_iso <= wr.sun;
                 })
               : [];
-          renderWeekGrid(coachAssigns.concat(tpAsAssigns), wr.mon, realWeek);
+          renderWeekGrid(assigns, wr.mon, realWeek);
         });
-      }
-
-      /* Muestra "real / plan" en cada celda del resumen semanal — antes solo
-   mostraba el total planificado, sin ningún dato de lo realmente
-   ejecutado. */
-      /* key: 'tss'|'dist'|'sessions'|'hours'. realVal/planVal: números crudos
-   (para el % real del anillo, nunca redondeados "de más"). displayReal/
-   displayPlan: lo que se muestra como texto (ya formateado, ej. "6h12m"
-   para horas) — mismos valores que ya se mostraban antes del cambio. */
-      function _wkSumSet(key, realVal, planVal, displayReal, displayPlan) {
-        var ringEl = document.getElementById('wk-' + key + '-ring');
-        var pctEl = document.getElementById('wk-' + key + '-pct');
-        var numsEl = document.getElementById('wk-' + key);
-        var pct =
-          planVal > 0
-            ? Math.round((realVal / planVal) * 100)
-            : realVal > 0
-              ? 100
-              : 0;
-        var offset = 170 * (1 - Math.min(100, pct) / 100);
-        if (pctEl) pctEl.textContent = pct + '%';
-        if (numsEl)
-          numsEl.innerHTML = '<b>' + displayReal + '</b>/' + displayPlan;
-        if (ringEl) {
-          ringEl.style.strokeDashoffset = '170';
-          requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-              ringEl.style.strokeDashoffset = offset;
-            });
-          });
-        }
       }
 
       var _weekAssignsFlat = []; // para poder abrir el detalle al tocar una actividad de la semana
       var _weekMatchedRealFlat = []; // actividad real (Garmin) emparejada 1:1 con _weekAssignsFlat, por día — igual criterio que "Hoy"
+      var _weekExtraFlat = []; // actividades Adicionales (sin sesión planificada que las explique)
+
+      /* Una Adicional abre el mismo detalle que las extras de Hoy; se apunta
+   _todayExtraRealFlat solo durante la llamada (lectura sincrónica). */
+      function showWeekExtraDetail(idx) {
+        var act = _weekExtraFlat[idx];
+        if (!act) return;
+        var prev = _todayExtraRealFlat;
+        _todayExtraRealFlat = [act];
+        try {
+          showExtraActivityDetail(0);
+        } finally {
+          _todayExtraRealFlat = prev;
+        }
+      }
 
       function renderWeekGrid(assigns, monIso, realWeek) {
         realWeek = realWeek || [];
@@ -10246,10 +10092,10 @@
 
         _weekAssignsFlat = [];
         _weekMatchedRealFlat = [];
-        var totalTss = 0,
-          totalDist = 0,
-          totalSessions = 0,
-          totalDur = 0;
+        _weekExtraFlat = [];
+        var totalSessions = 0,
+          doneSessions = 0,
+          totalExtra = 0;
         var DAYS_ABR = [
           _t('app_day_mon', 'Lun'),
           _t('app_day_tue', 'Mar'),
@@ -10260,27 +10106,25 @@
           _t('app_day_sun', 'Dom'),
         ];
         var html = '';
-        var todayDayNum = null;
+        var stripHtml = '';
 
         for (var i = 0; i < 7; i++) {
           var d = new Date(monIso + 'T12:00:00');
           d.setDate(d.getDate() + i);
           var iso = _isoLocal(d);
           var isToday = iso === today;
-          if (isToday) todayDayNum = i + 1;
           var dayAssigns = assignByDay[iso] || [];
           // Emparejar plan↔real DENTRO de este día (mismo deporte, duración más
-          // parecida) — mismo _matchPlannedToReal() que ya usa "Hoy", pero
-          // corrido día por día para no cruzar un real del lunes con un plan
-          // del martes. Pedido explícito: ver plan vs resultado real de cada
-          // entrenamiento de la semana, no solo el nombre + TSS planificado.
-          var dayMatch = _matchPlannedToReal(
-            dayAssigns,
-            realByDay[iso] || [],
-          ).matched;
+          // parecida) — mismo _matchPlannedToReal() que usa "Hoy".
+          var pm = _matchPlannedToReal(dayAssigns, realByDay[iso] || []);
+          var dayMatch = pm.matched;
+          var dayExtra = pm.extraReal;
+          var chipDots = '';
 
           html +=
-            '<div class="wk-day' +
+            '<div id="wk-day-' +
+            i +
+            '" class="wk-day' +
             (isToday ? ' wk-day-today' : '') +
             '"><div class="wk-day-head">' +
             '<span class="wk-day-name">' +
@@ -10291,17 +10135,24 @@
             '</span>' +
             '</div>';
 
-          if (dayAssigns.length) {
+          if (dayAssigns.length || dayExtra.length) {
             html += '<div class="wk-day-workouts">';
             dayAssigns.forEach(function (a, dIdx) {
               var t = a.template || {};
               var sp = t.sport || 'run';
               var real = dayMatch[dIdx];
-              var done = (a.logs && a.logs.length > 0) || !!real;
-              if (t.tss) totalTss += t.tss;
-              if (t.dist_km) totalDist += t.dist_km;
-              if (t.dur_min) totalDur += t.dur_min;
+              var done = (a.logs && a.logs.length > 0) || !!real || !!a.done;
               totalSessions++;
+              if (done) doneSessions++;
+              var col = SPORT_COL[sp] || '#9CA3AF';
+              chipDots +=
+                '<span class="wk-chip-dot' +
+                (done ? '' : ' pend') +
+                '" style="background:' +
+                col +
+                ';border-color:' +
+                col +
+                '"></span>';
               var idx = _weekAssignsFlat.length;
               _weekAssignsFlat.push(a);
               _weekMatchedRealFlat.push(real ? [real] : []);
@@ -10310,7 +10161,7 @@
                 idx +
                 ')" style="cursor:pointer">' +
                 '<div class="wk-wo-dot" style="background:' +
-                (SPORT_COL[sp] || '#9CA3AF') +
+                col +
                 '"></div>' +
                 '<div class="wk-wo-name">' +
                 (SPORT_EMOJI[sp] || '🏋') +
@@ -10325,64 +10176,89 @@
                 '</div>' +
                 '</div>';
             });
+            dayExtra.forEach(function (x) {
+              totalExtra++;
+              var col = SPORT_COL[x.sport] || '#9CA3AF';
+              chipDots +=
+                '<span class="wk-chip-dot" style="background:' +
+                col +
+                ';border-color:' +
+                col +
+                '"></span>';
+              var xi = _weekExtraFlat.length;
+              _weekExtraFlat.push(x);
+              html +=
+                '<div class="wk-wo wk-wo-extra" onclick="showWeekExtraDetail(' +
+                xi +
+                ')">' +
+                '<div class="wk-wo-dot" style="background:' +
+                col +
+                '"></div>' +
+                '<div class="wk-wo-name">' +
+                (SPORT_EMOJI[x.sport] || '🏋') +
+                ' ' +
+                _escCm(x.name || _t('app_default_activity', 'Actividad')) +
+                '</div>' +
+                '<div class="wk-wo-tag">' +
+                _t('b4_adicional', 'Adicional') +
+                '</div>' +
+                '<div class="wk-wo-status">✅</div>' +
+                '</div>';
+            });
             html += '</div>';
           } else {
             html +=
               '<div class="wk-rest">' + _t('app_rest', 'Descanso') + '</div>';
           }
           html += '</div>';
+
+          stripHtml +=
+            '<div class="wk-chip' +
+            (isToday ? ' wk-chip-today' : '') +
+            '" onclick="wkScrollToDay(' +
+            i +
+            ')">' +
+            '<div class="wk-chip-name">' +
+            DAYS_ABR[i] +
+            '</div><div class="wk-chip-num">' +
+            d.getDate() +
+            '</div><div class="wk-chip-dots">' +
+            chipDots +
+            '</div></div>';
         }
 
         document.getElementById('week-grid').innerHTML = html;
+        var stripEl = document.getElementById('wk-strip');
+        if (stripEl) stripEl.innerHTML = stripHtml;
 
-        // Real de la semana (Garmin) — mismos campos que ya usa "Hoy" para
-        // comparar plan vs real (act.tss/dist_km/dur_min).
-        var realTss = 0,
-          realDist = 0,
-          realDur = 0;
-        realWeek.forEach(function (act) {
-          realTss += act.tss || 0;
-          realDist += act.dist_km || 0;
-          realDur += act.dur_min || 0;
-        });
-        var realSessions = realWeek.length;
+        // "N de M sesiones" en una línea (+ Adicionales aparte, sin inflar M).
+        var lineEl = document.getElementById('wk-sessions-line');
+        if (lineEl) {
+          var txt = '';
+          if (totalSessions) {
+            txt =
+              '<b>' +
+              _t('b4_sesiones_de', '{n} de {m} sesiones')
+                .replace('{n}', doneSessions)
+                .replace('{m}', totalSessions) +
+              '</b>';
+          } else if (!totalExtra) {
+            txt = _t('b4_sin_sesiones', 'Sin sesiones planificadas esta semana');
+          }
+          if (totalExtra)
+            txt +=
+              (txt ? ' · ' : '') +
+              _t('b4_adicionales_n', 'Adicionales: {k}').replace(
+                '{k}',
+                totalExtra,
+              );
+          lineEl.innerHTML = txt;
+        }
+      }
 
-        var daysEl = document.getElementById('wk-summary-days');
-        if (daysEl)
-          daysEl.textContent = todayDayNum
-            ? _t('app_day_x_of_7_prefix', 'Día ') +
-              todayDayNum +
-              _t('app_day_x_of_7_suffix', ' de 7')
-            : '';
-
-        _wkSumSet(
-          'tss',
-          realTss,
-          totalTss,
-          Math.round(realTss),
-          Math.round(totalTss),
-        );
-        _wkSumSet(
-          'dist',
-          realDist,
-          totalDist,
-          Math.round(realDist * 10) / 10,
-          Math.round(totalDist * 10) / 10,
-        );
-        _wkSumSet(
-          'sessions',
-          realSessions,
-          totalSessions,
-          realSessions,
-          totalSessions,
-        );
-        _wkSumSet(
-          'hours',
-          realDur,
-          totalDur,
-          _wpMobFmtDur(realDur),
-          _wpMobFmtDur(totalDur),
-        );
+      function wkScrollToDay(i) {
+        var e = document.getElementById('wk-day-' + i);
+        if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       /* Detalle de una actividad de la semana al tocarla — pedido explícito
@@ -13140,6 +13016,7 @@
 
       function loadProgressInsights() {
         if (!_token) return;
+        loadWeeklyProgressMobile();
         var list = document.getElementById('pgr-insights-list');
         list.innerHTML =
           '<div class="cm-empty">' +
