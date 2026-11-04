@@ -5313,12 +5313,84 @@
             .catch(function () {
               return null;
             }),
+          loadGarminOfficialState(),
         ]).then(function (res) {
-          renderProfileConnections(res[0], res[1]);
+          renderProfileConnections(res[0], res[1], res[2]);
         });
       }
 
-      function renderProfileConnections(garmin, strava) {
+      /* CQ9 · Garmin OFICIAL (OAuth2). Estados honestos:
+         connected | not_connected | unavailable (503 / available:false) | error.
+         'unavailable' y 'error' JAMAS se pintan como conectado. */
+      function garminOfficialState(httpOk, status, d) {
+        if (status === 503) return 'unavailable';
+        if (!httpOk || !d || typeof d !== 'object') return 'error';
+        if (d.connected === true) return 'connected';
+        if (d.available === false) return 'unavailable';
+        return 'not_connected';
+      }
+      function loadGarminOfficialState() {
+        var code = 0;
+        return apiFetch('/integrations/garmin/status')
+          .then(function (r) {
+            code = r.status;
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            return garminOfficialState(!!d, code, d);
+          })
+          .catch(function () {
+            return 'error';
+          });
+      }
+      function garminOfficialConnect() {
+        window.location.href = API + '/integrations/garmin/connect';
+      }
+      function garminOfficialDisconnect() {
+        apiFetch('/integrations/garmin/disconnect', { method: 'POST' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            toast(_t('garmin_off_dis_ok', 'Conexión oficial desconectada'));
+          })
+          .catch(function () {
+            toast(_t('garmin_off_dis_err', 'No se pudo desconectar'));
+          })
+          .then(loadProfileConnections);
+      }
+      function _garminOfficialRow(state) {
+        var meta = {
+          connected: _t('garmin_off_on', 'Conectada'),
+          not_connected: _t('garmin_off_off', 'No conectada'),
+          unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
+          error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+        }[state || 'error'];
+        var btn =
+          state === 'connected'
+            ? '<button class="pf-conn-sync-btn" onclick="garminOfficialDisconnect()">' +
+              _t('garmin_off_dis', 'Desconectar') +
+              '</button>'
+            : state === 'not_connected'
+              ? '<button class="pf-conn-sync-btn" onclick="garminOfficialConnect()">' +
+                _t('garmin_off_btn', 'Conectar Garmin (oficial)') +
+                '</button>'
+              : '';
+        return (
+          '<div class="pf-conn-row" id="pf-garmin-off" data-state="' +
+          (state || 'error') +
+          '">' +
+          '<div><div class="pf-conn-name"><span class="pf-conn-dot ' +
+          (state === 'connected' ? 'on' : 'off') +
+          '"></span>' +
+          _t('garmin_off_name', 'Garmin (oficial)') +
+          '</div><div class="pf-conn-meta">' +
+          meta +
+          '</div></div>' +
+          btn +
+          '</div>'
+        );
+      }
+
+      function renderProfileConnections(garmin, strava, garminOff) {
         var box = document.getElementById('pf-connections');
         var gOn = !!(
           garmin &&
@@ -5351,6 +5423,8 @@
               '</button>'
             : '') +
           '</div>';
+
+        html += _garminOfficialRow(garminOff);
 
         html +=
           '<div class="pf-conn-row">' +

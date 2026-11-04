@@ -1373,6 +1373,55 @@
                 >
                   <span id="garmin-log-txt"></span>
                 </div>
+                <!-- CQ9: conexion OFICIAL Garmin (OAuth2). La via de arriba no se toca. -->
+                <div
+                  class="conn-card"
+                  id="garmin-off"
+                  data-state="loading"
+                  style="
+                    margin-top: 0.85rem;
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.85rem;
+                  "
+                >
+                  <div class="conn-left">
+                    <div class="conn-logo conn-logo-garmin">⌚</div>
+                    <div>
+                      <div class="conn-name" data-i18n="garmin_off_name">
+                        Garmin (oficial)
+                      </div>
+                      <div class="conn-desc" data-i18n="garmin_off_desc">
+                        Conexión oficial de Garmin: autorizas a LabX desde
+                        Garmin, sin guardar tu contraseña.
+                      </div>
+                      <div
+                        id="garmin-off-status"
+                        class="conn-desc"
+                        style="margin-top: 0.25rem; font-weight: 600"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="btn-garmin-off-con"
+                      onclick="garminOfficialConnect()"
+                      style="display: none"
+                      data-i18n="garmin_off_btn"
+                    >
+                      Conectar Garmin (oficial)
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      id="btn-garmin-off-dis"
+                      onclick="garminOfficialDisconnect()"
+                      style="display: none"
+                      data-i18n="garmin_off_dis"
+                    >
+                      Desconectar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1993,6 +2042,7 @@
         }
         if (name === 'conexiones') {
           loadGarminStatus();
+          loadGarminOfficialStatus();
           loadStravaStatus();
         }
         if (name === 'seguridad') {
@@ -2354,6 +2404,69 @@
             ' ' +
             new Date(d.last_sync).toLocaleString('es-CL');
         }
+      }
+      /* ── Garmin OFICIAL (CQ9) ─────────────────────────────────────── */
+      /* Estados honestos: connected | not_connected | unavailable | error.
+         'unavailable' (503 / available:false) JAMAS se pinta como conectado. */
+      function garminOfficialState(httpOk, status, d) {
+        if (status === 503) return 'unavailable';
+        if (!httpOk || !d || typeof d !== 'object') return 'error';
+        if (d.connected === true) return 'connected';
+        if (d.available === false) return 'unavailable';
+        return 'not_connected';
+      }
+      function setGarminOfficialUI(state) {
+        var box = document.getElementById('garmin-off');
+        if (!box) return;
+        box.setAttribute('data-state', state);
+        var st = document.getElementById('garmin-off-status');
+        var txt = {
+          connected: _t('garmin_off_on', 'Conectada'),
+          not_connected: _t('garmin_off_off', 'No conectada'),
+          unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
+          error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+        }[state];
+        st.textContent = txt || '';
+        st.style.color = state === 'connected' ? 'var(--green, #22c55e)' : '';
+        document.getElementById('btn-garmin-off-con').style.display =
+          state === 'not_connected' ? '' : 'none';
+        document.getElementById('btn-garmin-off-dis').style.display =
+          state === 'connected' ? '' : 'none';
+      }
+      function loadGarminOfficialStatus() {
+        var code = 0;
+        fetch(API + '/integrations/garmin/status', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            code = r.status;
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            setGarminOfficialUI(garminOfficialState(!!d, code, d));
+          })
+          .catch(function () {
+            setGarminOfficialUI('error');
+          });
+      }
+      function garminOfficialConnect() {
+        window.location.href = API + '/integrations/garmin/connect';
+      }
+      function garminOfficialDisconnect() {
+        fetch(API + '/integrations/garmin/disconnect', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            toast(_t('garmin_off_dis_ok', 'Conexión oficial desconectada'));
+          })
+          .catch(function () {
+            toast(_t('garmin_off_dis_err', 'No se pudo desconectar'), 'err');
+          })
+          .then(loadGarminOfficialStatus);
       }
       function showGarminForm() {
         document.getElementById('garmin-form').style.display = 'block';
