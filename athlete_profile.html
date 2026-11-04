@@ -714,7 +714,7 @@
             </button>
           </div>
 
-          <!-- ════════════════════ TAB: MIS DATOS (perfil + marcas + records) ════ -->
+          <!-- ════════════════════ TAB: MIS DATOS (perfil + marcas) ════ -->
           <div id="tab-perfil" class="tab-pane active">
             <div class="card" style="margin-bottom: 1rem">
               <div class="card-head">
@@ -1160,154 +1160,6 @@
                 >
                   Cargando zonas…
                 </p>
-              </div>
-            </div>
-          </div>
-          </details>
-
-          <details class="prof-fold" id="fold-records">
-            <summary data-i18n="prof_fold_records">Mis récords</summary>
-          <div id="tab-records" class="prof-fold-body">
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title" data-i18n="prof_card_records">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
-                    />
-                  </svg>
-                  Records Personales
-                </span>
-                <button
-                  class="btn btn-primary btn-sm"
-                  onclick="showPRForm()"
-                  data-i18n="prof_btn_new_record"
-                >
-                  + Nuevo Record
-                </button>
-              </div>
-              <div class="card-body" style="padding: 0">
-                <table class="pr-table">
-                  <thead>
-                    <tr>
-                      <th data-i18n="prof_label_sport">Deporte</th>
-                      <th data-i18n="prof_th_event">Evento</th>
-                      <th data-i18n="prof_th_mark">Marca</th>
-                      <th data-i18n="prof_label_date">Fecha</th>
-                      <th data-i18n="prof_th_place">Lugar</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody id="pr-tbody">
-                    <tr>
-                      <td
-                        colspan="6"
-                        style="
-                          text-align: center;
-                          color: var(--dim);
-                          padding: 2rem;
-                          font-size: 0.82rem;
-                        "
-                        data-i18n="prof_loading_records"
-                      >
-                        Cargando records…
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div id="pr-form-card" class="card" style="display: none">
-              <div class="card-head">
-                <span class="card-title" data-i18n="prof_card_new_record"
-                  >Nuevo Record Personal</span
-                >
-              </div>
-              <div class="card-body">
-                <div class="form-grid" style="margin-bottom: 1rem">
-                  <div class="field">
-                    <label data-i18n="prof_label_sport">Deporte</label>
-                    <select id="pr-sport">
-                      <option value="swim" data-i18n="prof_sport_swim">
-                        Natación
-                      </option>
-                      <option value="bike" data-i18n="prof_sport_bike">
-                        Ciclismo
-                      </option>
-                      <option value="run" data-i18n="prof_sport_run">
-                        Running
-                      </option>
-                      <option value="triathlon" data-i18n="prof_sport_tri">
-                        Triatlón
-                      </option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_event_distance"
-                      >Evento / Distancia</label
-                    >
-                    <input
-                      id="pr-event"
-                      type="text"
-                      placeholder="Ej: Ironman 70.3, 10K, 400m…"
-                      data-i18n-placeholder="prof_ph_event_example"
-                    />
-                  </div>
-                </div>
-                <div class="form-grid three">
-                  <div class="field">
-                    <label data-i18n="prof_label_mark_hms"
-                      >Marca (hh:mm:ss)</label
-                    ><input id="pr-time" type="text" placeholder="4:32:10" />
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_date">Fecha</label
-                    ><input
-                      id="pr-date"
-                      type="date"
-                      data-i18n-aria="prof_aria_record_date"
-                    />
-                  </div>
-                  <div class="field">
-                    <label data-i18n="prof_label_place_opt"
-                      >Lugar (opcional)</label
-                    ><input
-                      id="pr-place"
-                      type="text"
-                      placeholder="Ej: Pucón, Chile"
-                      data-i18n-placeholder="prof_ph_place_example"
-                    />
-                  </div>
-                </div>
-                <div
-                  style="
-                    display: flex;
-                    gap: 0.6rem;
-                    justify-content: flex-end;
-                    margin-top: 1rem;
-                  "
-                >
-                  <button
-                    class="btn btn-secondary btn-sm"
-                    onclick="hidePRForm()"
-                    data-i18n="prof_btn_cancel"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    class="btn btn-primary btn-sm"
-                    onclick="addPR()"
-                    data-i18n="prof_btn_save_record"
-                  >
-                    Guardar Record
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -2108,18 +1960,14 @@
 
       /* ── Tabs ─────────────────────────────────────────────────────── */
       var TAB_ORDER = ['perfil', 'conexiones', 'seguridad'];
-      // W13: rendimiento y records viven plegados dentro de "Mis datos".
-      var TAB_ALIAS = { rendimiento: 'perfil', records: 'perfil' };
+      // W13: rendimiento vive plegado dentro de "Mis datos".
+      var TAB_ALIAS = { rendimiento: 'perfil' };
       var _foldLoaded = {};
       function _loadFold(name) {
         if (name === 'rendimiento' && !_foldLoaded.r) {
           _foldLoaded.r = true;
           loadZones();
           loadBenchmarks();
-        }
-        if (name === 'records' && !_foldLoaded.k) {
-          _foldLoaded.k = true;
-          loadPRs();
         }
       }
       function switchTab(name) {
@@ -2156,7 +2004,6 @@
       document.addEventListener('toggle', function (e) {
         var t = e.target;
         if (t && t.open && t.id === 'fold-rendimiento') _loadFold('rendimiento');
-        if (t && t.open && t.id === 'fold-records') _loadFold('records');
       }, true);
 
       /* ── Profile ──────────────────────────────────────────────────── */
@@ -3093,154 +2940,6 @@
           })
           .catch(function () {
             toast(_t('addon_err', 'No se pudo iniciar la compra'), 'err');
-          });
-      }
-
-      /* ── Personal Records ─────────────────────────────────────────── */
-      function SPORT_LBL(s) {
-        var d = {
-          swim: 'prof_sport_swim',
-          bike: 'prof_sport_bike',
-          run: 'prof_sport_run',
-          triathlon: 'prof_sport_tri',
-        };
-        var fb = {
-          swim: 'Natación',
-          bike: 'Ciclismo',
-          run: 'Running',
-          triathlon: 'Triatlón',
-        };
-        return d[s] ? _t(d[s], fb[s]) : s;
-      }
-      var SPORT_CLS = {
-        swim: 'pr-swim',
-        bike: 'pr-bike',
-        run: 'pr-run',
-        triathlon: 'pr-tri',
-      };
-
-      function loadPRs() {
-        fetch(API + '/athlete/personal-records', {
-          credentials: 'include',
-          headers: authH(false),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(renderPRs)
-          .catch(function () {
-            document.getElementById('pr-tbody').innerHTML =
-              '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.82rem">' +
-              esc(_t('prof_error_loading_records', 'Error cargando records')) +
-              '</td></tr>';
-          });
-      }
-      function renderPRs(list) {
-        var tb = document.getElementById('pr-tbody');
-        if (!list || !list.length) {
-          tb.innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:2rem;font-size:.82rem">' +
-            esc(
-              _t(
-                'prof_records_empty',
-                'Sin records aún. ¡Agrega tu primer PR!',
-              ),
-            ) +
-            '</td></tr>';
-          return;
-        }
-        var delTitle = esc(_t('prof_delete', 'Eliminar'));
-        tb.innerHTML = list
-          .map(function (pr) {
-            var sc = SPORT_CLS[pr.sport] || 'pr-tri';
-            return (
-              '<tr>' +
-              '<td><span class="pr-sport ' +
-              sc +
-              '">' +
-              esc(SPORT_LBL(pr.sport) || pr.sport || '') +
-              '</span></td>' +
-              '<td style="font-weight:600">' +
-              esc(pr.event || pr.distance || '') +
-              '</td>' +
-              '<td style="color:var(--gold);font-family:\'Barlow Condensed\',sans-serif;font-size:1rem;font-weight:700">' +
-              esc(pr.time || pr.value_disp || pr.result || '') +
-              '</td>' +
-              '<td style="color:var(--muted);font-size:.76rem">' +
-              esc(pr.date || pr.achieved_at || '') +
-              '</td>' +
-              '<td style="color:var(--muted);font-size:.76rem">' +
-              esc(pr.place || pr.location || '') +
-              '</td>' +
-              '<td><button class="del-btn" onclick="deletePR(\'' +
-              esc(pr.id) +
-              '\')" title="' +
-              delTitle +
-              '">✕</button></td>' +
-              '</tr>'
-            );
-          })
-          .join('');
-      }
-      function showPRForm() {
-        document.getElementById('pr-form-card').style.display = 'block';
-      }
-      function hidePRForm() {
-        document.getElementById('pr-form-card').style.display = 'none';
-      }
-      function addPR() {
-        var body = {
-          sport: document.getElementById('pr-sport').value,
-          event: document.getElementById('pr-event').value.trim(),
-          time: document.getElementById('pr-time').value.trim(),
-          date: document.getElementById('pr-date').value,
-          place: document.getElementById('pr-place').value.trim(),
-        };
-        if (!body.event || !body.time) {
-          toast(
-            _t('prof_toast_event_mark_required', 'Completa evento y marca'),
-            'err',
-          );
-          return;
-        }
-        fetch(API + '/athlete/personal-records', {
-          method: 'POST',
-          credentials: 'include',
-          headers: authH(),
-          body: JSON.stringify(body),
-        })
-          .then(function (r) {
-            if (!r.ok) throw r;
-            return r.json();
-          })
-          .then(function () {
-            toast(_t('prof_toast_record_saved', 'Record guardado ✓'));
-            hidePRForm();
-            loadPRs();
-          })
-          .catch(function () {
-            toast(
-              _t('prof_toast_record_save_err', 'Error guardando record'),
-              'err',
-            );
-          });
-      }
-      function deletePR(id) {
-        if (
-          !confirm(_t('prof_confirm_delete_record', '¿Eliminar este record?'))
-        )
-          return;
-        fetch(API + '/athlete/personal-records/' + id, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: authH(false),
-        })
-          .then(function () {
-            toast(_t('prof_toast_record_deleted', 'Record eliminado'));
-            loadPRs();
-          })
-          .catch(function () {
-            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
           });
       }
 

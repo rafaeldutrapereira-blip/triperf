@@ -150,11 +150,13 @@ def test_perfil_plan_y_privacidad_salen_de_la_primera_pantalla():
     assert 'id="priv-details"' in cuenta
 
 
-def test_perfil_rendimiento_y_records_plegados_en_mis_datos():
+def test_perfil_rendimiento_plegado_y_sin_records_manuales():
     h = _read("athlete_profile.html")
     mis_datos = h[h.index('id="tab-perfil"'):h.index('id="tab-conexiones"')]
     assert 'id="fold-rendimiento"' in mis_datos
-    assert 'id="fold-records"' in mis_datos
+    # Sprint RECORDS: Rendimiento es la unica fuente de records
+    assert 'id="fold-records"' not in h
+    assert "personal-records" not in h
     assert 'id="be-ftp"' in mis_datos
     assert "profileGoto" in h
 
