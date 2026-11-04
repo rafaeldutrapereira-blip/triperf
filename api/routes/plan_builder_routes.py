@@ -1,31 +1,31 @@
-﻿"""
+"""
 LabX Training Plan Intelligence
 ================================
-Motor de planificaciÃ³n de entrenamiento con periodizaciÃ³n cientÃ­fica.
+Motor de planificación de entrenamiento con periodización científica.
 
 Endpoints:
-  POST   /plans                          â€” Crear plan
-  GET    /plans                          â€” Mis planes (como atleta)
-  GET    /plans/{id}                     â€” Detalle con sesiones
-  DELETE /plans/{id}                     â€” Eliminar plan
-  PATCH  /plans/{id}                     â€” Actualizar metadatos
-  POST   /plans/{id}/sessions            â€” Agregar sesiÃ³n
-  PATCH  /plans/{id}/sessions/{sid}      â€” Actualizar sesiÃ³n (drag & drop)
-  DELETE /plans/{id}/sessions/{sid}      â€” Eliminar sesiÃ³n
-  GET    /plans/{id}/ctl-projection      â€” Curva CTL proyectada semana a semana
-  GET    /plans/{id}/plan-vs-actual      â€” Plan vs Actual por semana
-  POST   /plans/{id}/ai-adjust           â€” Ajuste inteligente IA segÃºn HRV/riesgo
-  GET    /plans/templates                â€” CatÃ¡logo de templates
-  POST   /plans/templates/{id}/apply     â€” Aplicar template a atleta
+  POST   /plans                          — Crear plan
+  GET    /plans                          — Mis planes (como atleta)
+  GET    /plans/{id}                     — Detalle con sesiones
+  DELETE /plans/{id}                     — Eliminar plan
+  PATCH  /plans/{id}                     — Actualizar metadatos
+  POST   /plans/{id}/sessions            — Agregar sesión
+  PATCH  /plans/{id}/sessions/{sid}      — Actualizar sesión (drag & drop)
+  DELETE /plans/{id}/sessions/{sid}      — Eliminar sesión
+  GET    /plans/{id}/ctl-projection      — Curva CTL proyectada semana a semana
+  GET    /plans/{id}/plan-vs-actual      — Plan vs Actual por semana
+  POST   /plans/{id}/ai-adjust           — Ajuste inteligente IA según HRV/riesgo
+  GET    /plans/templates                — Catálogo de templates
+  POST   /plans/templates/{id}/apply     — Aplicar template a atleta
 
   Coach:
-  GET    /coach/plans                    â€” Planes de todos mis atletas
-  GET    /coach/plans/compliance         â€” Panel compliance todos los atletas
-  POST   /coach/plans/bulk-assign        â€” Asignar template a grupo de atletas
+  GET    /coach/plans                    — Planes de todos mis atletas
+  GET    /coach/plans/compliance         — Panel compliance todos los atletas
+  POST   /coach/plans/bulk-assign        — Asignar template a grupo de atletas
 
-PeriodizaciÃ³n:
-  Modelo ATL/CTL para proyecciÃ³n: dCTL = (ATL - CTL) / 42
-  Fases: Base (CTLâ†‘) â†’ Build (carga sostenida) â†’ Peak (max volumen) â†’ Taper (CTL baja, TSBâ†‘)
+Periodización:
+  Modelo ATL/CTL para proyección: dCTL = (ATL - CTL) / 42
+  Fases: Base (CTL↑) → Build (carga sostenida) → Peak (max volumen) → Taper (CTL baja, TSB↑)
 """
 from __future__ import annotations
 
@@ -48,21 +48,21 @@ from ..auth import get_current_user, require_role
 logger = logging.getLogger("labx.plan_builder")
 router = APIRouter(tags=["training_plans"])
 
-# â”€â”€ Deportes permitidos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Deportes permitidos ────────────────────────────────────────────────────────
 SPORTS = {"swim", "bike", "run", "strength", "brick", "rest", "other"}
 ZONES  = {"Z1", "Z2", "Z3", "Z4", "Z5", "tempo", "threshold", "vo2max", "race", "recovery"}
 
-# â”€â”€ Templates incorporados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Cada template es una lista de semanas, cada semana es lista de sesiones por dÃ­a.
-# Formato sesiÃ³n: {day:0-6, sport, duration_min, tss, zone, title, intensity}
+# ── Templates incorporados ─────────────────────────────────────────────────────
+# Cada template es una lista de semanas, cada semana es lista de sesiones por día.
+# Formato sesión: {day:0-6, sport, duration_min, tss, zone, title, intensity}
 BUILTIN_TEMPLATES = {
     "ironman_16w": {
-        "name":     "Ironman 140.6 â€” 16 Semanas",
+        "name":     "Ironman 140.6 — 16 Semanas",
         "weeks":    16,
         "goal_ctl": 95,
         "peak_week":14,
         "description": "Plan progresivo con pico en semana 14 y taper 2 semanas. "
-                        "Base aerÃ³bica primero, bloques especÃ­ficos de triatlÃ³n las Ãºltimas 8 semanas.",
+                        "Base aeróbica primero, bloques específicos de triatlón las últimas 8 semanas.",
         "phases": {
             "base":  [1,  5],
             "build": [6,  11],
@@ -78,7 +78,7 @@ BUILTIN_TEMPLATES = {
         ],
     },
     "ironman_703_12w": {
-        "name":     "Ironman 70.3 â€” 12 Semanas",
+        "name":     "Ironman 70.3 — 12 Semanas",
         "weeks":    12,
         "goal_ctl": 75,
         "peak_week":10,
@@ -91,11 +91,11 @@ BUILTIN_TEMPLATES = {
         },
     },
     "olympic_8w": {
-        "name":     "OlÃ­mpico â€” 8 Semanas",
+        "name":     "Olímpico — 8 Semanas",
         "weeks":    8,
         "goal_ctl": 60,
         "peak_week":6,
-        "description": "Plan de 8 semanas para distancia olÃ­mpica. Alta intensidad.",
+        "description": "Plan de 8 semanas para distancia olímpica. Alta intensidad.",
         "phases": {
             "base":  [1, 2],
             "build": [3, 5],
@@ -104,7 +104,7 @@ BUILTIN_TEMPLATES = {
         },
     },
     "marathon_16w": {
-        "name":     "MaratÃ³n â€” 16 Semanas",
+        "name":     "Maratón — 16 Semanas",
         "weeks":    16,
         "goal_ctl": 70,
         "peak_week":13,
@@ -118,7 +118,7 @@ BUILTIN_TEMPLATES = {
     },
 }
 
-# â”€â”€ Sesiones tipo por deporte y zona â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Sesiones tipo por deporte y zona ─────────────────────────────────────────
 
 def _default_sessions_for_week(
     week_num:  int,
@@ -130,7 +130,7 @@ def _default_sessions_for_week(
     plan_id:    str,
 ) -> list[dict]:
     """
-    Genera las sesiones por defecto de una semana segÃºn el template y la posiciÃ³n
+    Genera las sesiones por defecto de una semana según el template y la posición
     en el plan (inicio, build, pico, taper).
     Distribuye la carga para alcanzar ctl_target en el pico.
     """
@@ -145,12 +145,12 @@ def _default_sessions_for_week(
             phase = ph_name
             break
 
-    # Multiplicador de carga segÃºn fase + progresiÃ³n dentro de la fase
+    # Multiplicador de carga según fase + progresión dentro de la fase
     base_mult  = {"base": 0.55, "build": 0.78, "peak": 1.0, "taper": 0.5}.get(phase, 0.65)
     # Rampa dentro de la fase (semanas 3:1 - 3 semanas carga, 1 descanso)
     week_in_phase = (week_num - (phases.get(phase, (1,1))[0])) % 4
     if week_in_phase == 3:
-        base_mult *= 0.65   # semana de recuperaciÃ³n
+        base_mult *= 0.65   # semana de recuperación
 
     # TSS semanal objetivo basado en CTL target
     tss_weekly = ctl_target * 7 * base_mult
@@ -163,25 +163,25 @@ def _default_sessions_for_week(
     sessions = []
 
     if is_tri:
-        # DistribuciÃ³n TSS: nataciÃ³n 15%, ciclismo 55%, carrera 25%, fuerza 5%
+        # Distribución TSS: natación 15%, ciclismo 55%, carrera 25%, fuerza 5%
         tss_swim = tss_weekly * 0.15
         tss_bike = tss_weekly * 0.55
         tss_run  = tss_weekly * 0.25
         tss_str  = tss_weekly * 0.05
 
-        swim_if  = 0.72   # intensidad factor tÃ­pica nataciÃ³n Z2
+        swim_if  = 0.72   # intensidad factor típica natación Z2
         bike_if  = 0.75
         run_if   = 0.75
 
         sessions += [
             _ses(week_start, 0, "swim", round(tss_swim * 0.55), "Z2",
-                 "NataciÃ³n tÃ©cnica + Z2", week_num, plan_id, athlete_id),
+                 "Natación técnica + Z2", week_num, plan_id, athlete_id),
             _ses(week_start, 1, "bike", round(tss_bike * 0.40), "Z2",
-                 "Ciclismo aerÃ³bico base", week_num, plan_id, athlete_id),
+                 "Ciclismo aeróbico base", week_num, plan_id, athlete_id),
             _ses(week_start, 2, "run",  round(tss_run  * 0.35), "Z2",
                  "Carrera regenerativa Z2", week_num, plan_id, athlete_id),
             _ses(week_start, 3, "swim", round(tss_swim * 0.45), "threshold",
-                 "Intervalos de nataciÃ³n" if phase != "base" else "NataciÃ³n Z1-Z2",
+                 "Intervalos de natación" if phase != "base" else "Natación Z1-Z2",
                  week_num, plan_id, athlete_id),
         ]
         if phase in ("build", "peak"):
@@ -189,7 +189,7 @@ def _default_sessions_for_week(
                 _ses(week_start, 4, "bike", round(tss_bike * 0.30), "threshold",
                      "Intervalos en bici FTP", week_num, plan_id, athlete_id)
             )
-        # SÃ¡bado: ciclismo largo
+        # Sábado: ciclismo largo
         sessions.append(
             _ses(week_start, 5, "bike", round(tss_bike * 0.30),
                  "Z2" if phase == "base" else "tempo",
@@ -208,11 +208,11 @@ def _default_sessions_for_week(
             )
 
     elif is_run:
-        # DistribuciÃ³n: 4 sesiones carrera, 1 fuerza
+        # Distribución: 4 sesiones carrera, 1 fuerza
         tss_r = tss_weekly * 0.95
         sessions += [
             _ses(week_start, 0, "run", round(tss_r * 0.20), "Z2",
-                 "Carrera fÃ¡cil recuperaciÃ³n", week_num, plan_id, athlete_id),
+                 "Carrera fácil recuperación", week_num, plan_id, athlete_id),
             _ses(week_start, 2, "run", round(tss_r * 0.30),
                  "threshold" if phase != "base" else "Z2",
                  "Tempo o intervalos", week_num, plan_id, athlete_id),
@@ -224,7 +224,7 @@ def _default_sessions_for_week(
                  "Carrera larga dominical", week_num, plan_id, athlete_id),
         ]
 
-    # En taper: simplificar â€” solo 3 sesiones de calidad
+    # En taper: simplificar — solo 3 sesiones de calidad
     if phase == "taper":
         sessions = [s for s in sessions if s.get("tss_planned", 0) >= 20][:3]
 
@@ -242,10 +242,10 @@ def _ses(
     plan_id:     str,
     athlete_id:  str,
 ) -> dict:
-    """Construye el dict de una sesiÃ³n planificada."""
+    """Construye el dict de una sesión planificada."""
     d = week_start + timedelta(days=day_offset)
-    # DuraciÃ³n estimada en min desde TSS (TSS = (dur/3600) Ã— IFÂ² Ã— FTPÂ² / FTPÂ²  â†’ aprox dur=TSS*60/IFÂ²/100)
-    # Para Z2 IF~0.72, threshold IF~0.90 â†’ dur aprox = TSS/0.72Â²*60 â‰ˆ TSS*115
+    # Duración estimada en min desde TSS (TSS = (dur/3600) × IF² × FTP² / FTP²  → aprox dur=TSS*60/IF²/100)
+    # Para Z2 IF~0.72, threshold IF~0.90 → dur aprox = TSS/0.72²*60 ≈ TSS*115
     if_map   = {"Z1":0.65,"Z2":0.72,"Z3":0.80,"threshold":0.88,"tempo":0.84,
                 "vo2max":0.95,"race":0.95,"recovery":0.60}
     if_val   = if_map.get(zone, 0.75)
@@ -269,7 +269,7 @@ def _ses(
     }
 
 
-# â”€â”€ ProyecciÃ³n CTL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Proyección CTL ────────────────────────────────────────────────────────────
 
 def _project_ctl(
     ctl_now:   float,
@@ -278,7 +278,7 @@ def _project_ctl(
     """
     Proyecta el CTL semana a semana dado el TSS planificado por semana.
     Usa el modelo exponencial de Banister: CTL(t+1) = CTL(t) + (ATL_daily - CTL(t)) / 42
-    AproximaciÃ³n: CTL semanal += (TSS_sem/7 - CTL) / 42 Ã— 7
+    Aproximación: CTL semanal += (TSS_sem/7 - CTL) / 42 × 7
     """
     ctl   = ctl_now
     curve = [ctl]
@@ -290,7 +290,7 @@ def _project_ctl(
     return curve
 
 
-# â”€â”€ Serializers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Serializers ───────────────────────────────────────────────────────────────
 
 def _serialize_session(s: PlanSession) -> dict:
     return {
@@ -344,7 +344,7 @@ def _serialize_plan(p: TrainingPlan, include_sessions: bool = False) -> dict:
         "created_at":  p.created_at.isoformat() if p.created_at else None,
     }
     if include_sessions:
-        # Agrupar sesiones por semana y dÃ­a
+        # Agrupar sesiones por semana y día
         weeks: dict[int, dict[int, list]] = {}
         for s in p.sessions:
             wn = s.week_number or 1
@@ -359,13 +359,13 @@ def _serialize_plan(p: TrainingPlan, include_sessions: bool = False) -> dict:
     return base
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Endpoints â€” Atleta
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# Endpoints — Atleta
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/plans/templates")
 def list_templates(me: User = Depends(get_current_user)):
-    """CatÃ¡logo de templates de plan disponibles."""
+    """Catálogo de templates de plan disponibles."""
     result = [{"id": k, **{kk: vv for kk, vv in v.items() if kk not in ("week_pattern", "phases")}}
               for k, v in BUILTIN_TEMPLATES.items()]
     return result
@@ -417,7 +417,7 @@ def ctl_projection(
 ):
     """
     Proyecta la curva de CTL semana a semana basada en el TSS planificado.
-    Ãštil para el overlay SVG del plan builder.
+    Útil para el overlay SVG del plan builder.
     """
     plan = db.query(TrainingPlan).filter(TrainingPlan.id == plan_id).first()
     if not plan:
@@ -530,9 +530,9 @@ def plan_vs_actual(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Endpoints â€” GestiÃ³n de sesiones
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# Endpoints — Gestión de sesiones
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/plans/{plan_id}/sessions")
 def add_session(
@@ -542,20 +542,20 @@ def add_session(
     me:  User    = Depends(get_current_user),
 ):
     """
-    Agrega una sesiÃ³n al plan.
+    Agrega una sesión al plan.
     Puede ser llamado por el coach (plan de otro atleta) o por el atleta mismo.
     """
     plan = _get_plan_with_access(plan_id, me, db)
 
     sport = (body.get("sport") or "other").lower()
     if sport not in SPORTS:
-        raise HTTPException(422, f"Deporte invÃ¡lido. Opciones: {sorted(SPORTS)}")
+        raise HTTPException(422, f"Deporte inválido. Opciones: {sorted(SPORTS)}")
 
     date_iso = (body.get("date_iso") or date.today().isoformat()).strip()
     try:
         d = date.fromisoformat(date_iso)
     except ValueError:
-        raise HTTPException(422, "date_iso invÃ¡lido")
+        raise HTTPException(422, "date_iso inválido")
 
     week_num = body.get("week_number")
     if week_num is None:
@@ -593,8 +593,8 @@ def update_session(
     me:  User    = Depends(get_current_user),
 ):
     """
-    Actualiza una sesiÃ³n â€” soporta drag & drop (nuevo date_iso),
-    actualizaciÃ³n de resultado real y notas del coach/atleta.
+    Actualiza una sesión — soporta drag & drop (nuevo date_iso),
+    actualización de resultado real y notas del coach/atleta.
     """
     _get_plan_with_access(plan_id, me, db)
     s = db.query(PlanSession).filter(
@@ -602,21 +602,21 @@ def update_session(
         PlanSession.plan_id == plan_id,
     ).first()
     if not s:
-        raise HTTPException(404, "SesiÃ³n no encontrada")
+        raise HTTPException(404, "Sesión no encontrada")
 
-    # Drag & drop â€” cambio de fecha
+    # Drag & drop — cambio de fecha
     if "date_iso" in body:
         try:
             new_date = date.fromisoformat(body["date_iso"])
         except ValueError:
-            raise HTTPException(422, "date_iso invÃ¡lido")
+            raise HTTPException(422, "date_iso inválido")
         plan = db.query(TrainingPlan).filter(TrainingPlan.id == plan_id).first()
         s.date_iso    = new_date.isoformat()
         s.day_of_week = new_date.weekday()
         start = date.fromisoformat(plan.start_date)
         s.week_number = max(1, (new_date - start).days // 7 + 1)
 
-    # Metadatos de la sesiÃ³n
+    # Metadatos de la sesión
     for field in ["sport","title","description","duration_min","distance_km",
                   "tss_planned","zone","intensity","coach_note","order_in_day"]:
         if field in body:
@@ -657,15 +657,15 @@ def delete_session(
         PlanSession.plan_id == plan_id,
     ).first()
     if not s:
-        raise HTTPException(404, "SesiÃ³n no encontrada")
+        raise HTTPException(404, "Sesión no encontrada")
     db.delete(s)
     db.commit()
     return {"ok": True}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Endpoints â€” Coach
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# Endpoints — Coach
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/coach/plans")
 def coach_create_plan(
@@ -681,7 +681,7 @@ def coach_create_plan(
       name:         str (requerido)
       start_date:   YYYY-MM-DD (requerido)
       weeks:        int (default: 16)
-      template_id:  str (opcional â€” genera sesiones automÃ¡ticamente)
+      template_id:  str (opcional — genera sesiones automáticamente)
       goal_ctl:     float (opcional)
       peak_week:    int (opcional)
       race_id:      str (opcional)
@@ -701,7 +701,7 @@ def coach_create_plan(
     try:
         start = date.fromisoformat(start_date)
     except ValueError:
-        raise HTTPException(422, "start_date invÃ¡lido")
+        raise HTTPException(422, "start_date inválido")
 
     weeks     = int(body.get("weeks", 16))
     end_date  = (start + timedelta(weeks=weeks)).isoformat()
@@ -733,7 +733,7 @@ def coach_create_plan(
     db.add(plan)
     db.flush()  # para obtener plan.id antes de generar sesiones
 
-    # Si viene con template â†’ generar sesiones por defecto
+    # Si viene con template → generar sesiones por defecto
     sessions_created = 0
     if tpl_id and tpl_id in BUILTIN_TEMPLATES and goal_ctl:
         for wn in range(1, weeks + 1):
@@ -823,7 +823,7 @@ def coach_compliance_panel(
         except Exception:
             continue
 
-        # TSS planificado vs real Ãºltimas 4 semanas
+        # TSS planificado vs real últimas 4 semanas
         weekly_compliance = []
         for offset in range(3, -1, -1):
             wn    = current_week_num - offset
@@ -877,7 +877,7 @@ def apply_template(
     me:  User    = Depends(require_role("coach","admin")),
 ):
     """
-    Aplica un template builtin a uno o mÃ¡s atletas del coach.
+    Aplica un template builtin a uno o más atletas del coach.
     Body: {athlete_ids: [str], start_date: YYYY-MM-DD, name?: str}
     """
     if template_id not in BUILTIN_TEMPLATES:
@@ -927,9 +927,9 @@ def apply_template(
     return {"ok": True, "plans_created": len(results), "results": results}
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Endpoint â€” AI Adjust (B-01 + B-15 integrado)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# Endpoint — AI Adjust (B-01 + B-15 integrado)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/plans/{plan_id}/ai-adjust")
 def ai_adjust_plan(
@@ -938,10 +938,10 @@ def ai_adjust_plan(
     me:  User    = Depends(get_current_user),
 ):
     """
-    Ajuste inteligente del plan para los prÃ³ximos 7 dÃ­as.
-    Si el riesgo de lesiÃ³n es alto o el HRV estÃ¡ bajo:
-    - Intercambia sesiones duras por fÃ¡ciles
-    - Reduce TSS de sesiones en dÃ­as de bajo readiness
+    Ajuste inteligente del plan para los próximos 7 días.
+    Según el riesgo de lesión (compute_injury_risk; no lee readiness ni HRV):
+    - Intercambia sesiones duras por fáciles
+    - Reduce el TSS (-20%) de sesiones con riesgo moderado
     - Genera nota de coach explicando el ajuste
     """
     import os
@@ -951,7 +951,7 @@ def ai_adjust_plan(
     from ..services.injury_risk_service import compute_injury_risk
     risk = compute_injury_risk(plan.athlete_id, db)
 
-    # Sesiones de los prÃ³ximos 7 dÃ­as
+    # Sesiones de los próximos 7 días
     today  = date.today()
     week_end = (today + timedelta(days=7)).isoformat()
     upcoming = [s for s in plan.sessions
@@ -973,12 +973,12 @@ def ai_adjust_plan(
             s.zone         = "Z1" if s.zone in ("threshold","vo2max","race") else "Z2"
             s.tss_planned  = round((s.tss_planned or 50) * 0.60)
             s.was_adjusted = True
-            s.adjust_reason= f"Riesgo lesiÃ³n {risk_score:.0f}/100 â†’ intensidad reducida"
-            adj = {"session_id": s.id, "date": s.date_iso, "change": "intensidad reducida (riesgo lesiÃ³n alto)"}
+            s.adjust_reason= f"Riesgo lesión {risk_score:.0f}/100 → intensidad reducida"
+            adj = {"session_id": s.id, "date": s.date_iso, "change": "intensidad reducida (riesgo lesión alto)"}
         elif risk_level == "moderate" and s.intensity == "hard" and risk_score > 45:
             s.tss_planned  = round((s.tss_planned or 50) * 0.80)
             s.was_adjusted = True
-            s.adjust_reason= f"Riesgo moderado {risk_score:.0f}/100 â†’ TSS -20%"
+            s.adjust_reason= f"Riesgo moderado {risk_score:.0f}/100 → TSS -20%"
             adj = {"session_id": s.id, "date": s.date_iso, "change": "TSS reducido 20% (riesgo moderado)"}
         if adj:
             adjustments.append(adj)
@@ -998,10 +998,10 @@ def ai_adjust_plan(
                     model="claude-haiku-4-5-20251001",
                     max_tokens=200,
                     messages=[{"role":"user","content":
-                        f"El atleta tiene riesgo de lesiÃ³n {risk_score:.0f}/100 ({risk_level}). "
+                        f"El atleta tiene riesgo de lesión {risk_score:.0f}/100 ({risk_level}). "
                         f"Se ajustaron {len(adjustments)} sesiones esta semana. "
                         f"Alertas: {[a['msg'] for a in risk.get('alerts', [])[:2]]}. "
-                        "Escribe una nota corta de 2-3 oraciones para el atleta explicando el ajuste. En espaÃ±ol."}]
+                        "Escribe una nota corta de 2-3 oraciones para el atleta explicando el ajuste. En español."}]
                 )
                 note = resp.content[0].text.strip() if resp.content else ""
             except Exception:
@@ -1017,13 +1017,13 @@ def ai_adjust_plan(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # Helper de acceso
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# ATHLETE FEEDBACK (Sprint 10 â€” B-22 RPE)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# ATHLETE FEEDBACK (Sprint 10 — B-22 RPE)
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _FeedbackIn(BaseModel):
     rpe:              Optional[int]  = None   # 1-10
@@ -1041,8 +1041,8 @@ def save_athlete_feedback(
     me:         User    = Depends(get_current_user),
 ):
     """
-    El atleta registra su percepciÃ³n de esfuerzo (RPE), estado de Ã¡nimo
-    y nota personal sobre la sesiÃ³n. Solo el propio atleta puede hacer esto.
+    El atleta registra su percepción de esfuerzo (RPE), estado de ánimo
+    y nota personal sobre la sesión. Solo el propio atleta puede hacer esto.
     """
     sess = db.query(PlanSession).filter(
         PlanSession.id         == session_id,
@@ -1050,7 +1050,7 @@ def save_athlete_feedback(
         PlanSession.athlete_id == me.id,
     ).first()
     if not sess:
-        raise HTTPException(404, "SesiÃ³n no encontrada")
+        raise HTTPException(404, "Sesión no encontrada")
 
     if body.rpe is not None:
         if not (1 <= body.rpe <= 10):
@@ -1059,12 +1059,12 @@ def save_athlete_feedback(
     if body.perceived_effort is not None:
         valid_pe = {"easy", "moderate", "hard", "very_hard"}
         if body.perceived_effort not in valid_pe:
-            raise HTTPException(400, f"perceived_effort invÃ¡lido. Valores: {valid_pe}")
+            raise HTTPException(400, f"perceived_effort inválido. Valores: {valid_pe}")
         sess.perceived_effort = body.perceived_effort
     if body.mood is not None:
         valid_moods = {"great", "good", "neutral", "tired", "bad"}
         if body.mood not in valid_moods:
-            raise HTTPException(400, f"mood invÃ¡lido. Valores: {valid_moods}")
+            raise HTTPException(400, f"mood inválido. Valores: {valid_moods}")
         sess.mood = body.mood
     if body.athlete_note is not None:
         sess.athlete_note = body.athlete_note.strip()[:1000]
@@ -1083,15 +1083,15 @@ def save_athlete_feedback(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# PLAN CALENDAR (Sprint 10 â€” Coach Calendar View)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# PLAN CALENDAR (Sprint 10 — Coach Calendar View)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/plans/{plan_id}/calendar")
 def get_plan_calendar(
     plan_id:    str,
-    year:       Optional[int] = Query(None, description="AÃ±o a mostrar (default: aÃ±o del plan)"),
-    month:      Optional[int] = Query(None, ge=1, le=12, description="Mes especÃ­fico (1-12), si no: plan completo"),
+    year:       Optional[int] = Query(None, description="Año a mostrar (default: año del plan)"),
+    month:      Optional[int] = Query(None, ge=1, le=12, description="Mes específico (1-12), si no: plan completo"),
     db:         Session = Depends(get_db),
     me:         User    = Depends(get_current_user),
 ):
@@ -1099,10 +1099,10 @@ def get_plan_calendar(
     Vista de calendario del plan: retorna sesiones organizadas por fecha ISO.
 
     El coach ve RPE y notas del atleta; el atleta solo ve las suyas.
-    Para el frontend: cada dÃ­a â†’ lista de sesiones de ese dÃ­a con pill data.
+    Para el frontend: cada día → lista de sesiones de ese día con pill data.
 
     Retorna:
-      calendar:   dict[date_iso] â†’ list[session_pill]
+      calendar:   dict[date_iso] → list[session_pill]
       weeks:      list[{week_num, dates, tss_planned, tss_actual, compliance_pct}]
       plan_meta:  {name, start_date, end_date, weeks, phase}
       rpe_summary: promedio RPE por semana
@@ -1122,10 +1122,10 @@ def get_plan_calendar(
         month_prefix = f"{year:04d}-{month:02d}"
         all_sessions = [s for s in all_sessions if s.date_iso.startswith(month_prefix)]
     elif month:
-        # Mes en cualquier aÃ±o del plan
+        # Mes en cualquier año del plan
         all_sessions = [s for s in all_sessions if s.date_iso[5:7] == f"{month:02d}"]
 
-    # Construir dict calendario dia â†’ [sesiones]
+    # Construir dict calendario dia → [sesiones]
     calendar: dict[str, list] = {}
     for sess in all_sessions:
         d = sess.date_iso
@@ -1156,7 +1156,7 @@ def get_plan_calendar(
         }
         calendar[d].append(pill)
 
-    # Agrupar por semana (week_number â†’ stats)
+    # Agrupar por semana (week_number → stats)
     weeks_map: dict[int, dict] = {}
     for sess in all_sessions:
         wn = sess.week_number or 0
@@ -1214,9 +1214,9 @@ def get_plan_calendar(
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # COACH RPE DASHBOARD
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/coach/plans/rpe-summary")
 def get_coach_rpe_summary(
@@ -1225,8 +1225,8 @@ def get_coach_rpe_summary(
     me:  User    = Depends(get_current_user),
 ):
     """
-    Dashboard de RPE del coach: resumen de percepciÃ³n de esfuerzo de todos
-    sus atletas en los Ãºltimos N dÃ­as. Detecta sobre-esfuerzo sistemÃ¡tico.
+    Dashboard de RPE del coach: resumen de percepción de esfuerzo de todos
+    sus atletas en los últimos N días. Detecta sobre-esfuerzo sistemático.
     """
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
 
@@ -1256,7 +1256,7 @@ def get_coach_rpe_summary(
         high_rpe     = sum(1 for r in rpe_vals if r >= 8)
         last_session = sessions[0]
 
-        # Detectar patrÃ³n de sobre-esfuerzo: >50% sesiones con RPE>=8
+        # Detectar patrón de sobre-esfuerzo: >50% sesiones con RPE>=8
         overload_flag = high_rpe / max(len(rpe_vals), 1) >= 0.5
 
         # Compliance reciente
@@ -1283,7 +1283,7 @@ def get_coach_rpe_summary(
             "compliance_pct": round(completed / max(total_planned, 1) * 100),
             "last_mood":      last_session.mood,
             "alert": (
-                "âš ï¸ Atleta reporta sobrecarga sistemÃ¡tica"
+                "⚠️ Atleta reporta sobrecarga sistemática"
                 if overload_flag else None
             ),
         })
@@ -1292,7 +1292,7 @@ def get_coach_rpe_summary(
     summary.sort(key=lambda x: (not x["overload_flag"], -(x["rpe_avg"] or 0)))
 
     return {
-        "period":    f"Ãºltimos {days_back} dÃ­as",
+        "period":    f"últimos {days_back} días",
         "athletes":  summary,
         "n_plans":   len(summary),
         "n_alerts":  sum(1 for a in summary if a["overload_flag"]),
@@ -1309,9 +1309,9 @@ def _get_plan_with_access(plan_id: str, me: User, db: Session) -> TrainingPlan:
     return plan
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # Plan Template Library (Sprint 13)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 class _SaveTemplateIn(BaseModel):
     template_name: str
@@ -1424,7 +1424,7 @@ def list_plan_templates(
 
 class _CreateFromTemplateIn(BaseModel):
     athlete_id:  str
-    start_date:  str   # YYYY-MM-DD â€” primer lunes del plan
+    start_date:  str   # YYYY-MM-DD — primer lunes del plan
     plan_name:   Optional[str] = None
 
 
@@ -1457,7 +1457,7 @@ def create_plan_from_template(
     try:
         start = _d.fromisoformat(body.start_date)
     except ValueError:
-        raise HTTPException(400, "start_date invÃ¡lido, usar YYYY-MM-DD")
+        raise HTTPException(400, "start_date inválido, usar YYYY-MM-DD")
 
     end = start + _td(weeks=tmpl.weeks) - _td(days=1)
 
@@ -1481,7 +1481,7 @@ def create_plan_from_template(
     db.flush()
 
     # Reajustar fechas de sesiones
-    # Las sesiones del template usan dÃ­a-offset basado en week_number + day_of_week
+    # Las sesiones del template usan día-offset basado en week_number + day_of_week
     n_created = 0
     for ts in sorted(tmpl.sessions, key=lambda s: (s.week_number or 0, s.day_of_week or 0)):
         wk  = max(0, (ts.week_number or 1) - 1)

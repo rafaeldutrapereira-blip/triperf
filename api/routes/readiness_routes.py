@@ -79,9 +79,9 @@ def get_daily_readiness(
             for d in report.dimensions
         ],
         "raw_inputs": {
-            "recovery_score": round(recovery) if recovery else None,
-            "mental_score":   round(mental)   if mental   else None,
-            "trs":            round(trs)       if trs      else None,
+            "recovery_score": round(recovery) if recovery is not None else None,
+            "mental_score":   round(mental)   if mental   is not None else None,
+            "trs":            round(trs)       if trs      is not None else None,
             "tsb":            round(tsb, 1)    if tsb is not None else None,
             "form_score":     round(form_score) if form_score is not None else None,
         },
