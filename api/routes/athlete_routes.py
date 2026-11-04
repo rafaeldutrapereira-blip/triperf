@@ -115,20 +115,17 @@ def _verify_coach_access(coach: User, athlete_id: str, db: Session) -> None:
 def my_plan(
     start: Optional[str] = Query(None, description="YYYY-MM-DD"),
     end:   Optional[str] = Query(None, description="YYYY-MM-DD"),
+    include_garmin: bool = Query(False, description="W17: suma el plan descargado de Garmin"),
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user)
 ):
-    """Entrenos asignados al atleta autenticado, con filtro de fechas opcional."""
+    """Entrenos asignados al atleta autenticado, con filtro de fechas opcional.
+    Con include_garmin=1 suma ademas el plan de Garmin (source 'garmin'), sin duplicados."""
     if _free_applies(me):
         from datetime import date as _d
         start, end = _free_clip_range(start, end, _d.today())
-    q = db.query(AssignedWorkout).filter(
-        AssignedWorkout.athlete_id == me.id,
-        AssignedWorkout.deleted_at.is_(None),
-    )
-    if start: q = q.filter(AssignedWorkout.date_iso >= start)
-    if end:   q = q.filter(AssignedWorkout.date_iso <= end)
-    return q.order_by(AssignedWorkout.date_iso).all()
+    from ..services.plan_dia import build_plan
+    return build_plan(db, me.id, start, end, include_garmin=include_garmin)
 
 
 @router.post("/log", response_model=WorkoutLogOut, status_code=201)

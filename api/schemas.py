@@ -233,6 +233,9 @@ class AssignedWorkoutOut(BaseModel):
     garmin_push_status: Optional[str] = None
     garmin_push_error:  Optional[str] = None
     garmin_push_at:     Optional[datetime] = None
+    # W17: origen de la sesion en el plan del dia ('labx' | 'garmin') y hecha con evidencia real.
+    source:             str = "labx"
+    done:               Optional[bool] = None
 
     model_config = {"from_attributes": True}
 

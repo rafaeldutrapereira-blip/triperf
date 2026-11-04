@@ -3629,7 +3629,8 @@
         function coachToday(list) {
           return (list || []).filter(function (a) { return a && a.date_iso === diso; }).map(function (a) {
             var t = a.template || {};
-            return { src: 'coach', sport: t.sport, name: t.nombre || '', dur: t.dur_min, dist: t.dist_km, done: !!(a.logs && a.logs.length) };
+            var g = a.source === 'garmin';
+            return { src: g ? 'garmin' : 'coach', sport: t.sport, name: t.nombre || '', dur: t.dur_min, dist: t.dist_km, done: g ? a.done === true : !!(a.logs && a.logs.length) };
           });
         }
         function renderToday(items) {
@@ -3661,7 +3662,7 @@
             }
             var sr = document.createElement('span');
             sr.className = 'w13-item-src';
-            sr.textContent = it.src === 'coach' ? tr('dash_w13_src_coach', 'Coach') : tr('dash_w13_src_own', 'Mi plan');
+            sr.textContent = it.src === 'coach' ? tr('dash_w13_src_coach', 'Coach') : it.src === 'garmin' ? tr('dash_w13_src_garmin', 'Garmin') : tr('dash_w13_src_own', 'Mi plan');
             row.appendChild(sr);
             if (it.done) {
               var dn = document.createElement('span');
@@ -3675,7 +3676,7 @@
         // Mi Plan propio se ve de inmediato; el plan del coach se suma al llegar.
         renderToday(ownToday());
         if (tok()) {
-          getJSON('/athlete/plan?start=' + diso + '&end=' + diso).then(function (assigns) {
+          getJSON('/athlete/plan?start=' + diso + '&end=' + diso + '&include_garmin=1').then(function (assigns) {
             renderToday(coachToday(assigns).concat(ownToday()));
           });
         }
