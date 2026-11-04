@@ -89,10 +89,17 @@ def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
     mas = mas[: mas.index("<!-- /screens -->")]
     for dest in ("progress", "raceday", "profile"):
         assert f"goScreen('screen-{dest}')" in mas
-    # P1: Mental y Gear salieron de la app; Mi equipo es un enlace a la web
-    # (puente P0, destino gear) y Mental ya no tiene fila.
+    # P1/C2: Mental y Gear salieron de la app y Mas ya no tiene fila de
+    # Equipo; Mas tiene exactamente 5 filas (4 destinos + Salir) y la
+    # tarjeta de proxima carrera.
     assert "screen-mental" not in mas and "screen-gear" not in mas
-    assert "onclick=\"abrirEnWeb('gear')\"" in mas
+    assert "abrirEnWeb" not in mas and "mas-item-equipo" not in mas
+    assert mas.count('<button class="mas-row') == 5
+    assert 'id="mas-next-race"' in mas
+    # C2: Perfil sin Salir duplicado y con enlace a la web
+    prof = APP[APP.index('id="screen-profile"'):APP.index('id="screen-raceday"')]
+    assert "doLogout" not in prof
+    assert "abrirEnWeb('estado')" in prof and "pf-sex" not in prof
     # P2: Recovery ya no es fila de Más (se entra desde el semaforo de Hoy)
     assert "screen-wellness" not in mas
     assert "showNotifications()" in mas and "doLogout()" in mas
