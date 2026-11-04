@@ -3964,6 +3964,7 @@
         var acts = window.KL_DATA.activities;
         // Group by ISO week, compute kcal per sport
         var weeks = {};
+        var usable = 0;
         acts.forEach(function (a) {
           if (!a.date_iso) return;
           var p = a.date_iso.split('-');
@@ -3985,17 +3986,27 @@
           if (!weeks[wk]) weeks[wk] = { swim: 0, bike: 0, run: 0 };
           var sp = (a.sport || '').toLowerCase();
           var kcal = 0;
-          if (sp === 'bike')
-            kcal = kCalBike(
-              a.avg_power || ATH.ftp * 0.72,
-              (a.dur_min || 0) * 60,
-            );
-          else if (sp === 'run') kcal = kCalRun(ATH.weight, a.dist_km || 0);
-          else if (sp === 'swim') kcal = kCalSwim(ATH.weight, a.dur_min || 0);
+          // CQ2: kcal del dispositivo; si no hay, el perfil SOLO si esta completo
+          // (nutProfileReady). Nunca las semillas ATH (62 kg / 235 W).
+          var devKcal = Number(a.calories);
+          if (devKcal > 0) {
+            kcal = devKcal;
+            usable++;
+          } else if (nutProfileReady()) {
+            if (sp === 'bike')
+              kcal = kCalBike(
+                a.avg_power || ATH.ftp * 0.72,
+                (a.dur_min || 0) * 60,
+              );
+            else if (sp === 'run') kcal = kCalRun(ATH.weight, a.dist_km || 0);
+            else if (sp === 'swim')
+              kcal = kCalSwim(ATH.weight, a.dur_min || 0);
+            if (kcal > 0) usable++;
+          }
           if (sp in weeks[wk]) weeks[wk][sp] += kcal;
         });
         var sortedWks = Object.keys(weeks).sort().slice(-8);
-        if (!sortedWks.length) {
+        if (!usable || !sortedWks.length) {
           emptyEl.textContent = _t('nutr_pl_139', 'Sin datos suficientes.');
           return;
         }
@@ -4360,7 +4371,7 @@
           .catch(function () {});
       })();
     </script>
-    <script src="nav.js?v=5"></script>
+    <script src="nav.js?v=6"></script>
     <script src="footer.js"></script>
     <script src="dash-header.js"></script>
     <script src="lx-upgrade.js"></script>

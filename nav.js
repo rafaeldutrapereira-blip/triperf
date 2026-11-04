@@ -104,12 +104,6 @@
     '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">' +
     '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
-  var _SYNC_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">' +
-    '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>' +
-    '<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>' +
-    '<path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
-
   var _LOGOUT_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">' +
     '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>' +
@@ -223,21 +217,6 @@
     /* ── Overlay ─── */
     if(overlay) overlay.onclick = sbClose;
   }
-
-  /* ═══════════════════════════════════════════════════════════════
-     5.  SYNC GARMIN (privado, expuesto vía window para compatibilidad)
-  ═══════════════════════════════════════════════════════════════ */
-  function _syncGarmin(btn){
-    var tok = localStorage.getItem('lx_co_token');
-    if(!tok){ lxToast && lxToast.warn(_nt('shell_session_unavailable','Sesión no disponible')); return; }
-    if(btn){ btn.disabled=true; btn.classList.add('spin'); }
-    var API = (window.location.protocol==='file:' ? 'http://localhost:8000/api' : window.location.origin+'/api');
-    fetch(API+'/personal/sync', { method:'POST', headers:{Authorization:'Bearer '+tok} })
-      .then(function(r){ return r.json(); })
-      .then(function(){ if(btn){ btn.textContent=_nt('shell_sync_done','Sync ✓'); setTimeout(function(){ btn.innerHTML=_SYNC_SVG+_nt('shell_sync_garmin','Sync Garmin'); btn.disabled=false; btn.classList.remove('spin'); },4000); } })
-      .catch(function(){ if(btn){ btn.textContent=_nt('shell_sync_error','Error'); setTimeout(function(){ btn.innerHTML=_SYNC_SVG+_nt('shell_sync_garmin','Sync Garmin'); btn.disabled=false; btn.classList.remove('spin'); },2000); } });
-  }
-  window.syncGarmin = _syncGarmin; /* compatibilidad con onclicks existentes */
 
   /* ═══════════════════════════════════════════════════════════════
      6.  DOM READY — punto de entrada principal

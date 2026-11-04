@@ -1882,42 +1882,6 @@
       </div>
     </div>
 
-    <!-- MODAL: Garmin Sync -->
-    <div
-      class="modal-ov"
-      id="modal-garmin"
-      onclick="closeModalOv(event, 'modal-garmin')"
-    >
-      <div class="modal" style="max-width: 560px">
-        <div class="modal-head">
-          <div class="modal-title" data-i18n="tp_garmin_sync_title">
-            Garmin Sync — Sesiones Planificadas
-          </div>
-          <button class="modal-close" onclick="closeModal('modal-garmin')">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body" id="garmin-body"></div>
-        <div class="modal-foot">
-          <button
-            class="btn btn-g btn-sm"
-            onclick="closeModal('modal-garmin')"
-            data-i18n="btn_close"
-          >
-            Cerrar
-          </button>
-          <button
-            class="btn btn-p btn-sm"
-            id="garmin-send-btn"
-            onclick="fakeSync()"
-            data-i18n="btn_send_garmin"
-          >
-            Enviar a Garmin Connect
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- MODAL: Registrar Resultado + RPE -->
     <div
       class="modal-ov"
@@ -2066,20 +2030,6 @@
       <div class="t-msg" id="t-rs-msg" data-i18n="tp_rs_moved">
         Sesión movida
       </div>
-      <button class="t-sync-btn" onclick="syncRescheduled()">
-        <span
-          style="
-            display: inline-block;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: var(--green);
-            vertical-align: middle;
-            margin-right: 0.28rem;
-          "
-        ></span>
-        Sync Garmin
-      </button>
       <button class="t-x" onclick="hideRsToast()" title="Cerrar">✕</button>
     </div>
 
@@ -4446,117 +4396,6 @@
         };
 
         // ──────────────────────────────────────
-        // MODAL: Garmin Sync
-        // ──────────────────────────────────────
-        window.showGarminModal = function () {
-          var range = currentRange();
-          var planned = getPlanned().filter(function (p) {
-            return p.date_iso >= range.start && p.date_iso <= range.end;
-          });
-          var body = document.getElementById('garmin-body');
-          var sendBtn = document.getElementById('garmin-send-btn');
-
-          if (!planned.length) {
-            body.innerHTML =
-              '<p style="color:var(--muted);font-size:.83rem;text-align:center;padding:2rem 0">' +
-              _t(
-                'tp_no_planned_period',
-                'No hay sesiones planificadas en el período seleccionado.',
-              ) +
-              '</p>';
-            sendBtn.style.display = 'none';
-          } else {
-            sendBtn.style.display = '';
-            var rescheduled = planned.filter(function (s) {
-              return s.rescheduled_from;
-            });
-            var sportMap = {
-              swim: 'LAP_SWIMMING',
-              bike: 'CYCLING',
-              run: 'RUNNING',
-              str: 'STRENGTH_TRAINING',
-            };
-            var garminPayload = planned.map(function (s) {
-              var obj = {
-                workoutName: s.name,
-                sport: sportMap[s.sport] || 'OTHER',
-                estimatedDurationInSecs: (s.dur_min || 0) * 60,
-                estimatedDistanceInMeters: s.dist_km
-                  ? Math.round(s.dist_km * 1000)
-                  : undefined,
-                scheduledDate: s.date_iso,
-                source: 'LabX',
-                notes: s.notes || undefined,
-              };
-              if (s.rescheduled_from) obj._rescheduledFrom = s.rescheduled_from;
-              return obj;
-            });
-
-            var rsHtml = '';
-            if (rescheduled.length) {
-              rsHtml =
-                '<div style="background:rgba(255,101,53,.07);border:1px solid rgba(255,101,53,.28);border-radius:8px;padding:.75rem 1rem;margin-bottom:.85rem">' +
-                '<div style="font-family:\'Oswald\',sans-serif;font-size:.67rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:.5rem">Reprogramadas</div>' +
-                '<div style="display:flex;flex-direction:column;gap:.35rem">' +
-                rescheduled
-                  .map(function (s) {
-                    var sp = SPORT[s.sport] || { icon: '🏅' };
-                    return (
-                      '<div style="font-size:.78rem;display:flex;align-items:center;gap:.5rem">' +
-                      '<span>' +
-                      sp.icon +
-                      '</span>' +
-                      '<b style="color:var(--text)">' +
-                      s.name +
-                      '</b>' +
-                      '<span style="color:var(--dim);font-size:.7rem;text-decoration:line-through">' +
-                      fmtDateLabel(s.rescheduled_from) +
-                      '</span>' +
-                      '<span style="color:var(--orange)">→ ' +
-                      fmtDateLabel(s.date_iso) +
-                      '</span>' +
-                      '</div>'
-                    );
-                  })
-                  .join('') +
-                '</div></div>';
-            }
-
-            body.innerHTML =
-              rsHtml +
-              '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.85rem">' +
-              planned.length +
-              ' ' +
-              _t(
-                'tp_garmin_ready',
-                'sesión(es) lista(s) para enviar a Garmin Connect:',
-              ) +
-              '</p>' +
-              '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:.85rem;font-size:.68rem;color:var(--green);font-family:monospace;white-space:pre-wrap;max-height:240px;overflow-y:auto;line-height:1.55">' +
-              JSON.stringify(garminPayload, null, 2) +
-              '</div>' +
-              '<p style="font-size:.7rem;color:var(--dim);margin-top:.65rem">' +
-              _t(
-                'tp_garmin_note',
-                '⚠ Integración Garmin requiere <code style="color:var(--muted)">python sync_garmin_schedule.py</code> con OAuth · El payload de arriba es el input exacto.',
-              ) +
-              '</p>';
-          }
-          document.getElementById('modal-garmin').classList.add('open');
-        };
-
-        window.fakeSync = function () {
-          var btn = document.getElementById('garmin-send-btn');
-          btn.textContent = _t('tp_sent_garmin', '✓ Enviado a Garmin');
-          btn.style.background = 'var(--green)';
-          setTimeout(function () {
-            closeModal('modal-garmin');
-            btn.textContent = _t('btn_send_garmin', 'Enviar a Garmin Connect');
-            btn.style.background = '';
-          }, 1800);
-        };
-
-        // ──────────────────────────────────────
         // NAVIGATION HELPERS
         // ──────────────────────────────────────
         window.goDetail = function (id) {
@@ -4829,11 +4668,6 @@
             t.style.display = 'none';
             clearTimeout(t._timer);
           }
-        };
-
-        window.syncRescheduled = function () {
-          hideRsToast();
-          showGarminModal();
         };
 
         // ──────────────────────────────────────
@@ -5575,7 +5409,7 @@
         cursor: not-allowed !important;
       }
     </style>
-    <script src="nav.js?v=5"></script>
+    <script src="nav.js?v=6"></script>
     <script src="footer.js"></script>
     <script src="dash-header.js"></script>
     <script src="lx-upgrade.js"></script>
