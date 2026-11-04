@@ -2484,7 +2484,7 @@ var DICT = {
     app_configure_race_goal: 'Configurá tu meta de carrera en Perfil para ver protocolos pre-carrera.',
     app_days_to_race_suffix2: 'días para la carrera', app_recommended_protocols_today: 'Protocolos recomendados para hoy',
     app_raceday_title: 'RACE DAY', app_raceday_sub: 'Tu carrera, en un solo lugar',
-    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrición', app_tab_hourly_plan: 'Plan Hora a Hora',
+    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrición', app_tab_hourly_plan: 'Plan Hora a Hora', app_raceday_full_plan: 'Ver plan completo',
     /* App móvil — Race Day (Sprint 2b-vii) */
     app_plan_gate_raceday: 'Tu plan no incluye Race Day — actualizalo en Mi Perfil',
     app_plan_gate_nutrition: 'Tu plan no incluye Nutrición — actualizalo en Mi Perfil',
@@ -6008,7 +6008,7 @@ var DICT = {
     app_configure_race_goal: 'Configure sua meta de prova em Perfil para ver protocolos pré-prova.',
     app_days_to_race_suffix2: 'dias para a prova', app_recommended_protocols_today: 'Protocolos recomendados para hoje',
     app_raceday_title: 'RACE DAY', app_raceday_sub: 'Sua prova, em um só lugar',
-    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrição', app_tab_hourly_plan: 'Plano Hora a Hora',
+    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrição', app_tab_hourly_plan: 'Plano Hora a Hora', app_raceday_full_plan: 'Ver plano completo',
     /* App móvil — Race Day (Sprint 2b-vii) */
     app_plan_gate_raceday: 'Seu plano não inclui Race Day — atualize em Meu Perfil',
     app_plan_gate_nutrition: 'Seu plano não inclui Nutrição — atualize em Meu Perfil',
@@ -9531,7 +9531,7 @@ var DICT = {
     app_configure_race_goal: 'Set your race goal in Profile to see pre-race protocols.',
     app_days_to_race_suffix2: 'days to race', app_recommended_protocols_today: 'Recommended protocols for today',
     app_raceday_title: 'RACE DAY', app_raceday_sub: 'Your race, in one place',
-    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrition', app_tab_hourly_plan: 'Hour-by-Hour Plan',
+    app_tab_dashboard: 'Dashboard', app_tab_nutrition: 'Nutrition', app_tab_hourly_plan: 'Hour-by-Hour Plan', app_raceday_full_plan: 'View full plan',
     /* App móvil — Race Day (Sprint 2b-vii) */
     app_plan_gate_raceday: 'Your plan does not include Race Day — upgrade in My Profile',
     app_plan_gate_nutrition: 'Your plan does not include Nutrition — upgrade in My Profile',
