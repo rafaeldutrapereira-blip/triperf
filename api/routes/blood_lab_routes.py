@@ -28,7 +28,7 @@ import os
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 
 import re
@@ -412,6 +412,29 @@ def _audit_lab_access(user_id: str, action: str, exam_id: str | None, db: Sessio
         pass  # no bloquear el endpoint si el audit falla
 
 
+_PENDING_PREFIX = "blood_lab_pending"
+_FILES_PREFIX   = "blood_lab_files"
+_TOKEN_RE       = re.compile(r"^[a-f0-9]{32}\.(pdf|jpg|png|webp)$")
+_FILE_EXTS      = (("pdf", "application/pdf"), ("jpg", "image/jpeg"),
+                   ("png", "image/png"), ("webp", "image/webp"))
+
+
+def _attach_source_file(user_id: str, exam_id: str, token) -> None:
+    """Mueve el archivo pendiente del usuario a su examen confirmado (best-effort)."""
+    if not token or not isinstance(token, str) or not _TOKEN_RE.match(token):
+        return
+    try:
+        from ..storage import storage
+        pending = f"{_PENDING_PREFIX}/{user_id}/{token}"
+        if not storage.exists(pending):
+            return
+        ext = token.rsplit(".", 1)[1]
+        storage.save(f"{_FILES_PREFIX}/{user_id}/{exam_id}.{ext}", storage.load(pending))
+        storage.delete(pending)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("No se pudo asociar el archivo al examen %s: %s", exam_id, e)
+
+
 @router.get("/markers")
 def get_markers_catalog(me: User = Depends(get_current_user)):
     """
@@ -427,6 +450,45 @@ def get_markers_catalog(me: User = Depends(get_current_user)):
             "cat":  m["cat"],
         }
     return result
+
+
+@router.post("/parse")
+def parse_exam_file(
+    file: UploadFile = File(...),
+    me:   User       = Depends(require_feature("blood_labs")),
+):
+    """
+    W20: lee un informe (PDF/imagen) con IA y devuelve un BORRADOR de marcadores.
+    NO guarda nada en la BD: el usuario lo revisa y confirma con POST /exams.
+    El archivo se deja en un area pendiente del propio usuario; POST /exams con
+    source_file_token lo asocia al examen confirmado.
+    """
+    from ..services import blood_lab_parser as bp
+    from ..storage import storage
+    import hashlib
+
+    allowed, _ = check_rate_limit_redis(f"rl:lab_parse:{me.id}", max_count=10, window_seconds=3600, strict=True)
+    if not allowed:
+        raise HTTPException(429, "Límite de lecturas alcanzado. Máximo 10 por hora.")
+
+    data = file.file.read(bp.MAX_PDF_BYTES + 1)
+    try:
+        draft = bp.parse_report(data)
+    except bp.ParseBadFile as e:
+        raise HTTPException(400, str(e))
+    except bp.ParseUnavailable:
+        raise HTTPException(503, "La lectura automática no está disponible ahora. Puedes cargar los valores a mano.")
+
+    token = hashlib.sha256(data).hexdigest()[:32] + "." + draft.pop("ext")
+    draft.pop("media_type", None)
+    try:
+        storage.save(f"{_PENDING_PREFIX}/{me.id}/{token}", data)
+        draft["file_token"] = token
+    except Exception as e:  # noqa: BLE001
+        logger.warning("No se pudo guardar el archivo pendiente user=%s: %s", me.id, e)
+        draft["file_token"] = None
+    logger.info("BloodLab parse user=%s marcadores=%d", me.id, len(draft["markers"]))
+    return {"ok": True, **draft}
 
 
 @router.post("/exams")
@@ -497,6 +559,7 @@ def create_exam(
         db.add(a)
 
     db.commit()
+    _attach_source_file(me.id, exam.id, body.get("source_file_token"))
     logger.info("BloodLabExam creado user=%s exam=%s marcadores=%d alertas=%d",
                 me.id, exam.id, len(clean_values), len(alerts))
 
@@ -641,7 +704,35 @@ def delete_exam(
         raise HTTPException(404, "Examen no encontrado")
     db.delete(exam)
     db.commit()
+    try:
+        from ..storage import storage
+        for ext, _mt in _FILE_EXTS:
+            storage.delete(f"{_FILES_PREFIX}/{me.id}/{exam_id}.{ext}")
+    except Exception:  # noqa: BLE001
+        pass
     return {"ok": True}
+
+
+@router.get("/exams/{exam_id}/file")
+def get_exam_file(
+    exam_id: str,
+    db:      Session = Depends(get_db),
+    me:      User    = Depends(require_feature("blood_labs")),
+):
+    """W20: descarga el informe original asociado al examen (solo su dueño)."""
+    from ..storage import storage
+    exam = db.query(BloodLabExam).filter(
+        BloodLabExam.id == exam_id, BloodLabExam.user_id == me.id).first()
+    if not exam:
+        raise HTTPException(404, "Examen no encontrado")
+    for ext, mt in _FILE_EXTS:
+        key = f"{_FILES_PREFIX}/{me.id}/{exam_id}.{ext}"
+        if storage.exists(key):
+            _audit_lab_access(me.id, "blood_lab_file_read", exam_id, db)
+            db.commit()
+            return Response(content=storage.load(key), media_type=mt,
+                            headers={"Cache-Control": "private, no-store"})
+    raise HTTPException(404, "Este examen no tiene archivo asociado")
 
 
 @router.post("/exams/{exam_id}/analyze")

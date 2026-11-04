@@ -1209,6 +1209,19 @@
               <div class="sec-h" data-i18n="bl_register_new">
                 Registrar Nuevo Examen
               </div>
+              <div class="panel" id="upload-box" style="margin-bottom: 1rem">
+                <div class="panel-body">
+                  <input type="file" id="inp-file" accept=".pdf,application/pdf,image/*" style="display: none" onchange="uploadExamFile(this)" />
+                  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap">
+                    <button class="btn btn-primary" id="btn-upload-exam" onclick="document.getElementById('inp-file').click()">
+                      📄 <span data-i18n="bl_up_btn">Subir examen</span>
+                    </button>
+                    <span style="font-size: 0.78rem; color: var(--muted)" data-i18n="bl_up_hint">Sube el PDF o una foto de tu informe y lo leemos por ti. Tú revisas antes de guardar.</span>
+                  </div>
+                  <div class="save-msg" id="upload-msg" style="display: none; margin-top: 0.75rem"></div>
+                  <div id="read-draft" style="display: none; margin-top: 1rem"></div>
+                </div>
+              </div>
               <div class="panel">
                 <div class="panel-body">
                   <div class="g2" style="gap: 0.75rem; margin-bottom: 0.75rem">
@@ -2745,6 +2758,164 @@
                 ),
               'err',
             );
+          });
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // W20: SUBIR EXAMEN (PDF/foto) -> lectura IA -> borrador editable -> confirmar
+      // Nada se guarda hasta que el usuario confirma (POST /labs/exams).
+      // La unidad es la del catalogo (el backend ya convirtio); solo el valor se edita.
+      // ══════════════════════════════════════════════════════════════
+      var DRAFT = null; // {date, lab, token, ignored, rows:[{key,value,converted,orig_v,orig_u,doubtful}]}
+      function upMsg(text, type) {
+        var el = document.getElementById('upload-msg');
+        if (!text) { el.style.display = 'none'; return; }
+        el.className = 'save-msg save-' + (type === 'ok' ? 'ok' : 'err');
+        el.style.display = 'flex';
+        el.textContent = text;
+      }
+      function _upUnavail() {
+        return '⚠️ ' + _t('bl_up_unavailable', 'La lectura automática no está disponible ahora. Puedes cargar los valores a mano más abajo.');
+      }
+      function uploadExamFile(inp) {
+        var f = inp.files && inp.files[0];
+        inp.value = '';
+        if (!f) return;
+        DRAFT = null;
+        renderDraft();
+        upMsg(_t('bl_up_reading', 'Leyendo tu examen…'), 'ok');
+        var btn = document.getElementById('btn-upload-exam');
+        btn.disabled = true;
+        var fd = new FormData();
+        fd.append('file', f);
+        fetch(apiBase() + '/labs/parse', { method: 'POST', headers: authHeaders(), body: fd })
+          .then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (d) {
+              return { ok: r.ok, status: r.status, data: d };
+            });
+          })
+          .then(function (res) {
+            btn.disabled = false;
+            if (!res.ok) {
+              upMsg(res.status === 400
+                ? '⚠️ ' + _t('bl_up_bad_file', 'No pude leer ese archivo. Sube un PDF, JPG o PNG legible.')
+                : _upUnavail(), 'err');
+              return;
+            }
+            var d = res.data;
+            if (!d.markers || !d.markers.length) {
+              upMsg('⚠️ ' + _t('bl_up_none', 'No encontré marcadores conocidos en el archivo. Puedes cargarlos a mano más abajo.'), 'err');
+              return;
+            }
+            DRAFT = {
+              date: d.exam_date || '',
+              lab: d.lab_name || '',
+              token: d.file_token || null,
+              ignored: d.ignored || 0,
+              rows: d.markers.map(function (m) {
+                return { key: m.key, value: m.value, converted: m.converted,
+                  orig_v: m.original_value, orig_u: m.original_unit, doubtful: m.unit_doubtful };
+              }),
+            };
+            upMsg('', 'ok');
+            renderDraft();
+          })
+          .catch(function () {
+            btn.disabled = false;
+            upMsg(_upUnavail(), 'err');
+          });
+      }
+      function renderDraft() {
+        var box = document.getElementById('read-draft');
+        if (!DRAFT) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        var used = {};
+        DRAFT.rows.forEach(function (r) { used[r.key] = 1; });
+        var h = '<div class="sec-h">' + esc(_t('bl_up_title', 'Esto leí de tu examen')) + '</div>' +
+          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem">' +
+          esc(_t('bl_up_title_sub', 'Revisa cada valor. No se guarda nada hasta que confirmes.')) + '</div>';
+        h += '<div class="g2" style="gap:.75rem;margin-bottom:.75rem"><div class="form-field">' +
+          '<label class="form-label">' + esc(_t('app_gear_date', 'Fecha del examen')) + '</label>' +
+          '<input type="date" class="form-input" value="' + esc(DRAFT.date) + '" onchange="DRAFT.date=this.value" /></div>' +
+          '<div class="form-field"><label class="form-label">' + esc(_t('bl_lab_label', 'Laboratorio')) + '</label>' +
+          '<input type="text" class="form-input" value="' + esc(DRAFT.lab) + '" onchange="DRAFT.lab=this.value" /></div></div>';
+        if (!DRAFT.date)
+          h += '<div style="font-size:.78rem;color:#c0392b;margin-bottom:.5rem">⚠️ ' + esc(_t('bl_up_date_missing', 'No encontré la fecha del examen: indícala.')) + '</div>';
+        DRAFT.rows.forEach(function (r, i) {
+          var m = MARKERS_CATALOG[r.key] || {};
+          var note = '';
+          if (r.converted)
+            note = _t('bl_up_converted', 'Convertido desde {v} {u}').replace('{v}', r.orig_v).replace('{u}', r.orig_u);
+          else if (r.doubtful)
+            note = _t('bl_up_check_unit', 'Revisa la unidad: el informe dice «{u}»').replace('{u}', r.orig_u || '—');
+          h += '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem">' +
+            '<span style="flex:1 1 11rem;font-size:.82rem">' + esc(m.name || r.key) + '</span>' +
+            '<input type="number" step="any" class="form-input" style="width:7rem" value="' + esc(String(r.value)) +
+            '" onchange="DRAFT.rows[' + i + '].value=this.value" />' +
+            '<span style="width:4.5rem;font-size:.78rem;color:var(--muted)">' + esc(m.unit || '') + '</span>' +
+            '<button class="btn btn-g" type="button" onclick="removeDraftRow(' + i + ')" title="' + esc(_t('bl_up_remove', 'Quitar')) + '">✕</button>' +
+            (note ? '<span style="flex-basis:100%;font-size:.72rem;color:' + (r.doubtful ? '#c0392b' : 'var(--muted)') + '">' + esc(note) + '</span>' : '') +
+            '</div>';
+        });
+        var opts = Object.keys(MARKERS_CATALOG)
+          .filter(function (k) { return !used[k] && k !== 't_c_ratio'; })
+          .map(function (k) {
+            return '<option value="' + esc(k) + '">' + esc(MARKERS_CATALOG[k].name) + ' (' + esc(MARKERS_CATALOG[k].unit) + ')</option>';
+          }).join('');
+        h += '<div style="margin:.6rem 0"><select class="form-input" style="max-width:20rem" onchange="addDraftRow(this)">' +
+          '<option value="">' + esc(_t('bl_up_add', 'Agregar marcador…')) + '</option>' + opts + '</select></div>';
+        if (DRAFT.ignored)
+          h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem">' +
+            esc(_t('bl_up_ignored', '{n} resultados del informe no están en el catálogo y se omitieron.').replace('{n}', DRAFT.ignored)) + '</div>';
+        h += '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.8rem">' +
+          '<button class="btn btn-primary" id="btn-confirm-draft" onclick="confirmDraft()">💾 ' + esc(_t('bl_up_confirm', 'Confirmar y guardar')) + '</button>' +
+          '<button class="btn btn-g" onclick="discardDraft()">✕ ' + esc(_t('bl_up_cancel', 'Descartar')) + '</button></div>';
+        box.innerHTML = h;
+        box.style.display = '';
+      }
+      function removeDraftRow(i) { DRAFT.rows.splice(i, 1); renderDraft(); }
+      function addDraftRow(sel) {
+        if (!sel.value) return;
+        DRAFT.rows.push({ key: sel.value, value: '', converted: false, doubtful: false, orig_v: '', orig_u: '' });
+        renderDraft();
+      }
+      function discardDraft() { DRAFT = null; renderDraft(); upMsg('', 'ok'); }
+      function confirmDraft() {
+        if (!DRAFT) return;
+        if (!DRAFT.date) { upMsg('⚠️ ' + _t('bl_select_date', 'Selecciona la fecha del examen'), 'err'); return; }
+        var values = {};
+        DRAFT.rows.forEach(function (r) {
+          var v = parseFloat(r.value);
+          if (!isNaN(v)) values[r.key] = v;
+        });
+        if (!Object.keys(values).length) {
+          upMsg('⚠️ ' + _t('bl_enter_one_value', 'Ingresa al menos un valor de marcador'), 'err');
+          return;
+        }
+        var btn = document.getElementById('btn-confirm-draft');
+        btn.disabled = true;
+        var dateVal = DRAFT.date;
+        apiPost('/labs/exams', {
+          date_iso: dateVal, values: values, lab_name: DRAFT.lab || null,
+          context: null, source_file_token: DRAFT.token,
+        })
+          .then(function (resp) {
+            return refreshAfterChange().then(function () {
+              CUR_EXAM_ID = resp.exam_id;
+              CUR_COMP_ID = EXAMS.length > 1 ? EXAMS[1].id : null;
+              buildExamSelectors();
+              return renderAll();
+            });
+          })
+          .then(function () {
+            var n = Object.keys(values).length;
+            DRAFT = null;
+            renderDraft();
+            upMsg('', 'ok');
+            showSaveMsg('✅ ' + _t('bl_exam_saved', 'Examen del {date} guardado con {n} marcadores.').replace('{date}', dateVal).replace('{n}', n), 'ok');
+          })
+          .catch(function () {
+            btn.disabled = false;
+            upMsg('⚠️ ' + _t('bl_save_failed', 'No se pudo guardar el examen — revisa tu conexión e inténtalo de nuevo.'), 'err');
           });
       }
 
