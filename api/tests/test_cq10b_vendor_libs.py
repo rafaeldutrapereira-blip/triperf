@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-LEAFLET = "vendor/leaflet/leaflet"
+LEAFLET = "vendor/leaflet"  # CQ15: ruta simple, sin carpeta doble
 FILES = [
     f"{LEAFLET}/leaflet.css",
     f"{LEAFLET}/leaflet.js",
@@ -18,6 +18,22 @@ FILES = [
 
 def test_vendor_files_exist():
     for rel in FILES:
+        assert (ROOT / rel).is_file(), rel
+
+
+def test_no_double_leaflet_path():
+    assert not (ROOT / "vendor/leaflet/leaflet").exists()
+    for name in ("athlete-app.html", "sw.js"):
+        assert "leaflet/leaflet/" not in (ROOT / name).read_text(encoding="utf-8"), name
+
+
+def test_referenced_vendor_files_exist_on_disk():
+    html = (ROOT / "athlete-app.html").read_text(encoding="utf-8")
+    sw = (ROOT / "sw.js").read_text(encoding="utf-8")
+    refs = set(re.findall(r"""(?:href|src)=["'](vendor/[^"'?#]+)""", html))
+    refs |= {m.lstrip("/") for m in re.findall(r"'(/vendor/[^']+)'", sw)}
+    assert refs
+    for rel in refs:
         assert (ROOT / rel).is_file(), rel
 
 
