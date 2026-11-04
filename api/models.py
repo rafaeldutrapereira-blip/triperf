@@ -2294,6 +2294,36 @@ class AiUsageDaily(Base):
     count    = Column(Integer, nullable=False, default=0)
 
 
+class OwnPlanSession(Base):
+    """Sesion del plan PROPIO del atleta (CQ7, "Mi Plan"). Antes vivia solo en
+    localStorage.kl_training_plan. Las columnas guardan lo que usan listados y
+    filtros; `data_json` conserva cualquier otro campo de la sesion (calories,
+    status, tss_real, rescheduled_from...) para no perder nada. `legacy_id` es
+    el id local 'plan-...' de la version anterior: la migracion es idempotente.
+    No es el plan asignado por el coach ni el de Garmin (esos no se tocan)."""
+    __tablename__ = "own_plan_sessions"
+    __table_args__ = (
+        Index("ix_own_plan_sessions_user_date", "user_id", "date_iso"),
+        UniqueConstraint("user_id", "legacy_id", name="uq_own_plan_sessions_user_legacy"),
+    )
+
+    id                 = Column(String, primary_key=True, default=_uuid)
+    user_id            = Column(String, ForeignKey("users.id"), nullable=False)
+    date_iso           = Column(String(10), nullable=False)
+    sport              = Column(String, nullable=False, default="run")
+    name               = Column(String, nullable=False)
+    dur_min            = Column(Integer, nullable=True)
+    dist_km            = Column(Float, nullable=True)
+    tss                = Column(Float, nullable=True)
+    notes              = Column(Text, nullable=True)
+    indoor_workout_id  = Column(String, nullable=True)
+    legacy_id          = Column(String, nullable=True)
+    data_json          = Column(Text, nullable=False, default="{}")
+    created_at         = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at         = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                                onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class IndoorWorkout(Base):
     """Workout indoor propio del atleta (S4). Antes vivia solo en localStorage.
     `blocks_json` guarda la estructura de bloques tal cual la arma
