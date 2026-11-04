@@ -138,8 +138,8 @@ class TestAiCoachAsync:
 
     def test_coach_suggest_503_has_semantic_code(self, client, db):
         """
-        Sprint 3b (i18n): aicSend() en athlete-app.html muestra el
-        "message" del backend directamente en el chat -- sin código
+        Sprint 3b (i18n): el chat de IA (ai_coach.html) muestra el
+        "message" del backend directamente -- sin código
         semántico, un tester PT/EN vería este error siempre en español.
         """
         token = _register_and_login(client, "aitest_code@test.com", db=db)

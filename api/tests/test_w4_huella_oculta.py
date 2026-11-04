@@ -1,4 +1,4 @@
-"""W4: Mi Huella oculta para todos; codigo conservado."""
+"""W4/D1: Mi Huella oculta en la web (routes.config); D1 la borro de la app."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -8,15 +8,15 @@ def _read(name):
     return (ROOT / name).read_text(encoding="utf-8")
 
 
-def test_huella_html_y_endpoints_se_conservan():
+def test_huella_html_se_conserva_en_la_web():
     assert (ROOT / "huella.html").exists()
-    assert "loadProgressHuella" in _read("athlete-app.html")
 
 
-def test_app_pestana_huella_condicionada_a_canaccess():
+def test_huella_no_existe_en_la_app():
     s = _read("athlete-app.html")
-    assert "{ el: 'pgr-tab-huella', mod: 'huella' }" in s
-    assert "canAccess({ api_rol: 'atleta', plan: 'elite' }, 'huella')" in s
+    for needle in ("loadProgressHuella", "renderProgressHuella",
+                   "pgr-tab-huella", "pgr-huella-content", "yir-mob"):
+        assert needle not in s, needle
 
 
 def test_landing_sin_feature_9_huella():

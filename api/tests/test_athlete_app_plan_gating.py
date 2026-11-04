@@ -37,7 +37,6 @@ def test_mapeo_de_visibilidad_por_plan():
     assert pairs == [
         ("nav-community", "community"),
         ("menu-item-raceday", "race_day"),
-        ("pgr-tab-huella", "huella"),  # W4: deshabilitada para todos
     ]
 
 
@@ -111,7 +110,7 @@ def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
 
 def test_b1_goscreen_conserva_pantallas_y_mapea_la_barra():
     for sid in ("today", "week", "wellness", "community", "profile",
-                "raceday", "progress", "aicoach", "mas"):
+                "raceday", "progress", "mas"):
         assert APP.count(f'id="screen-{sid}"') == 1
     # P1: pantallas retiradas (viven en la web)
     for sid in ("mental", "gear"):

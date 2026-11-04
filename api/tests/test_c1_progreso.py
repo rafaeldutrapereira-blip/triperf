@@ -8,13 +8,12 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 I18N = (ROOT / "i18n.js").read_text(encoding="utf-8")
 
 _a = HTML.index('<div class="screen" id="screen-progress">')
-SCREEN = HTML[_a:HTML.index("<!-- SCREEN 11", _a)]
+SCREEN = HTML[_a:HTML.index("<!-- B1: Mas", _a)]
 
 
 def test_tres_chips_visibles():
     tabs = re.findall(r'id="pgr-tab-(\w+)"', SCREEN)
-    # huella sigue en el HTML (W4, se borra en D1) pero oculta por canAccess
-    assert tabs == ["forma", "records", "powervo2", "huella"]
+    assert tabs == ["forma", "records", "powervo2"]
 
 
 def test_pestanas_retiradas_no_existen():
