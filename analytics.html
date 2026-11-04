@@ -675,6 +675,10 @@
               <div class="vo2-canvas-wrap">
                 <canvas id="vo2-canvas"></canvas>
               </div>
+              <div
+                id="vo2-legend"
+                style="display: none; font-size: 0.72rem; color: var(--muted); gap: 1rem; padding: 0.4rem 0 0; flex-wrap: wrap"
+              ></div>
             </div>
             <div
               id="vo2-message"
@@ -1334,6 +1338,33 @@
         }
         msg.style.display = 'none';
         _drawVo2Chart(document.getElementById('vo2-canvas'), d.timeline);
+        _renderVo2Legend(d.timeline);
+      }
+
+      /* CQ5 (H18): las lecturas estimadas (ritmo + FC) nunca se mezclan en silencio
+         con las de Garmin: marcador hueco ambar + leyenda visible. */
+      function _renderVo2Legend(timeline) {
+        var leg = document.getElementById('vo2-legend');
+        if (!leg) return;
+        var hasG = timeline.some(function (t) {
+          return t.source !== 'estimated';
+        });
+        var hasE = timeline.some(function (t) {
+          return t.source === 'estimated';
+        });
+        var html = '';
+        if (hasG)
+          html +=
+            '<span><span style="color:#10B981">&#9679;</span> ' +
+            _t('an_vo2_leg_garmin', 'Lectura Garmin') +
+            '</span>';
+        if (hasE)
+          html +=
+            '<span><span style="color:#F59E0B">&#9675;</span> ' +
+            _t('an_vo2_leg_est', 'Estimado (ritmo y FC)') +
+            '</span>';
+        leg.innerHTML = html;
+        leg.style.display = html ? 'flex' : 'none';
       }
 
       function _drawVo2Chart(canvas, timeline) {
@@ -1387,6 +1418,20 @@
           else ctx.lineTo(xp(i), yp(t.vo2max));
         });
         ctx.stroke();
+
+        // Marcadores por origen: Garmin relleno verde, estimado hueco ambar
+        timeline.forEach(function (t, i) {
+          ctx.beginPath();
+          ctx.arc(xp(i), yp(t.vo2max), 3, 0, Math.PI * 2);
+          if (t.source === 'estimated') {
+            ctx.strokeStyle = '#F59E0B';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = '#10B981';
+            ctx.fill();
+          }
+        });
 
         // Y labels
         ctx.fillStyle = 'rgba(148,163,184,.6)';
@@ -1881,6 +1926,30 @@
           return;
         }
         canvas.parentElement.style.display = '';
+        /* CQ5 (H20): misma cifra que dashboard y detalle. El payload trae
+           ctl/atl/tsb de cabecera proyectados a hoy; pmc termina en la ultima
+           fila guardada. Igual que detalle, se agrega el punto de hoy. */
+        var _now = new Date();
+        var _todayISO =
+          _now.getFullYear() +
+          '-' +
+          String(_now.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(_now.getDate()).padStart(2, '0');
+        if (
+          typeof d.ctl === 'number' &&
+          d.ctl > 0 &&
+          series[series.length - 1].dt < _todayISO
+        ) {
+          series = series.concat([
+            {
+              dt: _todayISO,
+              ctl: d.ctl,
+              atl: d.atl,
+              tsb: d.tsb,
+            },
+          ]);
+        }
         var last = series[series.length - 1];
         var change = typeof d.ctl_change === 'number' ? d.ctl_change : null;
         if (change === null) {
