@@ -88,8 +88,10 @@ def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
     assert APP.count('id="screen-mas"') == 1
     mas = APP[APP.index('id="screen-mas"'):]
     mas = mas[: mas.index("<!-- /screens -->")]
-    for dest in ("progress", "raceday", "wellness", "mental", "gear", "profile"):
+    for dest in ("progress", "raceday", "mental", "gear", "profile"):
         assert f"goScreen('screen-{dest}')" in mas
+    # P2: Recovery ya no es fila de Más (se entra desde el semaforo de Hoy)
+    assert "screen-wellness" not in mas
     assert "showNotifications()" in mas and "doLogout()" in mas
     # Race Day y Mi Equipo conservan su gating por plan, ahora dentro de Más
     assert 'id="menu-item-raceday"' in mas and 'id="menu-item-gear"' in mas
