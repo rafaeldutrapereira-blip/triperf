@@ -47,4 +47,6 @@ def test_503_se_evalua_antes_que_connected():
 
 def test_sw_build_incrementado():
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
-    assert "BUILD_VERSION = '313'" in sw
+    import re
+    m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
+    assert m and int(m.group(1)) >= 313

@@ -409,31 +409,35 @@ def compute_vo2max_history(
                 "source":     "estimated",
             })
 
-    # Combinar Garmin + estimado, priorizar Garmin cuando disponible
-    all_vo2 = []
-    garmin_dates = {r["date"] for r in garmin_vo2max}
-    for r in garmin_vo2max:
-        all_vo2.append({"date": r["date"], "vo2max": r["vo2max"], "source": "garmin"})
-    for r in estimated_timeline:
-        # Solo agregar estimado si no hay Garmin para esa semana
-        week = r["date"][:8] + "00"   # YYYY-MM (aproximar por mes)
-        garmin_week = any(d[:8] + "00" == week for d in garmin_dates)
-        if not garmin_week:
-            all_vo2.append({"date": r["date"], "vo2max": r["vo2max_est"], "source": "estimated"})
+    # CQ12: una sola fuente por serie. Con >=1 lectura Garmin en la ventana la
+    # serie es SOLO Garmin; las estimadas solo se usan (marcadas) si no hay
+    # ninguna lectura Garmin. Nunca se intercalan ni se promedian juntas.
+    if garmin_vo2max:
+        vo2max_source = "garmin"
+        all_vo2 = [{"date": r["date"], "vo2max": r["vo2max"], "source": "garmin"}
+                   for r in garmin_vo2max]
+    elif estimated_timeline:
+        vo2max_source = "estimated"
+        all_vo2 = [{"date": r["date"], "vo2max": r["vo2max_est"], "source": "estimated"}
+                   for r in estimated_timeline]
+    else:
+        vo2max_source = None
+        all_vo2 = []
 
     all_vo2.sort(key=lambda x: x["date"])
 
-    # Tendencia: promedio últimos 90 días vs 90-180 días
-    today = date.today().isoformat()
+    # Tendencia: promedio ultimos 90 dias vs 90-180 dias (misma fuente)
     cutoff_90  = (date.today() - timedelta(days=90)).isoformat()
     cutoff_180 = (date.today() - timedelta(days=180)).isoformat()
 
     recent = [r["vo2max"] for r in all_vo2 if r["date"] >= cutoff_90]
     prev   = [r["vo2max"] for r in all_vo2 if cutoff_180 <= r["date"] < cutoff_90]
 
-    vo2max_current = round(sum(recent) / len(recent), 1) if recent else None
-    vo2max_prev    = round(sum(prev)   / len(prev),   1) if prev   else None
-    trend_delta    = round(vo2max_current - vo2max_prev, 1) if (vo2max_current and vo2max_prev) else None
+    recent_avg = round(sum(recent) / len(recent), 1) if recent else None
+    vo2max_prev = round(sum(prev) / len(prev), 1) if prev else None
+    # Garmin: valor actual = lectura mas reciente (no promedio); estimada: promedio reciente
+    vo2max_current = all_vo2[-1]["vo2max"] if vo2max_source == "garmin" else recent_avg
+    trend_delta = round(recent_avg - vo2max_prev, 1) if (recent_avg and vo2max_prev) else None
 
     # Clasificación (hombres entrenados: >55 excelente)
     def _classify_vo2max(v, sex="M"):
@@ -456,8 +460,10 @@ def compute_vo2max_history(
         "vo2max_prev":     vo2max_prev,
         "trend_delta":     trend_delta,
         "classification":  classification,
+        "vo2max_source":   vo2max_source,
+        "vo2max_is_estimated": vo2max_source == "estimated",
         "garmin_readings": len(garmin_vo2max),
-        "estimated_readings": len(estimated_timeline),
+        "estimated_readings": len(estimated_timeline) if vo2max_source == "estimated" else 0,
         "n_run_activities": len(run_acts),
     }
 
