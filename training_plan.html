@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <script src="routes.config.js?v=11"></script>
+    <script src="lx-tss.js?v=1"></script>
     <script>
       LX_ROUTES.guard();
     </script>
@@ -2405,44 +2406,11 @@
         }
 
         // ──────────────────────────────────────
-        // TSS ESTIMATOR — idéntico a estTSS() en dashboard.html. Necesario porque
-        // no todas las actividades de Garmin traen `.tss` calculado (depende del
-        // tipo de actividad y de si Garmin pudo estimar Training Effect); sin este
-        // fallback, esta página contaba esas actividades como 0 TSS mientras el
-        // dashboard sí las estimaba desde FC/potencia — dos números de
-        // "Cumplimiento Semanal" distintos para la misma semana con las mismas
-        // actividades reales.
-        // sRPE (método de Foster): Session Load = RPE (1-10) × duración (min),
-        // normalizado ÷6 para quedar en escala comparable al TSS de las otras
-        // disciplinas (~100 puntos = una hora a esfuerzo máximo). Se usa el RPE
-        // REAL si el atleta lo logueó al completar una sesión de coach asignada
-        // (WorkoutLog.rpe, ya viene embebido en la respuesta de /athlete/plan —
-        // ver window._strengthRpeByDate, poblado en fetchPlanTSSRange). Si no hay
-        // RPE reportado ese día, se asume un esfuerzo "moderado" (RPE 6) como
-        // default explícito — a diferencia de cardio, no hay FC/potencia
-        // confiable para medir el esfuerzo real de una sesión de fuerza sin que
-        // el atleta lo reporte.
-        function estStrengthTSS(a) {
-          var byDate = window._strengthRpeByDate || {};
-          var rpe = byDate[a.date_iso] != null ? byDate[a.date_iso] : 6;
-          return Math.round((rpe * (a.dur_min || 0)) / 6);
-        }
-
+        // TSS ESTIMATOR — helper unico compartido (lx-tss.js, CQ3), el mismo que
+        // usan dashboard.html y detalle.html. Devuelve null (la UI omite el TSS)
+        // si faltan FTP/FCmax/FC reales; fuerza sin RPE reportado tampoco cuenta.
         function estTSS(a) {
-          if (a.tss) return Math.round(a.tss);
-          if (a.sport === 'str' || a.sport === 'gym') return estStrengthTSS(a);
-          var FTP = window._athleteFTP || 240;
-          var FCMax = window._athleteFCMax || 180;
-          var h = (a.dur_min || 0) / 60,
-            IF;
-          if (a.sport === 'bike')
-            IF = a.avg_power
-              ? a.avg_power / FTP
-              : (a.avg_hr || 120) / (0.88 * FCMax);
-          else if (a.sport === 'run') IF = (a.avg_hr || 140) / (0.89 * FCMax);
-          else if (a.sport === 'swim') IF = (a.avg_hr || 120) / (0.82 * FCMax);
-          else IF = (a.avg_hr || 110) / (0.75 * FCMax); // fallback genérico (deportes sin mapeo, ej. "other")
-          return Math.round(h * Math.min(1.25, Math.max(0.4, IF)) ** 2 * 100);
+          return window.LXTss.estimate(a);
         }
 
         // ──────────────────────────────────────
@@ -3807,7 +3775,7 @@
             });
             var tPlan = planTSS[sport] || 0;
             var tDone = done.reduce(function (t, a) {
-              return t + estTSS(a);
+              return t + (estTSS(a) || 0);
             }, 0);
 
             // pct = número real mostrado en el centro (SIN tope, ej. 253% si te
@@ -5366,8 +5334,8 @@
           })
           .then(function (profile) {
             if (!profile) return;
-            window._athleteFTP = profile.ftp || 240;
-            window._athleteFCMax = profile.fcmax || 180;
+            window._athleteFTP = profile.ftp || null;
+            window._athleteFCMax = profile.fcmax || null;
             if (typeof window._tpRender === 'function') window._tpRender();
           })
           .catch(function () {});

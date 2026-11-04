@@ -16,6 +16,7 @@
       })();
     </script>
     <script src="routes.config.js?v=11"></script>
+    <script src="lx-tss.js?v=1"></script>
     <script>
       LX_ROUTES.guard();
     </script>
@@ -3401,20 +3402,11 @@
                   ? 'strength'
                   : 'bike';
           }
+          // Helper unico (lx-tss.js, CQ3): null => la actividad no aporta TSS.
           function eTSSDt(a) {
-            var FTP = window._athleteFTP || 240,
-              FC = window._athleteFCMax || 180,
-              h = (a.dur_min || 0) / 60;
-            if (!h) return 0;
-            if (a.avg_power && normSportDt(a.sport) === 'bike') {
-              var IF = a.avg_power / FTP;
-              return Math.round(h * IF * IF * 100);
-            }
-            if (a.avg_hr) {
-              var IF2 = a.avg_hr / (FC * 0.89);
-              return Math.round(h * IF2 * IF2 * 100);
-            }
-            return Math.round(h * 50);
+            return window.LXTss.estimate(
+              Object.assign({}, a, { sport: normSportDt(a.sport) }),
+            );
           }
 
           var pS = pmcD.length ? pmcD[0].dt : '',
