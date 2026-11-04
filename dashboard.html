@@ -6252,11 +6252,33 @@
                 dt.getFullYear();
             }
             var goalEl = document.getElementById('kc-race-goal');
-            if (goalEl && profile.race_goal_dist)
-              goalEl.textContent =
-                _t('dash_goal_prefix', 'Objetivo: ') +
-                profile.race_goal_dist +
-                ' km';
+            if (goalEl) {
+              /* DASHFIX: race_goal_dist es un CODIGO; se resuelve a la misma
+                 etiqueta del select del Perfil (prof_opt_*). Sin codigo
+                 conocido se muestra el nombre del objetivo, sin sufijo km. */
+              var _GOAL_OPT = {
+                ironman: ['prof_opt_ironman', 'Ironman (226 km)'],
+                full: ['prof_opt_ironman', 'Ironman (226 km)'],
+                '70.3': ['prof_opt_703', '70.3 / Half (113 km)'],
+                703: ['prof_opt_703', '70.3 / Half (113 km)'],
+                olympic: ['prof_opt_olympic', 'Olímpico (51.5 km)'],
+                sprint: ['prof_opt_sprint', 'Sprint (25.75 km)'],
+                marathon: ['prof_opt_marathon', 'Maratón'],
+                '42k': ['prof_opt_marathon', 'Maratón'],
+                half_marathon: ['prof_opt_half_marathon', 'Media Maratón'],
+                '21k': ['prof_opt_half_marathon', 'Media Maratón'],
+              };
+              var _gc = String(profile.race_goal_dist || '')
+                .toLowerCase()
+                .trim();
+              var _gl = null;
+              if (Object.prototype.hasOwnProperty.call(_GOAL_OPT, _gc))
+                _gl = _t(_GOAL_OPT[_gc][0], _GOAL_OPT[_gc][1]);
+              else if (_gc === '10k') _gl = '10K';
+              var _gtxt = _gl || profile.race_goal_name || '';
+              if (_gtxt)
+                goalEl.textContent = _t('dash_goal_prefix', 'Objetivo: ') + _gtxt;
+            }
             var apiNameEl = document.getElementById('kl-race-goal-name');
             if (apiNameEl && profile.race_goal_name)
               apiNameEl.textContent = profile.race_goal_name;
