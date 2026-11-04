@@ -98,7 +98,7 @@ def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
     # C2: Perfil sin Salir duplicado y con enlace a la web
     prof = APP[APP.index('id="screen-profile"'):APP.index('id="screen-raceday"')]
     assert "doLogout" not in prof
-    assert "abrirEnWeb('estado')" in prof and "pf-sex" not in prof
+    assert "abrirEnWeb('estado')" in prof and 'id="pf-sexo"' in prof
     # P2: Recovery ya no es fila de Más (se entra desde el semaforo de Hoy)
     assert "screen-wellness" not in mas
     assert "showNotifications()" in mas and "doLogout()" in mas
