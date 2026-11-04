@@ -47,4 +47,4 @@ def test_503_se_evalua_antes_que_connected():
 
 def test_sw_build_incrementado():
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
-    assert "BUILD_VERSION = '312'" in sw
+    assert "BUILD_VERSION = '313'" in sw

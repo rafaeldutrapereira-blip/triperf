@@ -164,7 +164,7 @@ def test_hoja_plan_sin_recovery_muestra_aviso_de_plan():
 def test_hoja_y_boton_en_hoy():
     assert 'onclick="openCheckin()"' in HTML
     assert 'id="ck-sheet-overlay"' in HTML
-    assert '<script src="estado-checkin.js"></script>' in HTML
+    assert '<script src="estado-checkin.js?v=1"></script>' in HTML
     # un solo contrato: la hoja usa el reparto de estado-checkin.js, no payloads propios
     assert "window.EstadoCheckin.buildPayloads" in HTML
     for f in ("energy", "soreness", "sleep_quality", "stress", "mood", "motivation",
@@ -181,6 +181,6 @@ def test_checkins_viejos_ya_no_existen():
 
 
 def test_estado_checkin_precacheado_y_build_subido():
-    assert "'/estado-checkin.js'" in SW
+    assert "'/estado-checkin.js?v=1'" in SW
     m = re.search(r"var BUILD_VERSION = '(\d+)'", SW)
     assert m and int(m.group(1)) >= 291

@@ -176,7 +176,7 @@ def test_estado_tiene_un_solo_formulario_de_9_campos():
         assert old not in html, old
     # Anclas que usan dashboard.html / detalle.html / e2e siguen existiendo
     assert 'id="est-reg-fis"' in html and 'id="est-reg-men"' in html
-    assert 'src="estado-checkin.js"' in html
+    assert 'src="estado-checkin.js?v=1"' in html
     # Veredicto unico y detalle por grupos intactos
     assert 'id="est-detail"' in html and "est_group_phys" in html and "est_group_mental" in html
 
@@ -196,7 +196,7 @@ def test_i18n_x3_de_los_textos_nuevos():
 
 def test_sw_precachea_el_modulo_nuevo():
     sw = _read("sw.js")
-    assert "'/estado-checkin.js'" in sw
+    assert "'/estado-checkin.js?v=1'" in sw
 
 
 def test_recovery_coach_iframe_sigue_en_recovery_html():
