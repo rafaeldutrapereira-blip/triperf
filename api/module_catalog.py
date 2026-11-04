@@ -36,7 +36,7 @@ ADDONS: dict[str, str] = {
     "labs":                  "Labs",
     "estrategia_carrera":    "Estrategia de carrera",
     "protocolos_mentales":   "Protocolos mentales avanzados",
-    "indoor":                "Indoor",
+    "indoor":                "Entrenador",
     "ajustes_adaptativos":   "Ajustes adaptativos",
     "rendimiento_avanzado":  "Potencia y records avanzados",
     "retrospectiva":         "Retrospectiva anual",

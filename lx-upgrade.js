@@ -103,7 +103,7 @@ function buildHTML(){
     +         '<li><span class="up-feat-on">✓</span> Blood Labs + biomarcadores</li>'
     +         '<li><span class="up-feat-on">✓</span> Asistente IA — forecast CTL + riesgo de lesión</li>'
     +         '<li><span class="up-feat-on">✓</span> Plan adaptativo automático</li>'
-    +         '<li><span class="up-feat-on">✓</span> Indoor Workout Builder (Zwift-style)</li>'
+    +         '<li><span class="up-feat-on">✓</span> Entrenador (estilo Zwift)</li>'
     +       '</ul>'
     +       '<button onclick="doCheckout(\'elite\')" style="width:100%;background:linear-gradient(135deg,#F0A500,#D97706);color:#000;border:none;border-radius:10px;padding:.7rem;font-family:\'Barlow Condensed\',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Elegir Élite →</button>'
     +     '</div>'
