@@ -2450,7 +2450,7 @@ var DICT = {
     app_club_sport_swim: '🏊 Natación', app_club_sport_multi: '⚡ Multi',
     app_club_privacy: 'Privacidad', app_club_privacy_public: '🌍 Público',
     app_club_privacy_private: '🔒 Privado (por invitación)', app_club_create: 'Crear club',
-    app_greet_morning: 'Buenos días', app_greet_afternoon: 'Buenas tardes', app_greet_evening: 'Buenas noches',
+    app_greet_neutral: 'Hola', app_session_done: 'Hecha', app_greet_morning: 'Buenos días', app_greet_afternoon: 'Buenas tardes', app_greet_evening: 'Buenas noches',
     /* App móvil — pantallas (tabs/secciones/botones) */
     app_tab_feed: 'Feed', app_tab_ranking: 'Ranking', app_tab_discover: 'Descubrir',
     app_tab_clubs: 'Clubes', app_tab_myprofile: 'Mi Perfil', app_share_activity_btn: '📤 Compartir actividad',
@@ -5978,7 +5978,7 @@ var DICT = {
     app_club_sport_swim: '🏊 Natação', app_club_sport_multi: '⚡ Multi',
     app_club_privacy: 'Privacidade', app_club_privacy_public: '🌍 Público',
     app_club_privacy_private: '🔒 Privado (por convite)', app_club_create: 'Criar clube',
-    app_greet_morning: 'Bom dia', app_greet_afternoon: 'Boa tarde', app_greet_evening: 'Boa noite',
+    app_greet_neutral: 'Olá', app_session_done: 'Feita', app_greet_morning: 'Bom dia', app_greet_afternoon: 'Boa tarde', app_greet_evening: 'Boa noite',
     /* App móvel — telas (tabs/seções/botões) */
     app_tab_feed: 'Feed', app_tab_ranking: 'Ranking', app_tab_discover: 'Descobrir',
     app_tab_clubs: 'Clubes', app_tab_myprofile: 'Meu Perfil', app_share_activity_btn: '📤 Compartilhar atividade',
@@ -9505,7 +9505,7 @@ var DICT = {
     app_club_sport_swim: '🏊 Swimming', app_club_sport_multi: '⚡ Multi',
     app_club_privacy: 'Privacy', app_club_privacy_public: '🌍 Public',
     app_club_privacy_private: '🔒 Private (invite-only)', app_club_create: 'Create club',
-    app_greet_morning: 'Good morning', app_greet_afternoon: 'Good afternoon', app_greet_evening: 'Good evening',
+    app_greet_neutral: 'Hello', app_session_done: 'Done', app_greet_morning: 'Good morning', app_greet_afternoon: 'Good afternoon', app_greet_evening: 'Good evening',
     /* Mobile app — screens (tabs/sections/buttons) */
     app_tab_feed: 'Feed', app_tab_ranking: 'Ranking', app_tab_discover: 'Discover',
     app_tab_clubs: 'Clubs', app_tab_myprofile: 'My Profile', app_share_activity_btn: '📤 Share activity',

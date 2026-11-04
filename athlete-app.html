@@ -669,6 +669,17 @@
         color: var(--dim);
         margin-top: 0.15rem;
       }
+      .sess-done {
+        color: #6ee7b7;
+        font-size: 0.74rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .sess-pend {
+        color: var(--dim);
+        opacity: 0.5;
+        font-size: 0.8rem;
+      }
       .tcc-status {
         font-size: 1rem;
         flex-shrink: 0;
@@ -3737,8 +3748,8 @@
                 Cargando...
               </div>
               <div class="topbar-greet">
-                <span id="s1-greet-txt" data-i18n="app_greet_morning"
-                  >Buenos días</span
+                <span id="s1-greet-txt" data-i18n="app_greet_neutral"
+                  >Hola</span
                 >, <em id="s1-greet-name" data-i18n="aa_athlete">Atleta</em>
               </div>
             </div>
@@ -3972,8 +3983,8 @@
                 Cargando...
               </div>
               <div class="topbar-greet">
-                <span id="s4-greet-txt" data-i18n="app_greet_morning"
-                  >Buenos días</span
+                <span id="s4-greet-txt" data-i18n="app_greet_neutral"
+                  >Hola</span
                 >, <em id="s4-greet-name" data-i18n="aa_athlete">Atleta</em>
               </div>
               <div
@@ -4004,8 +4015,8 @@
                   Cargando...
                 </div>
                 <div class="topbar-greet">
-                  <span id="s5-greet-txt" data-i18n="app_greet_morning"
-                    >Buenos días</span
+                  <span id="s5-greet-txt" data-i18n="app_greet_neutral"
+                    >Hola</span
                   >, <em id="s5-greet-name" data-i18n="aa_athlete">Atleta</em>
                 </div>
               </div>
@@ -4048,8 +4059,8 @@
                   Cargando...
                 </div>
                 <div class="topbar-greet">
-                  <span id="s6-greet-txt" data-i18n="app_greet_morning"
-                    >Buenos días</span
+                  <span id="s6-greet-txt" data-i18n="app_greet_neutral"
+                    >Hola</span
                   >, <em id="s6-greet-name" data-i18n="aa_athlete">Atleta</em>
                 </div>
               </div>
@@ -4117,8 +4128,8 @@
                 Cargando...
               </div>
               <div class="topbar-greet">
-                <span id="s7-greet-txt" data-i18n="app_greet_morning"
-                  >Buenos días</span
+                <span id="s7-greet-txt" data-i18n="app_greet_neutral"
+                  >Hola</span
                 >, <em id="s7-greet-name">Atleta</em>
               </div>
             </div>
@@ -5893,7 +5904,7 @@
             : h >= 12 && h < 19
               ? 'app_greet_afternoon'
               : 'app_greet_evening';
-        var greetTxt = window.i18n ? window.i18n.t(greetKey) : 'Buenos días';
+        var greetTxt = window.i18n ? window.i18n.t(greetKey) : 'Hola';
 
         var name = localStorage.getItem('lx_co_nombre') || 'Atleta';
 
@@ -6724,7 +6735,7 @@
             : '') +
           '</div>' +
           '<div class="tcc-status">' +
-          (done ? '✅' : '⏳') +
+          _sessMark(done) +
           '</div>' +
           '<svg class="tcc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
           '</div>'
@@ -6909,8 +6920,8 @@
           // card de comparación ya es la única señal de "completado" que hace
           // falta cuando hay dato real).
           html +=
-            '<div style="margin:.75rem 1rem;padding:.75rem 1rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:.85rem;color:#6EE7B7;text-align:center">' +
-            _t('app_completed_badge', '✅ Completado') +
+            '<div style="margin:.75rem 1rem;text-align:center">' +
+            _sessMark(true) +
             '</div>';
         }
 
@@ -6986,6 +6997,17 @@
       }
 
       var _weekAssignsFlat = []; // para poder abrir el detalle al tocar una actividad de la semana
+      /* CQ14: marca sobria de estado (como la web): check verde + palabra,
+         sin caja; pendiente = reloj de arena gris tenue. */
+      function _sessMark(done) {
+        if (done)
+          return (
+            '<span class="sess-done">\u2713 ' +
+            _t('app_session_done', 'Hecha') +
+            '</span>'
+          );
+        return '<span class="sess-pend">\u231B</span>';
+      }
       var _weekMatchedRealFlat = []; // actividad real (Garmin) emparejada 1:1 con _weekAssignsFlat, por día — igual criterio que "Hoy"
       var _weekExtraFlat = []; // actividades Adicionales (sin sesión planificada que las explique)
 
@@ -7099,7 +7121,7 @@
                   ? '<div class="wk-wo-tss">' + _tssLbl() + ' ' + t.tss + '</div>'
                   : '') +
                 '<div class="wk-wo-status">' +
-                (done ? '✅' : '⏳') +
+                _sessMark(done) +
                 '</div>' +
                 '</div>';
             });
@@ -7129,7 +7151,9 @@
                 '<div class="wk-wo-tag">' +
                 _t('b4_adicional', 'Adicional') +
                 '</div>' +
-                '<div class="wk-wo-status">✅</div>' +
+                '<div class="wk-wo-status">' +
+                _sessMark(true) +
+                '</div>' +
                 '</div>';
             });
             html += '</div>';
