@@ -899,6 +899,24 @@ class RevokedToken(Base):
     revoked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class WebHandoff(Base):
+    """
+    P0: token de handoff app -> web, de UN SOLO USO y vida corta.
+    Solo se guarda el hash SHA-256. La misma tabla es el contador del puente:
+    filas emitidas por destino (created_at) y canjeadas (used_at).
+    """
+    __tablename__ = "web_handoffs"
+    __table_args__ = (Index("ix_web_handoffs_destino", "destino"),)
+
+    id         = Column(String, primary_key=True, default=_uuid)
+    token_hash = Column(String, nullable=False, unique=True)
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    destino    = Column(String, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used_at    = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class PasswordResetToken(Base):
     """
     Tokens de reset de contraseÃ±a persistentes en DB (reemplaza dict in-memory).

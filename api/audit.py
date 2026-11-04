@@ -29,6 +29,7 @@ class Action:
     GARMIN_SYNC     = "athlete.garmin.sync"
     TOTP_ENABLE     = "auth.2fa.enable"
     TOTP_DISABLE    = "auth.2fa.disable"
+    WEB_HANDOFF     = "auth.web_handoff.redeem"
 
 
 def audit(

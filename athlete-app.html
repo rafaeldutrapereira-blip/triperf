@@ -7902,6 +7902,22 @@
               </div>
             </div>
           </div>
+          <div
+            id="mas-web-banner"
+            style="display:none;align-items:center;gap:.6rem;margin:.6rem 1rem 0;padding:.7rem .9rem;background:var(--bg2);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:12px;font-size:.85rem"
+          >
+            <span style="flex:1" data-i18n="app_web_banner"
+              >Algunas secciones avanzadas ahora viven en la web.</span
+            >
+            <button
+              type="button"
+              onclick="dismissWebBanner()"
+              data-i18n="app_web_banner_ok"
+              style="background:none;border:0;color:inherit;font-weight:600;padding:.3rem .5rem"
+            >
+              Entendido
+            </button>
+          </div>
           <div class="mas-list">
             <button class="mas-row" id="mas-item-progress" onclick="goScreen('screen-progress')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -8083,6 +8099,72 @@
           })()
         );
       }
+
+      /* P0 — puente a la web. abrirEnWeb(destino) pide un token de handoff de
+         un solo uso y abre la web ya con sesion. destino va en una LISTA
+         CERRADA validada tambien en el servidor. Sin usos todavia (llega con
+         los retiros de pantallas). El token viaja en el fragmento (#t=). */
+      var _WEB_DESTINOS = ['estado', 'race_day', 'gear', 'detalle', 'analytics'];
+      var _WEB_ORIGIN = 'https://labxperformanceapp.com';
+      function abrirEnWeb(destino) {
+        if (_WEB_DESTINOS.indexOf(destino) === -1) {
+          return Promise.resolve(false);
+        }
+        var h = { 'Content-Type': 'application/json' };
+        Object.keys(_NGROK_BYPASS).forEach(function (k) {
+          h[k] = _NGROK_BYPASS[k];
+        });
+        var tk = getToken();
+        if (tk) h.Authorization = 'Bearer ' + tk;
+        return fetch(API + '/auth/web-handoff', {
+          method: 'POST',
+          credentials: 'include',
+          headers: h,
+          body: JSON.stringify({ destino: destino }),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject(r.status);
+          })
+          .then(function (d) {
+            var native = !!(
+              window.Capacitor &&
+              window.Capacitor.isNativePlatform &&
+              window.Capacitor.isNativePlatform()
+            );
+            var url =
+              (native ? _WEB_ORIGIN : window.location.origin) +
+              d.path +
+              '#t=' +
+              encodeURIComponent(d.token);
+            var B = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+            if (B && B.open) B.open({ url: url });
+            else window.open(url, '_blank');
+            return true;
+          })
+          .catch(function () {
+            return false;
+          });
+      }
+      window.abrirEnWeb = abrirEnWeb;
+
+      /* Banner unico de Mas: visible una sola vez (descarte persistido). */
+      var _WEB_BANNER_KEY = 'lx_web_banner_dismissed';
+      function dismissWebBanner() {
+        try {
+          localStorage.setItem(_WEB_BANNER_KEY, '1');
+        } catch (e) {}
+        var b = document.getElementById('mas-web-banner');
+        if (b) b.style.display = 'none';
+      }
+      window.dismissWebBanner = dismissWebBanner;
+      document.addEventListener('DOMContentLoaded', function () {
+        var b = document.getElementById('mas-web-banner');
+        var seen = false;
+        try {
+          seen = localStorage.getItem(_WEB_BANNER_KEY) === '1';
+        } catch (e) {}
+        if (b && !seen) b.style.display = 'flex';
+      });
 
       /* Ojo mostrar/ocultar contraseña — pedido explícito: sin esto el
    usuario no tenía forma de confirmar que tipeó bien la clave antes de
