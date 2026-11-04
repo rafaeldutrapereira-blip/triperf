@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="theme-vars.css" />
     <script src="i18n.js"></script>
     <script src="lx-backend-i18n.js"></script>
+    <script src="lx-estado-ball.js?v=1"></script>
     <script src="lx-info.js"></script>
     <script src="estado-checkin.js"></script>
     <style>
@@ -2735,14 +2736,16 @@
           setMental: function () {},
           setVerdict: function (v) {
             S.gotVerdict = true;
+            S.raw = v;
             var ok = v && v.status === 'ok' && (v.sev === 0 || v.sev === 1 || v.sev === 2) && has(v.score) && (v.governs === 'rec' || v.governs === 'men');
             S.verdict = ok
               ? {
                   src: v.governs,
                   score: Math.round(v.score),
                   sev: v.sev,
-                  label: window.lxBeT ? window.lxBeT(v.label || '') : v.label || '',
-                  text: window.lxBeT ? window.lxBeT(v.text || '') : v.text || '',
+                  /* CQ8: etiqueta y frase por clave i18n del idioma activo (LXEstadoBall.text) */
+                  label: window.LXEstadoBall ? window.LXEstadoBall.text(v).label : v.label || '',
+                  text: window.LXEstadoBall ? window.LXEstadoBall.text(v).text : v.text || '',
                   both: !!(v.recovery && v.mental),
                 }
               : null;
@@ -2772,6 +2775,11 @@
           },
           _state: S,
         };
+        ['lx:i18nready', 'lx:langchange'].forEach(function (ev) {
+          document.addEventListener(ev, function () {
+            if (S.gotVerdict) window.ESTADO.setVerdict(S.raw);
+          });
+        });
         ESTADO.refresh();
         window.EST = {
           toggleMore: function (id, btn) {

@@ -5,6 +5,7 @@
     <script src="routes.config.js?v=11"></script>
     <script src="lx-tss.js?v=1"></script>
     <script src="lx-ownplan.js?v=1"></script>
+    <script src="lx-estado-ball.js?v=1"></script>
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -513,6 +514,7 @@
       .w13-front { padding: 1rem 0 0; }
       .w13-phrase { display: flex; align-items: center; gap: 0.9rem; padding: 1.1rem 1.3rem; text-decoration: none; color: inherit; margin-bottom: 1rem; }
       .w13-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--dim, #666); flex-shrink: 0; }
+      .w13-ball { flex-shrink: 0; }
       .w13-phrase-body { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
       .w13-phrase-label { font-weight: 700; font-size: 1.05rem; }
       .w13-phrase-text { font-size: 0.85rem; color: var(--muted, #aaa); }
@@ -2484,6 +2486,7 @@
         <!-- Pieza 1: la frase de hoy (veredicto de Estado) -->
         <a class="panel sr w13-phrase" id="w13-phrase" href="estado.html">
           <span class="w13-dot" id="w13-dot"></span>
+          <span class="w13-ball" id="w13-ball" hidden></span>
           <span class="w13-phrase-body">
             <span class="w13-phrase-label" id="w13-phrase-label" data-i18n="dh_loading">Cargando...</span>
             <span class="w13-phrase-text" id="w13-phrase-text"></span>
@@ -3594,13 +3597,27 @@
         var S = { gov: null };
         function paintPhrase() {
           var gov = S.gov;
-          var lab = $('w13-phrase-label'), txt = $('w13-phrase-text'), dot = $('w13-dot');
+          var lab = $('w13-phrase-label'), txt = $('w13-phrase-text'), dot = $('w13-dot'), ball = $('w13-ball');
           if (!lab) return;
           lab.removeAttribute('data-i18n');
           if (!gov) {
             lab.textContent = tr('dash_w13_phrase_empty', 'Registra tu día en Estado para ver cómo estás hoy.');
             txt.textContent = '';
             dot.style.background = '';
+            dot.hidden = false;
+            ball.hidden = true;
+            return;
+          }
+          /* CQ8: la pelota de Estado (arco proporcional + indicador que manda) en version compacta;
+             etiqueta y frase por clave i18n del idioma activo. */
+          var d = window.LXEstadoBall ? window.LXEstadoBall.text(gov.raw) : null;
+          if (d) {
+            dot.hidden = true;
+            ball.hidden = false;
+            window.LXEstadoBall.render(ball, gov.raw, { size: 64, other: false });
+            lab.textContent = d.label;
+            txt.textContent = d.text + (d.other ? ' · ' + d.other.name + ' ' + d.other.score : '');
+            lab.style.color = COLORS[d.sev];
             return;
           }
           lab.textContent = gov.label;
@@ -3608,11 +3625,14 @@
           txt.textContent = gov.text;
           dot.style.background = COLORS[gov.sev];
         }
+        ['lx:i18nready', 'lx:langchange'].forEach(function (ev) {
+          document.addEventListener(ev, function () { if (S.gov) paintPhrase(); });
+        });
         var diso = todayISO();
         /* Veredicto unico: lo decide el servidor (GET /athlete/estado-hoy, A1). */
         getJSON('/athlete/estado-hoy?date_iso=' + diso).then(function (v) {
           if (v && v.status === 'ok' && (v.sev === 0 || v.sev === 1 || v.sev === 2)) {
-            S.gov = { sev: v.sev, label: be(v.label || ''), text: be(v.text || '') };
+            S.gov = { sev: v.sev, label: be(v.label || ''), text: be(v.text || ''), raw: v };
           }
           paintPhrase();
         });

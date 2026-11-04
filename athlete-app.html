@@ -30,6 +30,7 @@
     />
     <script src="i18n.js"></script>
     <script src="lx-backend-i18n.js"></script>
+    <script src="lx-estado-ball.js?v=1"></script>
     <script src="routes.config.js?v=11"></script>
     <script src="community.js?v=1"></script>
     <script src="estado-checkin.js"></script>
@@ -768,16 +769,13 @@
       }
       .tv-score {
         flex-shrink: 0;
-        width: 3.4rem;
-        height: 3.4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 3px solid var(--border);
-        border-radius: 50%;
-        font-family: 'Oswald', sans-serif;
-        font-size: 1.4rem;
-        font-weight: 700;
+        width: 4.6rem;
+        text-align: center;
+      }
+      .tv-other {
+        margin-top: 0.3rem;
+        font-size: 0.78rem;
+        color: var(--dim);
       }
       .tv-body {
         min-width: 0;
@@ -3928,6 +3926,7 @@
               <div class="tv-body">
                 <div class="tv-label" id="tv-label"></div>
                 <div class="tv-text" id="tv-text"></div>
+                <div class="tv-other" id="tv-other"></div>
               </div>
             </div>
             <button
@@ -5613,22 +5612,25 @@
           .catch(function () {});
       }
 
+      var _lastVerdict;
       function renderVerdict(v) {
+        _lastVerdict = v;
         var box = document.getElementById('today-verdict');
         var sc = document.getElementById('tv-score');
         var lb = document.getElementById('tv-label');
         var tx = document.getElementById('tv-text');
+        var ot = document.getElementById('tv-other');
         if (!box) return;
-        var ok = v && v.status === 'ok' && (v.sev === 0 || v.sev === 1 || v.sev === 2);
-        var col = ok ? _VERDICT_COL[v.sev] : '#9CA3AF';
+        /* CQ8: arco proporcional + rotulo del indicador que manda; textos por clave i18n
+           del idioma activo (el backend manda estado-hoy en espanol). */
+        var d = window.LXEstadoBall ? LXEstadoBall.text(v) : null;
+        var col = d ? _VERDICT_COL[d.sev] : '#9CA3AF';
         box.style.borderColor = col;
-        sc.style.color = col;
-        sc.style.borderColor = col;
-        sc.textContent =
-          ok && v.score != null && isFinite(v.score) ? Math.round(v.score) : '—';
+        if (window.LXEstadoBall) LXEstadoBall.render(sc, v, { size: 74, other: false });
         lb.style.color = col;
-        lb.textContent = v && v.label ? v.label : _t('status_no_data', 'Sin datos');
-        tx.textContent = v && v.text ? v.text : '';
+        lb.textContent = d ? d.label : v && v.label && v.status !== 'ok' ? v.label : _t('status_no_data', 'Sin datos');
+        tx.textContent = d ? d.text : v && v.status !== 'ok' && v.text ? v.text : '';
+        ot.textContent = d && d.other ? d.other.name + ' ' + d.other.score : '';
       }
 
       function loadEstadoHoy() {
@@ -5644,6 +5646,25 @@
       }
 
       /* Chip de carrera: días que faltan; al tocarlo abre Race Day. */
+      var _raceChip = null;
+      function paintRaceChip() {
+        var chip = document.getElementById('today-race-chip');
+        if (!chip || !_raceChip) return;
+        chip.textContent =
+          '🏁 ' +
+          _raceChip.days +
+          ' ' +
+          _t('ment_days', 'días') +
+          (_raceChip.name ? ' · ' + _raceChip.name : '');
+        chip.style.display = '';
+      }
+      /* CQ8: el idioma puede llegar despues del primer pintado. */
+      ['lx:i18nready', 'lx:langchange'].forEach(function (ev) {
+        document.addEventListener(ev, function () {
+          if (_lastVerdict !== undefined) renderVerdict(_lastVerdict);
+          paintRaceChip();
+        });
+      });
       function loadRaceChip() {
         if (!_token) return;
         apiFetch('/athlete/profile')
@@ -5656,13 +5677,8 @@
             var t = new Date(p.race_goal_date + 'T07:00:00');
             var days = Math.ceil((t - new Date()) / 86400000);
             if (isNaN(days) || days < 0) return;
-            chip.textContent =
-              '🏁 ' +
-              days +
-              ' ' +
-              _t('ment_days', 'días') +
-              (p.race_goal_name ? ' · ' + p.race_goal_name : '');
-            chip.style.display = '';
+            _raceChip = { days: days, name: p.race_goal_name || '' };
+            paintRaceChip();
           })
           .catch(function () {});
       }
