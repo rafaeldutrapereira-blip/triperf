@@ -128,6 +128,21 @@ def my_plan(
     return build_plan(db, me.id, start, end, include_garmin=include_garmin)
 
 
+@router.get("/plan/realizado")
+def my_plan_realizado(
+    start: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    end:   Optional[str] = Query(None, description="YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user)
+):
+    """W21: realizado completo del rango; `adicional` marca lo que no calza con el plan."""
+    if _free_applies(me):
+        from datetime import date as _d
+        start, end = _free_clip_range(start, end, _d.today())
+    from ..services.plan_dia import build_realizado
+    return build_realizado(db, me.id, start, end)
+
+
 @router.post("/log", response_model=WorkoutLogOut, status_code=201)
 def log_workout(body: WorkoutLogCreate,
                 db: Session = Depends(get_db),

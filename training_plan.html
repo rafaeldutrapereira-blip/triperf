@@ -2682,7 +2682,7 @@
             adh.pct !== null
               ? (isDone ? st.icon + ' ' : '') + Math.round(adh.pct) + '%'
               : adh.key === 'extra'
-                ? 'Extra'
+                ? _t('tp_adicional', 'Adicional')
                 : adh.key === 'ext_plan'
                   ? '⟳ Ext'
                   : adh.key === 'planned'
@@ -2881,7 +2881,7 @@
                   adh.pct !== null
                     ? ' ' + Math.round(adh.pct) + '%'
                     : adh.key === 'extra'
-                      ? ' Extra'
+                      ? ' ' + _t('tp_adicional', 'Adicional')
                       : '';
                 html +=
                   '<div class="' +
@@ -3053,7 +3053,7 @@
                   adh.pct !== null
                     ? ' ' + Math.round(adh.pct) + '%'
                     : adh.key === 'extra'
-                      ? ' Extra'
+                      ? ' ' + _t('tp_adicional', 'Adicional')
                       : '';
                 html +=
                   '<div class="' +
@@ -3155,7 +3155,7 @@
             adh.pct !== null
               ? ast.icon + ' ' + Math.round(adh.pct) + '%'
               : adh.key === 'extra'
-                ? _t('tp_extra', 'Extra')
+                ? _t('tp_adicional', 'Adicional')
                 : adh.key === 'planned'
                   ? _t('tp_not_done', 'Sin ejecutar')
                   : '0%';
@@ -3596,10 +3596,55 @@
           });
         }
 
+        // W21: realizado completo. /athlete/plan/realizado devuelve todas las
+        // actividades del rango (el dashboard recorta a 100 dias / cache); se suman
+        // a KL_DATA.activities las que falten y pasan por la misma regla de calce
+        // (pairPlanAndReal); las que no calzan se ven como Adicional.
+        var _realCache = {};
+        function fetchRealizado(startIso, endIso) {
+          var key = startIso + '|' + endIso;
+          if (_realCache[key]) return;
+          var auth = _complAuth();
+          if (!auth.tok) return;
+          _realCache[key] = 'pending';
+          fetch(
+            auth.API + '/athlete/plan/realizado?start=' + startIso + '&end=' + endIso,
+            { headers: { Authorization: 'Bearer ' + auth.tok } },
+          )
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (data) {
+              _realCache[key] = 'done';
+              if (!data || !data.activities) return;
+              window.KL_DATA = window.KL_DATA || {};
+              var cur = (window.KL_DATA.activities = window.KL_DATA.activities || []);
+              var have = {};
+              cur.forEach(function (a) {
+                have[String(a.activity_id)] = true;
+              });
+              var swimWords = /nata|swim|piscina|pool/i;
+              var added = 0;
+              data.activities.forEach(function (a) {
+                if (have[String(a.activity_id)]) return;
+                if (a.sport === 'strength' || a.sport === 'gym') a.sport = 'str';
+                if (a.sport === 'other' && swimWords.test(a.name || ''))
+                  a.sport = 'swim';
+                cur.push(a);
+                added++;
+              });
+              if (added) render();
+            })
+            .catch(function () {
+              _realCache[key] = 'done';
+            });
+        }
+
         function getExternalPlanned(startIso, endIso) {
           var key = startIso + '|' + endIso;
           var cached = _extPlanCache[key];
           if (cached === undefined) fetchExternalPlanned(startIso, endIso);
+          fetchRealizado(startIso, endIso);
           return cached && cached !== 'pending' ? cached : [];
         }
 

@@ -131,3 +131,73 @@ def build_plan(db: Session, user_id: str, start: Optional[str], end: Optional[st
     rows = list(labx) + garmin
     rows.sort(key=lambda x: x["date_iso"] if isinstance(x, dict) else x.date_iso)
     return rows
+
+
+# -- W21: actividades adicionales (realizado completo) ----------------------
+def _match_day(planned: list, reals: list) -> set:
+    """Regla de calce existente (training_plan.html pairPlanAndReal): mismo deporte,
+    1 a 1, por duracion mas cercana (greedy). Devuelve los indices de `reals` calzados."""
+    pairs = []
+    for gi, g in enumerate(reals):
+        for pi, p in enumerate(planned):
+            if p["sport"] == g["sport"]:
+                pairs.append((abs((g["dur_min"] or 0) - (p["dur_min"] or 0)), gi, pi))
+    pairs.sort(key=lambda x: x[0])
+    ug, up, matched = set(), set(), set()
+    for _, gi, pi in pairs:
+        if gi in ug or pi in up:
+            continue
+        ug.add(gi)
+        up.add(pi)
+        matched.add(gi)
+    return matched
+
+
+def build_realizado(db: Session, user_id: str, start: Optional[str], end: Optional[str]) -> dict:
+    """Actividades reales del rango (sin el tope de 100 dias del dashboard); marca
+    `adicional` las que no calzan con ninguna sesion planificada del dia. Los totales
+    suman todas (calzadas + adicionales)."""
+    q = db.query(GarminActivity).filter(GarminActivity.user_id == user_id)
+    if start:
+        q = q.filter(GarminActivity.date_iso >= start)
+    if end:
+        q = q.filter(GarminActivity.date_iso <= end)
+    acts = q.order_by(GarminActivity.date_iso, GarminActivity.id).all()
+
+    planned_by_day: dict = {}
+    for row in build_plan(db, user_id, start, end, include_garmin=True):
+        if isinstance(row, dict):
+            d, t = row["date_iso"], row["template"]
+            sp, dur = t["sport"], t["dur_min"]
+        else:
+            d = row.date_iso
+            sp = _sport(row.template.sport if row.template else None)
+            dur = row.template.dur_min if row.template else None
+        planned_by_day.setdefault(d, []).append({"sport": sp, "dur_min": dur})
+
+    by_day: dict = {}
+    for a in acts:
+        by_day.setdefault(a.date_iso, []).append({
+            "activity_id": a.activity_id, "name": a.name, "sport": _sport(a.sport),
+            "date_iso": a.date_iso, "dur_min": a.dur_min or 0, "dist_km": a.dist_km or 0.0,
+            "tss": a.tss or 0.0, "avg_hr": a.avg_hr, "avg_power": a.avg_power,
+            "pace_str": a.pace_str, "swim_pace": a.swim_pace,
+        })
+    items = []
+    totals = {"tss": 0.0, "dur_min": 0, "adicional_tss": 0.0, "adicional_dur_min": 0}
+    by_date: dict = {}
+    for d, reals in by_day.items():
+        matched = _match_day(planned_by_day.get(d, []), reals)
+        for i, r in enumerate(reals):
+            r["adicional"] = i not in matched
+            items.append(r)
+            t = by_date.setdefault(d, {"tss": 0.0, "dur_min": 0})
+            t["tss"] += r["tss"]
+            t["dur_min"] += r["dur_min"]
+            totals["tss"] += r["tss"]
+            totals["dur_min"] += r["dur_min"]
+            if r["adicional"]:
+                totals["adicional_tss"] += r["tss"]
+                totals["adicional_dur_min"] += r["dur_min"]
+    items.sort(key=lambda x: (x["date_iso"], str(x["activity_id"])))
+    return {"activities": items, "by_date": by_date, "totals": totals}
