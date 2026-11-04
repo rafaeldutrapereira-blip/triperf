@@ -1,5 +1,5 @@
 """
-athlete-app.html oculta Comunidad (barra inferior) y Race Day / Mi Equipo (menú)
+athlete-app.html oculta Comunidad (barra inferior) y Race Day (menú)
 para planes que no los incluyen. Usa el mismo catálogo que la web
 (routes.config.js). Estos tests verifican el contrato estático: que la página
 carga el catálogo, que los ids existen una sola vez, y que el mapeo apunta a
@@ -25,7 +25,7 @@ def test_athlete_app_carga_routes_config():
     assert 'src="routes.config.js' in APP
 
 
-@pytest.mark.parametrize("element_id", ["nav-community", "menu-item-raceday", "menu-item-gear"])
+@pytest.mark.parametrize("element_id", ["nav-community", "menu-item-raceday"])
 def test_elemento_gated_existe_una_vez(element_id):
     assert APP.count(f'id="{element_id}"') == 1
 
@@ -37,7 +37,6 @@ def test_mapeo_de_visibilidad_por_plan():
     assert pairs == [
         ("nav-community", "community"),
         ("menu-item-raceday", "race_day"),
-        ("menu-item-gear", "gear"),
         ("pgr-tab-huella", "huella"),  # W4: deshabilitada para todos
     ]
 
@@ -88,20 +87,28 @@ def test_b1_mas_es_pantalla_y_lista_destinos_con_gating():
     assert APP.count('id="screen-mas"') == 1
     mas = APP[APP.index('id="screen-mas"'):]
     mas = mas[: mas.index("<!-- /screens -->")]
-    for dest in ("progress", "raceday", "mental", "gear", "profile"):
+    for dest in ("progress", "raceday", "profile"):
         assert f"goScreen('screen-{dest}')" in mas
+    # P1: Mental y Gear salieron de la app; Mi equipo es un enlace a la web
+    # (puente P0, destino gear) y Mental ya no tiene fila.
+    assert "screen-mental" not in mas and "screen-gear" not in mas
+    assert "onclick=\"abrirEnWeb('gear')\"" in mas
     # P2: Recovery ya no es fila de Más (se entra desde el semaforo de Hoy)
     assert "screen-wellness" not in mas
     assert "showNotifications()" in mas and "doLogout()" in mas
-    # Race Day y Mi Equipo conservan su gating por plan, ahora dentro de Más
-    assert 'id="menu-item-raceday"' in mas and 'id="menu-item-gear"' in mas
+    # Race Day conserva su gating por plan dentro de Más
+    assert 'id="menu-item-raceday"' in mas
+    assert 'id="menu-item-gear"' not in APP
     assert 'id="nav-community"' not in mas
 
 
 def test_b1_goscreen_conserva_pantallas_y_mapea_la_barra():
-    for sid in ("today", "week", "wellness", "community", "profile", "mental",
-                "raceday", "progress", "gear", "aicoach", "mas"):
+    for sid in ("today", "week", "wellness", "community", "profile",
+                "raceday", "progress", "aicoach", "mas"):
         assert APP.count(f'id="screen-{sid}"') == 1
+    # P1: pantallas retiradas (viven en la web)
+    for sid in ("mental", "gear"):
+        assert f'id="screen-{sid}"' not in APP
     nav_map = re.search(r"var navMap = \{(.*?)\};", APP, re.S).group(1)
     for sid, nid in (("today", "nav-today"), ("week", "nav-week"),
                      ("community", "nav-community"), ("mas", "nav-menu")):

@@ -258,42 +258,6 @@ def test_profile_screen_connections_translated(page: Page, athlete_api):
 
 @pytest.mark.mobile
 @pytest.mark.timeout(60)
-def test_mental_screen_translated(page: Page, athlete_api):
-    """
-    Given: un atleta de prueba sin plan Coach (gateado) o sin check-in
-           previo del día (estado real de cualquier cuenta nueva)
-    When:  entra a Rendimiento Mental con idioma inglés
-    Then:  o bien el mensaje de gate de plan aparece en inglés, o el
-           título "Mental Fatigue Score" y "Last 7 days" aparecen sin
-           texto español colado (confirma que renderMentalScore,
-           MTL_CAT_LABELS/MTL_DIFF_LABELS como funciones, y los mensajes
-           de check-in quedaron traducidos — Sprint 2b-vi).
-    """
-    errors = []
-    page.on("pageerror", lambda e: errors.append(str(e)))
-
-    page.set_viewport_size(MOBILE_VIEWPORT)
-    page.goto(f"{BASE_URL}/login.html")
-    _inject_auth_and_lang(page, athlete_api._token, "en")
-
-    page.goto(f"{BASE_URL}/athlete-app.html")
-    page.wait_for_load_state("domcontentloaded")
-    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
-
-    page.evaluate("goScreen('screen-mental')")
-    page.wait_for_selector("#mtl-score-card:not(:has-text('Loading'))", timeout=20000)
-
-    card_text = page.locator("#mtl-score-card").inner_text()
-    assert "Cargando" not in card_text, f"Pantalla quedó en estado de carga (ES): {card_text!r}"
-    assert "Rendimiento Mental" not in card_text, f"Mensaje de gate quedó en español: {card_text!r}"
-    if "Mental Fatigue Score" in card_text:
-        assert "Últimos" not in card_text, f"Texto de score quedó en español: {card_text!r}"
-
-    assert not errors, f"JS errors en Mental (en): {errors}"
-
-
-@pytest.mark.mobile
-@pytest.mark.timeout(60)
 def test_raceday_screen_translated(page: Page, athlete_api):
     """
     Given: un atleta de prueba sin meta de carrera configurada (estado
@@ -390,36 +354,3 @@ def test_aicoach_chat_new_conversation_translated(page: Page, athlete_api):
     assert "Nueva conversación" not in msg_text, f"Saludo quedó en español: {msg_text!r}"
 
     assert not errors, f"JS errors en AI Coach (pt): {errors}"
-
-
-@pytest.mark.mobile
-@pytest.mark.timeout(60)
-def test_gear_screen_translated(page: Page, athlete_api):
-    """
-    Given: un atleta de prueba sin zapatillas/bicicletas registradas
-           (estado real de cualquier cuenta nueva)
-    When:  entra a Mi Equipo > Zapatillas con idioma inglés
-    Then:  el mensaje de "todavía no agregaste zapatillas" aparece en
-           inglés, nunca en español — confirma que
-           loadGearShoes/renderGearShoes quedaron traducidos
-           (Sprint 2b-x).
-    """
-    errors = []
-    page.on("pageerror", lambda e: errors.append(str(e)))
-
-    page.set_viewport_size(MOBILE_VIEWPORT)
-    page.goto(f"{BASE_URL}/login.html")
-    _inject_auth_and_lang(page, athlete_api._token, "en")
-
-    page.goto(f"{BASE_URL}/athlete-app.html")
-    page.wait_for_load_state("domcontentloaded")
-    page.wait_for_selector("#today-content .no-workout, #today-content .today-card-compact", timeout=20000)
-
-    page.evaluate("goScreen('screen-gear')")
-    page.wait_for_selector("#gear-shoes-list:not(:has-text('Loading'))", timeout=20000)
-
-    list_text = page.locator("#gear-shoes-list").inner_text()
-    assert "Cargando" not in list_text, f"Pantalla quedó en estado de carga (ES): {list_text!r}"
-    assert "Todavía no agregaste" not in list_text, f"Mensaje quedó en español: {list_text!r}"
-
-    assert not errors, f"JS errors en Mi Equipo (en): {errors}"

@@ -27,7 +27,7 @@ const html = fs.readFileSync(process.argv[1], 'utf8');
 const EC = require(process.argv[2]);
 const cfg = JSON.parse(process.argv[3]);
 const a = html.indexOf('var _CK_GROUPS');
-const b = html.indexOf('/* ── Pantalla Mental (Sprint 2 del roadmap app↔web) — mismos', a);
+const b = html.indexOf('/* ── Race Day + Nutrición (Sprints 3+4', a);
 if (a < 0 || b < 0) { throw new Error('bloque de hoja no encontrado'); }
 const src = html.slice(a, b);
 

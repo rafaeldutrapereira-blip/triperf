@@ -52,7 +52,7 @@ def test_loadweek_usa_plan_real_y_realizado():
 
 
 def test_build_y_claves_i18n():
-    assert re.search(r"BUILD_VERSION = '293'", SW)
+    assert re.search(r"BUILD_VERSION = '294'", SW)
     i18n = open(os.path.join(ROOT, "i18n.js"), encoding="utf-8").read()
     for k in ("b4_sesiones_de", "b4_adicional", "b4_adicionales_n", "b4_sin_sesiones"):
         assert i18n.count(k + ":") == 3
