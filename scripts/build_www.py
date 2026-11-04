@@ -37,6 +37,17 @@ def build():
         shutil.copy2(f, WWW / f.name)
         copied += 1
 
+    # CQ10b/D3: librerias vendorizadas (Leaflet, Chart.js) que athlete-app.html
+    # carga por ruta local; sin esto la app empaquetada queda sin ellas.
+    vendor = ROOT / "vendor"
+    if vendor.is_dir():
+        for f in vendor.rglob("*"):
+            if f.is_file() and f.suffix.lower() in _ALLOWED_EXT:
+                dest = WWW / f.relative_to(ROOT)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, dest)
+                copied += 1
+
     # Capacitor exige un index.html como entry point del webDir. El punto
     # de entrada real de la app es athlete-app.html (ver manifest.json:
     # start_url) -- se copia tal cual como index.html, sin duplicar
