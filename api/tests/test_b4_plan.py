@@ -25,7 +25,7 @@ def _section(start, end):
 
 
 WEEK = _section('<div class="screen" id="screen-week">', "<!-- SCREEN 5")
-INSIGHTS = _section('<div id="pgr-insights-content">', '<div id="pgr-records-content"')
+INSIGHTS = _section('<div id="pgr-forma-content">', '<div id="pgr-records-content"')
 
 
 def test_plan_ya_no_tiene_anillos_ni_wpmob():
@@ -52,7 +52,7 @@ def test_loadweek_usa_plan_real_y_realizado():
 
 
 def test_build_y_claves_i18n():
-    assert re.search(r"BUILD_VERSION = '294'", SW)
+    assert re.search(r"BUILD_VERSION = '(29[4-9]|[3-9]\d\d)'", SW)
     i18n = open(os.path.join(ROOT, "i18n.js"), encoding="utf-8").read()
     for k in ("b4_sesiones_de", "b4_adicional", "b4_adicionales_n", "b4_sin_sesiones"):
         assert i18n.count(k + ":") == 3

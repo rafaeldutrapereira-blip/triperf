@@ -1486,58 +1486,6 @@
         display: block;
         overflow: visible;
       }
-      /* Barras con relleno degradado + crecimiento animado al cargar — mismo
-   dato/interacción de siempre (tap/hover sigue funcionando igual),
-   solo un poco más pulido visualmente. y/height son atributos SVG
-   animables por CSS en los navegadores modernos. */
-      .wp-mob-bar {
-        transition:
-          height 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-          y 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-          fill-opacity 0.18s;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .wp-mob-bar {
-          transition: fill-opacity 0.18s;
-        }
-      }
-      .wp-mob-tooltip {
-        position: absolute;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        background: #07111d;
-        border: 1px solid rgba(61, 104, 128, 0.4);
-        border-radius: 6px;
-        padding: 0.4rem 0.55rem;
-        z-index: 5;
-        font-family: 'Oswald', sans-serif;
-        white-space: nowrap;
-        opacity: 0;
-        transition: opacity 0.12s ease;
-        transform: translate(-50%, -110%);
-      }
-      .wp-mob-tooltip.on {
-        opacity: 1;
-      }
-      .wp-mob-tooltip-wk {
-        font-size: 0.58rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: #7fb3cc;
-        margin-bottom: 0.2rem;
-      }
-      .wp-mob-tooltip-row {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #f0f9ff;
-      }
-      .wp-mob-tooltip-row span {
-        font-weight: 400;
-        color: #7fb3cc;
-        margin-right: 0.25rem;
-      }
-
       /* ── Detalle de actividad de Comunidad (GPS + parciales) — pedido
    explícito: mismo recorrido/parciales que training_detail.html, igual
    Strava. Reusa #wo-detail-modal (mismo bottom-sheet con scroll seguro
@@ -4757,14 +4705,14 @@
               </div>
             </div>
 
-            <div class="cm-tabs cm-tabs-scroll">
+            <div class="cm-tabs">
               <div
                 class="cm-tab active"
-                id="pgr-tab-insights"
-                onclick="progressTab('insights')"
-                data-i18n="app_tab_insights"
+                id="pgr-tab-forma"
+                onclick="progressTab('forma')"
+                data-i18n="c1_tab_forma"
               >
-                Insights
+                Forma
               </div>
               <div
                 class="cm-tab"
@@ -4776,12 +4724,13 @@
               </div>
               <div
                 class="cm-tab"
-                id="pgr-tab-projection"
-                onclick="progressTab('projection')"
-                data-i18n="app_tab_projection"
+                id="pgr-tab-powervo2"
+                onclick="progressTab('powervo2')"
+                data-i18n="c1_tab_power_vo2"
               >
-                Proyección
+                Potencia/VO2
               </div>
+              <!-- W4: Huella deshabilitada para todos; se oculta por canAccess y se borra en D1 -->
               <div
                 class="cm-tab"
                 id="pgr-tab-huella"
@@ -4790,47 +4739,12 @@
               >
                 Huella
               </div>
-              <div
-                class="cm-tab"
-                id="pgr-tab-power"
-                onclick="progressTab('power')"
-                data-i18n="app_tab_power"
-              >
-                Potencia
-              </div>
-              <div
-                class="cm-tab"
-                id="pgr-tab-vo2max"
-                onclick="progressTab('vo2max')"
-                data-i18n="app_tab_vo2max"
-              >
-                VO2max
-              </div>
-              <div
-                class="cm-tab"
-                id="pgr-tab-distrib"
-                onclick="progressTab('distrib')"
-                data-i18n="app_tab_distrib"
-              >
-                Distribución
-              </div>
-              <div
-                class="cm-tab"
-                id="pgr-tab-zones"
-                onclick="progressTab('zones')"
-                data-i18n="app_tab_zones"
-              >
-                Zonas
-              </div>
-            </div>
-            <div class="pgr-tabs-hint" data-i18n="app_progress_swipe_hint">
-              ← desliza para ver más →
             </div>
           </div>
           <!-- /screen-sticky-head -->
 
-          <div id="pgr-insights-content">
-            <!-- B4: Progreso Semanal (wpMob) se muda aquí desde Plan; base del chip Forma (C1 lo recorta) -->
+          <div id="pgr-forma-content">
+            <!-- B4: Progreso Semanal (wpMob) se muda aquí desde Plan; chip Forma (C1: recortado) -->
           <!-- Progreso Semanal — misma ventana móvil de 5 semanas que
            dashboard.html (pedido explícito: incluir esta card acá, después
            de la de TSS). Mismos datos (/athlete/dashboard activities),
@@ -4905,7 +4819,6 @@
                 viewBox="0 0 340 100"
                 preserveAspectRatio="none"
               ></svg>
-              <div class="wp-mob-tooltip" id="wp-mob-tooltip"></div>
             </div>
           </div>
 
@@ -4924,16 +4837,6 @@
             </div>
           </div>
 
-          <div id="pgr-projection-content" style="display: none">
-            <div
-              class="rc-mob-card"
-              id="pgr-proj-card"
-              style="margin-top: 1rem"
-            >
-              <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
-            </div>
-          </div>
-
           <div id="pgr-huella-content" style="display: none">
             <div
               class="rc-mob-card"
@@ -4945,7 +4848,8 @@
           </div>
 
           <!-- Curva de Potencia (cierre de gap 2026-08-14) — /analytics/power-curve -->
-          <div id="pgr-power-content" style="display: none">
+          <div id="pgr-powervo2-content" style="display: none">
+          <div id="pgr-power-content">
             <div
               class="md-tabs"
               style="padding: 1rem 1rem 0"
@@ -4977,8 +4881,9 @@
             </div>
           </div>
 
-          <!-- VO2max histórico — /analytics/vo2max -->
-          <div id="pgr-vo2max-content" style="display: none">
+          </div>
+          <!-- VO2max histórico — /analytics/vo2max (mismo chip que Potencia) -->
+          <div id="pgr-vo2max-content">
             <div
               class="md-tabs"
               style="padding: 1rem 1rem 0"
@@ -5010,26 +4915,6 @@
             </div>
           </div>
 
-          <!-- Distribución de entrenamiento por deporte — /analytics/training-distribution -->
-          <div id="pgr-distrib-content" style="display: none">
-            <div
-              class="rc-mob-card"
-              id="pgr-distrib-card"
-              style="margin-top: 1rem"
-            >
-              <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
-            </div>
-          </div>
-
-          <!-- Calibración de zonas — /analytics/zone-calibration -->
-          <div id="pgr-zones-content" style="display: none">
-            <div
-              class="rc-mob-card"
-              id="pgr-zones-card"
-              style="margin-top: 1rem"
-            >
-              <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
-            </div>
           </div>
         </div>
 
@@ -6178,7 +6063,7 @@
           racedayTab('dashboard');
         }
         if (id === 'screen-progress') {
-          progressTab('insights');
+          progressTab('forma');
         }
       }
 
@@ -8050,12 +7935,11 @@
           });
       }
 
-      /* ── Progreso Semanal (ventana móvil de 5 semanas) ──────────
-   Misma card/dato que dashboard.html (renderWeeklyProgress) — pedido
-   explícito: agregarla acá, en "Semana", después de la card de TSS.
-   Usa /athlete/dashboard.activities (mismo endpoint que alimenta
-   el dashboard web) en vez de re-derivarlo de /athlete/plan,
-   porque necesita actividades REALES de Garmin, no lo planificado. */
+      /* ── Progreso Semanal (ventana móvil de 5 semanas; chip Forma, C1) ──
+   Ventana móvil de 5 semanas con actividades REALES de
+   /athlete/dashboard (mismo dato/agregación que dashboard.html).
+   Versión recortada: barras + promedio + cifras de la semana actual,
+   sin tooltip táctil ni animaciones. */
       var _wpMobActs = [];
       var _wpMobSport = 'all';
 
@@ -8082,42 +7966,16 @@
         _renderWpMob(sport);
       }
 
-      function _wpMobSportMatch(actSport, filter) {
-        if (filter === 'all') return true;
-        return actSport === filter;
-      }
-
-      /* Misma lógica de agregación por semana (lunes local) que _weekKey() de
-   dashboard.html — 5 semanas terminando siempre en la actual. */
+      /* Semana = lunes local, igual que _weekKey() de dashboard.html. */
       function _wpMobWeekKey(dateIso) {
         var p = dateIso.split('-');
         var d = new Date(+p[0], +p[1] - 1, +p[2]);
-        var day = d.getDay() || 7;
-        d.setDate(d.getDate() - day + 1);
+        d.setDate(d.getDate() - (d.getDay() || 7) + 1);
         return _isoLocal(d);
       }
 
-      var _wpMobWeeksSnapshot = [];
-      var _wpMobActiveColor = '#FF6535';
-      var _wpMobDefaultIdx = 0;
-      var _wpMobUseDur = false;
-      var _wpMobListenersOn = false;
-
       function _renderWpMob(sport) {
-        var MO = [
-          'ENE',
-          'FEB',
-          'MAR',
-          'ABR',
-          'MAY',
-          'JUN',
-          'JUL',
-          'AGO',
-          'SEP',
-          'OCT',
-          'NOV',
-          'DIC',
-        ];
+        var MO = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
         var today = new Date();
         var weeks = [];
         for (var w = 4; w >= 0; w--) {
@@ -8131,17 +7989,16 @@
             label: d.getDate() + ' ' + MO[d.getMonth()],
           });
         }
-
         _wpMobActs.forEach(function (a) {
-          if (!_wpMobSportMatch(a.sport, sport)) return;
+          if (sport !== 'all' && a.sport !== sport) return;
           var wk = _wpMobWeekKey(a.date_iso);
-          var w = weeks.find(function (x) {
+          var wkObj = weeks.find(function (x) {
             return x.key === wk;
           });
-          if (!w) return;
-          w.dist += a.dist_km || 0;
-          w.dur += a.dur_min || 0;
-          w.count += 1;
+          if (!wkObj) return;
+          wkObj.dist += a.dist_km || 0;
+          wkObj.dur += a.dur_min || 0;
+          wkObj.count += 1;
         });
 
         var cur = weeks[weeks.length - 1];
@@ -8154,325 +8011,56 @@
         document.getElementById('wp-mob-acts').textContent = cur.count;
 
         var useDur = sport === 'gym';
-        _wpMobUseDur = useDur;
         var metricOf = function (x) {
           return useDur ? x.dur : x.dist;
         };
-        var metricUnit = useDur ? 'min' : 'km';
+        var unit = useDur ? 'min' : 'km';
         var maxVal = Math.max.apply(null, weeks.map(metricOf));
         if (maxVal < 1) maxVal = useDur ? 30 : 10;
         var maxLine = Math.ceil(maxVal / 10) * 10;
-
-        var W = 340,
-          H = 100,
-          padL = 8,
-          padR = 8,
-          padT = 8,
-          padB = 18;
-        var chartW = W - padL - padR,
-          chartH = H - padT - padB;
-        var barW = chartW / weeks.length;
+        var W = 340, H = 100, pad = 8, padT = 8, padB = 18;
+        var chartH = H - padT - padB;
+        var barW = (W - 2 * pad) / weeks.length;
         var col = SPORT_COL[sport] || '#FF6535';
+        var base = padT + chartH;
 
-        var svgParts = [];
-        // Gradiente vertical para el relleno de las barras — mismo color de
-        // deporte de siempre, solo con más cuerpo visual que un fill-opacity
-        // plano (pedido explícito de pulido, mismo criterio que "an area fill"
-        // ya usado en otros charts de la sesión).
-        var gradId = 'wpBarGrad-' + sport;
-        svgParts.push(
-          '<defs><linearGradient id="' +
-            gradId +
-            '" x1="0" y1="0" x2="0" y2="1">' +
-            '<stop offset="0%" stop-color="' +
-            col +
-            '" stop-opacity=".85"/>' +
-            '<stop offset="100%" stop-color="' +
-            col +
-            '" stop-opacity=".25"/>' +
-            '</linearGradient></defs>',
-        );
-        svgParts.push(
-          '<line x1="' +
-            padL +
-            '" y1="' +
-            (padT + chartH) +
-            '" x2="' +
-            (W - padR) +
-            '" y2="' +
-            (padT + chartH) +
+        var svg = [
+          '<line x1="' + pad + '" y1="' + base + '" x2="' + (W - pad) + '" y2="' + base +
             '" stroke="rgba(255,255,255,.08)" stroke-width="1"/>',
-        );
-
-        // Línea de promedio — pedido explícito, igual que dashboard.html (línea
-        // punteada + valor a la derecha), para poder leer de un vistazo si la
-        // semana actual está arriba o abajo de lo habitual.
+        ];
         var avgVal =
-          weeks.reduce(function (s, w) {
-            return s + metricOf(w);
+          weeks.reduce(function (s, x) {
+            return s + metricOf(x);
           }, 0) / weeks.length;
         if (avgVal > 0) {
-          var avgY = padT + chartH - Math.min(avgVal / maxLine, 1) * chartH;
-          svgParts.push(
-            '<line x1="' +
-              padL +
-              '" y1="' +
-              avgY.toFixed(1) +
-              '" x2="' +
-              (W - padR) +
-              '" y2="' +
-              avgY.toFixed(1) +
+          var avgY = (base - Math.min(avgVal / maxLine, 1) * chartH).toFixed(1);
+          svg.push(
+            '<line x1="' + pad + '" y1="' + avgY + '" x2="' + (W - pad) + '" y2="' + avgY +
               '" stroke="rgba(255,255,255,.28)" stroke-width="1" stroke-dasharray="3,3"/>',
-          );
-          svgParts.push(
-            '<text x="' +
-              (W - padR) +
-              '" y="' +
-              (avgY - 3).toFixed(1) +
+            '<text x="' + (W - pad) + '" y="' + (avgY - 3) +
               '" text-anchor="end" font-size="6.5" fill="rgba(255,255,255,.4)">prom. ' +
-              avgVal.toFixed(useDur ? 0 : 1) +
-              metricUnit +
-              '</text>',
+              avgVal.toFixed(useDur ? 0 : 1) + unit + '</text>',
           );
         }
-
-        var dotPts = [];
         weeks.forEach(function (wk, i) {
           var val = metricOf(wk);
-          var x = padL + i * barW;
-          var barH = val > 0 ? (val / maxLine) * chartH : 0;
-          var y = padT + chartH - barH;
+          var x = pad + i * barW;
+          var isCur = i === weeks.length - 1;
           if (val > 0) {
-            svgParts.push(
-              '<rect class="wp-mob-bar" data-wk-idx="' +
-                i +
-                '" data-final-y="' +
-                y +
-                '" data-final-h="' +
-                barH +
-                '" x="' +
-                (x + barW * 0.22) +
-                '" y="' +
-                (padT + chartH) +
-                '" width="' +
-                barW * 0.56 +
-                '" height="0" rx="3" fill="url(#' +
-                gradId +
-                ')" fill-opacity=".35"/>',
+            var barH = (val / maxLine) * chartH;
+            svg.push(
+              '<rect class="wp-mob-bar" x="' + (x + barW * 0.22) + '" y="' + (base - barH) +
+                '" width="' + barW * 0.56 + '" height="' + barH + '" rx="3" fill="' + col +
+                '" fill-opacity="' + (isCur ? '.9' : '.4') + '"/>',
             );
           }
-          var cx = padL + (i + 0.5) * barW;
-          var cy = val > 0 ? padT + chartH - (val / maxLine) * chartH : null;
-          if (cy !== null) dotPts.push({ x: cx, y: cy, idx: i });
-          svgParts.push(
-            '<text class="wp-mob-lbl" data-wk-idx="' +
-              i +
-              '" data-label="' +
-              wk.label +
-              '" x="' +
-              cx +
-              '" y="' +
-              (padT + chartH + 13) +
-              '" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.4)">' +
-              wk.label +
-              '</text>',
+          svg.push(
+            '<text x="' + (x + barW / 2) + '" y="' + (base + 13) +
+              '" text-anchor="middle" font-size="7" fill="rgba(255,255,255,' +
+              (isCur ? '.85' : '.4') + ')">' + wk.label + '</text>',
           );
         });
-
-        if (dotPts.length > 1) {
-          var path =
-            'M' + dotPts[0].x.toFixed(1) + ' ' + dotPts[0].y.toFixed(1);
-          for (var i2 = 1; i2 < dotPts.length; i2++)
-            path +=
-              ' L' + dotPts[i2].x.toFixed(1) + ' ' + dotPts[i2].y.toFixed(1);
-          svgParts.push(
-            '<path d="' +
-              path +
-              '" fill="none" stroke="' +
-              col +
-              '" stroke-width="1.3" stroke-opacity=".55" stroke-linejoin="round"/>',
-          );
-        }
-        dotPts.forEach(function (p) {
-          svgParts.push(
-            '<circle class="wp-mob-dot" data-wk-idx="' +
-              p.idx +
-              '" cx="' +
-              p.x.toFixed(1) +
-              '" cy="' +
-              p.y.toFixed(1) +
-              '" r="2" fill="rgba(255,255,255,.4)"/>',
-          );
-        });
-
-        // Zonas invisibles de hover/touch — una por semana, toda la altura del
-        // chart (no solo sobre la barra) para que el dedo no tenga que acertar
-        // justo en el pixel de la barra.
-        weeks.forEach(function (wk, i) {
-          var x = padL + i * barW;
-          svgParts.push(
-            '<rect x="' +
-              x +
-              '" y="0" width="' +
-              barW +
-              '" height="' +
-              H +
-              '" fill="transparent" data-wk-idx="' +
-              i +
-              '"/>',
-          );
-        });
-
-        var chartEl = document.getElementById('wp-mob-chart');
-        chartEl.innerHTML = svgParts.join('');
-        _wpMobWeeksSnapshot = weeks;
-        _wpMobActiveColor = col;
-        _wpMobDefaultIdx = weeks.length - 1;
-        _wpMobHighlight(_wpMobDefaultIdx);
-        _wpMobWireTouch();
-
-        // Crecimiento animado — mismo criterio que los anillos: arranca en 0 y
-        // crece a su altura real un frame después, para que la transición CSS
-        // de arriba (.wp-mob-bar) se dispare.
-        var reducedMotion =
-          window.matchMedia &&
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!reducedMotion) {
-          requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-              chartEl.querySelectorAll('.wp-mob-bar').forEach(function (el) {
-                el.setAttribute('y', el.getAttribute('data-final-y'));
-                el.setAttribute('height', el.getAttribute('data-final-h'));
-              });
-            });
-          });
-        } else {
-          chartEl.querySelectorAll('.wp-mob-bar').forEach(function (el) {
-            el.setAttribute('y', el.getAttribute('data-final-y'));
-            el.setAttribute('height', el.getAttribute('data-final-h'));
-          });
-        }
-      }
-
-      /* Resalta la semana `idx` (barra a full opacidad + punto más grande +
-   label en blanco) y deja el resto neutro — misma técnica que
-   _wpHighlight() en dashboard.html, para hover Y para pintar la semana
-   actual al renderizar. */
-      function _wpMobHighlight(idx) {
-        var svg = document.getElementById('wp-mob-chart');
-        if (!svg) return;
-        svg.querySelectorAll('.wp-mob-bar').forEach(function (el) {
-          var on = +el.getAttribute('data-wk-idx') === idx;
-          el.setAttribute('fill-opacity', on ? '.9' : '.35');
-        });
-        svg.querySelectorAll('.wp-mob-dot').forEach(function (el) {
-          var on = +el.getAttribute('data-wk-idx') === idx;
-          el.setAttribute('r', on ? '3' : '2');
-          el.setAttribute(
-            'fill',
-            on ? _wpMobActiveColor : 'rgba(255,255,255,.4)',
-          );
-        });
-        svg.querySelectorAll('.wp-mob-lbl').forEach(function (el) {
-          var on = +el.getAttribute('data-wk-idx') === idx;
-          el.setAttribute(
-            'fill',
-            'rgba(255,255,255,' + (on ? '.85' : '.4') + ')',
-          );
-        });
-      }
-
-      function _wpMobFmtDur(min) {
-        var h = Math.floor(min / 60),
-          m = Math.round(min % 60);
-        return h > 0 ? h + 'h ' + m + 'min' : m + 'min';
-      }
-
-      function _wpMobShowTooltip(idx, clientX, clientY) {
-        var wk = _wpMobWeeksSnapshot[idx];
-        if (!wk) return;
-        _wpMobHighlight(idx);
-        var ttEl = document.getElementById('wp-mob-tooltip');
-        var wrapEl = document.querySelector('.wp-mob-chart-wrap');
-        ttEl.innerHTML =
-          _t('ath_week_of', '<div class="wp-mob-tooltip-wk">Semana del ') +
-          wk.label +
-          '</div>' +
-          '<div class="wp-mob-tooltip-row"><span>Distancia</span>' +
-          wk.dist.toFixed(1) +
-          ' km</div>' +
-          '<div class="wp-mob-tooltip-row"><span>Tiempo</span>' +
-          _wpMobFmtDur(wk.dur) +
-          '</div>' +
-          '<div class="wp-mob-tooltip-row"><span>Sesiones</span>' +
-          wk.count +
-          '</div>';
-        var wrapRect = wrapEl.getBoundingClientRect();
-        var ttW = ttEl.offsetWidth || 110;
-        var x = clientX - wrapRect.left;
-        var y = clientY - wrapRect.top;
-        x = Math.max(ttW / 2 + 4, Math.min(wrapRect.width - ttW / 2 - 4, x));
-        ttEl.style.left = x + 'px';
-        ttEl.style.top = y + 'px';
-        ttEl.classList.add('on');
-      }
-      function _wpMobHideTooltip() {
-        document.getElementById('wp-mob-tooltip').classList.remove('on');
-        _wpMobHighlight(_wpMobDefaultIdx);
-      }
-
-      /* Conecta touch (arrastrar el dedo, pedido explícito) + mouse (para
-   probar desde una compu) — se ata UNA sola vez al elemento <svg> (no a
-   sus hijos, que se regeneran en cada render) vía delegación de
-   eventos, así sobrevive a que _renderWpMob() reemplace el innerHTML. */
-      function _wpMobWireTouch() {
-        if (_wpMobListenersOn) return;
-        _wpMobListenersOn = true;
-        var svg = document.getElementById('wp-mob-chart');
-
-        function idxAt(clientX, clientY) {
-          var el = document.elementFromPoint(clientX, clientY);
-          var v = el && el.getAttribute && el.getAttribute('data-wk-idx');
-          return v == null ? null : +v;
-        }
-
-        svg.addEventListener(
-          'touchstart',
-          function (e) {
-            var t = e.touches[0];
-            var idx = idxAt(t.clientX, t.clientY);
-            if (idx != null) {
-              e.preventDefault();
-              _wpMobShowTooltip(idx, t.clientX, t.clientY);
-            }
-          },
-          { passive: false },
-        );
-        svg.addEventListener(
-          'touchmove',
-          function (e) {
-            var t = e.touches[0];
-            var idx = idxAt(t.clientX, t.clientY);
-            if (idx != null) {
-              e.preventDefault();
-              _wpMobShowTooltip(idx, t.clientX, t.clientY);
-            }
-          },
-          { passive: false },
-        );
-        svg.addEventListener('touchend', _wpMobHideTooltip);
-        svg.addEventListener('touchcancel', _wpMobHideTooltip);
-
-        svg.addEventListener('mousemove', function (e) {
-          var idx =
-            e.target.getAttribute && e.target.getAttribute('data-wk-idx');
-          if (idx == null) {
-            _wpMobHideTooltip();
-            return;
-          }
-          _wpMobShowTooltip(+idx, e.clientX, e.clientY);
-        });
-        svg.addEventListener('mouseleave', _wpMobHideTooltip);
+        document.getElementById('wp-mob-chart').innerHTML = svg.join('');
       }
 
       /* ── Check-in en hoja única (B3) ───────────────────────────
@@ -9917,16 +9505,7 @@
       }
 
       /* ── Progreso — Analytics + Mi Huella (Sprint 5 del roadmap app↔web) ── */
-      var PGR_TABS = [
-        'insights',
-        'records',
-        'projection',
-        'huella',
-        'power',
-        'vo2max',
-        'distrib',
-        'zones',
-      ];
+      var PGR_TABS = ['forma', 'records', 'huella', 'powervo2'];
       function progressTab(tab) {
         PGR_TABS.forEach(function (t) {
           var tabEl = document.getElementById('pgr-tab-' + t),
@@ -9934,14 +9513,13 @@
           if (tabEl) tabEl.classList.toggle('active', t === tab);
           if (contEl) contEl.style.display = t === tab ? '' : 'none';
         });
-        if (tab === 'insights') loadProgressInsights();
+        if (tab === 'forma') loadProgressInsights();
         else if (tab === 'records') loadProgressRecords();
-        else if (tab === 'projection') loadProgressProjection();
         else if (tab === 'huella') loadProgressHuella();
-        else if (tab === 'power') loadProgressPower(_pgrPowerSport);
-        else if (tab === 'vo2max') loadProgressVo2max();
-        else if (tab === 'distrib') loadProgressDistrib();
-        else if (tab === 'zones') loadProgressZones();
+        else if (tab === 'powervo2') {
+          loadProgressPower(_pgrPowerSport);
+          loadProgressVo2max(_pgrVo2Sport);
+        }
       }
 
       function loadProgressInsights() {
@@ -10115,149 +9693,6 @@
             );
           })
           .join('');
-      }
-
-      function loadProgressProjection() {
-        if (!_token) return;
-        var card = document.getElementById('pgr-proj-card');
-        card.innerHTML =
-          '<div class="cm-empty">' +
-          _t('status_loading', 'Cargando...') +
-          '</div>';
-        apiFetch('/analytics/ctl-projection')
-          .then(function (r) {
-            if (r.status === 403) {
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t(
-                  'app_plan_gate_analytics',
-                  'Tu plan no incluye Analytics — actualizalo en Mi Perfil',
-                ) +
-                '</div>';
-              return Promise.reject('gated');
-            }
-            return r.ok ? r.json() : Promise.reject('err');
-          })
-          .then(function (d) {
-            renderProgressProjection(d);
-          })
-          .catch(function (e) {
-            if (e !== 'gated')
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t('app_offline_error', 'Sin conexión — no se pudo cargar') +
-                '</div>';
-          });
-      }
-
-      function renderProgressProjection(d) {
-        var card = document.getElementById('pgr-proj-card');
-        var proj = d.projection || [];
-        if (!proj.length) {
-          card.innerHTML =
-            '<div class="cm-empty">' +
-            _t('app_no_proj_data', 'Sin datos suficientes para proyectar.') +
-            '</div>';
-          return;
-        }
-        var kpis = [
-          {
-            l: _t('app_kpi_ctl_current', 'CTL actual'),
-            v: d.current_ctl,
-            c: '#22D3EE',
-          },
-          {
-            l: _t('app_kpi_atl_current', 'ATL actual'),
-            v: d.current_atl,
-            c: '#FF6535',
-          },
-          {
-            l: _t('app_kpi_tsb_current', 'TSB actual'),
-            v:
-              d.current_tsb != null
-                ? (d.current_tsb >= 0 ? '+' : '') + d.current_tsb
-                : '—',
-            c: (d.current_tsb || 0) >= 0 ? '#10B981' : '#EF4444',
-          },
-        ]
-          .map(function (k) {
-            return (
-              '<div class="hrv-mob-kpi"><div class="hrv-mob-kpi-n" style="color:' +
-              k.c +
-              '">' +
-              (k.v != null ? k.v : '—') +
-              '</div><div class="hrv-mob-kpi-l">' +
-              k.l +
-              '</div></div>'
-            );
-          })
-          .join('');
-
-        var mx =
-          Math.max.apply(
-            null,
-            proj.map(function (p) {
-              return p.ctl || 0;
-            }),
-          ) * 1.15;
-        var bars = proj
-          .filter(function (_, i) {
-            return i % 2 === 0;
-          })
-          .map(function (p) {
-            var h = Math.round((p.ctl / mx) * 72);
-            return (
-              '<div class="hrv-mob-bar" style="height:' +
-              h +
-              'px;background:#22D3EE" title="' +
-              p.date_iso +
-              ': CTL ' +
-              p.ctl +
-              ' · ' +
-              p.form_label +
-              '"></div>'
-            );
-          })
-          .join('');
-
-        var peak = proj.reduce(function (best, p) {
-          return best == null || p.tsb > best.tsb ? p : best;
-        }, null);
-
-        card.innerHTML =
-          '<div class="rc-mob-title">' +
-          _t('app_projection_label', 'Proyección') +
-          ' ' +
-          proj.length +
-          ' ' +
-          _t('app_days_word', 'días') +
-          ' · ' +
-          _t('app_planned_tss_label', 'TSS planificado') +
-          ' ' +
-          d.planned_tss_per_day +
-          _t('app_per_day_suffix', '/día') +
-          '</div>' +
-          '<div class="hrv-mob-kpis rd-mob-kpis">' +
-          kpis +
-          '</div>' +
-          '<div class="rc-mob-title" style="margin-top:1rem">' +
-          _t('app_ctl_projected_title', 'CTL proyectada') +
-          '</div>' +
-          '<div class="hrv-mob-chart">' +
-          bars +
-          '</div>' +
-          (peak
-            ? '<div class="rec-mob-alert rec-mob-alert-info" style="margin-top:.8rem">' +
-              _t('app_peak_form_window', '🟢 Ventana de forma pico:') +
-              ' <strong>' +
-              _escCm(peak.date_iso) +
-              '</strong> (TSB ' +
-              (peak.tsb >= 0 ? '+' : '') +
-              peak.tsb +
-              ', ' +
-              _escCm(peak.form_label) +
-              ')</div>'
-            : '');
       }
 
       function loadProgressHuella() {
@@ -10688,174 +10123,6 @@
           '<div class="hrv-mob-chart">' +
           bars +
           '</div>';
-      }
-
-      function loadProgressDistrib() {
-        if (!_token) return;
-        var card = document.getElementById('pgr-distrib-card');
-        card.innerHTML =
-          '<div class="cm-empty">' +
-          _t('status_loading', 'Cargando...') +
-          '</div>';
-        apiFetch('/analytics/training-distribution?days_back=90')
-          .then(function (r) {
-            if (r.status === 403) {
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t(
-                  'app_plan_gate_analytics',
-                  'Tu plan no incluye Analytics — actualizalo en Mi Perfil',
-                ) +
-                '</div>';
-              return Promise.reject('gated');
-            }
-            return r.ok ? r.json() : Promise.reject('err');
-          })
-          .then(function (d) {
-            renderProgressDistrib(d);
-          })
-          .catch(function (e) {
-            if (e !== 'gated')
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t('app_offline_error', 'Sin conexión — no se pudo cargar') +
-                '</div>';
-          });
-      }
-
-      var PGR_SPORT_COLOR = {
-        swim: '#22D3EE',
-        bike: '#FF6535',
-        run: '#10B981',
-        gym: '#A855F7',
-        other: '#9CA3AF',
-      };
-      function renderProgressDistrib(d) {
-        var card = document.getElementById('pgr-distrib-card');
-        var rows = (d.by_sport || []).filter(function (s) {
-          return s.count > 0;
-        });
-        if (!rows.length) {
-          card.innerHTML =
-            '<div class="cm-empty">' +
-            _t(
-              'app_no_activities_90d',
-              'Sin actividades en los últimos 90 días.',
-            ) +
-            '</div>';
-          return;
-        }
-        card.innerHTML =
-          '<div class="rc-mob-title">' +
-          _t('app_distrib_title', 'Distribución por deporte — 90d') +
-          '</div>' +
-          rows
-            .map(function (s) {
-              var col = PGR_SPORT_COLOR[s.sport] || '#9CA3AF';
-              return (
-                '<div class="yir-mob-sport-row" style="align-items:center">' +
-                '<span class="yir-mob-sport-name" style="color:' +
-                col +
-                '">● ' +
-                _escCm(s.sport) +
-                '</span>' +
-                '<span class="yir-mob-sport-val">' +
-                Math.round(s.hours) +
-                'h · TSS ' +
-                Math.round(s.tss) +
-                ' · ' +
-                s.pct_tss +
-                '%</span>' +
-                '</div>'
-              );
-            })
-            .join('');
-      }
-
-      function loadProgressZones() {
-        if (!_token) return;
-        var card = document.getElementById('pgr-zones-card');
-        card.innerHTML =
-          '<div class="cm-empty">' +
-          _t('status_loading', 'Cargando...') +
-          '</div>';
-        apiFetch('/analytics/zone-calibration?days_back=90')
-          .then(function (r) {
-            if (r.status === 403) {
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t(
-                  'app_plan_gate_analytics',
-                  'Tu plan no incluye Analytics — actualizalo en Mi Perfil',
-                ) +
-                '</div>';
-              return Promise.reject('gated');
-            }
-            return r.ok ? r.json() : Promise.reject('err');
-          })
-          .then(function (d) {
-            renderProgressZones(d);
-          })
-          .catch(function (e) {
-            if (e !== 'gated')
-              card.innerHTML =
-                '<div class="cm-empty">' +
-                _t('app_offline_error', 'Sin conexión — no se pudo cargar') +
-                '</div>';
-          });
-      }
-
-      function PGR_ZONE_SPORT_LABEL() {
-        return {
-          cycling: _t('app_zone_sport_cycling', '🚴 Ciclismo'),
-          running: _t('app_zone_sport_running', '🏃 Running'),
-          swimming: _t(
-            'app_zone_sport_swimming',
-            _t('nutr_pl_123', '🏊 Natación'),
-          ),
-        };
-      }
-      function renderProgressZones(d) {
-        var card = document.getElementById('pgr-zones-card');
-        var sports = ['cycling', 'running', 'swimming'].filter(function (s) {
-          return d[s];
-        });
-        if (!sports.length) {
-          card.innerHTML =
-            '<div class="cm-empty">' +
-            _t(
-              'app_no_zones_data',
-              'Sin datos suficientes para calibrar zonas.',
-            ) +
-            '</div>';
-          return;
-        }
-        var zoneLbl = PGR_ZONE_SPORT_LABEL();
-        card.innerHTML = sports
-          .map(function (s) {
-            var sp = d[s];
-            var zones = sp.zones || {};
-            var zoneRows = Object.keys(zones)
-              .map(function (z) {
-                return (
-                  '<div class="pr-mob-row"><span class="pr-mob-dist">' +
-                  z +
-                  '</span><span class="pr-mob-val" style="font-size:.78rem">' +
-                  _escCm(zones[z]) +
-                  '</span></div>'
-                );
-              })
-              .join('');
-            return (
-              '<div class="pr-mob-sport-title">' +
-              zoneLbl[s] +
-              ' <span style="color:var(--dim);font-weight:400;text-transform:none">· ' +
-              _escCm(sp.source || '') +
-              '</span></div>' +
-              zoneRows
-            );
-          })
-          .join('');
       }
 
       /* ── AI Coach — chat (Sprint 6 del roadmap app↔web) ── Mismos 3

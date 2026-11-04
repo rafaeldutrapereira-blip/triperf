@@ -2508,6 +2508,7 @@ var DICT = {
     app_tab_insights: 'Insights', app_tab_records: 'Récords', app_tab_projection: 'Proyección',
     app_tab_huella: 'Huella', app_tab_power: 'Potencia', app_tab_vo2max: 'VO2max',
     app_tab_distrib: 'Distribución', app_tab_zones: 'Zonas',
+    c1_tab_forma: 'Forma', c1_tab_power_vo2: 'Potencia/VO2',
     app_progress_swipe_hint: '← desliza para ver más →',
     /* App móvil — Progreso (Sprint 2b-viii) */
     app_plan_gate_analytics: 'Tu plan no incluye Analytics — actualizalo en Mi Perfil',
@@ -6031,6 +6032,7 @@ var DICT = {
     app_tab_insights: 'Insights', app_tab_records: 'Recordes', app_tab_projection: 'Projeção',
     app_tab_huella: 'Pegada', app_tab_power: 'Potência', app_tab_vo2max: 'VO2max',
     app_tab_distrib: 'Distribuição', app_tab_zones: 'Zonas',
+    c1_tab_forma: 'Forma', c1_tab_power_vo2: 'Potência/VO2',
     app_progress_swipe_hint: '← deslize para ver mais →',
     /* App móvil — Progreso (Sprint 2b-viii) */
     app_plan_gate_analytics: 'Seu plano não inclui Analytics — atualize em Meu Perfil',
@@ -9553,6 +9555,7 @@ var DICT = {
     app_tab_insights: 'Insights', app_tab_records: 'Records', app_tab_projection: 'Projection',
     app_tab_huella: 'Footprint', app_tab_power: 'Power', app_tab_vo2max: 'VO2max',
     app_tab_distrib: 'Distribution', app_tab_zones: 'Zones',
+    c1_tab_forma: 'Form', c1_tab_power_vo2: 'Power/VO2',
     app_progress_swipe_hint: '← swipe to see more →',
     /* App móvil — Progreso (Sprint 2b-viii) */
     app_plan_gate_analytics: 'Your plan does not include Analytics — upgrade in My Profile',
