@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <script src="routes.config.js?v=11"></script>
+    <script src="lx-ownplan.js?v=1"></script>
     <script>
       LX_ROUTES.guard();
     </script>
@@ -2682,29 +2683,15 @@
             });
         };
 
-        /* Inserta el workout como sesión propia en Mi Plan, con el mismo
-           mecanismo de sesiones propias de training_plan.html
-           (localStorage.kl_training_plan, ids 'plan-…'). */
+        /* Inserta el workout como sesión propia en Mi Plan. CQ7: se guarda en el
+           servidor (POST /athlete/own-plan via lx-ownplan.js); el workout indoor en
+           BD no cambia. Si ese workout ya está ese día, el servidor no duplica. */
         window.addToPlan = function (id) {
           var wo = loadSaved().find(function (w) {
             return w.id === id;
           });
           if (!wo) return;
           var date = wo.date || new Date().toISOString().slice(0, 10);
-          var plans = [];
-          try {
-            plans = JSON.parse(localStorage.getItem('kl_training_plan') || '[]');
-          } catch (e) {}
-          var dup = plans.some(function (p) {
-            return p.indoor_workout_id === id && p.date_iso === date;
-          });
-          if (dup) {
-            toast(
-              _t('iw_toast_already_in_plan', 'Ya está en Mi Plan ese día'),
-              false,
-            );
-            return;
-          }
           var swimT = wo.sport === 'swim' ? swimTotals(wo.blocks) : null;
           var totalSec = swimT
             ? swimT.duration_s
@@ -2712,8 +2699,7 @@
                 return acc + totalBlockDuration(b);
               }, 0);
           var ss = swimT ? { tss: null } : calcStats(buildSegs(wo.blocks), totalSec, wo.sport);
-          plans.push({
-            id: 'plan-' + Date.now(),
+          window.LXOwnPlan.add({
             sport: _spOf(wo.sport),
             name: wo.name,
             date_iso: date,
@@ -2724,11 +2710,29 @@
             calories: null,
             created: new Date().toISOString(),
             indoor_workout_id: id,
-          });
-          localStorage.setItem('kl_training_plan', JSON.stringify(plans));
-          toast(
-            _t('iw_toast_added_plan', '✓ Añadido a Mi Plan') + ' · ' + date,
-            true,
+          }).then(
+            function (saved) {
+              if (saved && saved.duplicate) {
+                toast(
+                  _t('iw_toast_already_in_plan', 'Ya está en Mi Plan ese día'),
+                  false,
+                );
+                return;
+              }
+              toast(
+                _t('iw_toast_added_plan', '✓ Añadido a Mi Plan') + ' · ' + date,
+                true,
+              );
+            },
+            function () {
+              toast(
+                _t(
+                  'tp_own_sync_fail',
+                  'No se pudo guardar en el servidor. Revisa tu conexión e inténtalo de nuevo.',
+                ),
+                false,
+              );
+            },
           );
         };
 

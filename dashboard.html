@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <script src="routes.config.js?v=11"></script>
     <script src="lx-tss.js?v=1"></script>
+    <script src="lx-ownplan.js?v=1"></script>
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -3619,8 +3620,8 @@
         /* ---------- Pieza 3: que toca hoy ---------- */
         var EMO = { swim: '🏊', bike: '🚴', run: '🏃', strength: '💪', gym: '💪' };
         function ownToday() {
-          var arr = [];
-          try { arr = JSON.parse(localStorage.getItem('kl_training_plan') || '[]'); } catch (e) {}
+          // CQ7: Mi Plan propio viene del servidor (lx-ownplan.js); localStorage es solo cache.
+          var arr = window.LXOwnPlan ? window.LXOwnPlan.cached() : [];
           return (Array.isArray(arr) ? arr : []).filter(function (x) {
             return x && x.date_iso === diso && !x.api_assignment_id;
           }).map(function (x) {
@@ -3633,6 +3634,15 @@
             var g = a.source === 'garmin';
             return { src: g ? 'garmin' : 'coach', sport: t.sport, name: t.nombre || '', dur: t.dur_min, dist: t.dist_km, done: g ? a.done === true : !!(a.logs && a.logs.length) };
           });
+        }
+        /* Suma plan del coach/Garmin + Mi Plan propio sin duplicar: una sesion propia
+           con el mismo deporte, dia y nombre que una del coach/Garmin (p. ej. un workout
+           de Indoor enviado al reloj) se muestra una sola vez, la externa (lleva el hecho). */
+        function mergeToday(ext, own) {
+          function key(x) { return String(x.sport || '') + '|' + String(x.name || '').trim().toLowerCase(); }
+          var seen = {};
+          ext.forEach(function (x) { seen[key(x)] = true; });
+          return ext.concat(own.filter(function (x) { return !seen[key(x)]; }));
         }
         function renderToday(items) {
           var box = $('w13-today-list');
@@ -3677,11 +3687,16 @@
         // Mi Plan propio se ve de inmediato; el plan del coach se suma al llegar.
         renderToday(ownToday());
         if (tok()) {
-          getJSON('/athlete/plan?start=' + diso + '&end=' + diso + '&include_garmin=1').then(function (assigns) {
-            renderToday(coachToday(assigns).concat(ownToday()));
+          var planP = getJSON('/athlete/plan?start=' + diso + '&end=' + diso + '&include_garmin=1');
+          // Primero el plan propio del servidor (migra el local una vez); luego se suma coach + Garmin.
+          var ownP = window.LXOwnPlan ? window.LXOwnPlan.load() : Promise.resolve([]);
+          ownP.then(function () { renderToday(ownToday()); });
+          Promise.all([planP, ownP]).then(function (r) {
+            var assigns = r[0];
+            renderToday(mergeToday(coachToday(assigns), ownToday()));
           });
         }
-        window.W13 = { todayISO: todayISO, ownToday: ownToday, coachToday: coachToday, renderToday: renderToday };
+        window.W13 = { todayISO: todayISO, ownToday: ownToday, coachToday: coachToday, mergeToday: mergeToday, renderToday: renderToday };
       })();
     </script>
     <script>

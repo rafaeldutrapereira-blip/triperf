@@ -35,7 +35,7 @@ def test_dashboard_frase_enlaza_a_estado_con_misma_fuente():
 def test_dashboard_que_toca_hoy_lee_coach_y_mi_plan_propio():
     h = _read("dashboard.html")
     assert "¿Qué toca hoy?" in h
-    assert "kl_training_plan" in h
+    assert "LXOwnPlan" in h          # CQ7: Mi Plan propio viene del servidor
     assert "/athlete/plan?start=" in h
     m = re.search(r"function ownToday\(\).*?\n        \}\n", h, re.S)
     assert m, "ownToday no encontrada"
@@ -45,7 +45,7 @@ def test_dashboard_que_toca_hoy_lee_coach_y_mi_plan_propio():
     assert "x.date_iso === diso" in body
     # el Mi Plan propio se pinta de inmediato, sin esperar al coach
     assert "renderToday(ownToday())" in h
-    assert "coachToday(assigns).concat(ownToday())" in h
+    assert "mergeToday(coachToday(assigns), ownToday())" in h
 
 
 def test_dashboard_cuenta_a_la_carrera_en_dias_sin_segundos():

@@ -106,6 +106,6 @@ def test_dashboard_consume_la_fuente_garmin():
     assert "include_garmin=1" in h
     assert "a.source === 'garmin'" in h
     assert "dash_w13_src_garmin" in h
-    assert "coachToday(assigns).concat(ownToday())" in h
+    assert "mergeToday(coachToday(assigns), ownToday())" in h
     i18n = (root / "i18n.js").read_text(encoding="utf-8")
     assert i18n.count("dash_w13_src_garmin:") == 3

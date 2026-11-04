@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <script src="routes.config.js?v=11"></script>
     <script src="lx-tss.js?v=1"></script>
+    <script src="lx-ownplan.js?v=1"></script>
     <script>
       LX_ROUTES.guard();
     </script>
@@ -2275,16 +2276,42 @@
           return (window.KL_DATA && window.KL_DATA.activities) || [];
         }
 
-        function getPlanned() {
+        // CQ7: el plan PROPIO vive en el servidor (lx-ownplan.js); localStorage
+        // solo cachea la lectura. kl_training_plan queda solo con el cache de lo
+        // asignado por el coach (api_assignment_id), que no es plan propio.
+        function coachCached() {
           try {
-            return JSON.parse(localStorage.getItem('kl_training_plan') || '[]');
+            return JSON.parse(
+              localStorage.getItem('kl_training_plan') || '[]',
+            ).filter(function (p) {
+              return p && p.api_assignment_id;
+            });
           } catch (e) {
             return [];
           }
         }
 
+        function getPlanned() {
+          return coachCached().concat(window.LXOwnPlan.cached());
+        }
+
         function savePlanned(arr) {
-          localStorage.setItem('kl_training_plan', JSON.stringify(arr));
+          var coach = arr.filter(function (p) {
+            return p.api_assignment_id;
+          });
+          var own = arr.filter(function (p) {
+            return !p.api_assignment_id;
+          });
+          // Hasta migrar, kl_training_plan conserva las propias locales (por si
+          // el servidor no responde); migradas, solo queda el cache del coach.
+          var keep = localStorage.getItem('kl_own_plan_migrated') ? [] : own;
+          localStorage.setItem(
+            'kl_training_plan',
+            JSON.stringify(coach.concat(keep)),
+          );
+          window.LXOwnPlan.sync(own).then(function (ok) {
+            if (!ok) render();
+          });
         }
 
         function sessionsInRange(startIso, endIso) {
@@ -4658,6 +4685,18 @@
         // ──────────────────────────────────────
         render();
         window._tpRender = render; // expuesto para el bridge API
+        // CQ7: trae el plan propio del servidor (migra el local una sola vez).
+        window.LXOwnPlan.onError = function (e) {
+          console.error('Mi Plan: no se pudo sincronizar con el servidor', e);
+          if (e && e.status !== 401 && e.status !== 403 && e.message !== 'no-token')
+            logToast(
+              _t(
+                'tp_own_sync_fail',
+                'No se pudo guardar en el servidor. Revisa tu conexión e inténtalo de nuevo.',
+              ),
+            );
+        };
+        window.LXOwnPlan.load().then(render);
 
         // ──────────────────────────────────────
         // REGISTRO DE SESIÓN (S3)
