@@ -1,5 +1,5 @@
 /**
- * dash-header.js — Header compartido (fecha + saludo + chips Readiness/Garmin
+ * dash-header.js — Header compartido (fecha + saludo + chip Garmin
  * + botones Perfil/Actualizar Plan) para todas las páginas del atleta con
  * sidebar. dashboard.html NO lo usa: ya tiene esta misma estructura nativa
  * (con su propia lógica ligada al resto del dashboard); este módulo replica
@@ -129,7 +129,6 @@ function buildHTML(){
     +       '</div>'
     +       '<div class="dhx-right">'
     +         '<div class="dhx-chip-row" role="status" aria-live="polite">'
-    +           '<div class="dhx-chip"><span class="dhx-dot dhx-dot-g"></span>' + esc(_nt('dh_readiness','Readiness')) + ' <strong id="dhx-readiness-val">— / 100</strong></div>'
     +           '<div class="dhx-chip" style="border-color:rgba(34,211,238,.22)"><span class="dhx-dot dhx-dot-c"></span><span style="color:var(--aqua);font-size:.7rem;font-weight:700;letter-spacing:.05em">GARMIN</span><span id="dhx-garmin-chip">—</span></div>'
     +         '</div>'
     +         '<div class="dhx-bell-wrap">'
@@ -213,16 +212,6 @@ function updateDateGreeting(){
     }
     if(fullName) nameEl.textContent = esc(fullName);
   }
-}
-
-function loadReadiness(){
-  var el = document.getElementById('dhx-readiness-val');
-  if(!el) return;
-  var tok = authToken();
-  fetch(apiBase() + '/readiness/daily', { headers: tok ? { Authorization: 'Bearer ' + tok } : {} })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){ if(d && d.drs != null) el.textContent = Math.round(d.drs) + ' / 100'; })
-    .catch(function(){});
 }
 
 function loadGarminSync(){
@@ -339,7 +328,6 @@ function init(){
   injectCSS();
   mount();
   updateDateGreeting();
-  loadReadiness();
   loadGarminSync();
   setupUpgradeBtn();
   setupBell();

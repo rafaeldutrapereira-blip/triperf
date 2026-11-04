@@ -90,9 +90,6 @@ def get_personal_data(coach: User = Depends(_coach_or_admin)):
     ctl_7d = _f(training[-8]["ctl"]) if len(training) >= 8 else ctl
     ctl_change = round(ctl - ctl_7d, 1)
 
-    # Readiness simple: TSB normalizado 0-100
-    readiness = max(0, min(100, int(50 + tsb * 1.5)))
-
     # ── TSS de la semana actual
     today = date.today()
     mon = today - timedelta(days=today.weekday())
@@ -249,7 +246,6 @@ def get_personal_data(coach: User = Depends(_coach_or_admin)):
         "tsb":          round(tsb, 1),
         "ctl_change":   ctl_change,
         "atl_delta":    round(atl - _f(training[-8]["atl"]) if len(training) >= 8 else 0, 1),
-        "readiness":    readiness,
         "tss_week":     round(tss_week),
         "tss_week_target": 520,
         "pmc":          pmc,
