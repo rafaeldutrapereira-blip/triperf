@@ -287,15 +287,9 @@ var METRICS = {
   readiness: {
     nombre: 'Readiness — Disposición para Entrenar',
     emoji: '🟢',
-    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Se arma con 4 dimensiones fisiológicas reales: <strong style="color:#10b981">Recuperación</strong> (HRV + sueño de anoche), <strong style="color:#a855f7">Estado Mental</strong> (fatiga neurocognitiva), <strong style="color:#f59e0b">Bioquímica</strong> (tus análisis de sangre) y <strong style="color:#22d3ee">Forma</strong> (tu TSB del modelo de carga). Si te falta alguna (ej. no cargaste análisis de sangre), el puntaje se recalcula solo con las dimensiones disponibles — por eso puede aparecer más bajo o más alto de lo esperado cuando hay poca data.',
+    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Se arma con 4 dimensiones fisiológicas reales: <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery — sin el TSB, que ya cuenta en Forma), <strong style="color:#a855f7">Estado Mental</strong> (tu check-in del día; sin check-in no cuenta), <strong style="color:#f59e0b">Bioquímica</strong> (tus análisis de sangre) y <strong style="color:#22d3ee">Forma</strong> (tu TSB del modelo de carga). Los datos tienen vigencia máxima (Recuperación y Mental 2 días, Forma 3, análisis de sangre 90); lo más viejo cuenta como faltante. Si te falta alguna dimensión el puntaje se recalcula con las disponibles y se descuenta una pequeña penalización; con menos de la mitad de los datos no se muestra número.',
     formula: 'DRS = Recuperación×35% + Estado Mental×25% + Bioquímica×20% + Forma×20%',
-    rangos: [
-      {min:0,  max:30, label:'Descansar hoy',      color:'#EF4444', advice:'Tu cuerpo necesita recuperación. Haz sesión muy suave o descansa.'},
-      {min:30, max:60, label:'Entrenamiento ligero',color:'#F59E0B', advice:'Sesión moderada OK. Evita intervalos de alta intensidad.'},
-      {min:60, max:80, label:'Listo para entrenar', color:'#10B981', advice:'Buenas condiciones. Puedes hacer tu sesión planificada.'},
-      {min:80, max:100,label:'Óptimo ✓',           color:'#22D3EE', advice:'Condiciones ideales. Aprovecha para sesión exigente o test.'},
-    ],
-    dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV+sueño) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:#a855f7">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:#f59e0b">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:#22d3ee">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
+    dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:#a855f7">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:#f59e0b">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:#22d3ee">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
     pro_tip: 'Fijate cuál es tu "limitante principal" (la dimensión con el score más bajo) — ahí es donde tenés más para ganar. Un DRS bajo con Recuperación en rojo pide más sueño; un DRS bajo con Forma en rojo pide simplemente unos días de descarga. Si más abajo en esta página también ves "Training Readiness (Garmin)" con un número distinto, es normal: es el algoritmo propio de Garmin, no el mismo cálculo — tocá ese ícono "i" para ver por qué pueden diferir.',
     unidad: '0–100 puntos',
   },
@@ -520,8 +514,8 @@ function _render(metricId, currentValue){
     var rcol = rdData.drs_color || (activeRange ? activeRange.color : '#F9FAFB');
     html += '<div class="li-current-box" style="background:'+rcol+'12;border-color:'+rcol+'33">'
       +'<div class="li-cb-label">'+_lxInfoT('info_tu_estado','Tu estado actual')+'</div>'
-      +'<div class="li-cb-val" style="color:'+rcol+'">'+(rdData.drs!=null?Math.round(rdData.drs):'—')+' <span style="font-size:1rem;font-weight:400;color:#6B7280">/ 100</span></div>'
-      +'<div class="li-cb-interp"><strong style="color:'+rcol+'">'+(rdData.drs_emoji?rdData.drs_emoji+' ':'')+(rdData.drs_label||(activeRange?activeRange.label:''))+'</strong>'+(rdData.recommendation?' — '+rdData.recommendation:'')+'</div>'
+      +(rdData.drs!=null?'<div class="li-cb-val" style="color:'+rcol+'">'+Math.round(rdData.drs)+' <span style="font-size:1rem;font-weight:400;color:#6B7280">/ 100</span></div>':'')
+      +'<div class="li-cb-interp"><strong style="color:'+rcol+'">'+(rdData.drs_emoji?rdData.drs_emoji+' ':'')+(rdData.drs_label||'')+'</strong>'+(rdData.recommendation?' — '+rdData.recommendation:'')+'</div>'
       +'</div>';
 
     if(rdData.dimensions && rdData.dimensions.length){

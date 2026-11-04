@@ -132,7 +132,7 @@ var LX_BE_ENTRIES = [
   "be_092"
  ],
  [
-  "Sin datos fisiológicos disponibles — DRS neutral (70)",
+  "Datos insuficientes (menos de la mitad de las dimensiones con datos recientes) — DRS no disponible",
   "be_093"
  ],
  [
@@ -140,7 +140,7 @@ var LX_BE_ENTRIES = [
   "be_094"
  ],
  [
-  "HRV + Sueño",
+  "HRV, sueño, estrés y Body Battery",
   "be_095"
  ],
  [
@@ -148,7 +148,7 @@ var LX_BE_ENTRIES = [
   "be_096"
  ],
  [
-  "Fatiga Neurocognitiva",
+  "Check-in mental del día",
   "be_097"
  ],
  [

@@ -387,6 +387,15 @@ def save_checkin(
         db.commit()
 
     mfs = _get_or_compute_mfs(current_user.id, date_iso, db, force=True)
+
+    # CQ1/H4: refresca el readiness persistido (ai_athlete_context + garmin_health_daily,
+    # mismo punto de escritura que context_engine/garmin_pull) para que los consumidores
+    # backend no lean el valor previo al check-in. Best-effort: nunca rompe el guardado.
+    try:
+        from ..services.context_engine import refresh_athlete_context
+        refresh_athlete_context(current_user.id, db)
+    except Exception:
+        pass
     return {
         "message":  "check-in guardado",
         "date_iso": date_iso,

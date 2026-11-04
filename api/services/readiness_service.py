@@ -22,7 +22,11 @@ Fallback estratégico:
   penalización explícita de -2.5 puntos por dimensión faltante (hasta -7.5
   con 3 de 4 ausentes) — un dato incompleto nunca debe producir un score más
   optimista que uno completo, por eso se penaliza en vez de solo promediar.
-  Si hay 0 dimensiones, se devuelve DRS=70 (neutral) para no bloquear el UX.
+  CQ1/H1: con completitud < 0,5 (0 o 1 dimension de 4) el DRS es None: no se
+  inventa una cifra (antes devolvia 70 "neutral"). La UI omite el numero.
+  CQ1/H2: Recuperacion se compone SIN el TSB (ya cuenta en Forma) y Estado
+  Mental solo existe si hay check-in (sin check-in = dimension no disponible).
+  CQ1/H3-H4: frescura maxima por dimension (ver _MAX_AGE_DAYS).
 """
 from __future__ import annotations
 
@@ -44,6 +48,12 @@ _W_MENTAL   = 0.25
 _W_TRS      = 0.20
 _W_FORM     = 0.20
 
+# Completitud minima para publicar un DRS (CQ1/H1)
+MIN_COMPLETENESS = 0.5
+
+# Frescura maxima (dias) por dimension; lo mas viejo cuenta como faltante (CQ1/H3-H4)
+_MAX_AGE_DAYS = {"recovery": 2, "mental": 2, "tsb": 3, "trs": 90}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data types
@@ -62,7 +72,7 @@ class ReadinessDimension:
 
 @dataclass
 class DailyReadinessReport:
-    drs: int                              # 0-100 — Daily Readiness Score
+    drs: Optional[int]                    # 0-100 — Daily Readiness Score; None si faltan datos (CQ1/H1)
     drs_label: str                        # "Óptimo" | "Bueno" | "Moderado" | "Bajo" | "Crítico"
     drs_color: str                        # hex
     drs_emoji: str                        # para mobile UI
@@ -109,47 +119,44 @@ def tsb_to_form_score(tsb: float) -> float:
 # DRS label system
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _drs_metadata(drs: int) -> tuple[str, str, str, str, str]:
+# Unica tabla de bandas del DRS (CQ1/H5). El frontend NO define bandas propias:
+# usa drs_label/drs_color devueltos por el backend. (min_inclusive, label, color,
+# emoji, recomendacion, guia de entrenamiento), de mayor a menor.
+DRS_BANDS = (
+    (85, "Óptimo", "#10b981", "🟢",
+     "Condiciones fisiológicas ideales. Aprovecha para sesiones de calidad.",
+     "Sesión de alta intensidad o largo endurance según plan"),
+    (70, "Bueno", "#22d3ee", "🔵",
+     "Buena disposición para entrenar. Ejecuta el plan con normalidad.",
+     "Sigue el plan — intensidad moderada a alta según programa"),
+    (55, "Moderado", "#f59e0b", "🟡",
+     "Readiness moderada. Ajusta la intensidad si sientes fatiga.",
+     "Preferir Zona 2 — evitar series VO2 hoy"),
+    (35, "Bajo", "#f97316", "🟠",
+     "Señales de fatiga acumulada. Considera reducir volumen o descansar.",
+     "Solo Zona 1 o descanso activo (movilidad, natación suave)"),
+    (0, "Crítico", "#ef4444", "🔴",
+     "Cuerpo en estado de recuperación. El entrenamiento duro hoy puede lesionar.",
+     "Descanso completo o recuperación activa muy suave"),
+)
+
+_NO_DATA_META = (
+    "Sin datos suficientes",
+    "#6b7280",
+    "⚪",
+    "Faltan datos recientes para calcular tu readiness. Registra tu check-in o sincroniza tu reloj.",
+    "Sin guía automática hoy — entrena según tus sensaciones y tu plan",
+)
+
+
+def _drs_metadata(drs: Optional[int]) -> tuple[str, str, str, str, str]:
     """Returns (label, color, emoji, recommendation, training_guidance)"""
-    if drs >= 85:
-        return (
-            "Óptimo",
-            "#10b981",
-            "🟢",
-            "Condiciones fisiológicas ideales. Aprovecha para sesiones de calidad.",
-            "Sesión de alta intensidad o largo endurance según plan",
-        )
-    if drs >= 70:
-        return (
-            "Bueno",
-            "#22d3ee",
-            "🔵",
-            "Buena disposición para entrenar. Ejecuta el plan con normalidad.",
-            "Sigue el plan — intensidad moderada a alta según programa",
-        )
-    if drs >= 55:
-        return (
-            "Moderado",
-            "#f59e0b",
-            "🟡",
-            "Readiness moderada. Ajusta la intensidad si sientes fatiga.",
-            "Preferir Zona 2 — evitar series VO2 hoy",
-        )
-    if drs >= 35:
-        return (
-            "Bajo",
-            "#f97316",
-            "🟠",
-            "Señales de fatiga acumulada. Considera reducir volumen o descansar.",
-            "Solo Zona 1 o descanso activo (movilidad, natación suave)",
-        )
-    return (
-        "Crítico",
-        "#ef4444",
-        "🔴",
-        "Cuerpo en estado de recuperación. El entrenamiento duro hoy puede lesionar.",
-        "Descanso completo o recuperación activa muy suave",
-    )
+    if drs is None:
+        return _NO_DATA_META
+    for lo, label, color, emoji, rec, guidance in DRS_BANDS:
+        if drs >= lo:
+            return (label, color, emoji, rec, guidance)
+    return tuple(DRS_BANDS[-1][1:])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +194,7 @@ def compute_daily_readiness(
             name="Recuperación",
             score=float(recovery_score) if recovery_score is not None else None,
             weight=_W_RECOVERY,
-            label="HRV + Sueño",
+            label="HRV, sueño, estrés y Body Battery",
             color="#10b981",
             available=recovery_score is not None,
             data_source="recovery_scores",
@@ -196,7 +203,7 @@ def compute_daily_readiness(
             name="Estado Mental",
             score=float(mental_score) if mental_score is not None else None,
             weight=_W_MENTAL,
-            label="Fatiga Neurocognitiva",
+            label="Check-in mental del día",
             color="#a855f7",
             available=mental_score is not None,
             data_source="mental_fatigue_scores",
@@ -225,15 +232,17 @@ def compute_daily_readiness(
     n_available = len(available_dims)
     data_completeness = round(n_available / len(dims), 2)
 
-    if n_available == 0:
-        warnings.append("Sin datos fisiológicos disponibles — DRS neutral (70)")
-        label, color, emoji, rec, guidance = _drs_metadata(70)
+    if n_available == 0 or data_completeness < MIN_COMPLETENESS:
+        warnings.append(
+            "Datos insuficientes (menos de la mitad de las dimensiones con datos recientes) — DRS no disponible"
+        )
+        label, color, emoji, rec, guidance = _drs_metadata(None)
         return DailyReadinessReport(
-            drs=70, drs_label=label, drs_color=color, drs_emoji=emoji,
+            drs=None, drs_label=label, drs_color=color, drs_emoji=emoji,
             recommendation=rec, training_guidance=guidance,
             dimensions=dims, primary_limiter=None,
-            data_completeness=0.0, warnings=warnings,
-            computed_from=[],
+            data_completeness=data_completeness, warnings=warnings,
+            computed_from=[d.name for d in available_dims],
         )
 
     # Weighted average con normalización de pesos de las dimensiones disponibles
@@ -283,7 +292,7 @@ def compute_daily_readiness(
 @dataclass
 class ReadinessHistoryPoint:
     date_iso: str
-    drs: int
+    drs: Optional[int]
     recovery_score: Optional[float]
     mental_score: Optional[float]
     trs: Optional[float]
@@ -336,47 +345,86 @@ def compute_readiness_history(data_points: list[dict]) -> list[ReadinessHistoryP
 # para que el DRS se calcule igual en ambos lugares).
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _cutoff(key: str) -> str:
+    return (date.today() - timedelta(days=_MAX_AGE_DAYS[key])).isoformat()
+
+
+# Pesos por defecto de recovery_routes sin el TSB (CQ1/H2); solo si la fila no
+# guardo weights_json.
+_RECOVERY_FALLBACK_WEIGHTS = {"hrv": 0.30, "sleep": 0.25, "stress": 0.15, "body_battery": 0.10}
+
+
+def recovery_without_tsb(row) -> Optional[float]:
+    """
+    Recuperacion sin el componente TSB (CQ1/H2): el TSB ya cuenta en la dimension
+    Forma, asi que aca se recompone con los demas componentes que recovery_routes
+    persiste (hrv, sueno, estres, body battery, wellness), con los pesos reales
+    guardados en la fila, renormalizados. Sin ningun componente -> None.
+    """
+    factors = {
+        "hrv": row.hrv_factor, "sleep": row.sleep_factor, "stress": row.stress_factor,
+        "body_battery": row.body_battery_factor, "wellness": row.wellness_factor,
+    }
+    try:
+        weights = json.loads(row.weights_json) if getattr(row, "weights_json", None) else {}
+    except (ValueError, TypeError):
+        weights = {}
+    if not weights:
+        weights = dict(_RECOVERY_FALLBACK_WEIGHTS)
+        if factors["wellness"] is not None:
+            weights["wellness"] = 0.10
+    num = den = 0.0
+    for k, v in factors.items():
+        w = float(weights.get(k, 0) or 0)
+        if v is not None and w > 0:
+            num += float(v) * w
+            den += w
+    return num / den if den > 0 else None
+
+
 def get_recovery_score(user_id: str, db: "Session") -> Optional[float]:
-    """Lee el RecoveryScore más reciente (últimos 3 días)."""
-    cutoff = (date.today() - timedelta(days=3)).isoformat()
+    """Recuperacion (sin TSB) del RecoveryScore mas reciente, max. 2 dias."""
     try:
         from ..models import RecoveryScore
         row = (
             db.query(RecoveryScore)
             .filter(
                 RecoveryScore.user_id == user_id,
-                RecoveryScore.date_iso >= cutoff,
+                RecoveryScore.date_iso >= _cutoff("recovery"),
             )
             .order_by(RecoveryScore.date_iso.desc())
             .first()
         )
-        return float(row.score) if row else None
+        return recovery_without_tsb(row) if row else None
     except Exception:
         return None
 
 
 def get_mental_score(user_id: str, db: "Session") -> Optional[float]:
-    """Lee el MentalFatigueScore más reciente (últimos 3 días)."""
-    cutoff = (date.today() - timedelta(days=3)).isoformat()
+    """
+    Estado mental SOLO si hay check-in (CQ1/H2): se usa el factor del check-in,
+    no el MFS compuesto (que mezcla Recovery/HRV y duplicaria senal). Max. 2 dias.
+    """
     try:
         from ..models import MentalFatigueScore
         row = (
             db.query(MentalFatigueScore)
             .filter(
                 MentalFatigueScore.user_id == user_id,
-                MentalFatigueScore.date_iso >= cutoff,
+                MentalFatigueScore.date_iso >= _cutoff("mental"),
+                MentalFatigueScore.checkin_factor.isnot(None),
             )
             .order_by(MentalFatigueScore.date_iso.desc())
             .first()
         )
-        return float(row.score) if row else None
+        return float(row.checkin_factor) if row else None
     except Exception:
         return None
 
 
 def get_trs(user_id: str, db: "Session") -> Optional[float]:
     """Calcula TRS del último examen de blood labs (últimos 90 días)."""
-    cutoff = (date.today() - timedelta(days=90)).isoformat()
+    cutoff = _cutoff("trs")
     try:
         from ..models import BloodLabExam, User
         exam = (
@@ -405,12 +453,13 @@ def get_trs(user_id: str, db: "Session") -> Optional[float]:
 
 
 def get_tsb(user_id: str, db: "Session") -> Optional[float]:
-    """Lee el TSB más reciente de GarminTrainingLoad."""
+    """Lee el TSB más reciente de GarminTrainingLoad (máx. 3 días, CQ1/H3)."""
     try:
         from ..models import GarminTrainingLoad
         load = (
             db.query(GarminTrainingLoad)
-            .filter(GarminTrainingLoad.user_id == user_id)
+            .filter(GarminTrainingLoad.user_id == user_id,
+                    GarminTrainingLoad.date_iso >= _cutoff("tsb"))
             .order_by(GarminTrainingLoad.date_iso.desc())
             .first()
         )

@@ -948,6 +948,15 @@ def log_wellness(
     # Invalidar cache del score del día (se recalculará con wellness)
     _get_or_compute_score(me.id, d_iso, db, force=True)
 
+    # CQ1/H4: refresca el readiness persistido (ai_athlete_context + garmin_health_daily,
+    # mismo punto de escritura que context_engine/garmin_pull) para que los consumidores
+    # backend no lean el valor previo al check-in. Best-effort: nunca rompe el guardado.
+    try:
+        from ..services.context_engine import refresh_athlete_context
+        refresh_athlete_context(me.id, db)
+    except Exception:
+        pass
+
     return {"ok": True, "date_iso": d_iso, "message": "Bienestar registrado"}
 
 

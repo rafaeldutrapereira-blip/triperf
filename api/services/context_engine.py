@@ -460,7 +460,9 @@ def _save_readiness_to_health(user_id: str, db: Session, context: dict) -> None:
     readiness = context.get("readiness", {})
     score     = readiness.get("labx_score")
     factors   = readiness.get("factors", {})
-    if health_row and score is not None:
+    if health_row:
+        # CQ1: score None (datos insuficientes) tambien se persiste, para no dejar
+        # un valor viejo que los consumidores backend leerian como vigente.
         health_row.labx_readiness_score   = score
         health_row.labx_readiness_factors = _json.dumps(factors)
     elif score is not None:

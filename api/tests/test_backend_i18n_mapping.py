@@ -383,13 +383,13 @@ def test_lxbet_translates_urea_supplement_hint_and_drs_warnings():
         "Aumentar ingesta proteica a 2-2.5g/kg. BCAAs intra-entrenamiento.",
         "DRS calculado con 3/4 dimensiones — datos faltantes: Bioquímica",
         "DRS calculado con 2/4 dimensiones — datos faltantes: Recuperación, Forma",
-        "Sin datos fisiológicos disponibles — DRS neutral (70)",
+        "Datos insuficientes (menos de la mitad de las dimensiones con datos recientes) — DRS no disponible",
     ]
     en = _run_lxbet("en", es)
     assert en[0] == "Increase protein intake to 2-2.5 g/kg. BCAAs during training."
     assert en[1] == "DRS calculated with 3/4 dimensions — missing data: Biochemistry"
     assert en[2].startswith("DRS calculated with 2/4 dimensions — missing data: Recovery, ")
-    assert en[3] == "No physiological data available — neutral DRS (70)"
+    assert en[3] == "Insufficient data (less than half of the dimensions have recent data) — DRS unavailable"
     pt = _run_lxbet("pt", es)
     assert pt[0] == "Aumentar a ingestão de proteína para 2-2,5 g/kg. BCAAs durante o treino."
     assert pt[1] == "DRS calculado com 3/4 dimensões — dados faltantes: Bioquímica"

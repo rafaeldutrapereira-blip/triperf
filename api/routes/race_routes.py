@@ -72,7 +72,7 @@ def _predict(
     run_pace_sec: float,     # Pace umbral en segundos/km
     weight_kg:    float,
     tsb:          float,
-    readiness:    int,
+    readiness:    Optional[int],   # None = sin readiness real (CQ1/H7)
     labs_factors: dict,      # penalizaciones de Blood Labs
     cond_mult:    float = 1.0,
     temp_mult:    float = 1.0,
@@ -102,7 +102,11 @@ def _predict(
     else:
         tsb_mult = 0.95    # muy fatigado
 
-    readiness_mult = 0.93 + (readiness / 100) * 0.07  # 0.93 (readiness=0) a 1.0 (readiness=100)
+    # CQ1/H7: sin readiness real NO se aplica multiplicador (antes se asumia 70).
+    if readiness is None:
+        readiness_mult = 1.0
+    else:
+        readiness_mult = 0.93 + (readiness / 100) * 0.07  # 0.93 (readiness=0) a 1.0 (readiness=100)
 
     # â”€â”€ Penalizaciones Blood Labs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     labs_mult = 1.0
@@ -187,8 +191,16 @@ def _predict(
     total_sec = swim_sec + t1_sec + bike_sec + t2_sec + run_sec
 
     # â”€â”€ Banda de confianza â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    uncertainty = 0.02 + (1.0 - readiness / 100) * 0.04 + (len(labs_notes) * 0.005)
-    conf_pct    = max(55, min(95, round(70 + readiness * 0.25 - len(labs_notes) * 3)))
+    if readiness is None:
+        # Sin readiness: banda de incertidumbre y confianza del peor caso razonable,
+        # rotulado de forma explicita en la respuesta (confidence_note).
+        uncertainty = 0.02 + 0.04 + (len(labs_notes) * 0.005)
+        conf_pct    = max(55, min(95, round(70 - len(labs_notes) * 3)))
+        confidence_note = "Sin readiness reciente: la prediccion no incluye el ajuste por readiness y la confianza es menor."
+    else:
+        uncertainty = 0.02 + (1.0 - readiness / 100) * 0.04 + (len(labs_notes) * 0.005)
+        conf_pct    = max(55, min(95, round(70 + readiness * 0.25 - len(labs_notes) * 3)))
+        confidence_note = None
 
     return {
         "swim_sec":        swim_sec,
@@ -206,6 +218,8 @@ def _predict(
         "confidence_pct":  conf_pct,
         "tsb_mult":        round(tsb_mult, 3),
         "readiness_mult":  round(readiness_mult, 3),
+        "readiness_used":  readiness is not None,
+        "confidence_note": confidence_note,
         "labs_mult":       round(labs_mult, 3),
         "labs_notes":      labs_notes,
         "range_low_sec":   round(total_sec * (1 - uncertainty)),
@@ -282,7 +296,8 @@ def _get_athlete_params(user: User, db: Session) -> dict:
     # Readiness desde context
     from ..models import AIAthleteContext
     ctx = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == user.id).first()
-    params["readiness"] = ctx.current_readiness or 70 if ctx else 70
+    # CQ1/H7: sin readiness real queda None (la prediccion omite el multiplicador).
+    params["readiness"] = ctx.current_readiness if ctx and ctx.current_readiness is not None else None
 
     # Blood Labs mÃ¡s reciente (Ãºltimos 90 dÃ­as)
     cutoff = (date.today() - timedelta(days=90)).isoformat()

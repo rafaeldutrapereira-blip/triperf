@@ -110,9 +110,10 @@ class TestDRSMetadata:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestComputeDailyReadiness:
-    def test_no_data_returns_neutral_70(self):
+    def test_no_data_returns_none_not_70(self):
+        # CQ1/H1: sin datos no se inventa una cifra
         report = compute_daily_readiness()
-        assert report.drs == 70
+        assert report.drs is None
         assert report.data_completeness == 0.0
         assert len(report.computed_from) == 0
 
@@ -143,13 +144,13 @@ class TestComputeDailyReadiness:
 
     def test_only_recovery_available(self):
         report = compute_daily_readiness(recovery_score=80)
-        assert report.drs > 0
+        assert report.drs is None  # CQ1/H1: completitud 0.25 < 0.5
         assert report.data_completeness == 0.25
         assert "Recuperación" in report.computed_from
 
     def test_only_tsb_available(self):
         report = compute_daily_readiness(tsb=10)  # form_score=80
-        assert report.drs > 0
+        assert report.drs is None  # CQ1/H1
         assert "Forma" in report.computed_from
 
     def test_data_completeness_all_four(self):
@@ -166,7 +167,7 @@ class TestComputeDailyReadiness:
         full = compute_daily_readiness(
             recovery_score=80, mental_score=80, trs=80, tsb=5
         )
-        partial = compute_daily_readiness(recovery_score=80)
+        partial = compute_daily_readiness(recovery_score=80, mental_score=80)
         # partial should be lower due to completeness penalty
         assert partial.drs <= full.drs
 
@@ -256,7 +257,7 @@ class TestComputeReadinessHistory:
     def test_each_point_has_drs(self):
         points = [
             {"date_iso": f"2026-06-{10+i:02d}", "recovery_score": 70+i*5,
-             "mental_score": None, "trs": None, "tsb": None}
+             "mental_score": 70, "trs": None, "tsb": None}
             for i in range(5)
         ]
         result = compute_readiness_history(points)
@@ -267,16 +268,16 @@ class TestComputeReadinessHistory:
 
     def test_good_recovery_trend_increasing_drs(self):
         points = [
-            {"date_iso": "2026-06-01", "recovery_score": 20, "mental_score": None, "trs": None, "tsb": None},
-            {"date_iso": "2026-06-07", "recovery_score": 80, "mental_score": None, "trs": None, "tsb": None},
+            {"date_iso": "2026-06-01", "recovery_score": 20, "mental_score": 50, "trs": None, "tsb": None},
+            {"date_iso": "2026-06-07", "recovery_score": 80, "mental_score": 50, "trs": None, "tsb": None},
         ]
         result = compute_readiness_history(points)
         assert result[0].drs < result[1].drs
 
-    def test_no_data_points_give_neutral(self):
+    def test_no_data_points_give_none(self):
         points = [{"date_iso": "2026-06-01", "recovery_score": None, "mental_score": None, "trs": None, "tsb": None}]
         result = compute_readiness_history(points)
-        assert result[0].drs == 70
+        assert result[0].drs is None
 
     def test_history_point_has_all_fields(self):
         points = [{"date_iso": "2026-06-01", "recovery_score": 75, "mental_score": 80, "trs": 90, "tsb": 5}]

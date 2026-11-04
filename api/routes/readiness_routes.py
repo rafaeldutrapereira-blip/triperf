@@ -209,6 +209,27 @@ def get_today_readiness_plan(
         tsb=tsb,
     )
 
+    if report.drs is None:
+        # CQ1/H1: sin datos suficientes no hay ajuste automatico (ni cifra inventada).
+        return {
+            "date":               date.today().isoformat(),
+            "drs":                None,
+            "drs_label":          report.drs_label,
+            "drs_color":          report.drs_color,
+            "recommendation":     report.recommendation,
+            "sport_priority":     None,
+            "duration_modifier":  None,
+            "allowed_zones":      None,
+            "training_guidance":  report.training_guidance,
+            "primary_limiter":    None,
+            "skip_training":      False,
+            "data_completeness":  report.data_completeness,
+            "dimensions_summary": [
+                {"name": d.name, "score": round(d.score) if d.score is not None else None, "color": d.color}
+                for d in report.dimensions
+            ],
+        }
+
     # Disciplina recomendada según DRS
     sport_priority = "run"
     if report.drs < 40:
