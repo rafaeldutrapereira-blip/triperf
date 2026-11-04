@@ -6,6 +6,10 @@
  *   LXOwnPlan.sync(next)    -> aplica el diff (crear/editar/borrar) contra el servidor
  *   LXOwnPlan.add(session)  -> POST de una sesion (usado por Indoor "+ Mi Plan")
  *
+ * CQ13: la marca de migrado es por usuario (kl_own_plan_migrated:<user_id>) y el
+ * plan local solo se importa si kl_training_plan_owner coincide con la cuenta
+ * actual; si es otra cuenta o no hay atribucion, queda intacto sin subirse.
+ *
  * Migracion suave: las sesiones propias que hubiera en localStorage.kl_training_plan
  * (las del coach llevan api_assignment_id y NO se migran) se suben UNA vez con
  * legacy_id (el servidor no duplica) y se retiran del almacenamiento local.
@@ -20,7 +24,8 @@
 })(typeof window !== 'undefined' ? window : this, function (env) {
   'use strict';
   var CACHE_KEY = 'kl_own_plan_cache';
-  var MIGRATED_KEY = 'kl_own_plan_migrated';
+  var MIGRATED_KEY = 'kl_own_plan_migrated'; // CQ13: se le agrega ':<user_id>'
+  var OWNER_KEY = 'kl_training_plan_owner'; // CQ13: user_id que dejo el plan local
   var LEGACY_KEY = 'kl_training_plan';
 
   function store() {
@@ -92,9 +97,38 @@
   function resolveId(id) {
     return idMap[id] || id;
   }
+  /* CQ13: id del usuario autenticado (sesion kl_s.user_id) o '' si no hay. */
+  function userId() {
+    try {
+      if (env.userId) return String(env.userId() || '');
+      var s = store();
+      var raw =
+        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('kl_s')) ||
+        (s && s.getItem('kl_s')) || 'null';
+      var ks = JSON.parse(raw);
+      return ks && ks.user_id != null ? String(ks.user_id) : '';
+    } catch (e) {
+      return '';
+    }
+  }
+  function migratedKey(uid) {
+    return MIGRATED_KEY + ':' + uid;
+  }
   function isMigrated() {
+    var uid = userId();
     var s = store();
-    return !!(s && s.getItem(MIGRATED_KEY));
+    return !!(uid && s && s.getItem(migratedKey(uid)));
+  }
+  function note(msg) {
+    try {
+      if (typeof console !== 'undefined' && console.info) console.info('[LXOwnPlan] ' + msg);
+    } catch (e) {}
+  }
+  /* El plan local es de esta cuenta solo si quedo marcado con su user_id. */
+  function localIsMine() {
+    var uid = userId();
+    var s = store();
+    return !!(uid && s && s.getItem(OWNER_KEY) === uid);
   }
   /* Sesiones propias que aun viven en kl_training_plan (sin api_assignment_id). */
   function legacyLocal() {
@@ -103,13 +137,17 @@
       return s && s.id && !s.api_assignment_id && s.source !== 'api' && s.date_iso;
     });
   }
-  function stripLegacy() {
+  function stripLegacy(uid) {
     var arr = rd(LEGACY_KEY, []);
     wr(LEGACY_KEY, (Array.isArray(arr) ? arr : []).filter(function (s) {
       return s && (s.api_assignment_id || s.source === 'api');
     }));
     var s = store();
-    if (s) s.setItem(MIGRATED_KEY, '1');
+    if (s) {
+      s.setItem(migratedKey(uid), '1');
+      if (s.removeItem) s.removeItem(OWNER_KEY);
+      else s.setItem(OWNER_KEY, '');
+    }
   }
   function fail(err) {
     if (err && (err.status === 401 || err.status === 403)) setList([]);
@@ -119,7 +157,7 @@
 
   api.cached = function () {
     var out = list.slice();
-    if (!isMigrated()) {
+    if (!isMigrated() && localIsMine()) {
       // antes de migrar se siguen viendo las locales (sin duplicar las ya subidas)
       var known = {};
       out.forEach(function (s) { if (s.legacy_id) known[s.legacy_id] = true; known[s.id] = true; });
@@ -128,15 +166,33 @@
     return out;
   };
 
+  /* Marca el plan local como de la cuenta actual (lo llama quien guarda
+     sesiones propias en localStorage). Sin sesion no marca nada. */
+  api.stampOwner = function () {
+    var uid = userId();
+    var s = store();
+    if (uid && s && !s.getItem(OWNER_KEY)) s.setItem(OWNER_KEY, uid);
+  };
+
+  api.migrated = isMigrated;
+
   api.migrate = function () {
-    var local = isMigrated() ? [] : legacyLocal();
+    var uid = userId();
+    if (!uid) return Promise.resolve(null); // sin sesion: no se importa ni se marca
+    var s = store();
+    if (isMigrated()) return Promise.resolve(null);
+    var local = legacyLocal();
     if (!local.length) {
-      var s = store();
-      if (s && !isMigrated()) s.setItem(MIGRATED_KEY, '1');
+      if (s) s.setItem(migratedKey(uid), '1');
+      return Promise.resolve(null);
+    }
+    if (!localIsMine()) {
+      // otro usuario (o nadie atribuible) dejo este plan: queda intacto, sin subir
+      note('plan local no atribuible a esta cuenta; no se importa');
       return Promise.resolve(null);
     }
     return req('POST', '/import', { sessions: local }).then(function (res) {
-      stripLegacy();
+      stripLegacy(uid);
       return res;
     });
   };

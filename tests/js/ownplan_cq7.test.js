@@ -8,7 +8,7 @@ const { create } = require('../../lx-ownplan.js');
 const ROOT = path.join(__dirname, '..', '..');
 
 function makeEnv({ local = {}, server = [], failWrites = false } = {}) {
-  const store = Object.assign({ lx_co_token: 'tok' }, local);
+  const store = Object.assign({ lx_co_token: 'tok', kl_s: JSON.stringify({ user_id: 7 }) }, local);
   const srv = { sessions: server.slice(), calls: [], n: 100 };
   const env = {
     storage: {
@@ -58,12 +58,12 @@ const L = (id, extra) => Object.assign({ id, sport: 'run', name: 'Rodaje', date_
 
 test('migracion: sube las locales una vez, sin las del coach, y las retira de localStorage', async () => {
   const local = [L('plan-1'), L('plan-2', { name: 'Fondo' }), L('api_9', { api_assignment_id: 9 })];
-  const { api, store, srv } = makeEnv({ local: { kl_training_plan: JSON.stringify(local) } });
+  const { api, store, srv } = makeEnv({ local: { kl_training_plan: JSON.stringify(local), kl_training_plan_owner: '7' } });
   const out = await api.load();
   assert.equal(out.length, 2);
   assert.equal(srv.sessions.length, 2);
   assert.deepEqual(JSON.parse(store.kl_training_plan).map((s) => s.id), ['api_9']); // solo cache del coach
-  assert.equal(store.kl_own_plan_migrated, '1');
+  assert.equal(store['kl_own_plan_migrated:7'], '1');
   // segundo inicio: no vuelve a importar
   const before = srv.calls.filter((c) => c === 'POST /import').length;
   const api2 = create({ storage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, api: 'https://x.test/api', fetch: (u, o) => { srv.calls.push(o.method + ' ' + u.slice(-7)); return Promise.resolve({ ok: true, json: () => ({ sessions: srv.sessions }) }); } });
@@ -74,20 +74,20 @@ test('migracion: sube las locales una vez, sin las del coach, y las retira de lo
 });
 
 test('si el servidor falla, se siguen viendo las locales y no se pierden', async () => {
-  const { api, store } = makeEnv({ local: { kl_training_plan: JSON.stringify([L('plan-1')]) } });
+  const { api, store } = makeEnv({ local: { kl_training_plan: JSON.stringify([L('plan-1')]), kl_training_plan_owner: '7' } });
   api.onError = () => {};
-  const env2 = makeEnv({ local: { kl_training_plan: JSON.stringify([L('plan-1')]) } });
+  const env2 = makeEnv({ local: { kl_training_plan: JSON.stringify([L('plan-1')]), kl_training_plan_owner: '7' } });
   env2.api; // sin uso: el fallo se simula con fetch rechazado abajo
   const failing = create({ storage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, fetch: () => Promise.reject(new Error('red')), api: 'x' });
   failing.onError = () => {};
   const out = await failing.load();
   assert.equal(out.length, 1);
   assert.equal(JSON.parse(store.kl_training_plan).length, 1); // intacto
-  assert.ok(!store.kl_own_plan_migrated);
+  assert.ok(!store['kl_own_plan_migrated:7']);
 });
 
 test('sync: crear, editar y borrar viajan al servidor; el id temporal pasa al del servidor', async () => {
-  const { api, srv } = makeEnv({ local: { kl_own_plan_migrated: '1' } });
+  const { api, srv } = makeEnv({ local: { 'kl_own_plan_migrated:7': '1' } });
   await api.load();
   assert.equal(await api.sync([L('plan-9')]), true);
   assert.equal(srv.sessions.length, 1);
@@ -101,7 +101,7 @@ test('sync: crear, editar y borrar viajan al servidor; el id temporal pasa al de
 });
 
 test('editar antes de que responda el alta usa el id del servidor', async () => {
-  const { api, srv } = makeEnv({ local: { kl_own_plan_migrated: '1' } });
+  const { api, srv } = makeEnv({ local: { 'kl_own_plan_migrated:7': '1' } });
   await api.load();
   const p1 = api.sync([L('plan-7')]);
   const p2 = api.sync([L('plan-7', { name: 'Editado' })]); // aun con id temporal
@@ -111,7 +111,7 @@ test('editar antes de que responda el alta usa el id del servidor', async () => 
 });
 
 test('write fallido: avisa, recarga del servidor y no deja la sesion fantasma', async () => {
-  const { api, srv } = makeEnv({ local: { kl_own_plan_migrated: '1' }, failWrites: true });
+  const { api, srv } = makeEnv({ local: { 'kl_own_plan_migrated:7': '1' }, failWrites: true });
   let err = null;
   api.onError = (e) => { err = e; };
   await api.load();
@@ -122,7 +122,7 @@ test('write fallido: avisa, recarga del servidor y no deja la sesion fantasma', 
 });
 
 test('add (Indoor + Mi Plan) escribe en servidor y no duplica el mismo workout/dia', async () => {
-  const { api, srv } = makeEnv({ local: { kl_own_plan_migrated: '1' } });
+  const { api, srv } = makeEnv({ local: { 'kl_own_plan_migrated:7': '1' } });
   const body = { sport: 'bike', name: 'SS', date_iso: '2026-11-05', indoor_workout_id: 'iw1' };
   const a = await api.add(body);
   const b = await api.add(body);
@@ -136,7 +136,7 @@ test('las paginas leen del servidor y localStorage no es fuente', () => {
   const dash = fs.readFileSync(path.join(ROOT, 'dashboard.html'), 'utf8');
   const tp = fs.readFileSync(path.join(ROOT, 'training_plan.html'), 'utf8');
   const iw = fs.readFileSync(path.join(ROOT, 'indoor_workout.html'), 'utf8');
-  for (const h of [dash, tp, iw]) assert.match(h, /lx-ownplan\.js\?v=1/);
+  for (const h of [dash, tp, iw]) assert.match(h, /lx-ownplan\.js\?v=2/);
   assert.doesNotMatch(dash, /localStorage\.getItem\('kl_training_plan'\)/);
   assert.doesNotMatch(iw, /kl_training_plan/);
   assert.match(iw, /LXOwnPlan\.add\(/);
@@ -155,4 +155,59 @@ test('dashboard: suma propio + Garmin/coach sin duplicar', () => {
   const out = mergeToday([g], [dupOwn, other]);
   assert.deepEqual(out.map((x) => x.src), ['garmin', 'own']);
   assert.equal(out[1].name, 'Rodaje');
+});
+
+// ---- CQ13: la importacion del plan local es por usuario ----
+const sess = (id) => JSON.stringify({ user_id: id });
+const imports = (srv) => srv.calls.filter((c) => c === 'POST /import').length;
+
+test('CQ13: misma cuenta importa una vez, con marca por usuario y sin duplicar', async () => {
+  const local = { kl_training_plan: JSON.stringify([L('plan-1')]), kl_training_plan_owner: '7' };
+  const { api, store, srv } = makeEnv({ local });
+  await api.load();
+  assert.equal(imports(srv), 1);
+  assert.equal(srv.sessions.length, 1);
+  assert.equal(store['kl_own_plan_migrated:7'], '1');
+  assert.ok(!store.kl_training_plan_owner);
+  await api.load();
+  assert.equal(imports(srv), 1);
+  assert.equal(srv.sessions.length, 1);
+});
+
+test('CQ13: cuenta distinta no importa ni borra el plan local, y ve el del servidor', async () => {
+  const local = { kl_s: sess(8), kl_training_plan: JSON.stringify([L('plan-1')]), kl_training_plan_owner: '7' };
+  const { api, store, srv } = makeEnv({ local, server: [{ id: 'srvA', name: 'De B', date_iso: '2026-11-06' }] });
+  const logs = [];
+  const orig = console.info;
+  console.info = (m) => logs.push(m);
+  let out;
+  try { out = await api.load(); } finally { console.info = orig; }
+  assert.equal(imports(srv), 0);
+  assert.deepEqual(out.map((s) => s.id), ['srvA']);
+  assert.equal(JSON.parse(store.kl_training_plan).length, 1);
+  assert.equal(store.kl_training_plan_owner, '7');
+  assert.ok(!store['kl_own_plan_migrated:8']);
+  assert.ok(logs.some((m) => /LXOwnPlan/.test(m)));
+});
+
+test('CQ13: plan local sin duenio conocido no se atribuye a nadie', async () => {
+  const { api, store, srv } = makeEnv({ local: { kl_training_plan: JSON.stringify([L('plan-1')]) } });
+  await api.load();
+  assert.equal(imports(srv), 0);
+  assert.equal(JSON.parse(store.kl_training_plan).length, 1);
+});
+
+test('CQ13: sin sesion no importa ni marca nada', async () => {
+  const { api, store, srv } = makeEnv({ local: { kl_s: null, kl_training_plan: JSON.stringify([L('plan-1')]), kl_training_plan_owner: '7' } });
+  await api.load();
+  assert.equal(imports(srv), 0);
+  assert.equal(JSON.parse(store.kl_training_plan).length, 1);
+  assert.ok(!Object.keys(store).some((k) => k.startsWith('kl_own_plan_migrated')));
+});
+
+test('CQ13: la marca de una cuenta no cuenta para otra en el mismo navegador', async () => {
+  const { api, store } = makeEnv({ local: { kl_s: sess(8), 'kl_own_plan_migrated:7': '1' } });
+  await api.load();
+  assert.equal(store['kl_own_plan_migrated:8'], '1');
+  assert.equal(store['kl_own_plan_migrated:7'], '1');
 });

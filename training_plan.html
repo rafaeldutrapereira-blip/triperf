@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <script src="routes.config.js?v=11"></script>
     <script src="lx-tss.js?v=1"></script>
-    <script src="lx-ownplan.js?v=1"></script>
+    <script src="lx-ownplan.js?v=2"></script>
     <script>
       LX_ROUTES.guard();
     </script>
@@ -2304,7 +2304,8 @@
           });
           // Hasta migrar, kl_training_plan conserva las propias locales (por si
           // el servidor no responde); migradas, solo queda el cache del coach.
-          var keep = localStorage.getItem('kl_own_plan_migrated') ? [] : own;
+          var keep = window.LXOwnPlan.migrated() ? [] : own;
+          if (keep.length) window.LXOwnPlan.stampOwner(); // CQ13
           localStorage.setItem(
             'kl_training_plan',
             JSON.stringify(coach.concat(keep)),
