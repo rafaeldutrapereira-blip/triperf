@@ -32,6 +32,7 @@
     <script src="lx-backend-i18n.js"></script>
     <script src="routes.config.js?v=11"></script>
     <script src="community.js?v=1"></script>
+    <script src="estado-checkin.js"></script>
     <script>
       (function () {
         function _ti() {
@@ -791,6 +792,59 @@
         font-size: 0.78rem;
         line-height: 1.35;
         color: var(--dim);
+      }
+      /* B3 · hoja de check-in */
+      .ck-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        background: rgba(0, 0, 0, 0.55);
+        align-items: flex-end;
+      }
+      .ck-overlay.open {
+        display: flex;
+      }
+      .ck-sheet {
+        width: 100%;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg2, #111827);
+        border-radius: 18px 18px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .ck-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1rem 0.4rem;
+      }
+      .ck-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      .ck-close {
+        background: none;
+        border: 0;
+        color: var(--dim);
+        font-size: 1.2rem;
+        cursor: pointer;
+      }
+      .ck-body {
+        overflow-y: auto;
+        padding: 0 1rem 0.5rem;
+      }
+      .ck-group-h {
+        margin-top: 0.8rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .ck-save {
+        margin-top: 0.5rem;
       }
       .today-checkin-btn {
         display: block;
@@ -5213,7 +5267,7 @@
               class="today-checkin-btn"
               id="today-checkin-btn"
               type="button"
-              onclick="goScreen('screen-wellness'); wellnessTab('checkin')"
+              onclick="openCheckin()"
             >
               Check-in
             </button>
@@ -5490,13 +5544,6 @@
               </div>
               <div
                 class="cm-tab"
-                id="wl-tab-checkin"
-                onclick="wellnessTab('checkin')"
-              >
-                Check-in
-              </div>
-              <div
-                class="cm-tab"
                 id="wl-tab-timeline"
                 onclick="wellnessTab('timeline')"
               >
@@ -5622,84 +5669,6 @@
             >
               <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
             </div>
-          </div>
-
-          <div id="wl-checkin-content" style="display: none">
-            <div class="wellness-grid">
-              <!-- Mismo esquema de 6 factores que recovery.html (¿Cómo te sentís
-               hoy?) — pedido explícito del usuario: "debería ser igual [...]
-               y debería guardar como siendo única". Antes esta pantalla tenía
-               su PROPIO esquema (estado/fatiga/dolor/sueño en horas) que
-               escribía en columnas DISTINTAS de la misma fila de la base de
-               datos (wellness_logs) — dos check-ins "distintos" para el mismo
-               día según por dónde se entrara. Ahora comparten exactamente los
-               mismos 6 campos (energy/mood/soreness/motivation/stress/
-               sleep_quality) contra el mismo endpoint /api/recovery/wellness. -->
-              <div class="wl-card">
-                <div class="wl-star-row" data-field="energy">
-                  <span class="wl-star-lbl" data-i18n="app_wl_energy"
-                    >⚡ Energía general</span
-                  >
-                  <div class="wl-stars" id="ws-energy"></div>
-                </div>
-                <div class="wl-star-row" data-field="mood">
-                  <span class="wl-star-lbl" data-i18n="app_wl_mood"
-                    >😊 Estado de ánimo</span
-                  >
-                  <div class="wl-stars" id="ws-mood"></div>
-                </div>
-                <div class="wl-star-row" data-field="soreness">
-                  <span class="wl-star-lbl" data-i18n="app_wl_soreness"
-                    >💪 Piernas/Músculos (5=sin dolor)</span
-                  >
-                  <div class="wl-stars" id="ws-soreness"></div>
-                </div>
-                <div class="wl-star-row" data-field="motivation">
-                  <span class="wl-star-lbl" data-i18n="app_wl_motivation"
-                    >🎯 Motivación para entrenar</span
-                  >
-                  <div class="wl-stars" id="ws-motivation"></div>
-                </div>
-                <div class="wl-star-row" data-field="stress">
-                  <span class="wl-star-lbl" data-i18n="app_wl_stress"
-                    >🌡️ Estrés externo (5=sin estrés)</span
-                  >
-                  <div class="wl-stars" id="ws-stress"></div>
-                </div>
-                <div
-                  class="wl-star-row"
-                  data-field="sleep_quality"
-                  style="border-bottom: none"
-                >
-                  <span class="wl-star-lbl" data-i18n="app_wl_sleep_quality"
-                    >🌙 Calidad del sueño subjetiva</span
-                  >
-                  <div class="wl-stars" id="ws-sleep_quality"></div>
-                </div>
-              </div>
-
-              <div class="wl-card">
-                <div class="wl-title" data-i18n="app_wellness_notes_title">
-                  Notas (opcional)
-                </div>
-                <textarea
-                  class="pw-input"
-                  id="wl-notes"
-                  rows="2"
-                  placeholder="Dolor específico, viaje, estrés laboral..."
-                  data-i18n-placeholder="app_wellness_notes_ph"
-                  style="resize: none; background: var(--bg3)"
-                ></textarea>
-              </div>
-            </div>
-
-            <button
-              class="wl-submit"
-              onclick="submitWellness()"
-              data-i18n="app_wellness_checkin_save"
-            >
-              Guardar check-in
-            </button>
           </div>
 
           <!-- Timeline 14/30/60d (Sprint 4 del port de recovery.html) — 3 series
@@ -6204,52 +6173,6 @@
             <div class="rc-mob-card" id="mtl-score-card">
               <div class="cm-empty" data-i18n="status_loading">Cargando...</div>
             </div>
-            <div class="wl-card" style="margin: 1rem">
-              <div class="wl-title" data-i18n="app_mental_checkin_title">
-                Check-in mental de hoy
-              </div>
-              <div class="wl-star-row" data-field="anxiety">
-                <span class="wl-star-lbl" data-i18n="app_mtl_anxiety"
-                  >😰 Ansiedad (5=calmo)</span
-                >
-                <div class="wl-stars" id="mtl-ws-anxiety"></div>
-              </div>
-              <div class="wl-star-row" data-field="motivation">
-                <span class="wl-star-lbl" data-i18n="app_mtl_motivation"
-                  >🎯 Motivación</span
-                >
-                <div class="wl-stars" id="mtl-ws-motivation"></div>
-              </div>
-              <div class="wl-star-row" data-field="focus">
-                <span class="wl-star-lbl" data-i18n="app_mtl_focus"
-                  >🧠 Foco/Concentración</span
-                >
-                <div class="wl-stars" id="mtl-ws-focus"></div>
-              </div>
-              <div class="wl-star-row" data-field="confidence">
-                <span class="wl-star-lbl" data-i18n="app_mtl_confidence"
-                  >💪 Confianza</span
-                >
-                <div class="wl-stars" id="mtl-ws-confidence"></div>
-              </div>
-              <div
-                class="wl-star-row"
-                data-field="mood"
-                style="border-bottom: none"
-              >
-                <span class="wl-star-lbl" data-i18n="app_mtl_mood"
-                  >😊 Ánimo</span
-                >
-                <div class="wl-stars" id="mtl-ws-mood"></div>
-              </div>
-            </div>
-            <button
-              class="wl-submit"
-              onclick="saveMentalCheckin()"
-              data-i18n="app_mental_checkin_save"
-            >
-              Guardar check-in mental
-            </button>
           </div>
 
           <div id="mtl-protocols-content" style="display: none">
@@ -7645,8 +7568,6 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'flex';
         updateGreetingHeaders();
-        _wlInitStars();
-        _mtlInitStars();
         loadToday();
         loadWeek();
         loadHoy();
@@ -9109,7 +9030,6 @@
      llamada liviana y evita mostrar datos de un check-in que haya
      cambiado por otro medio (ej. la web) durante la misma sesión. */
         if (id === 'screen-wellness') {
-          loadWellnessToday();
           wellnessTab('resumen');
         }
         if (id === 'screen-profile') {
@@ -11377,132 +11297,241 @@
         svg.addEventListener('mouseleave', _wpMobHideTooltip);
       }
 
-      /* ── Screen 5: Bienestar ─────────────────────────────────── */
-      /* Unificado con recovery.html (web) — pedido explícito del usuario: "la
-   encuesta debería ser igual [...] y debería guardar como siendo única,
-   no?". Antes esta pantalla tenía su PROPIO esquema (estado/fatiga/
-   dolor/horas de sueño) que además nunca coincidía con los nombres de
-   campo reales del backend (ver Gap #17) — y aunque se hubiera arreglado
-   esa vez, seguía siendo un esquema DISTINTO al de recovery.html
-   (energy/mood/soreness/motivation/stress/sleep_quality), escribiendo en
-   columnas diferentes de la MISMA fila de wellness_logs. Ahora usa
-   exactamente los mismos 6 campos, mismo endpoint (/api/recovery/
-   wellness) y mismo GET de prefill que la web — completar el check-in
-   desde la app o desde recovery.html es, a partir de ahora, la MISMA
-   acción sobre el MISMO dato. */
-      var _WL_FIELDS = [
-        'energy',
-        'mood',
-        'soreness',
-        'motivation',
-        'stress',
-        'sleep_quality',
+      /* ── Check-in en hoja única (B3) ───────────────────────────
+   Reemplaza el check-in de Recovery (6 campos) y el check-in mental
+   (5 campos, estrellas): UNA hoja con los 9 campos de estado.html (S28).
+   El reparto hacia los dos endpoints vive en estado-checkin.js
+   (EstadoCheckin.buildPayloads, el mismo de la web): POST
+   /recovery/wellness primero y luego POST /mental/checkin. Se abre desde
+   el botón de Hoy; al guardar se refresca el semáforo (estado-hoy). */
+      var _CK_GROUPS = [
+        {
+          h: ['est_group_phys', 'Físico'],
+          rows: [
+            ['energy', 'rcw_energy', 'Energía general'],
+            ['soreness', 'rcw_soreness', 'Piernas/Músculos (5=sin dolor)'],
+            ['sleep_quality', 'rcw_sleep_subj', 'Calidad del sueño subjetiva'],
+            ['stress', 'rcw_stress', 'Estrés externo (5=sin estrés)'],
+          ],
+        },
+        {
+          h: ['est_reg_grp_both', 'Físico y mental'],
+          rows: [
+            ['mood', 'ment_label_mood', 'Estado de ánimo general (5=excelente)'],
+            ['motivation', 'ment_label_motivation', 'Motivación (5=muy motivado)'],
+          ],
+        },
+        {
+          h: ['est_group_mental', 'Mental'],
+          rows: [
+            ['anxiety', 'ment_label_anxiety', 'Ansiedad — ¿Qué tan calmo te sientes? (5=muy calmo)'],
+            ['focus', 'ment_label_focus', 'Foco / Concentración (5=muy enfocado)'],
+            ['confidence', 'ment_label_confidence', 'Confianza (5=muy confiado)'],
+          ],
+        },
       ];
-      var _wlValues = {};
+      var _ck = null;
 
-      function _wlInitStars() {
-        _WL_FIELDS.forEach(function (f) {
-          var container = document.getElementById('ws-' + f);
-          if (!container) return;
-          container.innerHTML = '';
-          for (var i = 1; i <= 5; i++) {
-            var btn = document.createElement('button');
-            btn.className = 'wl-star-btn';
-            btn.type = 'button';
-            btn.textContent = '★';
-            btn.dataset.val = i;
-            btn.onclick = (function (field, val) {
-              return function () {
-                _wlValues[field] = val;
-                _wlUpdateStars(field);
-              };
-            })(f, i);
-            container.appendChild(btn);
+      function _ckReset() {
+        _ck = {
+          answers: {},
+          touched: {},
+          stored: { well: {}, men: {} },
+          storedNotes: { well: '', men: '' },
+          notesTouched: false,
+          busy: false,
+        };
+      }
+      function _ckHas(v) {
+        return v !== null && v !== undefined && v !== 0 && v !== '';
+      }
+
+      function _ckBuild() {
+        var box = document.getElementById('ck-fields');
+        if (!box) return;
+        var html = '';
+        _CK_GROUPS.forEach(function (g) {
+          html += '<div class="ck-group-h">' + _t(g.h[0], g.h[1]) + '</div>';
+          g.rows.forEach(function (r) {
+            html +=
+              '<div class="wl-star-row" data-ck-row="' +
+              r[0] +
+              '"><span class="wl-star-lbl" id="ck-l-' +
+              r[0] +
+              '">' +
+              _t(r[1], r[2]) +
+              '</span><div class="wl-stars" role="radiogroup" aria-labelledby="ck-l-' +
+              r[0] +
+              '" data-ck-field="' +
+              r[0] +
+              '">';
+            for (var i = 1; i <= 5; i++) {
+              html +=
+                '<button class="wl-star-btn" type="button" role="radio" aria-checked="false" data-val="' +
+                i +
+                '" onclick="ckSet(&quot;' +
+                r[0] +
+                '&quot;,' +
+                i +
+                ')">★</button>';
+            }
+            html += '</div></div>';
+          });
+        });
+        box.innerHTML = html;
+      }
+
+      function _ckPaint(f) {
+        var c = document.querySelector('[data-ck-field="' + f + '"]');
+        if (!c) return;
+        var val = _ck.answers[f] || 0;
+        c.querySelectorAll('.wl-star-btn').forEach(function (b) {
+          var n = parseInt(b.dataset.val, 10);
+          b.classList.toggle('active', n <= val);
+          b.setAttribute('aria-checked', n === val ? 'true' : 'false');
+        });
+      }
+
+      function ckSet(f, v) {
+        if (!_ck) return;
+        _ck.answers[f] = v;
+        _ck.touched[f] = true;
+        _ckPaint(f);
+      }
+
+      function _ckShowNote() {
+        var el = document.getElementById('ck-notes');
+        if (el && !_ck.notesTouched && !el.value)
+          el.value = _ck.storedNotes.well || _ck.storedNotes.men || '';
+      }
+
+      function _ckSetWellness(w) {
+        if (!w || !w.logged) return;
+        window.EstadoCheckin.WELL_FIELDS.forEach(function (f) {
+          if (_ckHas(w[f])) {
+            _ck.stored.well[f] = w[f];
+            if (!_ck.touched[f]) _ck.answers[f] = w[f];
+            _ckPaint(f);
           }
         });
+        _ck.storedNotes.well = w.notes || '';
+        _ckShowNote();
       }
-      function _wlUpdateStars(field) {
-        var val = _wlValues[field] || 0;
-        var container = document.getElementById('ws-' + field);
-        if (!container) return;
-        container.querySelectorAll('.wl-star-btn').forEach(function (s) {
-          s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+
+      function _ckSetMental(c) {
+        if (!c) return;
+        var EC = window.EstadoCheckin;
+        EC.MEN_FIELDS.forEach(function (f) {
+          if (!_ckHas(c[f])) return;
+          _ck.stored.men[f] = c[f];
+          var shared = EC.BOTH.indexOf(f) !== -1;
+          /* en campos compartidos manda el valor de bienestar si ya existe */
+          if (!_ck.touched[f] && !(shared && _ckHas(_ck.stored.well[f])))
+            _ck.answers[f] = c[f];
+          _ckPaint(f);
         });
+        _ck.storedNotes.men = c.notes || '';
+        _ckShowNote();
       }
 
-      function submitWellness() {
-        var notes = (document.getElementById('wl-notes').value || '').trim();
-        var body = { date_iso: todayIso() };
-        _WL_FIELDS.forEach(function (f) {
-          if (_wlValues[f]) body[f] = _wlValues[f];
-        });
-        if (notes) body.notes = notes;
-
-        if (!_token) {
-          toast(_t('aa_login_to_save', 'Inicia sesión para guardar'), '');
-          return;
-        }
-
-        apiFetch('/recovery/wellness', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        })
-          .then(function (r) {
-            /* /recovery/wellness está gateado por plan (require_feature
-         "recovery" — básico no lo incluye, ver plan_features.py). El
-         endpoint viejo /athlete/wellness NO tenía ningún gate, así que
-         sin este manejo un atleta básico vería _t('ath_err_save', "Error al guardar") sin
-         entender por qué, cuando antes sí podía guardar su check-in. */
-            if (r.status === 403) {
-              toast(
-                _t(
-                  'ath_plan_no_checkin',
-                  'Tu plan no incluye el check-in de bienestar — actualizalo en Mi Perfil',
-                ),
-                '',
-              );
-              return;
-            }
-            if (r.ok || r.status === 201) {
-              toast('Check-in guardado ✓ — score recalculado', 'ok');
-            } else {
-              toast(
-                _t(
-                  'prof_toast_profile_save_err',
-                  _t('ath_err_save', 'Error al guardar'),
-                ),
-                '',
-              );
-            }
-          })
-          .catch(function () {
-            toast(
-              _t('aa_offline_save', 'Sin conexión — no se pudo guardar'),
-              '',
-            );
-          });
-      }
-
-      /* Precarga el check-in de hoy si ya se hizo (desde la app o desde
-   recovery.html — es el mismo dato) al abrir "Bienestar". */
-      function loadWellnessToday() {
-        if (!_token) return;
+      /* Precarga lo ya registrado hoy (desde la app o la web: es el mismo dato). */
+      function _ckLoadStored() {
+        var ck = _ck;
         apiFetch('/recovery/wellness/' + todayIso())
           .then(function (r) {
             return r.ok ? r.json() : null;
           })
-          .then(function (row) {
-            if (!row || !row.logged) return;
-            _WL_FIELDS.forEach(function (f) {
-              if (row[f] != null) {
-                _wlValues[f] = row[f];
-                _wlUpdateStars(f);
-              }
-            });
-            if (row.notes)
-              document.getElementById('wl-notes').value = row.notes;
+          .then(function (w) {
+            if (_ck === ck) _ckSetWellness(w);
+          })
+          .catch(function () {})
+          .then(function () {
+            return apiFetch('/mental/dashboard?date_iso=' + todayIso());
+          })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (_ck === ck && d) _ckSetMental(d.checkin);
           })
           .catch(function () {});
+      }
+
+      function openCheckin() {
+        if (!_token) {
+          toast(_t('aa_login_to_save', 'Inicia sesión para guardar'), '');
+          return;
+        }
+        _ckReset();
+        _ckBuild();
+        document.getElementById('ck-notes').value = '';
+        document.getElementById('ck-sheet-overlay').classList.add('open');
+        _ckLoadStored();
+      }
+
+      function closeCheckin() {
+        var o = document.getElementById('ck-sheet-overlay');
+        if (o) o.classList.remove('open');
+      }
+
+      function saveCheckin() {
+        if (!_ck || _ck.busy) return;
+        var p = window.EstadoCheckin.buildPayloads(_ck.answers, {
+          dateIso: todayIso(),
+          touched: _ck.touched,
+          stored: _ck.stored,
+          notes: document.getElementById('ck-notes').value,
+          notesTouched: _ck.notesTouched,
+          storedNotes: _ck.storedNotes,
+        });
+        if (!p.well && !p.men) {
+          toast(_t('est_reg_empty', 'Elige al menos una respuesta.'), '');
+          return;
+        }
+        _ck.busy = true;
+        var btn = document.getElementById('ck-save');
+        btn.disabled = true;
+        var gated = false;
+        var failed = false;
+        function post(url, body) {
+          return apiFetch(url, { method: 'POST', body: JSON.stringify(body) })
+            .then(function (r) {
+              if (r.status === 403) gated = true;
+              if (!r.ok) failed = true;
+            })
+            .catch(function () {
+              failed = true;
+            });
+        }
+        /* Bienestar primero: el MFS toma el Recovery del día, que ya debe incluirlo. */
+        var chain = Promise.resolve();
+        if (p.well)
+          chain = chain.then(function () {
+            return post('/recovery/wellness', p.well);
+          });
+        if (p.men)
+          chain = chain.then(function () {
+            return post('/mental/checkin', p.men);
+          });
+        chain.then(function () {
+          if (_ck) _ck.busy = false;
+          btn.disabled = false;
+          if (!failed) {
+            toast(_t('ment_saved', '✓ Guardado'), 'ok');
+            closeCheckin();
+          } else if (gated) {
+            toast(
+              _t(
+                'ath_plan_no_checkin',
+                'Tu plan no incluye el check-in de bienestar — actualizalo en Mi Perfil',
+              ),
+              '',
+            );
+          } else {
+            toast(_t('est_reg_err', 'No se pudo guardar. Reintenta.'), '');
+          }
+          loadEstadoHoy();
+        });
       }
 
       /* ── Pantalla Mental (Sprint 2 del roadmap app↔web) — mismos 4
@@ -11510,46 +11539,8 @@
    check-in+trend_7d+protocolo sugerido+carrera), /mental/checkin (POST),
    /mental/protocols (filtro por category), /mental/protocols/{id}/
    complete (POST), /mental/correlations, /mental/pre-race. */
-      var _MTL_FIELDS = [
-        'anxiety',
-        'motivation',
-        'focus',
-        'confidence',
-        'mood',
-      ];
-      var _mtlValues = {};
       var _mtlCat = '';
       var _mtlProtocols = [];
-
-      function _mtlInitStars() {
-        _MTL_FIELDS.forEach(function (f) {
-          var container = document.getElementById('mtl-ws-' + f);
-          if (!container) return;
-          container.innerHTML = '';
-          for (var i = 1; i <= 5; i++) {
-            var btn = document.createElement('button');
-            btn.className = 'wl-star-btn';
-            btn.type = 'button';
-            btn.textContent = '★';
-            btn.dataset.val = i;
-            btn.onclick = (function (field, val) {
-              return function () {
-                _mtlValues[field] = val;
-                _mtlUpdateStars(field);
-              };
-            })(f, i);
-            container.appendChild(btn);
-          }
-        });
-      }
-      function _mtlUpdateStars(field) {
-        var val = _mtlValues[field] || 0;
-        var container = document.getElementById('mtl-ws-' + field);
-        if (!container) return;
-        container.querySelectorAll('.wl-star-btn').forEach(function (s) {
-          s.classList.toggle('active', parseInt(s.dataset.val, 10) <= val);
-        });
-      }
 
       var MTL_TABS = [
         'score',
@@ -11687,57 +11678,6 @@
             '</div>';
         }
         card.innerHTML = html;
-
-        if (d.checkin) {
-          _MTL_FIELDS.forEach(function (f) {
-            if (d.checkin[f] != null) {
-              _mtlValues[f] = d.checkin[f];
-              _mtlUpdateStars(f);
-            }
-          });
-        }
-      }
-
-      function saveMentalCheckin() {
-        if (!_token) {
-          toast(_t('app_login_to_save', 'Inicia sesión para guardar'), '');
-          return;
-        }
-        var body = { date_iso: todayIso() };
-        _MTL_FIELDS.forEach(function (f) {
-          if (_mtlValues[f]) body[f] = _mtlValues[f];
-        });
-        apiFetch('/mental/checkin', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        })
-          .then(function (r) {
-            if (r.status === 403) {
-              toast(
-                _t(
-                  'app_plan_gate_mental',
-                  'Tu plan no incluye Rendimiento Mental — actualizalo en Mi Perfil',
-                ),
-                '',
-              );
-              return Promise.reject('gated');
-            }
-            return r.ok ? r.json() : Promise.reject('err');
-          })
-          .then(function () {
-            toast(_t('app_checkin_saved', 'Check-in mental guardado ✓'), 'ok');
-            loadMentalScore();
-          })
-          .catch(function (e) {
-            if (e !== 'gated')
-              toast(
-                _t(
-                  'app_save_offline_error',
-                  'Sin conexión — no se pudo guardar',
-                ),
-                '',
-              );
-          });
       }
 
       function MTL_CAT_LABELS() {
@@ -14985,7 +14925,7 @@
    recommendation/factors) y GET /recovery/recommendation?date_iso=
    (training_suggestion/main_recommendation/alerts/recovery_priorities/
    recommended_tss). Ambos gateados por plan (require_feature
-   "recovery") — mismo 403 que ya maneja submitWellness(). */
+   "recovery") — mismo 403 que ya maneja saveCheckin(). */
       var _wlHrvDays = 14;
       var _wlSleepDays = 30;
       var _wlTlDays = 30;
@@ -14995,7 +14935,6 @@
         'resumen',
         'hrv',
         'sleep',
-        'checkin',
         'timeline',
         'correlations',
         'protocol',
@@ -17322,6 +17261,32 @@
      fetch — se llama lxInfo.autoInit() de nuevo al final de
      renderVerdict() cada vez (es idempotente, ver mount.querySelector
      guard adentro de lx-info.js). -->
+
+    <!-- B3 · Check-in en hoja unica: 9 campos de estado.html (S28) -->
+    <div class="ck-overlay" id="ck-sheet-overlay" onclick="if (event.target === this) closeCheckin()">
+      <div class="ck-sheet" role="dialog" aria-modal="true" aria-labelledby="ck-title">
+        <div class="ck-head">
+          <div class="ck-title" id="ck-title" data-i18n="today_b_title">Cómo estás hoy</div>
+          <button class="ck-close" type="button" onclick="closeCheckin()" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="ck-body">
+          <div id="ck-fields"></div>
+          <textarea
+            class="pw-input"
+            id="ck-notes"
+            rows="2"
+            placeholder="Nota opcional (ej: estrés laboral, viaje)…"
+            data-i18n-placeholder="rcw_notes_ph"
+            oninput="if (_ck) _ck.notesTouched = true"
+            style="resize: none; background: var(--bg3); margin-top: 0.8rem"
+          ></textarea>
+        </div>
+        <button class="wl-submit ck-save" id="ck-save" type="button" onclick="saveCheckin()" data-i18n="est_reg_save">
+          Guardar registro
+        </button>
+      </div>
+    </div>
+
     <script src="lx-info.js"></script>
     <script>
       /* P11-C: inyecta el CSS de LXTerm de entrada (el ⓘ estático de Semana
