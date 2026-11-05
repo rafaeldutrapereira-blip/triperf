@@ -944,6 +944,37 @@ class GarminOAuthState(Base):
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class ProviderConnection(Base):
+    """Conexion OAuth generica a un wearable (Polar/Wahoo). Tokens cifrados con Fernet."""
+    __tablename__ = "provider_connections"
+    __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_provider_conn_user_provider"),)
+
+    id               = Column(String, primary_key=True, default=_uuid)
+    user_id          = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider         = Column(String(20), nullable=False)
+    access_token     = Column(Text, nullable=False)
+    refresh_token    = Column(Text, nullable=True)
+    expires_at       = Column(DateTime, nullable=True)
+    external_user_id = Column(String, nullable=True)
+    member_id        = Column(String, nullable=True)
+    scope            = Column(String, nullable=True)
+    created_at       = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at       = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                              onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
+class ProviderOAuthState(Base):
+    """State de un connect OAuth en curso (Polar/Wahoo). Solo se guarda el hash del state."""
+    __tablename__ = "provider_oauth_states"
+
+    id         = Column(String, primary_key=True, default=_uuid)
+    state_hash = Column(String, nullable=False, index=True)
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider   = Column(String(20), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class PasswordResetToken(Base):
     """
     Tokens de reset de contraseÃ±a persistentes en DB (reemplaza dict in-memory).

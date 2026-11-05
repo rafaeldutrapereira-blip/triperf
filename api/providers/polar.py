@@ -131,6 +131,7 @@ class PolarProvider(WearableProvider):
 
     def __init__(self, db: Session):
         self.db = db
+        self.last_token_response: dict | None = None
 
     async def authenticate(self, user_id: str, **credentials: Any) -> str:
         """Exchange de OAuth2 (`code` -> access_token) + registro obligatorio
@@ -162,6 +163,7 @@ class PolarProvider(WearableProvider):
             if reg.status_code not in (200, 201, 409):
                 reg.raise_for_status()
 
+            self.last_token_response = token_data
             return access_token
 
     async def list_activities(self, client: Any, since: Any) -> list[dict]:

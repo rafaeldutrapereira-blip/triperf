@@ -117,6 +117,7 @@ class WahooProvider(WearableProvider):
 
     def __init__(self, db: Session):
         self.db = db
+        self.last_token_response: dict | None = None
 
     async def authenticate(self, user_id: str, **credentials: Any) -> str:
         """Exchange/refresh OAuth2 token contra los endpoints documentados.
@@ -136,7 +137,10 @@ class WahooProvider(WearableProvider):
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.post(_TOKEN_URL, params=params)
             r.raise_for_status()
-            return r.json()["access_token"]
+            body = r.json()
+            access_token = body["access_token"]
+            self.last_token_response = body
+            return access_token
 
     async def list_activities(self, client: Any, since: Any, page: int = 1, per_page: int = 30) -> list[dict]:
         """GET /v1/workouts (paginado, documentado)."""
