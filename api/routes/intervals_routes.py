@@ -9,6 +9,7 @@ import base64
 import json
 import logging
 import os
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
@@ -60,6 +61,23 @@ async def intervals_sync(
     if not read_enabled():
         raise HTTPException(404, "No encontrado")
     return await iss.sync_intervals_user(db, me.id, days)
+
+
+@router.post("/backfill")
+async def intervals_backfill(
+    floor: str = Query("2019-01-01", pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    me: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not read_enabled():
+        raise HTTPException(404, "No encontrado")
+    try:
+        d = date.fromisoformat(floor)
+    except ValueError:
+        raise HTTPException(422, "floor no es una fecha valida")
+    if d > date.today():
+        raise HTTPException(422, "floor no puede ser futuro")
+    return await iss.backfill_intervals_user(db, me.id, floor)
 
 
 @router.get("/connect")

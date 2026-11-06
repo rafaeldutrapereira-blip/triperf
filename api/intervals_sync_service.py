@@ -13,19 +13,32 @@ Reglas:
     clave de dedupe ADICIONAL (external_id == activity_id Garmin existente del usuario).
     Es solo una pista extra; el criterio base sigue siendo usuario+fecha+deporte porque
     external_id no siempre viene ni siempre es el id de Garmin Connect.
+  - Dedupe fina (Sprint 2): la pista por external_id de Garmin sigue teniendo prioridad
+    (si coincide -> "merged"). Si no, se miran TODAS las filas de otro origen del mismo
+    usuario+fecha+deporte: la actividad de intervals es una sesion DISTINTA (se IMPORTA)
+    solo si TODAS difieren claramente, es decir |dur_min_existente - dur_intervals| > 10 min.
+    Si alguna coincide en duracion (<= 10 min), o falta el dato de duracion en cualquiera
+    de los dos lados, es "merged". Criterio de hora de inicio (> 30 min): se aplica solo
+    cuando ambos lados tienen hora; GarminActivity NO persiste hora de inicio, por lo que
+    hoy no se puede evaluar contra filas existentes y la duracion es el unico criterio activo.
+  - Peso: wellness.weight (kg) -> weight_logs (GarminHealthDaily no tiene columna de peso).
+    Solo se crea la fila si no hay ninguna para ese usuario+fecha (source="intervals");
+    jamas se modifica una existente. Valores <= 0 se ignoran.
+  - Backfill (backfill_intervals_user): ventanas de 90 dias hacia atras, commit por ventana.
   - Wellness: REGLA DURA, nunca se pisa un valor no vacio con uno vacio; lo de
     intervals solo completa huecos o crea la fila.
   - Idempotente.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
 from . import intervals_connector as ic
-from .models import GarminActivity, GarminHealthDaily, GarminSleepSession, User
+from .models import GarminActivity, GarminHealthDaily, GarminSleepSession, User, WeightLog
 
 logger = logging.getLogger("labx.intervals_sync")
 
@@ -46,7 +59,7 @@ _ACT_USED = {"id", "start_date_local", "type", "name", "moving_time", "elapsed_t
              "average_heartrate", "icu_average_watts", "average_watts", "calories",
              "total_elevation_gain", "average_speed", "icu_training_load", "source", "external_id"}
 # Campos de wellness que SI se mapean.
-_WELL_USED = {"id", "restingHR", "hrv", "steps", "spO2", "respiration", "sleepSecs", "sleepScore"}
+_WELL_USED = {"id", "restingHR", "hrv", "steps", "spO2", "respiration", "sleepSecs", "sleepScore", "weight"}
 
 
 def _now() -> datetime:
@@ -80,6 +93,45 @@ def _pace(speed_mps, per: int) -> str | None:
 
 
 # ── Actividades ─────────────────────────────────────────────────────────────
+
+_WINDOW_DAYS = 90
+_DUR_TOL_MIN = 10
+_START_TOL_MIN = 30
+
+
+def _parse_start(v):
+    try:
+        t = str(v or "")
+        return datetime.fromisoformat(t) if len(t) > 10 else None
+    except ValueError:
+        return None
+
+
+def _same_session_clash(db: Session, user_id: str, date_iso: str, sport: str, it: dict, dur_s):
+    """Fila de otro origen (mismo usuario+fecha+deporte) que es la MISMA sesion, o None."""
+    rows = db.query(GarminActivity).filter(
+        GarminActivity.user_id == user_id,
+        GarminActivity.date_iso == date_iso,
+        GarminActivity.sport == sport,
+        GarminActivity.activity_id.notlike(f"{PREFIX}%"),
+    ).all()
+    if not rows:
+        return None
+    new_min = (dur_s / 60) if dur_s else None
+    new_start = _parse_start(it.get("start_date_local"))
+    for r in rows:
+        if new_min is None or not r.dur_min:
+            return r  # sin datos para distinguir -> merged
+        if abs(r.dur_min - new_min) <= _DUR_TOL_MIN:
+            # La duracion coincide; la hora solo desempata si ambos lados la tienen
+            # (GarminActivity no la persiste, ver docstring del modulo).
+            r_start = getattr(r, "start_local", None)
+            if new_start and isinstance(r_start, datetime) and \
+                    abs((r_start - new_start).total_seconds()) / 60 > _START_TOL_MIN:
+                continue
+            return r
+    return None
+
 
 def _upsert_activity(db: Session, user_id: str, it: dict, counters: dict) -> str:
     """-> 'imported' | 'updated' | 'merged' | 'skipped'. Sin commit."""
@@ -132,18 +184,15 @@ def _upsert_activity(db: Session, user_id: str, it: dict, counters: dict) -> str
         own.synced_at = _now()
         return "updated"
 
-    # Dedupe contra filas de OTRO origen (Garmin sin prefijo, strava_, polar_...).
-    clash = db.query(GarminActivity).filter(
-        GarminActivity.user_id == user_id,
-        GarminActivity.date_iso == date_iso,
-        GarminActivity.sport == sport,
-        GarminActivity.activity_id.notlike(f"{PREFIX}%"),
-    ).first()
-    if clash is None and str(it.get("source") or "").upper().startswith("GARMIN") and it.get("external_id"):
+    # Pista Garmin por external_id: prioridad sobre el criterio fecha+deporte.
+    clash = None
+    if str(it.get("source") or "").upper().startswith("GARMIN") and it.get("external_id"):
         clash = db.query(GarminActivity).filter(
             GarminActivity.user_id == user_id,
             GarminActivity.activity_id == str(it["external_id"]),
         ).first()
+    if clash is None:
+        clash = _same_session_clash(db, user_id, date_iso, sport, it, dur_s)
     if clash is not None:
         return "merged"
 
@@ -191,7 +240,8 @@ def _upsert_wellness(db: Session, user_id: str, it: dict, counters: dict) -> boo
     # El sueno solo se escribe si el payload trae datos propios de sueno.
     has_sleep = sleep["total_min"] is not None or sleep["sleep_score"] is not None
     sleep = {k: v for k, v in sleep.items() if v is not None} if has_sleep else {}
-    if not health and not sleep:
+    weight = _pos(it.get("weight"))
+    if not health and not sleep and weight is None:
         return False
 
     if health:
@@ -208,28 +258,19 @@ def _upsert_wellness(db: Session, user_id: str, it: dict, counters: dict) -> boo
             db.add(GarminSleepSession(user_id=user_id, date_iso=date_iso, synced_at=_now(), **sleep))
         elif _fill(srow, sleep):
             srow.synced_at = _now()
+    if weight is not None:
+        exists = db.query(WeightLog.id).filter(
+            WeightLog.user_id == user_id, WeightLog.date_iso == date_iso).first()
+        if exists is None:  # nunca se toca una fila existente (manual o garmin)
+            db.add(WeightLog(user_id=user_id, date_iso=date_iso,
+                             weight_kg=round(weight, 1), source="intervals"))
     return True
 
 
 # ── Orquestador ─────────────────────────────────────────────────────────────
 
-async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict:
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None or not user.intervals_access_token:
-        return {"status": "not_connected"}
-    if not ic.has_scope(user, "ACTIVITY:READ"):
-        return {"status": "needs_reconnect"}
-    token = ic.read_access_token(user)
-    if not token:
-        return {"status": "not_connected"}
-
-    days = max(1, min(int(days), 365))
-    newest = _now().date()
-    oldest = newest - timedelta(days=days)
-    res = {"status": "ok", "imported": 0, "merged": 0, "skipped": 0, "updated": 0,
-           "wellness_days": 0, "errors": 0}
-    counters = {"ignored_fields": 0}
-
+async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) -> None:
+    """Actividades + wellness de [oldest, newest]. Sin commit; acumula en res/counters."""
     # Llamadas secuenciales: primero actividades, luego wellness.
     try:
         acts = await ic.fetch_activities(token, oldest.isoformat(), newest.isoformat())
@@ -261,6 +302,26 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
                 logger.warning("intervals wellness omitido user=%s: %s", user_id, type(exc).__name__)
                 res["errors"] += 1
 
+
+async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.intervals_access_token:
+        return {"status": "not_connected"}
+    if not ic.has_scope(user, "ACTIVITY:READ"):
+        return {"status": "needs_reconnect"}
+    token = ic.read_access_token(user)
+    if not token:
+        return {"status": "not_connected"}
+
+    days = max(1, min(int(days), 365))
+    newest = _now().date()
+    oldest = newest - timedelta(days=days)
+    res = {"status": "ok", "imported": 0, "merged": 0, "skipped": 0, "updated": 0,
+           "wellness_days": 0, "errors": 0}
+    counters = {"ignored_fields": 0}
+
+    await _sync_window(db, user_id, user, token, oldest, newest, res, counters)
+
     try:
         db.commit()
     except Exception as exc:  # noqa: BLE001
@@ -268,5 +329,45 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
         logger.warning("intervals sync commit fallo user=%s: %s", user_id, type(exc).__name__)
         res["errors"] += 1
         res["status"] = "error"
+    res["ignored_fields"] = counters["ignored_fields"]
+    return res
+
+
+async def backfill_intervals_user(db: Session, user_id: str, floor_iso: str = "2019-01-01") -> dict:
+    """Historial completo: ventanas de 90 dias hacia atras desde hoy hasta floor_iso.
+
+    Commit por ventana (un fallo deja lo ya importado y se cuenta en errors). Secuencial,
+    con pausa de 0.3 s entre ventanas. Idempotente (misma logica de dedupe que el sync).
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.intervals_access_token:
+        return {"status": "not_connected"}
+    if not ic.has_scope(user, "ACTIVITY:READ"):
+        return {"status": "needs_reconnect"}
+    token = ic.read_access_token(user)
+    if not token:
+        return {"status": "not_connected"}
+
+    floor = datetime.fromisoformat(floor_iso).date()
+    newest = _now().date()
+    res = {"status": "ok", "windows": 0, "imported": 0, "merged": 0, "skipped": 0,
+           "updated": 0, "wellness_days": 0, "errors": 0}
+    counters = {"ignored_fields": 0}
+    first = True
+    while newest >= floor:
+        oldest = max(floor, newest - timedelta(days=_WINDOW_DAYS))
+        if not first:
+            await asyncio.sleep(0.3)
+        first = False
+        try:
+            await _sync_window(db, user_id, user, token, oldest, newest, res, counters)
+            db.commit()
+        except Exception as exc:  # noqa: BLE001
+            db.rollback()
+            logger.warning("intervals backfill ventana %s..%s user=%s: %s",
+                           oldest, newest, user_id, type(exc).__name__)
+            res["errors"] += 1
+        res["windows"] += 1
+        newest = oldest - timedelta(days=1)
     res["ignored_fields"] = counters["ignored_fields"]
     return res

@@ -228,3 +228,91 @@ def test_status_exposes_scopes_flag_and_needs_reconnect(client, db, athlete_user
 def test_authorize_url_requests_read_scopes():
     url = ic.build_authorize_url("st")
     assert "ACTIVITY%3AREAD" in url and "WELLNESS%3AREAD" in url and "CALENDAR%3AWRITE" in url
+
+
+# ── Sprint 2: peso, backfill, dedupe fina ───────────────────────────────────
+
+from api.models import WeightLog  # noqa: E402
+
+
+def test_weight_fills_only_missing_and_never_overwrites(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user)
+    db.add(WeightLog(user_id=athlete_user.id, date_iso="2026-11-02", weight_kg=70.0, source="manual"))
+    db.commit()
+    well = [dict(WELL, weight=68.4), dict(WELL, id="2026-11-02", weight=99.0),
+            dict(WELL, id="2026-11-03", weight=0), dict(WELL, id="2026-11-04", weight=-5)]
+    _patch(monkeypatch, well=well)
+    _run(db, athlete_user)
+    _run(db, athlete_user)  # idempotente
+    rows = {w.date_iso: w for w in db.query(WeightLog).all()}
+    assert rows["2026-11-01"].weight_kg == 68.4 and rows["2026-11-01"].source == "intervals"
+    assert rows["2026-11-02"].weight_kg == 70.0 and rows["2026-11-02"].source == "manual"
+    assert "2026-11-03" not in rows and "2026-11-04" not in rows
+
+
+def test_backfill_three_windows_aggregates_and_is_idempotent(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user)
+    sleep = AsyncMock()
+    monkeypatch.setattr(asyncio, "sleep", sleep)
+    today = datetime.utcnow().date()
+    floor = (today - timedelta(days=200)).isoformat()  # 201 dias -> 3 ventanas de 90
+    acts = [dict(ACT, id=f"b{i}", start_date_local=f"{(today - timedelta(days=5 + i * 80)).isoformat()}T07:00:00")
+            for i in range(3)]
+
+    async def by_window(token, oldest, newest):
+        return [a for a in acts if oldest <= a["start_date_local"][:10] <= newest]
+
+    fa = AsyncMock(side_effect=by_window)
+    monkeypatch.setattr(ic, "fetch_activities", fa)
+    monkeypatch.setattr(ic, "fetch_wellness", AsyncMock(return_value=[WELL]))
+    r = asyncio.run(iss.backfill_intervals_user(db, athlete_user.id, floor))
+    assert r["windows"] == 3 and fa.await_count == 3 and sleep.await_count == 2
+    assert r["imported"] == 3 and r["errors"] == 0
+    assert db.query(GarminActivity).count() == 3
+    r2 = asyncio.run(iss.backfill_intervals_user(db, athlete_user.id, floor))
+    assert r2["imported"] == 0 and r2["updated"] == 3 and r2["errors"] == 0
+    assert db.query(GarminActivity).count() == 3
+    assert db.query(GarminHealthDaily).count() == 1
+
+
+def test_fine_dedupe_second_swim_same_day_is_imported(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user)
+    db.add(GarminActivity(user_id=athlete_user.id, activity_id="8800001", sport="swim",
+                          date_iso="2026-11-01", dur_min=45, name="Nado manana"))
+    db.commit()
+    swim = dict(ACT, type="Swim", moving_time=1200, id="s1")  # 20 min vs 45 -> distinta
+    _patch(monkeypatch, acts=[swim])
+    r = _run(db, athlete_user)
+    assert r["imported"] == 1 and r["merged"] == 0
+    assert db.query(GarminActivity).filter_by(sport="swim").count() == 2
+
+
+def test_fine_dedupe_same_swim_garmin_and_intervals_is_merged(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user)
+    db.add(GarminActivity(user_id=athlete_user.id, activity_id="8800002", sport="swim",
+                          date_iso="2026-11-01", dur_min=45, name="Nado"))
+    db.commit()
+    swim = dict(ACT, type="Swim", moving_time=45 * 60 + 240, id="s2")  # 49 min vs 45 -> misma
+    _patch(monkeypatch, acts=[swim])
+    r = _run(db, athlete_user)
+    assert r["merged"] == 1 and r["imported"] == 0
+    assert db.query(GarminActivity).filter_by(sport="swim").count() == 1
+
+
+def test_backfill_route_404_when_flag_off(client, db, athlete_user, monkeypatch):
+    monkeypatch.delenv("INTERVALS_READ_ENABLED", raising=False)
+    _connect(db, athlete_user)
+    r = client.post("/api/integrations/intervals/backfill", headers=_headers(client, athlete_user))
+    assert r.status_code == 404
+
+
+def test_backfill_route_validates_floor_when_flag_on(client, db, athlete_user, monkeypatch):
+    monkeypatch.setenv("INTERVALS_READ_ENABLED", "true")
+    _connect(db, athlete_user)
+    monkeypatch.setattr(asyncio, "sleep", AsyncMock())
+    _patch(monkeypatch)
+    h = _headers(client, athlete_user)
+    assert client.post("/api/integrations/intervals/backfill?floor=basura", headers=h).status_code in (400, 422)
+    assert client.post("/api/integrations/intervals/backfill?floor=2026-13-45", headers=h).status_code in (400, 422)
+    r = client.post("/api/integrations/intervals/backfill?floor=2026-06-01", headers=h)
+    assert r.status_code == 200 and r.json()["windows"] >= 1
