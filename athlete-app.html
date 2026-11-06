@@ -5371,37 +5371,102 @@
           })
           .then(loadProfileConnections);
       }
-      function _garminOfficialRow(state) {
-        var meta = {
-          connected: _t('garmin_off_on', 'Conectada'),
-          not_connected: _t('garmin_off_off', 'No conectada'),
-          unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
-          error: _t('garmin_off_err', 'No se pudo consultar el estado'),
-        }[state || 'error'];
-        var btn =
-          state === 'connected'
-            ? '<button class="pf-conn-sync-btn" onclick="garminOfficialDisconnect()">' +
-              _t('garmin_off_dis', 'Desconectar') +
-              '</button>'
-            : state === 'not_connected'
-              ? '<button class="pf-conn-sync-btn" onclick="garminOfficialConnect()">' +
-                _t('garmin_off_btn', 'Conectar Garmin (oficial)') +
-                '</button>'
-              : '';
-        return (
-          '<div class="pf-conn-row" id="pf-garmin-off" data-state="' +
-          (state || 'error') +
+      /* S-A: UNA tarjeta Garmin (ver garminCardModel en athlete_profile.html,
+         misma logica). Oficial manda; legacy solo se gestiona como admin. */
+      function garminCardModel(legacyOn, offState, isAdmin) {
+        var offOn = offState === 'connected';
+        legacyOn = !!legacyOn;
+        return {
+          via: offOn ? 'official' : legacyOn ? 'legacy' : 'none',
+          connected: offOn || legacyOn,
+          status: offOn || legacyOn ? 'connected' : offState || '',
+          showSync: !offOn && legacyOn,
+          disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
+          showConnect: !offOn && !legacyOn && offState === 'not_connected',
+          showSwitch: !offOn && legacyOn && offState === 'not_connected',
+          adminConnectLegacy: !!isAdmin && !legacyOn,
+          adminDisconnectLegacy: !!isAdmin && offOn && legacyOn,
+        };
+      }
+      function garminIsAdmin() {
+        try {
+          var s = JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          );
+          return !!s && s.api_rol === 'admin';
+        } catch (e) {
+          return false;
+        }
+      }
+      function _garminRow(garmin, gOn, offState, isAdmin) {
+        var m = garminCardModel(gOn, offState, isAdmin);
+        var meta =
+          m.via === 'legacy'
+            ? _t('app_last_sync', 'Última sync:') +
+              ' ' +
+              _escCm((garmin && garmin.last_sync) || '—') +
+              ' · ' +
+              ((garmin && garmin.activities_total) || 0) +
+              ' ' +
+              _t('app_activities_count', 'actividades')
+            : {
+                connected: _t('garmin_off_on', 'Conectado'),
+                not_connected: _t('garmin_off_off', 'No conectado'),
+                unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
+                error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+              }[m.status || 'error'] || '';
+        if (m.via === 'none' && garmin && garmin.has_credentials)
+          meta = _t('app_sync_error', 'Error de sincronización');
+        var btn = '';
+        if (m.showSync)
+          btn +=
+            '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">' +
+            _t('app_sync_btn', 'Sincronizar') +
+            '</button>';
+        if (m.disconnect === 'official')
+          btn +=
+            '<button class="pf-conn-sync-btn" onclick="garminOfficialDisconnect()">' +
+            _t('garmin_off_dis', 'Desconectar') +
+            '</button>';
+        if (m.showConnect)
+          btn +=
+            '<button class="pf-conn-sync-btn" onclick="garminOfficialConnect()">' +
+            _t('garmin_off_btn', 'Conectar Garmin') +
+            '</button>';
+        var html =
+          '<div class="pf-conn-row" id="pf-garmin" data-via="' +
+          m.via +
+          '" data-state="' +
+          (m.status || 'error') +
           '">' +
           '<div><div class="pf-conn-name"><span class="pf-conn-dot ' +
-          (state === 'connected' ? 'on' : 'off') +
-          '"></span>' +
-          _t('garmin_off_name', 'Garmin (oficial)') +
-          '</div><div class="pf-conn-meta">' +
+          (m.connected ? 'on' : 'off') +
+          '"></span>Garmin</div><div class="pf-conn-meta">' +
           meta +
-          '</div></div>' +
+          '</div>' +
+          (m.showSwitch
+            ? '<div class="pf-conn-meta"><a href="#" id="pf-garmin-switch" onclick="garminOfficialConnect();return false">' +
+              _t('garmin_switch', 'Cambiar a la conexión oficial') +
+              '</a></div>'
+            : '') +
+          '</div>' +
           btn +
-          '</div>'
-        );
+          '</div>';
+        /* Solo admin con las dos vias conectadas: fila de la via por credenciales. */
+        if (m.adminDisconnectLegacy)
+          html +=
+            '<div class="pf-conn-row" id="pf-garmin-admin"><div><div class="pf-conn-name"><span class="pf-conn-dot on"></span>' +
+            _t('garmin_admin_title', 'Admin · conexión por credenciales') +
+            '</div><div class="pf-conn-meta">' +
+            _t('app_last_sync', 'Última sync:') +
+            ' ' +
+            _escCm((garmin && garmin.last_sync) || '—') +
+            '</div></div><button class="pf-conn-sync-btn" onclick="refreshGarminSync()">' +
+            _t('app_sync_btn', 'Sincronizar') +
+            '</button></div>';
+        return html;
       }
 
       function renderProfileConnections(garmin, strava, garminOff) {
@@ -5413,32 +5478,7 @@
         );
         var sOn = !!(strava && strava.connected);
 
-        var html =
-          '<div class="pf-conn-row">' +
-          '<div><div class="pf-conn-name"><span class="pf-conn-dot ' +
-          (gOn ? 'on' : 'off') +
-          '"></span>Garmin Connect</div>' +
-          '<div class="pf-conn-meta">' +
-          (gOn
-            ? _t('app_last_sync', 'Última sync:') +
-              ' ' +
-              _escCm(garmin.last_sync || '—') +
-              ' · ' +
-              (garmin.activities_total || 0) +
-              ' ' +
-              _t('app_activities_count', 'actividades')
-            : garmin && garmin.has_credentials
-              ? _t('app_sync_error', 'Error de sincronización')
-              : _t('app_not_connected', 'No conectado')) +
-          '</div></div>' +
-          (gOn
-            ? '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">' +
-              _t('app_sync_btn', 'Sincronizar') +
-              '</button>'
-            : '') +
-          '</div>';
-
-        html += _garminOfficialRow(garminOff);
+        var html = _garminRow(garmin, gOn, garminOff, garminIsAdmin());
 
         html +=
           '<div class="pf-conn-row">' +

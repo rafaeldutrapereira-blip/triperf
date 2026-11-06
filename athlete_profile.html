@@ -1169,7 +1169,8 @@
 
           <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
           <div id="tab-conexiones" class="tab-pane">
-            <!-- Garmin -->
+            <!-- S-A: UNA tarjeta por marca. Via oficial (OAuth) para todos; la via
+                 por credenciales (legacy) solo se renderiza para admin (template). -->
             <div class="card">
               <div class="card-head">
                 <span class="card-title">
@@ -1183,7 +1184,7 @@
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                   </svg>
-                  Garmin Connect
+                  Garmin
                 </span>
                 <span
                   id="garmin-badge"
@@ -1193,15 +1194,20 @@
                 >
               </div>
               <div class="card-body">
-                <div class="conn-card">
+                <div class="conn-card" id="garmin-card" data-via="loading">
                   <div class="conn-left">
                     <div class="conn-logo conn-logo-garmin">⌚</div>
                     <div>
-                      <div class="conn-name">Garmin</div>
+                      <div class="conn-name" data-i18n="garmin_off_name">Garmin</div>
                       <div class="conn-desc" data-i18n="prof_garmin_desc">
                         Sincroniza actividades, FC, potencia y bienestar
                         automáticamente
                       </div>
+                      <div
+                        id="garmin-status"
+                        class="conn-desc"
+                        style="margin-top: 0.25rem; font-weight: 600"
+                      ></div>
                     </div>
                   </div>
                   <div class="conn-actions">
@@ -1228,7 +1234,7 @@
                     <button
                       class="btn btn-danger btn-sm"
                       id="btn-garmin-dis"
-                      onclick="garminDisconnect()"
+                      onclick="garminCardDisconnect()"
                       style="display: none"
                       data-i18n="prof_btn_disconnect"
                     >
@@ -1236,14 +1242,72 @@
                     </button>
                     <button
                       class="btn btn-primary btn-sm"
-                      id="btn-garmin-con"
-                      onclick="showGarminForm()"
-                      data-i18n="prof_btn_connect"
+                      id="btn-garmin-off-con"
+                      onclick="garminOfficialConnect()"
+                      style="display: none"
+                      data-i18n="garmin_off_btn"
                     >
-                      Conectar
+                      Conectar Garmin
                     </button>
                   </div>
                 </div>
+                <div style="margin-top: 0.5rem">
+                  <a
+                    href="#"
+                    id="btn-garmin-switch"
+                    onclick="garminOfficialConnect(); return false"
+                    style="display: none; font-size: 0.72rem; color: var(--muted)"
+                    data-i18n="garmin_switch"
+                    >Cambiar a la conexión oficial</a
+                  >
+                </div>
+                <div
+                  id="garmin-log"
+                  style="
+                    display: none;
+                    margin-top: 0.75rem;
+                    font-size: 0.73rem;
+                    color: var(--muted);
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.75rem;
+                  "
+                >
+                  <span id="garmin-log-txt"></span>
+                </div>
+                <!-- Solo admin: conexion por credenciales (legacy). Es un <template>:
+                     para atletas nunca entra al DOM. -->
+                <div id="garmin-admin-legacy"></div>
+                <template id="garmin-admin-legacy-tpl">
+                  <div
+                    style="
+                      margin-top: 0.85rem;
+                      border-top: 1px solid var(--border2);
+                      padding-top: 0.75rem;
+                    "
+                  >
+                    <div class="conn-desc" data-i18n="garmin_admin_title">
+                      Admin · conexión por credenciales
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem">
+                      <button
+                        class="btn btn-secondary btn-sm"
+                        id="btn-garmin-con"
+                        onclick="showGarminForm()"
+                        style="display: none"
+                        data-i18n="garmin_admin_connect"
+                      >
+                        Conectar con credenciales
+                      </button>
+                      <button
+                        class="btn btn-danger btn-sm"
+                        id="btn-garmin-admin-dis"
+                        onclick="garminDisconnect()"
+                        style="display: none"
+                        data-i18n="garmin_admin_disconnect"
+                      >
+                        Desconectar credenciales
+                      </button>
+                    </div>
                 <div
                   id="garmin-form"
                   style="
@@ -1360,68 +1424,8 @@
                     </div>
                   </div>
                 </div>
-                <div
-                  id="garmin-log"
-                  style="
-                    display: none;
-                    margin-top: 0.75rem;
-                    font-size: 0.73rem;
-                    color: var(--muted);
-                    border-top: 1px solid var(--border2);
-                    padding-top: 0.75rem;
-                  "
-                >
-                  <span id="garmin-log-txt"></span>
-                </div>
-                <!-- CQ9: conexion OFICIAL Garmin (OAuth2). La via de arriba no se toca. -->
-                <div
-                  class="conn-card"
-                  id="garmin-off"
-                  data-state="loading"
-                  style="
-                    margin-top: 0.85rem;
-                    border-top: 1px solid var(--border2);
-                    padding-top: 0.85rem;
-                  "
-                >
-                  <div class="conn-left">
-                    <div class="conn-logo conn-logo-garmin">⌚</div>
-                    <div>
-                      <div class="conn-name" data-i18n="garmin_off_name">
-                        Garmin (oficial)
-                      </div>
-                      <div class="conn-desc" data-i18n="garmin_off_desc">
-                        Conexión oficial de Garmin: autorizas a LabX desde
-                        Garmin, sin guardar tu contraseña.
-                      </div>
-                      <div
-                        id="garmin-off-status"
-                        class="conn-desc"
-                        style="margin-top: 0.25rem; font-weight: 600"
-                      ></div>
-                    </div>
                   </div>
-                  <div class="conn-actions">
-                    <button
-                      class="btn btn-primary btn-sm"
-                      id="btn-garmin-off-con"
-                      onclick="garminOfficialConnect()"
-                      style="display: none"
-                      data-i18n="garmin_off_btn"
-                    >
-                      Conectar Garmin (oficial)
-                    </button>
-                    <button
-                      class="btn btn-danger btn-sm"
-                      id="btn-garmin-off-dis"
-                      onclick="garminOfficialDisconnect()"
-                      style="display: none"
-                      data-i18n="garmin_off_dis"
-                    >
-                      Desconectar
-                    </button>
-                  </div>
-                </div>
+                </template>
               </div>
             </div>
 
@@ -2384,32 +2388,113 @@
             setGarminUI(false, {});
           });
       }
-      function setGarminUI(on, d) {
+      /* S-A: UNA tarjeta Garmin. Las dos tuberias (credenciales = legacy,
+         OAuth = oficial) son invisibles para el atleta; el modelo decide que
+         se ve. Oficial manda sobre legacy; legacy solo lo gestiona un admin. */
+      function garminCardModel(legacyOn, offState, isAdmin) {
+        var offOn = offState === 'connected';
+        legacyOn = !!legacyOn;
+        return {
+          via: offOn ? 'official' : legacyOn ? 'legacy' : 'none',
+          connected: offOn || legacyOn,
+          status: offOn || legacyOn ? 'connected' : offState || '',
+          showSync: !offOn && legacyOn,
+          disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
+          showConnect: !offOn && !legacyOn && offState === 'not_connected',
+          showSwitch: !offOn && legacyOn && offState === 'not_connected',
+          adminConnectLegacy: !!isAdmin && !legacyOn,
+          adminDisconnectLegacy: !!isAdmin && offOn && legacyOn,
+        };
+      }
+      /* Rol admin: mismo criterio que routes.config.js canAccess (api_rol de
+         la sesion kl_s). Ante cualquier duda, NO es admin. */
+      function garminIsAdmin() {
+        try {
+          var s = JSON.parse(
+            sessionStorage.getItem('kl_s') ||
+              localStorage.getItem('kl_s') ||
+              'null',
+          );
+          return !!s && s.api_rol === 'admin';
+        } catch (e) {
+          return false;
+        }
+      }
+      var _gLegacyOn = null; /* null = aun no consultado */
+      var _gLegacyData = {};
+      var _gOffState = null;
+      var _gModel = null;
+      function _garminMountAdmin() {
+        var host = document.getElementById('garmin-admin-legacy');
+        var tpl = document.getElementById('garmin-admin-legacy-tpl');
+        if (!host || !tpl || host.firstChild) return;
+        host.appendChild(tpl.content.cloneNode(true));
+        Array.prototype.forEach.call(
+          host.querySelectorAll('[data-i18n]'),
+          function (el) {
+            if (!el.children.length)
+              el.textContent = _t(
+                el.getAttribute('data-i18n'),
+                el.textContent,
+              );
+          },
+        );
+      }
+      function renderGarminCard() {
+        var m = (_gModel = garminCardModel(
+          _gLegacyOn,
+          _gOffState,
+          garminIsAdmin(),
+        ));
+        var shown = function (id, on) {
+          var el = document.getElementById(id);
+          if (el) el.style.display = on ? '' : 'none';
+        };
+        if (garminIsAdmin()) _garminMountAdmin();
+        var card = document.getElementById('garmin-card');
+        if (card) card.setAttribute('data-via', m.via);
         var badge = document.getElementById('garmin-badge');
         badge.className =
-          'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
-        badge.textContent = on
+          'status-dot ' +
+          (m.connected ? 'status-connected' : 'status-disconnected');
+        badge.textContent = m.connected
           ? _t('prof_status_connected', 'Conectado')
           : _t('prof_status_disconnected', 'Sin conectar');
-        document.getElementById('btn-garmin-con').style.display = on
-          ? 'none'
-          : '';
-        document.getElementById('btn-garmin-sync').style.display = on
-          ? ''
-          : 'none';
-        document.getElementById('btn-garmin-dis').style.display = on
-          ? ''
-          : 'none';
-        if (on && d.last_sync) {
-          var log = document.getElementById('garmin-log');
+        var st = document.getElementById('garmin-status');
+        st.textContent =
+          {
+            connected: _t('garmin_off_on', 'Conectado'),
+            not_connected: _t('garmin_off_off', 'No conectado'),
+            unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
+            error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+          }[m.status] || '';
+        st.style.color = m.connected ? 'var(--green, #22c55e)' : '';
+        shown('btn-garmin-sync', m.showSync);
+        shown('btn-garmin-dis', !!m.disconnect);
+        shown('btn-garmin-off-con', m.showConnect);
+        shown('btn-garmin-switch', m.showSwitch);
+        shown('btn-garmin-con', m.adminConnectLegacy);
+        shown('btn-garmin-admin-dis', m.adminDisconnectLegacy);
+        var log = document.getElementById('garmin-log');
+        if (m.via === 'legacy' && _gLegacyData.last_sync) {
           log.style.display = 'block';
           document.getElementById('garmin-log-txt').textContent =
             _t('prof_last_sync', 'Último sync:') +
             ' ' +
-            new Date(d.last_sync).toLocaleString('es-CL');
-        }
+            new Date(_gLegacyData.last_sync).toLocaleString('es-CL');
+        } else log.style.display = 'none';
       }
-      /* ── Garmin OFICIAL (CQ9) ─────────────────────────────────────── */
+      function setGarminUI(on, d) {
+        _gLegacyOn = !!on;
+        _gLegacyData = d || {};
+        renderGarminCard();
+      }
+      function garminCardDisconnect() {
+        if (_gModel && _gModel.disconnect === 'official')
+          garminOfficialDisconnect();
+        else garminDisconnect();
+      }
+      /* ── Garmin oficial (OAuth, CQ9) ──────────────────────────────── */
       /* Estados honestos: connected | not_connected | unavailable | error.
          'unavailable' (503 / available:false) JAMAS se pinta como conectado. */
       function garminOfficialState(httpOk, status, d) {
@@ -2420,22 +2505,8 @@
         return 'not_connected';
       }
       function setGarminOfficialUI(state) {
-        var box = document.getElementById('garmin-off');
-        if (!box) return;
-        box.setAttribute('data-state', state);
-        var st = document.getElementById('garmin-off-status');
-        var txt = {
-          connected: _t('garmin_off_on', 'Conectada'),
-          not_connected: _t('garmin_off_off', 'No conectada'),
-          unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
-          error: _t('garmin_off_err', 'No se pudo consultar el estado'),
-        }[state];
-        st.textContent = txt || '';
-        st.style.color = state === 'connected' ? 'var(--green, #22c55e)' : '';
-        document.getElementById('btn-garmin-off-con').style.display =
-          state === 'not_connected' ? '' : 'none';
-        document.getElementById('btn-garmin-off-dis').style.display =
-          state === 'connected' ? '' : 'none';
+        _gOffState = state;
+        renderGarminCard();
       }
       function loadGarminOfficialStatus() {
         var code = 0;
@@ -2465,7 +2536,7 @@
         })
           .then(function (r) {
             if (!r.ok) throw new Error('http ' + r.status);
-            toast(_t('garmin_off_dis_ok', 'Conexión oficial desconectada'));
+            toast(_t('garmin_off_dis_ok', 'Garmin desconectado'));
           })
           .catch(function () {
             toast(_t('garmin_off_dis_err', 'No se pudo desconectar'), 'err');

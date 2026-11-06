@@ -35,36 +35,26 @@ for (const [label, src] of [['web', web], ['app', app]]) {
   });
 }
 
-test('app: fila oficial pinta cada estado y el boton correcto', () => {
-  const code = 'var _t=function(k,f){return f;};' + extract(app, '_garminOfficialRow') + '; return _garminOfficialRow;';
-  const row = new Function(code)();
-  const on = row('connected');
-  assert.match(on, /garminOfficialDisconnect/);
-  assert.match(on, /pf-conn-dot on/);
-  const off = row('not_connected');
-  assert.match(off, /garminOfficialConnect/);
-  assert.match(off, /pf-conn-dot off/);
-  for (const st of ['unavailable', 'error']) {
-    const h = row(st);
-    assert.doesNotMatch(h, /<button/);
-    assert.doesNotMatch(h, /pf-conn-dot on/);
-  }
-  assert.match(row('unavailable'), /Pronto/);
-});
-
-test('web: setGarminOfficialUI solo muestra Conectar si not_connected', () => {
+test('web: setGarminOfficialUI solo muestra Conectar si not_connected y sin legacy', () => {
   const els = {};
   const doc = {
     getElementById: (id) => (els[id] = els[id] || { style: {}, textContent: '', setAttribute() {} }),
+    querySelectorAll: () => [],
   };
-  const fn = new Function('document', '_t',
-    extract(web, 'setGarminOfficialUI') + '; return setGarminOfficialUI;')(doc, (k, f) => f);
+  const sess = { getItem: () => null };
+  const code =
+    'var _gLegacyOn=false,_gLegacyData={},_gOffState=null,_gModel=null;' +
+    'var sessionStorage=S,localStorage=S;' +
+    ['garminCardModel', 'garminIsAdmin', '_garminMountAdmin', 'renderGarminCard', 'setGarminOfficialUI']
+      .map((n) => extract(web, n)).join(';') +
+    '; return setGarminOfficialUI;';
+  const fn = new Function('document', '_t', 'S', code)(doc, (k, f) => f, sess);
   fn('unavailable');
   assert.strictEqual(els['btn-garmin-off-con'].style.display, 'none');
-  assert.strictEqual(els['btn-garmin-off-dis'].style.display, 'none');
-  assert.match(els['garmin-off-status'].textContent, /Pronto/);
+  assert.strictEqual(els['btn-garmin-dis'].style.display, 'none');
+  assert.match(els['garmin-status'].textContent, /Pronto/);
   fn('connected');
-  assert.strictEqual(els['btn-garmin-off-dis'].style.display, '');
+  assert.strictEqual(els['btn-garmin-dis'].style.display, '');
   assert.strictEqual(els['btn-garmin-off-con'].style.display, 'none');
   fn('not_connected');
   assert.strictEqual(els['btn-garmin-off-con'].style.display, '');
