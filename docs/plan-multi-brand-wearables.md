@@ -124,3 +124,4 @@ Se encontraron y corrigieron 2 problemas reales en el camino:
 - [!] Sprint 54 — Coros **BLOQUEADO**: su doc de API no es pública (requiere aprobación de partner). Acción pendiente del usuario: enviar solicitud a Coros. Ver nota arriba.
 - [~] Sprint 55 — Health Connect (Android) código listo, commit `cc075a2` — falta: instalar Android SDK/emulador para probar de verdad, luego conseguir usuario real.
 - [~] Sprint 55 — HealthKit (iOS) código listo, commit `5a465fe` — **PAUSADO por decisión del usuario**: única vía sin Mac nueva es pagar Apple Developer (US$99/año) + Codemagic + TestFlight al iPad; decidió no pagar por ahora. No retomar sin pedido explícito.
+- [~] Sprint 56 — Rutas OAuth + sync Polar/Wahoo (código listo, flags en false) — falta: activación con 1 usuario real por marca; Wahoo además requiere app de Producción aprobada.
