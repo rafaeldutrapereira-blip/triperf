@@ -101,7 +101,20 @@ def _disconnect(provider: str, me: User, db: Session) -> dict:
     return {"ok": True, "disconnected": po.delete_connection(db, me.id, provider)}
 
 
+async def _sync(provider: str, days: int, me: User, db: Session) -> dict:
+    _require_available(provider)
+    if not po.get_connection(db, me.id, provider):
+        raise HTTPException(404, f"{provider} no está conectado")
+    from ..provider_sync_service import sync_provider_user
+    return await sync_provider_user(db, me.id, provider, days=max(1, min(365, days)))
+
+
 # ── Polar ───────────────────────────────────────────────────────────────────
+
+@polar_router.post("/sync")
+async def polar_sync(days: int = 30, me: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return await _sync("polar", days, me, db)
+
 
 @polar_router.get("/connect")
 async def polar_connect(me: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -125,6 +138,11 @@ async def polar_disconnect(me: User = Depends(get_current_user), db: Session = D
 
 
 # ── Wahoo ───────────────────────────────────────────────────────────────────
+
+@wahoo_router.post("/sync")
+async def wahoo_sync(days: int = 30, me: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return await _sync("wahoo", days, me, db)
+
 
 @wahoo_router.get("/connect")
 async def wahoo_connect(me: User = Depends(get_current_user), db: Session = Depends(get_db)):

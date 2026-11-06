@@ -958,6 +958,12 @@ class ProviderConnection(Base):
     external_user_id = Column(String, nullable=True)
     member_id        = Column(String, nullable=True)
     scope            = Column(String, nullable=True)
+    # Estado del ultimo sync (garmin_sync_status es 1 fila por usuario sin columna
+    # provider: usarla pisaria el estado de Garmin).
+    last_sync_at     = Column(DateTime, nullable=True)
+    last_sync_status = Column(String(10), nullable=True)   # ok | error
+    last_sync_error  = Column(String, nullable=True)       # solo tipo de error, nunca tokens
+    last_sync_saved  = Column(Integer, nullable=True)
     created_at       = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at       = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
                               onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

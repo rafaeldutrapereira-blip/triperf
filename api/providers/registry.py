@@ -43,6 +43,18 @@ def is_provider_enabled(name: str) -> bool:
     return os.getenv(env_var, "false").strip().lower() == "true"
 
 
+def get_provider(name: str, db):
+    """Instancia el provider con sync generico (Sprint 56). Garmin/Strava
+    siguen con sus propios flujos y no pasan por aqui."""
+    if name == "polar":
+        from .polar import PolarProvider
+        return PolarProvider(db)
+    if name == "wahoo":
+        from .wahoo import WahooProvider
+        return WahooProvider(db)
+    raise ValueError(f"provider sin sync generico: {name}")
+
+
 def enabled_providers() -> dict[str, bool]:
     """Estado de todos los providers conocidos (implementados o no), para
     que el frontend pueda decidir qué mostrar/ocultar en 'Conexiones'."""
