@@ -109,6 +109,43 @@ def test_no_activity_scope_needs_reconnect_and_makes_no_api_calls(db, athlete_us
     assert ic.needs_reconnect(athlete_user) is True
 
 
+WRITE_ONLY_SCOPE = "CALENDAR:WRITE,SETTINGS:WRITE,ACTIVITY:WRITE,WELLNESS:WRITE"
+
+
+def test_write_scope_satisfies_read_and_sync_calls_api(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user, scope="ACTIVITY:WRITE,WELLNESS:WRITE")
+    fa, fw = _patch(monkeypatch, acts=[ACT])
+    res = _run(db, athlete_user)
+    assert res != {"status": "needs_reconnect"}
+    fa.assert_called()
+    assert ic.needs_reconnect(athlete_user) is False
+    assert ic.has_scope(athlete_user, "ACTIVITY:READ")
+    assert ic.has_scope(athlete_user, "WELLNESS:READ")
+
+
+def test_has_scope_write_does_not_cross_resources_or_imply_write(db, athlete_user):
+    _connect(db, athlete_user, scope="ACTIVITY:READ,CALENDAR:WRITE")
+    assert ic.has_scope(athlete_user, "ACTIVITY:READ")
+    assert not ic.has_scope(athlete_user, "ACTIVITY:WRITE")   # READ no implica WRITE
+    assert not ic.has_scope(athlete_user, "WELLNESS:READ")    # otro recurso
+
+
+def test_old_scope_still_needs_reconnect_and_no_api_calls(db, athlete_user, monkeypatch):
+    _connect(db, athlete_user, scope="CALENDAR:WRITE,SETTINGS:READ")
+    fa, fw = _patch(monkeypatch, acts=[ACT])
+    assert _run(db, athlete_user) == {"status": "needs_reconnect"}
+    fa.assert_not_called()
+    fw.assert_not_called()
+    assert ic.needs_reconnect(athlete_user) is True
+
+
+def test_status_write_grant_not_needs_reconnect(client, db, athlete_user, monkeypatch):
+    monkeypatch.setenv("INTERVALS_READ_ENABLED", "1")
+    _connect(db, athlete_user, scope=WRITE_ONLY_SCOPE)
+    s = client.get("/api/integrations/intervals/status", headers=_headers(client, athlete_user)).json()
+    assert s["read_enabled"] is True and s["needs_reconnect"] is False
+
+
 def test_save_tokens_stores_granted_or_requested_scope(db, athlete_user):
     ic.save_tokens(athlete_user, "t", "1", db, scope="ACTIVITY:READ,CALENDAR:WRITE")
     assert athlete_user.intervals_scope == "ACTIVITY:READ,CALENDAR:WRITE"

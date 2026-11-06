@@ -69,7 +69,13 @@ def parse_scopes(scope: str | None) -> set[str]:
 
 
 def has_scope(user: "User", needed: str) -> bool:
-    return needed.upper() in parse_scopes(getattr(user, "intervals_scope", None))
+    """Match exacto; ademas RECURSO:WRITE satisface RECURSO:READ (WRITE implica READ)."""
+    granted = parse_scopes(getattr(user, "intervals_scope", None))
+    needed = needed.upper()
+    if needed in granted:
+        return True
+    resource, _, action = needed.partition(":")
+    return action == "READ" and f"{resource}:WRITE" in granted
 
 
 def needs_reconnect(user: "User") -> bool:
