@@ -4999,6 +4999,9 @@
         loadHoy();
         _pushRefreshBtnState();
         loadNotifCountApp();
+        /* Retorno del OAuth de Polar/Wahoo: abre Perfil -> Conexiones */
+        wearableReadReturn();
+        if (_wearReturn) goScreen('screen-profile');
       }
 
       /* Cierra sesión — mismo criterio que KL.logout() en auth.js (llama al
@@ -5455,6 +5458,8 @@
           '</div></div>' +
           '</div>';
 
+        html += '<div id="wearable-oauth-cards"></div>';
+
         html +=
           '<div class="rc-mob-rec" style="margin-top:.7rem">' +
           _t(
@@ -5463,6 +5468,270 @@
           ) +
           '</div>';
         box.innerHTML = html;
+        loadWearableCards();
+      }
+
+      /* ── Polar / Wahoo (Sprint 56 paso 3) ─────────────────────────── */
+      /* Tarjetas solo para marcas que GET /providers/enabled lista en true.
+         Si ese fetch falla o la marca no viene, no se agrega tarjeta. Solo
+         actividades: no se promete nada mas para estas marcas. */
+      var WEARABLE_OAUTH = ['polar', 'wahoo'];
+      var WEARABLE_NAMES = { polar: 'Polar', wahoo: 'Wahoo' };
+      var _wearState = {};
+      var _wearMsg = {};
+      var _wearReturn = null;
+      function _wearEsc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function wearableState(httpOk, status, d) {
+        if (status === 503) return 'unavailable';
+        if (!httpOk || !d || typeof d !== 'object') return 'error';
+        if (d.connected === true) return 'connected';
+        if (d.available === false) return 'unavailable';
+        return 'not_connected';
+      }
+      function _wearCardHtml(p, state) {
+        var name = WEARABLE_NAMES[p];
+        var m = _wearMsg[p] || {};
+        var busy = !!m.busy;
+        var meta = {
+          connected: _t('wearable_on', 'Conectado'),
+          not_connected: _t('wearable_off', 'No conectado'),
+          unavailable: _t('wearable_soon', 'Pronto — aún no disponible'),
+          error: _t('wearable_err', 'No se pudo consultar el estado'),
+        }[state];
+        var btns = '';
+        if (state === 'not_connected') {
+          btns =
+            '<button class="pf-conn-sync-btn" onclick="wearableConnect(\'' +
+            p +
+            '\')">' +
+            _wearEsc(_t('wearable_btn_connect', 'Conectar')) +
+            '</button>';
+        } else if (state === 'connected') {
+          btns =
+            '<div style="display:flex;gap:.4rem;flex-wrap:wrap">' +
+            '<button class="pf-conn-sync-btn"' +
+            (busy ? ' disabled' : '') +
+            ' onclick="wearableSync(\'' +
+            p +
+            '\')">' +
+            _wearEsc(_t('wearable_btn_sync', 'Sincronizar')) +
+            '</button>' +
+            '<button class="pf-conn-sync-btn"' +
+            (busy ? ' disabled' : '') +
+            ' onclick="wearableDisconnect(\'' +
+            p +
+            '\')">' +
+            _wearEsc(_t('wearable_btn_disconnect', 'Desconectar')) +
+            '</button></div>';
+        }
+        return (
+          '<div class="pf-conn-row" id="pf-wearable-' +
+          p +
+          '" data-state="' +
+          state +
+          '"><div><div class="pf-conn-name"><span class="pf-conn-dot ' +
+          (state === 'connected' ? 'on' : 'off') +
+          '"></span>' +
+          name +
+          '</div><div class="pf-conn-meta">' +
+          _wearEsc(meta) +
+          '</div>' +
+          (m.text
+            ? '<div class="pf-conn-meta" id="wearable-' +
+              p +
+              '-log"' +
+              (m.err ? ' style="color:var(--red,#ef4444)"' : '') +
+              '>' +
+              _wearEsc(m.text) +
+              '</div>'
+            : '') +
+          '</div>' +
+          btns +
+          '</div>'
+        );
+      }
+      function _wearPaint(p) {
+        var el = document.getElementById('wearable-card-' + p);
+        if (el) el.innerHTML = _wearCardHtml(p, _wearState[p] || 'error');
+      }
+      function wearableLoadOne(p) {
+        var code = 0;
+        return apiFetch('/integrations/' + p + '/status')
+          .then(function (r) {
+            code = r.status;
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            _wearState[p] = wearableState(!!d, code, d);
+          })
+          .catch(function () {
+            _wearState[p] = 'error';
+          })
+          .then(function () {
+            _wearPaint(p);
+          });
+      }
+      function loadWearableCards() {
+        var box = document.getElementById('wearable-oauth-cards');
+        if (!box) return Promise.resolve();
+        return apiFetch('/providers/enabled')
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            var list =
+              d && typeof d === 'object'
+                ? WEARABLE_OAUTH.filter(function (p) {
+                    return d[p] === true;
+                  })
+                : [];
+            box.innerHTML = list
+              .map(function (p) {
+                return '<div id="wearable-card-' + p + '"></div>';
+              })
+              .join('');
+            return Promise.all(list.map(wearableLoadOne)).then(function () {
+              return list;
+            });
+          })
+          .catch(function () {
+            box.innerHTML = '';
+            return [];
+          })
+          .then(_wearConsumeReturn);
+      }
+      function wearableConnect(p) {
+        window.location.href = API + '/integrations/' + p + '/connect';
+      }
+      function wearableDisconnect(p) {
+        apiFetch('/integrations/' + p + '/disconnect', { method: 'POST' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            _wearMsg[p] = null;
+            toast(_t('wearable_dis_ok', 'Desconectado'));
+          })
+          .catch(function () {
+            toast(_t('wearable_dis_err', 'No se pudo desconectar'));
+          })
+          .then(function () {
+            return wearableLoadOne(p);
+          });
+      }
+      function wearableSync(p, days, initial) {
+        _wearMsg[p] = {
+          busy: true,
+          text: initial
+            ? _t(
+                'wearable_syncing_initial',
+                'Sincronizando tu historial reciente…',
+              )
+            : _t('wearable_syncing', 'Sincronizando…'),
+        };
+        _wearPaint(p);
+        return apiFetch(
+          '/integrations/' + p + '/sync' + (days ? '?days=' + days : ''),
+          { method: 'POST' },
+        )
+          .then(function (r) {
+            return r
+              .json()
+              .catch(function () {
+                return null;
+              })
+              .then(function (d) {
+                return { ok: r.ok, status: r.status, d: d };
+              });
+          })
+          .then(function (x) {
+            var d = x.d;
+            if (x.ok && d && d.ok === true) {
+              _wearMsg[p] = {
+                text:
+                  (d.saved || 0) +
+                  ' ' +
+                  _t('wearable_res_saved', 'actividades nuevas') +
+                  ' · ' +
+                  (d.skipped_dup || 0) +
+                  ' ' +
+                  _t('wearable_res_skipped', 'ya existentes'),
+              };
+            } else {
+              var e =
+                (d && d.error) ||
+                (d && d.errors && d.errors[0] && d.errors[0].message) ||
+                (d && d.detail) ||
+                'HTTP ' + x.status;
+              _wearMsg[p] = {
+                err: true,
+                text: typeof e === 'string' ? e : JSON.stringify(e),
+              };
+            }
+          })
+          .catch(function () {
+            _wearMsg[p] = {
+              err: true,
+              text: _t('wearable_net_err', 'Error de red'),
+            };
+          })
+          .then(function () {
+            _wearPaint(p);
+          });
+      }
+      /* Retorno del OAuth: ?polar=connected|denied|error|error_state */
+      function wearableReadReturn() {
+        var q;
+        try {
+          q = new URLSearchParams(window.location.search);
+        } catch (e) {
+          return;
+        }
+        var found = {};
+        var any = false;
+        WEARABLE_OAUTH.forEach(function (p) {
+          var v = q.get(p);
+          if (v) {
+            found[p] = v;
+            q.delete(p);
+            any = true;
+          }
+        });
+        if (!any) return;
+        _wearReturn = found;
+        try {
+          var qs = q.toString();
+          history.replaceState(
+            null,
+            '',
+            window.location.pathname +
+              (qs ? '?' + qs : '') +
+              window.location.hash,
+          );
+        } catch (e) {}
+      }
+      function _wearConsumeReturn(list) {
+        var ret = _wearReturn;
+        _wearReturn = null;
+        if (!ret) return;
+        Object.keys(ret).forEach(function (p) {
+          var v = ret[p];
+          var name = WEARABLE_NAMES[p];
+          if (v === 'connected') {
+            toast(name + ' ' + _t('wearable_conn_ok', 'conectado ✓'), 'ok');
+            if (list && list.indexOf(p) >= 0) wearableSync(p, 90, true);
+          } else if (v === 'denied') {
+            toast(
+              name + ': ' + _t('wearable_conn_denied', 'autorización denegada'),
+            );
+          } else if (v === 'error' || v === 'error_state') {
+            toast(name + ': ' + _t('wearable_conn_err', 'error al conectar'));
+          }
+        });
       }
 
       function saveProfileMobile() {
