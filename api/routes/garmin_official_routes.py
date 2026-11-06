@@ -133,6 +133,11 @@ def _record_push(db: Session, payload: dict, uid_map: dict) -> None:
         logger.warning("Garmin push inbox error: %s", type(exc).__name__)
 
 
+def _ingest_pending() -> None:
+    from ..garmin_ingest import process_pending_background
+    process_pending_background()
+
+
 @router.post("/notify")
 async def garmin_notify(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Webhook push de Garmin. Nunca 500: payload no resoluble => 200 y log."""
@@ -158,6 +163,7 @@ async def garmin_notify(request: Request, background_tasks: BackgroundTasks, db:
             rows = db.query(GarminOAuthToken).filter(
                 GarminOAuthToken.garmin_user_id.in_(list(garmin_ids))).all()
         _record_push(db, payload, {r.garmin_user_id: r.user_id for r in rows})
+        background_tasks.add_task(_ingest_pending)
         if garmin_ids:
             for row in rows:
                 dispatch_garmin_sync(row.user_id, background_tasks)

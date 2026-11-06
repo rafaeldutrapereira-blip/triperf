@@ -955,6 +955,9 @@ class GarminPushPayload(Base):
     user_id      = Column(String, nullable=True, index=True)
     payload_json = Column(Text, nullable=False)
     processed    = Column(Boolean, nullable=False, default=False)
+    # Fase B: resultado del procesamiento. error != None => fallo (processed sigue False)
+    processed_at = Column(DateTime, nullable=True)
+    error        = Column(String(300), nullable=True)
 
 
 class ProviderConnection(Base):
