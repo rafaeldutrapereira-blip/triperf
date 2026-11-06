@@ -221,6 +221,58 @@ def test_notify_dispatch_error_still_200(client, db, athlete_user):
     assert r.status_code == 200
 
 
+# ── bandeja de entrada push (ingestor fase A) ───────────────────────────────
+
+def test_notify_stores_raw_payload_per_type_unprocessed(client, db, athlete_user, caplog):
+    import json, logging
+    from api.models import GarminPushPayload
+    caplog.set_level(logging.INFO, logger="garmin_official_ingest")
+    go.save_tokens(db, athlete_user.id, TOKENS, "G-555")
+    body = {"activities": [{"userId": "G-555", "activityId": 1}],
+            "dailies": [{"userId": "G-555", "calendarDate": "2026-11-05"}]}
+    with patch.object(gr, "dispatch_garmin_sync", return_value="background") as d:
+        r = client.post(f"{BASE}/notify", json=body)
+    assert r.status_code == 200 and r.json()["queued"] == 1
+    d.assert_called_once()
+    rows = {x.payload_type: x for x in db.query(GarminPushPayload).all()}
+    assert set(rows) == {"activities", "dailies"}
+    for x in rows.values():
+        assert x.processed is False and x.user_id == athlete_user.id and x.received_at
+    assert json.loads(rows["activities"].payload_json) == {"activities": body["activities"]}
+    log = " ".join(rec.getMessage() for rec in caplog.records if rec.name == "garmin_official_ingest")
+    assert "activityId" in log and "G-555" not in log
+
+
+def test_notify_unresolved_user_still_stored_with_null_user(client, db, athlete_user):
+    from api.models import GarminPushPayload
+    r = client.post(f"{BASE}/notify", json={"dailies": [{"userId": "ghost", "calendarDate": "2026-11-05"}]})
+    assert r.status_code == 200
+    row = db.query(GarminPushPayload).one()
+    assert row.user_id is None and row.payload_type == "dailies"
+
+
+def test_notify_empty_or_ping_only_not_stored(client, db, athlete_user):
+    from api.models import GarminPushPayload
+    client.post(f"{BASE}/notify", json={})
+    client.post(f"{BASE}/notify", json={"activities": [], "dailies": [{"userId": "G-1"}], "x": "y"})
+    assert db.query(GarminPushPayload).count() == 0
+
+
+def test_notify_invalid_payload_400_and_not_stored(client, db, athlete_user):
+    from api.models import GarminPushPayload
+    assert client.post(f"{BASE}/notify", json=[1]).status_code == 400
+    assert db.query(GarminPushPayload).count() == 0
+
+
+def test_notify_inbox_failure_does_not_break_response(client, db, athlete_user):
+    go.save_tokens(db, athlete_user.id, TOKENS, "G-8")
+    with patch.object(gr, "dispatch_garmin_sync", return_value="background") as d, \
+         patch.object(gr, "GarminPushPayload", side_effect=RuntimeError("db")):
+        r = client.post(f"{BASE}/notify", json={"activities": [{"userId": "G-8", "activityId": 2}]})
+    assert r.status_code == 200 and r.json()["queued"] == 1
+    d.assert_called_once()
+
+
 def test_secret_never_in_logs(client, db, athlete_user, configured, caplog):
     import logging
     caplog.set_level(logging.DEBUG)

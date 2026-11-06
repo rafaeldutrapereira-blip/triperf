@@ -944,6 +944,19 @@ class GarminOAuthState(Base):
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class GarminPushPayload(Base):
+    """Bandeja de entrada auditable de payloads push de Garmin (ingestor fase A).
+    Copia cruda por tipo de dato; sin parsear (processed=False). Sin retencion por ahora."""
+    __tablename__ = "garmin_push_payloads"
+
+    id           = Column(String, primary_key=True, default=_uuid)
+    received_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), index=True)
+    payload_type = Column(String, nullable=False, index=True)
+    user_id      = Column(String, nullable=True, index=True)
+    payload_json = Column(Text, nullable=False)
+    processed    = Column(Boolean, nullable=False, default=False)
+
+
 class ProviderConnection(Base):
     """Conexion OAuth generica a un wearable (Polar/Wahoo). Tokens cifrados con Fernet."""
     __tablename__ = "provider_connections"
