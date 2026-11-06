@@ -74,6 +74,7 @@ class User(Base):
     intervals_access_token = Column(String,  nullable=True)  # Fernet-cifrado
     intervals_athlete_id   = Column(String,  nullable=True)  # id numerico del atleta en intervals.icu
     intervals_connected_at = Column(DateTime, nullable=True)
+    intervals_scope        = Column(String,  nullable=True)  # scopes otorgados (p. ej. "ACTIVITY:READ,CALENDAR:WRITE")
     # Stripe â€” S15: customer_id para portal de facturaciÃ³n
     stripe_customer_id      = Column(String,  nullable=True, index=True)
     stripe_subscription_id  = Column(String,  nullable=True, index=True)

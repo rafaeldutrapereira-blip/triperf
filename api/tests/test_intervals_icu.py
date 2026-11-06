@@ -121,7 +121,10 @@ class TestStatusEndpoints:
         h = _h(client, "s6status@test.com")
         r = client.get("/api/integrations/intervals/status", headers=h)
         assert r.status_code == 200
-        assert r.json() == {"available": True, "connected": False, "athlete_id": None}
+        body = r.json()
+        assert {k: body[k] for k in ("available", "connected", "athlete_id")} == {
+            "available": True, "connected": False, "athlete_id": None}
+        assert body["scopes"] is None and body["needs_reconnect"] is False
 
     def test_status_connected(self, client, db):
         u = _user(db, "s6status2@test.com")

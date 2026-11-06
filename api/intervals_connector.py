@@ -1,8 +1,10 @@
 """
 intervals_connector.py -- OAuth2 + envio de workouts a intervals.icu (S6).
 
-Alcance ESTRICTO de este sprint: solo ESCRIBIR workouts en el calendario del
-atleta (scope CALENDAR:WRITE). Nunca se lee actividad ni wellness desde acá.
+Escritura: workouts en el calendario del atleta (scope CALENDAR:WRITE).
+Lectura (detras del flag INTERVALS_READ_ENABLED, ver intervals_routes.py):
+actividades y wellness (scopes ACTIVITY:READ / WELLNESS:READ) via
+fetch_activities / fetch_wellness, consumidos por intervals_sync_service.py.
 
 Mecanismo de payload elegido y confirmado contra la documentacion/foro oficial
 de intervals.icu durante el sprint: el texto DSL de "workout description" que
@@ -24,9 +26,11 @@ OAuth2 (confirmado en forum.intervals.icu, hilo "intervals-icu-oauth-support"):
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
+import re
 from typing import TYPE_CHECKING
 
 import httpx
@@ -45,7 +49,8 @@ REDIRECT_URI  = os.getenv("INTERVALS_REDIRECT_URI", "http://localhost:8000/api/i
 AUTHORIZE_URL = "https://intervals.icu/oauth/authorize"
 TOKEN_URL     = "https://intervals.icu/api/oauth/token"
 API_BASE      = "https://intervals.icu/api/v1"
-SCOPE         = "CALENDAR:WRITE,SETTINGS:READ"  # SETTINGS:READ = lo minimo para identificar al atleta
+SCOPE         = "CALENDAR:WRITE,SETTINGS:READ,ACTIVITY:READ,WELLNESS:READ"  # SETTINGS:READ = identificar al atleta
+RETRY_AFTER_MAX_S = 30  # tope de espera ante HTTP 429
 
 
 def available() -> bool:
@@ -58,9 +63,26 @@ class IntervalsError(Exception):
 
 # ── Tokens cifrados (mismo patron que Strava, ver routes/strava_routes.py) ──
 
-def save_tokens(user: "User", access_token: str, athlete_id: str | None, db) -> None:
+def parse_scopes(scope: str | None) -> set[str]:
+    """'ACTIVITY:READ,CALENDAR:WRITE' (o separado por espacios) -> {'ACTIVITY:READ', ...}."""
+    return {s.upper() for s in re.split(r"[,\s]+", scope or "") if s}
+
+
+def has_scope(user: "User", needed: str) -> bool:
+    return needed.upper() in parse_scopes(getattr(user, "intervals_scope", None))
+
+
+def needs_reconnect(user: "User") -> bool:
+    """Conectado pero sin permiso de lectura de actividades (conexion previa al scope)."""
+    return bool(user.intervals_access_token) and not has_scope(user, "ACTIVITY:READ")
+
+
+def save_tokens(user: "User", access_token: str, athlete_id: str | None, db,
+                scope: str | None = None) -> None:
     user.intervals_access_token = _enc(access_token)
     user.intervals_athlete_id   = str(athlete_id) if athlete_id else None
+    # Si la respuesta del token no trae "scope", se guarda el pedido.
+    user.intervals_scope        = (scope or "").strip() or SCOPE
     from datetime import datetime, timezone
     user.intervals_connected_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
@@ -77,6 +99,7 @@ def read_access_token(user: "User") -> str | None:
 def clear_tokens(user: "User", db) -> None:
     user.intervals_access_token = None
     user.intervals_athlete_id   = None
+    user.intervals_scope        = None
     user.intervals_connected_at = None
     db.commit()
 
@@ -120,6 +143,54 @@ async def fetch_athlete_id(access_token: str) -> str | None:
     except Exception as exc:
         logger.warning("No se pudo identificar atleta intervals.icu: %s", exc)
     return None
+
+
+# ── Lectura (actividades y wellness) ────────────────────────────────────────
+
+async def _get_json(path: str, token: str, params: dict) -> list:
+    """GET secuencial a la API. Ante 429 espera Retry-After (tope RETRY_AFTER_MAX_S)
+    y reintenta UNA vez. Lanza IntervalsError (sin incluir el token en el mensaje)."""
+    url = f"{API_BASE}{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient(timeout=30) as client:
+        for attempt in (1, 2):
+            try:
+                r = await client.get(url, headers=headers, params=params)
+            except httpx.HTTPError as exc:
+                logger.warning("intervals.icu GET %s fallo: %s", path, type(exc).__name__)
+                raise IntervalsError(f"No se pudo contactar a intervals.icu: {type(exc).__name__}") from exc
+            if r.status_code == 429 and attempt == 1:
+                try:
+                    wait = float(r.headers.get("Retry-After", "1"))
+                except (TypeError, ValueError):
+                    wait = 1.0
+                wait = min(max(wait, 0.0), RETRY_AFTER_MAX_S)
+                logger.info("intervals.icu 429 en %s; reintento en %.1fs", path, wait)
+                await asyncio.sleep(wait)
+                continue
+            break
+    if r.status_code in (401, 403):
+        raise IntervalsError("intervals.icu rechazo el token o el permiso -- reconecta")
+    if r.status_code >= 400:
+        logger.warning("intervals.icu GET %s -> %s", path, r.status_code)
+        raise IntervalsError(f"intervals.icu respondio {r.status_code}")
+    try:
+        data = r.json()
+    except ValueError as exc:
+        raise IntervalsError("intervals.icu devolvio una respuesta no valida") from exc
+    if not isinstance(data, list):
+        raise IntervalsError("intervals.icu devolvio un formato inesperado")
+    return data
+
+
+async def fetch_activities(token: str, oldest_iso: str, newest_iso: str) -> list[dict]:
+    """GET /athlete/0/activities?oldest&newest (scope ACTIVITY:READ)."""
+    return await _get_json("/athlete/0/activities", token, {"oldest": oldest_iso, "newest": newest_iso})
+
+
+async def fetch_wellness(token: str, oldest_iso: str, newest_iso: str) -> list[dict]:
+    """GET /athlete/0/wellness?oldest&newest (scope WELLNESS:READ)."""
+    return await _get_json("/athlete/0/wellness", token, {"oldest": oldest_iso, "newest": newest_iso})
 
 
 # ── Motor de bloques -> texto DSL de intervals.icu ──────────────────────────

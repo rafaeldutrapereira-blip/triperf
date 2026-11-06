@@ -771,6 +771,8 @@
             <span data-i18n="iw_watch_auto_label">Enviar automáticamente a mi reloj</span>
           </label>
           <button id="btn-intervals-connect" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.35rem 0.8rem; display: none" onclick="connectIntervals()" data-i18n="iw_watch_connect">Conectar mi reloj</button>
+          <button id="btn-intervals-read" class="btn btn-ghost" style="font-size: 0.7rem; padding: 0.25rem 0.6rem; display: none" onclick="syncIntervalsRead()" data-i18n="iw_read_title">Traer historial y wellness</button>
+          <a id="lnk-intervals-reconnect" href="#" style="font-size: 0.7rem; color: var(--cyan); display: none" onclick="connectIntervals(); return false" data-i18n="iw_read_reconnect">Reconectar para traer tu historial</a>
           <button id="btn-intervals-disconnect" class="btn btn-ghost" style="font-size: 0.7rem; padding: 0.25rem 0.6rem; color: var(--red); display: none" onclick="disconnectIntervals()" data-i18n="iw_watch_disconnect">Desconectar</button>
         </div>
       </div>
@@ -2439,9 +2441,19 @@
           renderWatchBar();
         };
 
+        function _renderReadCtl() {
+          var bR = document.getElementById('btn-intervals-read');
+          var lR = document.getElementById('lnk-intervals-reconnect');
+          if (!bR || !lR) return;
+          var on = WATCH.available && WATCH.connected && WATCH.readEnabled;
+          bR.style.display = on && !WATCH.needsReconnect ? '' : 'none';
+          lR.style.display = on && WATCH.needsReconnect ? '' : 'none';
+        }
+
         function renderWatchBar() {
           var txt = document.getElementById('watch-txt');
           if (!txt) return;
+          _renderReadCtl();
           var dot = document.getElementById('watch-dot');
           var wrap = document.getElementById('watch-auto-wrap');
           var chk = document.getElementById('watch-auto');
@@ -2470,9 +2482,11 @@
           }
         }
 
-        function _setWatchStatus(connected, available) {
+        function _setWatchStatus(connected, available, st) {
           WATCH.connected = !!connected;
           WATCH.available = available !== false;
+          WATCH.readEnabled = !!(st && st.read_enabled);
+          WATCH.needsReconnect = !!(st && st.needs_reconnect);
           renderWatchBar();
           renderSaved();
         }
@@ -2481,7 +2495,7 @@
           if (!_iwApiToken()) return;
           _iwApi('GET', '/integrations/intervals/status')
             .then(function (s) {
-              _setWatchStatus(s.connected, s.available);
+              _setWatchStatus(s.connected, s.available, s);
             })
             .catch(function () {
               _setWatchStatus(false, false);
@@ -2524,6 +2538,30 @@
                 toast(_t('iw_watch_connect_err', 'No se pudo conectar tu reloj'), false);
               });
           }, 600);
+        };
+
+        window.syncIntervalsRead = function () {
+          var btn = document.getElementById('btn-intervals-read');
+          if (btn) btn.disabled = true;
+          toast(_t('iw_read_running', 'Trayendo tu historial…'), true);
+          _iwApi('POST', '/integrations/intervals/sync')
+            .then(function (r) {
+              if (r && r.status === 'needs_reconnect') {
+                WATCH.needsReconnect = true;
+                _renderReadCtl();
+                toast(_t('iw_read_reconnect', 'Reconectar para traer tu historial'), false);
+                return;
+              }
+              var msg = _t('iw_read_done', 'Listo: {i} actividades nuevas, {m} ya existían, {w} días de wellness')
+                .replace('{i}', r.imported || 0).replace('{m}', r.merged || 0).replace('{w}', r.wellness_days || 0);
+              toast(msg, !(r.errors > 0));
+            })
+            .catch(function (e) {
+              toast(_iwErrMsg(e, _t('iw_read_err', 'No se pudo traer tu historial')), false);
+            })
+            .then(function () {
+              if (btn) btn.disabled = false;
+            });
         };
 
         window.disconnectIntervals = function () {
@@ -2620,7 +2658,7 @@
             var st = watchState[id];
             toast(
               ok
-                ? _t('iw_watch_sent_prefix', '✓ Enviado a tu reloj — programado para') + ' ' + wo.date
+                ? _t('iw_watch_sent_prefix', '✓ Enviado a intervals.icu — programado para') + ' ' + fmtDateLong(wo.date)
                 : (st && st.why) || _t('iw_watch_send_err', 'No se pudo enviar a tu reloj'),
               ok,
             );
@@ -2750,6 +2788,20 @@
           renderChart();
         };
 
+        /* ISO (YYYY-MM-DD) -> "6 nov 2026" segun idioma. Solo display; el ISO interno no cambia. */
+        function fmtDateLong(iso) {
+          var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+          if (!m) return iso || '';
+          var loc = { es: 'es', pt: 'pt-BR', en: 'en-GB' }[(window.i18n && window.i18n.lang) || 'es'] || 'es';
+          try {
+            return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString(loc, {
+              day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+            });
+          } catch (e) {
+            return iso;
+          }
+        }
+
         function _stateHtml(wo) {
           var st = watchState[wo.id];
           if (!st) return '';
@@ -2758,8 +2810,8 @@
           if (st.s === 'sent')
             return (
               '<div class="iw-saved-state"><span class="iw-chip ok">' +
-              esc(_t('iw_watch_state_sent', 'En tu reloj ✓')) +
-              (st.date ? ' · ' + esc(st.date) : '') + '</span></div>'
+              esc(_t('iw_watch_state_sent', 'Enviado a intervals.icu ✓')) +
+              (st.date ? ' · ' + esc(fmtDateLong(st.date)) : '') + '</span></div>'
             );
           var why = st.why === 'nodate' ? _t('iw_watch_state_nodate', 'Sin enviar — falta la fecha') : '';
           var retry =
@@ -2817,7 +2869,7 @@
                 '<div class="iw-saved-row" data-wid="' + wo.id + '">' +
                 '<div class="iw-saved-main"><div class="iw-saved-name">' + esc(wo.name) + '</div>' +
                 '<div class="iw-saved-meta">' + sportLbl + ' · ' + (isSwim ? swimT.distance_m + ' m · ' : '') + fmtDur(totalSec, true) +
-                (isSwim ? '' : ' · TSS ' + ss.tss + ' · IF ' + ss.IF.toFixed(2)) + (wo.date ? ' · ' + wo.date : '') + '</div>' +
+                (isSwim ? '' : ' · TSS ' + ss.tss + ' · IF ' + ss.IF.toFixed(2)) + (wo.date ? ' · ' + esc(fmtDateLong(wo.date)) : '') + '</div>' +
                 _stateHtml(wo) + '</div>' +
                 '<div class="iw-saved-btns">' +
                 '<button class="btn btn-ghost" style="' + bs + '" onclick="loadWorkout(\'' + wo.id + '\')">' + editLbl + '</button>' +

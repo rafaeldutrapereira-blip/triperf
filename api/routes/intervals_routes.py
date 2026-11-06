@@ -1,19 +1,21 @@
 """
-Conexion OAuth2 con intervals.icu (S6) -- solo ESCRITURA de workouts al
-calendario del atleta (scope CALENDAR:WRITE). Ver api/intervals_connector.py
-para el mecanismo de payload y el motor de conversion de bloques.
+Conexion OAuth2 con intervals.icu (S6): ESCRITURA de workouts al calendario
+(scope CALENDAR:WRITE) y, detras del flag INTERVALS_READ_ENABLED, LECTURA de
+actividades y wellness (POST /sync). Ver api/intervals_connector.py.
 """
 from __future__ import annotations
 
 import base64
 import json
 import logging
+import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from .. import intervals_connector as ic
+from .. import intervals_sync_service as iss
 from ..app_url import get_app_url
 from ..auth import get_current_user
 from ..database import get_db
@@ -24,6 +26,11 @@ logger = logging.getLogger("labx.intervals")
 router = APIRouter(prefix="/integrations/intervals", tags=["intervals"])
 
 APP_URL = get_app_url()
+
+
+def read_enabled() -> bool:
+    """Flag apagado por defecto: sin INTERVALS_READ_ENABLED nada de lectura es alcanzable."""
+    return os.getenv("INTERVALS_READ_ENABLED", "").strip().lower() in ("1", "true")
 
 
 def _require_available():
@@ -38,7 +45,21 @@ def intervals_status(me: User = Depends(get_current_user)):
         "available":  ic.available(),
         "connected":  connected,
         "athlete_id": me.intervals_athlete_id if connected else None,
+        "scopes":     me.intervals_scope if connected else None,
+        "read_enabled":    read_enabled(),
+        "needs_reconnect": ic.needs_reconnect(me),
     }
+
+
+@router.post("/sync")
+async def intervals_sync(
+    days: int = Query(90, ge=1, le=365),
+    me: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not read_enabled():
+        raise HTTPException(404, "No encontrado")
+    return await iss.sync_intervals_user(db, me.id, days)
 
 
 @router.get("/connect")
@@ -76,7 +97,7 @@ async def intervals_callback(
         if not access_token:
             raise ic.IntervalsError("intervals.icu no devolvio un access_token")
         athlete_id = await ic.fetch_athlete_id(access_token)
-        ic.save_tokens(user, access_token, athlete_id, db)
+        ic.save_tokens(user, access_token, athlete_id, db, scope=tokens.get("scope"))
     except ic.IntervalsError as exc:
         logger.warning("intervals.icu callback fallo user=%s: %s", user_id, exc)
         return RedirectResponse(f"{APP_URL}/indoor_workout.html?intervals=error")
