@@ -196,7 +196,7 @@
       '<div class="sb-foot">' +
         '<div class="sb-user">' +
           '<div class="sb-avatar" id="kl-sb-avatar">' + _escH(init) + '</div>' +
-          '<div>' +
+          '<div class="sb-ubox">' +
             '<div class="sb-uname" id="kl-sb-uname">' + _escH(name) + '</div>' +
             '<div class="sb-urole" id="kl-sb-urole">' + _escH(roleText) + '</div>' +
           '</div>' +
