@@ -1158,6 +1158,13 @@ class GarminHealthDaily(Base):
     labx_readiness_score   = Column(Integer, nullable=True)
     labx_readiness_factors = Column(Text,    nullable=True)  # JSON desglose por factor
 
+    # M2: check-in subjetivo del atleta (escala 1-5). SOLO lo escribe el endpoint
+    # /athlete/health/checkin; ningun sync (Garmin/intervals) toca estas columnas.
+    energia        = Column(Integer, nullable=True)
+    animo          = Column(Integer, nullable=True)
+    dolor_muscular = Column(Integer, nullable=True)
+    estres         = Column(Integer, nullable=True)
+
     synced_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

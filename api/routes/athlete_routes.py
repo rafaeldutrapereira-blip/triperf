@@ -1229,6 +1229,84 @@ def athlete_health_360(
     return intel
 
 
+# ── M2: check-in subjetivo diario (energia, animo, dolor muscular, estres) ──
+# Escala 1-5 en garmin_health_daily. SOLO este endpoint escribe esas columnas:
+# los syncs (Garmin oficial/legacy, intervals) nunca las tocan. No alimentan
+# ningun score en este sprint (solo captura y muestra).
+_CHECKIN_FIELDS = ("energia", "animo", "dolor_muscular", "estres")
+
+
+class HealthCheckinIn(BaseModel):
+    date_iso: Optional[str] = None
+    energia: Optional[int] = None
+    animo: Optional[int] = None
+    dolor_muscular: Optional[int] = None
+    estres: Optional[int] = None
+
+    @field_validator("energia", "animo", "dolor_muscular", "estres")
+    @classmethod
+    def _rango_1_5(cls, v):
+        if v is not None and not (1 <= v <= 5):
+            raise ValueError("La escala va de 1 a 5")
+        return v
+
+
+def _checkin_date(raw: Optional[str]) -> str:
+    today = _date.today()
+    if not raw:
+        return today.isoformat()
+    try:
+        d = _date.fromisoformat(raw)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Fecha invalida (YYYY-MM-DD)")
+    if d > today:
+        raise HTTPException(status_code=400, detail="La fecha no puede ser futura")
+    return d.isoformat()
+
+
+def _checkin_payload(row, date_iso: str) -> dict:
+    out = {"date_iso": date_iso}
+    for f in _CHECKIN_FIELDS:
+        out[f] = getattr(row, f) if row is not None else None
+    out["saved"] = any(out[f] is not None for f in _CHECKIN_FIELDS)
+    return out
+
+
+@router.get("/health/checkin")
+def get_health_checkin(
+    date_iso: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    from ..models import GarminHealthDaily
+    d = _checkin_date(date_iso)
+    row = db.query(GarminHealthDaily).filter(
+        GarminHealthDaily.user_id == me.id, GarminHealthDaily.date_iso == d).first()
+    return _checkin_payload(row, d)
+
+
+@router.post("/health/checkin")
+def save_health_checkin(
+    body: HealthCheckinIn,
+    db: Session = Depends(get_db),
+    me: User    = Depends(get_current_user),
+):
+    from ..models import GarminHealthDaily
+    vals = {f: getattr(body, f) for f in _CHECKIN_FIELDS if getattr(body, f) is not None}
+    if not vals:
+        raise HTTPException(status_code=400, detail="Indica al menos una escala (1-5)")
+    d = _checkin_date(body.date_iso)
+    row = db.query(GarminHealthDaily).filter(
+        GarminHealthDaily.user_id == me.id, GarminHealthDaily.date_iso == d).first()
+    if row is None:
+        row = GarminHealthDaily(user_id=me.id, date_iso=d)
+        db.add(row)
+    for k, v in vals.items():
+        setattr(row, k, v)
+    db.commit()
+    return _checkin_payload(row, d)
+
+
 def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) -> list:
     """Devuelve los workouts planificados (Training Peaks/Garmin) entre start_iso y end_iso."""
     rows = (
