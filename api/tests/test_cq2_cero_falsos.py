@@ -44,7 +44,7 @@ def test_h23_nav_sin_syncgarmin_y_sello_unico():
     stamps = set()
     for f in glob.glob(os.path.join(ROOT, "*.html")):
         stamps.update(re.findall(r"nav\.js\?v=(\d+)", _r(os.path.basename(f))))
-    assert stamps == {"7"}
+    assert stamps == {"8"}
 
 
 def test_h22_race_day_sin_readiness_score():

@@ -204,6 +204,22 @@
         '<button onclick="KL.logout()" class="sb-logout" title="' + _escH(_nt('shell_logout','Salir')) + '" aria-label="' + _escH(_nt('shell_logout','Salir')) + '">' + _LOGOUT_SVG + '</button>' +
       '</div>';
 
+    /* MENUBAR-3: el menu conserva su posicion vertical entre paginas.
+       El elemento con scroll es .sb-nav (#sidebar es overflow:hidden). Se
+       guarda su scrollTop en sessionStorage y se restaura sin animacion. */
+    (function(){
+      var nv = sidebar.querySelector('.sb-nav');
+      if(!nv) return;
+      var KEY = 'lx_sb_scroll';
+      try{
+        var saved = parseInt(sessionStorage.getItem(KEY), 10);
+        if(saved > 0) nv.scrollTop = saved;
+      }catch(e){}
+      var save = function(){ try{ sessionStorage.setItem(KEY, String(nv.scrollTop)); }catch(e){} };
+      nv.addEventListener('scroll', save, {passive:true});
+      window.addEventListener('pagehide', save);
+    })();
+
     /* ── Topbar mobile ─── */
     if(topbar){
       topbar.innerHTML =
