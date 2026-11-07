@@ -559,6 +559,8 @@ class TrainingPlan(Base):
     is_template  = Column(Boolean, default=False)    # True si es plantilla reutilizable
     template_name= Column(String,  nullable=True)    # nombre pÃºblico si is_template
     notes        = Column(Text,    nullable=True)
+    # M4: token opaco del link compartible de solo lectura (None = no compartido)
+    share_token  = Column(String,  nullable=True, unique=True, index=True)
     created_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 

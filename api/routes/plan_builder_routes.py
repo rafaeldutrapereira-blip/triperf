@@ -1460,6 +1460,38 @@ def list_plan_templates(
     ]
 
 
+def _clone_sessions_into(db: Session, src_sessions, new_plan: TrainingPlan,
+                         start, athlete_id: str) -> int:
+    """Clona sesiones (prescripcion, sin resultados) a new_plan, reajustando
+    las fechas con week_number + day_of_week relativos a `start` (date).
+    Compartido por create-plan (template) y por la copia de un plan compartido."""
+    import uuid as _uuid_mod
+    from datetime import timedelta as _td
+
+    n_created = 0
+    for ts in sorted(src_sessions, key=lambda s: (s.week_number or 0, s.day_of_week or 0)):
+        wk  = max(0, (ts.week_number or 1) - 1)
+        dow = ts.day_of_week or 0         # 0=Lun, 6=Dom
+        session_date = start + _td(weeks=wk, days=dow)
+        db.add(PlanSession(
+            id          = str(_uuid_mod.uuid4()),
+            plan_id     = new_plan.id,
+            athlete_id  = athlete_id,
+            date_iso    = session_date.isoformat(),
+            week_number = ts.week_number,
+            day_of_week = ts.day_of_week,
+            sport       = ts.sport,
+            title       = ts.title,
+            zone        = ts.zone,
+            duration_min= ts.duration_min,
+            distance_km = ts.distance_km,
+            tss_planned = ts.tss_planned,
+            coach_note  = ts.coach_note,
+        ))
+        n_created += 1
+    return n_created
+
+
 class _CreateFromTemplateIn(BaseModel):
     athlete_id:  str
     start_date:  str   # YYYY-MM-DD — primer lunes del plan
@@ -1518,31 +1550,7 @@ def create_plan_from_template(
     db.add(new_plan)
     db.flush()
 
-    # Reajustar fechas de sesiones
-    # Las sesiones del template usan día-offset basado en week_number + day_of_week
-    n_created = 0
-    for ts in sorted(tmpl.sessions, key=lambda s: (s.week_number or 0, s.day_of_week or 0)):
-        wk  = max(0, (ts.week_number or 1) - 1)
-        dow = ts.day_of_week or 0         # 0=Lun, 6=Dom
-        session_date = start + _td(weeks=wk, days=dow)
-
-        new_s = PlanSession(
-            id          = str(_uuid_mod.uuid4()),
-            plan_id     = new_plan.id,
-            athlete_id  = body.athlete_id,
-            date_iso    = session_date.isoformat(),
-            week_number = ts.week_number,
-            day_of_week = ts.day_of_week,
-            sport       = ts.sport,
-            title       = ts.title,
-            zone        = ts.zone,
-            duration_min= ts.duration_min,
-            distance_km = ts.distance_km,
-            tss_planned = ts.tss_planned,
-            coach_note  = ts.coach_note,
-        )
-        db.add(new_s)
-        n_created += 1
+    n_created = _clone_sessions_into(db, tmpl.sessions, new_plan, start, body.athlete_id)
 
     db.commit()
     return {
@@ -1556,3 +1564,116 @@ def create_plan_from_template(
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# M4 — Planes compartibles por link (solo lectura) + copiar a mi plan
+# ─────────────────────────────────────────────────────────────────────────────
+# Modelo: training_plans.share_token (token opaco, unico, NULL = no compartido).
+# Generar/revocar: solo el coach dueño del plan (o admin). La vista publica vive
+# en public_routes (GET /public/plans/{token}); copiar requiere sesion.
+
+def _own_plan_for_share(plan_id: str, me: User, db: Session) -> TrainingPlan:
+    q = db.query(TrainingPlan).filter(TrainingPlan.id == plan_id)
+    if me.rol != "admin":
+        q = q.filter(TrainingPlan.coach_id == me.id)
+    plan = q.first()
+    if not plan:
+        raise HTTPException(404, "Plan no encontrado")
+    return plan
+
+
+def _share_url(token: str) -> str:
+    return f"/shared_plan.html?t={token}"
+
+
+@router.post("/coach/plans/{plan_id}/share")
+def share_plan(
+    plan_id: str,
+    db: Session = Depends(get_db),
+    me: User    = Depends(require_role("coach", "admin")),
+):
+    """Genera (o devuelve el existente) el link de solo lectura del plan."""
+    import secrets
+    plan = _own_plan_for_share(plan_id, me, db)
+    if not plan.share_token:
+        plan.share_token = secrets.token_urlsafe(16)
+        db.commit()
+    return {"ok": True, "share_token": plan.share_token, "share_url": _share_url(plan.share_token)}
+
+
+@router.delete("/coach/plans/{plan_id}/share")
+def unshare_plan(
+    plan_id: str,
+    db: Session = Depends(get_db),
+    me: User    = Depends(require_role("coach", "admin")),
+):
+    """Revoca el link: el token deja de funcionar."""
+    plan = _own_plan_for_share(plan_id, me, db)
+    plan.share_token = None
+    db.commit()
+    return {"ok": True}
+
+
+class _CopySharedIn(BaseModel):
+    start_date: Optional[str] = None   # YYYY-MM-DD; por defecto el proximo lunes
+    plan_name:  Optional[str] = None
+
+
+@router.post("/plans/shared/{token}/copy", status_code=201)
+def copy_shared_plan(
+    token: str,
+    body:  _CopySharedIn,
+    db:    Session = Depends(get_db),
+    me:    User    = Depends(get_current_user),
+):
+    """
+    Copia independiente de un plan compartido a la cuenta de quien abre el link.
+    Atleta -> plan propio activo (visible en /plans). Coach/admin -> plantilla en
+    su biblioteca (/coach/plan-templates). Reutiliza _clone_sessions_into; la copia
+    no guarda referencia al original (template_id vacio, sin share_token).
+    """
+    import uuid as _uuid_mod
+    from datetime import timedelta as _td
+
+    if not token:
+        raise HTTPException(404, "Link no valido")
+    src = db.query(TrainingPlan).filter(TrainingPlan.share_token == token).first()
+    if not src:
+        raise HTTPException(404, "Este link no existe o fue revocado")
+
+    if body.start_date:
+        try:
+            start = date.fromisoformat(body.start_date)
+        except ValueError:
+            raise HTTPException(400, "start_date invalido, usar YYYY-MM-DD")
+    else:
+        today = date.today()
+        start = today + _td(days=(7 - today.weekday()) % 7 or 7)   # proximo lunes
+
+    is_library = me.rol in ("coach", "admin")
+    name = (body.plan_name or src.template_name or src.name or "").strip() or src.name
+    end = start + _td(weeks=src.weeks) - _td(days=1)
+    new_plan = TrainingPlan(
+        id            = str(_uuid_mod.uuid4()),
+        coach_id      = me.id,      # self-referencia: plan propio / biblioteca
+        athlete_id    = me.id,
+        name          = name,
+        description   = src.description,
+        start_date    = start.isoformat(),
+        end_date      = end.isoformat(),
+        weeks         = src.weeks,
+        goal_ctl      = src.goal_ctl,
+        peak_week     = src.peak_week,
+        is_template   = is_library,
+        template_name = name if is_library else None,
+        is_active     = not is_library,
+        notes         = src.notes,
+    )
+    db.add(new_plan)
+    db.flush()
+    n = _clone_sessions_into(db, src.sessions, new_plan, start, me.id)
+    db.commit()
+    return {
+        "ok": True, "plan_id": new_plan.id, "to_library": is_library,
+        "start_date": start.isoformat(), "end_date": end.isoformat(),
+        "weeks": src.weeks, "n_sessions": n,
+    }

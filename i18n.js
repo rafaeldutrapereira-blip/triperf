@@ -2099,6 +2099,7 @@ var DICT = {
     pa_stat_pace: 'Ritmo (min/km)', pa_stat_swim_pace: 'Ritmo (100m)', pa_stat_elev: 'Desnivel',
     pa_cta_text: 'Entrená, analizá y compartí tus actividades de triatlón con LabX.',
     pa_cta_btn: 'Crear cuenta gratis',
+    sp_no_token: 'Este link no incluye un plan válido.', sp_not_found: 'Este link no existe o su dueño dejó de compartirlo.', sp_load_failed: 'No se pudo cargar este plan. Intenta de nuevo más tarde.', sp_by: 'Por', sp_weeks: 'semanas', sp_sessions: 'sesiones', sp_week: 'Semana', sp_copy_btn: 'Copiar a mi plan', sp_login_to_copy: 'Inicia sesión para copiar este plan', sp_login_hint: 'Después vuelve a abrir este link.', sp_start_label: 'Inicio (lunes)', sp_copy_ok: '✓ Copiado a tu plan', sp_copy_ok_library: '✓ Copiado a tu biblioteca de plantillas', sp_copy_error: 'No se pudo copiar el plan', sp_d0: 'Lun', sp_d1: 'Mar', sp_d2: 'Mié', sp_d3: 'Jue', sp_d4: 'Vie', sp_d5: 'Sáb', sp_d6: 'Dom',
     /* gps_tracker.html (Sprint i18n páginas web) */
     gps_select_sport: 'Selecciona deporte',
     gps_sport_run: 'Correr', gps_sport_bike: 'Ciclismo', gps_sport_swim: 'Natación', gps_sport_walk: 'Caminar',
@@ -5659,6 +5660,7 @@ var DICT = {
     pa_stat_pace: 'Ritmo (min/km)', pa_stat_swim_pace: 'Ritmo (100m)', pa_stat_elev: 'Desnível',
     pa_cta_text: 'Treine, analise e compartilhe suas atividades de triatlo com o LabX.',
     pa_cta_btn: 'Criar conta grátis',
+    sp_no_token: 'Este link não inclui um plano válido.', sp_not_found: 'Este link não existe ou o dono parou de compartilhá-lo.', sp_load_failed: 'Não foi possível carregar este plano. Tente novamente mais tarde.', sp_by: 'Por', sp_weeks: 'semanas', sp_sessions: 'sessões', sp_week: 'Semana', sp_copy_btn: 'Copiar para o meu plano', sp_login_to_copy: 'Entre na sua conta para copiar este plano', sp_login_hint: 'Depois abra este link novamente.', sp_start_label: 'Início (segunda)', sp_copy_ok: '✓ Copiado para o seu plano', sp_copy_ok_library: '✓ Copiado para a sua biblioteca de modelos', sp_copy_error: 'Não foi possível copiar o plano', sp_d0: 'Seg', sp_d1: 'Ter', sp_d2: 'Qua', sp_d3: 'Qui', sp_d4: 'Sex', sp_d5: 'Sáb', sp_d6: 'Dom',
     /* gps_tracker.html (Sprint i18n páginas web) */
     gps_select_sport: 'Selecione o esporte',
     gps_sport_run: 'Correr', gps_sport_bike: 'Ciclismo', gps_sport_swim: 'Natação', gps_sport_walk: 'Caminhar',
@@ -9218,6 +9220,7 @@ var DICT = {
     pa_stat_pace: 'Pace (min/km)', pa_stat_swim_pace: 'Pace (100m)', pa_stat_elev: 'Elevation',
     pa_cta_text: 'Train, analyze and share your triathlon activities with LabX.',
     pa_cta_btn: 'Create free account',
+    sp_no_token: 'This link does not include a valid plan.', sp_not_found: 'This link does not exist or its owner stopped sharing it.', sp_load_failed: 'Could not load this plan. Try again later.', sp_by: 'By', sp_weeks: 'weeks', sp_sessions: 'sessions', sp_week: 'Week', sp_copy_btn: 'Copy to my plan', sp_login_to_copy: 'Sign in to copy this plan', sp_login_hint: 'Then open this link again.', sp_start_label: 'Start (Monday)', sp_copy_ok: '✓ Copied to your plan', sp_copy_ok_library: '✓ Copied to your template library', sp_copy_error: 'Could not copy the plan', sp_d0: 'Mon', sp_d1: 'Tue', sp_d2: 'Wed', sp_d3: 'Thu', sp_d4: 'Fri', sp_d5: 'Sat', sp_d6: 'Sun',
     /* gps_tracker.html (Sprint i18n páginas web) */
     gps_select_sport: 'Select sport',
     gps_sport_run: 'Run', gps_sport_bike: 'Cycling', gps_sport_swim: 'Swimming', gps_sport_walk: 'Walk',

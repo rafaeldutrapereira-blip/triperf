@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Plan compartido</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <script src="i18n.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.5;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 4rem;
+      }
+      .logo {
+        font-family: 'Oswald', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        display: inline-block;
+        margin-bottom: 2rem;
+      }
+      .logo span {
+        color: var(--orange);
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        margin-bottom: 0.4rem;
+      }
+      .sub {
+        color: var(--text2, #94a3b8);
+        font-size: 0.9rem;
+      }
+      h2 {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.7rem;
+      }
+      .ses {
+        display: flex;
+        gap: 0.8rem;
+        padding: 0.45rem 0;
+        border-top: 1px solid var(--border2);
+        font-size: 0.9rem;
+      }
+      .ses:first-of-type {
+        border-top: 0;
+      }
+      .ses .d {
+        width: 2.4rem;
+        flex: none;
+        color: var(--text2, #94a3b8);
+      }
+      .ses .m {
+        margin-left: auto;
+        color: var(--text2, #94a3b8);
+        white-space: nowrap;
+      }
+      .note {
+        font-size: 0.8rem;
+        color: var(--text2, #94a3b8);
+      }
+      .copy-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+        margin-top: 1rem;
+      }
+      .copy-row input {
+        padding: 0.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--border2);
+        background: var(--bg);
+        color: var(--text);
+      }
+      .btn {
+        background: var(--orange);
+        color: #fff;
+        border: 0;
+        border-radius: 8px;
+        padding: 0.6rem 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .empty {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <a class="logo" href="landing.html">LAB<span>X</span></a>
+      <div id="content">
+        <div class="empty"><span data-i18n="status_loading">Cargando...</span></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+        var API =
+          window.location.protocol === 'file:'
+            ? 'http://localhost:8000/api'
+            : window.location.origin + '/api';
+        var token = new URLSearchParams(window.location.search).get('t');
+        var content = document.getElementById('content');
+
+        function _t(key, fallback) {
+          return (window.i18n ? window.i18n.t(key) : null) || fallback;
+        }
+        function esc(v) {
+          return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+            }[c];
+          });
+        }
+        function empty(msg) {
+          content.innerHTML = '<div class="empty">🔒<br>' + esc(msg) + '</div>';
+        }
+        function days() {
+          return [
+            _t('sp_d0', 'Lun'),
+            _t('sp_d1', 'Mar'),
+            _t('sp_d2', 'Mié'),
+            _t('sp_d3', 'Jue'),
+            _t('sp_d4', 'Vie'),
+            _t('sp_d5', 'Sáb'),
+            _t('sp_d6', 'Dom'),
+          ];
+        }
+
+        if (!token) {
+          empty(_t('sp_no_token', 'Este link no incluye un plan válido.'));
+          return;
+        }
+
+        fetch(API + '/public/plans/' + encodeURIComponent(token))
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (!d) {
+              empty(
+                _t(
+                  'sp_not_found',
+                  'Este link no existe o su dueño dejó de compartirlo.',
+                ),
+              );
+              return;
+            }
+            var D = days();
+            var html =
+              '<div class="card"><h1>' +
+              esc(d.name) +
+              '</h1><div class="sub">' +
+              esc(_t('sp_by', 'Por')) +
+              ' ' +
+              esc(d.owner && d.owner.name) +
+              ' · ' +
+              d.weeks +
+              ' ' +
+              esc(_t('sp_weeks', 'semanas')) +
+              ' · ' +
+              d.total_sessions +
+              ' ' +
+              esc(_t('sp_sessions', 'sesiones')) +
+              '</div>' +
+              (d.description
+                ? '<p class="note" style="margin-top:.7rem">' +
+                  esc(d.description) +
+                  '</p>'
+                : '') +
+              '<div class="copy-row" id="copy-row"></div></div>';
+            Object.keys(d.sessions_by_week).forEach(function (wn) {
+              html +=
+                '<div class="card"><h2>' +
+                esc(_t('sp_week', 'Semana')) +
+                ' ' +
+                esc(wn) +
+                '</h2>';
+              d.sessions_by_week[wn].forEach(function (s) {
+                var meta = [];
+                if (s.duration_min) meta.push(s.duration_min + ' min');
+                if (s.distance_km) meta.push(s.distance_km + ' km');
+                if (s.tss_planned) meta.push('TSS ' + Math.round(s.tss_planned));
+                html +=
+                  '<div class="ses"><span class="d">' +
+                  esc(D[s.day_of_week] || '') +
+                  '</span><span>' +
+                  esc(s.title || s.sport) +
+                  (s.zone ? ' · ' + esc(s.zone) : '') +
+                  (s.coach_note
+                    ? '<div class="note">' + esc(s.coach_note) + '</div>'
+                    : '') +
+                  '</span><span class="m">' +
+                  esc(meta.join(' · ')) +
+                  '</span></div>';
+              });
+              html += '</div>';
+            });
+            content.innerHTML = html;
+            setupCopy();
+          })
+          .catch(function () {
+            empty(
+              _t('sp_load_failed', 'No se pudo cargar este plan. Intenta de nuevo más tarde.'),
+            );
+          });
+
+        function setupCopy() {
+          var row = document.getElementById('copy-row');
+          var bearer = localStorage.getItem('lx_co_token');
+          if (!bearer) {
+            row.innerHTML =
+              '<a class="btn" href="login.html">' +
+              esc(_t('sp_login_to_copy', 'Inicia sesión para copiar este plan')) +
+              '</a><span class="note">' +
+              esc(_t('sp_login_hint', 'Después vuelve a abrir este link.')) +
+              '</span>';
+            return;
+          }
+          row.innerHTML =
+            '<label class="note">' +
+            esc(_t('sp_start_label', 'Inicio (lunes)')) +
+            ' <input type="date" id="sp-start"></label>' +
+            '<button class="btn" id="sp-copy">' +
+            esc(_t('sp_copy_btn', 'Copiar a mi plan')) +
+            '</button><span class="note" id="sp-msg"></span>';
+          document.getElementById('sp-copy').onclick = function () {
+            var btn = this,
+              msg = document.getElementById('sp-msg');
+            var start = document.getElementById('sp-start').value;
+            btn.disabled = true;
+            fetch(API + '/plans/shared/' + encodeURIComponent(token) + '/copy', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + bearer,
+              },
+              body: JSON.stringify(start ? { start_date: start } : {}),
+            })
+              .then(function (r) {
+                return r.ok ? r.json() : Promise.reject();
+              })
+              .then(function (res) {
+                msg.textContent = res.to_library
+                  ? _t('sp_copy_ok_library', '✓ Copiado a tu biblioteca de plantillas')
+                  : _t('sp_copy_ok', '✓ Copiado a tu plan');
+              })
+              .catch(function () {
+                btn.disabled = false;
+                msg.textContent = _t('sp_copy_error', 'No se pudo copiar el plan');
+              });
+          };
+        }
+      })();
+    </script>
+  </body>
+</html>
