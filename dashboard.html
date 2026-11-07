@@ -511,6 +511,19 @@
       }
 
       /* W13: portada en tres piezas */
+      /* A4: checklist de primeros pasos */
+      .onb-card { padding: 1rem 1.2rem; margin-bottom: 1rem; }
+      .onb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+      .onb-title { font-weight: 700; font-size: 1rem; }
+      .onb-count { font-size: 0.78rem; color: var(--muted, #8a94a6); }
+      .onb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+      .onb-item a { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.65rem; border: 1px solid var(--border2, #1c2b3d); border-radius: 8px; text-decoration: none; color: inherit; }
+      .onb-item a:hover { border-color: var(--accent, #4fd1c5); }
+      .onb-mark { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted, #8a94a6); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+      .onb-item.done .onb-mark { background: var(--accent, #4fd1c5); border-color: var(--accent, #4fd1c5); color: #04121e; }
+      .onb-item.done .onb-label { text-decoration: line-through; opacity: 0.6; }
+      .onb-go { margin-left: auto; font-size: 0.78rem; color: var(--muted, #8a94a6); }
+      .onb-dismiss { background: none; border: 0; color: var(--muted, #8a94a6); font-size: 0.78rem; cursor: pointer; text-decoration: underline; padding: 0; }
       .w13-front { padding: 1rem 0 0; }
       .w13-phrase { display: flex; align-items: center; gap: 0.9rem; padding: 1.1rem 1.3rem; text-decoration: none; color: inherit; margin-bottom: 1rem; }
       .w13-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--dim, #666); flex-shrink: 0; }
@@ -2479,6 +2492,22 @@
         </div>
       </div>
     </div>
+
+    <!-- A4: checklist de primeros pasos (oculta hasta que el estado diga que falta algo) -->
+    <section id="onb-card" class="w13-front" style="display: none" aria-label="Primeros pasos" data-i18n-aria="onb_title">
+      <div class="c">
+        <div class="panel onb-card" role="region">
+          <div class="onb-head">
+            <span class="onb-title" data-i18n="onb_title">Primeros pasos</span>
+            <span class="onb-count" id="onb-count"></span>
+          </div>
+          <ul class="onb-list" id="onb-list"></ul>
+          <div style="margin-top: 0.6rem; text-align: right">
+            <button type="button" class="onb-dismiss" onclick="onbDismiss()" data-i18n="onb_dismiss">No mostrar más</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ───────────── W13: PORTADA EN TRES PIEZAS ───────────── -->
     <section class="w13-front" id="w13-front" aria-label="Hoy" data-i18n-aria="dash_w13_front_aria">
@@ -8171,6 +8200,77 @@
           });
         })();
         _dhxLoadNotifCount();
+      })();
+    </script>
+
+    <script>
+      /* A4: checklist de primeros pasos. El estado sale de GET /onboarding/status
+         (4 booleanos de datos reales). Local solo vive el descarte ("No mostrar
+         mas") y el descarte de la tarjeta de historial S-B (lx_history_step:<id>). */
+      var ONB_STEPS = [
+        { key: 'connect', href: 'athlete_profile.html', label: 'onb_step_connect', fb: 'Conecta tu reloj' },
+        { key: 'history', href: 'athlete_profile.html', label: 'onb_step_history', fb: 'Trae tu historial' },
+        { key: 'plan', href: 'training_plan.html', label: 'onb_step_plan', fb: 'Crea tu primer plan' },
+        { key: 'profile', href: 'athlete_profile.html', label: 'onb_step_profile', fb: 'Completa tu perfil' },
+      ];
+      function onbModel(status, state) {
+        state = state || {};
+        var st = (status && status.steps) || null;
+        if (!st) return { visible: false, items: [], done: 0 };
+        var items = ONB_STEPS.map(function (d) {
+          var ok = !!st[d.key];
+          if (d.key === 'history' && (state.historyDismissed || state.historyDone)) ok = true;
+          return { key: d.key, href: d.href, label: d.label, fb: d.fb, done: ok };
+        });
+        var done = items.filter(function (i) { return i.done; }).length;
+        return { visible: done < items.length && !state.dismissed, items: items, done: done };
+      }
+      function onbKey(uid) { return 'lx_onboarding_a4' + (uid ? ':' + uid : ''); }
+      function onbReadState(uid) {
+        var out = {};
+        try { out.dismissed = !!(JSON.parse(localStorage.getItem(onbKey(uid)) || '{}') || {}).dismissed; } catch (e) {}
+        try {
+          var h = JSON.parse(localStorage.getItem('lx_history_step' + (uid ? ':' + uid : '')) || '{}') || {};
+          out.historyDismissed = !!h.dismissed;
+          out.historyDone = !!h.done;
+        } catch (e) {}
+        return out;
+      }
+      var _onbStatus = null;
+      function onbRender() {
+        var card = document.getElementById('onb-card');
+        if (!card) return;
+        var s = KL.getSession();
+        var m = onbModel(_onbStatus, onbReadState(s && s.user_id));
+        card.style.display = m.visible ? '' : 'none';
+        if (!m.visible) return;
+        document.getElementById('onb-count').textContent = _fmt(
+          _t('onb_progress', '{done} de {total}'), { done: m.done, total: m.items.length });
+        document.getElementById('onb-list').innerHTML = m.items.map(function (i) {
+          return '<li class="onb-item' + (i.done ? ' done' : '') + '"><a href="' + i.href + '">' +
+            '<span class="onb-mark" aria-hidden="true">' + (i.done ? '✓' : '') + '</span>' +
+            '<span class="onb-label">' + _t(i.label, i.fb) + '</span>' +
+            (i.done ? '' : '<span class="onb-go">→</span>') + '</a></li>';
+        }).join('');
+      }
+      function onbDismiss() {
+        var s = KL.getSession();
+        try { localStorage.setItem(onbKey(s && s.user_id), JSON.stringify({ dismissed: true })); } catch (e) {}
+        onbRender();
+      }
+      (function () {
+        var s = KL.getSession();
+        if (!s || s.api_rol !== 'atleta') return;
+        if (onbReadState(s.user_id).dismissed) return;
+        var tok = localStorage.getItem('lx_co_token') || '';
+        fetch(KL.API_BASE + '/onboarding/status', {
+          credentials: 'include',
+          headers: tok ? { Authorization: 'Bearer ' + tok } : {},
+        })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) { _onbStatus = d; onbRender(); })
+          .catch(function () {});
+        document.addEventListener('lx:langchange', onbRender);
       })();
     </script>
 

@@ -73,6 +73,7 @@ from .routes.calendar_routes            import router as calendar_router
 from .routes.gear_routes                import router as gear_router
 from .routes.indoor_workout_routes     import router as indoor_workout_router
 from .routes.own_plan_routes           import router as own_plan_router
+from .routes.onboarding_routes         import router as onboarding_router
 from .routes.week_summary_routes       import router as week_summary_router
 from .routes.gear_routes                import coach_router as gear_coach_router
 
@@ -558,6 +559,7 @@ def create_app() -> FastAPI:
     _app.include_router(gear_router,                   prefix="/api")
     _app.include_router(indoor_workout_router,         prefix="/api")
     _app.include_router(own_plan_router,               prefix="/api")
+    _app.include_router(onboarding_router,             prefix="/api")
     _app.include_router(week_summary_router,           prefix="/api")
     _app.include_router(gear_coach_router,             prefix="/api")
 
