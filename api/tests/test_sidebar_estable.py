@@ -1,8 +1,10 @@
 """
 Sprint MENUBAR — sidebar fijo y estable (estandar intervals.icu).
 Guardias sobre nav.css / nav.js: sin transform ni `transition: all` en el
-sidebar de escritorio, marca estatica, y reserva de espacio en .sb-user.
-El drawer movil (@media) y la barra superior movil quedan fuera.
+sidebar de escritorio, marca estatica en TODAS las superficies (MENUBAR-2),
+filas de 36px sin barra lateral, y reserva de espacio en .sb-user.
+El drawer movil (@media) y la barra superior movil quedan fuera de las
+reglas de transform/animation, pero NO de `transition: all` ni de la marca.
 """
 import re
 from pathlib import Path
@@ -72,11 +74,35 @@ def test_transiciones_solo_color_fondo_opacidad():
                 assert float(d) <= 0.15, (sel, d)
 
 
-def test_marca_del_sidebar_estatica():
-    # La rotacion solo existe bajo .sb-tb-logo (barra movil), no en el sidebar.
-    for m in re.finditer(r"([^{}]*)\{[^{}]*animation\s*:\s*sbl-spin", _sin_comentarios(CSS)):
-        assert "sb-tb-logo" in m.group(1), m.group(1)
-    assert not re.search(r"(^|\})\s*\.sbl-(flower|arcs)\s*\{", _sin_comentarios(CSS))
+def test_sin_transition_all_en_todo_nav_css():
+    # MENUBAR-2: incluye hamburguesa y overlay (solo transform/opacity).
+    assert not re.search(r"transition\s*:\s*all\b", _sin_comentarios(CSS))
+
+
+def test_marca_estatica_en_todas_las_superficies():
+    css = _sin_comentarios(CSS)
+    # Ni sidebar ni barra movil rotan la marca; keyframes de giro eliminados.
+    assert "sbl-spin" not in css
+    assert not re.search(r"\.sbl-(flower|arcs)\b[^{]*\{[^}]*animation", css)
+    assert not re.search(r"\.sb-tb-logo[^{]*\{[^}]*animation", css)
+
+
+def test_filas_36px_sin_barra_lateral():
+    lnk = dict(_reglas_planas())[".sb-lnk"]
+    assert re.search(r"\bheight\s*:\s*36px", lnk)
+    assert "border-left" not in lnk
+    assert "text-transform" not in lnk
+    assert re.search(r"border-radius\s*:\s*8px", lnk)
+    for sel, body in _reglas_planas():
+        if sel.startswith(".sb-lnk.on"):
+            assert "border-left" not in body, sel
+
+
+def test_ancho_232_y_padding_del_body():
+    reglas = dict(_reglas_planas())
+    assert re.search(r"\bwidth\s*:\s*232px", reglas["#sidebar"])
+    assert re.search(r"padding-left\s*:\s*232px", reglas["body"])
+    assert "280px" in CSS  # el drawer movil conserva 280px
 
 
 def test_sb_user_reserva_espacio():
@@ -94,7 +120,7 @@ def test_sb_user_reserva_espacio():
 
 def test_filas_y_marca_con_alto_fijo():
     reglas = dict(_reglas_planas())
-    for sel in (".sb-lnk", ".sb-brand", ".sb-foot"):
+    for sel in (".sb-lnk", ".sb-brand", ".sb-foot", ".sb-sync"):
         assert re.search(r"\bheight\s*:\s*\d+px", reglas[sel]), sel
         assert "overflow: hidden" in reglas[sel], sel
 
