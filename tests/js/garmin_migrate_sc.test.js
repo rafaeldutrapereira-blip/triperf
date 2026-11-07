@@ -106,3 +106,45 @@ test('franja: sin tuberia ni datos -> invita; con datos -> frescura; con tuberia
   for (const k of ['official', 'strava', 'legacyLive'])
     assert.strictEqual(wm({ [k]: true, dataUntil: '2026-06-25' }).mode, 'hidden', k);
 });
+
+// TARJETA-VERDAD: el legacy existe solo con has_credentials; la fila de sync (la escribe tambien intervals.icu) no cuenta
+const tv = new Function(
+  extract(web, 'garminLegacyPresent') + extract(web, 'garminCardModel') +
+    '; return { present: garminLegacyPresent, cardModel: garminCardModel };',
+)();
+const cardFrom = (d, off) => tv.cardModel(tv.present(d), off || 'not_connected', false, d && d.sync_state);
+test('has_credentials=false + status ok (fila de intervals) -> NO conectado, sin SYNC/DISCONNECT, banner S-C oculto', () => {
+  const m = cardFrom({ has_credentials: false, connected: true, status: 'ok', sync_state: 'live' });
+  assert.strictEqual(m.via, 'none');
+  assert.strictEqual(m.connected, false);
+  assert.strictEqual(m.showSync, false);
+  assert.strictEqual(m.disconnect, null);
+  assert.strictEqual(visible(m, false), false);
+});
+test('has_credentials=true + needs_reauth -> legacyDown (regresion SYNC-HONESTO)', () => {
+  const m = cardFrom({ has_credentials: true, status: 'needs_reauth', sync_state: 'needs_reauth' });
+  assert.strictEqual(m.legacyDown, true);
+  assert.strictEqual(m.connected, false);
+  assert.strictEqual(m.status, 'legacy_down');
+  assert.strictEqual(visible(m, false), true);
+});
+test('has_credentials=true + ok reciente -> conectado normal', () => {
+  const m = cardFrom({ has_credentials: true, status: 'ok', sync_state: 'live' });
+  assert.strictEqual(m.via, 'legacy');
+  assert.strictEqual(m.connected, true);
+  assert.strictEqual(m.showSync, true);
+  assert.strictEqual(m.disconnect, 'legacy');
+});
+test('has_credentials=false + sin fila -> no conectado', () => {
+  for (const d of [{ has_credentials: false }, {}, null, undefined]) {
+    const m = cardFrom(d);
+    assert.strictEqual(m.connected, false);
+    assert.strictEqual(m.via, 'none');
+    assert.strictEqual(m.showSync, false);
+  }
+});
+test('loadGarminStatus decide con garminLegacyPresent, sin status ni connected', () => {
+  const body = extract(web, 'loadGarminStatus');
+  assert.ok(body.includes('garminLegacyPresent(d)'));
+  assert.ok(!/status === 'ok'|d\.connected/.test(body));
+});

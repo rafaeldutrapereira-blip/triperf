@@ -63,7 +63,7 @@ def test_login_redirige_a_shell_y_sw_precachea():
     assert "'shell.html'" in _read("login.html")
     sw = _read("sw.js")
     assert "'/shell.html'" in sw
-    assert "BUILD_VERSION = '338'" in sw
+    assert "BUILD_VERSION = '339'" in sw
 
 
 NAV_CSS_V = "7"

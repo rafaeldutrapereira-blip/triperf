@@ -2356,6 +2356,9 @@
       }
 
       /* ── Garmin ───────────────────────────────────────────────────── */
+      function garminLegacyPresent(d) {
+        return !!(d && d.has_credentials === true);
+      }
       function loadGarminStatus() {
         fetch(API + '/athlete/garmin/sync-status', {
           credentials: 'include',
@@ -2365,10 +2368,9 @@
             return r.json();
           })
           .then(function (d) {
-            setGarminUI(
-              d.has_credentials || d.connected || d.status === 'ok',
-              d,
-            );
+            /* TARJETA-VERDAD: la fila de sync tambien la escribe el lector de
+               intervals.icu; solo las credenciales legacy reales cuentan. */
+            setGarminUI(garminLegacyPresent(d), d);
           })
           .catch(function () {
             setGarminUI(false, {});
