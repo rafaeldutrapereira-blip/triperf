@@ -64,3 +64,26 @@ def test_login_redirige_a_shell_y_sw_precachea():
     sw = _read("sw.js")
     assert "'/shell.html'" in sw
     assert "BUILD_VERSION = '338'" in sw
+
+
+NAV_CSS_V = "7"
+NAV_JS_V = "9"
+
+
+def test_version_de_nav_uniforme_en_todas_las_paginas():
+    """Toda pagina raiz que cargue nav.css/nav.js usa la version vigente (v7/v9)."""
+    css_re = re.compile(r"nav\.css\?v=(\w+)")
+    js_re = re.compile(r"nav\.js\?v=(\w+)")
+    paginas = 0
+    for n in sorted(os.listdir(ROOT)):
+        if not n.endswith(".html"):
+            continue
+        h = _read(n)
+        css, js = css_re.findall(h), js_re.findall(h)
+        if css or js:
+            paginas += 1
+        assert set(css) <= {NAV_CSS_V}, f"{n}: nav.css con version {set(css)}"
+        assert set(js) <= {NAV_JS_V}, f"{n}: nav.js con version {set(js)}"
+        assert not re.search(r"nav\.css(?!\?v=)['\"]", h), f"{n}: nav.css sin ?v="
+        assert not re.search(r"nav\.js(?!\?v=)['\"]", h), f"{n}: nav.js sin ?v="
+    assert paginas >= 19
