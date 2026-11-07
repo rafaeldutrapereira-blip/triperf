@@ -162,7 +162,8 @@ def test_callback_denied_and_provider_error(client, db, athlete_user, monkeypatc
 def test_status_and_disconnect(client, db, athlete_user, provider):
     h = _h(client)
     s = client.get(f"{BASE}/{provider}/status", headers=h).json()
-    assert s == {"provider": provider, "available": True, "connected": False, "updated_at": None}
+    assert s == {"provider": provider, "available": True, "connected": False, "updated_at": None,
+                 "last_sync_at": None, "last_sync_status": None}
     _, q = _start(client, provider)
     client.get(f"{BASE}/{provider}/callback?code=abc&state={q['state'][0]}", follow_redirects=False)
     s = client.get(f"{BASE}/{provider}/status", headers=h).json()
@@ -216,3 +217,21 @@ def test_wahoo_refresh_failure_returns_none(db, athlete_user, monkeypatch):
         raise RuntimeError("401")
     monkeypatch.setattr(WahooProvider, "authenticate", boom)
     assert asyncio.run(po.get_valid_access_token(db, athlete_user.id, "wahoo")) is None
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
+def test_status_expone_ultima_sync_real(client, db, athlete_user, provider):
+    """S-D: last_sync_at/status vienen de la fila; nunca inventados."""
+    from datetime import datetime
+    h = _h(client)
+    _, q = _start(client, provider)
+    client.get(f"{BASE}/{provider}/callback?code=abc&state={q['state'][0]}", follow_redirects=False)
+    s = client.get(f"{BASE}/{provider}/status", headers=h).json()
+    assert s["last_sync_at"] is None and s["last_sync_status"] is None
+    row = db.query(ProviderConnection).first()
+    row.last_sync_at = datetime(2026, 11, 6, 12, 30)
+    row.last_sync_status = "ok"
+    db.commit()
+    s = client.get(f"{BASE}/{provider}/status", headers=h).json()
+    assert s["last_sync_at"].startswith("2026-11-06T12:30")
+    assert s["last_sync_status"] == "ok"

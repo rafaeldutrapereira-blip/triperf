@@ -94,6 +94,8 @@ def _status(provider: str, me: User, db: Session) -> dict:
         "available": po.enabled(provider) and po.configured(provider),
         "connected": bool(row),
         "updated_at": row.updated_at.isoformat() if row and row.updated_at else None,
+        "last_sync_at": row.last_sync_at.isoformat() if row and row.last_sync_at else None,
+        "last_sync_status": row.last_sync_status if row else None,
     }
 
 

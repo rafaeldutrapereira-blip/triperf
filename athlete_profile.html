@@ -1362,6 +1362,7 @@
                     </button>
                   </div>
                 </div>
+                <div id="garmin-details"></div>
                 <div style="margin-top: 0.5rem">
                   <a
                     href="#"
@@ -1618,6 +1619,7 @@
                     </button>
                   </div>
                 </div>
+                <div id="strava-details"></div>
                 <div
                   id="strava-unavailable"
                   style="
@@ -2595,6 +2597,7 @@
             ' ' +
             new Date(_gLegacyData.last_sync).toLocaleString('es-CL');
         } else log.style.display = 'none';
+        if (typeof connRenderGarmin === 'function') connRenderGarmin(); /* S-D */
         if (typeof histRender === 'function') histRender(); /* S-B */
         if (typeof gmigRender === 'function') gmigRender(); /* S-C */
       }
@@ -2664,6 +2667,7 @@
       var WEARABLE_OAUTH = ['polar', 'wahoo'];
       var WEARABLE_NAMES = { polar: 'Polar', wahoo: 'Wahoo' };
       var _wearState = {};
+      var _wearLast = {};
       var _wearMsg = {};
       var _wearReturn = null;
       function _wearReq(path, method) {
@@ -2746,7 +2750,19 @@
           esc(m.text || '') +
           '</div></div></div><div class="conn-actions">' +
           btns +
-          '</div></div></div></div>'
+          '</div></div>' +
+          (state === 'connected' || state === 'not_connected'
+            ? connDetailsHtml(
+                p,
+                connDetailModel(p, {
+                  connected: state === 'connected',
+                  lastSync: _wearLast[p] ? _wearLast[p].at || '' : undefined,
+                  lastStatus: _wearLast[p] ? _wearLast[p].status : null,
+                }),
+                statusTxt,
+              )
+            : '') +
+          '</div></div>'
         );
       }
       function _wearPaint(p) {
@@ -2762,6 +2778,10 @@
           })
           .then(function (d) {
             _wearState[p] = wearableState(!!d, code, d);
+            _wearLast[p] =
+              d && 'last_sync_at' in d
+                ? { at: d.last_sync_at, status: d.last_sync_status }
+                : null;
           })
           .catch(function () {
             _wearState[p] = 'error';
@@ -2873,7 +2893,7 @@
             };
           })
           .then(function () {
-            _wearPaint(p);
+            return wearableLoadOne(p); /* S-D: refresca la ultima sync real */
           });
       }
       /* Retorno del OAuth: ?polar=connected|denied|error|error_state */
@@ -3126,6 +3146,7 @@
                 (d.athlete_name ? ' — ' + d.athlete_name : '')
               : _t('prof_status_disconnected', 'Sin conectar');
 
+            connRenderStrava(d); /* S-D */
             if (d.available === false) {
               // Strava no configurado en este servidor (falta STRAVA_CLIENT_ID/SECRET)
               // — ocultar el botón en vez de dejar que el usuario tope con el 503.
@@ -3235,6 +3256,156 @@
           .finally(function () {
             btn.disabled = false;
           });
+      }
+
+      /* ── S-D: "Ver detalles" por conexion ─────────────────────────────
+         Solo presentacion sobre los status existentes. Lo que entra/sale esta
+         declarado a mano (lo que el backend realmente ingiere/envia hoy);
+         la ultima sync es SIEMPRE un dato del backend o "sin sincronizaciones
+         aun", jamas una fecha inventada. Huecos: Garmin oficial y Strava no
+         exponen ultima sync (no se muestra); intervals.icu no tiene tarjeta aqui. */
+      var CONN_RECV = {
+        garmin: ['activities', 'sleep', 'daily'],
+        polar: ['activities'],
+        wahoo: ['activities'],
+        strava: ['activities'],
+      };
+      function connDetailModel(p, c) {
+        c = c || {};
+        var connected = !!c.connected;
+        var legacy = p === 'garmin' && c.via === 'legacy';
+        return {
+          recv: CONN_RECV[p] || [],
+          send: legacy ? ['workouts'] : [],
+          /* null = el backend no lo expone para esta conexion (fila oculta);
+             '' = lo expone pero aun no hay sync (se avisa) */
+          lastSync: c.lastSync === undefined ? null : c.lastSync || '',
+          lastFailed: c.lastStatus === 'error',
+          connected: connected,
+          showSync: connected && (p !== 'garmin' || legacy),
+          showReconnect: connected && !legacy,
+        };
+      }
+      function connFmtDate(raw) {
+        if (!raw) return null;
+        var d = new Date(String(raw).replace(' ', 'T'));
+        return isNaN(d.getTime()) ? null : d.toLocaleString('es-CL');
+      }
+      var _connOpen = {};
+      function connDetToggle(p, open) {
+        _connOpen[p] = !!open;
+      }
+      var CONN_ACT = {
+        garmin: { sync: 'garminSync()', reconnect: 'garminOfficialConnect()' },
+        polar: { sync: "wearableSync('polar')", reconnect: "wearableConnect('polar')" },
+        wahoo: { sync: "wearableSync('wahoo')", reconnect: "wearableConnect('wahoo')" },
+        strava: { sync: 'stravaSync()', reconnect: 'stravaConnect()' },
+      };
+      function connDetailsHtml(p, m, statusTxt) {
+        var item = function (k) {
+          return esc(
+            _t(
+              'cdet_item_' + k,
+              {
+                activities: 'actividades de entrenamiento',
+                sleep: 'sueño',
+                daily: 'resumen diario (pasos, FC en reposo, estrés)',
+                workouts: 'entrenamientos creados en Indoor',
+              }[k],
+            ),
+          );
+        };
+        var none = esc(_t('cdet_none', 'Nada por esta conexión'));
+        var last = '';
+        if (m.connected && m.lastSync !== null) {
+          var f = connFmtDate(m.lastSync);
+          last =
+            '<div class="conn-desc"><b>' +
+            esc(_t('cdet_last', 'Última sincronización')) +
+            ':</b> ' +
+            (f
+              ? esc(f) +
+                (m.lastFailed ? ' · ' + esc(_t('cdet_last_failed', 'con error')) : '')
+              : esc(_t('cdet_never', 'sin sincronizaciones aún'))) +
+            '</div>';
+        }
+        var btns = '';
+        if (m.showSync)
+          btns +=
+            '<button class="btn btn-secondary btn-sm" onclick="' +
+            CONN_ACT[p].sync +
+            '">' +
+            esc(_t('cdet_sync_now', 'Sincronizar ahora')) +
+            '</button>';
+        if (m.showReconnect)
+          btns +=
+            '<button class="btn btn-secondary btn-sm" onclick="' +
+            CONN_ACT[p].reconnect +
+            '">' +
+            esc(_t('cdet_reconnect', 'Reconectar')) +
+            '</button>';
+        return (
+          '<details class="conn-details" style="margin-top: 0.6rem" data-conn="' +
+          p +
+          '"' +
+          (_connOpen[p] ? ' open' : '') +
+          " ontoggle=\"connDetToggle('" +
+          p +
+          "', this.open)\">" +
+          '<summary style="cursor: pointer; font-size: 0.78rem; color: var(--muted)">' +
+          esc(_t('cdet_toggle', 'Ver detalles')) +
+          '</summary><div style="margin-top: 0.5rem; display: grid; gap: 0.3rem">' +
+          '<div class="conn-desc"><b>' +
+          esc(_t('cdet_status', 'Estado')) +
+          ':</b> ' +
+          esc(statusTxt || '') +
+          '</div>' +
+          '<div class="conn-desc"><b>' +
+          esc(_t('cdet_recv', 'Recibe')) +
+          ':</b> ' +
+          m.recv.map(item).join(', ') +
+          '</div>' +
+          '<div class="conn-desc"><b>' +
+          esc(_t('cdet_send', 'Envía')) +
+          ':</b> ' +
+          (m.send.length ? m.send.map(item).join(', ') : none) +
+          '</div>' +
+          last +
+          (btns ? '<div class="conn-actions" style="margin-top: 0.3rem">' + btns + '</div>' : '') +
+          '</div></details>'
+        );
+      }
+      function connRenderGarmin() {
+        var host = document.getElementById('garmin-details');
+        if (!host || !_gModel) return;
+        var m = _gModel;
+        var legacyDate = m.via === 'legacy' ? (_gLegacyData || {}).last_sync || '' : undefined;
+        var cm = connDetailModel('garmin', {
+          connected: m.connected,
+          via: m.via,
+          lastSync: legacyDate,
+        });
+        var st = document.getElementById('garmin-status');
+        host.innerHTML = connDetailsHtml('garmin', cm, st ? st.textContent : '');
+      }
+      function connRenderStrava(d) {
+        var host = document.getElementById('strava-details');
+        if (!host) return;
+        d = d || {};
+        var stTxt =
+          d.available === false
+            ? _t('wearable_soon', 'Pronto — aún no disponible')
+            : d.connected
+              ? _t('wearable_on', 'Conectado')
+              : _t('wearable_off', 'No conectado');
+        host.innerHTML =
+          d.available === false
+            ? ''
+            : connDetailsHtml(
+                'strava',
+                connDetailModel('strava', { connected: !!d.connected }),
+                stTxt,
+              );
       }
 
       /* ── S-C: banner de migracion a Garmin oficial ────────────────────
