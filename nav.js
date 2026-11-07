@@ -5,6 +5,25 @@
                                <div class="sb-overlay" id="sb-overlay"></div>    */
 (function(){
 
+  /* SHELL-1: dentro de la cascara (shell.html) la pagina corre en un iframe.
+     body.lx-in-shell (nav.css) oculta el menu propio; el logout sale al top. */
+  var _IN_SHELL = (window.self !== window.top);
+  if(_IN_SHELL){
+    var _markShell = function(){ if(document.body) document.body.classList.add('lx-in-shell'); };
+    if(document.body) _markShell(); else document.addEventListener('DOMContentLoaded', _markShell);
+    var _patchLogout = function(){
+      if(!window.KL || window.KL.__lxShellLogout) return;
+      window.KL.__lxShellLogout = true;
+      window.KL.logout = function(){
+        var API=(window.location.protocol==='file:'?'http://localhost:8000':'')+'/api';
+        var go=function(){ try{ if(window.KL.clearSession) window.KL.clearSession(); }catch(e){} window.top.location.replace('login.html'); };
+        fetch(API+'/auth/logout',{method:'POST',credentials:'include'}).catch(function(){}).then(go);
+      };
+    };
+    _patchLogout();
+    document.addEventListener('DOMContentLoaded', _patchLogout);
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      1.  SIDEBAR OPEN / CLOSE
   ═══════════════════════════════════════════════════════════════ */
@@ -456,7 +475,7 @@
       var API=(window.location.protocol==='file:'?'http://localhost:8000':'')+'/api';
       var tok=localStorage.getItem('lx_co_token')||'';
       fetch(API+'/auth/logout',{method:'POST',headers:tok?{'Authorization':'Bearer '+tok}:{},credentials:'include'})
-        .finally(function(){ localStorage.removeItem('lx_co_token'); sessionStorage.removeItem('kl_s'); window.location.href='/landing.html'; });
+        .finally(function(){ localStorage.removeItem('lx_co_token'); sessionStorage.removeItem('kl_s'); (_IN_SHELL?window.top:window).location.href='/landing.html'; });
     }
     var has=sessionStorage.getItem('kl_s')||localStorage.getItem('kl_s')||localStorage.getItem('lx_co_token');
     if(has){ ['click','keydown','scroll','mousemove','touchstart'].forEach(function(ev){ document.addEventListener(ev,reset,{passive:true}); }); reset(); }

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="routes.config.js?v=11"></script>
+    <meta name="google" content="notranslate" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-500.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-600.woff2" crossorigin />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <link rel="stylesheet" href="nav.css?v=6" />
+    <style>
+      /* SHELL-1: el menu se dibuja una sola vez; el contenido vive en el iframe. */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+      #lx-content {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 232px;
+        width: calc(100% - 232px);
+        height: 100%;
+        border: 0;
+        background: transparent;
+      }
+      @media (max-width: 860px) {
+        #lx-content {
+          top: 52px;
+          left: 0;
+          width: 100%;
+          height: calc(100% - 52px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR NAVIGATION (lo renderiza nav.js, igual que en las demas paginas) -->
+    <aside id="sidebar"></aside>
+    <header class="sb-topbar"></header>
+    <div class="sb-overlay" id="sb-overlay"></div>
+
+    <iframe id="lx-content" name="lxcontent" title="LabX" src="about:blank"></iframe>
+
+    <script>
+      /* Sin sesion -> login en la ventana superior (mismas claves que auth.js). */
+      (function () {
+        var tok = null;
+        try {
+          tok =
+            localStorage.getItem('lx_co_token') ||
+            sessionStorage.getItem('kl_s') ||
+            localStorage.getItem('kl_s');
+        } catch (e) {}
+        if (!tok) window.top.location.replace('login.html');
+      })();
+    </script>
+    <script src="auth.js"></script>
+    <script src="nav.js?v=8"></script>
+    <script src="i18n.js"></script>
+    <script>
+      (function () {
+        /* Lista blanca = paginas que incluyen nav.js. Cualquier otro ?p= -> dashboard. */
+        var ALLOWED = [
+          'adaptive.html',
+          'ai_coach.html',
+          'analytics.html',
+          'athlete_profile.html',
+          'blood_labs.html',
+          'coach.html',
+          'community.html',
+          'dashboard.html',
+          'detalle.html',
+          'estado.html',
+          'gear.html',
+          'huella.html',
+          'indoor_workout.html',
+          'nutrition.html',
+          'race_day.html',
+          'recovery.html',
+          'training_detail.html',
+          'training_plan.html'
+        ];
+        var DEFAULT_PAGE = 'dashboard.html';
+        var frame = document.getElementById('lx-content');
+
+        function pageFromUrl() {
+          var p = new URLSearchParams(window.location.search).get('p');
+          return p && ALLOWED.indexOf(p) !== -1 ? p : DEFAULT_PAGE;
+        }
+
+        function markActive(page) {
+          document.querySelectorAll('#sidebar .sb-lnk').forEach(function (a) {
+            var h = a.getAttribute('href');
+            a.classList.toggle('on', !!h && h.split(/[?#]/)[0] === page);
+          });
+        }
+
+        function frameFile() {
+          try {
+            return frame.contentWindow.location.pathname.split('/').pop() || '';
+          } catch (e) {
+            return '';
+          }
+        }
+
+        function load(page) {
+          frame.src = page;
+          markActive(page);
+        }
+
+        /* Clics del menu: cambian solo el iframe. */
+        document.getElementById('sidebar').addEventListener('click', function (ev) {
+          var a = ev.target.closest && ev.target.closest('a[href]');
+          if (!a || ev.defaultPrevented || ev.button !== 0) return;
+          if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+          var page = (a.getAttribute('href') || '').split(/[?#]/)[0];
+          if (ALLOWED.indexOf(page) === -1) return;
+          ev.preventDefault();
+          if (page !== frameFile()) {
+            history.pushState({ p: page }, '', 'shell.html?p=' + encodeURIComponent(page));
+            load(page);
+          }
+          if (window.sbToggle && document.getElementById('sidebar').classList.contains('open'))
+            window.sbToggle();
+        });
+
+        window.addEventListener('popstate', function () {
+          load(pageFromUrl());
+        });
+
+        /* Al cargar el iframe: sincroniza item activo y URL de la cascara. */
+        frame.addEventListener('load', function () {
+          var f = frameFile();
+          if (f === '' || f === 'blank') return;
+          if (f === 'login.html' || f === 'landing.html') {
+            window.top.location.replace(f);
+            return;
+          }
+          markActive(f);
+          if (ALLOWED.indexOf(f) !== -1 && f !== pageFromUrl()) {
+            history.replaceState({ p: f }, '', 'shell.html?p=' + encodeURIComponent(f));
+          }
+          try {
+            if (frame.contentDocument.title) document.title = frame.contentDocument.title;
+          } catch (e) {}
+        });
+
+        /* nav.js vuelve a dibujar el menu al cambiar de idioma: re-marca el activo. */
+        document.addEventListener('lx:i18nready', function () {
+          markActive(frameFile() || pageFromUrl());
+        });
+
+        load(pageFromUrl());
+      })();
+    </script>
+  </body>
+</html>
