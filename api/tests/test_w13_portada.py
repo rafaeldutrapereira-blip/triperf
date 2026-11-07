@@ -131,11 +131,11 @@ def test_perfil_tiene_tres_pestanas():
 
 def test_perfil_conserva_objetivo_sexo_y_medidor():
     h = _read("athlete_profile.html")
-    for i in ("p-race-name", "p-race-date", "p-race-dist", "p-sexo", "profile-meter"):
+    for i in ("races-list", "rc-name", "rc-date", "rc-dist", "p-sexo", "profile-meter"):
         assert 'id="%s"' % i in h, i
     # ambos viven en la primera pestana (Mis datos)
     pane = h[h.index('id="tab-perfil"'):h.index('id="tab-conexiones"')]
-    for i in ("p-race-name", "p-sexo"):
+    for i in ("races-list", "p-sexo"):
         assert 'id="%s"' % i in pane
     assert "PROFILE_FIELDS" in h and "profileCompleteness" in h
 

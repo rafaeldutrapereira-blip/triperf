@@ -419,6 +419,7 @@ class RaceEvent(Base):
     distance            = Column(String)    # sprint|olympic|703|full|21k|42k|custom
     location            = Column(String)
     is_goal_race        = Column(Boolean, default=False)
+    priority            = Column(String)    # A|B|C (CARRERAS-PERFIL), nullable
     surface             = Column(String)    # road|trail|xc (para running)
 
     # PredicciÃ³n tomada al momento de registrar

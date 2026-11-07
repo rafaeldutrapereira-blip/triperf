@@ -283,6 +283,211 @@ def _sync_goal_race_event(me: User, db: Session) -> None:
         ))
 
 
+# ── CARRERAS-PERFIL: «Mis carreras del año» ─────────────────────────────────
+# Endpoints propios del perfil sobre RaceEvent (NO dependen del gate race_day).
+# Invariante: a lo sumo UNA carrera is_goal_race=True por usuario; la principal
+# se espeja hacia User.race_goal_name/date/dist (inverso de _sync_goal_race_event).
+
+_RACE_PRIORITIES = ("A", "B", "C")
+
+
+def _today_iso() -> str:
+    return _date.today().isoformat()
+
+
+def _sync_goal_fields_from_event(me: User, ev: Optional[RaceEvent]) -> None:
+    """Inversa de _sync_goal_race_event: copia la principal a los campos del User."""
+    if ev is None:
+        me.race_goal_name = None
+        me.race_goal_date = None
+        me.race_goal_dist = None
+    else:
+        me.race_goal_name = ev.name
+        me.race_goal_date = ev.date_iso
+        me.race_goal_dist = ev.distance
+
+
+def _promote_nearest_future_race(me: User, db: Session) -> None:
+    """Deja como principal la futura más cercana (o limpia el User si no hay)."""
+    db.flush()
+    nxt = (
+        db.query(RaceEvent)
+        .filter(RaceEvent.user_id == me.id, RaceEvent.date_iso >= _today_iso())
+        .order_by(RaceEvent.date_iso.asc())
+        .first()
+    )
+    if nxt is not None:
+        _make_principal(me, nxt, db)
+    else:
+        _sync_goal_fields_from_event(me, None)
+
+
+def _make_principal(me: User, ev: RaceEvent, db: Session) -> None:
+    for other in db.query(RaceEvent).filter(
+        RaceEvent.user_id == me.id, RaceEvent.id != ev.id, RaceEvent.is_goal_race == True  # noqa: E712
+    ).all():
+        other.is_goal_race = False
+    ev.is_goal_race = True
+    _sync_goal_fields_from_event(me, ev)
+
+
+def _race_out(ev: RaceEvent) -> dict:
+    return {
+        "id": ev.id,
+        "name": ev.name,
+        "date_iso": ev.date_iso,
+        "distance": ev.distance,
+        "location": ev.location,
+        "priority": ev.priority,
+        "is_goal_race": bool(ev.is_goal_race),
+        "has_result": ev.actual_total_sec is not None,
+    }
+
+
+def _clean_date(v: str) -> str:
+    try:
+        return _date.fromisoformat((v or "").strip()).isoformat()
+    except ValueError:
+        raise HTTPException(422, "date_iso debe ser YYYY-MM-DD")
+
+
+def _clean_priority(v: Optional[str]) -> Optional[str]:
+    v = (v or "").strip().upper() or None
+    if v is not None and v not in _RACE_PRIORITIES:
+        raise HTTPException(422, "priority debe ser A, B, C o vacio")
+    return v
+
+
+def _clean_name(v: str) -> str:
+    v = (v or "").strip()
+    if not v:
+        raise HTTPException(422, "name es obligatorio")
+    return v[:200]
+
+
+class ProfileRaceCreate(BaseModel):
+    name: str
+    date_iso: str
+    distance: Optional[str] = None
+    location: Optional[str] = None
+    priority: Optional[str] = None
+
+
+class ProfileRaceUpdate(BaseModel):
+    name: Optional[str] = None
+    date_iso: Optional[str] = None
+    distance: Optional[str] = None
+    location: Optional[str] = None
+    priority: Optional[str] = None
+
+
+def _own_race_or_404(race_id: str, me: User, db: Session) -> RaceEvent:
+    ev = db.query(RaceEvent).filter(RaceEvent.id == race_id, RaceEvent.user_id == me.id).first()
+    if ev is None:
+        raise HTTPException(404, "Carrera no encontrada")
+    return ev
+
+
+@router.get("/races", response_model=dict)
+def list_my_races(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    since = f"{_date.today().year}-01-01"
+    rows = (
+        db.query(RaceEvent)
+        .filter(RaceEvent.user_id == me.id, RaceEvent.date_iso >= since)
+        .order_by(RaceEvent.date_iso.asc())
+        .all()
+    )
+    return {"ok": True, "races": [_race_out(r) for r in rows]}
+
+
+@router.post("/races", response_model=dict)
+def create_my_race(
+    body: ProfileRaceCreate,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    import uuid as _uuid_mod
+    date_iso = _clean_date(body.date_iso)
+    ev = RaceEvent(
+        id=str(_uuid_mod.uuid4()),
+        user_id=me.id,
+        name=_clean_name(body.name),
+        date_iso=date_iso,
+        distance=(body.distance or "").strip()[:30] or None,
+        location=(body.location or "").strip()[:200] or None,
+        priority=_clean_priority(body.priority),
+        is_goal_race=False,
+    )
+    db.add(ev)
+    db.flush()
+    has_future_principal = (
+        db.query(RaceEvent)
+        .filter(
+            RaceEvent.user_id == me.id,
+            RaceEvent.is_goal_race == True,  # noqa: E712
+            RaceEvent.date_iso >= _today_iso(),
+            RaceEvent.id != ev.id,
+        )
+        .first()
+        is not None
+    )
+    if not has_future_principal and date_iso >= _today_iso():
+        _make_principal(me, ev, db)
+    db.commit()
+    return {"ok": True, "race": _race_out(ev)}
+
+
+@router.patch("/races/{race_id}", response_model=dict)
+def update_my_race(
+    race_id: str,
+    body: ProfileRaceUpdate,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    ev = _own_race_or_404(race_id, me, db)
+    if body.name is not None:
+        ev.name = _clean_name(body.name)
+    if body.date_iso is not None:
+        ev.date_iso = _clean_date(body.date_iso)
+    if body.distance is not None:
+        ev.distance = body.distance.strip()[:30] or None
+    if body.location is not None:
+        ev.location = body.location.strip()[:200] or None
+    if body.priority is not None:
+        ev.priority = _clean_priority(body.priority)
+    if ev.is_goal_race:
+        _sync_goal_fields_from_event(me, ev)
+    db.commit()
+    return {"ok": True, "race": _race_out(ev)}
+
+
+@router.delete("/races/{race_id}", response_model=dict)
+def delete_my_race(
+    race_id: str,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    ev = _own_race_or_404(race_id, me, db)
+    was_principal = bool(ev.is_goal_race)
+    db.delete(ev)
+    if was_principal:
+        _promote_nearest_future_race(me, db)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/races/{race_id}/principal", response_model=dict)
+def make_my_race_principal(
+    race_id: str,
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    ev = _own_race_or_404(race_id, me, db)
+    _make_principal(me, ev, db)
+    db.commit()
+    return {"ok": True, "race": _race_out(ev)}
+
+
 def effective_indoor_ftp(user) -> Optional[int]:
     """M1: FTP a usar en sesiones Indoor de ciclismo (rodillo).
     ftp_indoor si esta definido (>0); si no, el FTP principal (comportamiento previo)."""
