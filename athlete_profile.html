@@ -1169,6 +1169,82 @@
 
           <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
           <div id="tab-conexiones" class="tab-pane">
+            <!-- S-B: paso "Trae tu historial" (oculto hasta que el modelo lo muestre) -->
+            <div class="card" id="hist-card" style="display: none">
+              <div class="card-head">
+                <span class="card-title" data-i18n="hist_title"
+                  >Trae tu historial</span
+                >
+              </div>
+              <div class="card-body">
+                <p
+                  data-i18n="hist_why"
+                  style="font-size: 0.78rem; color: var(--muted); margin: 0 0 0.9rem"
+                >
+                  Tu reloj solo envía datos nuevos; tu pasado se trae de donde
+                  ya vive.
+                </p>
+                <div id="hist-row-intervals" class="conn-card" style="display: none">
+                  <div class="conn-left">
+                    <div>
+                      <div class="conn-name">intervals.icu</div>
+                      <div class="conn-desc" id="hist-intervals-desc"></div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="hist-btn-intervals"
+                      onclick="histRunIntervals()"
+                      data-i18n="hist_btn_import"
+                    >
+                      Importar historial
+                    </button>
+                    <a
+                      class="btn btn-secondary btn-sm"
+                      id="hist-link-intervals"
+                      href="#"
+                      data-i18n="hist_btn_connect_intervals"
+                      >Conectar intervals.icu</a
+                    >
+                  </div>
+                </div>
+                <div id="hist-row-strava" class="conn-card" style="display: none; margin-top: 0.6rem">
+                  <div class="conn-left">
+                    <div>
+                      <div class="conn-name">Strava</div>
+                      <div class="conn-desc" data-i18n="hist_strava_desc">
+                        Trae tus actividades de los últimos 90 días de Strava.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="hist-btn-strava"
+                      onclick="histRunStrava()"
+                      data-i18n="hist_btn_import"
+                    >
+                      Importar historial
+                    </button>
+                  </div>
+                </div>
+                <div
+                  id="hist-msg"
+                  role="status"
+                  style="display: none; margin-top: 0.75rem; font-size: 0.78rem; color: var(--muted)"
+                ></div>
+                <div style="margin-top: 0.9rem; text-align: right">
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    onclick="histDismiss()"
+                    data-i18n="hist_btn_fresh"
+                  >
+                    Empezar de cero
+                  </button>
+                </div>
+              </div>
+            </div>
             <!-- S-A: UNA tarjeta por marca. Via oficial (OAuth) para todos; la via
                  por credenciales (legacy) solo se renderiza para admin (template). -->
             <div class="card">
@@ -2052,6 +2128,7 @@
           loadGarminOfficialStatus();
           loadWearableCards();
           loadStravaStatus();
+          loadHistoryCard();
         }
         if (name === 'seguridad') {
           loadSessions();
@@ -2483,6 +2560,7 @@
             ' ' +
             new Date(_gLegacyData.last_sync).toLocaleString('es-CL');
         } else log.style.display = 'none';
+        if (typeof histRender === 'function') histRender(); /* S-B */
       }
       function setGarminUI(on, d) {
         _gLegacyOn = !!on;
@@ -3120,6 +3198,187 @@
           })
           .finally(function () {
             btn.disabled = false;
+          });
+      }
+
+      /* ── S-B: "Trae tu historial" ─────────────────────────────────────
+         Estado en localStorage (como los demas descartes de la app, p.ej.
+         lx_web_banner_dismissed), por usuario: {dismissed, done}. Sin migracion. */
+      function histCardModel(s) {
+        var st = s.state || {};
+        var iv = s.intervals || {};
+        var sv = s.strava || {};
+        var m = { visible: false, intervals: 'hidden', strava: 'hidden' };
+        if (st.dismissed || st.done) return m;
+        if (iv.connected && iv.read_enabled) {
+          m.intervals = iv.needs_reconnect ? 'reconnect' : 'import';
+        } else if (!iv.connected && iv.available && iv.read_enabled) {
+          m.intervals = 'connect';
+        }
+        if (sv.connected && sv.available !== false) m.strava = 'import';
+        var anyConn = !!(s.garminOn || iv.connected || sv.connected);
+        m.visible = anyConn && (m.intervals !== 'hidden' || m.strava !== 'hidden');
+        return m;
+      }
+      function histKey() {
+        return 'lx_history_step' + (_profile && _profile.id ? ':' + _profile.id : '');
+      }
+      function histState() {
+        try {
+          return JSON.parse(localStorage.getItem(histKey()) || '{}') || {};
+        } catch (e) {
+          return {};
+        }
+      }
+      function histSave(patch) {
+        var s = histState();
+        for (var k in patch) s[k] = patch[k];
+        try {
+          localStorage.setItem(histKey(), JSON.stringify(s));
+        } catch (e) {}
+      }
+      var _histData = null;
+      var _histBusy = false;
+      function histMsg(text, isErr) {
+        var el = document.getElementById('hist-msg');
+        el.style.display = text ? 'block' : 'none';
+        el.style.color = isErr ? 'var(--red, #ef4444)' : 'var(--muted)';
+        el.textContent = text || '';
+      }
+      function histRender() {
+        if (!_histData) return;
+        var m = histCardModel({
+          garminOn: _gModel && _gModel.connected,
+          intervals: _histData.intervals,
+          strava: _histData.strava,
+          state: histState(),
+        });
+        var card = document.getElementById('hist-card');
+        card.style.display = m.visible || _histBusy || _histData.keep ? '' : 'none';
+        var ri = document.getElementById('hist-row-intervals');
+        ri.style.display = m.intervals === 'hidden' ? 'none' : '';
+        var desc = document.getElementById('hist-intervals-desc');
+        var imp = document.getElementById('hist-btn-intervals');
+        var lnk = document.getElementById('hist-link-intervals');
+        imp.style.display = m.intervals === 'import' ? '' : 'none';
+        lnk.style.display =
+          m.intervals === 'connect' || m.intervals === 'reconnect' ? '' : 'none';
+        lnk.href = API + '/integrations/intervals/connect';
+        desc.textContent =
+          m.intervals === 'import'
+            ? _t('hist_intervals_desc', 'Trae todo tu historial de actividades y bienestar desde intervals.icu (puede tardar varios minutos).')
+            : m.intervals === 'reconnect'
+              ? _t('hist_intervals_reconnect', 'Vuelve a conectar intervals.icu y acepta el permiso de lectura para importar tu historial.')
+              : _t('hist_intervals_off', 'Conecta intervals.icu para traer tu historial desde ahí.');
+        document.getElementById('hist-row-strava').style.display =
+          m.strava === 'import' ? '' : 'none';
+      }
+      function loadHistoryCard() {
+        var get = function (path) {
+          return fetch(API + path, { credentials: 'include', headers: authH(false) })
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .catch(function () {
+              return null;
+            });
+        };
+        Promise.all([get('/integrations/intervals/status'), get('/strava/status')]).then(
+          function (r) {
+            var keep = _histData && _histData.keep;
+            _histData = { intervals: r[0] || {}, strava: r[1] || {}, keep: keep };
+            histRender();
+          },
+        );
+      }
+      function histDismiss() {
+        histSave({ dismissed: true });
+        _histData.keep = false;
+        histMsg('');
+        histRender();
+      }
+      function histFinish(ok, text, isErr) {
+        _histBusy = false;
+        document.getElementById('hist-btn-intervals').disabled = false;
+        document.getElementById('hist-btn-strava').disabled = false;
+        if (ok) {
+          histSave({ done: true });
+          _histData.keep = true; /* deja visible el resultado hasta recargar */
+        }
+        histMsg(text, isErr);
+        histRender();
+      }
+      function histFill(tpl, vals) {
+        return tpl.replace(/\{(\w+)\}/g, function (_, k) {
+          return vals[k] == null ? 0 : vals[k];
+        });
+      }
+      function histRunIntervals() {
+        if (_histBusy) return;
+        _histBusy = true;
+        document.getElementById('hist-btn-intervals').disabled = true;
+        histMsg(_t('hist_running', 'Importando… puede tardar varios minutos. No cierres esta pantalla.'));
+        var code = 0;
+        fetch(API + '/integrations/intervals/backfill', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            code = r.status;
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (code === 404)
+              return histFinish(false, _t('hist_unavailable', 'La importación desde intervals.icu no está disponible todavía.'), true);
+            if (!d || (d.status !== 'ok'))
+              return histFinish(
+                false,
+                d && d.status === 'needs_reconnect'
+                  ? _t('hist_intervals_reconnect', 'Vuelve a conectar intervals.icu y acepta el permiso de lectura para importar tu historial.')
+                  : _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'),
+                true,
+              );
+            var txt = histFill(
+              _t('hist_res_intervals', 'Listo: {a} actividades importadas, {m} fusionadas con las que ya tenías, {w} días de bienestar.'),
+              { a: d.imported, m: d.merged, w: d.wellness_days },
+            );
+            if (d.errors > 0)
+              txt += histFill(_t('hist_res_errors', ' Hubo {e} tramos con error; puedes reintentar, no se duplica nada.'), { e: d.errors });
+            histFinish(!d.errors, txt, d.errors > 0);
+          })
+          .catch(function () {
+            histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
+          });
+      }
+      function histRunStrava() {
+        if (_histBusy) return;
+        _histBusy = true;
+        document.getElementById('hist-btn-strava').disabled = true;
+        histMsg(_t('hist_running', 'Importando… puede tardar varios minutos. No cierres esta pantalla.'));
+        /* Importador existente de Strava, sin cambios: tope 90 dias. */
+        fetch(API + '/strava/sync?days=90', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (!d || d.ok !== true)
+              return histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
+            var txt = histFill(
+              _t('hist_res_strava', 'Listo: {a} actividades importadas, {m} ya existían.'),
+              { a: d.imported, m: (d.updated || 0) + (d.duplicates || 0) },
+            );
+            if (d.errors > 0)
+              txt += histFill(_t('hist_res_errors', ' Hubo {e} tramos con error; puedes reintentar, no se duplica nada.'), { e: d.errors });
+            histFinish(!d.errors, txt, d.errors > 0);
+            loadStravaStatus();
+          })
+          .catch(function () {
+            histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
           });
       }
 
