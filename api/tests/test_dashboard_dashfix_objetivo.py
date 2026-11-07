@@ -23,11 +23,12 @@ def test_703_resuelve_a_etiqueta_half_113():
 
 def test_full_y_codigos_running_mapeados():
     s = squash(DASH)
-    for frag in ('full:["prof_opt_ironman"', '"21k":["prof_opt_half_marathon"',
-                 '"42k":["prof_opt_marathon"', 'sprint:["prof_opt_sprint"',
+    # CARRERAS-DASHBOARD: los codigos legacy resuelven por alias al mapa unico
+    for frag in ('full:"ironman"', '"21k":"half_marathon"', '"42k":"marathon"',
+                 '"703":"70.3"', 'sprint:["prof_opt_sprint"',
                  'olympic:["prof_opt_olympic"'):
         assert frag in s
 
 
-def test_sin_codigo_cae_al_nombre_del_objetivo():
-    assert "_gl||profile.race_goal_name" in squash(DASH)
+def test_codigo_desconocido_cae_a_otro_nunca_al_codigo_crudo():
+    assert '_RACE_DIST_ALIAS[code]||"other"' in squash(DASH)

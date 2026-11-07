@@ -2242,6 +2242,51 @@
         background: rgba(255, 101, 53, 0.1);
         border-color: var(--orange);
       }
+      .kc-race-next-lbl {
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+        text-align: center;
+        min-height: 0.8rem;
+      }
+      .kc-race-year {
+        margin-top: 0.7rem;
+        padding-top: 0.55rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 0.28rem;
+      }
+      .kc-race-year:empty {
+        display: none;
+      }
+      .kc-ry {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.7rem;
+        color: var(--text);
+        min-width: 0;
+      }
+      .kc-ry-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+      .kc-ry.past {
+        opacity: 0.45;
+      }
+      .kc-ry-prio {
+        font-size: 0.58rem;
+        font-weight: 700;
+        border: 1px solid var(--border2, var(--border));
+        border-radius: 8px;
+        padding: 0 0.3rem;
+        color: var(--orange);
+        flex: 0 0 auto;
+      }
       .kc-race-goal {
         font-size: 0.65rem;
         color: rgba(255, 101, 53, 0.75);
@@ -2531,12 +2576,13 @@
             aria-label="Countdown próxima carrera — editar en Perfil"
             data-i18n-aria="dash_aria_countdown"
           >
-            <div id="kc-race-content">
+            <div id="kc-race-content" style="display: none">
               <div class="kc-race-head">
                 <h3 class="kpi-card-q">
-                  <span data-i18n="dash_next_race">Próxima Carrera</span>
+                  <span data-i18n="dash_races_title">Carreras del año</span>
                 </h3>
               </div>
+              <div class="kc-race-next-lbl" id="kc-race-next-lbl"></div>
               <div class="kc-cd">
                 <div class="kc-cd-unit">
                   <span class="kc-cd-val" id="cd-d">--</span>
@@ -2545,11 +2591,10 @@
                   >
                 </div>
               </div>
-              <div class="kc-race-name" id="kc-race-name">
-                <span data-i18n="dh_loading">Cargando...</span>
-              </div>
+              <div class="kc-race-name" id="kc-race-name"></div>
               <div class="kc-race-date" id="kc-race-date"></div>
               <div class="kc-race-goal" id="kc-race-goal"></div>
+              <div class="kc-race-year" id="kc-race-year"></div>
             </div>
             <div id="kc-race-empty" style="display: none" class="kc-race-empty">
               <div class="kc-race-empty-ico">🏁</div>
@@ -2560,9 +2605,7 @@
                 class="kc-race-empty-cta"
                 onclick="location.href = 'athlete_profile.html'"
               >
-                <span data-i18n="dash_setup_profile"
-                  >Configurar en Perfil →</span
-                >
+                <span data-i18n="dash_races_add">Agregar en mi perfil →</span>
               </button>
             </div>
             <div style="flex: 1"></div>
@@ -3850,64 +3893,202 @@
 
       /* -- Init races on page load -- */
       window._raceDate = null;
-      window._apiRaceSet = false;
       window._raceName = '';
-      window._raceGoal = '';
 
-      (function initRaceCard() {
-        var MS = _monthAbbrs();
+      /* CARRERAS-DASHBOARD: franja de carreras del año. Fuente única:
+         GET /athlete/races (sin cache local ni campos del perfil). */
+      var _RACE_DIST = {
+        ironman: ['prof_opt_ironman', 'Ironman (226 km)'],
+        '70.3': ['prof_opt_703', '70.3 / Half (113 km)'],
+        olympic: ['prof_opt_olympic', 'Olímpico (51.5 km)'],
+        sprint: ['prof_opt_sprint', 'Sprint (25.75 km)'],
+        marathon: ['prof_opt_marathon', 'Maratón'],
+        half_marathon: ['prof_opt_half_marathon', 'Media Maratón'],
+        '10k': [null, '10K'],
+        other: ['prof_opt_other', 'Otro'],
+      };
+      var _RACE_DIST_ALIAS = {
+        full: 'ironman',
+        '703': '70.3',
+        '21k': 'half_marathon',
+        '42k': 'marathon',
+        custom: 'other',
+      };
+      function _raceDistLabel(code) {
+        if (!code) return '';
+        var k = _RACE_DIST[code] ? code : _RACE_DIST_ALIAS[code] || 'other';
+        var e = _RACE_DIST[k];
+        return e[0] ? _t(e[0], e[1]) : e[1];
+      }
+      function _raceShortDate(iso) {
+        var d = new Date(String(iso) + 'T12:00:00');
+        if (isNaN(d.getTime())) return String(iso || '');
+        return new Intl.DateTimeFormat(_dashLoc(), {
+          day: 'numeric',
+          month: 'short',
+        })
+          .format(d)
+          .replace(/\./g, '');
+      }
+      function _raceLongDate(iso) {
+        var d = new Date(String(iso) + 'T12:00:00');
+        if (isNaN(d.getTime())) return String(iso || '');
+        return new Intl.DateTimeFormat(_dashLoc(), {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }).format(d);
+      }
+      /* Modelo puro: la principal futura si existe; si no, la futura más cercana. */
+      function raceStripModel(races, todayIso) {
+        var list = (races || [])
+          .filter(function (r) {
+            return r && r.date_iso;
+          })
+          .slice()
+          .sort(function (a, b) {
+            return String(a.date_iso).localeCompare(String(b.date_iso));
+          });
+        var future = list.filter(function (r) {
+          return String(r.date_iso) >= todayIso;
+        });
+        var featured =
+          future.filter(function (r) {
+            return r.is_goal_race;
+          })[0] ||
+          future[0] ||
+          null;
+        return {
+          featured: featured,
+          others: list.filter(function (r) {
+            return r !== featured;
+          }),
+        };
+      }
+      function raceYearHtml(others, todayIso, escFn) {
+        return others
+          .map(function (r) {
+            var past = String(r.date_iso) < todayIso;
+            return (
+              '<div class="kc-ry' +
+              (past ? ' past' : '') +
+              '"><span class="kc-ry-name">' +
+              (past ? '✓ ' : '') +
+              escFn(_raceShortDate(r.date_iso)) +
+              ' · ' +
+              escFn(r.name) +
+              '</span>' +
+              (r.priority
+                ? '<span class="kc-ry-prio">' + escFn(r.priority) + '</span>'
+                : '') +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+      function _raceEsc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function _raceTodayIso() {
+        var n = new Date();
+        return (
+          n.getFullYear() +
+          '-' +
+          ('0' + (n.getMonth() + 1)).slice(-2) +
+          '-' +
+          ('0' + n.getDate()).slice(-2)
+        );
+      }
+      window._raceList = null;
+      function renderRaceStrip() {
         function _el(id) {
           return document.getElementById(id);
         }
-
-        /* 1. Read from athlete profile (primary source) */
-        var prof = null;
-        try {
-          prof = JSON.parse(localStorage.getItem('kl_athlete_data') || 'null');
-        } catch (e) {}
-
-        /* 2. Fallback: legacy kl_next_race */
-        var leg = null;
-        try {
-          leg = JSON.parse(localStorage.getItem('kl_next_race') || 'null');
-        } catch (e) {}
-
-        var raceName = (prof && prof.raceName) || (leg && leg.name) || '';
-        var raceDate = (prof && prof.raceDate) || (leg && leg.date) || '';
-        var raceGoal = (prof && prof.goal) || '';
-
         var content = _el('kc-race-content');
         var emptyBox = _el('kc-race-empty');
-
-        if (!raceDate) {
+        var races = window._raceList;
+        if (!races || !races.length) {
+          window._raceDate = null;
           if (content) content.style.display = 'none';
           if (emptyBox) emptyBox.style.display = 'flex';
           return;
         }
-
-        /* Parse date */
-        window._raceDate = new Date(raceDate + 'T07:00:00');
-        window._raceName =
-          raceName || _t('dash_next_race_default', 'Próxima carrera');
-        window._raceGoal = raceGoal;
-
-        /* Populate name / date / goal labels */
+        if (content) content.style.display = '';
+        if (emptyBox) emptyBox.style.display = 'none';
+        var today = _raceTodayIso();
+        var m = raceStripModel(races, today);
+        var f = m.featured;
+        var lbl = _el('kc-race-next-lbl');
         var nameEl = _el('kc-race-name');
         var dateEl = _el('kc-race-date');
         var goalEl = _el('kc-race-goal');
-        if (nameEl) nameEl.textContent = window._raceName;
-        if (dateEl) {
-          var dt = new Date(raceDate + 'T12:00:00');
-          dateEl.textContent =
-            dt.getDate() + ' ' + MS[dt.getMonth()] + ' ' + dt.getFullYear();
+        if (f) {
+          window._raceDate = new Date(f.date_iso + 'T07:00:00');
+          window._raceName = f.name;
+          if (lbl)
+            lbl.textContent = f.is_goal_race
+              ? _t('dash_races_main', 'Principal')
+              : _t('dash_next_race', 'Próxima Carrera');
+          if (nameEl) nameEl.textContent = f.name;
+          if (dateEl) dateEl.textContent = _raceLongDate(f.date_iso);
+          if (goalEl)
+            goalEl.textContent = [
+              _raceDistLabel(f.distance),
+              f.priority ? _t('prof_race_prio', 'Prioridad') + ' ' + f.priority : '',
+            ]
+              .filter(Boolean)
+              .join(' · ');
+        } else {
+          window._raceDate = null;
+          window._raceName = '';
+          var cdv = _el('cd-d');
+          if (cdv) cdv.textContent = '--';
+          var cdu = _el('cd-unit');
+          if (cdu) cdu.textContent = '';
+          if (lbl) lbl.textContent = '';
+          if (nameEl)
+            nameEl.textContent = _t('dash_races_none_next', 'Sin próxima carrera');
+          if (dateEl) dateEl.textContent = '';
+          if (goalEl)
+            goalEl.innerHTML =
+              '<a href="athlete_profile.html" style="color:var(--orange)">' +
+              _raceEsc(_t('dash_races_add', 'Agregar en mi perfil →')) +
+              '</a>';
         }
-        if (goalEl)
-          goalEl.textContent = raceGoal
-            ? _t('dash_goal_prefix', 'Objetivo: ') + raceGoal
-            : '';
-
-        if (content) content.style.display = '';
-        if (emptyBox) emptyBox.style.display = 'none';
+        var yr = _el('kc-race-year');
+        if (yr) yr.innerHTML = raceYearHtml(m.others, today, _raceEsc);
+        try {
+          tick();
+        } catch (e) {}
+      }
+      (function initRaceCard() {
+        var tok = localStorage.getItem('lx_co_token') || '';
+        var base =
+          window.location.protocol === 'file:'
+            ? 'http://localhost:8000/api'
+            : window.location.origin + '/api';
+        fetch(base + '/athlete/races', {
+          credentials: 'include',
+          headers: tok ? { Authorization: 'Bearer ' + tok } : {},
+        })
+          .then(function (r) {
+            if (!r.ok) throw r;
+            return r.json();
+          })
+          .then(function (d) {
+            window._raceList = d.races || [];
+            renderRaceStrip();
+          })
+          .catch(function () {
+            window._raceList = [];
+            renderRaceStrip();
+          });
+        document.addEventListener('lx:i18nready', renderRaceStrip);
       })();
 
       /* -- Countdown (W13: solo dias, sin horas/min/seg) -- */
@@ -3921,44 +4102,31 @@
           _set('cd-d', '--');
           return;
         }
-        var nameEl = document.getElementById('kc-race-name');
-        var goalEl = document.getElementById('kc-race-goal');
         // dias de calendario locales (hoy 23:59 -> carrera manana = 1 dia)
         var t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
         var n0 = new Date();
         n0 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate());
         var d = Math.round((t0 - n0) / 86400000);
         if (d < 0) {
-          // Carrera ya pasada: se reemplaza la cuenta por un CTA para
-          // actualizar el objetivo (bug auditoria 26/09/2026: antes quedaba un
-          // reloj en cero indefinidamente).
-          _set('cd-d', '—');
-          if (nameEl) {
-            nameEl.textContent = _fmt(
-              _t('dash_race_finished', '{name} ya finalizó'),
-              { name: window._raceName || _t('dash_your_race', 'Tu carrera') },
-            );
-            nameEl.style.color = 'var(--dim)';
-          }
-          if (goalEl)
-            goalEl.innerHTML =
-              '<a href="athlete_profile.html" style="color:var(--orange)">' +
-              _t('dash_update_goal', 'Actualizar objetivo de temporada →') +
-              '</a>';
+          // la carrera pasó con la página abierta: se vuelve a elegir la próxima
+          if (window._raceList) renderRaceStrip();
           return;
         }
-        _set('cd-d', String(d));
         var unit = document.getElementById('cd-unit');
-        if (unit) {
-          unit.removeAttribute('data-i18n');
-          unit.textContent =
+        if (unit) unit.removeAttribute('data-i18n');
+        if (d <= 1) {
+          _set(
+            'cd-d',
             d === 0
-              ? _t('dash_w13_race_today', '¡es hoy!')
-              : d === 1
-                ? _t('dash_w13_day', 'día')
-                : _t('dash_unit_days', 'días');
+              ? _t('dash_races_today', '¡Hoy!')
+              : _t('dash_races_tomorrow', 'Mañana'),
+          );
+          if (unit) unit.textContent = '';
+        } else {
+          _set('cd-d', String(d));
+          if (unit)
+            unit.textContent = _t('dash_races_days_to', 'días para la carrera');
         }
-        if (d === 0 && nameEl) nameEl.style.color = 'var(--green)';
         /* colour cd-d: orange<30d, gold<60d, else default */
         var dEl = document.getElementById('cd-d');
         if (dEl)
@@ -6347,75 +6515,6 @@
             // Guardar para estTSS en renderWeekAdherence
             window._athleteFTP = profile.ftp || null;
             window._athleteFCMax = profile.fcmax || null;
-
-            // Carrera objetivo
-            if (!profile.race_goal_date) return;
-            var dt = new Date(profile.race_goal_date + 'T07:00:00');
-            if (isNaN(dt)) return;
-            window._raceDate = dt;
-            window._apiRaceSet = true;
-            tick();
-            var content = document.getElementById('kc-race-content');
-            var emptyBox = document.getElementById('kc-race-empty');
-            if (content) content.style.display = '';
-            if (emptyBox) emptyBox.style.display = 'none';
-            var nameEl = document.getElementById('kc-race-name');
-            if (nameEl && profile.race_goal_name)
-              nameEl.textContent = profile.race_goal_name;
-            var dateEl = document.getElementById('kc-race-date');
-            if (dateEl) {
-              var MS2 = [
-                'Ene',
-                'Feb',
-                'Mar',
-                'Abr',
-                'May',
-                'Jun',
-                'Jul',
-                'Ago',
-                'Sep',
-                'Oct',
-                'Nov',
-                'Dic',
-              ];
-              dateEl.textContent =
-                dt.getDate() +
-                ' ' +
-                MS2[dt.getMonth()] +
-                ' ' +
-                dt.getFullYear();
-            }
-            var goalEl = document.getElementById('kc-race-goal');
-            if (goalEl) {
-              /* DASHFIX: race_goal_dist es un CODIGO; se resuelve a la misma
-                 etiqueta del select del Perfil (prof_opt_*). Sin codigo
-                 conocido se muestra el nombre del objetivo, sin sufijo km. */
-              var _GOAL_OPT = {
-                ironman: ['prof_opt_ironman', 'Ironman (226 km)'],
-                full: ['prof_opt_ironman', 'Ironman (226 km)'],
-                '70.3': ['prof_opt_703', '70.3 / Half (113 km)'],
-                703: ['prof_opt_703', '70.3 / Half (113 km)'],
-                olympic: ['prof_opt_olympic', 'Olímpico (51.5 km)'],
-                sprint: ['prof_opt_sprint', 'Sprint (25.75 km)'],
-                marathon: ['prof_opt_marathon', 'Maratón'],
-                '42k': ['prof_opt_marathon', 'Maratón'],
-                half_marathon: ['prof_opt_half_marathon', 'Media Maratón'],
-                '21k': ['prof_opt_half_marathon', 'Media Maratón'],
-              };
-              var _gc = String(profile.race_goal_dist || '')
-                .toLowerCase()
-                .trim();
-              var _gl = null;
-              if (Object.prototype.hasOwnProperty.call(_GOAL_OPT, _gc))
-                _gl = _t(_GOAL_OPT[_gc][0], _GOAL_OPT[_gc][1]);
-              else if (_gc === '10k') _gl = '10K';
-              var _gtxt = _gl || profile.race_goal_name || '';
-              if (_gtxt)
-                goalEl.textContent = _t('dash_goal_prefix', 'Objetivo: ') + _gtxt;
-            }
-            var apiNameEl = document.getElementById('kl-race-goal-name');
-            if (apiNameEl && profile.race_goal_name)
-              apiNameEl.textContent = profile.race_goal_name;
           })
           .catch(function () {});
 
