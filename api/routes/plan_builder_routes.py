@@ -869,6 +869,44 @@ def coach_compliance_panel(
     return result
 
 
+@router.post("/plans/templates/{template_id}/preview-impact")
+def preview_template_impact(
+    template_id: str,
+    body:        dict,
+    db:  Session = Depends(get_db),
+    me:  User    = Depends(require_role("coach","admin")),
+):
+    """
+    Solo lectura: curva CTL/ATL/TSB que produciria aplicar el template builtin
+    a UN atleta. Genera las sesiones con el mismo generador que apply_template,
+    sin escribir nada. Body: {athlete_id, start_date: YYYY-MM-DD}
+    """
+    from ..permissions import assert_coach_owns_athlete
+    from ..services.performance_analytics_service import build_plan_impact
+    if template_id not in BUILTIN_TEMPLATES:
+        raise HTTPException(404, f"Template '{template_id}' no encontrado")
+    athlete_id = (body.get("athlete_id") or "").strip()
+    start_date = (body.get("start_date") or "").strip()
+    if not athlete_id or not start_date:
+        raise HTTPException(422, "athlete_id y start_date son requeridos")
+    try:
+        date.fromisoformat(start_date)
+    except ValueError:
+        raise HTTPException(422, "start_date invalido (YYYY-MM-DD)")
+    assert_coach_owns_athlete(me.id, athlete_id, db)
+
+    tpl = BUILTIN_TEMPLATES[template_id]
+    sessions = []
+    for wn in range(1, tpl["weeks"] + 1):
+        for sd in _default_sessions_for_week(
+            week_num=wn, total_weeks=tpl["weeks"], template_key=template_id,
+            ctl_target=tpl.get("goal_ctl", 75), start_date=start_date,
+            athlete_id=athlete_id, plan_id="preview",
+        ):
+            sessions.append((date.fromisoformat(sd["date_iso"]), sd.get("tss_planned")))
+    return build_plan_impact(db, athlete_id, sessions)
+
+
 @router.post("/plans/templates/{template_id}/apply")
 def apply_template(
     template_id: str,

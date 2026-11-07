@@ -29,6 +29,7 @@ from ..schemas import (
 )
 from ..auth import require_role
 from ..permissions import assert_coach_owns_athlete
+from ..services.performance_analytics_service import build_plan_impact
 
 router = APIRouter(prefix="/coach", tags=["coach-plan"])
 _coach = require_role("coach", "admin")
@@ -175,6 +176,67 @@ def remove_week_template_day(
 # ─────────────────────────────────────────────────────────────
 # Aplicar semana tipo
 # ─────────────────────────────────────────────────────────────
+def _preview_athlete(body, coach: User, db: Session) -> str:
+    """El preview proyecta sobre un atleta concreto (no sobre un grupo)."""
+    if not body.athlete_id:
+        raise HTTPException(400, "El impacto proyectado requiere un atleta individual")
+    assert_coach_owns_athlete(coach.id, body.athlete_id, db)
+    try:
+        _date.fromisoformat(body.start_date)
+    except ValueError:
+        raise HTTPException(422, "start_date invalido (YYYY-MM-DD)")
+    return body.athlete_id
+
+
+@router.post("/week-templates/{wt_id}/preview-impact")
+def preview_week_template_impact(
+    wt_id: str,
+    body: ApplyWeekTemplateRequest,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach)
+):
+    """Solo lectura: curva CTL/ATL/TSB que produciria aplicar esta semana tipo."""
+    wt = db.query(WeekTemplate).filter(
+        WeekTemplate.id == wt_id, WeekTemplate.coach_id == coach.id
+    ).first()
+    if not wt:
+        raise HTTPException(404, "Semana tipo no encontrada")
+    if not wt.days:
+        raise HTTPException(400, "La semana tipo no tiene sesiones configuradas")
+    athlete_id = _preview_athlete(body, coach, db)
+    start = _date.fromisoformat(body.start_date)
+    sessions = [(start + timedelta(days=d.day_of_week), d.workout.tss) for d in wt.days]
+    return build_plan_impact(db, athlete_id, sessions)
+
+
+@router.post("/macrocycles/{mc_id}/preview-impact")
+def preview_macrocycle_impact(
+    mc_id: str,
+    body: ApplyMacrocycleRequest,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach)
+):
+    """Solo lectura: curva CTL/ATL/TSB que produciria aplicar este macrociclo."""
+    mc = db.query(Macrocycle).filter(Macrocycle.id == mc_id, Macrocycle.coach_id == coach.id).first()
+    if not mc:
+        raise HTTPException(404, "Macrociclo no encontrado")
+    if not mc.weeks:
+        raise HTTPException(400, "El macrociclo no tiene semanas configuradas")
+    athlete_id = _preview_athlete(body, coach, db)
+    start = _date.fromisoformat(body.start_date)
+    sessions = []
+    for mc_week in mc.weeks:
+        wt = mc_week.week_template
+        if not wt or not wt.days:
+            continue
+        week_start = start + timedelta(weeks=mc_week.position - 1)
+        for day in wt.days:
+            sessions.append((week_start + timedelta(days=day.day_of_week), day.workout.tss))
+    if not sessions:
+        raise HTTPException(400, "El macrociclo no tiene sesiones configuradas")
+    return build_plan_impact(db, athlete_id, sessions)
+
+
 @router.post("/week-templates/{wt_id}/apply")
 def apply_week_template(
     wt_id: str,

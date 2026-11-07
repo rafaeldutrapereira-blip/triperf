@@ -933,6 +933,91 @@ def project_ctl_tsb(
     }
 
 
+PLAN_IMPACT_MAX_DAYS = 400   # tope explícito del horizonte del preview
+
+
+def project_pmc_from_daily_tss(
+    ctl0:      float,
+    atl0:      float,
+    anchor:    date,
+    daily_tss: dict,
+    end:       date,
+) -> list[dict]:
+    """
+    Proyecta CTL/ATL/TSB día a día desde el día siguiente a `anchor` hasta `end`
+    (inclusive) con el TSS de cada fecha en `daily_tss` ({date: tss}); los días
+    sin entrada cuentan 0 (la carga decae). Misma EWMA que el PMC de la app
+    (_CTL_DECAY / _ATL_DECAY): x += (tss - x) * (1 - e^(-1/tau)).
+    """
+    ctl, atl = float(ctl0), float(atl0)
+    out: list[dict] = []
+    d = anchor + timedelta(days=1)
+    while d <= end and len(out) < PLAN_IMPACT_MAX_DAYS:
+        tss = float(daily_tss.get(d, 0.0) or 0.0)
+        ctl = ctl + (tss - ctl) * _CTL_DECAY
+        atl = atl + (tss - atl) * _ATL_DECAY
+        out.append({
+            "date_iso": d.isoformat(),
+            "tss":      round(tss, 1),
+            "ctl":      round(ctl, 1),
+            "atl":      round(atl, 1),
+            "tsb":      round(ctl - atl, 1),
+        })
+        d += timedelta(days=1)
+    return out
+
+
+def build_plan_impact(db: Session, athlete_id: str, sessions: list) -> dict:
+    """
+    Impacto proyectado de un conjunto de sesiones planificadas sobre el PMC.
+    `sessions`: lista de (date, tss|None). tss None o <= 0 = sin carga estimable:
+    se cuenta aparte y se excluye de la proyección (no se inventa un TSS).
+    Parte del último GarminTrainingLoad real del atleta; sin él no proyecta.
+    """
+    total = len(sessions)
+    daily: dict = {}
+    without = 0
+    for d, tss in sessions:
+        if tss is None or float(tss) <= 0:
+            without += 1
+            continue
+        daily[d] = daily.get(d, 0.0) + float(tss)
+
+    base = {
+        "sessions_total":        total,
+        "sessions_without_tss":  without,
+        "total_tss":             round(sum(daily.values()), 1),
+        "baseline":              None,
+        "points":                [],
+        "has_baseline":          False,
+        "truncated":             False,
+    }
+    latest = (
+        db.query(GarminTrainingLoad)
+        .filter(GarminTrainingLoad.user_id == athlete_id,
+                GarminTrainingLoad.date_iso <= date.today().isoformat())
+        .order_by(GarminTrainingLoad.date_iso.desc())
+        .first()
+    )
+    if not latest or latest.ctl is None or latest.atl is None or not sessions:
+        return base
+    anchor = date.fromisoformat(latest.date_iso)
+    end = max((d for d, _ in sessions), default=anchor)
+    points = project_pmc_from_daily_tss(latest.ctl, latest.atl, anchor, daily, end)
+    base.update({
+        "has_baseline": True,
+        "baseline": {
+            "date_iso": latest.date_iso,
+            "ctl": round(float(latest.ctl), 1),
+            "atl": round(float(latest.atl), 1),
+            "tsb": round(float(latest.ctl) - float(latest.atl), 1),
+        },
+        "points":    points,
+        "truncated": bool(points) and points[-1]["date_iso"] < end.isoformat(),
+    })
+    return base
+
+
 def _tsb_form_label(tsb: float) -> str:
     if tsb >= 15:  return "Forma Pico"
     if tsb >= 5:   return "Buena Forma"

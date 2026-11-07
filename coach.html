@@ -2905,11 +2905,11 @@
         <input type="hidden" id="wta-wt-id" />
         <div class="field">
           <label><span data-i18n="coach_h096">Lunes de inicio</span></label>
-          <input type="date" id="wta-start" />
+          <input type="date" id="wta-start" onchange="lxImpactRefresh('wta')" />
         </div>
         <div class="field">
           <label>Asignar a</label>
-          <select id="wta-target-type" onchange="toggleWtaTarget()">
+          <select id="wta-target-type" onchange="toggleWtaTarget(); lxImpactRefresh('wta')">
             <option value="athlete">
               <span data-i18n="coach_h023">Atleta individual</span>
             </option>
@@ -2918,7 +2918,7 @@
         </div>
         <div id="wta-athlete-row" class="field">
           <label><span data-i18n="coach_h024">Atleta</span></label
-          ><select id="wta-athlete">
+          ><select id="wta-athlete" onchange="lxImpactRefresh('wta')">
             <option value="">Seleccionar...</option>
           </select>
         </div>
@@ -2927,6 +2927,13 @@
           ><select id="wta-group">
             <option value="">Seleccionar...</option>
           </select>
+        </div>
+        <div id="wta-impact" class="a3-impact" style="margin-bottom: 1rem">
+          <div style="font-size: 0.82rem; font-weight: 600" data-i18n="a3_title">Impacto proyectado</div>
+          <div id="wta-impact-msg" style="font-size: 0.78rem; color: var(--muted)" data-i18n="a3_pick">Elige un atleta y una fecha de inicio para ver el impacto proyectado.</div>
+          <div id="wta-impact-chart" style="display: none; position: relative; height: 150px"><canvas id="wta-impact-canvas"></canvas></div>
+          <div id="wta-impact-sum" style="font-size: 0.78rem; margin-top: 0.3rem"></div>
+          <div id="wta-impact-warn" style="font-size: 0.78rem; color: #EAB308"></div>
         </div>
         <div
           style="
@@ -3141,11 +3148,11 @@
         <input type="hidden" id="mca-mc-id" />
         <div class="field">
           <label><span data-i18n="coach_h096">Lunes de inicio</span></label>
-          <input type="date" id="mca-start" />
+          <input type="date" id="mca-start" onchange="lxImpactRefresh('mca')" />
         </div>
         <div class="field">
           <label>Asignar a</label>
-          <select id="mca-target-type" onchange="toggleMcaTarget()">
+          <select id="mca-target-type" onchange="toggleMcaTarget(); lxImpactRefresh('mca')">
             <option value="athlete">
               <span data-i18n="coach_h023">Atleta individual</span>
             </option>
@@ -3154,7 +3161,7 @@
         </div>
         <div id="mca-athlete-row" class="field">
           <label><span data-i18n="coach_h024">Atleta</span></label
-          ><select id="mca-athlete">
+          ><select id="mca-athlete" onchange="lxImpactRefresh('mca')">
             <option value="">Seleccionar...</option>
           </select>
         </div>
@@ -3163,6 +3170,13 @@
           ><select id="mca-group">
             <option value="">Seleccionar...</option>
           </select>
+        </div>
+        <div id="mca-impact" class="a3-impact" style="margin-bottom: 1rem">
+          <div style="font-size: 0.82rem; font-weight: 600" data-i18n="a3_title">Impacto proyectado</div>
+          <div id="mca-impact-msg" style="font-size: 0.78rem; color: var(--muted)" data-i18n="a3_pick">Elige un atleta y una fecha de inicio para ver el impacto proyectado.</div>
+          <div id="mca-impact-chart" style="display: none; position: relative; height: 150px"><canvas id="mca-impact-canvas"></canvas></div>
+          <div id="mca-impact-sum" style="font-size: 0.78rem; margin-top: 0.3rem"></div>
+          <div id="mca-impact-warn" style="font-size: 0.78rem; color: #EAB308"></div>
         </div>
         <div
           style="
@@ -8308,6 +8322,7 @@
           });
           document.getElementById('wta-garmin').checked = false;
           openModal('modal-wt-apply');
+          lxImpactRefresh('wta');
         };
 
         window.toggleWtaTarget = function () {
@@ -8319,6 +8334,66 @@
           document.getElementById('wta-group-row').style.display = isGroup
             ? ''
             : 'none';
+        };
+
+
+        // ── A3: impacto proyectado (solo lectura) antes de aplicar ─────────
+        var _impactCharts = {};
+        var _impactSeq = {};
+        window.lxImpactRefresh = async function (pfx) {
+          var kind = pfx === 'wta' ? 'week-templates' : 'macrocycles';
+          var id = document.getElementById(pfx + (pfx === 'wta' ? '-wt-id' : '-mc-id')).value;
+          var start = document.getElementById(pfx + '-start').value;
+          var isGroup = document.getElementById(pfx + '-target-type').value === 'group';
+          var athId = document.getElementById(pfx + '-athlete').value;
+          var msg = document.getElementById(pfx + '-impact-msg');
+          var box = document.getElementById(pfx + '-impact-chart');
+          var sum = document.getElementById(pfx + '-impact-sum');
+          var warn = document.getElementById(pfx + '-impact-warn');
+          var seq = (_impactSeq[pfx] = (_impactSeq[pfx] || 0) + 1);
+          box.style.display = 'none';
+          sum.textContent = '';
+          warn.textContent = '';
+          if (_impactCharts[pfx]) { _impactCharts[pfx].destroy(); _impactCharts[pfx] = null; }
+          if (isGroup) { msg.textContent = _t('a3_group', 'El impacto proyectado se calcula para un atleta individual.'); return; }
+          if (!id || !start || !athId) { msg.textContent = _t('a3_pick', 'Elige un atleta y una fecha de inicio.'); return; }
+          msg.textContent = _t('a3_loading', 'Calculando proyección…');
+          try {
+            var d = await apiPost('/coach/' + kind + '/' + id + '/preview-impact', { start_date: start, athlete_id: athId });
+            if (seq !== _impactSeq[pfx]) return; // respuesta vieja
+            if (d.sessions_without_tss > 0) {
+              warn.textContent = _t('a3_missing', '{n} de {t} sesiones sin carga estimable; la proyección las excluye.')
+                .replace('{n}', d.sessions_without_tss).replace('{t}', d.sessions_total);
+            }
+            if (!d.has_baseline) { msg.textContent = _t('a3_nobase', 'Este atleta aún no tiene datos de carga.'); return; }
+            msg.textContent = _t('a3_hint', '');
+            var pts = d.points;
+            var last = pts[pts.length - 1];
+            sum.textContent = _t('a3_summary', '')
+              .replace('{ctl}', last.ctl).replace('{atl}', last.atl).replace('{tsb}', last.tsb).replace('{ctl0}', d.baseline.ctl);
+            if (d.truncated) warn.textContent += ' ' + _t('a3_truncated', '');
+            box.style.display = '';
+            if (typeof Chart === 'undefined') return;
+            var labels = pts.map(function (p) { return p.date_iso.slice(5); });
+            function ds(key, name, color) {
+              return { label: name, data: pts.map(function (p) { return p[key]; }), borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 0, tension: 0.25 };
+            }
+            _impactCharts[pfx] = new Chart(document.getElementById(pfx + '-impact-canvas'), {
+              type: 'line',
+              data: { labels: labels, datasets: [
+                ds('ctl', _t('term_ctl_name', 'CTL'), '#3B82F6'),
+                ds('atl', _t('term_atl_name', 'ATL'), '#F97316'),
+                ds('tsb', _t('term_tsb_name', 'TSB'), '#10B981'),
+              ] },
+              options: { responsive: true, maintainAspectRatio: false, animation: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } },
+                scales: { x: { ticks: { maxTicksLimit: 6, font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } } },
+            });
+          } catch (e) {
+            if (seq !== _impactSeq[pfx]) return;
+            msg.textContent = _t('a3_error', 'No se pudo calcular la proyección.');
+          }
         };
 
         window.applyWeekTemplate = async function () {
@@ -8705,6 +8780,7 @@
           document.getElementById('mca-target-type').value = 'athlete';
           toggleMcaTarget();
           openModal('modal-mc-apply');
+          lxImpactRefresh('mca');
         };
 
         window.toggleMcaTarget = function () {
@@ -9376,6 +9452,7 @@
       }
     </style>
 
+    <script src="vendor/chart.umd.min.js"></script>
     <script src="auth.js"></script>
     <script src="nav.js?v=6"></script>
     <script src="i18n.js"></script>
