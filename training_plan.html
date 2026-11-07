@@ -585,81 +585,6 @@
         }
       }
 
-      /* Cumplimiento semanal — donuts real vs plan por deporte (mismo estándar
-   dinámico que el gauge "Estado del Atleta" del dashboard: arco con
-   gradiente + glow, número animado en Barlow Condensed, texto con
-   text-fill degradado). */
-      .compl-row {
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        padding: 1.6rem 1.2rem;
-      }
-      .compl-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.6rem;
-      }
-      .compl-svg {
-        position: relative;
-        width: 140px;
-        height: 140px;
-        flex-shrink: 0;
-      }
-      .compl-svg svg {
-        width: 100%;
-        height: 100%;
-      }
-      .compl-ctr {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-      }
-      .compl-pct {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 2.1rem;
-        font-weight: 900;
-        line-height: 1;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      .compl-lbl {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.56rem;
-        font-weight: 600;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--dim);
-        margin-top: 0.1rem;
-      }
-      .compl-name {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.72rem;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-      .compl-detail {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.62rem;
-        color: var(--dim);
-        letter-spacing: 0.04em;
-      }
-      .compl-sessions {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.6rem;
-        color: var(--dim);
-        letter-spacing: 0.04em;
-        margin-top: -0.4rem;
-      }
-
       /* ── S3: franja semanal (wellness + hecho + plan + resumen) ── */
       #wk-strip {
         display: grid;
@@ -1064,71 +989,133 @@
         cursor: pointer;
       }
 
-      /* ── SESSION CARDS (S10: Mi Plan liviana — sesiones primero, legibles
-   de un vistazo, con "Hecha ✓" en la propia tarjeta) ── */
-      .day-group {
-        margin-bottom: 0.9rem;
-      }
-      .day-group:last-child {
-        margin-bottom: 0;
-      }
-      .day-group-hd {
+      /* ── MIPLAN-RESUMEN: resumen primero estilo intervals ── */
+      .tp-ov-hd {
         font-family: 'Oswald', sans-serif;
-        font-size: 0.68rem;
+        font-size: 0.78rem;
         font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: var(--dim);
-        padding: 0 0.2rem 0.4rem;
+        color: var(--muted);
       }
-      .sess-card {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        padding: 0.6rem 0.8rem;
+      .tp-ov-line {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text);
+        margin: 0.25rem 0 0.8rem;
+      }
+      .tp-ov-line.none {
+        color: var(--dim);
+        font-weight: 400;
+      }
+      .tp-days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .tp-days.tp-range {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      .tp-day {
         border: 1px solid var(--border2);
         border-radius: 10px;
-        margin-bottom: 0.5rem;
-        cursor: pointer;
-        transition: background var(--ease);
-      }
-      .sess-card:hover {
-        background: rgba(8, 116, 174, 0.05);
-      }
-      .sess-card:last-child {
-        margin-bottom: 0;
-      }
-      .sess-card-ico {
-        font-size: 1.1rem;
-        flex-shrink: 0;
-        line-height: 1;
-      }
-      .sess-card-body {
-        flex: 1;
+        padding: 0.4rem;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
       }
-      .sess-card-name {
-        font-weight: 500;
-        font-size: 0.85rem;
+      .tp-day.today {
+        border-color: var(--orange);
+        box-shadow: inset 0 0 0 1px rgba(255, 101, 53, 0.25);
       }
-      .sess-card-meta {
-        font-size: 0.74rem;
-        color: var(--muted);
-        margin-top: 0.1rem;
-      }
-      .sess-card-pvr {
-        font-size: 0.72rem;
+      .tp-day-hd {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
         color: var(--dim);
-        margin-top: 0.2rem;
       }
-      .sess-card-right {
+      .tp-day.today .tp-day-hd {
+        color: var(--orange);
+        font-weight: 700;
+      }
+      .tp-rest {
+        color: var(--dim);
+        font-size: 0.8rem;
+        padding: 0.1rem 0.2rem;
+      }
+      .tp-mini {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
+        padding: 0.4rem 0.45rem;
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        cursor: pointer;
+        min-width: 0;
+        transition: background var(--ease);
+      }
+      .tp-mini:hover {
+        background: rgba(8, 116, 174, 0.05);
+      }
+      .tp-mini.done {
+        border-color: rgba(16, 185, 129, 0.45);
+        background: rgba(16, 185, 129, 0.07);
+      }
+      .tp-mini-ico {
+        font-size: 1rem;
+        line-height: 1;
         flex-shrink: 0;
       }
-      .sess-card-done-btn {
+      .tp-mini-body {
+        min-width: 0;
+        flex: 1;
+      }
+      .tp-mini-meta {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: var(--text);
         white-space: nowrap;
+      }
+      .tp-mini.done .tp-mini-meta {
+        color: var(--green);
+      }
+      .tp-mini-name {
+        font-size: 0.7rem;
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tp-wk {
+        border-top: 1px solid var(--border2);
+        margin-top: 0.7rem;
+        padding-top: 0.6rem;
+      }
+      .tp-wk > summary {
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding: 0.2rem 0;
+      }
+      .tp-wk > summary b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .tp-wk .tp-days {
+        margin-top: 0.6rem;
+      }
+      @media (max-width: 700px) {
+        .tp-days {
+          grid-template-columns: 1fr;
+        }
+        .tp-day.empty:not(.today) {
+          display: none;
+        }
       }
       .badge {
         display: inline-block;
@@ -1224,60 +1211,6 @@
         padding: 2.5rem;
       }
 
-      /* ── SUMMARY CARDS ── */
-      .sum-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1px;
-        background: var(--border2);
-      }
-      @media (max-width: 780px) {
-        .sum-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-      .sum-card {
-        background: var(--bg);
-        padding: 1.1rem 1.2rem;
-      }
-      .sum-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.55rem;
-      }
-      .sum-disc {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
-      .sum-ico {
-        font-size: 1.15rem;
-      }
-      .sum-lbl {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-      }
-      .sum-pct {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 1rem;
-        font-weight: 700;
-      }
-      .sum-main {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 1.55rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 0.18rem;
-      }
-      .sum-sub {
-        font-size: 0.7rem;
-        color: var(--dim);
-        margin-bottom: 0.55rem;
-      }
       .bar-bg {
         height: 4px;
         border-radius: 3px;
@@ -1289,14 +1222,6 @@
         border-radius: 3px;
         transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .sum-sessions {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.65rem;
-        color: var(--dim);
-        letter-spacing: 0.06em;
-        margin-top: 0.35rem;
-      }
-
       /* ── MODAL ── */
       .modal-ov {
         position: fixed;
@@ -1601,21 +1526,7 @@
          más abajo, cerrado por defecto. "Hecha ✓" queda en la propia
          tarjeta — misma lógica de S3 (tpMarkDone), sin abrir el modal. -->
         <div class="panel sr" id="s-list">
-          <div class="panel-head">
-            <div class="panel-title">Sesiones</div>
-            <div class="tabs" id="list-tabs">
-              <div class="tab on" data-tab="list">Lista</div>
-              <div class="tab" data-tab="summary">Resumen</div>
-            </div>
-          </div>
-
-          <div class="tab-panel on" id="tab-list">
-            <div id="sess-cards"></div>
-          </div>
-
-          <div class="tab-panel" id="tab-summary">
-            <div class="sum-grid" id="sum-grid"></div>
-          </div>
+          <div id="sess-cards"></div>
         </div>
 
         <!-- VER MÁS (S10, cerrado por defecto) -->
@@ -1669,21 +1580,6 @@
                   💪 Fuerza
                 </button>
               </div>
-            </div>
-
-            <!-- CUMPLIMIENTO SEMANAL -->
-            <div class="panel sr" id="s-compl">
-              <div class="panel-head">
-                <div
-                  class="panel-title"
-                  id="compl-title"
-                  data-i18n="tp_compl_week"
-                >
-                  Cumplimiento semanal
-                </div>
-                <div class="ph-sub" id="compl-range" style="margin: 0"></div>
-              </div>
-              <div class="compl-row" id="compl-row"></div>
             </div>
 
             <!-- CALENDAR PANEL -->
@@ -2186,7 +2082,6 @@
             },
           });
         });
-        var TARGETS = { swim: 10, bike: 200, run: 40, str: 3 }; // weekly km / sessions
 
         // ──────────────────────────────────────
         // STATE
@@ -2754,7 +2649,6 @@
             if (v == null) return;
             rows.push('<div class="ws-row"><span>' + _wsEsc(label) + '</span><b>' + _wsEsc(v) + '</b></div>');
           }
-          row(_t('tp_ws_time', 'Tiempo'), s.dur_min != null ? fmtDur(s.dur_min) : null);
           row(_t('tp_ws_load', 'Carga (TSS)'), s.tss != null ? Math.round(s.tss) : null);
           row(_t('tp_ws_fitness', 'Fitness (CTL)'), s.ctl);
           row(_t('tp_ws_form', 'Forma (TSB)'), s.tsb);
@@ -3182,386 +3076,226 @@
         }
 
         // ──────────────────────────────────────
-        // RENDER: SESSION CARDS (S10 — Mi Plan liviana: una tarjeta
-        // compacta por sesión, agrupadas por día, legibles de un vistazo.
-        // "Hecha ✓" queda en la propia tarjeta con la MISMA semántica de
-        // S3 (tpMarkDone); clic en el resto de la tarjeta abre el mismo
-        // modal de siempre (showDetail/showCompareDetail/goDetail).
+        // RENDER: MI PLAN RESUMEN-PRIMERO (MIPLAN-RESUMEN, estilo intervals)
+        // Cabecera de semana + UNA linea ejecutiva con datos reales del plan
+        // ("N sesiones · Xh planificadas · M hechas ✓"), los dias en
+        // mini-tarjetas y las semanas siguientes colapsadas. El detalle vive
+        // en el destino de siempre (showDetail/showCompareDetail/goDetail).
+        // Sin plan, la linea lo dice sin cifras (nunca metas inventadas).
         // ──────────────────────────────────────
-        function dayHeaderLabel(dIso) {
-          var d = new Date(dIso + 'T12:00:00');
-          var dow = d.getDay() || 7; // Sun→7
-          return (
-            daysShort()[dow - 1] + ' ' + d.getDate() + ' ' + monthsS()[d.getMonth()]
-          );
+        var _openWk = {};
+        window.tpWkToggle = function (el) {
+          _openWk[el.getAttribute('data-wk')] = el.open;
+        };
+
+        function ovDate(d) {
+          return d.getDate() + ' ' + monthsS()[d.getMonth()].toLowerCase();
+        }
+        function ovFill(tpl, vars) {
+          return tpl.replace(/\{(\w+)\}/g, function (m, k) {
+            return k in vars ? vars[k] : m;
+          });
         }
 
-        function planVsRealLine(plan, real, sport) {
-          return (
-            _t('tp_hdr_plan', 'Plan') +
-            ' ' +
-            fmtDur(plan.dur_min) +
-            (plan.dist_km ? ' · ' + fmtDist(plan.dist_km, sport) : '') +
-            ' — ' +
-            _t('tp_hdr_real', 'Real') +
-            ' ' +
-            fmtDur(real.dur_min) +
-            (real.dist_km ? ' · ' + fmtDist(real.dist_km, sport) : '')
-          );
-        }
-
-        function sessCardHtml(s, byDay) {
-          var sp = SPORT[s.sport] || {
-            icon: '🏅',
-            label: _t('tp_session', 'Sesión'),
-            color: 'var(--muted)',
-          };
-          var allDay = byDay[s.date_iso] || [s];
-          var pair = pairPlanAndReal(allDay);
-          var oc =
-            s.source === 'garmin'
-              ? pair.planByActId[s.activity_id]
-                ? 'showCompareDetail(' + s.activity_id + ')'
-                : 'goDetail(' + s.activity_id + ')'
-              : 'showDetail(' + jsArg(s.id) + ')';
-          var adh = sessAdherence(s, allDay, pair);
-          var ast = adh.style;
-          var pctTxt =
-            adh.pct !== null
-              ? ast.icon + ' ' + Math.round(adh.pct) + '%'
-              : adh.key === 'extra'
-                ? _t('tp_adicional', 'Adicional')
-                : adh.key === 'planned'
-                  ? _t('tp_not_done', 'Sin ejecutar')
-                  : '0%';
-          var badge =
-            '<span class="badge ' +
-            ast.bdgCls +
-            '" title="Cumplimiento">' +
-            pctTxt +
-            '</span>';
-          var meta =
-            fmtDur(s.dur_min) +
-            (s.dist_km ? ' · ' + fmtDist(s.dist_km, s.sport) : '');
-
-          // sessionsInRange() siempre devuelve status:'planned' para
-          // source:'local' (lo usa solo para el emparejamiento con
-          // Garmin) — el estado real de "Hecha ✓" vive en el storage
-          // crudo. Mismo dato que ya lee showDetail/tpMarkDone
-          // (findPlanned), no el `s` ya transformado.
-          var raw = s.source === 'local' ? findPlanned(s.id) || s : s;
-
-          // Plan vs Real compacto — solo cuando ya hay algo que comparar
-          // (sesión propia registrada, o actividad Garmin emparejada con
-          // un plan). Mismos campos que showDetail/showCompareDetail.
-          var pvr = '';
-          if (s.source === 'local' && raw.status === 'done') {
-            pvr = planVsRealLine(
-              { dur_min: raw.dur_min, dist_km: raw.dist_km },
-              { dur_min: raw.dur_real, dist_km: raw.dist_real },
-              s.sport,
-            );
-          } else if (s.source === 'garmin' && pair.planByActId[s.activity_id]) {
-            var p = pair.planByActId[s.activity_id];
-            pvr = planVsRealLine(
-              { dur_min: p.dur_min, dist_km: p.dist_km },
-              { dur_min: s.dur_min, dist_km: s.dist_km },
-              s.sport,
-            );
-          }
-
-          // "Hecha ✓" en la tarjeta — misma condición que el botón del
-          // modal de detalle (canLogManual en showDetail): solo sesiones
-          // propias (locales) sin registrar. event.stopPropagation() para
-          // que el toque del botón no dispare además el onclick de la
-          // tarjeta (abrir el modal).
-          var doneBtn = '';
-          if (s.source === 'local' && raw.status !== 'done') {
-            var editable = raw.editable !== false && !raw.api_assignment_id;
-            var canLogManual = editable || !!raw.api_assignment_id;
-            if (canLogManual) {
-              doneBtn =
-                '<button type="button" class="btn btn-p btn-sm sess-card-done-btn" onclick="event.stopPropagation(); tpMarkDone(' +
-                jsArg(s.id) +
-                ')" data-i18n="tp_done_btn">' +
-                _t('tp_done_btn', 'Hecha ✓') +
-                '</button>';
-            }
-          }
-
-          return (
-            '<div class="sess-card" style="border-left:3px solid ' +
-            ast.border +
-            '" onclick="' +
-            oc +
-            '">' +
-            '<div class="sess-card-ico">' +
-            sp.icon +
-            '</div>' +
-            '<div class="sess-card-body">' +
-            '<div class="sess-card-name" style="color:' +
-            ast.color +
-            '">' +
-            (s.name || sp.label) +
-            '</div>' +
-            '<div class="sess-card-meta">' +
-            meta +
-            '</div>' +
-            (pvr ? '<div class="sess-card-pvr">' + pvr + '</div>' : '') +
-            '</div>' +
-            '<div class="sess-card-right">' +
-            badge +
-            doneBtn +
-            '</div>' +
-            '</div>'
-          );
-        }
-
-        function renderList() {
-          var range = currentRange();
-          var raw = applyFilter(sessionsInRange(range.start, range.end));
-
-          // Agrupar por día para emparejar plan-vs-real y ocultar la tarjeta
-          // de plan duplicada una vez que la sesión ya se ejecutó (mismo
-          // criterio que las vistas de calendario).
+        function ovStats(startIso, endIso) {
+          var raw = applyFilter(sessionsInRange(startIso, endIso));
           var byDay = {};
           raw.forEach(function (s) {
             (byDay[s.date_iso] = byDay[s.date_iso] || []).push(s);
           });
-          var hiddenIds = {};
+          var st = { n: 0, done: 0, min: 0, byDay: byDay, pair: {} };
           Object.keys(byDay).forEach(function (dIso) {
             var pair = pairPlanAndReal(byDay[dIso]);
-            Object.keys(pair.hiddenPlanned).forEach(function (k) {
-              hiddenIds[k] = true;
+            st.pair[dIso] = pair;
+            byDay[dIso].forEach(function (s) {
+              if (s.source !== 'local') return;
+              st.n++;
+              st.min += s.dur_min || 0;
+              var r = findPlanned(s.id) || s;
+              if (pair.hiddenPlanned[s.id] || r.status === 'done') st.done++;
             });
           });
-          var all = raw
-            .filter(function (s) {
-              return !(s.source === 'local' && hiddenIds[s.id]);
-            })
-            .sort(function (a, b) {
-              return a.date_iso > b.date_iso
-                ? 1
-                : a.date_iso < b.date_iso
-                  ? -1
-                  : 0;
-            });
-
-          var container = document.getElementById('sess-cards');
-          if (!all.length) {
-            container.innerHTML =
-              '<div style="padding:1.6rem;text-align:center;color:var(--dim);font-size:.85rem">' +
-              _t(
-                'tp_no_sessions_filter',
-                'Sin sesiones para los filtros seleccionados',
-              ) +
-              '</div>';
-            return;
-          }
-
-          var order = [],
-            groups = {};
-          all.forEach(function (s) {
-            if (!groups[s.date_iso]) {
-              groups[s.date_iso] = [];
-              order.push(s.date_iso);
-            }
-            groups[s.date_iso].push(s);
-          });
-
-          container.innerHTML = order
-            .map(function (dIso) {
-              return (
-                '<div class="day-group">' +
-                '<div class="day-group-hd">' +
-                dayHeaderLabel(dIso) +
-                '</div>' +
-                groups[dIso]
-                  .map(function (s) {
-                    return sessCardHtml(s, byDay);
-                  })
-                  .join('') +
-                '</div>'
-              );
-            })
-            .join('');
+          return st;
         }
 
-        // ──────────────────────────────────────
-        // RENDER: SUMMARY CARDS
-        // ──────────────────────────────────────
-        function renderSummary() {
-          var range = currentRange();
-          var done = applyFilter(
-            sessionsInRange(range.start, range.end),
-          ).filter(function (s) {
-            return s.status === 'done';
-          });
-
-          var periodDays =
-            S.view === 'week'
-              ? 7
-              : S.view === 'month'
-                ? new Date(
-                    S.ref.getFullYear(),
-                    S.ref.getMonth() + 1,
-                    0,
-                  ).getDate()
-                : S.pStart && S.pEnd
-                  ? Math.round((S.pEnd - S.pStart) / 86400000) + 1
-                  : 7;
-          var weekFactor = periodDays / 7;
-
-          var cards = [
-            {
-              sport: 'swim',
-              label: _t('opt_swim', 'Natación'),
-              color: 'var(--cyan)',
-              val: function (arr) {
-                return arr.reduce(function (t, s) {
-                  return t + (s.dist_km || 0);
-                }, 0);
-              },
-              fmt: function (v) {
-                return v.toFixed(1) + ' km';
-              },
-              target: function () {
-                return TARGETS.swim * weekFactor;
-              },
-            },
-            {
-              sport: 'bike',
-              label: _t('opt_bike', 'Ciclismo'),
-              color: 'var(--orange)',
-              val: function (arr) {
-                return arr.reduce(function (t, s) {
-                  return t + (s.dist_km || 0);
-                }, 0);
-              },
-              fmt: function (v) {
-                return v.toFixed(0) + ' km';
-              },
-              target: function () {
-                return TARGETS.bike * weekFactor;
-              },
-            },
-            {
-              sport: 'run',
-              label: _t('opt_run', 'Carrera'),
-              color: 'var(--green)',
-              val: function (arr) {
-                return arr.reduce(function (t, s) {
-                  return t + (s.dist_km || 0);
-                }, 0);
-              },
-              fmt: function (v) {
-                return v.toFixed(1) + ' km';
-              },
-              target: function () {
-                return TARGETS.run * weekFactor;
-              },
-            },
-            {
-              sport: 'str',
-              label: _t('opt_strength', 'Fuerza'),
-              color: 'var(--purple)',
-              val: function (arr) {
-                return arr.length;
-              },
-              fmt: function (v) {
-                return v + ' sesiones';
-              },
-              target: function () {
-                return Math.round(TARGETS.str * weekFactor);
-              },
-            },
+        function ovLine(st, showDone, noneKey, noneFb) {
+          if (!st.n) return _t(noneKey, noneFb);
+          var parts = [
+            st.n === 1
+              ? _t('tp_ov_sess_1', '1 sesión')
+              : ovFill(_t('tp_ov_sess_n', '{n} sesiones'), { n: st.n }),
           ];
-
-          var grid = document.getElementById('sum-grid');
-          grid.innerHTML = cards
-            .map(function (c) {
-              var sp = SPORT[c.sport];
-              var sarr = done.filter(function (s) {
-                return s.sport === c.sport;
-              });
-              var tmin = done
-                .filter(function (s) {
-                  return s.sport === c.sport;
-                })
-                .reduce(function (t, s) {
-                  return t + (s.dur_min || 0);
-                }, 0);
-              var v = c.val(sarr);
-              var tgt = c.target();
-              var pct =
-                tgt > 0 ? Math.min(100, Math.round((v / tgt) * 100)) : 0;
-              return (
-                '<div class="sum-card">' +
-                '<div class="sum-top">' +
-                '<div class="sum-disc"><span class="sum-ico">' +
-                sp.icon +
-                '</span>' +
-                '<span class="sum-lbl" style="color:' +
-                c.color +
-                '">' +
-                c.label +
-                '</span></div>' +
-                '<span class="sum-pct" style="color:' +
-                c.color +
-                '">' +
-                pct +
-                '%</span>' +
-                '</div>' +
-                '<div class="sum-main" style="color:' +
-                c.color +
-                '">' +
-                c.fmt(v) +
-                '</div>' +
-                '<div class="sum-sub">' +
-                _t('tp_of_word', 'de') +
-                ' ' +
-                c.fmt(tgt) +
-                ' ' +
-                _t('tp_target_word', 'objetivo') +
-                '</div>' +
-                '<div class="bar-bg"><div class="bar-f" style="width:' +
-                pct +
-                '%;background:' +
-                c.color +
-                '"></div></div>' +
-                '<div class="sum-sessions">' +
-                sarr.length +
-                ' sesiones · ' +
-                fmtDur(Math.round(tmin)) +
-                '</div>' +
-                '</div>'
-              );
-            })
-            .join('');
+          if (st.min > 0)
+            parts.push(
+              ovFill(_t('tp_ov_planned', '{t} planificadas'), {
+                t: fmtDur(st.min),
+              }),
+            );
+          if (showDone)
+            parts.push(
+              ovFill(_t('tp_ov_done', '{m} hechas ✓'), { m: st.done }),
+            );
+          return parts.join(' · ');
         }
 
-        // ──────────────────────────────────────
-        // CUMPLIMIENTO SEMANAL — real vs plan por deporte (semana calendario actual)
-        // Mismo estándar dinámico que el gauge "Estado del Atleta" del dashboard:
-        // arco con gradiente propio + glow, número que cuenta animado (ease-out
-        // cúbico, ~1.5s) en vez de pintarse estático.
-        // ──────────────────────────────────────
-        var COMPL_GRAD = {
-          swim: ['#0EA5E9', '#22D3EE'],
-          bike: ['#FF6535', '#F0A500'],
-          run: ['#10B981', '#22D3EE'],
-          str: ['#A855F7', '#6366F1'],
-        };
+        function ovMetaTxt(dur, dist, sport) {
+          return fmtDur(dur) + (dist ? ' · ' + fmtDist(dist, sport) : '');
+        }
 
-        // Caché en memoria (NO localStorage) del TSS planificado por rango de
-        // fechas, para que el panel de cumplimiento pueda seguir a la vista
-        // activa (Semana/Mes/Período) en vez de estar fijo a la semana actual.
-        // Cada rango se pide una sola vez por carga de página; si el coach tiene
-        // plan real asignado ese rango, reemplaza (no se suma) al de Training
-        // Peaks/Garmin, igual criterio que dashboard.html.
+        function miniCardHtml(s, pair) {
+          var sp = SPORT[s.sport] || {
+            icon: '🏅',
+            label: _t('tp_session', 'Sesión'),
+          };
+          var done = false,
+            name = s.name || sp.label,
+            meta,
+            oc;
+          if (s.source === 'garmin') {
+            var p = pair.planByActId[s.activity_id];
+            done = true;
+            if (p && p.name) name = p.name;
+            meta = ovMetaTxt(s.dur_min, s.dist_km, s.sport);
+            oc = p
+              ? 'showCompareDetail(' + s.activity_id + ')'
+              : 'goDetail(' + s.activity_id + ')';
+          } else {
+            var raw = findPlanned(s.id) || s;
+            oc = 'showDetail(' + jsArg(s.id) + ')';
+            if (raw.status === 'done') {
+              done = true;
+              meta = ovMetaTxt(
+                raw.dur_real || raw.dur_min,
+                raw.dist_real || raw.dist_km,
+                s.sport,
+              );
+            } else {
+              meta = ovMetaTxt(s.dur_min, s.dist_km, s.sport);
+            }
+          }
+          return (
+            '<div class="tp-mini' +
+            (done ? ' done' : '') +
+            '" role="button" tabindex="0" title="' +
+            _wsEsc(name) +
+            '" onclick="' +
+            oc +
+            '">' +
+            '<span class="tp-mini-ico">' +
+            sp.icon +
+            '</span><div class="tp-mini-body"><div class="tp-mini-meta">' +
+            _wsEsc(meta) +
+            (done ? ' ✓' : '') +
+            '</div><div class="tp-mini-name">' +
+            _wsEsc(name) +
+            '</div></div></div>'
+          );
+        }
+
+        function ovDaysHtml(startIso, endIso, st, asWeek) {
+          var todayS = todayIso();
+          var d = new Date(startIso + 'T12:00:00');
+          var end = new Date(endIso + 'T12:00:00');
+          var h = '<div class="tp-days' + (asWeek ? '' : ' tp-range') + '">';
+          for (; d <= end; d = addDays(d, 1)) {
+            var dIso = iso(d);
+            var pair = st.pair[dIso] || { hiddenPlanned: {}, planByActId: {} };
+            var list = (st.byDay[dIso] || [])
+              .filter(function (s) {
+                return !(s.source === 'local' && pair.hiddenPlanned[s.id]);
+              })
+              .sort(function (a, b) {
+                return a.status === 'done' ? -1 : 1;
+              });
+            if (!asWeek && !list.length) continue;
+            var dow = d.getDay() || 7;
+            h +=
+              '<div class="tp-day' +
+              (dIso === todayS ? ' today' : '') +
+              (list.length ? '' : ' empty') +
+              '" data-date-iso="' +
+              dIso +
+              '"><div class="tp-day-hd"><span>' +
+              daysShort()[dow - 1] +
+              '</span><span>' +
+              d.getDate() +
+              '</span>' +
+              (dIso === todayS
+                ? '<span>' + _t('tp_today', 'HOY') + '</span>'
+                : '') +
+              '</div>' +
+              (list.length
+                ? list
+                    .map(function (s) {
+                      return miniCardHtml(s, pair);
+                    })
+                    .join('')
+                : '<div class="tp-rest">—</div>') +
+              '</div>';
+          }
+          return h + '</div>';
+        }
+
+        function renderOverview() {
+          var container = document.getElementById('sess-cards');
+          if (!container) return;
+          var range = currentRange();
+          var isWeek = S.view === 'week';
+          var st = ovStats(range.start, range.end);
+          var a = new Date(range.start + 'T12:00:00'),
+            b = new Date(range.end + 'T12:00:00');
+          var head = isWeek
+            ? ovFill(_t('tp_ov_week_of', 'Semana del {a} al {b}'), {
+                a: ovDate(a),
+                b: ovDate(b),
+              })
+            : ovDate(a) + ' – ' + ovDate(b);
+          var line = ovLine(
+            st,
+            true,
+            isWeek ? 'tp_ov_none' : 'tp_ov_none_range',
+            isWeek ? 'Sin plan esta semana' : 'Sin plan en este período',
+          );
+          var html =
+            '<div class="tp-ov-hd" id="tp-ov-hd">' +
+            _wsEsc(head) +
+            '</div><div class="tp-ov-line' +
+            (st.n ? '' : ' none') +
+            '" id="tp-ov-line">' +
+            _wsEsc(line) +
+            '</div>' +
+            ovDaysHtml(range.start, range.end, st, isWeek);
+
+          if (isWeek) {
+            for (var w = 1; w <= 3; w++) {
+              var wm = addDays(a, 7 * w);
+              var wIso = iso(wm),
+                wEnd = iso(addDays(wm, 6));
+              var wst = ovStats(wIso, wEnd);
+              var lbl = ovFill(_t('tp_ov_week_from', 'Semana del {a}'), {
+                a: ovDate(wm),
+              });
+              var wline = ovLine(wst, false, 'tp_ov_none_short', 'Sin plan');
+              html +=
+                '<details class="tp-wk" data-wk="' +
+                wIso +
+                '"' +
+                (_openWk[wIso] ? ' open' : '') +
+                ' ontoggle="tpWkToggle(this)"><summary><b>' +
+                _wsEsc(lbl) +
+                '</b> · ' +
+                _wsEsc(wline) +
+                '</summary>' +
+                ovDaysHtml(wIso, wEnd, wst, true) +
+                '</details>';
+            }
+          }
+          container.innerHTML = html;
+        }
+
         // ──────────────────────────────────────
         // PLANES REALES SINCRONIZADOS → sesiones para el calendario
-        // (mismo origen de datos que fetchPlanTSSRange, pero como sesiones
+        // (como sesiones
         // individuales en vez de totales agregados por deporte)
         // ──────────────────────────────────────
         var _extPlanCache = {};
@@ -3631,7 +3365,7 @@
             // coach asignó una sesión puntual, eso solo debe reemplazar la tarjeta
             // de TP de ESE MISMO día+deporte — no borrar las demás sesiones de TP
             // de ese deporte en otros días del rango (mismo bug real que en
-            // fetchPlanTSSRange, ver ese comentario para el caso concreto que lo
+            // el antiguo cumplimiento semanal; caso concreto que lo
             // reveló: 5 sesiones reales de bici en la semana, solo 1 se mostraba).
             var sportMap = {
               swim: 'swim',
@@ -3723,7 +3457,6 @@
           return cached && cached !== 'pending' ? cached : [];
         }
 
-        var _complCache = {};
         function _complAuth() {
           var API =
             window.location.protocol === 'file:'
@@ -3744,373 +3477,12 @@
           }
           return { API: API, tok: tok };
         }
-        function fetchPlanTSSRange(startIso, endIso) {
-          var key = startIso + '|' + endIso;
-          if (_complCache[key]) return; // ya cacheado o ya en curso
-          var auth = _complAuth();
-          if (!auth.tok) return;
-          _complCache[key] = 'pending';
-          var swimWords = /nata|swim|piscina|pool/i;
-
-          var pTP = fetch(
-            auth.API +
-              '/athlete/planned-workouts?start=' +
-              startIso +
-              '&end=' +
-              endIso,
-            { headers: { Authorization: 'Bearer ' + auth.tok } },
-          )
-            .then(function (r) {
-              return r.ok ? r.json() : [];
-            })
-            .then(function (rows) {
-              return (rows || [])
-                .map(function (p) {
-                  var sport = p.sport;
-                  if (sport === 'strength') sport = 'str';
-                  if (sport === 'other' && swimWords.test(p.title || ''))
-                    sport = 'swim';
-                  return {
-                    date_iso: p.date_iso,
-                    sport: sport,
-                    tss: p.tss || 0,
-                    dur_min: p.dur_min || 0,
-                    precise: p.tss_precise,
-                  };
-                })
-                .filter(function (p) {
-                  return { swim: 1, bike: 1, run: 1, str: 1 }[p.sport];
-                });
-            })
-            .catch(function () {
-              return [];
-            });
-
-          var pCoach = fetch(
-            auth.API + '/athlete/plan?start=' + startIso + '&end=' + endIso,
-            { headers: { Authorization: 'Bearer ' + auth.tok } },
-          )
-            .then(function (r) {
-              return r.ok ? r.json() : [];
-            })
-            .then(function (assignments) {
-              // RPE real de sesiones de Fuerza logueadas (WorkoutLog.rpe, ya viene
-              // embebido en cada assignment.logs[]) — alimenta estStrengthTSS()
-              // para el sRPE, independiente de qué plan (coach o Training Peaks)
-              // termine ganando para el TSS objetivo de esta función.
-              window._strengthRpeByDate = window._strengthRpeByDate || {};
-              (assignments || []).forEach(function (a) {
-                if (a.template.sport !== 'strength' || !a.logs) return;
-                a.logs.forEach(function (log) {
-                  if (log.completado && log.rpe != null)
-                    window._strengthRpeByDate[a.date_iso] = log.rpe;
-                });
-              });
-              var sportMap = {
-                swim: 'swim',
-                bike: 'bike',
-                run: 'run',
-                strength: 'str',
-              };
-              return (assignments || [])
-                .map(function (a) {
-                  var sp = sportMap[a.template.sport];
-                  return sp
-                    ? {
-                        date_iso: a.date_iso,
-                        sport: sp,
-                        tss: a.template.tss || 0,
-                        dur_min: a.template.dur_min || 0,
-                      }
-                    : null;
-                })
-                .filter(Boolean);
-            })
-            .catch(function () {
-              return [];
-            });
-
-          Promise.all([pTP, pCoach]).then(function (results) {
-            var tpRows = results[0],
-              coachRows = results[1];
-            // Precedencia POR DÍA+DEPORTE, no por deporte-semana-completo: si el
-            // coach asignó una sola sesión de Ciclismo un día puntual, eso NO debe
-            // borrar el resto de las sesiones de Ciclismo que Training Peaks tenga
-            // programadas OTROS días de la misma semana — antes, con solo 1 sesión
-            // de un deporte asignada por el coach, se descartaban TODAS las demás
-            // sesiones de TP de ese deporte en toda la semana (bug real reportado
-            // por el usuario: el anillo de Ciclismo mostraba "1 sesión, 98 TSS"
-            // cuando en realidad había 5 sesiones reales programadas esa semana,
-            // 479 TSS — solo porque una de las 5 coincidía con una asignación del
-            // coach en otro día). Ahora solo se descarta la fila de TP que
-            // coincide EXACTAMENTE en fecha+deporte con una asignación del coach,
-            // el resto de esa semana para ese deporte sigue viniendo de TP.
-            var coachCoveredDaySport = {};
-            coachRows.forEach(function (c) {
-              coachCoveredDaySport[c.date_iso + '|' + c.sport] = true;
-            });
-
-            var merged = {
-              swim: 0,
-              bike: 0,
-              run: 0,
-              str: 0,
-              _approx: {},
-              _count: {},
-              _dur: { swim: 0, bike: 0, run: 0, str: 0 },
-            };
-            var approx = { swim: false, bike: false, run: false, str: false };
-
-            coachRows.forEach(function (c) {
-              merged[c.sport] += c.tss;
-              merged._count[c.sport] = (merged._count[c.sport] || 0) + 1;
-              merged._dur[c.sport] += c.dur_min;
-              // El plan de coach usa el TSS objetivo que el propio coach definió — no es una aproximación.
-            });
-            tpRows.forEach(function (p) {
-              if (coachCoveredDaySport[p.date_iso + '|' + p.sport]) return; // ese día+deporte ya lo cubrió el coach
-              merged[p.sport] += p.tss;
-              merged._count[p.sport] = (merged._count[p.sport] || 0) + 1;
-              merged._dur[p.sport] += p.dur_min;
-              if (p.precise === false) approx[p.sport] = true;
-            });
-            merged._approx = approx;
-
-            _complCache[key] = merged;
-            render();
-          });
-        }
-
-        function renderWeeklyCompliance() {
-          var range = currentRange(); // {start,end} ISO — ya calculado acorde a S.view (semana/mes/período)
-          var startIso = range.start,
-            endIso = range.end;
-
-          var titleEl = document.getElementById('compl-title');
-          if (titleEl)
-            titleEl.textContent =
-              S.view === 'week'
-                ? _t('tp_compl_week', 'Cumplimiento semanal')
-                : S.view === 'month'
-                  ? _t('tp_compl_month', 'Cumplimiento mensual')
-                  : _t('tp_compl_period', 'Cumplimiento del período');
-
-          var sD = new Date(startIso + 'T00:00:00'),
-            eD = new Date(endIso + 'T00:00:00');
-          document.getElementById('compl-range').textContent =
-            sD.getDate() +
-            ' ' +
-            monthsS()[sD.getMonth()] +
-            ' – ' +
-            eD.getDate() +
-            ' ' +
-            monthsS()[eD.getMonth()];
-
-          // Real: directo de KL_DATA.activities (siempre fresco, sin caché).
-          var acts = (window.KL_DATA && KL_DATA.activities) || [];
-          var key = startIso + '|' + endIso;
-          var cached = _complCache[key];
-          if (cached === undefined) fetchPlanTSSRange(startIso, endIso);
-          var loading = cached === undefined || cached === 'pending';
-          var planTSS = loading ? { swim: 0, bike: 0, run: 0, str: 0 } : cached;
-          var row = document.getElementById('compl-row');
-          var R = 60,
-            C = 2 * Math.PI * R;
-
-          // El filtro de deporte (Todos/Natación/Ciclismo/Carrera/Fuerza) también
-          // recorta qué pelotas se muestran — sin filtro activo, se ven las 4.
-          var sportsToShow = S.filters.length ? S.filters : Object.keys(SPORT);
-
-          var data = sportsToShow.map(function (sport) {
-            var sp = SPORT[sport];
-            var done = acts.filter(function (a) {
-              return (
-                a.sport === sport &&
-                a.date_iso >= startIso &&
-                a.date_iso <= endIso
-              );
-            });
-            var tPlan = planTSS[sport] || 0;
-            var tDone = done.reduce(function (t, a) {
-              return t + (estTSS(a) || 0);
-            }, 0);
-
-            // pct = número real mostrado en el centro (SIN tope, ej. 253% si te
-            // excediste del plan); ringPct = qué tan lleno se ve el anillo (topeado
-            // en 100%, un anillo no puede dibujar "más que completo"). Antes ambos
-            // se topeaban igual y un atleta que duplicaba su plan se veía idéntico
-            // a uno que apenas lo cumplía.
-            var pct, ringPct;
-            if (loading || tPlan <= 0) {
-              pct = null;
-              ringPct = null;
-            } // cargando, o sin plan asignado en este rango → no hay "cumplimiento" que medir
-            else {
-              pct = Math.round((tDone / tPlan) * 100);
-              ringPct = Math.min(pct, 100);
-            }
-            var approx =
-              !loading && !!(planTSS._approx && planTSS._approx[sport]);
-            var planCount = loading
-              ? null
-              : (planTSS._count && planTSS._count[sport]) || 0;
-            // Horas planificadas vs reales — pedido explícito, debajo de TSS y
-            // sesiones. dPlan sale de la misma fuente que el TSS planificado
-            // (coach + Training Peaks, misma precedencia día+deporte); dDone suma
-            // dur_min de las mismas actividades reales ya usadas para el TSS real.
-            var dPlan = loading
-              ? 0
-              : (planTSS._dur && planTSS._dur[sport]) || 0;
-            var dDone = done.reduce(function (t, a) {
-              return t + (a.dur_min || 0);
-            }, 0);
-            return {
-              sport: sport,
-              sp: sp,
-              pct: pct,
-              ringPct: ringPct,
-              tDone: Math.round(tDone),
-              tPlan: Math.round(tPlan),
-              approx: approx,
-              doneCount: done.length,
-              planCount: planCount,
-              dDone: dDone,
-              dPlan: dPlan,
-            };
-          });
-
-          row.innerHTML = data
-            .map(function (d, idx) {
-              var gid = 'compl-g-' + d.sport;
-              var grad = COMPL_GRAD[d.sport];
-              var textFill =
-                d.pct === null
-                  ? 'var(--dim)'
-                  : 'linear-gradient(135deg,' + grad[0] + ',' + grad[1] + ')';
-              return (
-                '<div class="compl-item">' +
-                '<div class="compl-svg">' +
-                '<svg viewBox="0 0 140 140">' +
-                '<defs>' +
-                '<linearGradient id="' +
-                gid +
-                '" x1="0" y1="0" x2="1" y2="0">' +
-                '<stop offset="0%" stop-color="' +
-                grad[0] +
-                '"/><stop offset="100%" stop-color="' +
-                grad[1] +
-                '"/>' +
-                '</linearGradient>' +
-                '<filter id="' +
-                gid +
-                '-glow"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
-                '</defs>' +
-                '<circle cx="70" cy="70" r="' +
-                R +
-                '" fill="none" stroke="rgba(8,145,178,.08)" stroke-width="9"/>' +
-                (d.pct !== null
-                  ? '<circle class="compl-arc" data-idx="' +
-                    idx +
-                    '" cx="70" cy="70" r="' +
-                    R +
-                    '" fill="none" stroke="url(#' +
-                    gid +
-                    ')" stroke-width="9" stroke-linecap="round" stroke-dasharray="' +
-                    C.toFixed(2) +
-                    '" stroke-dashoffset="' +
-                    C.toFixed(2) +
-                    '" transform="rotate(-90 70 70)" filter="url(#' +
-                    gid +
-                    '-glow)" style="transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)"/>'
-                  : '') +
-                '</svg>' +
-                '<div class="compl-ctr">' +
-                '<div class="compl-pct" data-idx="' +
-                idx +
-                '" style="' +
-                (d.pct === null
-                  ? 'color:var(--dim);'
-                  : 'background:' +
-                    textFill +
-                    ';background-clip:text;-webkit-background-clip:text') +
-                '">' +
-                (d.pct === null ? '—' : '0') +
-                '</div>' +
-                '<div class="compl-lbl">' +
-                (d.pct === null
-                  ? _t('tp_no_data', 'Sin datos')
-                  : d.pct > 100
-                    ? _t('tp_of_plan', 'del plan')
-                    : '/ 100') +
-                '</div>' +
-                '</div>' +
-                '</div>' +
-                '<span class="compl-name">' +
-                d.sp.icon +
-                ' ' +
-                d.sp.label +
-                '</span>' +
-                '<span class="compl-detail">' +
-                (d.pct !== null
-                  ? d.tDone + ' / ' + d.tPlan + ' TSS'
-                  : d.tDone > 0
-                    ? d.tDone + ' ' + _t('tp_tss_no_plan', 'TSS (sin plan)')
-                    : '') +
-                (d.approx
-                  ? ' <span title="' +
-                    _t(
-                      'tp_approx_tip',
-                      'El plan no trajo el detalle de cada intervalo — el TSS planificado es una aproximación por promedio de sesión, puede sobreestimar series con descanso.',
-                    ) +
-                    '" style="color:var(--dim);cursor:help">≈ estimado</span>'
-                  : '') +
-                '</span>' +
-                (d.planCount !== null && (d.doneCount > 0 || d.planCount > 0)
-                  ? '<span class="compl-sessions">' +
-                    d.doneCount +
-                    ' / ' +
-                    d.planCount +
-                    ' sesiones</span>'
-                  : '') +
-                (d.dDone > 0 || d.dPlan > 0
-                  ? '<span class="compl-sessions">' +
-                    fmtDur(d.dDone) +
-                    ' / ' +
-                    fmtDur(d.dPlan) +
-                    '</span>'
-                  : '') +
-                '</div>'
-              );
-            })
-            .join('');
-
-          // Animación: arco (topeado a 100%) + conteo del número (real, sin tope)
-          data.forEach(function (d, idx) {
-            if (d.pct === null) return;
-            var arc = row.querySelector('.compl-arc[data-idx="' + idx + '"]');
-            var numEl = row.querySelector('.compl-pct[data-idx="' + idx + '"]');
-            if (!arc || !numEl) return;
-            var end = C - (d.ringPct / 100) * C,
-              st = null,
-              dur = 1500;
-            requestAnimationFrame(function step(ts) {
-              if (!st) st = ts;
-              var p = Math.min((ts - st) / dur, 1),
-                e = 1 - Math.pow(1 - p, 3);
-              arc.style.strokeDashoffset = C - (C - end) * e;
-              numEl.textContent = Math.round(e * d.pct);
-              if (p < 1) requestAnimationFrame(step);
-            });
-          });
-        }
-
         // ──────────────────────────────────────
         // MASTER RENDER
         // ──────────────────────────────────────
         function render() {
           renderConfigBar();
           renderHeader();
-          renderWeeklyCompliance();
           if (S.view !== 'week') {
             var _ws = document.getElementById('wk-strip');
             if (_ws) _ws.hidden = true;
@@ -4118,8 +3490,7 @@
           if (S.view === 'week') renderWeekCal();
           else if (S.view === 'month') renderMonthCal();
           else renderPeriodCal();
-          renderList();
-          renderSummary();
+          renderOverview();
           setupDragDrop();
         }
 
@@ -4225,26 +3596,6 @@
               }
             });
             render();
-          });
-
-        // ──────────────────────────────────────
-        // LIST TABS
-        // ──────────────────────────────────────
-        document
-          .getElementById('list-tabs')
-          .addEventListener('click', function (e) {
-            var tab = e.target.closest('.tab');
-            if (!tab) return;
-            document.querySelectorAll('#list-tabs .tab').forEach(function (t) {
-              t.classList.remove('on');
-            });
-            document.querySelectorAll('.tab-panel').forEach(function (p) {
-              p.classList.remove('on');
-            });
-            tab.classList.add('on');
-            document
-              .getElementById('tab-' + tab.dataset.tab)
-              .classList.add('on');
           });
 
         // ──────────────────────────────────────
