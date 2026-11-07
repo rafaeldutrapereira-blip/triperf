@@ -271,10 +271,11 @@
         align-items: center;
         gap: 0.4rem;
         font-family: 'Oswald', sans-serif;
-        font-size: 0.72rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.05em;
         text-transform: uppercase;
+        line-height: 1.45;
         padding: 0.34rem 0.75rem;
         border-radius: 20px;
         white-space: nowrap;
@@ -288,7 +289,8 @@
         display: inline-flex;
         align-items: center;
         gap: 0.3rem;
-        font-size: 0.72rem;
+        font-size: 0.8rem;
+        line-height: 1.45;
         color: var(--muted);
         background: var(--surface);
         border: 1px solid var(--border);
@@ -306,11 +308,11 @@
       .insight-readiness-pill .irp-label {
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: 0.66rem;
+        font-size: 0.8rem;
       }
       .insight-readiness-pill .irp-max {
         color: var(--dim);
-        font-size: 0.66rem;
+        font-size: 0.8rem;
       }
       .sev-reduce {
         background: rgba(239, 68, 68, 0.15);
@@ -333,8 +335,8 @@
         border: 1px solid var(--border);
       }
       .insight-text {
-        font-size: 1.05rem;
-        line-height: 1.6;
+        font-size: 0.95rem;
+        line-height: 1.5;
         color: var(--text);
         max-width: 66ch;
         position: relative;
@@ -377,8 +379,9 @@
       }
       .insight-driver-lbl {
         font-family: 'Oswald', sans-serif;
-        font-size: 0.6rem;
-        letter-spacing: 0.08em;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
         color: var(--dim);
       }
@@ -398,7 +401,7 @@
       }
       .insight-driver-val small {
         font-family: 'Inter', sans-serif;
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         font-weight: 600;
         margin-left: 0.3rem;
         opacity: 0.85;
@@ -409,7 +412,8 @@
         gap: 0.4rem;
         margin-top: 1.1rem;
         font-family: 'Oswald', sans-serif;
-        font-size: 0.75rem;
+        font-size: 0.95rem;
+        line-height: 1.45;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-decoration: none;
@@ -426,7 +430,8 @@
         gap: 0.3rem;
         margin-top: 0.6rem;
         font-family: 'Inter', sans-serif;
-        font-size: 0.72rem;
+        font-size: 0.9rem;
+        line-height: 1.45;
         font-weight: 600;
         color: var(--dim);
         background: none;
@@ -447,19 +452,47 @@
         transform: rotate(180deg);
       }
       .insight-technical {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
         line-height: 1.5;
         color: var(--dim);
         max-width: 66ch;
         margin-top: 0.5rem;
         padding-top: 0.6rem;
         border-top: 1px solid var(--border);
-        display: none;
         position: relative;
         list-style: none;
         padding-left: 0;
       }
-      .insight-technical.open {
+      /* INSIGHT-SIMPLE: vista simple por defecto; el detalle vive plegado. */
+      .insight-headline {
+        position: relative;
+        margin: 0 0 0.5rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .insight-action {
+        position: relative;
+        margin: 0;
+        padding-left: 1.3rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: var(--text);
+      }
+      .insight-action::before {
+        content: '\2192';
+        position: absolute;
+        left: 0;
+        color: var(--gold);
+        font-weight: 700;
+      }
+      .insight-detail {
+        display: none;
+        position: relative;
+        margin-top: 0.6rem;
+      }
+      .insight-detail.open {
         display: block;
       }
       .insight-technical li {
@@ -2694,7 +2727,7 @@
                       style="
                         display: none;
                         color: var(--orange, #f97316);
-                        font-size: 0.68rem;
+                        font-size: 0.8rem;
                         margin-left: 4px;
                         cursor: help;
                       "
@@ -2715,19 +2748,18 @@
                         d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
                       />
                     </svg>
-                    <span id="insight-headline"
-                      ><span data-i18n="dash_loading_ell">Cargando…</span></span
-                    >
+                    <span id="insight-sev-word"></span>
                   </span>
                 </div>
               </div>
-              <ul class="insight-text" id="insight-message">
-                <li>
-                  <span data-i18n="dash_analyzing"
-                    >Analizando tu carga y recuperación…</span
-                  >
-                </li>
-              </ul>
+              <h4 class="insight-headline" id="insight-headline">
+                <span data-i18n="dash_loading_ell">Cargando…</span>
+              </h4>
+              <p class="insight-action" id="insight-action">
+                <span data-i18n="dash_analyzing"
+                  >Analizando tu carga y recuperación…</span
+                >
+              </p>
               <button
                 class="insight-why-toggle"
                 id="insight-why-toggle"
@@ -2747,10 +2779,13 @@
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
-              <ul class="insight-technical" id="insight-technical"></ul>
+              <div class="insight-detail" id="insight-detail">
+                <ul class="insight-text" id="insight-message"></ul>
+                <div class="insight-drivers" id="insight-drivers"></div>
+                <ul class="insight-technical" id="insight-technical"></ul>
+              </div>
             </div>
             <div>
-              <div class="insight-drivers" id="insight-drivers"></div>
               <a
                 class="insight-cta"
                 id="insight-cta"
@@ -4607,9 +4642,9 @@
       }
 
       function toggleInsightWhy() {
-        var techEl = document.getElementById('insight-technical');
+        var detEl = document.getElementById('insight-detail');
         var btn = document.getElementById('insight-why-toggle');
-        var open = techEl.classList.toggle('open');
+        var open = detEl.classList.toggle('open');
         btn.classList.toggle('open', open);
         document.getElementById('insight-why-label').textContent = open
           ? _t('dash_why_hide', 'Ocultar detalle')
@@ -4636,6 +4671,18 @@
           .replace(/>/g, '&gt;');
       }
 
+      /* INSIGHT-SIMPLE: palabra de severidad en lenguaje llano (etiquetas i18n). */
+      function _insightSevWord(sev) {
+        return (
+          {
+            reduce: _t('dash_sev_reduce', 'Reducir'),
+            caution: _t('dash_sev_caution', 'Precaución'),
+            good: _t('dash_sev_good', 'Bien'),
+            neutral: _t('dash_sev_neutral', 'Informativo'),
+          }[sev] || _t('dash_sev_neutral', 'Informativo')
+        );
+      }
+
       function renderInsight(ins) {
         if (!ins) return;
         window._lastInsight = ins; // usado por lx-info.js para el detalle "i" con datos reales
@@ -4648,13 +4695,16 @@
             neutral: 'sev-neutral',
           }[ins.severity] || 'sev-neutral';
         sevEl.className = 'insight-severity ' + sevClass;
+        document.getElementById('insight-sev-word').textContent =
+          _insightSevWord(ins.severity);
         document.getElementById('insight-headline').textContent = window.lxBeT
           ? window.lxBeT(ins.headline || '')
           : ins.headline || '';
-        /* message_bullets: mensaje PRINCIPAL en bullets (pedido explícito del
-     usuario 2026-08-13, mismo día que el fix del "ver por qué") — se
-     acepta también ins.message suelto por robustez ante un despliegue
-     parcial. */
+        /* message_bullets: mensaje PRINCIPAL en bullets; se acepta tambien
+     ins.message suelto por robustez ante un despliegue parcial.
+     Vista simple: UNA linea de accion = ULTIMO bullet (convencion: la
+     ultima linea es la recomendacion). Los bullets completos viven en la
+     region plegable del toggle "Ver por que". */
         var msgEl = document.getElementById('insight-message');
         var msgArr = Array.isArray(ins.message_bullets)
           ? ins.message_bullets
@@ -4666,14 +4716,20 @@
             return '<li>' + _escInsight(b) + '</li>';
           })
           .join('');
+        var actEl = document.getElementById('insight-action');
+        if (msgArr.length) {
+          actEl.textContent = window.lxBeT
+            ? window.lxBeT(String(msgArr[msgArr.length - 1]))
+            : String(msgArr[msgArr.length - 1]);
+          actEl.style.display = '';
+        } else {
+          actEl.textContent = '';
+          actEl.style.display = 'none';
+        }
 
         var whyToggle = document.getElementById('insight-why-toggle');
         var techEl = document.getElementById('insight-technical');
-        /* message_technical es una lista de bullets ejecutivos (pedido explícito
-     del usuario 2026-08-13: "ordenar en bullets, más organizado") — se
-     acepta también un string suelto por robustez ante un despliegue
-     parcial (frontend nuevo contra un backend todavía no reiniciado, o
-     viceversa), sin romper el render. */
+        var detEl = document.getElementById('insight-detail');
         var techArr = Array.isArray(ins.message_technical)
           ? ins.message_technical
           : ins.message_technical
@@ -4686,17 +4742,23 @@
               return '<li>' + _escInsight(b) + '</li>';
             })
             .join('');
-          whyToggle.style.display = 'inline-flex';
-          whyToggle.classList.remove('open');
-          document.getElementById('insight-why-label').textContent = _t(
-            'dash_why_show',
-            'Ver por qué',
-          );
-          techEl.classList.remove('open');
         } else {
-          whyToggle.style.display = 'none';
-          techEl.classList.remove('open');
+          techEl.innerHTML = '';
         }
+        /* El toggle aparece solo si hay algo que mostrar mas alla de la linea
+     de accion: mas de un bullet, drivers o lista tecnica. */
+        var hasDetail =
+          msgArr.length > 1 ||
+          (ins.drivers || []).length > 0 ||
+          techEl.innerHTML !== '';
+        msgEl.style.display = msgArr.length > 1 ? '' : 'none';
+        detEl.classList.remove('open');
+        whyToggle.classList.remove('open');
+        document.getElementById('insight-why-label').textContent = _t(
+          'dash_why_show',
+          'Ver por qué',
+        );
+        whyToggle.style.display = hasDetail ? 'inline-flex' : 'none';
 
         var driversEl = document.getElementById('insight-drivers');
         driversEl.innerHTML = (ins.drivers || [])

@@ -36,7 +36,7 @@ def test_claves_trilingues_y_build_341():
     for k in ("dash_races_title", "dash_races_main", "dash_races_today", "dash_races_tomorrow",
               "dash_races_days_to", "dash_races_none_next", "dash_races_add"):
         assert I18N.count("    " + k + ":") == 3, k
-    assert "BUILD_VERSION = '341'" in SW
+    assert "BUILD_VERSION = '342'" in SW
 
 
 def test_no_toca_goal_countdown():
