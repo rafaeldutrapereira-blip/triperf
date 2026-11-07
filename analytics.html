@@ -68,6 +68,30 @@
         font-size: 0.72rem;
         color: var(--dim, #94a3b8);
       }
+      .an-sum-cmp {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1.2rem;
+        margin: -0.2rem 0 0.8rem;
+        font-size: 0.78rem;
+        color: var(--dim, #94a3b8);
+      }
+      .an-sum-cmp[hidden] {
+        display: none;
+      }
+      .an-cmp-item b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .an-cmp-up,
+      .an-cmp-down {
+        font-weight: 600;
+        color: var(--text);
+      }
+      .an-cmp-flat,
+      .an-cmp-none {
+        font-style: italic;
+      }
       .an-sum-insight {
         margin-top: 0.8rem;
         font-size: 0.82rem;
@@ -510,6 +534,7 @@
             <span class="an-sum-period" id="an-sum-period"></span>
           </div>
           <div class="an-sum-headline" id="an-sum-headline"></div>
+          <div class="an-sum-cmp" id="an-sum-cmp" hidden></div>
           <div class="an-sum-stats" id="an-sum-stats"></div>
           <div class="an-sum-insight" id="an-sum-insight" hidden></div>
         </section>
@@ -2058,6 +2083,12 @@
           hours: 'Horas entrenadas',
           tss: 'Carga total',
           acwr: 'Riesgo de sobrecarga (7 d vs 28 d)',
+          vs: 'vs {n} días previos',
+          cmpS: 'Sesiones',
+          cmpH: 'Horas',
+          cmpT: 'Carga',
+          nodata: 'sin datos previos',
+          flat: 'igual',
         },
         pt: {
           title: 'Resumo',
@@ -2069,6 +2100,12 @@
           hours: 'Horas treinadas',
           tss: 'Carga total',
           acwr: 'Risco de sobrecarga (7 d vs 28 d)',
+          vs: 'vs {n} dias anteriores',
+          cmpS: 'Sessões',
+          cmpH: 'Horas',
+          cmpT: 'Carga',
+          nodata: 'sem dados anteriores',
+          flat: 'igual',
         },
         en: {
           title: 'Summary',
@@ -2080,6 +2117,12 @@
           hours: 'Hours trained',
           tss: 'Total load',
           acwr: 'Overload risk (7 d vs 28 d)',
+          vs: 'vs previous {n} days',
+          cmpS: 'Sessions',
+          cmpH: 'Hours',
+          cmpT: 'Load',
+          nodata: 'no previous data',
+          flat: 'same',
         },
       };
       var _sumSeq = 0;
@@ -2136,6 +2179,45 @@
         );
       }
 
+      // Deltas calculados en el backend (comparison); aquí solo se formatean.
+      function renderComparison(st, T, days, dist) {
+        var el = document.getElementById('an-sum-cmp');
+        if (!el) return;
+        var cmp = st.sum && st.sum.comparison;
+        if (!cmp) {
+          el.hidden = true;
+          return;
+        }
+        var html = '<span>' + esc(T.vs.replace('{n}', days)) + '</span>';
+        if (!cmp.has_previous || !cmp.deltas) {
+          html += '<span class="an-cmp-none">' + esc(T.nodata) + '</span>';
+        } else {
+          [
+            ['sessions', T.cmpS, 0],
+            ['hours', T.cmpH, 1],
+            ['tss', T.cmpT, 0],
+          ].forEach(function (m) {
+            var d = cmp.deltas[m[0]];
+            if (!d) return;
+            var txt;
+            if (d.trend === 'flat') {
+              txt = '<span class="an-cmp-flat">= ' + esc(T.flat) + '</span>';
+            } else {
+              var arrow = d.trend === 'up' ? '▲' : '▼';
+              var sign = d.abs > 0 ? '+' : '−';
+              txt =
+                '<span class="an-cmp-' + d.trend + '">' + arrow + ' ' + sign +
+                _sumNum(Math.abs(d.abs), m[2]) +
+                (d.pct === null ? '' : ' (' + sign + _sumNum(Math.abs(d.pct), 1) + '%)') +
+                '</span>';
+            }
+            html += '<span class="an-cmp-item">' + esc(m[1]) + ': <b>' + _sumNum(d.previous, m[2]) + '</b> → ' + txt + '</span>';
+          });
+        }
+        el.innerHTML = html;
+        el.hidden = false;
+      }
+
       function renderSummary(st) {
         var box = document.getElementById('an-summary');
         if (!box) return;
@@ -2169,6 +2251,7 @@
           .replace('{ses}', n === 1 ? T.ses1 : T.sesN)
           .replace('{tss}', tss);
 
+        renderComparison(st, T, days, dist);
         var stats = '';
         var ramp = st.ramp;
         if (
@@ -2233,7 +2316,7 @@
                 return _sumSide;
               },
             );
-        Promise.all([_sumGet('/analytics/summary?days_back=' + days), side])
+        Promise.all([_sumGet('/analytics/summary?days_back=' + days + '&compare=true'), side])
           .then(function (r) {
             if (seq !== _sumSeq) return; // llegó una respuesta de un rango anterior
             _sumLast = { sum: r[0], ramp: r[1].ramp, insights: r[1].insights };

@@ -30,6 +30,7 @@ from ..services.performance_analytics_service import (
     compute_vo2max_history,
     compute_personal_records,
     compute_training_distribution,
+    compute_period_comparison,
     compute_zone_calibration,
     project_ctl_tsb,
     compute_ramp_rate_risk,
@@ -126,6 +127,7 @@ def get_analytics_summary(
         description="Período en días para los agregados de ventana (90, 180, 365 o 730). "
                     "Sin el parámetro: respuesta legacy (365 d distribución, 90 d calibración).",
     ),
+    compare: bool = Query(False, description="Con days_back: añade `comparison` vs el período anterior equivalente."),
     db: Session = Depends(get_db),
     me: User    = Depends(get_current_user),
 ):
@@ -161,6 +163,8 @@ def get_analytics_summary(
         out["days_back"]    = days_back
         out["period_start"] = (today - timedelta(days=days_back)).isoformat()
         out["period_end"]   = today.isoformat()
+        if compare:
+            out["comparison"] = compute_period_comparison(me.id, db, days_back, current=distrib)
     return out
 
 

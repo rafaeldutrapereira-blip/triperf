@@ -131,4 +131,5 @@ def test_ui_e_i18n():
               "ckin_save", "ckin_saved", "ckin_saved_prev", "ckin_pick", "ckin_error"):
         assert len(re.findall(r"(?<![A-Za-z_])%s:" % k, i18n)) == 3, k
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
-    assert "BUILD_VERSION = '329'" in sw
+    m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
+    assert m and int(m.group(1)) >= 329

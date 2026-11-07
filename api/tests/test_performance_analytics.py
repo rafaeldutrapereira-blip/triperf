@@ -542,3 +542,57 @@ def test_summary_days_back_180_excludes_older(client, db, athlete_user, auth_hea
 def test_summary_days_back_invalid_rejected(client, auth_headers, bad):
     resp = client.get(f"/api/analytics/summary?days_back={bad}", headers=auth_headers)
     assert resp.status_code in (400, 422)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# M3: comparación período vs período anterior equivalente
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_summary_compare_deltas_vs_previous_period(client, db, athlete_user, auth_headers):
+    _seed_period_acts(db, athlete_user)
+    # 90 d: a1+a2 = 120 TSS, 2 ses, 1.75 h. Previo (90-180 d): a3 = 100 TSS, 1 ses, 1 h.
+    d = client.get("/api/analytics/summary?days_back=90&compare=true", headers=auth_headers).json()
+    c = d["comparison"]
+    assert c["has_previous"] is True and c["days_back"] == 90
+    assert c["deltas"]["tss"] == {"current": 120.0, "previous": 100.0, "abs": 20.0, "pct": 20.0, "trend": "up"}
+    assert c["deltas"]["sessions"]["abs"] == 1 and c["deltas"]["sessions"]["pct"] == 100.0
+    sp = {s["sport"]: s for s in c["by_sport"]}
+    assert sp["bike"]["tss"]["abs"] == -20.0 and sp["bike"]["tss"]["trend"] == "down"
+    # run: previo sin run -> pct None (no inventar), abs = actual
+    assert sp["run"]["tss"]["previous"] == 0 and sp["run"]["tss"]["pct"] is None
+
+
+def test_summary_compare_no_previous_data_has_no_deltas(client, db, athlete_user, auth_headers):
+    _seed_period_acts(db, athlete_user)
+    # 180 d: previo = 180-360 d -> solo a4 (300 d). Para 90 d sin previo usamos 730 d:
+    d = client.get("/api/analytics/summary?days_back=730&compare=true", headers=auth_headers).json()
+    c = d["comparison"]
+    assert c["has_previous"] is False
+    assert c["deltas"] is None and c["by_sport"] is None
+
+
+def test_summary_compare_does_not_overlap_current_period(client, db, athlete_user, auth_headers):
+    from datetime import date, timedelta
+    from api.models import GarminActivity
+    # Actividad exactamente en el borde (hoy-90): cuenta en el actual, no en el previo
+    db.add(GarminActivity(user_id=athlete_user.id, activity_id="edge", sport="bike",
+                          date_iso=(date.today() - timedelta(days=90)).isoformat(),
+                          dur_min=60, dist_km=10.0, avg_hr=150, tss=50.0))
+    db.commit()
+    d = client.get("/api/analytics/summary?days_back=90&compare=true", headers=auth_headers).json()
+    assert d["training_distribution"]["total_acts"] == 1
+    assert d["comparison"]["has_previous"] is False
+
+
+def test_summary_without_compare_has_no_comparison_key(client, db, athlete_user, auth_headers):
+    _seed_period_acts(db, athlete_user)
+    d = client.get("/api/analytics/summary?days_back=90", headers=auth_headers).json()
+    assert "comparison" not in d
+
+
+def test_analytics_html_requests_comparison_and_handles_no_previous():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parent.parent.parent / "analytics.html").read_text(encoding="utf-8")
+    assert "days_back=' + days + '&compare=true'" in html
+    assert html.count("nodata:") == 3 and html.count("vs:") >= 3  # ES/PT/EN
+    assert "cmp.has_previous" in html

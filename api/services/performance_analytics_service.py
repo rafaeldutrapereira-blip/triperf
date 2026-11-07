@@ -589,24 +589,28 @@ def compute_training_distribution(
     user_id:   str,
     db:        Session,
     days_back: int = 365,
+    offset_days: int = 0,
 ) -> dict:
     """
+    `offset_days` desplaza la ventana hacia atrás (M3): con offset_days=days_back
+    se obtiene el período inmediatamente anterior [hoy-2d, hoy-d). Con 0 (por
+    defecto) el comportamiento es el de siempre.
+
     Distribución del entrenamiento por:
     - Deporte (% del TSS total)
     - Día de la semana (qué días entrena más)
     - Hora del día (mañana/tarde/noche)
     - Zona de intensidad (usando avg_hr como proxy)
     """
-    cutoff = (date.today() - timedelta(days=days_back)).isoformat()
+    cutoff = (date.today() - timedelta(days=days_back + offset_days)).isoformat()
 
-    acts = (
-        db.query(GarminActivity)
-        .filter(
-            GarminActivity.user_id  == user_id,
-            GarminActivity.date_iso >= cutoff,
-        )
-        .all()
+    q = db.query(GarminActivity).filter(
+        GarminActivity.user_id  == user_id,
+        GarminActivity.date_iso >= cutoff,
     )
+    if offset_days:
+        q = q.filter(GarminActivity.date_iso < (date.today() - timedelta(days=offset_days)).isoformat())
+    acts = q.all()
 
     if not acts:
         return {"message": "Sin actividades en el período"}
@@ -698,6 +702,60 @@ def compute_training_distribution(
         "total_acts": len(acts),
         "days_back":  days_back,
     }
+
+
+def _delta(cur: float, prev: float) -> dict:
+    """Delta absoluto y % de cur frente a prev. pct es None si prev == 0."""
+    diff = round(cur - prev, 1)
+    pct = round((cur - prev) / prev * 100, 1) if prev else None
+    trend = "flat" if diff == 0 else ("up" if diff > 0 else "down")
+    return {"current": cur, "previous": prev, "abs": diff, "pct": pct, "trend": trend}
+
+
+def compute_period_comparison(
+    user_id:   str,
+    db:        Session,
+    days_back: int,
+    current:   Optional[dict] = None,
+) -> dict:
+    """
+    Compara el período [hoy-days_back, hoy] con el inmediatamente anterior de
+    la misma duración [hoy-2*days_back, hoy-days_back). Reutiliza
+    compute_training_distribution (misma agregación, sin fórmulas nuevas).
+
+    Si el período anterior no tiene actividades: has_previous=False y sin deltas
+    (nunca un 0% inventado). Si no hay datos actuales, también sin deltas.
+    """
+    today = date.today()
+    cur = current if current is not None else compute_training_distribution(user_id, db, days_back=days_back)
+    prev = compute_training_distribution(user_id, db, days_back=days_back, offset_days=days_back)
+    out = {
+        "days_back":      days_back,
+        "period_start":   (today - timedelta(days=2 * days_back)).isoformat(),
+        "period_end":     (today - timedelta(days=days_back)).isoformat(),
+        "has_previous":   not prev.get("message"),
+        "deltas":         None,
+        "by_sport":       None,
+    }
+    if prev.get("message") or cur.get("message"):
+        return out
+    out["deltas"] = {
+        "sessions": _delta(cur["total_acts"], prev["total_acts"]),
+        "hours":    _delta(cur["total_hours"], prev["total_hours"]),
+        "tss":      _delta(cur["total_tss"], prev["total_tss"]),
+    }
+    cs = {s["sport"]: s for s in cur["by_sport"]}
+    ps = {s["sport"]: s for s in prev["by_sport"]}
+    out["by_sport"] = [
+        {
+            "sport":    sp,
+            "sessions": _delta(cs.get(sp, {}).get("count", 0), ps.get(sp, {}).get("count", 0)),
+            "hours":    _delta(cs.get(sp, {}).get("hours", 0), ps.get(sp, {}).get("hours", 0)),
+            "tss":      _delta(cs.get(sp, {}).get("tss", 0), ps.get(sp, {}).get("tss", 0)),
+        }
+        for sp in sorted(set(cs) | set(ps))
+    ]
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
