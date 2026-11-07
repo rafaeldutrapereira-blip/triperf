@@ -1354,7 +1354,10 @@ def _get_planned_range(db: Session, user_id: str, start_iso: str, end_iso: str) 
             "steps_json":  r.steps_json,
             "description": r.description,
         })
-    return out
+    # Mi Plan: la copia que vuelve de Garmin de una sesion del plan propio no se
+    # muestra (gana la sesion LabX). Solo vista; no se borra nada.
+    from ..services.plan_dia import drop_own_plan_twins
+    return drop_own_plan_twins(db, user_id, out)
 
 
 def _get_planned_week(db: Session, user_id: str) -> list:

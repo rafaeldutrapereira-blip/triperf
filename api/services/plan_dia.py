@@ -102,6 +102,30 @@ def _dedupe(labx: list, garmin: list) -> list:
     return out
 
 
+def drop_own_plan_twins(db: Session, user_id: str, rows: list) -> list:
+    """Quita de `rows` (dicts con date_iso/sport/title, de garmin_planned_workouts) las
+    copias devueltas de una sesion del plan propio (own_plan_sessions): viaje LabX ->
+    intervals -> Garmin -> sync legacy. Mismo dia + mismo deporte + titulo igual/parecido
+    (criterio W17); gana la sesion LabX. Solo vista: no modifica ninguna fila."""
+    if not rows:
+        return rows
+    from ..models import OwnPlanSession
+    dates = {r["date_iso"] for r in rows}
+    own: dict = {}
+    for s in db.query(OwnPlanSession).filter(
+            OwnPlanSession.user_id == user_id, OwnPlanSession.date_iso.in_(dates)).all():
+        own.setdefault(s.date_iso, []).append((_sport(s.sport), _norm_title(s.name)))
+    if not own:
+        return rows
+    out = []
+    for r in rows:
+        sp, tt = _sport(r.get("sport")), _norm_title(r.get("title"))
+        if any(osp == sp and _similar(ot, tt) for osp, ot in own.get(r["date_iso"], [])):
+            continue
+        out.append(r)
+    return out
+
+
 def _mark_done(db: Session, user_id: str, garmin: list) -> None:
     """done=True solo con actividad sincronizada del mismo dia y deporte."""
     if not garmin:
