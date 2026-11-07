@@ -2377,13 +2377,27 @@
       /* S-A: UNA tarjeta Garmin. Las dos tuberias (credenciales = legacy,
          OAuth = oficial) son invisibles para el atleta; el modelo decide que
          se ve. Oficial manda sobre legacy; legacy solo lo gestiona un admin. */
-      function garminCardModel(legacyOn, offState, isAdmin) {
+      function garminCardModel(legacyOn, offState, isAdmin, syncState) {
         var offOn = offState === 'connected';
         legacyOn = !!legacyOn;
+        /* SYNC-HONESTO: credenciales guardadas != conexion viva. Con
+           needs_reauth/never la via vieja esta caida: no se dice "conectado". */
+        var legacyDown =
+          !offOn &&
+          legacyOn &&
+          (syncState === 'needs_reauth' || syncState === 'never');
         return {
           via: offOn ? 'official' : legacyOn ? 'legacy' : 'none',
-          connected: offOn || legacyOn,
-          status: offOn || legacyOn ? 'connected' : offState || '',
+          connected: offOn || (legacyOn && !legacyDown),
+          legacyDown: legacyDown,
+          legacyStale: !offOn && legacyOn && syncState === 'stale',
+          status: offOn
+            ? 'connected'
+            : legacyDown
+              ? 'legacy_down'
+              : legacyOn
+                ? 'connected'
+                : offState || '',
           showSync: !offOn && legacyOn,
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
           showConnect: !offOn && !legacyOn && offState === 'not_connected',
@@ -2430,6 +2444,7 @@
           _gLegacyOn,
           _gOffState,
           garminIsAdmin(),
+          _gLegacyData.sync_state,
         ));
         var shown = function (id, on) {
           var el = document.getElementById(id);
@@ -2452,6 +2467,7 @@
             not_connected: _t('garmin_off_off', 'No conectado'),
             unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
             error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+            legacy_down: _t('garmin_legacy_down', 'Conexión anterior caída'),
           }[m.status] || '';
         st.style.color = m.connected ? 'var(--green, #22c55e)' : '';
         shown('btn-garmin-sync', m.showSync);
@@ -2460,7 +2476,13 @@
         shown('btn-garmin-switch', m.showSwitch);
         shown('btn-garmin-admin-dis', m.adminDisconnectLegacy);
         var log = document.getElementById('garmin-log');
-        if (m.via === 'legacy' && _gLegacyData.last_sync) {
+        if (m.via === 'legacy' && m.legacyDown && _gLegacyData.data_until) {
+          log.style.display = 'block';
+          document.getElementById('garmin-log-txt').textContent = _t(
+            'garmin_data_until',
+            'Datos guardados hasta el {date}',
+          ).replace('{date}', _gLegacyData.data_until);
+        } else if (m.via === 'legacy' && _gLegacyData.last_sync) {
           log.style.display = 'block';
           document.getElementById('garmin-log-txt').textContent =
             _t('prof_last_sync', 'Último sync:') +
@@ -3181,6 +3203,37 @@
       function gmigRender() {
         var b = document.getElementById('garmin-migrate-banner');
         if (b) b.style.display = gmigVisible(_gModel, gmigDismissed()) ? '' : 'none';
+        var tx = document.querySelector('#garmin-migrate-banner [data-i18n]');
+        if (tx && _gModel)
+          tx.textContent = gmigText(_gModel, _gLegacyData.data_until);
+      }
+      /* SYNC-HONESTO: el texto se adapta si la conexion anterior esta caida. */
+      function gmigText(model, dataUntil) {
+        if (model && model.legacyDown) {
+          var t = _t(
+            'gmig_text_down',
+            'Tu conexión Garmin anterior dejó de funcionar.',
+          );
+          if (dataUntil)
+            t +=
+              ' ' +
+              _t(
+                'gmig_text_down_until',
+                'Tus datos están guardados hasta el {date}.',
+              ).replace('{date}', dataUntil);
+          return (
+            t +
+            ' ' +
+            _t(
+              'gmig_text_down_cta',
+              'Pásate a la conexión oficial para volver a recibir datos.',
+            )
+          );
+        }
+        return _t(
+          'gmig_text',
+          'Pásate a la conexión oficial de Garmin: más segura, sin compartir tu contraseña.',
+        );
       }
 
       /* ── S-B: "Trae tu historial" ─────────────────────────────────────

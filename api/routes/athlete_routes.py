@@ -1896,17 +1896,53 @@ def garmin_sync_status(
     flags = {"connect_enabled": legacy_connect_enabled(),
              "sync_enabled": legacy_sync_enabled()}
     row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
+    extra = {
+        "sync_state": _garmin_sync_state(has_credentials, row),
+        "last_sync_at": row.last_sync_at.isoformat() if row and row.last_sync_at else None,
+        "data_until": _garmin_data_until(db, me.id),
+    }
     if not row:
         return {"status": "never", "last_sync": None, "activities_total": 0,
-                "has_credentials": has_credentials, **flags}
+                "has_credentials": has_credentials, **flags, **extra}
     return {
         **flags,
+        **extra,
         "status":           row.status,
         "last_sync":        str(row.last_sync_at)[:16] if row.last_sync_at else None,
         "activities_total": row.activities_total,
         "error":            row.error,
         "has_credentials":  has_credentials,
     }
+
+
+_SYNC_LIVE_HOURS = 48
+
+
+def _garmin_sync_state(has_credentials: bool, row, now=None) -> str:
+    """SYNC-HONESTO: none | never | needs_reauth | live | stale."""
+    if not has_credentials:
+        return "none"
+    if row is None:
+        return "never"
+    if row.status == "needs_reauth":
+        return "needs_reauth"
+    if not row.last_sync_at:
+        return "never"
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    age_h = (now - row.last_sync_at).total_seconds() / 3600.0
+    return "live" if age_h <= _SYNC_LIVE_HOURS else "stale"
+
+
+def _garmin_data_until(db: Session, user_id: str):
+    """Fecha ISO (YYYY-MM-DD) del dato mas reciente (actividad o salud) o None."""
+    from sqlalchemy import func
+    from ..models import GarminActivity, GarminHealthDaily
+    a = db.query(func.max(GarminActivity.date_iso)).filter(
+        GarminActivity.user_id == user_id).scalar()
+    h = db.query(func.max(GarminHealthDaily.date_iso)).filter(
+        GarminHealthDaily.user_id == user_id).scalar()
+    vals = [str(v)[:10] for v in (a, h) if v]
+    return max(vals) if vals else None
 
 
 @router.post("/garmin/reauth")

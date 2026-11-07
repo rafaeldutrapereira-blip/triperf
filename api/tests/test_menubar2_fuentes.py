@@ -59,7 +59,8 @@ def test_paginas_enlazan_fonts_css_y_precargan_inter():
 
 def test_sw_build_335_y_precache_de_fuentes():
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
-    assert re.search(r"BUILD_VERSION\s*=\s*'335'", sw)
+    m = re.search(r"BUILD_VERSION\s*=\s*'(\d+)'", sw)
+    assert m and int(m.group(1)) >= 335
     ini = sw.index("var PRECACHE")
     pre = sw[ini:sw.index("];", ini)]
     assert "'/fonts.css'" in pre

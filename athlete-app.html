@@ -5369,13 +5369,26 @@
       }
       /* S-A: UNA tarjeta Garmin (ver garminCardModel en athlete_profile.html,
          misma logica). Oficial manda; legacy solo se gestiona como admin. */
-      function garminCardModel(legacyOn, offState, isAdmin) {
+      function garminCardModel(legacyOn, offState, isAdmin, syncState) {
         var offOn = offState === 'connected';
         legacyOn = !!legacyOn;
+        /* SYNC-HONESTO: credenciales guardadas != conexion viva. */
+        var legacyDown =
+          !offOn &&
+          legacyOn &&
+          (syncState === 'needs_reauth' || syncState === 'never');
         return {
           via: offOn ? 'official' : legacyOn ? 'legacy' : 'none',
-          connected: offOn || legacyOn,
-          status: offOn || legacyOn ? 'connected' : offState || '',
+          connected: offOn || (legacyOn && !legacyDown),
+          legacyDown: legacyDown,
+          legacyStale: !offOn && legacyOn && syncState === 'stale',
+          status: offOn
+            ? 'connected'
+            : legacyDown
+              ? 'legacy_down'
+              : legacyOn
+                ? 'connected'
+                : offState || '',
           showSync: !offOn && legacyOn,
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
           showConnect: !offOn && !legacyOn && offState === 'not_connected',
@@ -5396,9 +5409,18 @@
         }
       }
       function _garminRow(garmin, gOn, offState, isAdmin) {
-        var m = garminCardModel(gOn, offState, isAdmin);
+        var m = garminCardModel(gOn, offState, isAdmin, garmin && garmin.sync_state);
         var meta =
-          m.via === 'legacy'
+          m.via === 'legacy' && m.legacyDown
+            ? _t('garmin_legacy_down', 'Conexión anterior caída') +
+              (garmin && garmin.data_until
+                ? ' · ' +
+                  _t('garmin_data_until', 'Datos guardados hasta el {date}').replace(
+                    '{date}',
+                    _escCm(garmin.data_until),
+                  )
+                : '')
+            : m.via === 'legacy'
             ? _t('app_last_sync', 'Última sync:') +
               ' ' +
               _escCm((garmin && garmin.last_sync) || '—') +
@@ -5469,7 +5491,10 @@
         var gOn = !!(
           garmin &&
           garmin.has_credentials &&
-          garmin.status === 'ok'
+          (garmin.status === 'ok' ||
+            ['live', 'stale', 'needs_reauth', 'never'].indexOf(
+              garmin.sync_state,
+            ) >= 0)
         );
         var sOn = !!(strava && strava.connected);
 

@@ -2505,6 +2505,34 @@
           lR.style.display = on && WATCH.needsReconnect ? '' : 'none';
         }
 
+        /* SYNC-HONESTO: otras tuberias (oficial, Strava, legacy vivo) y datos. */
+        var WATCH_PIPES = { official: false, strava: false, legacyLive: false, dataUntil: null };
+        function iwWatchOffModel(p) {
+          p = p || {};
+          if (p.official || p.strava || p.legacyLive) return { mode: 'hidden', dataUntil: null };
+          if (p.dataUntil) return { mode: 'stale', dataUntil: p.dataUntil };
+          return { mode: 'invite', dataUntil: null };
+        }
+        function loadWatchPipes() {
+          var get = function (path) {
+            return _iwApi('GET', path).catch(function () { return {}; });
+          };
+          Promise.all([
+            get('/athlete/garmin/sync-status'),
+            get('/integrations/garmin/status'),
+            get('/strava/status'),
+          ]).then(function (r) {
+            var g = r[0] || {};
+            WATCH_PIPES = {
+              official: !!(r[1] && r[1].connected === true),
+              strava: !!(r[2] && r[2].connected),
+              legacyLive: g.sync_state === 'live',
+              dataUntil: g.data_until || null,
+            };
+            renderWatchBar();
+          });
+        }
+
         function renderWatchBar() {
           var txt = document.getElementById('watch-txt');
           if (!txt) return;
@@ -2515,6 +2543,8 @@
           var bC = document.getElementById('btn-intervals-connect');
           var bD = document.getElementById('btn-intervals-disconnect');
           txt.removeAttribute('data-i18n'); /* el texto lo maneja JS según el estado */
+          var bar0 = document.getElementById('watch-bar');
+          if (bar0) bar0.style.display = '';
           if (!WATCH.available) {
             txt.textContent = _t('iw_watch_unavailable', 'Reloj: función no disponible todavía');
             dot.className = 'dot';
@@ -2529,7 +2559,17 @@
             bC.style.display = 'none';
             bD.style.display = '';
           } else {
-            txt.textContent = _t('iw_watch_off_title', 'Conecta tu reloj y los workouts llegan solos');
+            /* SYNC-HONESTO: la invitacion "desde cero" solo si no hay tuberia
+               viva ni datos; con datos y sin tuberia viva, estado honesto. */
+            var wm = iwWatchOffModel(WATCH_PIPES);
+            var bar = document.getElementById('watch-bar');
+            if (bar) bar.style.display = wm.mode === 'hidden' ? 'none' : '';
+            txt.textContent =
+              wm.mode === 'stale'
+                ? wm.dataUntil
+                  ? _t('iw_watch_stale_title', 'Tus datos están guardados hasta el {date}. Reconecta una cuenta para seguir recibiendo entrenamientos.').replace('{date}', wm.dataUntil)
+                  : _t('iw_watch_stale_nodate', 'Tu conexión anterior dejó de funcionar. Reconecta una cuenta para seguir recibiendo entrenamientos.')
+                : _t('iw_watch_off_title', 'Conecta tu reloj y los workouts llegan solos');
             dot.className = 'dot';
             wrap.style.display = 'none';
             bC.style.display = '';
@@ -2548,6 +2588,7 @@
 
         function checkIntervalsStatus() {
           if (!_iwApiToken()) return;
+          loadWatchPipes();
           _iwApi('GET', '/integrations/intervals/status')
             .then(function (s) {
               _setWatchStatus(s.connected, s.available, s);
