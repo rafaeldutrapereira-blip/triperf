@@ -30,7 +30,7 @@ def test_app_usa_endpoints_oficiales():
 def test_via_no_oficial_intacta():
     for src in (WEB, APP):
         assert "/athlete/garmin/sync-status" in src
-    assert "garminSync()" in WEB and "saveGarminCreds()" in WEB
+    assert "garminSync()" in WEB and "saveGarminCreds()" not in WEB  # RETIRO-1
     assert "refreshGarminSync()" in APP
 
 

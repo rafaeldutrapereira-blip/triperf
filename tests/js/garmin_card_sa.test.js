@@ -25,7 +25,7 @@ for (const [label, src] of [['web', web], ['app', app]]) {
     const m = model(false, 'not_connected', false);
     assert.strictEqual(m.via, 'none');
     assert.strictEqual(m.showConnect, true);
-    assert.strictEqual(m.adminConnectLegacy, false);
+    assert.strictEqual(m.adminConnectLegacy, undefined); // RETIRO-1: la accion ya no existe
     assert.strictEqual(m.showSwitch, false);
   });
   test(label + ': oficial no disponible no ofrece boton', () => {
@@ -43,7 +43,7 @@ for (const [label, src] of [['web', web], ['app', app]]) {
     assert.strictEqual(m.disconnect, 'legacy');
     assert.strictEqual(m.showSwitch, true);
     assert.strictEqual(m.showConnect, false);
-    assert.strictEqual(m.adminConnectLegacy, false);
+    assert.strictEqual(m.adminConnectLegacy, undefined);
     assert.strictEqual(model(true, 'unavailable', false).showSwitch, false);
   });
   test(label + ': oficial conectado manda sobre legacy', () => {
@@ -55,9 +55,8 @@ for (const [label, src] of [['web', web], ['app', app]]) {
     assert.strictEqual(m.adminDisconnectLegacy, false, 'atleta: legacy no se muestra');
   });
   test(label + ': solo admin ve la via legacy', () => {
-    assert.strictEqual(model(false, 'not_connected', true).adminConnectLegacy, true);
+    assert.strictEqual(model(false, 'not_connected', true).adminConnectLegacy, undefined);
     assert.strictEqual(model(true, 'connected', true).adminDisconnectLegacy, true);
-    assert.strictEqual(model(false, 'not_connected', false).adminConnectLegacy, false);
     assert.strictEqual(model(true, 'connected', false).adminDisconnectLegacy, false);
   });
   test(label + ': garminIsAdmin lee api_rol de kl_s', () => {
@@ -78,13 +77,9 @@ for (const [label, src] of [['web', web], ['app', app]]) {
   });
 }
 
-test('web: el formulario de credenciales no esta en el DOM inicial (solo template)', () => {
-  const tpl = web.indexOf('<template id="garmin-admin-legacy-tpl">');
-  const end = web.indexOf('</template>', tpl);
-  assert.ok(tpl > 0 && end > tpl);
+test('web: RETIRO-1 sin formulario ni boton de conexion por credenciales', () => {
   for (const id of ['g-email', 'g-pass', 'garmin-form', 'btn-garmin-con']) {
-    const at = web.indexOf('id="' + id + '"');
-    assert.ok(at > tpl && at < end, id + ' debe vivir solo dentro del template admin');
+    assert.strictEqual(web.indexOf('id="' + id + '"'), -1, id + ' ya no debe existir');
   }
 });
 

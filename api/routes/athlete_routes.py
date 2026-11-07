@@ -198,7 +198,12 @@ def save_garmin_credentials(
     """
     Inicia la conexión con Garmin Connect.
     Si Garmin pide MFA retorna needs_mfa=True y el frontend muestra el campo de código.
+
+    RETIRO-1: cerrado por defecto (410) salvo GARMIN_LEGACY_CONNECT_ENABLED=1.
     """
+    from ..garmin_legacy_flags import legacy_connect_enabled, CONNECT_CLOSED_MESSAGE
+    if not legacy_connect_enabled():
+        raise HTTPException(410, CONNECT_CLOSED_MESSAGE)
     try:
         from ..garmin_pull_service import start_mfa_flow
         # Guardar credenciales primero (el login las valida)
@@ -1863,6 +1868,12 @@ def garmin_sync_now(
         raise HTTPException(400, "No tienes credenciales Garmin configuradas. Ve a Mi Perfil.")
 
     from ..garmin_pull_service import dispatch_garmin_sync
+    from ..garmin_legacy_flags import legacy_sync_enabled
+    if not legacy_sync_enabled():
+        # RETIRO-1: interruptor apagado -> no-op limpio (dispatch loguea y no encola)
+        dispatch_garmin_sync(me.id, background_tasks, force=force)
+        return {"ok": True, "status": "disabled", "last_sync": None,
+                "message": "La sincronización por contraseña está desactivada."}
     dispatch_garmin_sync(me.id, background_tasks, force=force)
 
     sync_row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
@@ -1880,12 +1891,16 @@ def garmin_sync_status(
     me: User    = Depends(get_current_user),
 ):
     """Devuelve el estado actual del sync Garmin del atleta."""
+    from ..garmin_legacy_flags import legacy_connect_enabled, legacy_sync_enabled
     has_credentials = bool(me.garmin_email and me.garmin_password)
+    flags = {"connect_enabled": legacy_connect_enabled(),
+             "sync_enabled": legacy_sync_enabled()}
     row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
     if not row:
         return {"status": "never", "last_sync": None, "activities_total": 0,
-                "has_credentials": has_credentials}
+                "has_credentials": has_credentials, **flags}
     return {
+        **flags,
         "status":           row.status,
         "last_sync":        str(row.last_sync_at)[:16] if row.last_sync_at else None,
         "activities_total": row.activities_total,

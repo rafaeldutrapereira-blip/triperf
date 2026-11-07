@@ -965,6 +965,12 @@ class GarminPullService:
         Entry point principal. Llama desde BackgroundTasks en login.
         force=True: ignora STALE_HOURS y re-sincroniza siempre.
         """
+        # RETIRO-1: interruptor global del sync legacy (GARMIN_LEGACY_SYNC_ENABLED=0)
+        from .garmin_legacy_flags import legacy_sync_enabled
+        if not legacy_sync_enabled():
+            logger.info("Sync legacy deshabilitado (GARMIN_LEGACY_SYNC_ENABLED=0) user=%s", user_id)
+            return {"ok": True, "reason": "legacy_sync_disabled"}
+
         db = self._db
         user = db.query(User).filter(User.id == user_id).first()
         if not user or not user.garmin_email:
@@ -2266,8 +2272,12 @@ def background_sync_user(user_id: str, force: bool = False) -> None:
 def dispatch_garmin_sync(user_id: str, background_tasks=None, force: bool = False) -> str:
     """Dispatch garmin sync — Celery when broker available, BackgroundTask otherwise.
 
-    Returns "celery" | "background" | "skipped" to indicate dispatch method.
+    Returns "celery" | "background" | "skipped" | "disabled" to indicate dispatch method.
     """
+    from .garmin_legacy_flags import legacy_sync_enabled
+    if not legacy_sync_enabled():
+        logger.info("Garmin sync legacy deshabilitado (GARMIN_LEGACY_SYNC_ENABLED=0) — dispatch omitido user_id=%s", user_id)
+        return "disabled"
     from .redis_client import is_available as _redis_ok
     if _redis_ok():
         try:

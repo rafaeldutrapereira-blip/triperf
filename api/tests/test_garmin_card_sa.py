@@ -11,9 +11,10 @@ I18N = (ROOT / "i18n.js").read_text(encoding="utf-8")
 def test_formulario_legacy_solo_en_template_admin():
     ini = WEB.index('<template id="garmin-admin-legacy-tpl">')
     fin = WEB.index("</template>", ini)
+    # RETIRO-1: el formulario y el boton de conexion por credenciales ya no existen
     for ident in ("g-email", "g-pass", "garmin-form", "btn-garmin-con"):
-        pos = WEB.index(f'id="{ident}"')
-        assert ini < pos < fin, ident
+        assert f'id="{ident}"' not in WEB, ident
+    assert ini < WEB.index('id="btn-garmin-admin-dis"') < fin
     assert "garminIsAdmin()" in WEB.split("function renderGarminCard(")[1][:600]
 
 

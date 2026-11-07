@@ -634,66 +634,11 @@
           condición física, tu fatiga y tu carga de entrenamiento real.
         </p>
 
-        <label data-i18n="onb_garmin_email">Email de Garmin Connect</label>
-        <input type="email" id="garmin-email" placeholder="tu@email.com" />
-
-        <label data-i18n="onb_garmin_pass">Contraseña de Garmin Connect</label>
-        <div class="pw-wrap">
-          <input type="password" id="garmin-pass" placeholder="••••••••" />
-          <button
-            type="button"
-            class="pw-eye"
-            onclick="toggleGarminPw()"
-            aria-label="Mostrar contraseña"
-            data-i18n-title="login_show_password"
-          >
-            <svg
-              id="garmin-eye-show"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            <svg
-              id="garmin-eye-hide"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="display: none"
-            >
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
-              />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-          </button>
+        <div class="info-box" data-i18n="onb_garmin_connect_later">
+          Conecta tu Garmin desde Mi Perfil → Conexiones cuando termines de configurar tu cuenta.
         </div>
-
-        <div class="info-box" data-i18n="onb_garmin_info">
-          Tus credenciales Garmin se almacenan encriptadas (AES-256) y solo se
-          usan para importar actividades. LabX no comparte estos datos con
-          terceros.
-        </div>
-
-        <div id="garmin-status" class="garmin-status"></div>
 
         <div class="btn-row">
-          <button
-            class="btn btn-primary"
-            id="btn-garmin-connect"
-            onclick="saveGarmin()"
-            data-i18n="btn_connect_garmin"
-          >
-            Conectar Garmin
-          </button>
           <button
             class="btn btn-secondary"
             onclick="goPrev()"
@@ -831,71 +776,6 @@
         }
       }
 
-      async function saveGarmin() {
-        const email = document.getElementById('garmin-email').value.trim();
-        const pass = document.getElementById('garmin-pass').value;
-        const btn = document.getElementById('btn-garmin-connect');
-        const status = document.getElementById('garmin-status');
-
-        const t = (k, fallback) => (window.i18n ? window.i18n.t(k) : fallback);
-
-        if (!email || !pass) {
-          status.textContent = t(
-            'onb_garmin_need_creds',
-            'Ingresa email y contraseña de Garmin.',
-          );
-          status.className = 'garmin-status err';
-          return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = t('onb_garmin_connecting', 'Conectando…');
-        status.textContent = '';
-
-        try {
-          const r = await fetch(API + '/api/athlete/garmin-credentials', {
-            method: 'POST',
-            headers: authH(),
-            credentials: 'include',
-            body: JSON.stringify({
-              garmin_email: email,
-              garmin_password: pass,
-            }),
-          });
-          if (r.ok) {
-            status.textContent = t(
-              'onb_garmin_connected',
-              '✓ Garmin conectado. Iniciando sync…',
-            );
-            status.className = 'garmin-status ok';
-            data.garmin_connected = true;
-            fetch(API + '/api/athlete/garmin/sync', {
-              method: 'POST',
-              headers: authH(),
-              credentials: 'include',
-            }).catch(() => {});
-            setTimeout(() => goNext(), 1200);
-          } else {
-            const err = await r.json().catch(() => ({}));
-            status.textContent =
-              '✗ ' +
-              (err.detail || t('onb_garmin_error', 'Error al conectar Garmin'));
-            status.className = 'garmin-status err';
-          }
-        } catch (e) {
-          status.textContent =
-            '✗ ' +
-            t(
-              'onb_garmin_network_error',
-              'Error de red. Verifica tu conexión.',
-            );
-          status.className = 'garmin-status err';
-        } finally {
-          btn.disabled = false;
-          btn.textContent = t('btn_connect_garmin', 'Conectar Garmin');
-        }
-      }
-
       function buildDoneList() {
         const list = document.getElementById('done-list');
         const t = (k, fallback) => (window.i18n ? window.i18n.t(k) : fallback);
@@ -952,21 +832,6 @@
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
-      }
-
-      function toggleGarminPw() {
-        const inp = document.getElementById('garmin-pass');
-        const show = document.getElementById('garmin-eye-show');
-        const hide = document.getElementById('garmin-eye-hide');
-        if (inp.type === 'password') {
-          inp.type = 'text';
-          show.style.display = 'none';
-          hide.style.display = 'block';
-        } else {
-          inp.type = 'password';
-          show.style.display = 'block';
-          hide.style.display = 'none';
-        }
       }
 
       async function saveProfileData() {

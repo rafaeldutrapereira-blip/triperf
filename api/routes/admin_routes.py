@@ -80,6 +80,10 @@ def set_athlete_garmin(
             raise HTTPException(404, "Usuario no encontrado")
     else:
         u = assert_coach_owns_athlete(me.id, user_id, db)
+    # RETIRO-1: conexiones legacy NUEVAS cerradas por defecto (410)
+    from ..garmin_legacy_flags import legacy_connect_enabled, CONNECT_CLOSED_MESSAGE
+    if not legacy_connect_enabled():
+        raise HTTPException(410, CONNECT_CLOSED_MESSAGE)
     u.garmin_email    = body.garmin_email
     u.garmin_password = _enc(body.garmin_password)
     db.commit()

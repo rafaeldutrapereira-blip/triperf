@@ -200,7 +200,8 @@ class TestAdminGarminIDOR:
         )
         assert r.status_code == 403
 
-    def test_admin_can_set_any_athlete_garmin(self, client, admin_user, athlete_user):
+    def test_admin_can_set_any_athlete_garmin(self, client, admin_user, athlete_user, monkeypatch):
+        monkeypatch.setenv("GARMIN_LEGACY_CONNECT_ENABLED", "1")  # RETIRO-1: valvula de escape
         token = login(client, "admin@test.com", "AdminPass123")
         client.cookies.clear()
         r = client.post(

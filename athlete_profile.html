@@ -1402,15 +1402,6 @@
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem">
                       <button
-                        class="btn btn-secondary btn-sm"
-                        id="btn-garmin-con"
-                        onclick="showGarminForm()"
-                        style="display: none"
-                        data-i18n="garmin_admin_connect"
-                      >
-                        Conectar con credenciales
-                      </button>
-                      <button
                         class="btn btn-danger btn-sm"
                         id="btn-garmin-admin-dis"
                         onclick="garminDisconnect()"
@@ -1420,122 +1411,6 @@
                         Desconectar credenciales
                       </button>
                     </div>
-                <div
-                  id="garmin-form"
-                  style="
-                    display: none;
-                    margin-top: 0.85rem;
-                    border-top: 1px solid var(--border2);
-                    padding-top: 1rem;
-                  "
-                >
-                  <!-- Paso 1: credenciales -->
-                  <div id="garmin-step-creds">
-                    <div class="form-grid" style="margin-bottom: 0.85rem">
-                      <div class="field">
-                        <label data-i18n="prof_label_garmin_email"
-                          >Email Garmin Connect</label
-                        ><input
-                          id="g-email"
-                          type="email"
-                          placeholder="tu@email.com"
-                        />
-                      </div>
-                      <div class="field">
-                        <label data-i18n="prof_label_garmin_pw"
-                          >Contraseña Garmin</label
-                        ><input
-                          id="g-pass"
-                          type="password"
-                          placeholder="••••••••"
-                        />
-                      </div>
-                    </div>
-                    <p
-                      style="
-                        font-size: 0.7rem;
-                        color: var(--muted);
-                        margin-bottom: 0.85rem;
-                      "
-                      data-i18n="prof_garmin_creds_note"
-                    >
-                      Credenciales almacenadas cifradas. Solo usadas para sync
-                      de actividades.
-                    </p>
-                    <div
-                      style="
-                        display: flex;
-                        gap: 0.6rem;
-                        justify-content: flex-end;
-                      "
-                    >
-                      <button
-                        class="btn btn-secondary btn-sm"
-                        onclick="hideGarminForm()"
-                        data-i18n="prof_btn_cancel"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        class="btn btn-primary btn-sm"
-                        id="btn-garmin-save"
-                        onclick="saveGarminCreds()"
-                        data-i18n="prof_btn_save_connect"
-                      >
-                        Guardar y Conectar
-                      </button>
-                    </div>
-                  </div>
-                  <!-- Paso 2: código MFA (se muestra solo si Garmin pide verificación) -->
-                  <div id="garmin-step-mfa" style="display: none">
-                    <p
-                      style="
-                        font-size: 0.8rem;
-                        color: var(--fg);
-                        margin-bottom: 0.85rem;
-                      "
-                      data-i18n="prof_garmin_mfa_note"
-                    >
-                      Garmin requiere verificación adicional. Revisa tu email o
-                      SMS y escribe el código:
-                    </p>
-                    <div class="field" style="margin-bottom: 0.85rem">
-                      <label data-i18n="prof_label_verif_code"
-                        >Código de verificación</label
-                      >
-                      <input
-                        id="g-mfa-code"
-                        type="text"
-                        inputmode="numeric"
-                        maxlength="8"
-                        placeholder="123456"
-                        style="letter-spacing: 0.15em; font-size: 1.1rem"
-                      />
-                    </div>
-                    <div
-                      style="
-                        display: flex;
-                        gap: 0.6rem;
-                        justify-content: flex-end;
-                      "
-                    >
-                      <button
-                        class="btn btn-secondary btn-sm"
-                        onclick="garminMfaCancel()"
-                        data-i18n="prof_btn_cancel"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        class="btn btn-primary btn-sm"
-                        onclick="submitGarminMfa()"
-                        data-i18n="prof_btn_verify"
-                      >
-                        Verificar
-                      </button>
-                    </div>
-                  </div>
-                </div>
                   </div>
                 </template>
               </div>
@@ -2516,7 +2391,6 @@
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
           showConnect: !offOn && !legacyOn && offState === 'not_connected',
           showSwitch: !offOn && legacyOn && offState === 'not_connected',
-          adminConnectLegacy: !!isAdmin && !legacyOn,
           adminDisconnectLegacy: !!isAdmin && offOn && legacyOn,
         };
       }
@@ -2587,7 +2461,6 @@
         shown('btn-garmin-dis', !!m.disconnect);
         shown('btn-garmin-off-con', m.showConnect);
         shown('btn-garmin-switch', m.showSwitch);
-        shown('btn-garmin-con', m.adminConnectLegacy);
         shown('btn-garmin-admin-dis', m.adminDisconnectLegacy);
         var log = document.getElementById('garmin-log');
         if (m.via === 'legacy' && _gLegacyData.last_sync) {
@@ -2949,133 +2822,6 @@
             );
           }
         });
-      }
-      function showGarminForm() {
-        document.getElementById('garmin-form').style.display = 'block';
-        document.getElementById('garmin-step-creds').style.display = '';
-        document.getElementById('garmin-step-mfa').style.display = 'none';
-      }
-      function hideGarminForm() {
-        document.getElementById('garmin-form').style.display = 'none';
-      }
-      function garminMfaCancel() {
-        document.getElementById('garmin-step-mfa').style.display = 'none';
-        document.getElementById('garmin-step-creds').style.display = '';
-        document.getElementById('g-mfa-code').value = '';
-      }
-      function saveGarminCreds() {
-        var email = document.getElementById('g-email').value.trim();
-        var pass = document.getElementById('g-pass').value;
-        if (!email || !pass) {
-          toast(
-            _t(
-              'prof_toast_garmin_fields_err',
-              'Completa email y contraseña Garmin',
-            ),
-            'err',
-          );
-          return;
-        }
-        var btn = document.getElementById('btn-garmin-save');
-        btn.disabled = true;
-        btn.textContent = _t('prof_connecting', 'Conectando…');
-        fetch(API + '/athlete/garmin-credentials', {
-          method: 'POST',
-          credentials: 'include',
-          headers: authH(),
-          body: JSON.stringify({ garmin_email: email, garmin_password: pass }),
-        })
-          .then(function (r) {
-            if (!r.ok)
-              return r.json().then(function (e) {
-                throw new Error(e.detail || 'Error');
-              });
-            return r.json();
-          })
-          .then(function (d) {
-            if (d.needs_mfa) {
-              // Garmin pide código de verificación → mostrar paso 2
-              document.getElementById('garmin-step-creds').style.display =
-                'none';
-              document.getElementById('garmin-step-mfa').style.display = '';
-              document.getElementById('g-mfa-code').focus();
-              toast(
-                _t(
-                  'prof_toast_garmin_mfa_sent',
-                  'Revisa tu email/SMS: Garmin envió un código',
-                ),
-                'info',
-              );
-            } else {
-              toast(_t('prof_toast_garmin_connected', 'Garmin conectado ✓'));
-              hideGarminForm();
-              loadGarminStatus();
-            }
-          })
-          .catch(function (e) {
-            toast(
-              _t('prof_toast_garmin_connect_err', 'Error conectando Garmin:') +
-                ' ' +
-                (e.message || e),
-              'err',
-            );
-          })
-          .finally(function () {
-            btn.disabled = false;
-            btn.textContent = _t('prof_btn_save_connect', 'Guardar y Conectar');
-          });
-      }
-      function submitGarminMfa() {
-        var code = document.getElementById('g-mfa-code').value.trim();
-        if (!code) {
-          toast(
-            _t(
-              'prof_toast_verif_code_required',
-              'Escribe el código de verificación',
-            ),
-            'err',
-          );
-          return;
-        }
-        fetch(API + '/athlete/garmin/reauth/mfa', {
-          method: 'POST',
-          credentials: 'include',
-          headers: authH(),
-          body: JSON.stringify({ code: code }),
-        })
-          .then(function (r) {
-            if (!r.ok)
-              return r.json().then(function (e) {
-                throw new Error(e.detail || 'Código incorrecto');
-              });
-            return r.json();
-          })
-          .then(function (d) {
-            if (d.ok) {
-              toast(
-                _t(
-                  'prof_toast_garmin_verified',
-                  'Garmin verificado y conectado ✓',
-                ),
-              );
-              hideGarminForm();
-              loadGarminStatus();
-            } else {
-              toast(
-                _t(
-                  'prof_toast_code_incorrect_retry',
-                  'Código incorrecto, intenta de nuevo',
-                ),
-                'err',
-              );
-            }
-          })
-          .catch(function (e) {
-            toast(
-              _t('prof_toast_generic_err', 'Error:') + ' ' + (e.message || e),
-              'err',
-            );
-          });
       }
       function garminSync() {
         var btn = document.getElementById('btn-garmin-sync');

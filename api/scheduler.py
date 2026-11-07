@@ -261,6 +261,11 @@ def _background_garmin_sync_all() -> None:
     from .models import User
     from pathlib import Path
     import json as _json
+    from .garmin_legacy_flags import legacy_sync_enabled
+
+    if not legacy_sync_enabled():
+        logger.info("Background Garmin sync omitido: GARMIN_LEGACY_SYNC_ENABLED=0")
+        return
 
     db = SessionLocal()
     try:
