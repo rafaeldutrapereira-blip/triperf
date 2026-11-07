@@ -278,6 +278,12 @@ def _sync_goal_race_event(me: User, db: Session) -> None:
         ))
 
 
+def effective_indoor_ftp(user) -> Optional[int]:
+    """M1: FTP a usar en sesiones Indoor de ciclismo (rodillo).
+    ftp_indoor si esta definido (>0); si no, el FTP principal (comportamiento previo)."""
+    return (user.ftp_indoor or None) or (user.ftp or None)
+
+
 @router.patch("/profile", response_model=dict)
 def update_profile(
     body: AthleteProfileUpdate,
@@ -296,6 +302,10 @@ def update_profile(
     if body.race_goal_name is not None or body.race_goal_date is not None or body.race_goal_dist is not None:
         _sync_goal_race_event(me, db)
     if body.ftp       is not None: me.ftp       = body.ftp
+    if body.ftp_indoor is not None:
+        if body.ftp_indoor < 0 or body.ftp_indoor > 2000:
+            raise HTTPException(422, "ftp_indoor fuera de rango")
+        me.ftp_indoor = body.ftp_indoor or None   # 0 = vaciar
     if body.weight_kg is not None: me.weight_kg = body.weight_kg
     if body.height_cm is not None: me.height_cm = body.height_cm
     if body.age       is not None: me.age       = body.age
@@ -1989,7 +1999,8 @@ def send_indoor_workout_to_garmin(
         raise HTTPException(400, "Conectá tu cuenta Garmin desde tu Perfil antes de poder enviar entrenamientos.")
     if body.sport not in ("bike", "run"):
         raise HTTPException(400, "Deporte no soportado para envío: use bike o run.")
-    if body.sport == "bike" and not me.ftp:
+    indoor_ftp = effective_indoor_ftp(me)
+    if body.sport == "bike" and not indoor_ftp:
         raise HTTPException(400, "Configurá tu FTP en tu Perfil para calcular los objetivos de potencia.")
     if not body.blocks:
         raise HTTPException(400, "El entrenamiento no tiene bloques.")
@@ -2006,7 +2017,7 @@ def send_indoor_workout_to_garmin(
         "dist_km":     0,
         "notes":       "",
         "blocks_json": json.dumps(body.blocks),
-        "ftp":         me.ftp,
+        "ftp":         indoor_ftp,   # M1: FTP Indoor si existe, si no el principal
     }
     if body.sport == "run":
         # formato del builder Indoor (mode pace|hr), distinto del de coach.html
@@ -2100,6 +2111,7 @@ def export_athlete_data(
         "rol":            me.rol,
         "plan_nivel":     me.plan_nivel,
         "ftp":            me.ftp,
+        "ftp_indoor":     me.ftp_indoor,
         "weight_kg":      me.weight_kg,
         "height_cm":      me.height_cm,
         "vo2max":         me.vo2max,

@@ -95,6 +95,7 @@ class UserOut(BaseModel):
     race_goal_date:  Optional[str] = None
     race_goal_dist:  Optional[str] = None
     ftp:             Optional[int]   = None
+    ftp_indoor:      Optional[int]   = None
     weight_kg:       Optional[float] = None
     height_cm:       Optional[int]   = None
     age:             Optional[int]   = None
@@ -290,6 +291,7 @@ class AthleteProfileUpdate(BaseModel):
     race_goal_date: Optional[str]   = None
     race_goal_dist: Optional[str]   = None
     ftp:            Optional[int]   = None
+    ftp_indoor:     Optional[int]   = None  # M1: 0 = borrar (vuelve a usar el FTP principal)
     weight_kg:      Optional[float] = None
     height_cm:      Optional[int]   = None
     age:            Optional[int]   = None

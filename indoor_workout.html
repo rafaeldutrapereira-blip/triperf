@@ -904,6 +904,12 @@
               ></span
             >
           </div>
+          <div id="ftp-indoor-row" class="sport-bike-only" style="margin-top: 0.4rem; font-size: 0.78rem; color: var(--muted)">
+            <label for="ftp-indoor-input" data-i18n="iw_ftp_indoor_label">FTP Indoor (rodillo)</label>
+            <input id="ftp-indoor-input" type="number" min="50" max="600" inputmode="numeric" style="width: 5rem" data-i18n-placeholder="iw_ftp_indoor_ph" placeholder="= FTP" />
+            <button type="button" class="btn btn-ghost" onclick="saveIndoorFtp()" data-i18n="iw_ftp_indoor_save">Guardar</button>
+            <div id="ftp-indoor-hint" style="font-size: 0.7rem" data-i18n="iw_ftp_indoor_hint">Vacío = se usa tu FTP principal.</div>
+          </div>
         </div>
       </div>
 
@@ -1227,6 +1233,23 @@
         // deja explícito que no es el FTP real del atleta.
         var FTP = 200;
         var FTP_IS_REAL = false;
+        var FTP_MAIN = null;
+        var FTP_INDOOR = null;
+        /* M1: FTP efectivo del constructor = FTP Indoor si existe; si no, el principal. */
+        function _applyFtp(p) {
+          if (!p) return;
+          var main = parseInt(p.ftp) || null;
+          var ind = parseInt(p.ftp_indoor) || null;
+          if (main) FTP_MAIN = main;
+          FTP_INDOOR = ind;
+          var eff = FTP_INDOOR || FTP_MAIN;
+          if (eff) {
+            FTP = eff;
+            FTP_IS_REAL = true;
+          }
+          var inp = document.getElementById('ftp-indoor-input');
+          if (inp && document.activeElement !== inp) inp.value = FTP_INDOOR || '';
+        }
         var blocks = []; /* array of block objects */
         var editId = null; /* currently editing saved workout id */
         /* S5: disciplina del workout en edición. 'bike' = comportamiento de siempre. */
@@ -1440,7 +1463,11 @@
           var statusEl = document.getElementById('ftp-status');
           if (statusEl) {
             statusEl.innerHTML = FTP_IS_REAL
-              ? esc(_t('iw_ftp_prefix', 'FTP ·')) +
+              ? esc(
+                  FTP_INDOOR
+                    ? _t('iw_ftp_indoor_prefix', 'FTP Indoor ·')
+                    : _t('iw_ftp_prefix', 'FTP ·'),
+                ) +
                 ' <a href="athlete_profile.html" style="color:var(--orange)">' +
                 esc(_t('iw_link_edit', 'editar')) +
                 '</a>'
@@ -1451,6 +1478,41 @@
           }
           if (typeof renderChart === 'function') renderChart();
         }
+
+        window.saveIndoorFtp = function () {
+          var inp = document.getElementById('ftp-indoor-input');
+          var raw = (inp.value || '').trim();
+          var v = raw === '' ? 0 : parseInt(raw, 10);
+          if (isNaN(v) || v < 0 || (v > 0 && (v < 50 || v > 600))) {
+            toast(_t('iw_ftp_indoor_invalid', 'FTP Indoor inválido (50–600 W)'), false);
+            return;
+          }
+          var tok = _iwApiToken();
+          if (!tok) return;
+          fetch(_iwApiBase() + '/athlete/profile', {
+            method: 'PATCH',
+            headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ftp_indoor: v }),
+          })
+            .then(function (r) {
+              if (!r.ok) throw new Error('http');
+              FTP_INDOOR = v || null;
+              FTP = FTP_INDOOR || FTP_MAIN || FTP;
+              FTP_IS_REAL = !!(FTP_INDOOR || FTP_MAIN);
+              try {
+                var cached = JSON.parse(localStorage.getItem('kl_athlete_data') || 'null');
+                if (cached) {
+                  cached.ftp_indoor = FTP_INDOOR;
+                  localStorage.setItem('kl_athlete_data', JSON.stringify(cached));
+                }
+              } catch (e) {}
+              _renderFtp();
+              toast(_t('iw_ftp_indoor_saved', '✓ FTP Indoor guardado'), true);
+            })
+            .catch(function () {
+              toast(_t('iw_ftp_indoor_error', 'No se pudo guardar el FTP Indoor'), false);
+            });
+        };
 
         function _iwApiToken() {
           var tok = localStorage.getItem('lx_co_token');
@@ -1479,10 +1541,7 @@
             var prof = JSON.parse(
               localStorage.getItem('kl_athlete_data') || 'null',
             );
-            if (prof && prof.ftp) {
-              FTP = parseInt(prof.ftp) || FTP;
-              FTP_IS_REAL = true;
-            }
+            _applyFtp(prof);
             _applyRunProfile(prof);
           } catch (e) {}
           _renderFtp();
@@ -1497,9 +1556,8 @@
                 return r.ok ? r.json() : null;
               })
               .then(function (p) {
-                if (p && p.ftp) {
-                  FTP = parseInt(p.ftp) || FTP;
-                  FTP_IS_REAL = true;
+                if (p && (p.ftp || p.ftp_indoor)) {
+                  _applyFtp(p);
                   _renderFtp();
                 }
                 _applyRunProfile(p);

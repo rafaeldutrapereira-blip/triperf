@@ -48,6 +48,7 @@ class User(Base):
     race_goal_dist = Column(String, nullable=True)   # "sprint"|"olympic"|"703"|"full"|"21k"|"42k"
     # MÃ©tricas de rendimiento (perfil atleta)
     ftp            = Column(Integer, nullable=True)   # Functional Threshold Power (W)
+    ftp_indoor     = Column(Integer, nullable=True)   # M1: FTP en rodillo; NULL = usar ftp principal
     weight_kg      = Column(Float,   nullable=True)
     height_cm      = Column(Integer, nullable=True)
     age            = Column(Integer, nullable=True)
