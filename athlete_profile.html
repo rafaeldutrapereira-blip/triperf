@@ -1169,6 +1169,41 @@
 
           <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
           <div id="tab-conexiones" class="tab-pane">
+            <!-- S-C: aviso de migracion a Garmin oficial (oculto hasta que el modelo lo muestre) -->
+            <div
+              class="card"
+              id="garmin-migrate-banner"
+              role="status"
+              style="display: none"
+            >
+              <div
+                class="card-body"
+                style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between"
+              >
+                <span
+                  data-i18n="gmig_text"
+                  style="font-size: 0.82rem; flex: 1 1 14rem"
+                  >Pásate a la conexión oficial de Garmin: más segura, sin
+                  compartir tu contraseña.</span
+                >
+                <span style="display: flex; gap: 0.5rem">
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick="garminOfficialConnect()"
+                    data-i18n="gmig_btn"
+                  >
+                    Pasarme a la oficial
+                  </button>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    onclick="gmigDismiss()"
+                    data-i18n="gmig_dismiss"
+                  >
+                    Ahora no
+                  </button>
+                </span>
+              </div>
+            </div>
             <!-- S-B: paso "Trae tu historial" (oculto hasta que el modelo lo muestre) -->
             <div class="card" id="hist-card" style="display: none">
               <div class="card-head">
@@ -2561,6 +2596,7 @@
             new Date(_gLegacyData.last_sync).toLocaleString('es-CL');
         } else log.style.display = 'none';
         if (typeof histRender === 'function') histRender(); /* S-B */
+        if (typeof gmigRender === 'function') gmigRender(); /* S-C */
       }
       function setGarminUI(on, d) {
         _gLegacyOn = !!on;
@@ -3199,6 +3235,38 @@
           .finally(function () {
             btn.disabled = false;
           });
+      }
+
+      /* ── S-C: banner de migracion a Garmin oficial ────────────────────
+         Visible SOLO con legacy conectado y oficial 'not_connected'
+         (= garminCardModel.showSwitch). Descarte en localStorage por usuario
+         (mismo patron que S-B / lx_web_banner_dismissed); al conectar el
+         oficial desaparece por condicion, no por flag. */
+      function gmigVisible(model, dismissed) {
+        return !!(model && model.showSwitch) && !dismissed;
+      }
+      function gmigKey() {
+        return (
+          'lx_garmin_migrate_dismissed' +
+          (_profile && _profile.id ? ':' + _profile.id : '')
+        );
+      }
+      function gmigDismissed() {
+        try {
+          return localStorage.getItem(gmigKey()) === '1';
+        } catch (e) {
+          return false;
+        }
+      }
+      function gmigDismiss() {
+        try {
+          localStorage.setItem(gmigKey(), '1');
+        } catch (e) {}
+        gmigRender();
+      }
+      function gmigRender() {
+        var b = document.getElementById('garmin-migrate-banner');
+        if (b) b.style.display = gmigVisible(_gModel, gmigDismissed()) ? '' : 'none';
       }
 
       /* ── S-B: "Trae tu historial" ─────────────────────────────────────
