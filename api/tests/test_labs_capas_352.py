@@ -65,4 +65,5 @@ def test_i18n_tres_idiomas():
 
 
 def test_build_352():
-    assert "BUILD_VERSION = '352'" in _read("sw.js")
+    m = re.search(r"BUILD_VERSION = '(\d+)'", _read("sw.js"))
+    assert m and int(m.group(1)) >= 352

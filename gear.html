@@ -194,6 +194,56 @@
       .alert-banner strong {
         color: var(--gold);
       }
+      .alert-banner.gear-attn.on {
+        display: block;
+      }
+      .gear-attn {
+        background: var(--surface, #131f2c);
+        border-color: var(--border, #22344a);
+        color: var(--text, #eef4fa);
+      }
+      .gear-attn .ga-head {
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .gear-attn .ga-sum {
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin: 0.15rem 0 0.5rem;
+      }
+      .gear-attn .ga-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .gear-attn .ga-list li {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        font-size: 0.86rem;
+      }
+      .gear-attn .ga-dot {
+        flex: none;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        transform: translateY(0px);
+      }
+      .gear-attn .ga-dot.ok {
+        background: var(--ok, #10b981);
+      }
+      .gear-attn .ga-dot.warn {
+        background: var(--warn, #f0a500);
+      }
+      .gear-attn .ga-dot.bad {
+        background: var(--bad, #ef4444);
+      }
+      .gear-attn .ga-more {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
 
       .main-tabs {
         display: flex;
@@ -628,8 +678,13 @@
     </div>
 
     <div class="c">
-      <div class="alert-banner" id="alert-banner">
-        ⚠️ <span id="alert-text"></span>
+      <div class="alert-banner gear-attn" id="alert-banner">
+        <div class="ga-head">
+          <span class="ga-ico">⚠️</span>
+          <b data-i18n="gear_attn_title">¿Qué necesita atención?</b>
+        </div>
+        <div class="ga-sum" id="alert-text"></div>
+        <ul class="ga-list" id="gear-attn-list"></ul>
       </div>
 
       <div class="main-tabs">
@@ -2324,9 +2379,18 @@
         gearFetch('/gear/summary')
           .then(function (d) {
             var banner = document.getElementById('alert-banner');
-            if (d.alerts_count > 0) {
-              document.getElementById('alert-text').textContent =
-                d.alerts_count === 1
+            var items = gearAttentionItems(d);
+            if (!items.length) {
+              banner.classList.remove('on');
+              return;
+            }
+            document.getElementById('alert-text').textContent =
+              d.alerts_count === 0
+                ? _t(
+                    'gear_attn_all_ok',
+                    'Todo tu equipo está en buen estado por ahora.',
+                  )
+                : d.alerts_count === 1
                   ? _t(
                       'gear_alert_single_web',
                       'Tienes 1 equipo por encima del 80% de su vida útil recomendada.',
@@ -2335,12 +2399,99 @@
                       'gear_alert_plural_web',
                       'Tienes {n} equipos por encima del 80% de su vida útil recomendada.',
                     ).replace('{n}', d.alerts_count);
-              banner.classList.add('on');
-            } else {
-              banner.classList.remove('on');
-            }
+            var MAX = 4;
+            var html = items
+              .slice(0, MAX)
+              .map(function (it) {
+                return (
+                  '<li><span class="ga-dot ' +
+                  it.level +
+                  '"></span><span>' +
+                  it.text +
+                  '</span></li>'
+                );
+              })
+              .join('');
+            if (items.length > MAX)
+              html +=
+                '<li class="ga-more">' +
+                _t('gear_attn_more', '+{n} más en las listas de abajo').replace(
+                  '{n}',
+                  items.length - MAX,
+                ) +
+                '</li>';
+            document.getElementById('gear-attn-list').innerHTML = html;
+            banner.classList.add('on');
           })
           .catch(function () {});
+      }
+
+      // Ítems del resumen ordenados por urgencia (life_pct que ya calcula el
+      // backend). Solo hay km restantes si el dato sale del cálculo actual
+      // (zapatillas y componentes medidos en km); el resto va en porcentaje.
+      function gearAttentionItems(d) {
+        var out = [];
+        function lvl(p) {
+          return p >= 100 ? 'bad' : p >= 80 ? 'warn' : 'ok';
+        }
+        (d.shoes || []).forEach(function (s) {
+          if (s.life_pct == null) return;
+          var name = esc(s.nickname || s.brand + ' ' + s.model);
+          var left = Math.round(s.target_km - s.accumulated_km);
+          var text =
+            s.target_km > 0 && left > 0
+              ? _t(
+                  'gear_attn_shoe_left',
+                  'A tus {name} les quedan ~{km} km',
+                )
+                  .replace('{name}', name)
+                  .replace('{km}', left)
+              : _t(
+                  'gear_attn_shoe_over',
+                  'Tus {name} ya superaron su vida útil recomendada',
+                ).replace('{name}', name);
+          out.push({ pct: s.life_pct, level: lvl(s.life_pct), text: text });
+        });
+        if (!document.documentElement.classList.contains('lx-free')) {
+          var compLbl = COMP_LABELS();
+          (d.bikes || []).forEach(function (b) {
+            (b.components || []).forEach(function (c) {
+              if (c.life_pct == null) return;
+              var comp = esc(c.label || compLbl[c.component_type] || '');
+              var bike = esc(b.brand + ' ' + b.model);
+              var left = Math.round(c.target_value - c.accumulated_value);
+              var text;
+              if (c.life_pct >= 100)
+                text = _t(
+                  'gear_attn_comp_over',
+                  '{comp} de {bike}: ya superó su vida útil recomendada',
+                );
+              else if (c.tracking_unit === 'km' && left > 0)
+                text = _t(
+                  'gear_attn_comp_left',
+                  '{comp} de {bike}: quedan ~{km} km',
+                );
+              else
+                text = _t(
+                  'gear_attn_comp_pct',
+                  '{comp} de {bike}: lleva el {pct}% de su vida útil',
+                );
+              out.push({
+                pct: c.life_pct,
+                level: lvl(c.life_pct),
+                text: text
+                  .replace('{comp}', comp)
+                  .replace('{bike}', bike)
+                  .replace('{km}', left)
+                  .replace('{pct}', Math.round(c.life_pct)),
+              });
+            });
+          });
+        }
+        out.sort(function (a, b) {
+          return b.pct - a.pct;
+        });
+        return out;
       }
 
       function esc(s) {
