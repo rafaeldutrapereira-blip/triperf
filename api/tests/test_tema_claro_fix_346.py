@@ -36,4 +36,4 @@ def test_sparkline_usa_style():
 
 
 def test_build_346():
-    assert re.search(r"BUILD_VERSION = '346'", SW)
+    assert re.search(r"BUILD_VERSION = '(34[6-9]|3[5-9]\d|[4-9]\d\d)'", SW)

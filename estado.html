@@ -1739,6 +1739,149 @@
       .men-scope .men-tabs {
         margin-bottom: 16px;
       }
+
+      /* ═══ ESTADO-CAPAS (BUILD 347): nivel 1 titular, nivel 2 tres bandas, nivel 3 detalle técnico ═══ */
+      .est-hero .rc-rec {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.45;
+      }
+      .est-weighs-h {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0.4rem 0 0.4rem;
+      }
+      .est-weighs-h[hidden] {
+        display: none;
+      }
+      .est-l2 {
+        margin-top: 2rem;
+      }
+      .est-band {
+        margin-bottom: 1.8rem;
+      }
+      .est-band[hidden] {
+        display: none;
+      }
+      .est-q {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--text);
+        margin-bottom: 0.7rem;
+      }
+      .est-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.9rem;
+      }
+      .est-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--est-card-c, var(--border));
+        border-radius: var(--radius);
+        padding: 1rem 1.1rem;
+        font-size: 0.95rem;
+        color: var(--text);
+        min-width: 0;
+      }
+      .est-card-t {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      .est-card-v {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.9rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--text);
+      }
+      .est-card-s {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-top: 0.3rem;
+        color: var(--text);
+      }
+      .est-card-s i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--est-card-c, var(--dim));
+        flex-shrink: 0;
+      }
+      .est-card-x {
+        font-size: 0.95rem;
+        color: var(--muted);
+        margin-top: 0.3rem;
+        line-height: 1.45;
+      }
+      .est-card .lx-term-name,
+      .est-card .lx-term-sigla {
+        font-size: 0.95rem;
+      }
+      .est-week-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        height: 90px;
+        margin: 0.5rem 0 0.2rem;
+      }
+      .est-week-col {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+        gap: 0.2rem;
+      }
+      .est-week-bar {
+        width: 100%;
+        max-width: 38px;
+        border-radius: 4px 4px 0 0;
+        background: var(--est-card-c, var(--dim));
+        min-height: 4px;
+      }
+      .est-week-d {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .est-proto-btn {
+        margin-top: 0.6rem;
+        padding: 0.45rem 0.9rem;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .est-proto-btn:hover {
+        border-color: var(--orange);
+      }
+      .est-tech-bar {
+        margin-top: 0.5rem;
+        display: flex;
+        justify-content: center;
+      }
+      .est-tech-bar .rc-detail-btn {
+        margin-top: 0;
+        font-size: 0.95rem;
+        padding: 0.65rem 1.4rem;
+      }
     </style>
     <link rel="stylesheet" href="nav.css?v=8" />
   </head>
@@ -1796,18 +1939,8 @@
                   <div class="kpi-l" data-i18n="rcw_sleep_last_night">Sueño anoche</div>
                 </div>
               </div>
+              <div class="est-weighs-h" id="est-weighs-h" hidden data-i18n="est_weighs">Lo que más pesa hoy</div>
               <div class="rc-factors" id="fis-rc-factors"></div>
-              <button
-                type="button"
-                class="rc-detail-btn"
-                id="est-detail-btn"
-                aria-expanded="false"
-                aria-controls="est-detail"
-                onclick="EST.toggleDetail()"
-                data-i18n="myplan_see_detail"
-              >
-                Ver detalle
-              </button>
             </div>
           </div>
         </section>
@@ -1876,7 +2009,36 @@
           </div>
         </section>
 
-        <!-- ══ CAPA 2: detalle progresivo ══ -->
+        <!-- ══ NIVEL 2: el porqué simple, tres bandas con pregunta (ESTADO-CAPAS) ══ -->
+        <section class="est-l2" id="est-l2">
+          <div class="est-band" id="est-band-sleep" hidden>
+            <h2 class="est-q" data-i18n="est_q_sleep">¿Cómo dormí?</h2>
+            <div class="est-cards" id="est-cards-sleep"></div>
+          </div>
+          <div class="est-band" id="est-band-body" hidden>
+            <h2 class="est-q" data-i18n="est_q_body">¿Cómo está mi cuerpo?</h2>
+            <div class="est-cards" id="est-cards-body"></div>
+          </div>
+          <div class="est-band" id="est-band-week" hidden>
+            <h2 class="est-q" data-i18n="est_q_week">¿Cómo vengo?</h2>
+            <div class="est-cards" id="est-cards-week"></div>
+          </div>
+        </section>
+
+        <!-- ══ NIVEL 3: detalle técnico completo, plegado por defecto ══ -->
+        <div class="est-tech-bar">
+          <button
+            type="button"
+            class="rc-detail-btn"
+            id="est-detail-btn"
+            aria-expanded="false"
+            aria-controls="est-detail"
+            onclick="EST.toggleDetail()"
+            data-i18n="est_see_tech"
+          >
+            Ver el detalle técnico
+          </button>
+        </div>
         <section class="mt2" id="est-detail" hidden>
           <div class="est-group-h" data-i18n="est_group_phys">Físico</div>
           <div class="panel" id="est-grp-fis">
@@ -2778,6 +2940,11 @@
           });
         });
         ESTADO.refresh();
+        /* ESTADO-CAPAS: puente hacia el nivel 2; si EST_L2 aún no cargó, encola la llamada */
+        window.estL2 = function (fn, arg) {
+          if (window.EST_L2) window.EST_L2[fn](arg);
+          else (window.EST_PEND = window.EST_PEND || []).push([fn, arg]);
+        };
         window.EST = {
           toggleMore: function (id, btn) {
             var row = el(id);
@@ -2790,8 +2957,8 @@
             var open = typeof show === 'boolean' ? show : sec.hidden;
             sec.hidden = !open;
             btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-            btn.setAttribute('data-i18n', open ? 'myplan_hide_detail' : 'myplan_see_detail');
-            btn.textContent = open ? t('myplan_hide_detail', 'Ocultar') : t('myplan_see_detail', 'Ver detalle');
+            btn.setAttribute('data-i18n', open ? 'est_hide_tech' : 'est_see_tech');
+            btn.textContent = open ? t('est_hide_tech', 'Ocultar el detalle técnico') : t('est_see_tech', 'Ver el detalle técnico');
           },
         };
         paint();
@@ -3071,6 +3238,7 @@
             .then(function (d) {
               renderHero(d.recovery);
               ESTADO.setNight(d.hrv, d.sleep);
+              window.estL2('setDash', d);
               renderOverviewDetail(d);
               updateDateSub(d.date_iso);
             })
@@ -3158,7 +3326,14 @@
             },
           ];
 
+          /* ESTADO-CAPAS: «lo que más pesa hoy» = los factores más bajos primero */
           var html = factorDefs
+            .filter(function (f) {
+              return factors[f.key] !== null && factors[f.key] !== undefined;
+            })
+            .sort(function (a, b) {
+              return factors[a.key] - factors[b.key];
+            })
             .map(function (f) {
               var val = factors[f.key];
               if (val === null || val === undefined) return '';
@@ -3185,6 +3360,8 @@
             })
             .join('');
           $('rc-factors').innerHTML = html;
+          var wh = document.getElementById('est-weighs-h');
+          if (wh) wh.hidden = !html;
         }
 
         // ── Overview detail ────────────────────────────────────────────────────────
@@ -4353,9 +4530,7 @@
                 renderMFS(d.today);
                 renderCheckin(d.checkin);
                 renderTrend(d.trend_7d);
-                if (d.suggested_protocol) {
-                  console.log('Suggested:', d.suggested_protocol.name);
-                }
+                window.estL2('setProtocol', d.suggested_protocol);
               })
               .catch(function () {
                 $('mfs-loader').textContent = _t(
@@ -5115,6 +5290,228 @@
           MEN.saveBreathSession = saveBreathSession;
 
         })();
+    </script>
+    <script>
+      /* ═══ ESTADO-CAPAS (BUILD 347) — nivel 2: tres bandas con tarjetas simples ═══
+         Solo presentación: usa datos que la página ya consulta (recovery/dashboard,
+         sleep/history, hrv/history, wellness/history, timeline, mental/dashboard).
+         Tarjeta sin datos = se omite; jamás cifras ni rangos de relleno. */
+      (function () {
+        'use strict';
+        var API = '/api';
+        var S = { dash: null, sleepH: null, hrvH: null, wellH: null, tl: null, proto: null };
+        var CLR = { 0: 'var(--green)', 1: 'var(--gold)', 2: 'var(--red)' };
+        function t(k, f) {
+          var v = window.i18n ? window.i18n.t(k) : null;
+          return v && v !== k ? v : f;
+        }
+        function esc(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+          });
+        }
+        function has(v) {
+          return v !== null && v !== undefined && !isNaN(v);
+        }
+        function tok() {
+          return localStorage.getItem('lx_co_token') || '';
+        }
+        function get(path) {
+          return fetch(API + path, { credentials: 'include', headers: { Authorization: 'Bearer ' + tok() } })
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .catch(function () {
+              return null;
+            });
+        }
+        function term(id) {
+          return window.LXTerm ? LXTerm.render(id) : esc(id);
+        }
+        function sword(sev) {
+          return sev === 0 ? t('est_s_good', 'Bien') : sev === 1 ? t('est_s_warn', 'Atención') : t('est_s_care', 'Cuidado');
+        }
+        /* card: {title (html ya escapado), value, sev (0|1|2|null), extra (texto)} */
+        function card(c) {
+          var style = c.sev === 0 || c.sev === 1 || c.sev === 2 ? ' style="--est-card-c:' + CLR[c.sev] + '"' : '';
+          return (
+            '<div class="est-card"' + style + '>' +
+            '<div class="est-card-t">' + c.title + '</div>' +
+            '<div class="est-card-v">' + esc(c.value) + '</div>' +
+            (style ? '<div class="est-card-s"><i></i>' + esc(sword(c.sev)) + '</div>' : '') +
+            (c.extra ? '<div class="est-card-x">' + esc(c.extra) + '</div>' : '') +
+            '</div>'
+          );
+        }
+        function fill(band, cards, extraHtml) {
+          var b = document.getElementById('est-band-' + band);
+          var host = document.getElementById('est-cards-' + band);
+          var html = cards.join('') + (extraHtml || '');
+          host.innerHTML = html;
+          b.hidden = !html;
+        }
+        function hm(min) {
+          var h = Math.floor(min / 60),
+            m = Math.round(min % 60);
+          return h + ' h ' + (m < 10 ? '0' : '') + m + ' min';
+        }
+        function avg(a) {
+          return a.reduce(function (x, y) { return x + y; }, 0) / a.length;
+        }
+        function last7(points, field) {
+          return (points || []).slice(-7).map(function (p) { return p[field]; }).filter(function (v) { return has(v) && v > 0; });
+        }
+
+        function sleepBand() {
+          var cards = [];
+          var s = S.dash && S.dash.sleep;
+          var sh = S.sleepH;
+          var target = sh && has(sh.target_h) ? sh.target_h : 8;
+          if (s && has(s.total_min) && s.total_min > 0) {
+            var h = s.total_min / 60;
+            var sev = h >= target ? 0 : h >= 6 ? 1 : 2;
+            cards.push(card({
+              title: esc(t('est_c_night', 'Sueño de anoche')),
+              value: hm(s.total_min),
+              sev: sev,
+              extra: t('est_c_target', 'Objetivo:') + ' ' + target + ' h',
+            }));
+          }
+          if (sh && has(sh.sleep_debt_7d_h)) {
+            var d = sh.sleep_debt_7d_h;
+            cards.push(card({
+              title: esc(t('est_c_debt', 'Deuda de sueño (7 días)')),
+              value: d > 0 ? d + ' h' : '0 h',
+              sev: d > 3 ? 2 : d > 1 ? 1 : 0,
+              extra: has(sh.nights_under_6h) && sh.nights_under_6h ? sh.nights_under_6h + ' ' + t('rcw_nights_under_6h', 'noches con menos de 6h.') : '',
+            }));
+          }
+          if (s && (s.deep_min || s.rem_min)) {
+            var parts = [];
+            if (s.deep_min) parts.push(t('est_c_deep', 'Profundo') + ' ' + hm(s.deep_min));
+            if (s.rem_min) parts.push('REM ' + hm(s.rem_min));
+            cards.push(card({
+              title: esc(t('est_c_quality', 'Calidad del sueño')),
+              value: parts.join(' · '),
+              sev: null,
+              extra: has(s.score) ? t('rcw_garmin_score', 'Score Garmin:') + ' ' + s.score : '',
+            }));
+          }
+          fill('sleep', cards);
+          var v = document.querySelectorAll('#est-cards-sleep .est-card-v');
+          for (var i = 0; i < v.length; i++) v[i].style.fontSize = v[i].textContent.length > 18 ? '1.15rem' : '';
+        }
+
+        function bodyBand() {
+          var cards = [];
+          var dash = S.dash;
+          var hrv = dash && dash.hrv;
+          if (hrv && has(hrv.last_night_ms)) {
+            var c = { title: term('hrv'), value: Math.round(hrv.last_night_ms) + ' ms', sev: null, extra: '' };
+            if (has(hrv.baseline_ms) && hrv.baseline_ms > 0) {
+              var r = hrv.last_night_ms / hrv.baseline_ms; /* mismos cortes que las zonas del detalle HRV */
+              c.sev = r > 0.95 ? 0 : r > 0.8 ? 1 : 2;
+              var dp = Math.round((r - 1) * 100);
+              c.extra = t('est_c_vs_base', 'Tu referencia personal:') + ' ' + Math.round(hrv.baseline_ms) + ' ms (' + (dp > 0 ? '+' : '') + dp + '%)';
+            } else {
+              var pts = ((hrv.trend_7d || []).map(function (p) { return p.hrv_ms; })).filter(has);
+              if (pts.length >= 2) c.extra = t('est_c_avg7', 'Promedio de 7 días:') + ' ' + Math.round(avg(pts)) + ' ms';
+            }
+            cards.push(card(c));
+          }
+          var g = dash && dash.garmin;
+          if (g && has(g.resting_hr) && g.resting_hr > 0) {
+            /* sin baseline en el servidor: valor + contexto 7 días, sin estado inventado */
+            var rc = { title: term('resting_hr'), value: Math.round(g.resting_hr) + ' bpm', sev: null, extra: '' };
+            var rv = last7(S.hrvH && S.hrvH.points, 'resting_hr');
+            if (rv.length >= 2) rc.extra = t('est_c_avg7', 'Promedio de 7 días:') + ' ' + Math.round(avg(rv)) + ' bpm';
+            cards.push(card(rc));
+          }
+          var w = dash && dash.wellness;
+          if (w && has(w.soreness)) {
+            /* escala del check-in: 5 = sin dolor */
+            var fc = { title: term('fatiga_muscular'), value: w.soreness + ' / 5', sev: w.soreness >= 4 ? 0 : w.soreness === 3 ? 1 : 2, extra: '' };
+            var wv = last7(S.wellH && S.wellH.points, 'soreness');
+            if (wv.length >= 2) fc.extra = t('est_c_avg7', 'Promedio de 7 días:') + ' ' + (Math.round(avg(wv) * 10) / 10) + ' / 5';
+            cards.push(card(fc));
+          }
+          fill('body', cards);
+        }
+
+        function weekBand() {
+          var cards = [];
+          var pts = ((S.tl && S.tl.timeline) || []).filter(function (p) { return has(p.recovery_score); }).slice(-7);
+          if (pts.length >= 2) {
+            var lang = document.documentElement.lang || 'es';
+            var cols = pts.map(function (p) {
+              var sc = p.recovery_score; /* cortes del propio score de Recuperación (≥70 / ≥40) */
+              var sev = sc >= 70 ? 0 : sc >= 40 ? 1 : 2;
+              var dt = new Date(p.date_iso + 'T12:00:00');
+              var lab = isNaN(dt.getTime()) ? '' : dt.toLocaleDateString(lang, { weekday: 'short' });
+              return (
+                '<div class="est-week-col" title="' + esc(p.date_iso + ': ' + Math.round(sc) + ' · ' + sword(sev)) + '">' +
+                '<div class="est-week-bar" style="--est-card-c:' + CLR[sev] + ';height:' + Math.max(4, Math.round(sc * 0.72)) + 'px"></div>' +
+                '<div class="est-week-d">' + esc(lab) + '</div></div>'
+              );
+            });
+            cards.push(
+              '<div class="est-card" style="grid-column:1/-1">' +
+              '<div class="est-card-t">' + esc(t('est_c_week7', 'Tu estado en los últimos 7 días')) + '</div>' +
+              '<div class="est-week-bars">' + cols.join('') + '</div>' +
+              '<div class="est-card-x">' + esc(t('est_c_week_legend', 'Verde: bien · Amarillo: atención · Rojo: cuidado')) + '</div></div>'
+            );
+          }
+          var p = S.proto;
+          if (p && p.id) {
+            var nm = t('mp_' + p.id + '_n', p.name || '');
+            var ds = t('mp_' + p.id + '_d', p.description || '');
+            cards.push(
+              '<div class="est-card">' +
+              '<div class="est-card-t">' + esc(t('est_c_proto', 'Protocolo sugerido para hoy')) + '</div>' +
+              '<div class="est-card-v" style="font-size:1.35rem">' + esc(nm) + '</div>' +
+              (has(p.duration_min) ? '<div class="est-card-x">' + esc(p.duration_min + ' min') + '</div>' : '') +
+              (ds ? '<div class="est-card-x">' + esc(ds) + '</div>' : '') +
+              '<button type="button" class="est-proto-btn" onclick="EST_L2.openProto(\'' + esc(p.id) + '\')">' + esc(t('est_c_proto_open', 'Ver protocolo')) + '</button> ' +
+              '<button type="button" class="est-proto-btn" onclick="EST_L2.allProtos()">' + esc(t('est_c_proto_all', 'Ver todos los protocolos')) + '</button>' +
+              '</div>'
+            );
+          }
+          fill('week', cards);
+        }
+
+        function paint() {
+          sleepBand();
+          bodyBand();
+          weekBand();
+        }
+
+        window.EST_L2 = {
+          setDash: function (d) { S.dash = d; paint(); },
+          setProtocol: function (p) { S.proto = p || null; paint(); },
+          openProto: function (id) { if (window.MEN) MEN.openProtoModal(id); },
+          allProtos: function () {
+            EST.toggleDetail(true);
+            var b = document.querySelector('#est-grp-men .men-tab-btn[onclick*="protocols"]');
+            if (window.MEN) MEN.switchTab('protocols', b);
+            var g = document.getElementById('est-grp-men');
+            if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          },
+          _state: S,
+        };
+        ['lx:i18nready', 'lx:langchange'].forEach(function (ev) {
+          document.addEventListener(ev, paint);
+        });
+
+        (window.EST_PEND || []).forEach(function (q) {
+          window.EST_L2[q[0]](q[1]);
+        });
+        window.EST_PEND = [];
+        /* datos de contexto: 7 días de cada serie, una consulta por fuente */
+        get('/recovery/sleep/history?days=7').then(function (d) { S.sleepH = d; paint(); });
+        get('/recovery/hrv/history?days=14').then(function (d) { S.hrvH = d; paint(); });
+        get('/recovery/wellness/history?days=7').then(function (d) { S.wellH = d; paint(); });
+        get('/recovery/timeline?days=7').then(function (d) { S.tl = d; paint(); });
+      })();
     </script>
     <script src="lx-audit.js"></script>
   </body>
