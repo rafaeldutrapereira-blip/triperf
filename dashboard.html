@@ -2395,7 +2395,7 @@
       }
       .cp-card-done .cp-card-name::after {
         content: ' ✓';
-        color: #10b981;
+        color: var(--ok);
       }
       .cp-log-btn {
         font-size: 0.65rem;
@@ -4340,6 +4340,22 @@
           ];
         });
       }
+      /* Tema: colores de semaforo como variables (--ok/--warn/--bad/--cyan/--orange/--faint)
+         para que el tema claro use los tonos oscuros. lxA = color con alpha sin
+         sufijo hex; lxTone normaliza los hex del backend a la variable del tema. */
+      function lxA(c, pct) {
+        return 'color-mix(in srgb, ' + c + ' ' + pct + '%, transparent)';
+      }
+      function lxTone(c) {
+        var m = {
+          '#10b981': 'var(--ok)',
+          '#f0a500': 'var(--warn)',
+          '#ef4444': 'var(--bad)',
+          '#0ea5e9': 'var(--cyan)',
+          '#ff6535': 'var(--orange)',
+        };
+        return (c && m[String(c).toLowerCase()]) || c;
+      }
       function drawSparkline(id, vals, color) {
         var svg = document.getElementById(id);
         if (!svg) return;
@@ -4357,14 +4373,14 @@
         svg.innerHTML =
           '<polyline points="' +
           poly +
-          '" fill="none" stroke="' +
+          '" fill="none" style="stroke:' +
           color +
           '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
           '<circle cx="' +
           last[0].toFixed(1) +
           '" cy="' +
           last[1].toFixed(1) +
-          '" r="2.3" fill="' +
+          '" r="2.3" style="fill:' +
           color +
           '"/>';
       }
@@ -4413,7 +4429,7 @@
                 p.projection.map(function (pt) {
                   return pt.ctl;
                 }),
-                '#10B981',
+                'var(--ok)',
               );
             })
             .catch(function () {});
@@ -4437,7 +4453,7 @@
                 g.race.name + ' · ' + g.countdown.days_to_race + 'd';
             if (g.targets.already_fit) {
               if (valEl) valEl.textContent = _t('dash_ready', '✓ Listo');
-              if (valEl) valEl.style.color = '#10B981';
+              if (valEl) valEl.style.color = 'var(--ok)';
               if (badgeEl) {
                 badgeEl.className = 'badge b-up';
                 badgeEl.textContent = _t('dash_ctl_label', 'Forma (CTL)') + ' ' + g.fitness.ctl_current;
@@ -4446,8 +4462,8 @@
               if (valEl) valEl.textContent = '+' + g.targets.ctl_gap.toFixed(1);
               if (valEl)
                 valEl.style.color = g.directive.is_safe_ramp
-                  ? '#F0A500'
-                  : '#EF4444';
+                  ? 'var(--warn)'
+                  : 'var(--bad)';
               if (badgeEl) {
                 badgeEl.className =
                   'badge ' + (g.directive.is_safe_ramp ? 'b-warn' : 'b-dn');
@@ -4469,28 +4485,28 @@
             recent.map(function (p) {
               return p.ctl;
             }),
-            '#10B981',
+            'var(--ok)',
           );
           drawSparkline(
             'spark-atl',
             recent.map(function (p) {
               return p.atl;
             }),
-            '#FF6535',
+            'var(--orange)',
           );
           drawSparkline(
             'spark-tsb',
             recent.map(function (p) {
               return p.ctl - p.atl;
             }),
-            '#F0A500',
+            'var(--warn)',
           );
         }
         // ACWR: historial real calculado por el backend (acwr_history), coloreado
         // igual que el badge de la zona actual.
         if (d.acwr_history && d.acwr_history.length > 1) {
           var acwrValEl = document.getElementById('kc-acwr-val');
-          var acwrColor = (acwrValEl && acwrValEl.style.color) || '#10B981';
+          var acwrColor = (acwrValEl && acwrValEl.style.color) || 'var(--ok)';
           var recentAcwr = d.acwr_history.slice(-14);
           drawSparkline(
             'spark-acwr',
@@ -4507,7 +4523,7 @@
             var info = d.acwr_by_sport[sp];
             if (!info || !info.history || info.history.length < 2) return;
             var valEl = document.getElementById('kc-acwr-' + sp + '-val');
-            var color = (valEl && valEl.style.color) || '#3D6880';
+            var color = (valEl && valEl.style.color) || 'var(--faint)';
             var recent = info.history.slice(-14);
             drawSparkline(
               'spark-acwr-' + sp,
@@ -4544,7 +4560,7 @@
             .slice(-14);
           var rhrSparkColor =
             (document.getElementById('kc-rhr-val') || {}).style.color ||
-            '#0EA5E9';
+            'var(--cyan)';
           if (rhrPts.length > 1)
             drawSparkline(
               'spark-rhr',
@@ -4596,7 +4612,7 @@
               vo2RunPts.map(function (p) {
                 return p.vo2;
               }),
-              '#0EA5E9',
+              'var(--cyan)',
             );
         }
         if (d.vo2_history_cycling && d.vo2_history_cycling.length > 1) {
@@ -4611,7 +4627,7 @@
               vo2BikePts.map(function (p) {
                 return p.vo2;
               }),
-              '#FF6535',
+              'var(--orange)',
             );
         }
 
@@ -4632,7 +4648,7 @@
               trPts.map(function (p) {
                 return p.tr;
               }),
-              '#0EA5E9',
+              'var(--cyan)',
             );
         }
         // Sueño (horas/noche): mismo sleep_history que ya alimenta la card de
@@ -4659,7 +4675,7 @@
           var fatPts = PMC_ALL.slice(-14).map(function (p) {
             return Math.min(100, Math.max(0, Math.round(50 - (p.ctl - p.atl))));
           });
-          drawSparkline('spark-fatmusc', fatPts, '#F0A500');
+          drawSparkline('spark-fatmusc', fatPts, 'var(--warn)');
         }
       }
 
@@ -5218,7 +5234,7 @@
 
               /* fill color based on adherence */
               var fillColor = d.isFuture
-                ? 'rgba(255,255,255,.05)'
+                ? 'color-mix(in srgb, var(--text) 6%, transparent)'
                 : isRest
                   ? 'transparent'
                   : isUnplanned
@@ -5240,7 +5256,7 @@
               var pctTxt = d.isFuture
                 ? ''
                 : isRest
-                  ? '<span style="color:rgba(255,255,255,.18)">—</span>'
+                  ? '<span style="color:color-mix(in srgb, var(--text) 22%, transparent)">—</span>'
                   : isUnplanned
                     ? '<span style="color:rgba(255,101,53,.7);font-size:.46rem">EXTRA</span>'
                     : isOver
@@ -5702,9 +5718,9 @@
             d.resting_hr == null
               ? ''
               : d.resting_hr <= 55
-                ? '#10B981'
+                ? 'var(--ok)'
                 : d.resting_hr <= 70
-                  ? '#0EA5E9'
+                  ? 'var(--cyan)'
                   : '#F43F5E';
         }
         var bRhr = document.getElementById('badge-rhr');
@@ -5745,7 +5761,7 @@
           var bbValEl = document.getElementById('kc-bb-val');
           bbValEl.innerHTML = Math.round(bbVal) + '<span class="u">%</span>';
           bbValEl.style.color =
-            bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
+            bbVal >= 60 ? 'var(--ok)' : bbVal >= 30 ? 'var(--warn)' : '#F43F5E';
           var bBb = document.getElementById('badge-bb');
           bBb.className = 'badge';
           bBb.textContent =
@@ -5762,7 +5778,7 @@
                 ? 'rgba(240,165,0,.18)'
                 : 'rgba(244,63,94,.18)';
           bBb.style.color =
-            bbVal >= 60 ? '#10B981' : bbVal >= 30 ? '#F0A500' : '#F43F5E';
+            bbVal >= 60 ? 'var(--ok)' : bbVal >= 30 ? 'var(--warn)' : '#F43F5E';
         }
 
         // tss-week-meta (subtítulo semana)
@@ -5828,7 +5844,7 @@
           var zones = {
             danger: {
               label: _t('dash_risk_high', '⚠ Alto riesgo'),
-              color: '#EF4444',
+              color: 'var(--bad)',
               tip: _t(
                 'dash_tip_danger',
                 'ACWR >1.5 — reduce carga esta semana',
@@ -5836,7 +5852,7 @@
             },
             warning: {
               label: _t('dash_load_high', 'Carga alta'),
-              color: '#F0A500',
+              color: 'var(--warn)',
               tip: _t(
                 'dash_tip_warning',
                 'ACWR 1.3–1.5 — monitorea recuperación',
@@ -5844,7 +5860,7 @@
             },
             optimal: {
               label: _t('dash_val_optimal', 'Óptimo'),
-              color: '#10B981',
+              color: 'var(--ok)',
               tip: _t(
                 'dash_tip_optimal',
                 'Zona óptima de entrenamiento (0.8–1.3)',
@@ -5852,7 +5868,7 @@
             },
             low: {
               label: _t('dtw_acwr_badge_low', 'Sub-carga'),
-              color: '#0EA5E9',
+              color: 'var(--cyan)',
               tip: _t(
                 'dash_tip_low',
                 'ACWR <0.8 — puedes incrementar volumen',
@@ -5863,7 +5879,7 @@
             // una zona que no corresponde a ningún cálculo real.
             no_data: {
               label: _t('dash_nodata_enough', 'Sin datos suficientes'),
-              color: '#3D6880',
+              color: 'var(--faint)',
               tip: _t(
                 'dash_tip_nodata',
                 'Necesitas al menos 7 días de actividad sincronizada para calcular ACWR',
@@ -5879,8 +5895,8 @@
           if (acwrBadge) {
             acwrBadge.textContent = z.label;
             acwrBadge.style.color = z.color;
-            acwrBadge.style.borderColor = z.color + '55';
-            acwrBadge.style.background = z.color + '18';
+            acwrBadge.style.borderColor = lxA(z.color, 33);
+            acwrBadge.style.background = lxA(z.color, 9);
           }
           if (acwrTip) acwrTip.textContent = z.tip;
         }
@@ -5893,23 +5909,23 @@
           var acwrZones = {
             danger: {
               label: _t('dash_risk_high', '⚠ Alto riesgo'),
-              color: '#EF4444',
+              color: 'var(--bad)',
             },
             warning: {
               label: _t('dash_load_high', 'Carga alta'),
-              color: '#F0A500',
+              color: 'var(--warn)',
             },
             optimal: {
               label: _t('dash_val_optimal', 'Óptimo'),
-              color: '#10B981',
+              color: 'var(--ok)',
             },
             low: {
               label: _t('dtw_acwr_badge_low', 'Sub-carga'),
-              color: '#0EA5E9',
+              color: 'var(--cyan)',
             },
             no_data: {
               label: _t('dash_no_data', 'Sin datos'),
-              color: '#3D6880',
+              color: 'var(--faint)',
             },
           };
           ['swim', 'bike', 'run', 'gym'].forEach(function (sp) {
@@ -5932,8 +5948,8 @@
             if (badgeEl) {
               badgeEl.textContent = label;
               badgeEl.style.color = z.color;
-              badgeEl.style.borderColor = z.color + '55';
-              badgeEl.style.background = z.color + '18';
+              badgeEl.style.borderColor = lxA(z.color, 33);
+              badgeEl.style.background = lxA(z.color, 9);
             }
           });
         }
@@ -5972,8 +5988,8 @@
           if (wBadge) {
             wBadge.textContent = wZone.label;
             wBadge.style.color = wZone.color;
-            wBadge.style.borderColor = wZone.color + '55';
-            wBadge.style.background = wZone.color + '18';
+            wBadge.style.borderColor = lxA(wZone.color, 33);
+            wBadge.style.background = lxA(wZone.color, 9);
           }
           if (wTip && wTipSrc) wTip.textContent = wTipSrc.tip;
         }
@@ -5992,13 +6008,13 @@
           };
           var injValEl = document.getElementById('kc-injury-num');
           injValEl.textContent = Math.round(d.injury_risk.score);
-          injValEl.parentElement.style.color = d.injury_risk.color;
+          injValEl.parentElement.style.color = lxTone(d.injury_risk.color);
           var bInjury = document.getElementById('kc-injury-badge');
           bInjury.textContent =
             injLevelLabels[d.injury_risk.level] || d.injury_risk.level;
-          bInjury.style.background = d.injury_risk.color + '18';
-          bInjury.style.color = d.injury_risk.color;
-          bInjury.style.borderColor = d.injury_risk.color + '55';
+          bInjury.style.background = lxA(lxTone(d.injury_risk.color), 9);
+          bInjury.style.color = lxTone(d.injury_risk.color);
+          bInjury.style.borderColor = lxA(lxTone(d.injury_risk.color), 33);
         }
 
         // PMC: rebuild PMC_ALL entirely from real Garmin historical data
@@ -6366,7 +6382,7 @@
               kcTr.style.display = '';
               document.getElementById('kc-tr-val').textContent = Math.round(tr);
               var trColor =
-                tr >= 70 ? '#10B981' : tr >= 40 ? '#F0A500' : '#EF4444';
+                tr >= 70 ? 'var(--ok)' : tr >= 40 ? 'var(--warn)' : 'var(--bad)';
               var trLabel =
                 tr >= 70
                   ? _t('dash_val_optimal', 'Óptimo')
@@ -6375,7 +6391,7 @@
                     : _t('dash_lvl_low', 'Bajo');
               var bTr = document.getElementById('badge-tr');
               bTr.textContent = trLabel;
-              bTr.style.background = trColor + '2e';
+              bTr.style.background = lxA(trColor, 18);
               bTr.style.color = trColor;
             }
 
@@ -6391,17 +6407,17 @@
               );
               var MFS_UI = {
                 peak: {
-                  color: '#10B981',
+                  color: 'var(--ok)',
                   label: _t('dash_mfs_peak', 'Óptima'),
                 },
-                good: { color: '#0EA5E9', label: _t('dash_mfs_good', 'Buena') },
+                good: { color: 'var(--cyan)', label: _t('dash_mfs_good', 'Buena') },
                 moderate: {
-                  color: '#F0A500',
+                  color: 'var(--warn)',
                   label: _t('dash_mfs_moderate', 'Moderada'),
                 },
                 low: { color: '#F97316', label: _t('dash_mfs_low', 'Alta') },
                 critical: {
-                  color: '#EF4444',
+                  color: 'var(--bad)',
                   label: _t('dash_mfs_critical', 'Crítica'),
                 },
               };
@@ -6411,7 +6427,7 @@
               };
               var bMental = document.getElementById('badge-mental');
               bMental.textContent = mCfg.label;
-              bMental.style.background = mCfg.color + '2e';
+              bMental.style.background = lxA(mCfg.color, 18);
               bMental.style.color = mCfg.color;
 
               // Sparkline: mismo trend_7d real que ya trae este endpoint (usado

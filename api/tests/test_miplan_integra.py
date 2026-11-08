@@ -69,4 +69,4 @@ def test_franja_fuera_de_ver_mas():
 
 
 def test_build_345():
-    assert re.search(r"BUILD_VERSION = '345'", SW)
+    assert re.search(r"BUILD_VERSION = '346'", SW)
