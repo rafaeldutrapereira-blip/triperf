@@ -58,7 +58,7 @@ function cut(a, b) {
 }
 const src = cut('function iso(d)', 'function isoWeekNum')
   + cut('function jsArg', 'function fmtDateLabel')
-  + cut('function _wsEsc', 'function renderWeekStrip')
+  + cut('function _wsEsc', 'function loadWeekSummary')
   + cut('var _openWk', '// PLANES REALES SINCRONIZADOS');
 const els = { 'sess-cards': { innerHTML: '' } };
 global.document = { getElementById: id => els[id] };
@@ -69,6 +69,7 @@ const run = new Function('cfg', 'document', 'window', '_t', `
   function monthsS() { return ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']; }
   var SPORT = { bike: {icon:'B', label:'Ciclismo'}, run: {icon:'R', label:'Carrera'} };
   var S = { view: cfg.view || 'week', filters: [] };
+  var _wkSumCache = cfg.week || {};
   function todayIso() { return cfg.today; }
   function weekMon(d) { var m = new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate() - (m.getDay() || 7) + 1); return m; }
   function currentRange() { var m = weekMon(new Date(cfg.today + 'T12:00:00')); return { start: iso(m), end: iso(addDays(m, 6)) }; }
@@ -91,11 +92,11 @@ console.log(JSON.stringify({ html: els['sess-cards'].innerHTML }));
 """
 
 
-def _run(sessions, today="2026-11-04", view="week"):
+def _run(sessions, today="2026-11-04", view="week", week=None):
     assert NODE, "node requerido"
     p = subprocess.run(
         [NODE, "-e", HARNESS, str(ROOT / "training_plan.html"),
-         json.dumps(dict(sessions=sessions, today=today, view=view))],
+         json.dumps(dict(sessions=sessions, today=today, view=view, week=week or {}))],
         capture_output=True, text=True, encoding="utf-8", timeout=30)
     assert p.returncode == 0, p.stderr
     return json.loads(p.stdout.strip().splitlines()[-1])["html"]

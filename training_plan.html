@@ -585,57 +585,35 @@
         }
       }
 
-      /* ── S3: franja semanal (wellness + hecho + plan + resumen) ── */
-      #wk-strip {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(120px, 1.1fr);
-        gap: 1px;
-        background: var(--border2);
-        min-width: 560px;
-        margin-bottom: 0.6rem;
-        font-size: 0.68rem;
+      /* ── MIPLAN-INTEGRA: bienestar por día + métricas de la semana ── */
+      .tp-well {
+        font-size: 0.62rem;
+        color: var(--dim);
+        line-height: 1.3;
+        padding: 0 0.1rem;
       }
-      #wk-strip[hidden] {
+      .tp-met {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 1.1rem;
+        margin: 0 0 0.8rem;
+        padding: 0.45rem 0.6rem;
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        font-size: 0.74rem;
+        color: var(--muted);
+      }
+      .tp-met[hidden] {
         display: none;
       }
-      #wk-strip .ws-c {
-        background: var(--bg);
-        padding: 0.5rem 0.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        min-width: 0;
+      .tp-met-r b {
+        color: var(--text);
+        margin-left: 0.25rem;
       }
-      #wk-strip .ws-c.today {
-        box-shadow: inset 0 0 0 1px rgba(255, 101, 53, 0.25);
-      }
-      #wk-strip .ws-w {
-        color: var(--dim);
+      .tp-met-asof {
+        flex-basis: 100%;
         font-size: 0.62rem;
-      }
-      #wk-strip .ws-a {
-        color: var(--text);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #wk-strip .ws-p {
-        color: var(--muted);
-        font-style: italic;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #wk-strip .ws-sum {
-        background: var(--surface, var(--bg));
-      }
-      #wk-strip .ws-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.4rem;
-      }
-      #wk-strip .ws-row b {
-        color: var(--text);
+        color: var(--dim);
       }
       /* ── WEEK CALENDAR ── */
       .cal-week-grid {
@@ -1641,7 +1619,6 @@
                   </div>
                 </div>
               </div>
-              <div id="wk-strip" hidden></div>
               <div id="cal-area"></div>
             </div>
 
@@ -2574,10 +2551,10 @@
         // ──────────────────────────────────────
         // RENDER: WEEK CALENDAR
         // ──────────────────────────────────────
-        // S3: franja semanal. TODAS las cifras vienen de
+        // S3 (datos): TODAS las cifras vienen de
         // GET /training-plan/week-summary (PMC/TSS/wellness ya calculados en
         // servidor); aqui solo se formatean. Si falta un dato, se omite.
-        var _wkStripCache = {};
+        var _wkSumCache = {};
         function _wsEsc(v) {
           return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
             return {
@@ -2589,84 +2566,35 @@
             }[c];
           });
         }
-        function renderWeekStrip(monIso) {
-          var el = document.getElementById('wk-strip');
-          if (!el) return;
-          var data = _wkStripCache[monIso];
-          if (!data) {
-            el.hidden = true;
-            if (_wkStripCache[monIso] === undefined) {
-              var auth = _complAuth();
-              if (!auth.tok) return;
-              _wkStripCache[monIso] = null;
-              fetch(auth.API + '/training-plan/week-summary?monday=' + monIso, {
-                headers: { Authorization: 'Bearer ' + auth.tok },
-              })
-                .then(function (r) {
-                  return r.ok ? r.json() : null;
-                })
-                .then(function (j) {
-                  if (j) {
-                    _wkStripCache[monIso] = j;
-                    if (S.view === 'week' && iso(weekMon(S.ref)) === monIso)
-                      renderWeekStrip(monIso);
-                  }
-                })
-                .catch(function () {});
-            }
-            return;
-          }
-          var todayS = todayIso();
-          var h = '';
-          data.days.forEach(function (d, i) {
-            var w = d.wellness || {};
-            var wl = [];
-            if (w.sleep_h != null)
-              wl.push(_t('tp_ws_sleep', 'Sueño') + ' ' + w.sleep_h + 'h');
-            if (w.hrv != null) wl.push(_t('tp_ws_hrv', 'HRV') + ' ' + w.hrv);
-            if (w.rhr != null)
-              wl.push(_t('tp_ws_rhr', 'FC reposo') + ' ' + w.rhr);
-            h += '<div class="ws-c' + (d.date_iso === todayS ? ' today' : '') + '">';
-            h += '<span class="cal-dow">' + _wsEsc(daysShort()[i]) + '</span>';
-            if (wl.length) h += '<div class="ws-w">' + _wsEsc(wl.join(' · ')) + '</div>';
-            d.done.forEach(function (a) {
-              h +=
-                '<div class="ws-a" title="' + _wsEsc(a.name) + '">✓ ' +
-                _wsEsc(a.name || a.sport) + ' · ' + fmtDur(a.dur_min) +
-                (a.tss ? ' · TSS ' + Math.round(a.tss) : '') + '</div>';
-            });
-            d.planned.forEach(function (p) {
-              h +=
-                '<div class="ws-p" title="' + _wsEsc(p.name) + '">' +
-                _wsEsc(_t('tp_ws_plan', 'Plan')) + ': ' + _wsEsc(p.name) +
-                (p.dur_min ? ' · ' + fmtDur(p.dur_min) : '') + '</div>';
-            });
-            h += '</div>';
-          });
-          var s = data.summary || {};
-          var rows = [];
-          function row(label, v) {
-            if (v == null) return;
-            rows.push('<div class="ws-row"><span>' + _wsEsc(label) + '</span><b>' + _wsEsc(v) + '</b></div>');
-          }
-          row(_t('tp_ws_load', 'Carga (TSS)'), s.tss != null ? Math.round(s.tss) : null);
-          row(_t('tp_ws_fitness', 'Fitness (CTL)'), s.ctl);
-          row(_t('tp_ws_form', 'Forma (TSB)'), s.tsb);
-          row(_t('tp_ws_fatigue', 'Fatiga (ATL)'), s.atl);
-          row(_t('tp_ws_ramp', 'Ramp rate'), s.ramp != null ? (s.ramp > 0 ? '+' : '') + s.ramp : null);
-          h += '<div class="ws-c ws-sum"><span class="cal-dow">' +
-            _wsEsc(_t('tp_ws_summary', 'Resumen semanal')) + '</span>' + rows.join('') +
-            (s.pmc_date ? '<div class="ws-w">' + _wsEsc(_t('tp_ws_asof', 'al')) + ' ' + _wsEsc(s.pmc_date) + '</div>' : '') +
-            '</div>';
-          el.innerHTML = h;
-          el.hidden = false;
+        // MIPLAN-INTEGRA: la franja ya no se pinta aqui; este fetch solo
+        // alimenta el cache que lee renderOverview (bienestar por dia y
+        // metricas de la semana). Misma fuente que la franja S3.
+        function loadWeekSummary(monIso) {
+          if (_wkSumCache[monIso] !== undefined) return;
+          var auth = _complAuth();
+          if (!auth.tok) return;
+          _wkSumCache[monIso] = null;
+          fetch(auth.API + '/training-plan/week-summary?monday=' + monIso, {
+            headers: { Authorization: 'Bearer ' + auth.tok },
+          })
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (j) {
+              if (j) {
+                _wkSumCache[monIso] = j;
+                if (S.view === 'week' && iso(weekMon(S.ref)) === monIso)
+                  renderOverview();
+              }
+            })
+            .catch(function () {});
         }
 
         function renderWeekCal() {
           var mon = weekMon(S.ref);
           var todayS = todayIso();
           var html = '<div class="cal-week-grid">';
-          renderWeekStrip(iso(mon));
+          loadWeekSummary(iso(mon));
 
           for (var i = 0; i < 7; i++) {
             var d = addDays(mon, i);
@@ -3142,6 +3070,60 @@
           return fmtDur(dur) + (dist ? ' · ' + fmtDist(dist, sport) : '');
         }
 
+        // Bienestar del dia (sueno · VFC · FC reposo). Sin dato → ''.
+        function ovWellLine(w) {
+          w = w || {};
+          var wl = [];
+          if (w.sleep_h != null)
+            wl.push(_t('tp_ws_sleep', 'Sueño') + ' ' + w.sleep_h + 'h');
+          if (w.hrv != null) wl.push(_t('tp_ws_hrv', 'HRV') + ' ' + w.hrv);
+          if (w.rhr != null)
+            wl.push(_t('tp_ws_rhr', 'FC reposo') + ' ' + w.rhr);
+          return wl.join(' · ');
+        }
+
+        function ovWellMap(data) {
+          var m = {};
+          ((data && data.days) || []).forEach(function (d) {
+            var l = ovWellLine(d.wellness);
+            if (l) m[d.date_iso] = l;
+          });
+          return m;
+        }
+
+        // Metricas de la semana (Carga, Fitness, Forma, Fatiga, Ramp). Se
+        // oculta sin datos o si la semana no tiene plan ni actividad.
+        function ovMetricsHtml(data, st) {
+          if (!data) return '';
+          var hasAct = (data.days || []).some(function (d) {
+            return (d.done && d.done.length) || (d.planned && d.planned.length);
+          });
+          if (!st.n && !hasAct) return '';
+          var s = data.summary || {};
+          var rows = [];
+          function row(label, v) {
+            if (v == null) return;
+            rows.push(
+              '<span class="tp-met-r">' + _wsEsc(label) + '<b>' + _wsEsc(v) + '</b></span>',
+            );
+          }
+          row(_t('tp_ws_load', 'Carga (TSS)'), s.tss != null ? Math.round(s.tss) : null);
+          row(_t('tp_ws_fitness', 'Fitness (CTL)'), s.ctl);
+          row(_t('tp_ws_form', 'Forma (TSB)'), s.tsb);
+          row(_t('tp_ws_fatigue', 'Fatiga (ATL)'), s.atl);
+          row(_t('tp_ws_ramp', 'Ramp rate'), s.ramp != null ? (s.ramp > 0 ? '+' : '') + s.ramp : null);
+          if (!rows.length) return '';
+          return (
+            '<div class="tp-met" id="tp-met">' +
+            rows.join('') +
+            (s.pmc_date
+              ? '<span class="tp-met-asof">' +
+                _wsEsc(_t('tp_ws_asof', 'al')) + ' ' + _wsEsc(s.pmc_date) + '</span>'
+              : '') +
+            '</div>'
+          );
+        }
+
         function miniCardHtml(s, pair) {
           var sp = SPORT[s.sport] || {
             icon: '🏅',
@@ -3192,7 +3174,8 @@
           );
         }
 
-        function ovDaysHtml(startIso, endIso, st, asWeek) {
+        function ovDaysHtml(startIso, endIso, st, asWeek, well) {
+          well = well || {};
           var todayS = todayIso();
           var d = new Date(startIso + 'T12:00:00');
           var end = new Date(endIso + 'T12:00:00');
@@ -3224,6 +3207,9 @@
                 ? '<span>' + _t('tp_today', 'HOY') + '</span>'
                 : '') +
               '</div>' +
+              (well[dIso]
+                ? '<div class="tp-well">' + _wsEsc(well[dIso]) + '</div>'
+                : '') +
               (list.length
                 ? list
                     .map(function (s) {
@@ -3256,6 +3242,7 @@
             isWeek ? 'tp_ov_none' : 'tp_ov_none_range',
             isWeek ? 'Sin plan esta semana' : 'Sin plan en este período',
           );
+          var wkData = isWeek ? _wkSumCache[range.start] : null;
           var html =
             '<div class="tp-ov-hd" id="tp-ov-hd">' +
             _wsEsc(head) +
@@ -3264,7 +3251,8 @@
             '" id="tp-ov-line">' +
             _wsEsc(line) +
             '</div>' +
-            ovDaysHtml(range.start, range.end, st, isWeek);
+            (isWeek ? ovMetricsHtml(wkData, st) : '') +
+            ovDaysHtml(range.start, range.end, st, isWeek, ovWellMap(wkData));
 
           if (isWeek) {
             for (var w = 1; w <= 3; w++) {
@@ -3483,10 +3471,6 @@
         function render() {
           renderConfigBar();
           renderHeader();
-          if (S.view !== 'week') {
-            var _ws = document.getElementById('wk-strip');
-            if (_ws) _ws.hidden = true;
-          }
           if (S.view === 'week') renderWeekCal();
           else if (S.view === 'month') renderMonthCal();
           else renderPeriodCal();

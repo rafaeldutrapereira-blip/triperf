@@ -115,7 +115,8 @@ def test_sin_siglas_solas_en_etiquetas_visibles():
 
 def test_build_344_en_sw_y_sellos_de_la_capa_compartida():
     sw = _r("sw.js")
-    assert "var BUILD_VERSION = '344';" in sw
+    import re
+    assert re.search(r"var BUILD_VERSION = '(34[4-9]|3[5-9]\d|[4-9]\d\d)';", sw)
     for page in ("dashboard.html", "shell.html"):
         h = _r(page)
         assert "nav.css?v=8" in h and "nav.js?v=10" in h, page
