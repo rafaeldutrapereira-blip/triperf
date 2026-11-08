@@ -954,6 +954,32 @@
               Sin Garmin
             </div>
           </div>
+          <div
+            id="roster-toolbar"
+            style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem"
+          >
+            <input
+              id="roster-q"
+              type="search"
+              placeholder="Buscar por nombre o email"
+              aria-label="Buscar atleta"
+              oninput="rosterOnChange()"
+              style="min-width: 220px; flex: 1"
+            />
+            <select id="roster-f-group" aria-label="Grupo" onchange="rosterOnChange()"></select>
+            <select id="roster-f-garmin" aria-label="Garmin" onchange="rosterOnChange()">
+              <option value="">Garmin: todos</option>
+              <option value="yes">Garmin conectado</option>
+              <option value="no">Sin Garmin</option>
+            </select>
+            <select id="roster-f-goal" aria-label="Objetivo" onchange="rosterOnChange()">
+              <option value="">Objetivo: todos</option>
+              <option value="soon">Carrera en 120 días o menos</option>
+              <option value="any">Con carrera</option>
+              <option value="none">Sin carrera</option>
+            </select>
+            <span id="roster-count" style="font-size: 0.78rem; color: var(--dim)"></span>
+          </div>
           <div class="tbl-wrap">
             <table>
               <thead>
@@ -963,18 +989,28 @@
                   <th>Plan</th>
                   <th>Garmin</th>
                   <th data-i18n="coach_bienestar_col">Bienestar</th>
+                  <th>Objetivo</th>
+                  <th>Días para la carrera</th>
                   <th data-i18n="tab_groups">Grupos</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="athletes-tbody">
                 <tr>
-                  <td colspan="7" style="text-align: center; color: var(--dim)">
+                  <td colspan="9" style="text-align: center; color: var(--dim)">
                     <span data-i18n="coach_h002">Cargando...</span>
                   </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div
+            id="roster-pager"
+            style="display: none; justify-content: center; align-items: center; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem"
+          >
+            <button class="btn btn-ghost btn-sm" id="roster-prev" onclick="rosterGo(-1)">&larr; Anterior</button>
+            <span id="roster-page-lbl"></span>
+            <button class="btn btn-ghost btn-sm" id="roster-next" onclick="rosterGo(1)">Siguiente &rarr;</button>
           </div>
         </div>
       </div>
@@ -3018,6 +3054,13 @@
     <div id="co-toast"></div>
 
     <script>
+      /* i18n helper: coach.html llamaba _t() sin definirla (ReferenceError al cargar el roster) */
+      if (typeof window._t !== 'function') {
+        window._t = function (k, fb) {
+          var v = window.i18n ? window.i18n.t(k) : null;
+          return v && v !== k ? v : fb;
+        };
+      }
       (function () {
         'use strict';
 
@@ -3696,7 +3739,7 @@
           var tb = document.getElementById('athletes-tbody');
           tb.innerHTML = _t(
             'coach_s012',
-            '<tr><td colspan="7" style="text-align:center;color:var(--dim)"><span data-i18n="coach_h002">Cargando...</span></td></tr>',
+            '<tr><td colspan="9" style="text-align:center;color:var(--dim)"><span data-i18n="coach_h002">Cargando...</span></td></tr>',
           );
           try {
             var [ath, wellness] = await Promise.all([
@@ -3711,27 +3754,46 @@
               wellnessMap[w.athlete_id] = w;
             });
             if (!ath.length) {
+              _roster.all = [];
               tb.innerHTML = _t(
                 'coach_s013',
-                '<tr><td colspan="7" style="text-align:center;color:var(--dim)">Sin atletas. Crea uno con "+ Nuevo Atleta".</td></tr>',
+                '<tr><td colspan="9" style="text-align:center;color:var(--dim)">Sin atletas. Crea uno con "+ Nuevo Atleta".</td></tr>',
               );
               return;
             }
-            tb.innerHTML = ath
-              .map(function (u) {
-                var grpNames = _cache.groups
-                  .filter(function (g) {
-                    return (
-                      g.members &&
-                      g.members.some &&
-                      g.members.some(function (m) {
-                        return m.user_id === u.id || m.athlete_id === u.id;
-                      })
-                    );
-                  })
-                  .map(function (g) {
-                    return g.nombre;
-                  });
+            _roster.all = ath.map(function (u) {
+              u._grps = _cache.groups
+                .filter(function (g) {
+                  return (
+                    g.members &&
+                    g.members.some &&
+                    g.members.some(function (m) {
+                      return m.user_id === u.id || m.athlete_id === u.id;
+                    })
+                  );
+                })
+                .map(function (g) {
+                  return g.nombre;
+                });
+              return u;
+            });
+            _roster.wellness = wellnessMap;
+            _roster.page = 1;
+            rosterFillGroups();
+            rosterRender();
+          } catch (e) {
+            tb.innerHTML =
+              _t(
+                'coach_s014',
+                '<tr><td colspan="9" style="color:var(--red)">Error: ',
+              ) +
+              esc(e.message) +
+              '</td></tr>';
+          }
+        }
+
+        function rosterRow(u) {
+                var wellnessMap = _roster.wellness;
                 var garminDot = u.has_garmin
                   ? '<span title="Garmin conectado" style="color:var(--green);font-size:1rem">&#9679;</span> <span style="font-size:.72rem;color:var(--green)">Conectado</span>'
                   : _t(
@@ -3755,8 +3817,16 @@
                   '<td>' +
                   _wellnessBadge(wellnessMap[u.id]) +
                   '</td>' +
+                  '<td>' +
+                  rosterH(u.race_goal_name || '—') +
+                  '</td>' +
+                  '<td>' +
+                  (rosterDays(u.race_goal_date) == null
+                    ? '—'
+                    : rosterDays(u.race_goal_date) + ' d') +
+                  '</td>' +
                   '<td style="color:var(--dim);font-size:.78rem">' +
-                  grpNames.join(', ') +
+                  rosterH((u._grps || []).join(', ')) +
                   '</td>' +
                   '<td style="display:flex;gap:.3rem;align-items:center;flex-wrap:nowrap;white-space:nowrap">' +
                   '<button class="btn btn-ghost btn-sm" onclick="openAthletePlan(\'' +
@@ -3793,17 +3863,111 @@
                   '</td>' +
                   '</tr>'
                 );
+        }
+
+        // ── Roster: búsqueda, filtros y paginación (COACH-ROSTER) ─────
+        var ROSTER_PAGE_SIZE = 50;
+        function rosterH(s) {
+          return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+        var _roster = { all: [], wellness: {}, page: 1 };
+        function rosterDays(dateStr, today) {
+          if (!dateStr) return null;
+          var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr));
+          if (!m) return null;
+          var t = today || new Date();
+          var a = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+          var b = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+          return Math.round((a - b) / 86400000);
+        }
+        function rosterFilter(list, f, today) {
+          var q = ((f && f.q) || '').trim().toLowerCase();
+          return list.filter(function (u) {
+            if (
+              q &&
+              (u.nombre || '').toLowerCase().indexOf(q) < 0 &&
+              (u.email || '').toLowerCase().indexOf(q) < 0
+            )
+              return false;
+            var g = f && f.group;
+            if (g === '__none__' && (u._grps || []).length) return false;
+            if (g && g !== '__none__' && (u._grps || []).indexOf(g) < 0)
+              return false;
+            if (f && f.garmin === 'yes' && !u.has_garmin) return false;
+            if (f && f.garmin === 'no' && u.has_garmin) return false;
+            var d = rosterDays(u.race_goal_date, today);
+            var hasGoal = !!(u.race_goal_name || u.race_goal_date);
+            if (f && f.goal === 'none' && hasGoal) return false;
+            if (f && f.goal === 'any' && !hasGoal) return false;
+            if (f && f.goal === 'soon' && !(d != null && d >= 0 && d <= 120))
+              return false;
+            return true;
+          });
+        }
+        function rosterPage(list, page, size) {
+          size = size || ROSTER_PAGE_SIZE;
+          var pages = Math.max(1, Math.ceil(list.length / size));
+          var p = Math.min(Math.max(1, page || 1), pages);
+          return {
+            rows: list.slice((p - 1) * size, p * size),
+            page: p,
+            pages: pages,
+          };
+        }
+        function rosterFillGroups() {
+          var sel = document.getElementById('roster-f-group');
+          if (!sel) return;
+          var cur = sel.value;
+          var names = [];
+          _cache.groups.forEach(function (g) {
+            if (names.indexOf(g.nombre) < 0) names.push(g.nombre);
+          });
+          sel.innerHTML =
+            '<option value="">Grupo: todos</option><option value="__none__">Sin grupo</option>' +
+            names
+              .map(function (n) {
+                return '<option value="' + rosterH(n) + '">' + rosterH(n) + '</option>';
               })
               .join('');
-          } catch (e) {
+          sel.value = cur;
+        }
+        window.rosterOnChange = function rosterOnChange() {
+          _roster.page = 1;
+          rosterRender();
+        };
+        window.rosterGo = function rosterGo(d) {
+          _roster.page += d;
+          rosterRender();
+        };
+        function rosterRender() {
+          var tb = document.getElementById('athletes-tbody');
+          var f = {
+            q: document.getElementById('roster-q').value,
+            group: document.getElementById('roster-f-group').value,
+            garmin: document.getElementById('roster-f-garmin').value,
+            goal: document.getElementById('roster-f-goal').value,
+          };
+          var list = rosterFilter(_roster.all, f);
+          var pg = rosterPage(list, _roster.page);
+          _roster.page = pg.page;
+          document.getElementById('roster-count').textContent =
+            list.length + ' de ' + _roster.all.length;
+          document.getElementById('roster-pager').style.display =
+            pg.pages > 1 ? 'flex' : 'none';
+          document.getElementById('roster-page-lbl').textContent =
+            'página ' + pg.page + ' de ' + pg.pages;
+          document.getElementById('roster-prev').disabled = pg.page <= 1;
+          document.getElementById('roster-next').disabled = pg.page >= pg.pages;
+          if (!pg.rows.length) {
             tb.innerHTML =
-              _t(
-                'coach_s014',
-                '<tr><td colspan="7" style="color:var(--red)">Error: ',
-              ) +
-              esc(e.message) +
-              '</td></tr>';
+              '<tr><td colspan="9" style="text-align:center;color:var(--dim)">Ningún atleta coincide con la búsqueda.</td></tr>';
+            return;
           }
+          tb.innerHTML = pg.rows.map(rosterRow).join('');
         }
 
         // ── Groups ────────────────────────────────────────────────────
