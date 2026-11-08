@@ -940,12 +940,12 @@
                       <label data-i18n="prof_label_distance">Distancia</label>
                       <select id="rc-dist">
                     <option value="" data-i18n="prof_opt_select">— Seleccionar —</option>
-                    <option value="ironman" data-i18n="prof_opt_ironman">Ironman (226 km)</option>
-                    <option value="70.3" data-i18n="prof_opt_703">70.3 / Half (113 km)</option>
+                    <option value="full" data-i18n="prof_opt_ironman">Ironman (226 km)</option>
+                    <option value="703" data-i18n="prof_opt_703">70.3 / Half (113 km)</option>
                     <option value="olympic" data-i18n="prof_opt_olympic">Olímpico (51.5 km)</option>
                     <option value="sprint" data-i18n="prof_opt_sprint">Sprint (25.75 km)</option>
-                    <option value="marathon" data-i18n="prof_opt_marathon">Maratón</option>
-                    <option value="half_marathon" data-i18n="prof_opt_half_marathon">Media Maratón</option>
+                    <option value="42k" data-i18n="prof_opt_marathon">Maratón</option>
+                    <option value="21k" data-i18n="prof_opt_half_marathon">Media Maratón</option>
                     <option value="10k">10K</option>
                     <option value="other" data-i18n="prof_opt_other">Otro</option>
                       </select>
@@ -2315,6 +2315,21 @@
         '42k': 'marathon',
         custom: 'other',
       };
+      var RACE_DIST_CANON = {
+        ironman: 'full',
+        '70.3': '703',
+        marathon: '42k',
+        half_marathon: '21k',
+        full: 'full',
+        '703': '703',
+        '42k': '42k',
+        '21k': '21k',
+        olympic: 'olympic',
+        sprint: 'sprint',
+        '10k': '10k',
+        other: 'other',
+        custom: 'other',
+      };
       var _races = [];
       var _raceEditId = null;
 
@@ -2461,8 +2476,10 @@
         document.getElementById('rc-name').value = r.name || '';
         document.getElementById('rc-date').value = r.date_iso || '';
         var dd = document.getElementById('rc-dist');
-        var key = RACE_DIST[r.distance] ? r.distance : RACE_DIST_ALIAS[r.distance];
-        dd.value = r.distance ? key || 'other' : '';
+        // El selector emite claves canonicas (703/42k/21k/full): las filas viejas
+        // ('70.3', 'marathon', 'ironman'...) se llevan a su clave canonica.
+        var key = RACE_DIST_CANON[r.distance] || (RACE_DIST[r.distance] ? r.distance : 'other');
+        dd.value = r.distance ? key : '';
         document.getElementById('rc-loc').value = r.location || '';
         document.getElementById('rc-prio').value = r.priority || '';
         var t = document.getElementById('rc-form-title');

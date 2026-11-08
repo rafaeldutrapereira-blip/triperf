@@ -1859,6 +1859,17 @@
             })
               .then(_okJson)
               .then(function (d) {
+                if (d && d.prediction === false) {
+                  // Sin tipo de carrera o sin peso: no se inventa una cifra.
+                  currentPlan = null;
+                  document.getElementById('plan-results').style.display = 'none';
+                  var npKey = d.reason === 'no_weight' ? 'rd_nopred_weight' : 'rd_nopred_race';
+                  var npFb = d.reason === 'no_weight'
+                    ? 'Falta tu peso en el perfil para calcular el plan.'
+                    : 'Agrega tu próxima carrera con su distancia para calcular el plan.';
+                  alert(_t(npKey, npFb));
+                  return;
+                }
                 currentPlan = d;
                 document.getElementById('plan-gen-msg').style.display =
                   'inline';

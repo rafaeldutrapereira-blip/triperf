@@ -376,7 +376,7 @@ def predict_stateless(
       tsb_override?: float  (para simular condiciones de llegada)
     }
     """
-    dist = body.get("distance", "703")
+    dist = normalize_race_type(body.get("distance", "703"))
     if dist not in DIST_CONFIG:
         raise HTTPException(422, f"Distancia invÃ¡lida. Opciones: {list(DIST_CONFIG.keys())}")
 
@@ -447,7 +447,7 @@ def create_race(
     """
     name         = (body.get("name") or "").strip()
     date_iso     = (body.get("date_iso") or "").strip()
-    distance     = body.get("distance", "703")
+    distance     = normalize_race_type(body.get("distance", "703"))
     location     = (body.get("location") or "").strip() or None
     is_goal_race = bool(body.get("is_goal_race", False))
 
@@ -546,7 +546,7 @@ def list_races(
             "name":          r.name,
             "date_iso":      r.date_iso,
             "distance":      r.distance,
-            "distance_label": DIST_CONFIG.get(r.distance, {}).get("label", r.distance),
+            "distance_label": DIST_CONFIG.get(normalize_race_type(r.distance), {}).get("label", r.distance),
             "location":      r.location,
             "is_goal_race":  r.is_goal_race,
             "days_to_race":  days_to,
@@ -794,7 +794,7 @@ def get_race(
 
     try:
         pred_now = _predict(
-            dist         = race.distance or "703",
+            dist         = normalize_race_type(race.distance) or "703",
             ftp          = params["ftp"],
             css_sec      = params["css_sec"],
             run_pace_sec = params["run_pace_sec"],
@@ -835,7 +835,7 @@ def get_race(
         "name":          race.name,
         "date_iso":      race.date_iso,
         "distance":      race.distance,
-        "distance_label": DIST_CONFIG.get(race.distance, {}).get("label", race.distance),
+        "distance_label": DIST_CONFIG.get(normalize_race_type(race.distance), {}).get("label", race.distance),
         "location":      race.location,
         "is_goal_race":  race.is_goal_race,
         "days_to_race":  days_to,
@@ -972,12 +972,12 @@ def generate_ai_briefing(
 
     params   = _get_athlete_params(me, db)
     tsb_proj = _tsb_on_date(me.id, race.date_iso, db) or params["tsb"]
-    cfg      = DIST_CONFIG.get(race.distance or "703", DIST_CONFIG["703"])
+    cfg      = DIST_CONFIG.get(normalize_race_type(race.distance) or "703", DIST_CONFIG["703"])
 
     # Calcular predicciÃ³n para el briefing
     try:
         pred = _predict(
-            dist         = race.distance or "703",
+            dist         = normalize_race_type(race.distance) or "703",
             ftp          = params["ftp"],
             css_sec      = params["css_sec"],
             run_pace_sec = params["run_pace_sec"],
@@ -1218,6 +1218,29 @@ def _rec_perf_mod(rec):
     if rec >= 40:   return 0.98
     return 0.96
 
+_RACE_TYPE_ALIASES = {
+    "sprint": "sprint", "olympic": "olympic", "703": "703", "full": "full",
+    "21k": "21k", "42k": "42k",
+    "70.3": "703", "140.6": "full", "ironman": "full",
+    "marathon": "42k", "maraton": "42k",
+    "half marathon": "21k", "half_marathon": "21k",
+    "media maraton": "21k", "medio maraton": "21k",
+}
+
+
+def normalize_race_type(value):
+    """Vocabulario unico de distancias: devuelve la clave canonica
+    (sprint|olympic|703|full|21k|42k) o None si no se reconoce.
+    Insensible a mayusculas, acentos y espacios. 'half' a secas es ambiguo -> None."""
+    if value is None:
+        return None
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(value).strip().lower())
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = " ".join(s.split())
+    return _RACE_TYPE_ALIASES.get(s)
+
+
 def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None, water_mult=1.0):
     dist_map = {
         "sprint": {"swim_m":750,   "bike_km":20,   "run_km":5,   "brick":1.03},
@@ -1232,8 +1255,11 @@ def _ctl_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w=None, wat
         "703":{"t1":180,"t2":90},    "full":{"t1":240,"t2":120},
         "21k":{"t1":0,"t2":0},       "42k":{"t1":0,"t2":0},
     }
-    dist = dist_map.get(race_dist_key, dist_map["olympic"])
-    tn   = trans.get(race_dist_key, trans["olympic"])
+    race_dist_key = normalize_race_type(race_dist_key)
+    if race_dist_key not in dist_map:
+        raise ValueError(f"Distancia desconocida: {race_dist_key!r}")
+    dist = dist_map[race_dist_key]
+    tn   = trans[race_dist_key]
     base = _ctl_base_paces(ctl or 50)
     mod  = (_tsb_perf_mod(tsb) + _rec_perf_mod(recovery_score)) / 2.0
 
@@ -1297,8 +1323,11 @@ def _physics_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w, weig
         "703":{"t1":180,"t2":90},    "full":{"t1":240,"t2":120},
         "21k":{"t1":0,"t2":0},       "42k":{"t1":0,"t2":0},
     }
-    dist = dist_map.get(race_dist_key, dist_map["olympic"])
-    tn   = trans.get(race_dist_key, trans["olympic"])
+    race_dist_key = normalize_race_type(race_dist_key)
+    if race_dist_key not in dist_map:
+        raise ValueError(f"Distancia desconocida: {race_dist_key!r}")
+    dist = dist_map[race_dist_key]
+    tn   = trans[race_dist_key]
     base = _ctl_base_paces(ctl or 50)
     mod  = (_tsb_perf_mod(tsb) + _rec_perf_mod(recovery_score)) / 2.0
     wind_ms = wind_ms or 0.0
@@ -1321,7 +1350,7 @@ def _physics_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w, weig
         bgain = bike_elevation_gain_m or 0.0
         bloss = bike_elevation_loss_m if bike_elevation_loss_m is not None else bgain
         bike_params = BikePhysicsParams(
-            weight_kg=weight_kg or 70.0, ftp_w=ftp_w, distance_km=bkm,
+            weight_kg=weight_kg, ftp_w=ftp_w, distance_km=bkm,
             elevation_gain_m=bgain, elevation_loss_m=bloss,
             altitude_m=altitude_m, temperature_c=temperature_c, wind_ms=wind_ms,
             if_factor=bike_if,
@@ -1346,7 +1375,7 @@ def _physics_predict_splits(race_dist_key, ctl, tsb, recovery_score, ftp_w, weig
             run_fraction = min(1.15, rec_if_run.get(race_dist_key, 0.95) * mod)
         bike_if_for_run = bike_if if bike_if is not None else (0.75 if dist["bike_km"] else 0.0)
         run_params = RunPhysicsParams(
-            threshold_pace_s_km=base["run_s_km"], weight_kg=weight_kg or 70.0,
+            threshold_pace_s_km=base["run_s_km"], weight_kg=weight_kg,
             distance_km=rk, elevation_gain_m=rgain, elevation_loss_m=rloss,
             surface=run_surface or "asfalto",
             altitude_m=altitude_m, temperature_c=temperature_c,
@@ -1526,27 +1555,29 @@ def auto_race_plan(
     recovery_score = rec.score if rec else None
 
     ftp_w     = body.ftp_w or me.ftp
-    weight_kg = body.weight_kg or me.weight_kg or 70.0
+    weight_kg = body.weight_kg or me.weight_kg or None
 
-    # Determine race type from next race (o del selector si el usuario lo eligió a mano)
+    # Tipo de carrera: selector manual > carrera indicada > proxima carrera.
+    # Sin default silencioso: si no se puede determinar, no hay prediccion.
     race_id = body.race_id
-    race_type = "olympic"
     race = None
     if not race_id:
         race = (db.query(RaceEvent)
                 .filter(RaceEvent.user_id == me.id, RaceEvent.date_iso >= today)
                 .order_by(RaceEvent.date_iso.asc()).first())
         if race:
-            race_id   = race.id
-            race_type = race.distance or "olympic"
+            race_id = race.id
     else:
         race = db.query(RaceEvent).filter_by(id=race_id).first()
-        if race:
-            race_type = race.distance or "olympic"
 
-    _VALID_RACE_TYPES = ("sprint", "olympic", "703", "full", "21k", "42k")
-    if body.race_type and body.race_type in _VALID_RACE_TYPES:
-        race_type = body.race_type
+    race_type = normalize_race_type(body.race_type) if body.race_type else None
+    if race_type is None and race:
+        race_type = normalize_race_type(race.distance)
+
+    if race_type is None:
+        return {"prediction": False, "reason": "no_race_type", "race_type": None}
+    if not weight_kg:
+        return {"prediction": False, "reason": "no_weight", "race_type": race_type}
 
     has_route_data = bool(
         body.bike_profile or body.bike_elevation_gain_m or body.run_elevation_gain_m
@@ -1575,12 +1606,20 @@ def auto_race_plan(
 
     # Banda de confianza — rescatada de race_predictor.html, misma fórmula,
     # usando recovery_score (0-100) en vez de "readiness" (mismo concepto).
-    _rec_for_conf = recovery_score if recovery_score is not None else 70
-    _uncertainty  = 0.02 + (1.0 - _rec_for_conf/100) * 0.04
-    _confidence   = max(55, min(95, round(70 + _rec_for_conf * 0.25)))
+    # Sin recovery no se inventa un 70: la confianza se omite.
+    confidence_block = None
+    if recovery_score is not None:
+        _uncertainty = 0.02 + (1.0 - recovery_score/100) * 0.04
+        _confidence  = max(55, min(95, round(70 + recovery_score * 0.25)))
+        confidence_block = {
+            "confidence_pct":  _confidence,
+            "uncertainty_pct": round(_uncertainty * 100, 1),
+            "range_low_fmt":   _fmt_t(round(splits["total_s"] * (1 - _uncertainty))),
+            "range_high_fmt":  _fmt_t(round(splits["total_s"] * (1 + _uncertainty))),
+        }
     nutrition = _gen_nutrition(
         splits["total_s"], race_type,
-        weight_kg=weight_kg or 70.0,
+        weight_kg=weight_kg,
         sweat_l_h=body.sweat_l_h or 0.8,
     )
 
@@ -1627,6 +1666,7 @@ def auto_race_plan(
             logger.warning("race_plan commit falló user=%s race_id=%s: %s", me.id, race_id, exc)
 
     return {
+        "prediction": True,
         "race_type":  race_type,
         "ctl_used":   round(float(ctl), 1) if ctl else None,
         "ctl_estimated": ctl_estimated,
@@ -1653,12 +1693,7 @@ def auto_race_plan(
             "run_pace":   _fmt_pace(splits["run_pace_s_km"]),
             "run_pace_s": splits["run_pace_s_km"],
         },
-        "confidence": {
-            "confidence_pct":  _confidence,
-            "uncertainty_pct": round(_uncertainty * 100, 1),
-            "range_low_fmt":   _fmt_t(round(splits["total_s"] * (1 - _uncertainty))),
-            "range_high_fmt":  _fmt_t(round(splits["total_s"] * (1 + _uncertainty))),
-        },
+        "confidence": confidence_block,
         "nutrition": nutrition,
     }
 
@@ -1800,5 +1835,5 @@ def get_nutrition_plan(
 
     # Generate on the fly
     total_s = (plan.total_pred_s if plan and plan.total_pred_s else 7200)
-    nutrition = _gen_nutrition(total_s, race.distance or "olympic", weight_kg, sweat_l_h)
+    nutrition = _gen_nutrition(total_s, normalize_race_type(race.distance) or "olympic", weight_kg, sweat_l_h)
     return {"source": "estimated", "nutrition": nutrition}
