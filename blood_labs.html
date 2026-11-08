@@ -205,6 +205,40 @@
         color: var(--muted);
         margin-top: 0.3rem;
       }
+      .bl-lvl {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        color: var(--text, inherit);
+        margin: 0 0 0.5rem;
+      }
+      .bl-sys {
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+        border-radius: 10px;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.6rem;
+      }
+      .bl-sys-h {
+        font-weight: 600;
+        font-size: 0.88rem;
+        margin-bottom: 0.35rem;
+      }
+      .bl-sys-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.25rem 0;
+        font-size: 0.82rem;
+        border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+      }
+      .bl-sys-row:first-of-type {
+        border-top: 0;
+      }
+      .bl-sys-val {
+        color: var(--muted);
+        white-space: nowrap;
+      }
       .bl-all > summary {
         cursor: pointer;
         font-weight: 600;
@@ -1038,6 +1072,7 @@
 
           <div id="resumen-content">
             <!-- W14: primera vista en lenguaje llano -->
+            <div class="bl-lvl" id="bl-l1-title" data-i18n="bl_l1_title">¿Cómo está mi sangre?</div>
             <div class="bl-plain sr" id="bl-plain" aria-live="polite">
               <div class="bl-plain-h" id="bl-plain-h">—</div>
               <div class="bl-plain-s" id="bl-plain-s"></div>
@@ -1061,6 +1096,12 @@
                   "
                 ></div>
               </div>
+            </div>
+
+            <!-- LABS-CAPAS nivel 2: marcadores por sistema, estado en palabras -->
+            <div class="sr mt3" id="bl-systems-wrap">
+              <div class="bl-lvl" data-i18n="bl_l2_title">Tus marcadores por sistema</div>
+              <div id="bl-systems"></div>
             </div>
 
             <details class="bl-all sr mt3" id="bl-ver-todo">
@@ -2011,6 +2052,7 @@
               ? cur.ai_interpretation.text
               : '—';
           renderPlainSummary(cur);
+          renderSystemGroups(cur);
           renderRadar(cur);
           renderBMTable(cur, comp);
         });
@@ -2137,6 +2179,88 @@
           'bl_plain_sub',
           'De {total} valores del examen. Abajo, las alertas y cómo afectan a tu entrenamiento.',
         ).replace('{total}', total);
+      }
+
+      // LABS-CAPAS nivel 2: marcadores agrupados por sistema a partir de la
+      // categoría (cat) que ya trae cada marcador; sin cat conocida -> "Otros".
+      // Estado en palabras desde zone/status del servidor; no se inventan rangos.
+      var SYS_GROUPS = [
+        { id: 'energia', icon: '🩸', cats: ['hematologico', 'minerales'],
+          key: 'bl_sys_energia', def: 'Energía y hierro' },
+        { id: 'horm', icon: '🧪', cats: ['hormonal'],
+          key: 'bl_sys_horm', def: 'Hormonas' },
+        { id: 'infl', icon: '🔥', cats: ['inflamacion'],
+          key: 'bl_sys_infl', def: 'Inflamación' },
+        { id: 'vit', icon: '🌟', cats: ['vitaminas'],
+          key: 'bl_sys_vit', def: 'Vitaminas' },
+        { id: 'lip', icon: '🔬', cats: ['metabolico'],
+          key: 'bl_sys_lip', def: 'Lípidos y metabolismo' },
+        { id: 'rinhig', icon: '🫘', cats: ['renal', 'hepatico'],
+          key: 'bl_sys_rinhig', def: 'Riñón e hígado' },
+      ];
+      function zoneWords(m) {
+        switch (m.zone) {
+          case 'optimal':
+            return _t('bl_zone_optimal', 'Dentro de su rango');
+          case 'high':
+            return _t('bl_zone_high', 'Por encima de su rango');
+          case 'very_high':
+            return _t('bl_zone_very_high', 'Muy por encima de su rango');
+          case 'suboptimal':
+            return _t('bl_zone_subopt', 'Algo por debajo de su rango');
+          case 'low':
+            return _t('bl_zone_low', 'Por debajo de su rango');
+          case 'very_low':
+            return _t('bl_zone_very_low', 'Muy por debajo de su rango');
+        }
+        return _t('bl_zone_none', 'Sin evaluar');
+      }
+      function renderSystemGroups(cur) {
+        var box = document.getElementById('bl-systems');
+        if (!box) return;
+        var ms = (cur && cur.markers) || {};
+        var keys = Object.keys(ms);
+        var used = {};
+        var groups = SYS_GROUPS.map(function (g) {
+          return {
+            icon: g.icon,
+            label: _t(g.key, g.def),
+            items: keys.filter(function (k) {
+              var hit = g.cats.indexOf(ms[k].cat) >= 0;
+              if (hit) used[k] = 1;
+              return hit;
+            }),
+          };
+        });
+        groups.push({
+          icon: '📋',
+          label: _t('bl_sys_otros', 'Otros'),
+          items: keys.filter(function (k) {
+            return !used[k];
+          }),
+        });
+        var html = '';
+        groups.forEach(function (g) {
+          if (!g.items.length) return;
+          html +=
+            '<div class="bl-sys"><div class="bl-sys-h">' +
+            g.icon + ' ' + esc(g.label) + '</div>';
+          g.items.forEach(function (k) {
+            var m = ms[k];
+            var sg = statusGrade(m.status);
+            html +=
+              '<div class="bl-sys-row"><span>' + esc(_lxBe(m.name)) +
+              '</span><span class="bl-sys-val">' +
+              (m.value != null ? esc(m.value) + ' ' + esc(m.unit || '') : '—') +
+              ' · <span style="color:' + sg.color + '">' + sg.icon + ' ' +
+              esc(zoneWords(m)) + '</span></span></div>';
+          });
+          html += '</div>';
+        });
+        box.innerHTML =
+          html ||
+          '<p style="color:var(--dim);font-size:.8rem">' +
+            _t('bl_no_markers', 'Sin marcadores en este examen.') + '</p>';
       }
 
       function renderBMTable(cur, comp) {
