@@ -214,3 +214,53 @@ test('el modulo no depende de la cascara ni usa endpoints nuevos', () => {
   const paths = (SRC.match(/'\/(community|athlete)\/[^']*/g) || []).map((s) => s.slice(1));
   for (const p of paths) assert.match(p, /^\/(community|athlete\/activities)/);
 });
+
+// COMUNIDAD-CAPAS (BUILD 354): Nivel 1 "Tu lugar" + guardian del nivel 2.
+test('COMUNIDAD-CAPAS: Tu lugar sin datos muestra estado vacio honesto y conserva tabs/feed', async () => {
+  const cont = fakeContainer();
+  const m = C.mount(cont, { canWrite: true, fetch: fakeFetch([]), t: (k, f) => f });
+  await m.ready;
+  assert.match(cont.innerHTML, /data-lxc="place"/);
+  assert.match(cont.innerHTML, /Tu lugar/);
+  assert.match(cont.innerHTML, /data-lxc="place-empty"/);
+  assert.match(cont.innerHTML, /Qué pasa en la comunidad/);
+  for (const v of ['feed', 'ranking', 'clubs']) assert.ok(cont.innerHTML.includes('data-view="' + v + '"'));
+  assert.match(cont.innerHTML, /lxc-card/);
+});
+
+test('COMUNIDAD-CAPAS: tras abrir Ranking, Tu lugar muestra la posicion real', async () => {
+  const cont = fakeContainer();
+  const m = C.mount(cont, { canWrite: true, fetch: fakeFetch([]), t: (k, f) => f });
+  await m.ready;
+  await m.setView('ranking');
+  const place = cont.innerHTML.split('data-lxc="level2"')[0];
+  assert.match(place, /lxc-big">#1</);
+  assert.match(place, /120 TSS/);
+  assert.match(cont.innerHTML, /data-lxc="ranking"/);
+});
+
+test('COMUNIDAD-CAPAS: reto activo desde los desafios ya cargados', async () => {
+  const cont = fakeContainer();
+  const m = C.mount(cont, { canWrite: true, fetch: fakeFetch([]), t: (k, f) => f });
+  await m.ready;
+  m.state.clubs.challenges = [
+    { id: 'c0', name: 'Viejo', is_active: false },
+    { id: 'c1', name: 'Reto 100k', target: 100, my_progress: 40, my_pct: 40, is_active: true },
+  ];
+  await m.setView('clubs');
+  m.state.clubs.challenges = [
+    { id: 'c0', name: 'Viejo', is_active: false },
+    { id: 'c1', name: 'Reto 100k', target: 100, my_progress: 40, my_pct: 40, is_active: true },
+  ];
+  await m.setView('feed');
+  const place = cont.innerHTML.split('data-lxc="level2"')[0];
+  assert.match(place, /Reto 100k/);
+  assert.ok(!place.includes('Viejo'));
+  assert.match(place, /aria-valuenow="40"/);
+});
+
+test('COMUNIDAD-CAPAS: i18n ES/PT/EN de lo nuevo', () => {
+  for (const k of ['com_place_title', 'com_place_pos', 'com_place_load', 'com_place_chal', 'com_place_pos_empty', 'com_place_chal_empty', 'com_place_more']) {
+    assert.equal(I18N.split(k + ':').length - 1, 3, k);
+  }
+});

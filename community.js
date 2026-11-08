@@ -281,6 +281,8 @@
     '.lxc-filters{display:flex;gap:.5rem;margin-bottom:.7rem}.lxc-chip{font-size:.72rem;border:1px solid var(--border,#2a2f3a);border-radius:999px;padding:.1rem .5rem}' +
     '.lxc-bar{height:8px;border-radius:99px;background:var(--border,#2a2f3a);margin:.4rem 0;overflow:hidden}.lxc-bar i{display:block;height:100%;background:var(--accent,#FF6535)}' +
     '.lxc-h{font-weight:700;margin:.8rem 0 .4rem}.lxc-club-main{cursor:pointer;flex:1;min-width:0}.lxc-people{display:flex;flex-direction:column;gap:.4rem}.lxc-person{padding:.3rem 0}' +
+    '.lxc-big{font-size:1.8rem;font-weight:800;line-height:1.1}.lxc-place-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}.lxc-place-grid .lxc-panel{margin-bottom:0}.lxc-h0{margin-top:0}' +
+    '@media(max-width:560px){.lxc-place-grid{grid-template-columns:1fr}}' +
     '.lxc-lb{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999}.lxc-lb img{max-width:92vw;max-height:92vh}';
 
   function injectCss() {
@@ -370,6 +372,30 @@
     }
 
     /* ── render ── */
+    /* ── NIVEL 1 · Tu lugar (COMUNIDAD-CAPAS): solo con datos que la vista ya cargo ── */
+    function myPlaceHtml() {
+      var rows = S.rank.rows, me = null;
+      (rows || []).forEach(function (r) { if (r && r.is_me) me = r; });
+      var posBody = me
+        ? '<div class="lxc-big">#' + esc(me.rank) + '</div><div class="lxc-muted">' + esc(fmt(me.value, 0)) + ' TSS · ' +
+          esc(t('com_scope_' + S.rank.scope, S.rank.scope)) + ' · ' + esc(t('com_period_' + S.rank.period, S.rank.period)) + '</div>'
+        : '<div class="lxc-muted" data-lxc="place-empty">' + esc(t('com_place_pos_empty', 'Todavía no vemos tu posición. Abre Ranking para calcularla.')) + '</div>' +
+          '<button type="button" class="lxc-btn ghost" data-act="place-go" data-view="ranking">' + esc(t('com_tab_ranking', 'Ranking')) + '</button>';
+      var act = null;
+      (S.clubs.challenges || []).forEach(function (ch) { if (!act && ch.is_active !== false) act = ch; });
+      var pct = act ? Math.max(0, Math.min(100, num(act.my_pct))) : 0;
+      var chBody = act
+        ? '<div class="lxc-name">' + esc(act.name) + '</div><div class="lxc-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + esc(pct) + '"><i style="width:' + pct + '%"></i></div>' +
+          '<div class="lxc-muted">' + esc(fmt(act.my_progress, 1)) + ' / ' + esc(fmt(act.target, 1)) + ' (' + esc(fmt(pct, 0)) + '%)</div>'
+        : '<div class="lxc-muted" data-lxc="place-empty">' + esc(t('com_place_chal_empty', 'Sin reto activo a la vista. Abre un club para ver sus desafíos.')) + '</div>' +
+          '<button type="button" class="lxc-btn ghost" data-act="place-go" data-view="clubs">' + esc(t('com_tab_clubs', 'Clubes')) + '</button>';
+      return '<section class="lxc-place" data-lxc="place" aria-label="' + esc(t('com_place_title', 'Tu lugar')) + '">' +
+        '<div class="lxc-h lxc-h0">' + esc(t('com_place_title', 'Tu lugar')) + '</div><div class="lxc-place-grid">' +
+        '<div class="lxc-panel"><div class="lxc-muted">' + esc(t('com_place_pos', 'Tu posición')) + ' — ' + esc(t('com_place_load', 'Carga de entrenamiento (TSS)')) + '</div>' + posBody + '</div>' +
+        '<div class="lxc-panel"><div class="lxc-muted">' + esc(t('com_place_chal', 'Tu reto activo')) + '</div>' + chBody + '</div></div>' +
+        '<div class="lxc-h" data-lxc="level2">' + esc(t('com_place_more', 'Qué pasa en la comunidad')) + '</div></section>';
+    }
+
     function render() {
       if (destroyed) return;
       var tabs = VIEWS.map(function (v) {
@@ -380,7 +406,7 @@
           (typeof opts.onUpgrade === 'function' ? ' <button type="button" class="lxc-btn" data-act="upgrade">' + esc(t('com_upgrade', 'Mejorar plan')) + '</button>' : '') + '</div>'
         : '';
       var body = S.view === 'ranking' ? rankingView() : S.view === 'clubs' ? clubsView() : feedView();
-      container.innerHTML = '<div class="lxc" data-view="' + S.view + '"><div class="lxc-tabs" role="tablist">' + tabs + '</div>' + note +
+      container.innerHTML = '<div class="lxc" data-view="' + S.view + '">' + myPlaceHtml() + '<div class="lxc-tabs" role="tablist">' + tabs + '</div>' + note +
         (S.msg ? '<div class="lxc-msg" role="alert">' + esc(S.msg) + '</div>' : '') + body +
         (S.lightbox ? '<div class="lxc-lb" data-act="lightbox-close"><img src="' + esc(S.lightbox) + '" alt=""></div>' : '') + '</div>';
     }
@@ -826,7 +852,7 @@
       // Los controles internos de la tarjeta no abren el detalle.
       if (act === 'photo-file' || inFileLabel) return;
       switch (act) {
-        case 'tab': return setView(el.getAttribute('data-view'));
+        case 'tab': case 'place-go': return setView(el.getAttribute('data-view'));
         case 'upgrade': if (typeof opts.onUpgrade === 'function') opts.onUpgrade(); return;
         case 'feed-more': return loadFeed(false);
         case 'feed-retry': return loadFeed(S.feed.items.length === 0);

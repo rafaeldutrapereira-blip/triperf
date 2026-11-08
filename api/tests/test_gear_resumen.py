@@ -47,4 +47,5 @@ def test_i18n_tres_idiomas():
 
 def test_build_353():
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
-    assert "var BUILD_VERSION = '353'" in sw
+    m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
+    assert m and int(m.group(1)) >= 353
