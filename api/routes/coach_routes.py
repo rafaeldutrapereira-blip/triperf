@@ -1449,6 +1449,54 @@ class BatchAssignRequest(BaseModel):
     assignments: List[BatchAssignItem]
 
 
+BATCH_ASSIGN_MAX = 500
+
+
+def _notify_batch_created(db, rows, templates):
+    """Mismo aviso que /assign individual (SSE + push + entrega bici/run con
+    bloques) para cada asignación creada por el batch. Best-effort: nunca
+    rompe la respuesta. Un solo hilo de fondo recorre las filas (no un hilo
+    por atleta: con 500 ítems saturaría)."""
+    jobs = []
+    for a in rows:
+        try:
+            tpl = templates.get(a.template_id)
+            if not tpl:
+                continue
+            db.refresh(a)
+            athlete = None
+            if tpl.sport in ("bike", "run") and tpl.blocks_json:
+                athlete = db.query(User).filter(User.id == a.athlete_id).first()
+            jobs.append((a, tpl, athlete))
+        except Exception:
+            pass
+    if not jobs:
+        return
+
+    def _run():
+        for a, tpl, athlete in jobs:
+            try:
+                if athlete:
+                    from ..workout_delivery import deliver_bike_workout
+                    deliver_bike_workout(a, athlete, tpl)
+            except Exception:
+                pass
+            try:
+                from ..sse_broker import publish_nowait
+                from .notification_routes import send_push_to_user
+                publish_nowait(a.athlete_id, "workout_assigned",
+                               {"workout_name": tpl.nombre, "date_iso": a.date_iso})
+                send_push_to_user(a.athlete_id, {
+                    "type": "workout_assigned",
+                    "title": "Nuevo entrenamiento asignado",
+                    "body": f"{tpl.nombre} · {a.date_iso}",
+                    "url": "/training_plan.html", "icon": "/icon-192.png"}, db)
+            except Exception:
+                pass
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 @router.post("/assign/batch", status_code=201)
 def assign_batch(
     body: BatchAssignRequest,
@@ -1456,19 +1504,21 @@ def assign_batch(
     coach: User = Depends(_coach),
 ):
     """
-    I-15: Crea múltiples asignaciones en una sola request (hasta 50).
+    I-15: Crea múltiples asignaciones en una sola request (hasta BATCH_ASSIGN_MAX = 500).
     Procesa cada item con la misma lógica que /coach/assign individual.
     Retorna un resumen con created/skipped/errors por item.
     """
     if not body.assignments:
         raise HTTPException(400, "La lista de asignaciones está vacía")
-    if len(body.assignments) > 50:
-        raise HTTPException(400, "Máximo 50 asignaciones por batch")
+    if len(body.assignments) > BATCH_ASSIGN_MAX:
+        raise HTTPException(400, f"Máximo {BATCH_ASSIGN_MAX} asignaciones por batch")
 
-    coach_template_ids = {
-        t.id for t in db.query(WorkoutTemplate)
-                        .filter(WorkoutTemplate.coach_id == coach.id).all()
+    coach_templates = {
+        t.id: t for t in db.query(WorkoutTemplate)
+                           .filter(WorkoutTemplate.coach_id == coach.id).all()
     }
+    coach_template_ids = set(coach_templates)
+    new_rows = []  # AssignedWorkout recién creados (para entrega/push tras el commit)
 
     created = []
     errors  = []
@@ -1498,13 +1548,14 @@ def assign_batch(
                     AssignedWorkout.deleted_at  == None,
                 ).first()
                 if not existing:
-                    db.add(AssignedWorkout(
+                    row = AssignedWorkout(
                         template_id = item.template_id,
                         athlete_id  = m.athlete_id,
                         group_id    = item.group_id,
                         date_iso    = item.date_iso,
                         notas       = item.notas,
-                    ))
+                    )
+                    db.add(row); new_rows.append(row)
                     created.append({"index": idx, "athlete_id": m.athlete_id, "date_iso": item.date_iso})
         else:
             if item.athlete_id not in universe:
@@ -1519,15 +1570,22 @@ def assign_batch(
             if existing:
                 errors.append({"index": idx, "reason": "Ya existe esta asignación (duplicado)"})
                 continue
-            db.add(AssignedWorkout(
+            row = AssignedWorkout(
                 template_id = item.template_id,
                 athlete_id  = item.athlete_id,
                 date_iso    = item.date_iso,
                 notas       = item.notas,
-            ))
-            created.append({"index": idx, "athlete_id": item.athlete_id, "date_iso": item.date_iso})
+            )
+            db.add(row); new_rows.append(row)
+            created.append({"index": idx, "athlete_id": item.athlete_id, "date_iso": item.date_iso,
+                            "_row": row})
 
     db.commit()
+    for c in created:
+        r = c.pop("_row", None)
+        if r is not None:
+            c["id"] = r.id
+    _notify_batch_created(db, new_rows, coach_templates)
 
     return {
         "ok":      True,

@@ -28,7 +28,7 @@ from ..schemas import (
     ApplyMacrocycleRequest,
 )
 from ..auth import require_role
-from ..permissions import assert_coach_owns_athlete
+from ..permissions import assert_coach_owns_athlete, coach_athlete_ids
 from ..services.performance_analytics_service import build_plan_impact
 
 router = APIRouter(prefix="/coach", tags=["coach-plan"])
@@ -237,6 +237,93 @@ def preview_macrocycle_impact(
     return build_plan_impact(db, athlete_id, sessions)
 
 
+APPLY_MULTI_MAX = 500
+
+
+def _resolve_multi_targets(db, coach, body):
+    """Destino múltiple de apply (semana tipo / macrociclo).
+
+    Valida cada id contra el universo único del coach (pila 360). Devuelve
+    (validos, fallidos): `fallidos` = [{athlete_id, reason}] para ids ajenos,
+    inexistentes, vacíos o repetidos. Un id inválido NO bloquea a los demás.
+    """
+    if body.athlete_id or body.group_id:
+        raise HTTPException(400, "athlete_ids no se combina con athlete_id ni group_id")
+    ids = body.athlete_ids or []
+    if not ids:
+        raise HTTPException(400, "athlete_ids está vacío")
+    if len(ids) > APPLY_MULTI_MAX:
+        raise HTTPException(400, f"Máximo {APPLY_MULTI_MAX} atletas por aplicación")
+    universe = set(coach_athlete_ids(db, coach))
+    valid, failed, seen = [], [], set()
+    for aid in ids:
+        if not aid or not str(aid).strip():
+            failed.append({"athlete_id": aid, "reason": "id vacío"})
+        elif aid in seen:
+            failed.append({"athlete_id": aid, "reason": "atleta repetido en la lista"})
+        elif aid not in universe:
+            failed.append({"athlete_id": aid, "reason": "El atleta no pertenece a este coach"})
+        else:
+            valid.append(aid)
+        seen.add(aid)
+    return valid, failed
+
+
+def _require_own_athlete(db, coach, athlete_id):
+    if athlete_id and athlete_id not in set(coach_athlete_ids(db, coach)):
+        raise HTTPException(403, "El atleta no pertenece a este coach")
+
+
+def _sync_garmin_assigns(db, created_assigns):
+    """Sync Garmin opcional de las asignaciones recién creadas. Devuelve cuántas se enviaron."""
+    synced = 0
+    try:
+        from garmin_connector import schedule_workout_for_athlete
+        for a, _, date_iso in created_assigns:
+            db.refresh(a)
+            tpl = db.query(WorkoutTemplate).filter(
+                WorkoutTemplate.id == a.template_id
+            ).first()
+            if not tpl:
+                continue
+            athletes_to_sync = []
+            if a.athlete_id:
+                ath = db.query(User).filter(User.id == a.athlete_id).first()
+                if ath:
+                    athletes_to_sync.append(ath)
+            elif a.group_id:
+                members = (
+                    db.query(User)
+                    .join(GroupMember, GroupMember.athlete_id == User.id)
+                    .filter(GroupMember.group_id == a.group_id, User.activo == True)
+                    .all()
+                )
+                athletes_to_sync.extend(members)
+            for ath in athletes_to_sync:
+                if ath.garmin_email and ath.garmin_password:
+                    try:
+                        from ..crypto import decrypt_credential
+                        schedule_workout_for_athlete(
+                            session={
+                                "name": tpl.nombre, "sport": tpl.sport,
+                                "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
+                                "notes": tpl.notas or "",
+                                "blocks_json": tpl.blocks_json, "ftp": ath.ftp,
+                                "fcmax": ath.fcmax,
+                            },
+                            target_date=date_iso,
+                            athlete_id=ath.id,
+                            athlete_email=ath.garmin_email,
+                            athlete_password=decrypt_credential(ath.garmin_password),
+                        )
+                        synced += 1
+                    except Exception:
+                        pass
+    except ImportError:
+        pass
+    return synced
+
+
 @router.post("/week-templates/{wt_id}/apply")
 def apply_week_template(
     wt_id: str,
@@ -249,82 +336,56 @@ def apply_week_template(
     ).first()
     if not wt:
         raise HTTPException(404, "Semana tipo no encontrada")
-    if not body.athlete_id and not body.group_id:
-        raise HTTPException(400, "Debes especificar athlete_id o group_id")
+    multi = body.athlete_ids is not None
+    if multi:
+        targets, failed = _resolve_multi_targets(db, coach, body)
+    else:
+        if not body.athlete_id and not body.group_id:
+            raise HTTPException(400, "Debes especificar athlete_id o group_id")
+        _require_own_athlete(db, coach, body.athlete_id)
+        targets, failed = [None], []
     if not wt.days:
         raise HTTPException(400, "La semana tipo no tiene sesiones configuradas")
 
     start = _date.fromisoformat(body.start_date)
     created_assigns = []
+    per_athlete = []
 
-    for d in wt.days:
-        target_date = (start + timedelta(days=d.day_of_week)).isoformat()
-        a = AssignedWorkout(
-            template_id = d.workout_template_id,
-            athlete_id  = body.athlete_id,
-            group_id    = body.group_id,
-            date_iso    = target_date,
-            notas       = d.notas,
-        )
-        db.add(a)
-        created_assigns.append((a, d.workout_template_id, target_date))
+    for tid in targets:
+        n = 0
+        for d in wt.days:
+            target_date = (start + timedelta(days=d.day_of_week)).isoformat()
+            a = AssignedWorkout(
+                template_id = d.workout_template_id,
+                athlete_id  = tid if multi else body.athlete_id,
+                group_id    = None if multi else body.group_id,
+                date_iso    = target_date,
+                notas       = d.notas,
+            )
+            db.add(a)
+            created_assigns.append((a, d.workout_template_id, target_date))
+            n += 1
+        if multi:
+            per_athlete.append({"athlete_id": tid, "ok": True, "created": n})
 
     db.commit()
 
-    # Sync Garmin opcional
-    synced = 0
-    if body.sync_garmin:
-        try:
-            from garmin_connector import schedule_workout_for_athlete
-            for a, _, date_iso in created_assigns:
-                db.refresh(a)
-                tpl = db.query(WorkoutTemplate).filter(
-                    WorkoutTemplate.id == a.template_id
-                ).first()
-                if not tpl:
-                    continue
-                athletes_to_sync = []
-                if a.athlete_id:
-                    ath = db.query(User).filter(User.id == a.athlete_id).first()
-                    if ath:
-                        athletes_to_sync.append(ath)
-                elif a.group_id:
-                    members = (
-                        db.query(User)
-                        .join(GroupMember, GroupMember.athlete_id == User.id)
-                        .filter(GroupMember.group_id == a.group_id, User.activo == True)
-                        .all()
-                    )
-                    athletes_to_sync.extend(members)
-                for ath in athletes_to_sync:
-                    if ath.garmin_email and ath.garmin_password:
-                        try:
-                            from ..crypto import decrypt_credential
-                            schedule_workout_for_athlete(
-                                session={
-                                    "name": tpl.nombre, "sport": tpl.sport,
-                                    "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
-                                    "notes": tpl.notas or "",
-                                    "blocks_json": tpl.blocks_json, "ftp": ath.ftp,
-                                    "fcmax": ath.fcmax,
-                                },
-                                target_date=date_iso,
-                                athlete_id=ath.id,
-                                athlete_email=ath.garmin_email,
-                                athlete_password=decrypt_credential(ath.garmin_password),
-                            )
-                            synced += 1
-                        except Exception:
-                            pass
-        except ImportError:
-            pass
+    synced = _sync_garmin_assigns(db, created_assigns) if body.sync_garmin else 0
 
-    return {
+    out = {
         "created": len(created_assigns),
         "synced_garmin": synced,
         "week_start": body.start_date,
         "week_end": (start + timedelta(days=6)).isoformat(),
     }
+    if multi:
+        out["results"] = per_athlete + [
+            {"athlete_id": f["athlete_id"], "ok": False, "created": 0, "error": f["reason"]}
+            for f in failed
+        ]
+        out["athletes_ok"] = len(per_athlete)
+        out["athletes_failed"] = len(failed)
+    return out
 
 
 # ─────────────────────────────────────────────────────────────
@@ -500,28 +561,49 @@ def apply_macrocycle(mc_id: str, body: ApplyMacrocycleRequest, db: Session = Dep
         raise HTTPException(404, "Macrociclo no encontrado")
     if not mc.weeks:
         raise HTTPException(400, "El macrociclo no tiene semanas configuradas")
-    if not body.athlete_id and not body.group_id:
-        raise HTTPException(400, "Debes especificar athlete_id o group_id")
+    multi = body.athlete_ids is not None
+    if multi:
+        targets, failed = _resolve_multi_targets(db, coach, body)
+    else:
+        if not body.athlete_id and not body.group_id:
+            raise HTTPException(400, "Debes especificar athlete_id o group_id")
+        _require_own_athlete(db, coach, body.athlete_id)
+        targets, failed = [None], []
 
     start = _date.fromisoformat(body.start_date)
-    total_created = 0; total_synced = 0
+    total_created = 0
+    per_athlete = []
 
-    for mc_week in mc.weeks:
-        week_start = start + timedelta(weeks=mc_week.position - 1)
-        wt = mc_week.week_template
-        if not wt or not wt.days:
-            continue
-        for day in wt.days:
-            target_date = (week_start + timedelta(days=day.day_of_week)).isoformat()
-            a = AssignedWorkout(
-                template_id=day.workout_template_id,
-                athlete_id=body.athlete_id, group_id=body.group_id,
-                date_iso=target_date, notas=day.notas,
-            )
-            db.add(a); total_created += 1
+    for tid in targets:
+        n = 0
+        for mc_week in mc.weeks:
+            week_start = start + timedelta(weeks=mc_week.position - 1)
+            wt = mc_week.week_template
+            if not wt or not wt.days:
+                continue
+            for day in wt.days:
+                target_date = (week_start + timedelta(days=day.day_of_week)).isoformat()
+                a = AssignedWorkout(
+                    template_id=day.workout_template_id,
+                    athlete_id=tid if multi else body.athlete_id,
+                    group_id=None if multi else body.group_id,
+                    date_iso=target_date, notas=day.notas,
+                )
+                db.add(a); n += 1
+        total_created += n
+        if multi:
+            per_athlete.append({"athlete_id": tid, "ok": True, "created": n})
 
     db.commit()
 
     end_date = (start + timedelta(weeks=len(mc.weeks)) - timedelta(days=1)).isoformat()
-    return {"macrocycle": mc.nombre, "weeks_applied": len(mc.weeks),
-            "created": total_created, "period_start": body.start_date, "period_end": end_date}
+    out = {"macrocycle": mc.nombre, "weeks_applied": len(mc.weeks),
+           "created": total_created, "period_start": body.start_date, "period_end": end_date}
+    if multi:
+        out["results"] = per_athlete + [
+            {"athlete_id": f["athlete_id"], "ok": False, "created": 0, "error": f["reason"]}
+            for f in failed
+        ]
+        out["athletes_ok"] = len(per_athlete)
+        out["athletes_failed"] = len(failed)
+    return out

@@ -591,6 +591,27 @@
         background: rgba(168, 85, 247, 0.15);
         color: var(--purple);
       }
+
+      /* COACH-DESTINO-MULTIPLE: selector de destino múltiple */
+      .lx-dest { border: 1px solid var(--border2); border-radius: 8px; padding: 0.55rem; }
+      .lx-dest .lx-dest-bar { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
+      .lx-dest .lx-dest-bar input { flex: 1 1 0; width: auto; min-width: 0; }
+      .lx-dest .lx-dest-bar select { flex: 0 0 42%; width: auto; min-width: 0; }
+      .lx-dest .lx-dest-act { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-bottom: 0.4rem; }
+      .lx-dest .lx-dest-act .btn { padding: 0.2rem 0.55rem; font-size: 0.72rem; }
+      .lx-dest .lx-dest-act select { width: auto; max-width: 12rem; font-size: 0.74rem; padding: 0.2rem 0.4rem; }
+      .lx-dest .lx-dest-list { max-height: 11rem; overflow-y: auto; border: 1px solid var(--border2); border-radius: 6px; }
+      .lx-dest label.lx-dest-row { display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0.28rem 0.5rem; font-size: 0.8rem; font-weight: 500; text-transform: none; letter-spacing: 0; cursor: pointer; border-bottom: 1px solid var(--border2); }
+      .lx-dest label.lx-dest-row:last-child { border-bottom: 0; }
+      .lx-dest .lx-dest-row input { flex: 0 0 auto; width: 14px; height: 14px; padding: 0; accent-color: var(--green); }
+      .lx-dest .lx-dest-row small { color: var(--dim); margin-left: auto; font-size: 0.7rem; }
+      .lx-dest-empty { padding: 0.6rem; font-size: 0.78rem; color: var(--dim); text-align: center; }
+      .lx-dest-count { margin-top: 0.4rem; font-size: 0.78rem; font-weight: 600; }
+      .lx-dest-sum { font-size: 0.74rem; color: var(--muted); margin-top: 0.15rem; word-break: break-word; }
+      .lx-dest-report { margin-top: 0.6rem; font-size: 0.8rem; }
+      .lx-dest-report .ok { color: var(--green); font-weight: 600; }
+      .lx-dest-report .bad { color: var(--red); font-weight: 600; margin-top: 0.3rem; }
+      .lx-dest-report ul { margin: 0.2rem 0 0; padding-left: 1.1rem; max-height: 9rem; overflow-y: auto; }
     </style>
       <link rel="stylesheet" href="theme-light.css?v=349" />
     <style id="lx-theme-light">
@@ -1093,17 +1114,13 @@
             <div class="field">
               <label>Asignar a</label>
               <select id="asgn-target-type" onchange="toggleAsgnTarget()">
-                <option value="athlete">
-                  <span data-i18n="coach_h023">Atleta individual</span>
-                </option>
-                <option value="group">Grupo completo</option>
+                <option value="multi">Atletas (uno o varios)</option>
+                <option value="group">Grupo completo (una asignación por miembro)</option>
               </select>
             </div>
             <div class="field" id="asgn-athlete-field">
               <label><span data-i18n="coach_h024">Atleta</span></label>
-              <select id="asgn-athlete">
-                <option value="">Seleccionar...</option>
-              </select>
+              <div id="asgn-dest"></div>
             </div>
             <div class="field" id="asgn-group-field" style="display: none">
               <label>Grupo</label>
@@ -1200,6 +1217,7 @@
             >
               Asignar Entrenamiento
             </button>
+            <div id="asgn-result" class="lx-dest-report" role="status"></div>
           </div>
           <div class="card">
             <div class="card-hd">
@@ -2752,17 +2770,13 @@
         <div class="field">
           <label>Asignar a</label>
           <select id="wta-target-type" onchange="toggleWtaTarget(); lxImpactRefresh('wta')">
-            <option value="athlete">
-              <span data-i18n="coach_h023">Atleta individual</span>
-            </option>
-            <option value="group">Grupo</option>
+            <option value="multi">Atletas (uno o varios)</option>
+            <option value="group">Grupo (fila de grupo, sin expandir)</option>
           </select>
         </div>
         <div id="wta-athlete-row" class="field">
-          <label><span data-i18n="coach_h024">Atleta</span></label
-          ><select id="wta-athlete" onchange="lxImpactRefresh('wta')">
-            <option value="">Seleccionar...</option>
-          </select>
+          <label><span data-i18n="coach_h024">Atleta</span></label>
+          <div id="wta-dest"></div>
         </div>
         <div id="wta-group-row" class="field" style="display: none">
           <label>Grupo</label
@@ -2796,6 +2810,7 @@
             ></label
           >
         </div>
+        <div id="wta-result" class="lx-dest-report" role="status" style="margin-bottom: 0.75rem"></div>
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
           <button class="btn btn-ghost" onclick="closeModal('modal-wt-apply')">
             <span data-i18n="coach_h052">Cancelar</span>
@@ -2995,17 +3010,13 @@
         <div class="field">
           <label>Asignar a</label>
           <select id="mca-target-type" onchange="toggleMcaTarget(); lxImpactRefresh('mca')">
-            <option value="athlete">
-              <span data-i18n="coach_h023">Atleta individual</span>
-            </option>
-            <option value="group">Grupo</option>
+            <option value="multi">Atletas (uno o varios)</option>
+            <option value="group">Grupo (fila de grupo, sin expandir)</option>
           </select>
         </div>
         <div id="mca-athlete-row" class="field">
-          <label><span data-i18n="coach_h024">Atleta</span></label
-          ><select id="mca-athlete" onchange="lxImpactRefresh('mca')">
-            <option value="">Seleccionar...</option>
-          </select>
+          <label><span data-i18n="coach_h024">Atleta</span></label>
+          <div id="mca-dest"></div>
         </div>
         <div id="mca-group-row" class="field" style="display: none">
           <label>Grupo</label
@@ -3039,6 +3050,7 @@
             ></label
           >
         </div>
+        <div id="mca-result" class="lx-dest-report" role="status" style="margin-bottom: 0.75rem"></div>
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
           <button class="btn btn-ghost" onclick="closeModal('modal-mc-apply')">
             <span data-i18n="coach_h052">Cancelar</span>
@@ -6008,15 +6020,7 @@
           });
           asgnTemplateChange(tSel.value);
 
-          var aSel = document.getElementById('asgn-athlete');
-          aSel.innerHTML = _t(
-            'coach_s057',
-            '<option value=""><span data-i18n="coach_h067">Seleccionar atleta...</span></option>',
-          );
-          _cache.athletes.forEach(function (u) {
-            aSel.innerHTML +=
-              '<option value="' + u.id + '">' + esc(u.nombre) + '</option>';
-          });
+          destMount('asgn');
 
           var gSel = document.getElementById('asgn-group');
           gSel.innerHTML = '<option value="">Seleccionar grupo...</option>';
@@ -6110,10 +6114,332 @@
           }
         }
 
+        // ── Destino múltiple (COACH-DESTINO-MULTIPLE) ─────────────────
+        // Selector reutilizable de atletas para los tres flujos: asignar sesión
+        // ('asgn'), aplicar semana tipo ('wta') y aplicar macrociclo ('mca').
+        var DEST_BATCH_MAX = 500; // = BATCH_ASSIGN_MAX del backend
+        var DEST_RENDER_MAX = 300;
+        var _dest = {};
+        function destState(pfx) {
+          return (_dest[pfx] = _dest[pfx] || { ids: [], q: '', group: '' });
+        }
+        // Atletas del coach que pasan el buscador y el filtro de grupo (por id).
+        function destFilter(list, f, groups) {
+          var q = ((f && f.q) || '').trim().toLowerCase();
+          var allowed = null;
+          if (f && f.group) {
+            allowed = {};
+            (groups || []).forEach(function (g) {
+              if (g.id !== f.group) return;
+              (g.members || []).forEach(function (m) {
+                allowed[m.athlete_id || m.user_id] = true;
+              });
+            });
+          }
+          return list.filter(function (u) {
+            if (allowed && !allowed[u.id]) return false;
+            if (
+              q &&
+              (u.nombre || '').toLowerCase().indexOf(q) < 0 &&
+              (u.email || '').toLowerCase().indexOf(q) < 0
+            )
+              return false;
+            return true;
+          });
+        }
+        function destUnion(ids, add) {
+          var seen = {};
+          var out = [];
+          ids.concat(add).forEach(function (id) {
+            if (id && !seen[id]) {
+              seen[id] = true;
+              out.push(id);
+            }
+          });
+          return out;
+        }
+        function destWithout(ids, remove) {
+          var rm = {};
+          remove.forEach(function (id) {
+            rm[id] = true;
+          });
+          return ids.filter(function (id) {
+            return !rm[id];
+          });
+        }
+        function destChunk(arr, size) {
+          var out = [];
+          for (var i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+          return out;
+        }
+        function destSummary(ids, nameOf, max) {
+          max = max || 6;
+          var names = ids.slice(0, max).map(nameOf);
+          return (
+            names.join(', ') +
+            (ids.length > max ? ' y ' + (ids.length - max) + ' más' : '')
+          );
+        }
+        function destErrMsg(e) {
+          var t = (e && e.message) || String(e || 'Error');
+          try {
+            var j = JSON.parse(t);
+            if (j.errors && j.errors[0] && j.errors[0].message)
+              return j.errors[0].message;
+            if (typeof j.detail === 'string') return j.detail;
+          } catch (x) {}
+          return t.slice(0, 200);
+        }
+        function destBatchItems(ids, tplId, date, notas) {
+          return ids.map(function (id) {
+            return { template_id: tplId, athlete_id: id, date_iso: date, notas: notas };
+          });
+        }
+        // chunks: [{ids:[…], resp|error}] en el mismo orden en que se enviaron.
+        // Cada atleta termina en ok o en failed (con motivo); lo que el servidor
+        // no confirma cuenta como fallo: nunca éxito falso global.
+        function destBatchReport(chunks) {
+          var ok = [];
+          var failed = [];
+          chunks.forEach(function (c) {
+            if (c.error) {
+              c.ids.forEach(function (id) {
+                failed.push({ id: id, reason: c.error });
+              });
+              return;
+            }
+            var det = (c.resp && c.resp.detail) || {};
+            var done = {};
+            (det.created || []).forEach(function (x) {
+              var id = c.ids[x.index];
+              if (id) {
+                done[id] = true;
+                ok.push({ id: id, assign_id: x.id });
+              }
+            });
+            (det.errors || []).forEach(function (x) {
+              var id = c.ids[x.index];
+              if (id) {
+                done[id] = true;
+                failed.push({ id: id, reason: x.reason });
+              }
+            });
+            c.ids.forEach(function (id) {
+              if (!done[id])
+                failed.push({ id: id, reason: 'Sin confirmación del servidor' });
+            });
+          });
+          return { ok: ok, failed: failed };
+        }
+        function destApplyReport(chunks) {
+          var ok = [];
+          var failed = [];
+          chunks.forEach(function (c) {
+            if (c.error) {
+              c.ids.forEach(function (id) {
+                failed.push({ id: id, reason: c.error });
+              });
+              return;
+            }
+            var done = {};
+            ((c.resp && c.resp.results) || []).forEach(function (r) {
+              done[r.athlete_id] = true;
+              if (r.ok) ok.push({ id: r.athlete_id, created: r.created });
+              else failed.push({ id: r.athlete_id, reason: r.error || 'Error' });
+            });
+            c.ids.forEach(function (id) {
+              if (!done[id])
+                failed.push({ id: id, reason: 'Sin confirmación del servidor' });
+            });
+          });
+          return { ok: ok, failed: failed };
+        }
+        function destReportHtml(rep, nameOf, unit) {
+          var total = rep.ok.length + rep.failed.length;
+          var h =
+            '<div class="' +
+            (rep.failed.length ? 'bad' : 'ok') +
+            '">' +
+            (rep.failed.length ? '⚠ ' : '✔ ') +
+            rep.ok.length +
+            ' de ' +
+            total +
+            ' atletas con ' +
+            (unit || 'sesiones creadas') +
+            '</div>';
+          if (rep.failed.length) {
+            h +=
+              '<div class="bad">' +
+              rep.failed.length +
+              ' fallaron:</div><ul>' +
+              rep.failed
+                .map(function (f) {
+                  return '<li>' + esc(nameOf(f.id)) + ' — ' + esc(f.reason) + '</li>';
+                })
+                .join('') +
+              '</ul>';
+          }
+          return h;
+        }
+        function destNameOf(id) {
+          var a = (_cache.athletes || []).find(function (x) {
+            return x.id === id;
+          });
+          return a ? a.nombre : id;
+        }
+        window.destIds = function (pfx) {
+          return destState(pfx).ids.slice();
+        };
+        function destMount(pfx, reset) {
+          var box = document.getElementById(pfx + '-dest');
+          if (!box) return;
+          var st = destState(pfx);
+          var known = {};
+          (_cache.athletes || []).forEach(function (a) {
+            known[a.id] = true;
+          });
+          st.ids = reset
+            ? []
+            : st.ids.filter(function (id) {
+                return known[id];
+              });
+          if (reset) {
+            st.q = '';
+            st.group = '';
+          }
+          box.innerHTML =
+            '<div class="lx-dest">' +
+            '<div class="lx-dest-bar">' +
+            '<input type="search" id="' + pfx + '-dest-q" placeholder="Buscar atleta…" aria-label="Buscar atleta" oninput="destOnFilter(\'' + pfx + '\')" />' +
+            '<select id="' + pfx + '-dest-g" aria-label="Filtrar por grupo" onchange="destOnFilter(\'' + pfx + '\')"><option value="">Grupo: todos</option>' +
+            (_cache.groups || [])
+              .map(function (g) {
+                return '<option value="' + g.id + '">' + _groupOptLabel(g) + '</option>';
+              })
+              .join('') +
+            '</select></div>' +
+            '<div class="lx-dest-act">' +
+            '<button type="button" class="btn btn-ghost btn-sm" id="' + pfx + '-dest-all" onclick="destSelVisible(\'' + pfx + '\', true)"></button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="destSelVisible(\'' + pfx + '\', false)">Quitar visibles</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="destClear(\'' + pfx + '\')">Limpiar</button>' +
+            '<select id="' + pfx + '-dest-grp" aria-label="Agregar grupo completo"><option value="">Agregar grupo completo…</option>' +
+            (_cache.groups || [])
+              .map(function (g) {
+                return '<option value="' + g.id + '">' + _groupOptLabel(g) + ' (' + (g.member_count || 0) + ')</option>';
+              })
+              .join('') +
+            '</select>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="destAddGroup(\'' + pfx + '\')">Agregar</button>' +
+            '</div>' +
+            '<div class="lx-dest-list" id="' + pfx + '-dest-list" role="group" aria-label="Atletas"></div>' +
+            '<div class="lx-dest-count" id="' + pfx + '-dest-count"></div>' +
+            '<div class="lx-dest-sum" id="' + pfx + '-dest-sum"></div>' +
+            '</div>';
+          destRefresh(pfx);
+        }
+        function destVisible(pfx) {
+          var st = destState(pfx);
+          return destFilter(_cache.athletes || [], st, _cache.groups);
+        }
+        function destRefresh(pfx) {
+          var st = destState(pfx);
+          var list = document.getElementById(pfx + '-dest-list');
+          if (!list) return;
+          var vis = destVisible(pfx);
+          var sel = {};
+          st.ids.forEach(function (id) {
+            sel[id] = true;
+          });
+          list.innerHTML = vis.length
+            ? vis
+                .slice(0, DEST_RENDER_MAX)
+                .map(function (u) {
+                  return (
+                    '<label class="lx-dest-row"><input type="checkbox" value="' + u.id + '"' +
+                    (sel[u.id] ? ' checked' : '') +
+                    ' onchange="destToggle(\'' + pfx + '\', this.value, this.checked)" />' +
+                    '<span>' + esc(u.nombre) + '</span><small>' + esc(u.email || '') + '</small></label>'
+                  );
+                })
+                .join('') +
+              (vis.length > DEST_RENDER_MAX
+                ? '<div class="lx-dest-empty">Mostrando ' + DEST_RENDER_MAX + ' de ' + vis.length + ': afina con el buscador (“Seleccionar visibles” incluye los ' + vis.length + ').</div>'
+                : '')
+            : '<div class="lx-dest-empty">Ningún atleta coincide con el filtro.</div>';
+          document.getElementById(pfx + '-dest-all').textContent =
+            'Seleccionar visibles (' + vis.length + ')';
+          document.getElementById(pfx + '-dest-count').textContent =
+            st.ids.length + (st.ids.length === 1 ? ' atleta seleccionado' : ' atletas seleccionados');
+          document.getElementById(pfx + '-dest-sum').textContent = st.ids.length
+            ? destSummary(st.ids, destNameOf)
+            : 'Ninguno todavía.';
+          if (pfx !== 'asgn' && typeof lxImpactRefresh === 'function')
+            lxImpactRefresh(pfx);
+        }
+        window.destOnFilter = function (pfx) {
+          var st = destState(pfx);
+          st.q = document.getElementById(pfx + '-dest-q').value;
+          st.group = document.getElementById(pfx + '-dest-g').value;
+          destRefresh(pfx);
+        };
+        window.destToggle = function (pfx, id, on) {
+          var st = destState(pfx);
+          st.ids = on ? destUnion(st.ids, [id]) : destWithout(st.ids, [id]);
+          destRefresh(pfx);
+        };
+        window.destSelVisible = function (pfx, on) {
+          var st = destState(pfx);
+          var ids = destVisible(pfx).map(function (u) {
+            return u.id;
+          });
+          st.ids = on ? destUnion(st.ids, ids) : destWithout(st.ids, ids);
+          destRefresh(pfx);
+        };
+        window.destClear = function (pfx) {
+          destState(pfx).ids = [];
+          destRefresh(pfx);
+        };
+        window.destAddGroup = function (pfx) {
+          var gid = document.getElementById(pfx + '-dest-grp').value;
+          if (!gid) {
+            toast('Elige un grupo para agregar', 'err');
+            return;
+          }
+          var g = (_cache.groups || []).find(function (x) {
+            return x.id === gid;
+          });
+          var known = {};
+          (_cache.athletes || []).forEach(function (a) {
+            known[a.id] = true;
+          });
+          var ids = ((g && g.members) || [])
+            .map(function (m) {
+              return m.athlete_id || m.user_id;
+            })
+            .filter(function (id) {
+              return known[id];
+            });
+          if (!ids.length) {
+            toast('Ese grupo no tiene miembros', 'err');
+            return;
+          }
+          var st = destState(pfx);
+          st.ids = destUnion(st.ids, ids);
+          destRefresh(pfx);
+        };
+        function destShowReport(pfx, rep, unit) {
+          var el = document.getElementById(pfx + '-result');
+          if (el) el.innerHTML = destReportHtml(rep, destNameOf, unit);
+        }
+        function destClearReport(pfx) {
+          var el = document.getElementById(pfx + '-result');
+          if (el) el.innerHTML = '';
+        }
+
         window.toggleAsgnTarget = function () {
           var v = document.getElementById('asgn-target-type').value;
           document.getElementById('asgn-athlete-field').style.display =
-            v === 'athlete' ? '' : 'none';
+            v === 'multi' ? '' : 'none';
           document.getElementById('asgn-group-field').style.display =
             v === 'group' ? '' : 'none';
         };
@@ -6146,14 +6472,16 @@
             toast(_t('coach_s059', 'Template y fecha requeridos'), 'err');
             return;
           }
+          destClearReport('asgn');
+          var ids = [];
           var body = { template_id: tpl, date_iso: date, notas: notes };
-          if (type === 'athlete') {
-            var uid = document.getElementById('asgn-athlete').value;
-            if (!uid) {
+          if (type === 'multi') {
+            ids = destIds('asgn');
+            if (!ids.length) {
               toast(_t('coach_s030', 'Selecciona un atleta'), 'err');
               return;
             }
-            body.athlete_id = uid;
+            if (ids.length === 1) body.athlete_id = ids[0]; // caso singular: /coach/assign
           } else {
             var gid = document.getElementById('asgn-group').value;
             if (!gid) {
@@ -6161,6 +6489,9 @@
               return;
             }
             body.group_id = gid;
+          }
+          if (type === 'multi' && ids.length > 1) {
+            return submitAssignMulti(ids, tpl, date, notes, syncGarmin);
           }
           try {
             var assigned = await apiPost('/coach/assign', body);
@@ -6205,8 +6536,58 @@
             loadRecentAssigns();
           } catch (e) {
             toast(_t('coach_s019', 'Error: ') + e.message, 'err');
+            if (type === 'multi')
+              destShowReport(
+                'asgn',
+                { ok: [], failed: [{ id: ids[0], reason: destErrMsg(e) }] },
+                'sesión asignada',
+              );
           }
         };
+
+        // Sesión suelta a N atletas: /coach/assign/batch troceado en llamadas de
+        // hasta DEST_BATCH_MAX ítems; el reporte sale por atleta.
+        async function submitAssignMulti(ids, tpl, date, notes, syncGarmin) {
+          var items = destBatchItems(ids, tpl, date, notes);
+          var parts = destChunk(ids, DEST_BATCH_MAX);
+          var chunks = [];
+          var off = 0;
+          for (var i = 0; i < parts.length; i++) {
+            var slice = items.slice(off, off + parts[i].length);
+            off += parts[i].length;
+            try {
+              var resp = await apiPost('/coach/assign/batch', { assignments: slice });
+              chunks.push({ ids: parts[i], resp: resp });
+            } catch (e) {
+              chunks.push({ ids: parts[i], error: destErrMsg(e) });
+            }
+          }
+          var rep = destBatchReport(chunks);
+          if (syncGarmin) {
+            for (var k = 0; k < rep.ok.length; k++) {
+              var o = rep.ok[k];
+              if (!o.assign_id) continue;
+              try {
+                var sr = await apiPost('/coach/assign/' + o.assign_id + '/sync-garmin', {});
+                if (!sr.ok) o.garmin = sr.error || 'sin respuesta';
+              } catch (e3) {
+                o.garmin = destErrMsg(e3);
+              }
+            }
+            rep.ok.forEach(function (o) {
+              if (o.garmin)
+                rep.failed.push({ id: o.id, reason: 'Asignado, pero Garmin falló: ' + o.garmin });
+            });
+          }
+          destShowReport('asgn', rep, 'sesión asignada');
+          if (rep.failed.length) {
+            toast(rep.ok.length + ' asignadas · ' + rep.failed.length + ' con error (ver detalle)', 'err');
+          } else {
+            toast(rep.ok.length + ' entrenamientos asignados', 'ok');
+            document.getElementById('asgn-notes').value = '';
+          }
+          loadRecentAssigns();
+        }
 
         // Sync manual de una asignación existente al Garmin del atleta
         window.syncToGarmin = async function (
@@ -8277,13 +8658,11 @@
           document.getElementById('wta-start').value = d
             .toISOString()
             .slice(0, 10);
-          // Poblar atletas y grupos
-          var aSel = document.getElementById('wta-athlete');
-          aSel.innerHTML = '<option value="">Seleccionar...</option>';
-          _cache.athletes.forEach(function (a) {
-            aSel.innerHTML +=
-              '<option value="' + a.id + '">' + esc(a.nombre) + '</option>';
-          });
+          // Poblar atletas (selector múltiple) y grupos
+          document.getElementById('wta-target-type').value = 'multi';
+          toggleWtaTarget();
+          destClearReport('wta');
+          destMount('wta', true);
           var gSel = document.getElementById('wta-group');
           gSel.innerHTML = '<option value="">Seleccionar...</option>';
           _cache.groups.forEach(function (g) {
@@ -8315,7 +8694,8 @@
           var id = document.getElementById(pfx + (pfx === 'wta' ? '-wt-id' : '-mc-id')).value;
           var start = document.getElementById(pfx + '-start').value;
           var isGroup = document.getElementById(pfx + '-target-type').value === 'group';
-          var athId = document.getElementById(pfx + '-athlete').value;
+          var picked = destIds(pfx);
+          var athId = picked.length === 1 ? picked[0] : '';
           var msg = document.getElementById(pfx + '-impact-msg');
           var box = document.getElementById(pfx + '-impact-chart');
           var sum = document.getElementById(pfx + '-impact-sum');
@@ -8326,6 +8706,7 @@
           warn.textContent = '';
           if (_impactCharts[pfx]) { _impactCharts[pfx].destroy(); _impactCharts[pfx] = null; }
           if (isGroup) { msg.textContent = _t('a3_group', 'El impacto proyectado se calcula para un atleta individual.'); return; }
+          if (picked.length > 1) { msg.textContent = _t('dest_impact_one', 'El impacto proyectado se muestra al elegir un solo atleta.'); return; }
           if (!id || !start || !athId) { msg.textContent = _t('a3_pick', 'Elige un atleta y una fecha de inicio.'); return; }
           msg.textContent = _t('a3_loading', 'Calculando proyección…');
           try {
@@ -8366,14 +8747,32 @@
           }
         };
 
+        // Aplica semana tipo / macrociclo a N atletas: athlete_ids[] en trozos de
+        // DEST_BATCH_MAX; el backend responde results[] por atleta.
+        async function applyMulti(path, ids, extra) {
+          var chunks = [];
+          var parts = destChunk(ids, DEST_BATCH_MAX);
+          var last = null;
+          for (var i = 0; i < parts.length; i++) {
+            try {
+              var body = { athlete_ids: parts[i] };
+              Object.keys(extra).forEach(function (k) {
+                body[k] = extra[k];
+              });
+              last = await apiPost(path, body);
+              chunks.push({ ids: parts[i], resp: last });
+            } catch (e) {
+              chunks.push({ ids: parts[i], error: destErrMsg(e) });
+            }
+          }
+          return { rep: destApplyReport(chunks), last: last };
+        }
+
         window.applyWeekTemplate = async function () {
           var wtId = document.getElementById('wta-wt-id').value;
           var start = document.getElementById('wta-start').value;
           var type = document.getElementById('wta-target-type').value;
-          var athId =
-            type === 'athlete'
-              ? document.getElementById('wta-athlete').value
-              : null;
+          var ids = type === 'multi' ? destIds('wta') : [];
           var grpId =
             type === 'group'
               ? document.getElementById('wta-group').value
@@ -8383,14 +8782,32 @@
             toast(_t('coach_s098', 'Selecciona la semana de inicio'), 'err');
             return;
           }
-          if (!athId && !grpId) {
+          if (!ids.length && !grpId) {
             toast(_t('coach_s099', 'Selecciona atleta o grupo'), 'err');
             return;
           }
+          destClearReport('wta');
+          var path = '/coach/week-templates/' + wtId + '/apply';
           try {
-            var r = await apiPost('/coach/week-templates/' + wtId + '/apply', {
+            if (type === 'multi') {
+              var m = await applyMulti(path, ids, { start_date: start, sync_garmin: sync });
+              var made = m.rep.ok.reduce(function (n, o) { return n + (o.created || 0); }, 0);
+              if (m.rep.failed.length) {
+                destShowReport('wta', m.rep, 'semana creada');
+                toast(m.rep.ok.length + ' atletas con semana · ' + m.rep.failed.length + ' con error (ver detalle)', 'err');
+              } else {
+                closeModal('modal-wt-apply');
+                toast(made + ' sesiones creadas en ' + m.rep.ok.length + ' atletas', 'ok');
+              }
+              if (m.rep.ok.length) {
+                loadCalendar();
+                setPlanStab('calendar');
+              }
+              return;
+            }
+            var r = await apiPost(path, {
               start_date: start,
-              athlete_id: athId || null,
+              athlete_id: null,
               group_id: grpId || null,
               sync_garmin: sync,
             });
@@ -8722,17 +9139,9 @@
           document.getElementById('mca-start').value = d
             .toISOString()
             .slice(0, 10);
-          // Populate selects
-          var athSel = document.getElementById('mca-athlete');
-          athSel.innerHTML =
-            '<option value="">Seleccionar...</option>' +
-            _cache.athletes
-              .map(function (u) {
-                return (
-                  '<option value="' + u.id + '">' + esc(u.nombre) + '</option>'
-                );
-              })
-              .join('');
+          // Populate selects (atletas: selector múltiple)
+          destClearReport('mca');
+          destMount('mca', true);
           var grpSel = document.getElementById('mca-group');
           grpSel.innerHTML =
             '<option value="">Seleccionar...</option>' +
@@ -8747,7 +9156,7 @@
                 );
               })
               .join('');
-          document.getElementById('mca-target-type').value = 'athlete';
+          document.getElementById('mca-target-type').value = 'multi';
           toggleMcaTarget();
           openModal('modal-mc-apply');
           lxImpactRefresh('mca');
@@ -8756,7 +9165,7 @@
         window.toggleMcaTarget = function () {
           var t = document.getElementById('mca-target-type').value;
           document.getElementById('mca-athlete-row').style.display =
-            t === 'athlete' ? '' : 'none';
+            t === 'multi' ? '' : 'none';
           document.getElementById('mca-group-row').style.display =
             t === 'group' ? '' : 'none';
         };
@@ -8765,10 +9174,7 @@
           var mcId = document.getElementById('mca-mc-id').value;
           var start = document.getElementById('mca-start').value;
           var type = document.getElementById('mca-target-type').value;
-          var athId =
-            type === 'athlete'
-              ? document.getElementById('mca-athlete').value
-              : null;
+          var ids = type === 'multi' ? destIds('mca') : [];
           var grpId =
             type === 'group'
               ? document.getElementById('mca-group').value
@@ -8778,14 +9184,32 @@
             toast(_t('coach_s098', 'Selecciona la semana de inicio'), 'err');
             return;
           }
-          if (!athId && !grpId) {
+          if (!ids.length && !grpId) {
             toast(_t('coach_s099', 'Selecciona atleta o grupo'), 'err');
             return;
           }
+          destClearReport('mca');
+          var path = '/coach/macrocycles/' + mcId + '/apply';
           try {
-            var r = await apiPost('/coach/macrocycles/' + mcId + '/apply', {
+            if (type === 'multi') {
+              var m = await applyMulti(path, ids, { start_date: start, sync_garmin: sync });
+              var made = m.rep.ok.reduce(function (n, o) { return n + (o.created || 0); }, 0);
+              if (m.rep.failed.length) {
+                destShowReport('mca', m.rep, 'macrociclo creado');
+                toast(m.rep.ok.length + ' atletas con macrociclo · ' + m.rep.failed.length + ' con error (ver detalle)', 'err');
+              } else {
+                closeModal('modal-mc-apply');
+                toast(made + ' sesiones creadas en ' + m.rep.ok.length + ' atletas', 'ok');
+              }
+              if (m.rep.ok.length) {
+                loadCalendar();
+                setPlanStab('calendar');
+              }
+              return;
+            }
+            var r = await apiPost(path, {
               start_date: start,
-              athlete_id: athId || null,
+              athlete_id: null,
               group_id: grpId || null,
               sync_garmin: sync,
             });

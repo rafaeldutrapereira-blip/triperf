@@ -430,6 +430,7 @@ class ApplyWeekTemplateRequest(BaseModel):
     start_date:   str             # lunes de la semana destino YYYY-MM-DD
     athlete_id:   Optional[str] = None
     group_id:     Optional[str] = None
+    athlete_ids:  Optional[List[str]] = None   # destino múltiple (excluyente con athlete_id/group_id)
     sync_garmin:  bool = False
 
 # ─────────────────────────────────────────────
@@ -489,6 +490,7 @@ class ApplyMacrocycleRequest(BaseModel):
     start_date:  str              # lunes de inicio YYYY-MM-DD
     athlete_id:  Optional[str] = None
     group_id:    Optional[str] = None
+    athlete_ids: Optional[List[str]] = None   # destino múltiple (excluyente con athlete_id/group_id)
     sync_garmin: bool = False
 
 
