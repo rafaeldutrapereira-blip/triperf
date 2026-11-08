@@ -35,7 +35,7 @@ for (const [label, src] of [['web', web], ['app', app]]) {
   });
 }
 
-test('web: setGarminOfficialUI solo muestra Conectar si not_connected y sin legacy', () => {
+test('web: setGarminOfficialUI muestra Conectar siempre que no haya conexion (GARMIN-CONECTA)', () => {
   const els = {};
   const doc = {
     getElementById: (id) => (els[id] = els[id] || { style: {}, textContent: '', setAttribute() {} }),
@@ -49,10 +49,13 @@ test('web: setGarminOfficialUI solo muestra Conectar si not_connected y sin lega
       .map((n) => extract(web, n)).join(';') +
     '; return setGarminOfficialUI;';
   const fn = new Function('document', '_t', 'S', code)(doc, (k, f) => f, sess);
+  fn('error');
+  assert.strictEqual(els['btn-garmin-off-con'].style.display, '');
+  assert.match(els['garmin-status'].textContent, /puedes conectar igual/);
   fn('unavailable');
-  assert.strictEqual(els['btn-garmin-off-con'].style.display, 'none');
+  assert.strictEqual(els['btn-garmin-off-con'].style.display, '');
   assert.strictEqual(els['btn-garmin-dis'].style.display, 'none');
-  assert.match(els['garmin-status'].textContent, /Pronto/);
+  assert.match(els['garmin-status'].textContent, /Conexión oficial/);
   fn('connected');
   assert.strictEqual(els['btn-garmin-dis'].style.display, '');
   assert.strictEqual(els['btn-garmin-off-con'].style.display, 'none');

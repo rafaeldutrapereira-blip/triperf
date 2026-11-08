@@ -28,11 +28,33 @@ for (const [label, src] of [['web', web], ['app', app]]) {
     assert.strictEqual(m.adminConnectLegacy, undefined); // RETIRO-1: la accion ya no existe
     assert.strictEqual(m.showSwitch, false);
   });
-  test(label + ': oficial no disponible no ofrece boton', () => {
-    for (const st of ['unavailable', 'error']) {
-      const m = model(false, st, false);
-      assert.strictEqual(m.showConnect, false);
-      assert.strictEqual(m.connected, false);
+  test(label + ': matriz completa de estados -> acciones (GARMIN-CONECTA)', () => {
+    const states = ['connected', 'not_connected', 'unavailable', 'error', '', null];
+    for (const st of states) {
+      for (const legacy of [false, true]) {
+        for (const sync of [undefined, 'live', 'stale', 'needs_reauth', 'never']) {
+          const m = model(legacy, st, false, sync);
+          const off = st === 'connected';
+          // sin conexion oficial ni legacy: SIEMPRE se ofrece conectar
+          if (!off && !legacy) {
+            assert.strictEqual(m.showConnect, true, 'sin accion en ' + st);
+            assert.strictEqual(m.connected, false);
+            assert.strictEqual(m.disconnect, null);
+          } else assert.strictEqual(m.showConnect, false);
+          // ningun estado deja la tarjeta sin accion
+          assert.ok(
+            m.showConnect || m.showSync || m.showSwitch || m.disconnect,
+            'tarjeta muda en ' + st + '/' + legacy + '/' + sync,
+          );
+          // legacy caida conserva su salida (sync + desconectar / pasarse a oficial)
+          if (!off && legacy && (sync === 'needs_reauth' || sync === 'never')) {
+            assert.strictEqual(m.status, 'legacy_down');
+            assert.strictEqual(m.connected, false);
+            assert.strictEqual(m.showSync, true);
+            assert.strictEqual(m.showSwitch, st === 'not_connected');
+          }
+        }
+      }
     }
   });
   test(label + ': legacy conectado (atleta) -> sync, desconectar y cambiar a oficial', () => {
@@ -98,4 +120,39 @@ test('app: fila unica, sin "(oficial)" y con enlace de cambio', () => {
   assert.doesNotMatch(both, /refreshGarminSync/);
   assert.doesNotMatch(row({}, true, 'connected', false), /pf-garmin-admin/);
   assert.match(row({}, true, 'connected', true), /pf-garmin-admin/);
+});
+
+test('app: la fila muestra Conectar en error/unavailable', () => {
+  const code = 'var _t=function(k,f){return f;};var _escCm=function(x){return x;};' +
+    extract(app, 'garminCardModel') + extract(app, '_garminRow') + '; return _garminRow;';
+  const row = new Function(code)();
+  for (const st of ['error', 'unavailable', 'not_connected']) {
+    assert.match(row(null, false, st, false), /garminOfficialConnect\(\)">Conectar Garmin/, st);
+  }
+  assert.doesNotMatch(row(null, false, 'connected', false), /Conectar Garmin/);
+  assert.match(row(null, false, 'error', false), /puedes conectar igual/);
+});
+
+test('app: garminOfficialConnect abre fuera del WebView (Browser, _system, fallback)', () => {
+  const run = (cap, openRet) => {
+    const calls = { browser: null, open: null };
+    const win = { Capacitor: cap, location: { href: '' }, open: (u, t) => ((calls.open = [u, t]), openRet) };
+    if (cap && cap.Plugins && cap.Plugins.Browser)
+      cap.Plugins.Browser.open = (o) => (calls.browser = o.url);
+    new Function('window', 'API', extract(app, 'garminOfficialConnect') + '; garminOfficialConnect();')(win, 'https://x');
+    return { calls, href: win.location.href };
+  };
+  const native = () => ({ isNativePlatform: () => true, Plugins: { Browser: {} } });
+  let r = run(native(), null);
+  assert.strictEqual(r.calls.browser, 'https://x/integrations/garmin/connect');
+  assert.strictEqual(r.href, '');
+  const noPlugin = { isNativePlatform: () => true, Plugins: {} };
+  r = run(noPlugin, {});
+  assert.deepStrictEqual(r.calls.open, ['https://x/integrations/garmin/connect', '_system']);
+  assert.strictEqual(r.href, '');
+  r = run(noPlugin, null);
+  assert.strictEqual(r.href, 'https://x/integrations/garmin/connect');
+  r = run(undefined, null);
+  assert.strictEqual(r.href, 'https://x/integrations/garmin/connect');
+  assert.strictEqual(r.calls.open, null);
 });

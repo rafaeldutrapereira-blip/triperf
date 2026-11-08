@@ -5401,8 +5401,25 @@
             return 'error';
           });
       }
+      /* GARMIN-CONECTA: Garmin/OAuth bloquea su login dentro de un WebView
+         ("This content is blocked"). En la app nativa se abre en el navegador
+         del sistema: plugin Browser de Capacitor, si no window.open(_system),
+         y solo si nada de eso existe se navega en la misma vista. */
       function garminOfficialConnect() {
-        window.location.href = API + '/integrations/garmin/connect';
+        var url = API + '/integrations/garmin/connect';
+        var cap = window.Capacitor;
+        var native = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
+        if (native) {
+          try {
+            var B = cap.Plugins && cap.Plugins.Browser;
+            if (B && B.open) {
+              B.open({ url: url });
+              return;
+            }
+            if (window.open(url, '_system')) return;
+          } catch (e) {}
+        }
+        window.location.href = url;
       }
       function garminOfficialDisconnect() {
         apiFetch('/integrations/garmin/disconnect', { method: 'POST' })
@@ -5439,7 +5456,7 @@
                 : offState || '',
           showSync: !offOn && legacyOn,
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
-          showConnect: !offOn && !legacyOn && offState === 'not_connected',
+          showConnect: !offOn && !legacyOn,
           showSwitch: !offOn && legacyOn && offState === 'not_connected',
           adminDisconnectLegacy: !!isAdmin && offOn && legacyOn,
         };
@@ -5479,8 +5496,8 @@
             : {
                 connected: _t('garmin_off_on', 'Conectado'),
                 not_connected: _t('garmin_off_off', 'No conectado'),
-                unavailable: _t('garmin_off_soon', 'Pronto — aún no disponible'),
-                error: _t('garmin_off_err', 'No se pudo consultar el estado'),
+                unavailable: _t('garmin_off_official', 'Conexión oficial'),
+                error: _t('garmin_off_err_hint', 'No se pudo consultar el estado; puedes conectar igual'),
               }[m.status || 'error'] || '';
         if (m.via === 'none' && garmin && garmin.has_credentials)
           meta = _t('app_sync_error', 'Error de sincronización');
