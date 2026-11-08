@@ -58,7 +58,7 @@ function injectCSS(){
   var s = document.createElement('style');
   s.id = 'dhx-css';
   s.textContent = [
-    '.dhx{padding-top:1.5rem;background:linear-gradient(180deg,#060E1C 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}',
+    '.dhx{padding-top:1.5rem;background:linear-gradient(180deg,var(--lxb-060e1c,#060E1C) 0%,var(--bg) 100%);border-bottom:1px solid var(--border2)}',
     '.dhx-c{max-width:1400px;margin:0 auto;padding:0 1.5rem}',
     '.dhx-inner{display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap;padding:1.5rem 0 1.4rem}',
     '.dhx-eye{font-family:"Oswald",sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem}',
@@ -89,15 +89,15 @@ function injectCSS(){
     '.dhx-bell-wrap{position:relative}',
     '.dhx-bell-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;position:relative}',
     '.dhx-bell-btn:hover{border-color:var(--orange);color:var(--orange)}',
-    '.dhx-bell-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--orange);color:#fff;font-family:"Oswald",sans-serif;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}',
+    '.dhx-bell-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--orange);color:var(--lxt-fff,#fff);font-family:"Oswald",sans-serif;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}',
     '.dhx-bell-badge.on{display:flex}',
-    '.dhx-bell-panel{position:absolute;top:calc(100% + .6rem);right:0;width:320px;max-width:90vw;max-height:420px;overflow-y:auto;background:#0A1626;border:1px solid var(--border2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.4);z-index:60;display:none}',
+    '.dhx-bell-panel{position:absolute;top:calc(100% + .6rem);right:0;width:320px;max-width:90vw;max-height:420px;overflow-y:auto;background:var(--lxb-0a1626,#0A1626);border:1px solid var(--border2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.4);z-index:60;display:none}',
     '.dhx-bell-panel.on{display:block}',
     '.dhx-bell-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border2)}',
     '.dhx-bell-title{font-family:"Oswald",sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text)}',
     '.dhx-bell-mark{font-family:"Oswald",sans-serif;font-size:.62rem;font-weight:600;color:var(--orange);cursor:pointer;background:none;border:none;letter-spacing:.04em}',
-    '.dhx-bell-item{display:flex;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer}',
-    '.dhx-bell-item:hover{background:rgba(255,255,255,.02)}',
+    '.dhx-bell-item{display:flex;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--lxd-rgba_255_255_255_p04,rgba(255,255,255,.04));cursor:pointer}',
+    '.dhx-bell-item:hover{background:var(--lxb-rgba_255_255_255_p02,rgba(255,255,255,.02))}',
     '.dhx-bell-item.unread{background:rgba(255,101,53,.06)}',
     '.dhx-bell-ico{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;background:var(--bg3)}',
     '.dhx-bell-body{flex:1;min-width:0}',
@@ -145,7 +145,7 @@ function buildHTML(){
     +           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>'
     +           _nt('dh_profile_btn','Perfil del Atleta')
     +         '</a>'
-    +         '<button class="dhx-btn" id="dhx-btn-upgrade" style="border-color:rgba(168,85,247,.35);color:#C084FC;display:none" aria-label="Actualizar plan">'
+    +         '<button class="dhx-btn" id="dhx-btn-upgrade" style="border-color:rgba(168,85,247,.35);color:var(--lxt-c084fc,#C084FC);display:none" aria-label="Actualizar plan">'
     +           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
     +           '<span id="dhx-btn-upgrade-label">' + esc(_nt('dh_update_plan','Actualizar Plan')) + '</span>'
     +         '</button>'

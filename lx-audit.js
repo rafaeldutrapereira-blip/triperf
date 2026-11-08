@@ -34,21 +34,21 @@ function _injectCSS(){
   var s = document.createElement('style');
   s.id  = '_lxaudit-css';
   s.textContent = [
-    '#_audit-btn{position:fixed;bottom:1.2rem;right:1.2rem;z-index:8000;background:#0F172A;border:1px solid rgba(255,255,255,.12);color:#94A3B8;font-size:.68rem;font-family:Inter,sans-serif;padding:.35rem .7rem;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:.35rem;box-shadow:0 4px 20px rgba(0,0,0,.4);-webkit-appearance:none;appearance:none;outline:none}',
-    '#_audit-btn:hover{border-color:rgba(14,165,233,.4);color:#7DD3FC}',
-    '#_audit-panel{display:none;position:fixed;bottom:3.5rem;right:1.2rem;z-index:8001;background:#0F172A;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:1rem;min-width:320px;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.6);flex-direction:column;gap:.6rem;max-height:75vh;overflow-y:auto}',
+    '#_audit-btn{position:fixed;bottom:1.2rem;right:1.2rem;z-index:8000;background:var(--lxb-0f172a,#0F172A);border:1px solid var(--lxd-rgba_255_255_255_p12,rgba(255,255,255,.12));color:var(--lxt-94a3b8,#94A3B8);font-size:.68rem;font-family:Inter,sans-serif;padding:.35rem .7rem;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:.35rem;box-shadow:0 4px 20px rgba(0,0,0,.4);-webkit-appearance:none;appearance:none;outline:none}',
+    '#_audit-btn:hover{border-color:rgba(14,165,233,.4);color:var(--lxt-7dd3fc,#7DD3FC)}',
+    '#_audit-panel{display:none;position:fixed;bottom:3.5rem;right:1.2rem;z-index:8001;background:var(--lxb-0f172a,#0F172A);border:1px solid var(--lxd-rgba_255_255_255_p12,rgba(255,255,255,.12));border-radius:12px;padding:1rem;min-width:320px;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.6);flex-direction:column;gap:.6rem;max-height:75vh;overflow-y:auto}',
     '#_audit-panel.open{display:flex}',
     '._aud-hd{font-family:Oswald,sans-serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#64748B;margin-bottom:.2rem;display:flex;justify-content:space-between;align-items:center}',
     '._aud-close{background:none;border:none;color:#64748B;cursor:pointer;font-size:.9rem;padding:0;line-height:1}',
-    '._aud-close:hover{color:#F9FAFB}',
+    '._aud-close:hover{color:var(--lxt-f9fafb,#F9FAFB)}',
     '._aud-table{width:100%;border-collapse:collapse}',
-    '._aud-table td{padding:.3rem .45rem;font-size:.71rem;border-bottom:1px solid rgba(255,255,255,.04)}',
+    '._aud-table td{padding:.3rem .45rem;font-size:.71rem;border-bottom:1px solid var(--lxd-rgba_255_255_255_p04,rgba(255,255,255,.04))}',
     '._aud-table tr:last-child td{border-bottom:none}',
-    '._aud-lbl{color:#D1D5DB}',
+    '._aud-lbl{color:var(--lxt-d1d5db,#D1D5DB)}',
     '._aud-val{text-align:right;font-weight:600}',
     '._aud-icon{text-align:center;width:1.2rem}',
-    '._aud-note{font-size:.67rem;color:#94A3B8;line-height:1.55;padding:.5rem .65rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:7px}',
-    '._aud-sync{display:block;width:100%;margin-top:.5rem;padding:.42rem;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.28);color:#7DD3FC;border-radius:6px;font-size:.71rem;cursor:pointer;font-family:Inter,sans-serif;-webkit-appearance:none;appearance:none}',
+    '._aud-note{font-size:.67rem;color:var(--lxt-94a3b8,#94A3B8);line-height:1.55;padding:.5rem .65rem;background:var(--lxb-rgba_255_255_255_p03,rgba(255,255,255,.03));border:1px solid var(--lxd-rgba_255_255_255_p07,rgba(255,255,255,.07));border-radius:7px}',
+    '._aud-sync{display:block;width:100%;margin-top:.5rem;padding:.42rem;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.28);color:var(--lxt-7dd3fc,#7DD3FC);border-radius:6px;font-size:.71rem;cursor:pointer;font-family:Inter,sans-serif;-webkit-appearance:none;appearance:none}',
     '._aud-sync:hover:not(:disabled){background:rgba(14,165,233,.22)}',
     '._aud-sync:disabled{opacity:.6;cursor:not-allowed}',
     '._aud-foot{font-size:.63rem;color:#475569;margin-top:.3rem}',
@@ -149,7 +149,7 @@ function show(data, fields, sourceLabel){
   var noteHtml = '';
   if(miss > 0){
     noteHtml = '<div class="_aud-note">'
-      + '<strong style="color:#F9FAFB">'+miss+' campo'+(miss>1?'s':'s')+' sin datos</strong> — '
+      + '<strong style="color:var(--lxt-f9fafb,#F9FAFB)">'+miss+' campo'+(miss>1?'s':'s')+' sin datos</strong> — '
       + 'posibles causas: (1) tu Garmin no reporta esa métrica '
       + '(HRV, Body Battery, Training Readiness requieren Fenix / Forerunner 955+), '
       + 'o (2) el sync no ha corrido hoy.'

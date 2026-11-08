@@ -287,9 +287,9 @@ var METRICS = {
   readiness: {
     nombre: 'Readiness — Disposición para Entrenar',
     emoji: '🟢',
-    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Se arma con 4 dimensiones fisiológicas reales: <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery — sin el TSB, que ya cuenta en Forma), <strong style="color:#a855f7">Estado Mental</strong> (tu check-in del día; sin check-in no cuenta), <strong style="color:#f59e0b">Bioquímica</strong> (tus análisis de sangre) y <strong style="color:#22d3ee">Forma</strong> (tu TSB del modelo de carga). Los datos tienen vigencia máxima (Recuperación y Mental 2 días, Forma 3, análisis de sangre 90); lo más viejo cuenta como faltante. Si te falta alguna dimensión el puntaje se recalcula con las disponibles y se descuenta una pequeña penalización; con menos de la mitad de los datos no se muestra número.',
+    definicion: 'Puntuación combinada (0–100) que estima <strong>cuán listo estás para entrenar hoy</strong>. Se arma con 4 dimensiones fisiológicas reales: <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery — sin el TSB, que ya cuenta en Forma), <strong style="color:var(--lxt-a855f7,#a855f7)">Estado Mental</strong> (tu check-in del día; sin check-in no cuenta), <strong style="color:var(--lxt-f59e0b,#f59e0b)">Bioquímica</strong> (tus análisis de sangre) y <strong style="color:var(--lxt-22d3ee,#22d3ee)">Forma</strong> (tu TSB del modelo de carga). Los datos tienen vigencia máxima (Recuperación y Mental 2 días, Forma 3, análisis de sangre 90); lo más viejo cuenta como faltante. Si te falta alguna dimensión el puntaje se recalcula con las disponibles y se descuenta una pequeña penalización; con menos de la mitad de los datos no se muestra número.',
     formula: 'DRS = Recuperación×35% + Estado Mental×25% + Bioquímica×20% + Forma×20%',
-    dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:#a855f7">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:#f59e0b">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:#22d3ee">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
+    dimensiones: 'Cada dimensión pesa distinto porque no todas predicen igual de bien tu rendimiento del día: la <strong style="color:#10b981">Recuperación</strong> (HRV, sueño, estrés y Body Battery) es la que más pesa (35%) porque reacciona rápido a cómo dormiste y a la fatiga acumulada. El <strong style="color:var(--lxt-a855f7,#a855f7)">Estado Mental</strong> (25%) detecta fatiga neurocognitiva que la fisiología sola no muestra. La <strong style="color:var(--lxt-f59e0b,#f59e0b)">Bioquímica</strong> (20%) mira marcadores de sangre (ej. CK, urea) cuando tenés análisis cargados. La <strong style="color:var(--lxt-22d3ee,#22d3ee)">Forma</strong> (20%) es tu TSB del PMC — si venís de un bloque de carga fuerte, esta dimensión te va a penalizar aunque hayas dormido bien.',
     pro_tip: 'Fijate cuál es tu "limitante principal" (la dimensión con el score más bajo) — ahí es donde tenés más para ganar. Un DRS bajo con Recuperación en rojo pide más sueño; un DRS bajo con Forma en rojo pide simplemente unos días de descarga. Si más abajo en esta página también ves "Training Readiness (Garmin)" con un número distinto, es normal: es el algoritmo propio de Garmin, no el mismo cálculo — tocá ese ícono "i" para ver por qué pueden diferir.',
     unidad: '0–100 puntos',
   },
@@ -297,7 +297,7 @@ var METRICS = {
   pmc: {
     nombre: 'PMC — Performance Management Chart',
     emoji: '📊',
-    definicion: 'Muestra <strong>3 curvas</strong> que cuentan la historia de tu temporada: la <strong style="color:#10B981">verde (CTL)</strong> es tu fitness acumulado — sube y baja lento, semana a semana. La <strong style="color:#FF6535">naranja (ATL)</strong> es tu fatiga de los últimos días — reacciona rápido a cada entrenamiento fuerte. La <strong style="color:#0EA5E9">celeste (TSB)</strong> es la resta de las dos (CTL − ATL) y te dice qué tan "fresco" estás en este momento.',
+    definicion: 'Muestra <strong>3 curvas</strong> que cuentan la historia de tu temporada: la <strong style="color:#10B981">verde (CTL)</strong> es tu fitness acumulado — sube y baja lento, semana a semana. La <strong style="color:var(--lxt-ff6535,#FF6535)">naranja (ATL)</strong> es tu fatiga de los últimos días — reacciona rápido a cada entrenamiento fuerte. La <strong style="color:var(--lxt-0ea5e9,#0EA5E9)">celeste (TSB)</strong> es la resta de las dos (CTL − ATL) y te dice qué tan "fresco" estás en este momento.',
     formula: 'CTL (fitness, 42 días) · ATL (fatiga, 7 días) · TSB = CTL − ATL',
     rangos: [
       {min:-999, max:-20, label:'TSB muy negativo — fatiga intensa', color:'#EF4444', advice:'ATL muy por encima de CTL. Sobrecarga; si no es una semana de carga planificada, hay riesgo de sobreentrenamiento o lesión.'},
@@ -306,7 +306,7 @@ var METRICS = {
       {min:5,    max:20,  label:'TSB positivo — fresco ✓',          color:'#22D3EE', advice:'ATL (naranja) cruzó por DEBAJO de CTL (verde): tu fatiga bajó más rápido que tu fitness. Este es el estado ideal para el día de carrera.'},
       {min:20,   max:999, label:'TSB muy alto — puede que sobres descanso', color:'#6B7280', advice:'Muy fresco por muchos días seguidos. Si no estás en semana de competencia, podrías estar perdiendo la forma construida (el CTL empieza a caer).'},
     ],
-    cruces: 'Fijate DÓNDE se tocan la línea verde (CTL) y la naranja (ATL): cuando la <strong style="color:#FF6535">naranja sube y cruza por ENCIMA</strong> de la verde, el TSB se vuelve negativo — estás en fase de carga/fatiga. Cuando la <strong style="color:#FF6535">naranja baja y cruza por DEBAJO</strong> de la verde, el TSB se vuelve positivo — es la señal de que estás afinando (taper) y llegando fresco.',
+    cruces: 'Fijate DÓNDE se tocan la línea verde (CTL) y la naranja (ATL): cuando la <strong style="color:var(--lxt-ff6535,#FF6535)">naranja sube y cruza por ENCIMA</strong> de la verde, el TSB se vuelve negativo — estás en fase de carga/fatiga. Cuando la <strong style="color:var(--lxt-ff6535,#FF6535)">naranja baja y cruza por DEBAJO</strong> de la verde, el TSB se vuelve positivo — es la señal de que estás afinando (taper) y llegando fresco.',
     meta_triathlon: 'Semana de carrera ideal: CTL alto y estable (no cayendo), ATL bajando día a día, TSB subiendo hasta quedar entre +5 y +15 el día de la competencia.',
     pro_tip: 'Lo importante no es un solo número: es la TENDENCIA. Un CTL que sube de forma sostenida mientras el TSB no cae demasiado negativo es la señal de una temporada bien construida. Si el CTL empieza a caer varias semanas seguidas, es que estás entrenando menos de lo que tu cuerpo puede tolerar.',
     unidad: 'puntos (TSS acumulado)',
@@ -412,33 +412,33 @@ function _ensurePanel(){
     var s = document.createElement('style');
     s.id = 'lx-info-css';
     s.textContent = [
-      '#lx-info-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s}',
-      '#lx-info-drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,96vw);background:#111827;border-left:1px solid rgba(255,255,255,.08);z-index:9999;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:1.5rem 1.35rem 2rem}',
+      '#lx-info-overlay{position:fixed;inset:0;background:var(--lxb-rgba_0_0_0_p45,rgba(0,0,0,.45));z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s}',
+      '#lx-info-drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,96vw);background:var(--lxb-111827,#111827);border-left:1px solid var(--lxd-rgba_255_255_255_p08,rgba(255,255,255,.08));z-index:9999;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:1.5rem 1.35rem 2rem}',
       '#lx-info-panel.open #lx-info-overlay{opacity:1;pointer-events:auto}',
       '#lx-info-panel.open #lx-info-drawer{transform:translateX(0)}',
-      '#lx-info-close{position:sticky;top:0;float:right;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#9CA3AF;width:28px;height:28px;border-radius:6px;font-size:.85rem;cursor:pointer;margin-bottom:1rem}',
-      '#lx-info-body h2{font-family:"Oswald",sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.04em;color:#F9FAFB;margin:0 0 .35rem;display:flex;align-items:center;gap:.45rem}',
+      '#lx-info-close{position:sticky;top:0;float:right;background:var(--lxb-rgba_255_255_255_p07,rgba(255,255,255,.07));border:1px solid var(--lxd-rgba_255_255_255_p12,rgba(255,255,255,.12));color:var(--lxt-9ca3af,#9CA3AF);width:28px;height:28px;border-radius:6px;font-size:.85rem;cursor:pointer;margin-bottom:1rem}',
+      '#lx-info-body h2{font-family:"Oswald",sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.04em;color:var(--lxt-f9fafb,#F9FAFB);margin:0 0 .35rem;display:flex;align-items:center;gap:.45rem}',
       '#lx-info-body .li-unit{font-size:.68rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;margin-bottom:1.1rem;display:block}',
-      '#lx-info-body .li-def{font-size:.85rem;line-height:1.65;color:#D1D5DB;margin-bottom:1.1rem}',
-      '#lx-info-body .li-def strong{color:#F9FAFB;font-weight:600}',
-      '#lx-info-body .li-formula{font-size:.75rem;font-family:monospace;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:.55rem .75rem;color:#9CA3AF;margin-bottom:1.1rem;word-break:break-word}',
+      '#lx-info-body .li-def{font-size:.85rem;line-height:1.65;color:var(--lxt-d1d5db,#D1D5DB);margin-bottom:1.1rem}',
+      '#lx-info-body .li-def strong{color:var(--lxt-f9fafb,#F9FAFB);font-weight:600}',
+      '#lx-info-body .li-formula{font-size:.75rem;font-family:monospace;background:var(--lxb-rgba_255_255_255_p05,rgba(255,255,255,.05));border:1px solid var(--lxd-rgba_255_255_255_p08,rgba(255,255,255,.08));border-radius:6px;padding:.55rem .75rem;color:var(--lxt-9ca3af,#9CA3AF);margin-bottom:1.1rem;word-break:break-word}',
       '.li-range-bar{margin-bottom:.5rem}',
       '.li-range-row{display:flex;align-items:center;gap:.55rem;padding:.4rem .6rem;border-radius:6px;transition:background .15s}',
-      '.li-range-row.active{background:rgba(255,255,255,.07)}',
+      '.li-range-row.active{background:var(--lxb-rgba_255_255_255_p07,rgba(255,255,255,.07))}',
       '.li-range-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}',
-      '.li-range-label{font-size:.78rem;font-weight:600;color:#F9FAFB;flex:1}',
-      '.li-range-advice{font-size:.72rem;color:#9CA3AF;line-height:1.5}',
-      '.li-current-box{border-radius:8px;padding:.75rem 1rem;margin:1.1rem 0;border:1px solid rgba(255,255,255,.1)}',
+      '.li-range-label{font-size:.78rem;font-weight:600;color:var(--lxt-f9fafb,#F9FAFB);flex:1}',
+      '.li-range-advice{font-size:.72rem;color:var(--lxt-9ca3af,#9CA3AF);line-height:1.5}',
+      '.li-current-box{border-radius:8px;padding:.75rem 1rem;margin:1.1rem 0;border:1px solid var(--lxd-rgba_255_255_255_p1,rgba(255,255,255,.1))}',
       '.li-current-box .li-cb-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B7280;margin-bottom:.25rem}',
       '.li-current-box .li-cb-val{font-family:"Oswald",sans-serif;font-size:2rem;font-weight:700;line-height:1}',
-      '.li-current-box .li-cb-interp{font-size:.78rem;color:#D1D5DB;margin-top:.35rem;line-height:1.5}',
+      '.li-current-box .li-cb-interp{font-size:.78rem;color:var(--lxt-d1d5db,#D1D5DB);margin-top:.35rem;line-height:1.5}',
       '.li-section-title{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;margin:1.1rem 0 .45rem}',
-      '.li-pro-tip{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:.65rem .85rem;font-size:.78rem;color:#7DD3FC;line-height:1.55}',
+      '.li-pro-tip{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:.65rem .85rem;font-size:.78rem;color:var(--lxt-7dd3fc,#7DD3FC);line-height:1.55}',
       '.li-pro-tip::before{content:"💡 ";font-style:normal}',
-      '.lx-info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:transparent!important;border:1px solid rgba(127,179,204,.35);color:rgba(127,179,204,.7);font-size:.55rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:border-color .18s,color .18s;vertical-align:middle;margin-left:.3rem;line-height:1;padding:0;box-sizing:border-box;appearance:none;-webkit-appearance:none;-moz-appearance:none;outline:none;-webkit-tap-highlight-color:transparent;box-shadow:none}',
+      '.lx-info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:transparent!important;border:1px solid rgba(127,179,204,.35);color:var(--lxt-rgba_127_179_204_p7,rgba(127,179,204,.7));font-size:.55rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:border-color .18s,color .18s;vertical-align:middle;margin-left:.3rem;line-height:1;padding:0;box-sizing:border-box;appearance:none;-webkit-appearance:none;-moz-appearance:none;outline:none;-webkit-tap-highlight-color:transparent;box-shadow:none}',
       '.lx-info-btn svg{width:7px;height:7px;display:block;pointer-events:none;flex-shrink:0}',
-      '.lx-info-btn:hover,.lx-info-btn:focus-visible{background:rgba(14,165,233,.15)!important;border-color:rgba(14,165,233,.55);color:#7DD3FC;box-shadow:none}',
-      '.lx-info-btn:active{background:rgba(14,165,233,.25)!important;border-color:rgba(14,165,233,.7);color:#38BDF8;box-shadow:none}',
+      '.lx-info-btn:hover,.lx-info-btn:focus-visible{background:rgba(14,165,233,.15)!important;border-color:rgba(14,165,233,.55);color:var(--lxt-7dd3fc,#7DD3FC);box-shadow:none}',
+      '.lx-info-btn:active{background:rgba(14,165,233,.25)!important;border-color:rgba(14,165,233,.7);color:var(--lxt-38bdf8,#38BDF8);box-shadow:none}',
       '.lx-info-btn:focus:not(:focus-visible){outline:none;box-shadow:none;background:transparent!important}',
       '.kc>.lx-info-btn{position:absolute;top:.45rem;right:.5rem;z-index:2;margin-left:0;width:16px;height:16px;background:transparent!important}',
       '.kc>.lx-info-btn:hover{background:rgba(14,165,233,.15)!important}',
@@ -464,7 +464,7 @@ function _findRange(m, val){
 function _render(metricId, currentValue){
   var _li = function(f, fb){ return _lxInfoT('info_' + metricId + '_' + f, fb); };
   var m = METRICS[metricId];
-  if(!m) return '<p style="color:#9CA3AF">Métrica no encontrada: '+metricId+'</p>';
+  if(!m) return '<p style="color:var(--lxt-9ca3af,#9CA3AF)">Métrica no encontrada: '+metricId+'</p>';
 
   // El PMC pasa un JSON {ctl,atl,tsb} en vez de un único número
   var pmcData = null;
@@ -498,15 +498,15 @@ function _render(metricId, currentValue){
       +'<div class="li-cb-label">'+_lxInfoT('info_tu_estado','Tu estado actual')+'</div>'
       +'<div style="display:flex;gap:1.2rem;margin:.35rem 0 .6rem">'
         +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">CTL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#10B981">'+(pmcData.ctl!=null?Math.round(pmcData.ctl):'—')+'</div></div>'
-        +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">ATL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:#FF6535">'+(pmcData.atl!=null?Math.round(pmcData.atl):'—')+'</div></div>'
+        +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">ATL</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:var(--lxt-ff6535,#FF6535)">'+(pmcData.atl!=null?Math.round(pmcData.atl):'—')+'</div></div>'
         +'<div><div style="font-size:.62rem;color:#6B7280;letter-spacing:.08em;text-transform:uppercase">TSB</div><div style="font-family:\'Oswald\',sans-serif;font-size:1.3rem;font-weight:700;color:'+pcol+'">'+(pmcData.tsb!=null?((pmcData.tsb>=0?'+':'')+Math.round(pmcData.tsb)):'—')+'</div></div>'
       +'</div>'
       +(activeRange?'<div class="li-cb-interp"><strong style="color:'+pcol+'">'+activeRange.label+'</strong>'+(activeRange.advice?' — '+activeRange.advice:'')+'</div>':'')
       +(pmcData.ctl!=null && pmcData.atl!=null
         ? '<div class="li-cb-interp" style="margin-top:.4rem">'
           +(pmcData.atl > pmcData.ctl
-            ? 'Ahora mismo tu <strong style="color:#FF6535">ATL está por ENCIMA</strong> de tu CTL → estás en fase de carga/fatiga.'
-            : 'Ahora mismo tu <strong style="color:#FF6535">ATL está por DEBAJO</strong> de tu CTL → estás fresco.')
+            ? 'Ahora mismo tu <strong style="color:var(--lxt-ff6535,#FF6535)">ATL está por ENCIMA</strong> de tu CTL → estás en fase de carga/fatiga.'
+            : 'Ahora mismo tu <strong style="color:var(--lxt-ff6535,#FF6535)">ATL está por DEBAJO</strong> de tu CTL → estás fresco.')
           +'</div>'
         : '')
       +'</div>';
@@ -553,7 +553,7 @@ function _render(metricId, currentValue){
         var tech = inData.message_technical;
         var techStr = Array.isArray(tech) ? tech.map(_lxBe).join(' · ') : _lxBe(tech || '');
         if(!techStr || techStr === inData.message) return '';
-        return '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08)"><strong>'+_lxInfoT('info_detalle_tecnico','Detalle técnico:')+'</strong> '+techStr+'</div>';
+        return '<div class="li-def" style="font-size:.72rem;color:#6B7280;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--lxd-rgba_255_255_255_p08,rgba(255,255,255,.08))"><strong>'+_lxInfoT('info_detalle_tecnico','Detalle técnico:')+'</strong> '+techStr+'</div>';
       })()
       +'</div>';
 
@@ -685,7 +685,7 @@ function _renderDietPlan(d){
 
   html += '<div class="li-current-box" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.06)">';
   html += '<div class="li-cb-label">Objetivo calórico diario</div>';
-  html += '<div class="li-cb-val" style="color:#F59E0B">'+t.kcal.toLocaleString('es')+' kcal</div>';
+  html += '<div class="li-cb-val" style="color:var(--lxt-f59e0b,#F59E0B)">'+t.kcal.toLocaleString('es')+' kcal</div>';
   html += '<div class="li-cb-interp">BMR '+d.bmr.toLocaleString('es')+' kcal + entrenamiento (~'+d.avg_daily_train_kcal.toLocaleString('es')+' kcal/día, '+d.avg_daily_train_min+' min/día promedio) → TDEE '+d.tdee.toLocaleString('es')+' kcal. Nivel de carga: <strong>'+d.tier+'</strong>.</div>';
   html += '</div>';
 
@@ -698,12 +698,12 @@ function _renderDietPlan(d){
 
   html += '<div class="li-section-title">Distribución por comida</div>';
   d.meals.forEach(function(m){
-    html += '<div style="margin-bottom:.9rem;padding:.6rem .75rem;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.06)">';
+    html += '<div style="margin-bottom:.9rem;padding:.6rem .75rem;background:var(--lxb-rgba_255_255_255_p03,rgba(255,255,255,.03));border-radius:8px;border:1px solid var(--lxd-rgba_255_255_255_p06,rgba(255,255,255,.06))">';
     html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem">';
-    html += '<strong style="color:#F9FAFB;font-size:.82rem">'+m.name+'</strong>';
-    html += '<span style="font-size:.72rem;color:#9CA3AF">'+m.kcal+' kcal · '+m.cho_g+'g CHO · '+m.protein_g+'g prot</span>';
+    html += '<strong style="color:var(--lxt-f9fafb,#F9FAFB);font-size:.82rem">'+m.name+'</strong>';
+    html += '<span style="font-size:.72rem;color:var(--lxt-9ca3af,#9CA3AF)">'+m.kcal+' kcal · '+m.cho_g+'g CHO · '+m.protein_g+'g prot</span>';
     html += '</div>';
-    html += '<div style="font-size:.74rem;color:#D1D5DB;line-height:1.5">'+m.menu_examples.join(' &nbsp;·&nbsp; ')+'</div>';
+    html += '<div style="font-size:.74rem;color:var(--lxt-d1d5db,#D1D5DB);line-height:1.5">'+m.menu_examples.join(' &nbsp;·&nbsp; ')+'</div>';
     html += '</div>';
   });
 
@@ -921,8 +921,8 @@ var CSS = ''
   + '.lx-term-name{font-family:"Barlow Condensed",system-ui,sans-serif;font-weight:700;line-height:1.1;color:var(--text,#f0f9ff)}'
   + '.lx-term-sigla{font-family:"Oswald",system-ui,sans-serif;font-size:.68em;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#7fb3cc);white-space:nowrap}'
   + '.lx-term-sigla::before{content:"("}.lx-term-sigla::after{content:")"}'
-  + '.lx-term-info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;padding:0;flex-shrink:0;border:1px solid rgba(127,179,204,.35);border-radius:50%;background:transparent;color:rgba(127,179,204,.8);cursor:pointer;line-height:0}'
-  + '.lx-term-info:hover,.lx-term-info:focus-visible{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.55);color:#7dd3fc;outline:none}'
+  + '.lx-term-info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;padding:0;flex-shrink:0;border:1px solid rgba(127,179,204,.35);border-radius:50%;background:transparent;color:var(--lxt-rgba_127_179_204_p8,rgba(127,179,204,.8));cursor:pointer;line-height:0}'
+  + '.lx-term-info:hover,.lx-term-info:focus-visible{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.55);color:var(--lxt-7dd3fc,#7dd3fc);outline:none}'
   + '.lx-term-info svg{width:7px;height:7px;display:block}'
   + '.lx-term-card{position:fixed;z-index:9000;max-width:300px;padding:.8rem 2rem .85rem .9rem;background:var(--surface,#08121e);border:1px solid var(--border,rgba(8,116,174,.18));border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.5);color:var(--text,#f0f9ff);font-family:"Inter",system-ui,sans-serif;font-size:.82rem;line-height:1.45;text-align:left}'
   + '.lx-term-card-name{margin:0 0 .45rem;font-family:"Barlow Condensed",system-ui,sans-serif;font-size:1rem;font-weight:700;color:var(--text,#f0f9ff)}'

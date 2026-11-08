@@ -81,7 +81,7 @@
       '<span class="lxb-in" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">' +
       '<span class="lxb-n" style="font-family:Oswald,sans-serif;font-weight:700;font-size:' + (big ? 2.6 : size * 0.3 / 16) + 'rem;color:' + col + '">' + (d ? d.score : '—') + '</span>' +
       (d && size >= 56
-        ? '<span class="lxb-l" style="font-family:Oswald,sans-serif;font-weight:700;font-size:' + (big ? 0.6 : 0.42) + 'rem;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-top:.1rem;max-width:' + (size - 10) + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(d.govName) + '</span>'
+        ? '<span class="lxb-l" style="font-family:Oswald,sans-serif;font-weight:700;font-size:' + (big ? 0.6 : 0.42) + 'rem;letter-spacing:.08em;text-transform:uppercase;color:var(--lxt-94a3b8,#94a3b8);margin-top:.1rem;max-width:' + (size - 10) + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(d.govName) + '</span>'
         : '') +
       '</span></span>';
     return h;
@@ -96,7 +96,7 @@
     if (d && d.other && opts.other !== false) {
       var s = document.createElement('span');
       s.className = 'lxb-other';
-      s.style.cssText = 'display:block;font-size:.72rem;color:#94a3b8;margin-top:.2rem';
+      s.style.cssText = 'display:block;font-size:.72rem;color:var(--lxt-94a3b8,#94a3b8);margin-top:.2rem';
       s.textContent = d.other.name + ' ' + d.other.score;
       el.appendChild(s);
     }
