@@ -74,6 +74,22 @@
       .tabs::-webkit-scrollbar {
         display: none;
       }
+      /* PERFIL-ORDEN (BUILD 351): variables del tema, sin colores fijos */
+      .acct-glance { margin-bottom: 1rem; }
+      .acct-facts { display: flex; flex-wrap: wrap; gap: 0.35rem 1.2rem; font-size: 0.85rem; color: var(--text, inherit); margin-bottom: 0.8rem; }
+      .acct-facts b { font-weight: 600; }
+      .acct-facts span.k { color: var(--muted, #8a94a6); margin-right: 0.3rem; }
+      .acct-conns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      .acct-conn { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.7rem; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 999px; font-size: 0.78rem; }
+      .acct-conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint, #8a94a6); }
+      .acct-conn[data-on='1'] .dot { background: var(--green, #22c55e); }
+      .acct-conn[data-on='0'] .dot { background: var(--bad, #ef4444); }
+      .acct-conn .d { color: var(--muted, #8a94a6); }
+      .acct-invites { display: inline-block; margin-top: 0.8rem; font-size: 0.82rem; font-weight: 600; color: var(--warn, #f0a500); }
+      .prof-index { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+      .prof-index a { padding: 0.4rem 0.9rem; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 999px; font-size: 0.82rem; font-weight: 600; color: var(--text, inherit); text-decoration: none; }
+      .prof-index a:hover { border-color: var(--cyan, #0ea5e9); }
+      .prof-sec { font-size: 1.05rem; font-weight: 700; margin: 0.2rem 0 0.8rem; scroll-margin-top: 4.5rem; }
       .prof-fold { margin: 1rem 0; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; padding: 0.2rem 1rem; }
       .prof-fold > summary { cursor: pointer; padding: 0.8rem 0; font-weight: 600; }
       .prof-fold > .prof-fold-body { padding-bottom: 0.8rem; }
@@ -714,8 +730,25 @@
           <!-- PAGE HEADER -->
           <div class="ph"></div>
 
-          <!-- Invitaciones de coach pendientes de aceptar -->
-          <div id="pending-coach-invites-wrap"></div>
+          <!-- PERFIL-ORDEN: cabecera «Tu cuenta en una mirada» (datos clave + estado real de conexiones) -->
+          <section class="card acct-glance" id="acct-glance" aria-labelledby="acct-glance-title">
+            <div class="card-head">
+              <span class="card-title" id="acct-glance-title" data-i18n="prof_glance_title">Tu cuenta en una mirada</span>
+            </div>
+            <div class="card-body">
+              <div id="acct-glance-facts" class="acct-facts"></div>
+              <div id="acct-glance-conns" class="acct-conns" role="list"></div>
+              <a id="acct-glance-invites" class="acct-invites" href="#sec-seguridad" onclick="return profSecGo('seguridad')" style="display: none"></a>
+            </div>
+          </section>
+
+          <!-- PERFIL-ORDEN: índice de secciones -->
+          <nav class="prof-index" id="prof-index" aria-label="Secciones">
+            <a href="#sec-datos" onclick="return profSecGo('datos')" data-i18n="prof_sec_datos">Mis datos</a>
+            <a href="#sec-carreras" onclick="return profSecGo('carreras')" data-i18n="prof_sec_carreras">Mis carreras</a>
+            <a href="#sec-conexiones" onclick="return profSecGo('conexiones')" data-i18n="prof_sec_conexiones">Mis conexiones</a>
+            <a href="#sec-seguridad" onclick="return profSecGo('seguridad')" data-i18n="prof_sec_seguridad">Seguridad y cuenta</a>
+          </nav>
 
           <!-- MEDIDOR DE PERFIL COMPLETO (W11 / D10) -->
           <div id="profile-meter" class="card" style="padding: 0.9rem 1.1rem; margin-bottom: 1rem" role="status"></div>
@@ -747,6 +780,7 @@
 
           <!-- ════════════════════ TAB: MIS DATOS (perfil + marcas) ════ -->
           <div id="tab-perfil" class="tab-pane active">
+            <h2 class="prof-sec" id="sec-datos" data-i18n="prof_sec_datos">Mis datos</h2>
             <div class="card" style="margin-bottom: 1rem">
               <div class="card-head">
                 <div class="card-title" data-i18n="prof_card_avatar">
@@ -877,6 +911,7 @@
               </div>
             </div>
 
+            <h2 class="prof-sec" id="sec-carreras" data-i18n="prof_sec_carreras">Mis carreras</h2>
             <div class="card" id="races-card">
               <div class="card-head">
                 <span class="card-title" data-i18n="prof_card_my_races">
@@ -1186,6 +1221,7 @@
 
           <!-- ════════════════════ TAB: CONEXIONES ════════════════════ -->
           <div id="tab-conexiones" class="tab-pane">
+            <h2 class="prof-sec" id="sec-conexiones" data-i18n="prof_sec_conexiones">Mis conexiones</h2>
             <!-- S-C: aviso de migracion a Garmin oficial (oculto hasta que el modelo lo muestre) -->
             <div
               class="card"
@@ -1545,6 +1581,9 @@
 
           <!-- ════════════════════ TAB: CUENTA ═════════════════════ -->
           <div id="tab-seguridad" class="tab-pane">
+            <h2 class="prof-sec" id="sec-seguridad" data-i18n="prof_sec_seguridad">Seguridad y cuenta</h2>
+            <!-- Invitaciones de coach pendientes de aceptar -->
+            <div id="pending-coach-invites-wrap"></div>
             <div class="card">
               <div class="card-head">
                 <div class="card-title" data-i18n="addon_card_title">
@@ -2065,6 +2104,103 @@
           render2FAStatus();
         }
       }
+      /* PERFIL-ORDEN: el índice abre la pestaña que contiene la sección y baja a ella. */
+      var SEC_TAB = {
+        datos: 'perfil',
+        carreras: 'perfil',
+        conexiones: 'conexiones',
+        seguridad: 'seguridad',
+      };
+      function profSecGo(sec) {
+        var tab = SEC_TAB[sec];
+        if (!tab) return true;
+        switchTab(tab);
+        var el = document.getElementById('sec-' + sec);
+        if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
+        return false;
+      }
+
+      /* PERFIL-ORDEN: «Tu cuenta en una mirada». Lee el MISMO estado que ya
+         pintan las tarjetas (_gModel/_gLegacyData, _wearState/_wearLast,
+         _stravaGlance, _profile); no calcula cifras nuevas. «Conectado» solo
+         si hay sync vivo (regla del 339: garminCardModel.connected). */
+      var _stravaGlance = null;
+      var _pendingInvites = 0;
+      function _glDate(v) {
+        if (!v) return '';
+        var d = new Date(v);
+        return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+      }
+      function accountGlanceConns() {
+        var out = [];
+        var gReady = _gLegacyOn !== null && _gOffState !== null && _gModel;
+        out.push({
+          name: 'Garmin',
+          state: gReady ? (_gModel.connected ? 'on' : 'off') : 'wait',
+          note: gReady && _gModel.legacyDown ? _t('garmin_legacy_down', 'Conexión anterior caída') : '',
+          date: gReady && _gModel.via === 'legacy' ? _glDate(_gLegacyData.last_sync) : '',
+        });
+        out.push({
+          name: 'Strava',
+          state: !_stravaGlance ? 'wait' : _stravaGlance.on ? 'on' : 'off',
+          note: '',
+          date: _stravaGlance && _stravaGlance.on ? _glDate(_stravaGlance.last_sync) : '',
+        });
+        WEARABLE_OAUTH.forEach(function (p) {
+          if (!(p in _wearState)) return;
+          var s = _wearState[p];
+          out.push({
+            name: WEARABLE_NAMES[p],
+            state: s === 'connected' ? 'on' : 'off',
+            note: '',
+            date: s === 'connected' && _wearLast[p] ? _glDate(_wearLast[p].at) : '',
+          });
+        });
+        return out;
+      }
+      function renderAccountGlance() {
+        var facts = document.getElementById('acct-glance-facts');
+        var conns = document.getElementById('acct-glance-conns');
+        var inv = document.getElementById('acct-glance-invites');
+        if (!facts || !conns) return;
+        var p = _profile || {};
+        var rows = [
+          ['prof_label_fullname', 'Nombre completo', p.nombre || p.name, ''],
+          ['prof_label_email', 'Email', p.email, ''],
+          ['prof_label_weight', 'Peso (kg)', p.weight_kg, ''],
+          ['prof_label_height', 'Altura (cm)', p.height_cm, ''],
+          ['prof_label_age', 'Edad', p.age || p.edad, ''],
+          ['prof_label_sex', 'Sexo', p.sexo === 'f' ? _t('prof_sex_opt_f', 'Femenino') : p.sexo === 'm' ? _t('prof_sex_opt_m', 'Masculino') : '', ''],
+        ];
+        facts.innerHTML = rows
+          .filter(function (r) { return r[2]; })
+          .map(function (r) {
+            return '<div><span class="k">' + esc(_t(r[0], r[1])) + '</span><b>' + esc(String(r[2])) + '</b></div>';
+          })
+          .join('');
+        conns.innerHTML = accountGlanceConns()
+          .map(function (c) {
+            var label =
+              c.state === 'on' ? _t('prof_status_connected', 'Conectado')
+              : c.state === 'off' ? _t('prof_status_disconnected', 'Sin conectar')
+              : _t('prof_glance_checking', 'Consultando…');
+            var extra = c.note || (c.date ? _t('prof_last_sync', 'Último sync:') + ' ' + c.date : '');
+            return (
+              '<a class="acct-conn" role="listitem" href="#sec-conexiones" onclick="return profSecGo(\'conexiones\')" data-on="' +
+              (c.state === 'on' ? '1' : c.state === 'off' ? '0' : '') +
+              '"><span class="dot"></span><b>' + esc(c.name) + '</b> ' + esc(label) +
+              (extra ? ' <span class="d">· ' + esc(extra) + '</span>' : '') + '</a>'
+            );
+          })
+          .join('');
+        if (inv) {
+          if (_pendingInvites > 0) {
+            inv.style.display = '';
+            inv.textContent = _t('prof_glance_invites', 'Invitaciones de coach pendientes:') + ' ' + _pendingInvites;
+          } else inv.style.display = 'none';
+        }
+      }
+
       document.addEventListener('toggle', function (e) {
         var t = e.target;
         if (t && t.open && t.id === 'fold-rendimiento') _loadFold('rendimiento');
@@ -2149,6 +2285,7 @@
             document.getElementById('p-edad').value = p.age || p.edad || '';
             document.getElementById('p-sexo').value = p.sexo || '';
             renderProfileMeter(p);
+            renderAccountGlance();
             loadRaces();
           })
           .catch(function () {
@@ -2747,6 +2884,7 @@
         if (typeof connRenderGarmin === 'function') connRenderGarmin(); /* S-D */
         if (typeof histRender === 'function') histRender(); /* S-B */
         if (typeof gmigRender === 'function') gmigRender(); /* S-C */
+        if (typeof renderAccountGlance === 'function') renderAccountGlance();
       }
       function setGarminUI(on, d) {
         _gLegacyOn = !!on;
@@ -2915,6 +3053,7 @@
       function _wearPaint(p) {
         var el = document.getElementById('wearable-card-' + p);
         if (el) el.innerHTML = _wearCardHtml(p, _wearState[p] || 'error');
+        if (typeof renderAccountGlance === 'function') renderAccountGlance();
       }
       function wearableLoadOne(p) {
         var code = 0;
@@ -3158,6 +3297,9 @@
           })
           .then(function (d) {
             var on = d.connected;
+            if (typeof _stravaGlance !== 'undefined')
+              _stravaGlance = { on: !!on, last_sync: d.last_sync || '' };
+            if (typeof renderAccountGlance === 'function') renderAccountGlance();
             var badge = document.getElementById('strava-badge');
             badge.className =
               'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
@@ -4266,6 +4408,8 @@
             return r.ok ? r.json() : [];
           })
           .then(function (rows) {
+            _pendingInvites = rows && rows.length ? rows.length : 0;
+            renderAccountGlance();
             if (!rows || !rows.length) {
               wrap.innerHTML = '';
               return;
@@ -4359,6 +4503,15 @@
         if (_wearReturn) switchTab('conexiones');
         loadProfile();
         loadPendingCoachInvites();
+        /* PERFIL-ORDEN: la cabecera necesita el estado real de las conexiones
+           desde el primer pintado (antes solo se cargaba al abrir la pestaña). */
+        renderAccountGlance();
+        if (!_wearReturn) {
+          loadGarminStatus();
+          loadGarminOfficialStatus();
+          loadWearableCards();
+          loadStravaStatus();
+        }
       });
     </script>
     <script src="lx-info.js"></script>
