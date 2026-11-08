@@ -209,7 +209,10 @@ def _fill(row, vals: dict) -> bool:
     """Completa SOLO atributos vacios (None). Nunca pisa un valor existente."""
     changed = False
     for k, v in vals.items():
-        if v is not None and getattr(row, k) is None:
+        cur = getattr(row, k)
+        # HRV 0 (o negativo) es un vacio mal guardado: no debe bloquear el relleno.
+        empty = cur is None or (k.startswith("hrv") and cur <= 0)
+        if v is not None and empty:
             setattr(row, k, v)
             changed = True
     return changed
@@ -287,7 +290,9 @@ async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) 
             continue
         res[outcome] += 1
 
-    if ic.has_scope(user, "WELLNESS:READ"):
+    if not ic.has_scope(user, "WELLNESS:READ"):
+        res["wellness_skipped"] = "sin_scope"  # visible: antes el wellness se omitia en silencio
+    else:
         try:
             wellness = await ic.fetch_wellness(token, oldest.isoformat(), newest.isoformat())
         except ic.IntervalsError as exc:

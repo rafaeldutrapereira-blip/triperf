@@ -2240,6 +2240,23 @@ class GarminPullService:
 # Entry point para BackgroundTasks (función libre, sin estado)
 # ─────────────────────────────────────────────────────────────────────────────
 
+INTERVALS_FILL_DAYS = 14
+
+
+def _sync_intervals_wellness_after_garmin(user_id: str, db: Session) -> None:
+    """Best-effort: nunca rompe el sync de Garmin. Solo con INTERVALS_READ_ENABLED."""
+    import os
+    if os.getenv("INTERVALS_READ_ENABLED", "").strip().lower() not in ("1", "true"):
+        return
+    try:
+        import asyncio
+        from . import intervals_sync_service as iss
+        asyncio.run(iss.sync_intervals_user(db, user_id, days=INTERVALS_FILL_DAYS))
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.warning("SYNC-HRV intervals post-garmin user=%s: %s", user_id, type(exc).__name__)
+
+
 def background_sync_user(user_id: str, force: bool = False) -> None:
     """
     Crear una sesión DB propia — BackgroundTasks corre fuera del request context.
@@ -2255,6 +2272,10 @@ def background_sync_user(user_id: str, force: bool = False) -> None:
             logger.info("Cache dashboard invalidado post-sync user_id=%s", user_id)
         except Exception:
             pass
+
+        # SYNC-HRV: el pull de Garmin no trae HRV siempre; intervals.icu si. Se rellena
+        # en el mismo ciclo (ventana corta -> tambien cubre HRV que llega tarde).
+        _sync_intervals_wellness_after_garmin(user_id, db)
 
         # Refrescar contexto IA tras sync exitoso (usado por Squad Overview del coach)
         if result and result.get("ok"):

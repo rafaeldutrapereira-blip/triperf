@@ -139,4 +139,5 @@ def test_gestor_de_carreras_emite_claves_canonicas():
 def test_race_day_maneja_sin_prediccion():
     s = _read("race_day.html")
     assert "d.prediction === false" in s
-    assert "BUILD_VERSION = '357'" in _read("sw.js")
+    import re
+    assert int(re.search(r"BUILD_VERSION = '(\d+)'", _read("sw.js")).group(1)) >= 357
