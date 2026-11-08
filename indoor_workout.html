@@ -2638,7 +2638,12 @@
             })
               .then(function (r) {
                 if (r.type === 'opaqueredirect' || r.status === 0) {
-                  window.location.href = url;
+                  /* SHELL-CONECTA: OAuth fuera del marco de la shell */
+                  try {
+                    (window.top || window).location.href = url;
+                  } catch (e) {
+                    window.location.href = url;
+                  }
                   return;
                 }
                 return r.json().then(function (d) {

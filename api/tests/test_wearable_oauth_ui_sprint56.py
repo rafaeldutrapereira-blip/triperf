@@ -48,7 +48,7 @@ def test_tarjetas_condicionadas_al_flag(name):
 @pytest.mark.parametrize("name", ["web", "app"])
 def test_endpoints_por_provider(name):
     s = squash(_wearable_js(FILES[name]))
-    assert squash("window.location.href = API + '/integrations/' + p + '/connect';") in s
+    assert squash("_lxTopNav(API + '/integrations/' + p + '/connect');") in s
     assert squash("'/integrations/' + p + '/status'") in s
     assert squash("'/integrations/' + p + '/sync'") in s
     assert squash("'/integrations/' + p + '/disconnect'") in s

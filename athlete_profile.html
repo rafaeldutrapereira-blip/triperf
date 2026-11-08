@@ -2944,8 +2944,18 @@
             setGarminOfficialUI('error');
           });
       }
+      /* SHELL-CONECTA: la shell monta esta pagina en un marco y los proveedores
+         OAuth (Garmin, Strava, Polar, Wahoo, intervals) prohiben su login en
+         marcos: toda conexion navega la ventana superior. */
+      function _lxTopNav(url) {
+        try {
+          (window.top || window).location.href = url;
+        } catch (e) {
+          window.location.href = url;
+        }
+      }
       function garminOfficialConnect() {
-        window.location.href = API + '/integrations/garmin/connect';
+        _lxTopNav(API + '/integrations/garmin/connect');
       }
       function garminOfficialDisconnect() {
         fetch(API + '/integrations/garmin/disconnect', {
@@ -3123,7 +3133,7 @@
           .then(_wearConsumeReturn);
       }
       function wearableConnect(p) {
-        window.location.href = API + '/integrations/' + p + '/connect';
+        _lxTopNav(API + '/integrations/' + p + '/connect');
       }
       function wearableDisconnect(p) {
         _wearReq('/integrations/' + p + '/disconnect', 'POST')
@@ -3369,7 +3379,7 @@
         })
           .then(function (r) {
             if (r.type === 'opaqueredirect' || r.status === 0) {
-              window.location.href = API + '/strava/connect';
+              _lxTopNav(API + '/strava/connect');
               return;
             }
             return r.json().then(function (d) {
@@ -3713,6 +3723,7 @@
         lnk.style.display =
           m.intervals === 'connect' || m.intervals === 'reconnect' ? '' : 'none';
         lnk.href = API + '/integrations/intervals/connect';
+        lnk.target = '_top'; /* SHELL-CONECTA: OAuth fuera del marco */
         desc.textContent =
           m.intervals === 'import'
             ? _t('hist_intervals_desc', 'Trae todo tu historial de actividades y bienestar desde intervals.icu (puede tardar varios minutos).')
@@ -4105,7 +4116,7 @@
             return r.ok ? r.json() : Promise.reject();
           })
           .then(function (d) {
-            window.location.href = d.checkout_url;
+            _lxTopNav(d.checkout_url);
           })
           .catch(function () {
             toast(_t('addon_err', 'No se pudo iniciar la compra'), 'err');

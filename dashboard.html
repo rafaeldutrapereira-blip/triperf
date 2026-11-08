@@ -8359,7 +8359,12 @@
               throw new Error(
                 d.detail || _t('dash_pay_error', 'Error al iniciar pago'),
               );
-            window.location.href = d.checkout_url;
+            /* SHELL-CONECTA: Stripe Checkout prohibe marcos */
+            try {
+              (window.top || window).location.href = d.checkout_url;
+            } catch (e) {
+              window.location.href = d.checkout_url;
+            }
           } catch (err) {
             showToast(err.message, 'err');
           }

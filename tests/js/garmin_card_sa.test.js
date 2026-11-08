@@ -133,14 +133,59 @@ test('app: la fila muestra Conectar en error/unavailable', () => {
   assert.match(row(null, false, 'error', false), /puedes conectar igual/);
 });
 
-test('app: garminOfficialConnect abre fuera del WebView (Browser, _system, fallback)', () => {
+// SHELL-CONECTA: la conexion navega la ventana superior (la shell monta la pagina en un marco)
+function topHarness(src, fn, args, extraFns) {
+  const top = { location: { href: '' } };
+  const win = { top, location: { href: '' }, Capacitor: undefined, open: () => null };
+  const code = extract(src, '_lxTopNav') + extract(src, fn) + '; ' + fn + '(' + args + ');';
+  new Function('window', 'API', code)(win, 'https://x');
+  return { top: top.location.href, self: win.location.href };
+}
+
+for (const [label, src] of [['web', web], ['app', app]]) {
+  test(label + ': garminOfficialConnect navega window.top, no el marco', () => {
+    const r = topHarness(src, 'garminOfficialConnect', '');
+    assert.strictEqual(r.top, 'https://x/integrations/garmin/connect');
+    assert.strictEqual(r.self, '');
+  });
+  test(label + ': wearableConnect (Polar/Wahoo) navega window.top', () => {
+    for (const p of ['polar', 'wahoo']) {
+      const r = topHarness(src, 'wearableConnect', "'" + p + "'");
+      assert.strictEqual(r.top, 'https://x/integrations/' + p + '/connect');
+      assert.strictEqual(r.self, '');
+    }
+  });
+  test(label + ': _lxTopNav cae a la ventana propia si window.top no es accesible', () => {
+    const win = { location: { href: '' } };
+    Object.defineProperty(win, 'top', { get() { throw new Error('SecurityError'); } });
+    new Function('window', extract(src, '_lxTopNav') + "; _lxTopNav('https://y/z');")(win);
+    assert.strictEqual(win.location.href, 'https://y/z');
+  });
+}
+
+test('web: Strava, intervals y checkout salen por la ventana superior', () => {
+  assert.doesNotMatch(web, /window\.location\.href\s*=\s*API \+ '\/strava\/connect'/);
+  assert.match(web, /_lxTopNav\(API \+ '\/strava\/connect'\)/);
+  assert.match(web, /lnk\.target = '_top'/);
+  assert.match(web, /_lxTopNav\(d\.checkout_url\)/);
+});
+
+test('indoor/dashboard/lx-upgrade: OAuth intervals y checkout usan window.top', () => {
+  const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+  assert.match(rd('indoor_workout.html'), /\(window\.top \|\| window\)\.location\.href = url/);
+  assert.match(rd('dashboard.html'), /\(window\.top \|\| window\)\.location\.href = d\.checkout_url/);
+  assert.match(rd('lx-upgrade.js'), /\(window\.top \|\| window\)\.location\.href = d\.checkout_url/);
+});
+
+test('app: garminOfficialConnect abre fuera del WebView (Browser, _system, fallback a window.top)', () => {
   const run = (cap, openRet) => {
     const calls = { browser: null, open: null };
-    const win = { Capacitor: cap, location: { href: '' }, open: (u, t) => ((calls.open = [u, t]), openRet) };
+    const top = { location: { href: '' } };
+    const win = { top, Capacitor: cap, location: { href: '' }, open: (u, t) => ((calls.open = [u, t]), openRet) };
     if (cap && cap.Plugins && cap.Plugins.Browser)
       cap.Plugins.Browser.open = (o) => (calls.browser = o.url);
-    new Function('window', 'API', extract(app, 'garminOfficialConnect') + '; garminOfficialConnect();')(win, 'https://x');
-    return { calls, href: win.location.href };
+    new Function('window', 'API', extract(app, '_lxTopNav') + extract(app, 'garminOfficialConnect') + '; garminOfficialConnect();')(win, 'https://x');
+    return { calls, href: top.location.href };
   };
   const native = () => ({ isNativePlatform: () => true, Plugins: { Browser: {} } });
   let r = run(native(), null);

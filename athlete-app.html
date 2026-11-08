@@ -5419,7 +5419,16 @@
             if (window.open(url, '_system')) return;
           } catch (e) {}
         }
-        window.location.href = url;
+        _lxTopNav(url);
+      }
+      /* SHELL-CONECTA: la shell monta las paginas en un marco; los proveedores
+         OAuth prohiben su login en marcos. Navegar SIEMPRE la ventana superior. */
+      function _lxTopNav(url) {
+        try {
+          (window.top || window).location.href = url;
+        } catch (e) {
+          window.location.href = url;
+        }
       }
       function garminOfficialDisconnect() {
         apiFetch('/integrations/garmin/disconnect', { method: 'POST' })
@@ -5732,7 +5741,7 @@
           .then(_wearConsumeReturn);
       }
       function wearableConnect(p) {
-        window.location.href = API + '/integrations/' + p + '/connect';
+        _lxTopNav(API + '/integrations/' + p + '/connect');
       }
       function wearableDisconnect(p) {
         apiFetch('/integrations/' + p + '/disconnect', { method: 'POST' })

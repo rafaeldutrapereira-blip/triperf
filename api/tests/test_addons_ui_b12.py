@@ -29,7 +29,7 @@ def test_tarjeta_vive_en_cuenta_fuera_de_mis_datos():
 def test_addons_usan_los_endpoints_de_stripe():
     assert "fetch(API + '/stripe/addons'" in PROFILE
     assert "fetch(API + '/stripe/addons/checkout'" in PROFILE
-    assert "window.location.href = d.checkout_url" in PROFILE
+    assert "_lxTopNav(d.checkout_url)" in PROFILE  # SHELL-CONECTA: ventana superior
 
 
 def test_arranca_colapsada_y_se_expande_con_el_toggle():

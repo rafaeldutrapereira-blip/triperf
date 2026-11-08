@@ -166,7 +166,9 @@ window.doCheckout = async function(plan){
     });
     var d = await r.json();
     if(!r.ok) throw new Error(d.detail || 'Error al iniciar pago');
-    window.location.href = d.checkout_url;
+    /* SHELL-CONECTA: Stripe Checkout prohibe marcos */
+    try { (window.top || window).location.href = d.checkout_url; }
+    catch(e){ window.location.href = d.checkout_url; }
   }catch(err){
     showToast(err.message, 'err');
   }
