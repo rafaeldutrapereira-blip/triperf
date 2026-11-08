@@ -58,14 +58,11 @@ def test_metricas_ausentes_no_se_inventan():
     assert "tp-met" not in _run(SESS, week=_week(summary=False))
 
 
-def test_franja_fuera_de_ver_mas():
+def test_franja_en_el_resumen_sin_ver_mas():
     assert "renderWeekStrip" not in HTML and "wk-strip" not in HTML
-    i = HTML.index('<details class="tp-more"')
-    more = HTML[i:HTML.index("</details>", i)]
-    assert "tp-met" not in more and "tp-well" not in more
-    assert 'data-view="month"' in more and 'data-view="period"' in more
-    assert 'id="sport-filters"' in more and "adaptive.html" in more
-    assert "loadWeekSummary(iso(mon))" in HTML  # la fuente de datos se conserva
+    assert 'class="tp-more"' not in HTML
+    assert "loadWeekSummary(range.start)" in HTML  # la fuente de datos se conserva
+    assert "adaptive.html" in HTML and 'id="s-adaptive-link"' in HTML
 
 
 def test_build_345():

@@ -45,9 +45,9 @@ def test_plan_sin_seccion_adaptativa_incrustada():
 
 
 def test_plan_tiene_enlace_a_ajustes_adaptativos():
-    # S14: en su lugar, dentro de "Ver más" queda un enlace simple a la
+    # S14: en su lugar queda un enlace simple a la
     # página completa (que sigue viva e intacta, ya no incrustada).
-    assert 'id="tp-more"' in PLAN
+    assert 'id="tp-more"' not in PLAN  # MIPLAN-SIN-VERMAS: sin seccion plegada
     assert 'id="s-adaptive-link"' in PLAN
     assert 'href="adaptive.html"' in PLAN
 

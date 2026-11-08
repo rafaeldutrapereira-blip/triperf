@@ -309,53 +309,85 @@
         letter-spacing: 0.06em;
       }
 
-      /* Sport filter pills */
+      /* Sport filter chips (MIPLAN-SIN-VERMAS): compactos en el encabezado */
       .sport-filters {
         display: flex;
-        gap: 0.2rem;
+        gap: 0.3rem;
         flex-wrap: wrap;
-        border-bottom: 1px solid var(--border);
       }
       .sf {
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.78rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.74rem;
         font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 0.65rem 1.1rem;
-        border: none;
-        border-bottom: 2px solid transparent;
+        padding: 0.28rem 0.7rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
         background: none;
         color: var(--muted);
         cursor: pointer;
+        white-space: nowrap;
         transition:
           color 0.18s,
           border-color 0.18s;
-        white-space: nowrap;
-        margin-bottom: -1px;
       }
       .sf:hover {
         color: var(--text);
       }
       .sf.on-all {
         color: var(--text);
-        border-bottom-color: var(--text);
+        border-color: var(--text);
       }
       .sf.on-swim {
         color: var(--cyan);
-        border-bottom-color: var(--cyan);
+        border-color: var(--cyan);
       }
       .sf.on-bike {
         color: var(--orange);
-        border-bottom-color: var(--orange);
+        border-color: var(--orange);
       }
       .sf.on-run {
         color: var(--green);
-        border-bottom-color: var(--green);
+        border-color: var(--green);
       }
       .sf.on-str {
         color: var(--purple);
-        border-bottom-color: var(--purple);
+        border-color: var(--purple);
+      }
+      .nav-goto {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .nav-month {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.28rem 0.5rem;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.74rem;
+      }
+      .nav-month:focus {
+        outline: none;
+        border-color: var(--orange);
+      }
+      .tp-day-add {
+        align-self: flex-start;
+        background: none;
+        border: 1px dashed var(--border);
+        border-radius: 6px;
+        color: var(--dim);
+        font-size: 0.78rem;
+        line-height: 1;
+        padding: 0.18rem 0.5rem;
+        cursor: pointer;
+      }
+      .tp-day-add:hover {
+        color: var(--orange);
+        border-color: var(--orange);
+      }
+      .tp-day.drag-over {
+        border-color: var(--orange);
       }
       .cfg-sep {
         width: 1px;
@@ -454,55 +486,6 @@
         border-radius: var(--radius);
         overflow: hidden;
         margin-bottom: 1.4rem;
-      }
-      #s-cal #cal-area {
-        overflow-x: auto;
-      }
-
-      /* -- VER MÁS (S10): zona secundaria colapsable — Cumplimiento
-   semanal, vista Mes/Período, filtros avanzados y Ajustes adaptativos.
-   Mismo patrón <details>/<summary> que .today-more en athlete-app.html. -- */
-      .tp-more {
-        margin-bottom: 1.4rem;
-      }
-      .tp-more > summary {
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        list-style: none;
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .tp-more > summary::-webkit-details-marker {
-        display: none;
-      }
-      .tp-more > summary::after {
-        content: '▾';
-        color: var(--dim);
-        transition: transform 0.2s;
-      }
-      .tp-more[open] > summary {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-      }
-      .tp-more[open] > summary::after {
-        transform: rotate(180deg);
-      }
-      .tp-more-body {
-        border: 1px solid var(--border);
-        border-top: none;
-        border-bottom-left-radius: var(--radius);
-        border-bottom-right-radius: var(--radius);
-        padding: 1rem;
       }
       .panel-head {
         padding: 0.9rem 1.2rem;
@@ -1469,20 +1452,19 @@
             <span class="nav-lbl" id="nav-lbl">—</span>
             <button class="nav-btn" id="btn-next">&#8594;</button>
           </div>
-
-          <!-- Period inputs (hidden unless period view) -->
-          <div class="period-inputs" id="period-inputs" style="display: none">
-            <input type="date" id="p-start" title="Fecha inicio" />
-            <span class="period-sep">al</span>
-            <input type="date" id="p-end" title="Fecha fin" />
-            <button
-              class="nav-btn"
-              style="margin-left: 0.2rem"
-              onclick="applyPeriod()"
-              title="Aplicar"
-            >
-              &#10003;
-            </button>
+          <button class="nav-btn" id="btn-today" data-i18n="tp_today_btn">Hoy</button>
+          <label class="nav-goto">
+            <span class="period-sep" data-i18n="tp_goto_month">Ir a…</span>
+            <input type="month" class="nav-month" id="nav-month" />
+          </label>
+          <div class="cfg-sep"></div>
+          <!-- Sport filters -->
+          <div class="sport-filters" id="sport-filters">
+            <button class="sf on-all" data-sport="" data-i18n="opt_all">Todos</button>
+            <button class="sf" data-sport="swim" data-i18n="opt_swim">🏊 Natación</button>
+            <button class="sf" data-sport="bike" data-i18n="opt_bike">🚴 Ciclismo</button>
+            <button class="sf" data-sport="run" data-i18n="opt_run">🏃 Carrera</button>
+            <button class="sf" data-sport="str" data-i18n="opt_strength">💪 Fuerza</button>
           </div>
         </div>
       </div>
@@ -1529,138 +1511,15 @@
           <div id="sess-cards"></div>
         </div>
 
-        <!-- VER MÁS (S10, cerrado por defecto) -->
-        <details class="tp-more" id="tp-more">
-          <summary data-i18n="tp_more_toggle">Ver más</summary>
-
-          <div class="tp-more-body">
-            <div class="cfg-inner" style="padding: 0 0 0.9rem">
-              <!-- View selector -->
-              <div class="view-tabs">
-                <button
-                  class="vt on"
-                  data-view="week"
-                  data-i18n="tp_view_week"
-                >
-                  Semana
-                </button>
-                <button
-                  class="vt"
-                  data-view="month"
-                  data-i18n="tp_view_month"
-                >
-                  Mes
-                </button>
-                <button
-                  class="vt"
-                  data-view="period"
-                  data-i18n="tp_view_period"
-                >
-                  Período
-                </button>
-              </div>
-
-              <div class="cfg-sep"></div>
-
-              <!-- Sport filters -->
-              <div class="sport-filters" id="sport-filters">
-                <button class="sf on-all" data-sport="" data-i18n="opt_all">
-                  Todos
-                </button>
-                <button class="sf" data-sport="swim" data-i18n="opt_swim">
-                  🏊 Natación
-                </button>
-                <button class="sf" data-sport="bike" data-i18n="opt_bike">
-                  🚴 Ciclismo
-                </button>
-                <button class="sf" data-sport="run" data-i18n="opt_run">
-                  🏃 Carrera
-                </button>
-                <button class="sf" data-sport="str" data-i18n="opt_strength">
-                  💪 Fuerza
-                </button>
-              </div>
-            </div>
-
-            <!-- CALENDAR PANEL -->
-            <div class="panel sr" id="s-cal">
-              <div class="panel-head">
-                <div
-                  class="panel-title"
-                  id="cal-panel-title"
-                  data-i18n="tp_calendar"
-                >
-                  Calendario
-                </div>
-                <div class="adh-lgd">
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="
-                        background: var(--dim);
-                        opacity: 0.35;
-                        border: 1px dashed var(--lxd-rgba_61_104_128_0p5,rgba(61, 104, 128, 0.5));
-                      "
-                    ></span
-                    ><span data-i18n="tp_not_done">Sin ejecutar</span>
-                  </div>
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="background: var(--green)"
-                    ></span
-                    >≥ 90%
-                  </div>
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="background: var(--gold)"
-                    ></span
-                    >60–89%
-                  </div>
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="background: var(--red)"
-                    ></span
-                    >&lt; 60%
-                  </div>
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="background: var(--orange)"
-                    ></span
-                    >Extra
-                  </div>
-                  <div class="adh-lgd-item">
-                    <span
-                      class="adh-lgd-sq"
-                      style="background: #0ea5e9"
-                    ></span
-                    >Ext. planificada
-                  </div>
-                </div>
-              </div>
-              <div id="cal-area"></div>
-            </div>
-
-            <!-- AJUSTES ADAPTATIVOS (S14: la sección incrustada de S10 sale
-             de Mi Plan. El valor llega como aviso ocasional sobre la lista
-             de sesiones (ver #adp-banner, solo cuando el motor propone un
-             ajuste real para hoy); acá queda solo un enlace a la página
-             completa, que sigue viva e intacta. -->
-            <a
-              class="panel sr tp-adp-link"
-              id="s-adaptive-link"
-              href="adaptive.html"
-            >
-              <span data-i18n="adp_tab_adjustments"
-                >⚙️ Ajustes adaptativos</span
-              >
-              <span aria-hidden="true">→</span>
-            </a>
-          </div>
-        </details>
+        <!-- AJUSTES ADAPTATIVOS (S14): enlace a la página completa. -->
+        <a
+          class="panel sr tp-adp-link"
+          id="s-adaptive-link"
+          href="adaptive.html"
+        >
+          <span data-i18n="adp_tab_adjustments">⚙️ Ajustes adaptativos</span>
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
     </div>
 
@@ -2086,11 +1945,9 @@
         // STATE
         // ──────────────────────────────────────
         var S = {
-          view: 'week', // 'week' | 'month' | 'period'
-          ref: new Date(), // reference date for week/month nav
-          filters: [], // [] = all; else array of sport keys
-          pStart: null, // period view start Date
-          pEnd: null, // period view end Date
+          ref: new Date(), // semana de referencia del resumen
+          filters: [], // [] = todos; si no, [deporte]
+          monthSel: null, // 'YYYY-MM' elegido en "Ir a…" (null tras usar flechas/Hoy)
         };
 
         // Drag & drop state
@@ -2292,78 +2149,32 @@
           });
         }
 
-        // Get date range for current view
+        // Rango visible: siempre la semana (lun-dom) de S.ref
         function currentRange() {
-          if (S.view === 'week') {
-            var mon = weekMon(S.ref);
-            return { start: iso(mon), end: iso(addDays(mon, 6)) };
-          }
-          if (S.view === 'month') {
-            var y = S.ref.getFullYear(),
-              m = S.ref.getMonth();
-            var first = new Date(y, m, 1),
-              last = new Date(y, m + 1, 0);
-            return { start: iso(first), end: iso(last) };
-          }
-          // period
-          if (S.pStart && S.pEnd) {
-            return { start: iso(S.pStart), end: iso(S.pEnd) };
-          }
-          return { start: todayIso(), end: todayIso() };
+          var mon = weekMon(S.ref);
+          return { start: iso(mon), end: iso(addDays(mon, 6)) };
         }
 
-        // ──────────────────────────────────────
-        // RENDER: PAGE HEADER
-        // ──────────────────────────────────────
-        function renderHeader() {
-          var filterLbl = S.filters.length
-            ? S.filters
-                .map(function (f) {
-                  return SPORT[f] ? SPORT[f].icon + ' ' + SPORT[f].label : f;
-                })
-                .join(', ')
-            : '';
-          document.getElementById('ph-sub').textContent = filterLbl; // fecha removida: ya se muestra en el nav del calendario
-        }
-
-        // ──────────────────────────────────────
-        // RENDER: CONFIG BAR CONTROLS
-        // ──────────────────────────────────────
+        // Etiqueta de rango del encabezado + estado del selector de mes
         function renderConfigBar() {
-          var isWeek = S.view === 'week';
-          var isMonth = S.view === 'month';
-          var isPeriod = S.view === 'period';
-
-          document.getElementById('date-nav-std').style.display = isPeriod
-            ? 'none'
-            : 'flex';
-          document.getElementById('period-inputs').style.display = isPeriod
-            ? 'flex'
-            : 'none';
-
-          if (isWeek) {
-            var mon = weekMon(S.ref),
-              sun = addDays(mon, 6);
-            document.getElementById('nav-lbl').textContent =
-              mon.getDate() +
-              ' ' +
-              monthsS()[mon.getMonth()] +
-              ' – ' +
-              sun.getDate() +
-              ' ' +
-              monthsS()[sun.getMonth()];
-          } else if (isMonth) {
-            document.getElementById('nav-lbl').textContent =
-              monthsL()[S.ref.getMonth()] + ' ' + S.ref.getFullYear();
-          }
-
-          if (isPeriod && !S.pStart) {
-            var mon2 = weekMon(new Date());
-            S.pStart = mon2;
-            S.pEnd = addDays(mon2, 27); // default: 4 weeks
-            document.getElementById('p-start').value = iso(S.pStart);
-            document.getElementById('p-end').value = iso(S.pEnd);
-          }
+          var mon = weekMon(S.ref),
+            sun = addDays(mon, 6);
+          document.getElementById('nav-lbl').textContent =
+            mon.getDate() +
+            ' ' +
+            monthsS()[mon.getMonth()] +
+            ' – ' +
+            sun.getDate() +
+            ' ' +
+            monthsS()[sun.getMonth()];
+          var m = document.getElementById('nav-month');
+          // Mes elegido en el selector (si lo hay); si no, el mes del jueves
+          // de la semana (el que domina la semana, como ISO).
+          var ref = S.monthSel ? null : addDays(mon, 3);
+          if (m)
+            m.value =
+              S.monthSel ||
+              ref.getFullYear() + '-' + ('0' + (ref.getMonth() + 1)).slice(-2);
         }
 
         // ──────────────────────────────────────
@@ -2605,424 +2416,11 @@
             .then(function (j) {
               if (j) {
                 _wkSumCache[monIso] = j;
-                if (S.view === 'week' && iso(weekMon(S.ref)) === monIso)
+                if (iso(weekMon(S.ref)) === monIso)
                   renderOverview();
               }
             })
             .catch(function () {});
-        }
-
-        function renderWeekCal() {
-          var mon = weekMon(S.ref);
-          var todayS = todayIso();
-          var html = '<div class="cal-week-grid">';
-          loadWeekSummary(iso(mon));
-
-          for (var i = 0; i < 7; i++) {
-            var d = addDays(mon, i);
-            var dIso = iso(d);
-            var isToday = dIso === todayS;
-            var isPast = dIso < todayS;
-            var cls =
-              'cal-day' + (isToday ? ' today' : !isPast ? ' future' : '');
-            var allDaySess = sessionsInRange(dIso, dIso);
-            var pair = pairPlanAndReal(allDaySess);
-            var daySess = applyFilter(
-              allDaySess.filter(function (s) {
-                return !(s.source === 'local' && pair.hiddenPlanned[s.id]);
-              }),
-            ).sort(function (a, b) {
-              return a.status === 'done' ? -1 : 1;
-            });
-            var dayTss = daySess.reduce(function (t, s) {
-              return t + (s.tss || 0);
-            }, 0);
-
-            html += '<div class="' + cls + '" data-date-iso="' + dIso + '">';
-            html +=
-              '<div class="cal-hd"><span class="cal-dow">' +
-              daysShort()[i] +
-              (isToday ? ' ' + _t('tp_today', 'HOY') : '') +
-              '</span>';
-            html += '<span class="cal-date">' + d.getDate() + '</span></div>';
-
-            daySess.forEach(function (s) {
-              var m = SPORT[s.sport] || {
-                icon: '🏅',
-                label: _t('tp_session', 'Sesión'),
-                color: 'var(--muted)',
-              };
-              var adh = sessAdherence(s, allDaySess, pair);
-              var ast = adh.style;
-              var sc = 'sess';
-              var oc =
-                s.source === 'garmin'
-                  ? pair.planByActId[s.activity_id]
-                    ? 'showCompareDetail(' + s.activity_id + ')'
-                    : 'goDetail(' + s.activity_id + ')'
-                  : 'showDetail(' + jsArg(s.id) + ')';
-              var meta =
-                fmtDur(s.dur_min) +
-                (s.dist_km ? ' · ' + fmtDist(s.dist_km, s.sport) : '');
-              var dd =
-                s.source === 'local' && s.editable !== false
-                  ? ' draggable="true" data-sess-id="' + s.id + '"'
-                  : '';
-              var sty =
-                'border-color:' +
-                ast.border +
-                ';background:' +
-                ast.bg +
-                ';' +
-                (ast.dashed ? 'border-style:dashed;' : '');
-              html +=
-                '<div class="' +
-                sc +
-                '"' +
-                dd +
-                ' style="' +
-                sty +
-                '" onclick="' +
-                oc +
-                '" title="' +
-                (s.name || m.label) +
-                ' · ' +
-                (adh.pct !== null ? Math.round(adh.pct) + '%' : adh.key) +
-                '">';
-              html += '<span class="sess-ico">' + m.icon + '</span>';
-              html += '<div class="sess-info">';
-              html +=
-                '<span class="sess-name" style="color:' +
-                ast.color +
-                '">' +
-                (s.name || m.label) +
-                '</span>';
-              html += '<span class="sess-meta">' + meta + '</span>';
-              html += '</div></div>';
-            });
-
-            html +=
-              '<div class="cal-tss' +
-              (dayTss ? ' has' : '') +
-              '">' +
-              (dayTss ? 'TSS ' + Math.round(dayTss) : '') +
-              '</div>';
-            html += '</div>';
-          }
-          html += '</div>';
-          document.getElementById('cal-area').innerHTML = html;
-          document.getElementById('cal-panel-title').textContent =
-            _t('tp_view_week', 'Semana') +
-            ' ' +
-            isoWeekNum(mon) +
-            ' · ' +
-            mon.getDate() +
-            ' ' +
-            monthsS()[mon.getMonth()] +
-            ' – ' +
-            addDays(mon, 6).getDate() +
-            ' ' +
-            monthsS()[addDays(mon, 6).getMonth()];
-        }
-
-        // ──────────────────────────────────────
-        // RENDER: MONTH CALENDAR
-        // ──────────────────────────────────────
-        function renderMonthCal() {
-          var y = S.ref.getFullYear(),
-            m = S.ref.getMonth();
-          var first = new Date(y, m, 1);
-          var gridStart = weekMon(first);
-          var todayS = todayIso();
-          var curMonM = y + '-' + String(m + 1).padStart(2, '0');
-
-          // Day headers
-          var html = '<div class="cal-month-hd">';
-          daysShort().forEach(function (d) {
-            html += '<div class="cal-month-hd-cell">' + d + '</div>';
-          });
-          html += '</div>';
-
-          // 6 rows × 7 = 42 cells
-          html += '<div class="cal-month-grid">';
-          for (var row = 0; row < 6; row++) {
-            for (var col = 0; col < 7; col++) {
-              var d = addDays(gridStart, row * 7 + col);
-              var dIso = iso(d);
-              var inMon = d.getFullYear() === y && d.getMonth() === m;
-              var isToday = dIso === todayS;
-              var isFut = dIso > todayS;
-              var cls =
-                'cal-month-day' +
-                (isToday ? ' today' : '') +
-                (!inMon ? ' out-month' : isFut ? ' future' : '');
-
-              var allDaySess = sessionsInRange(dIso, dIso);
-              var pair = pairPlanAndReal(allDaySess);
-              var daySess = applyFilter(
-                allDaySess.filter(function (s) {
-                  return !(s.source === 'local' && pair.hiddenPlanned[s.id]);
-                }),
-              ).sort(function (a, b) {
-                return a.status === 'done' ? -1 : 1;
-              });
-              var visible = daySess.slice(0, 2);
-              var extra = daySess.length - 2;
-
-              html += '<div class="' + cls + '" data-date-iso="' + dIso + '">';
-              html += '<div class="cal-month-date">' + d.getDate() + '</div>';
-              visible.forEach(function (s) {
-                var sp = SPORT[s.sport] || {
-                  icon: '🏅',
-                  color: 'var(--muted)',
-                };
-                var adh = sessAdherence(s, allDaySess, pair);
-                var ast = adh.style;
-                var sc = 'sess-sm';
-                var oc =
-                  s.source === 'garmin'
-                    ? pair.planByActId[s.activity_id]
-                      ? 'showCompareDetail(' + s.activity_id + ')'
-                      : 'goDetail(' + s.activity_id + ')'
-                    : 'showDetail(' + jsArg(s.id) + ')';
-                var dd =
-                  s.source === 'local' && s.editable !== false
-                    ? ' draggable="true" data-sess-id="' + s.id + '"'
-                    : '';
-                var sty =
-                  'border-color:' +
-                  ast.border +
-                  ';background:' +
-                  ast.bg +
-                  ';' +
-                  (ast.dashed ? 'border-style:dashed;' : '');
-                var pctLbl =
-                  adh.pct !== null
-                    ? ' ' + Math.round(adh.pct) + '%'
-                    : adh.key === 'extra'
-                      ? ' ' + _t('tp_adicional', 'Adicional')
-                      : '';
-                html +=
-                  '<div class="' +
-                  sc +
-                  '"' +
-                  dd +
-                  ' style="' +
-                  sty +
-                  '" onclick="' +
-                  oc +
-                  '" title="' +
-                  (s.name || sp.label) +
-                  pctLbl +
-                  '">';
-                html += '<span style="font-size:.7rem">' + sp.icon + '</span>';
-                html +=
-                  '<span style="color:' +
-                  ast.color +
-                  ';font-size:.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">' +
-                  (s.name || sp.label) +
-                  '</span>';
-                if (adh.key !== 'planned')
-                  html +=
-                    '<span style="font-size:.55rem;color:' +
-                    ast.color +
-                    ';flex-shrink:0;margin-left:.15rem">' +
-                    pctLbl.trim() +
-                    '</span>';
-                html += '</div>';
-              });
-              if (extra > 0)
-                html +=
-                  '<div class="more-sess">+' +
-                  extra +
-                  ' ' +
-                  _t('tp_more', 'más') +
-                  '</div>';
-              html += '</div>';
-            }
-          }
-          html += '</div>';
-
-          document.getElementById('cal-area').innerHTML = html;
-          document.getElementById('cal-panel-title').textContent =
-            monthsL()[m] + ' ' + y;
-        }
-
-        // ──────────────────────────────────────
-        // RENDER: PERIOD CALENDAR
-        // ──────────────────────────────────────
-        function renderPeriodCal() {
-          if (!S.pStart || !S.pEnd) {
-            document.getElementById('cal-area').innerHTML =
-              '<div style="padding:2rem;text-align:center;color:var(--dim);font-size:.85rem">' +
-              _t(
-                'tp_select_period',
-                'Selecciona las fechas de inicio y fin del período',
-              ) +
-              '</div>';
-            return;
-          }
-          var startMon = weekMon(S.pStart);
-          var todayS = todayIso();
-          var html = '';
-          var cur = cloneDate(startMon);
-
-          while (cur <= S.pEnd) {
-            var wMon = cloneDate(cur);
-            var wSun = addDays(wMon, 6);
-            var wIsoStart = iso(wMon),
-              wIsoEnd = iso(wSun);
-            var wSess = applyFilter(sessionsInRange(wIsoStart, wIsoEnd));
-            var wDone = wSess.filter(function (s) {
-              return s.status === 'done';
-            });
-            var wTss = wDone.reduce(function (t, s) {
-              return t + (s.tss || 0);
-            }, 0);
-            var wMin = wDone.reduce(function (t, s) {
-              return t + (s.dur_min || 0);
-            }, 0);
-
-            var wkNum = isoWeekNum(wMon);
-            html += '<div class="period-week">';
-            html += '<div class="period-wk-hd">';
-            html +=
-              '<span class="period-wk-lbl">SEM ' +
-              wkNum +
-              ' · ' +
-              wMon.getDate() +
-              ' ' +
-              monthsS()[wMon.getMonth()] +
-              ' – ' +
-              wSun.getDate() +
-              ' ' +
-              monthsS()[wSun.getMonth()] +
-              '</span>';
-            if (wDone.length) {
-              html += '<span class="period-wk-stats">';
-              html += wDone.length + ' ' + _t('tp_sessions_unit', 'sesión(es)');
-              if (wMin) html += ' · ' + fmtDur(Math.round(wMin));
-              if (wTss) html += ' · ' + Math.round(wTss) + ' TSS';
-              html += '</span>';
-            }
-            html += '</div>';
-
-            html += '<div class="period-day-grid">';
-            for (var i = 0; i < 7; i++) {
-              var d = addDays(wMon, i);
-              var dIso = iso(d);
-              var inRange = dIso >= iso(S.pStart) && dIso <= iso(S.pEnd);
-              var isToday = dIso === todayS;
-              var isFut = dIso > todayS;
-              var cls =
-                'period-day' +
-                (isToday ? ' today' : '') +
-                (!inRange ? ' out-range' : isFut ? ' future' : '');
-
-              var allDaySess = inRange ? sessionsInRange(dIso, dIso) : [];
-              var pair = inRange
-                ? pairPlanAndReal(allDaySess)
-                : { hiddenPlanned: {}, planByActId: {} };
-              var daySess = inRange
-                ? applyFilter(
-                    allDaySess.filter(function (s) {
-                      return !(
-                        s.source === 'local' && pair.hiddenPlanned[s.id]
-                      );
-                    }),
-                  ).sort(function (a, b) {
-                    return a.status === 'done' ? -1 : 1;
-                  })
-                : [];
-
-              html += '<div class="' + cls + '" data-date-iso="' + dIso + '">';
-              html +=
-                '<div class="period-day-hd"><span class="period-dow">' +
-                daysShort()[i] +
-                '</span>';
-              html +=
-                '<span class="period-date">' + d.getDate() + '</span></div>';
-
-              daySess.slice(0, 2).forEach(function (s) {
-                var sp = SPORT[s.sport] || {
-                  icon: '🏅',
-                  color: 'var(--muted)',
-                };
-                var adh = sessAdherence(s, allDaySess, pair);
-                var ast = adh.style;
-                var sc = 'sess-sm';
-                var oc =
-                  s.source === 'garmin'
-                    ? pair.planByActId[s.activity_id]
-                      ? 'showCompareDetail(' + s.activity_id + ')'
-                      : 'goDetail(' + s.activity_id + ')'
-                    : 'showDetail(' + jsArg(s.id) + ')';
-                var dd =
-                  s.source === 'local' && s.editable !== false
-                    ? ' draggable="true" data-sess-id="' + s.id + '"'
-                    : '';
-                var sty =
-                  'border-color:' +
-                  ast.border +
-                  ';background:' +
-                  ast.bg +
-                  ';' +
-                  (ast.dashed ? 'border-style:dashed;' : '');
-                var pctLbl =
-                  adh.pct !== null
-                    ? ' ' + Math.round(adh.pct) + '%'
-                    : adh.key === 'extra'
-                      ? ' ' + _t('tp_adicional', 'Adicional')
-                      : '';
-                html +=
-                  '<div class="' +
-                  sc +
-                  '"' +
-                  dd +
-                  ' style="' +
-                  sty +
-                  '" onclick="' +
-                  oc +
-                  '" title="' +
-                  (s.name || sp.label) +
-                  pctLbl +
-                  '">';
-                html += '<span style="font-size:.68rem">' + sp.icon + '</span>';
-                html +=
-                  '<span style="color:' +
-                  ast.color +
-                  ';font-size:.58rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">' +
-                  (s.name || sp.label) +
-                  '</span>';
-                if (adh.key !== 'planned')
-                  html +=
-                    '<span style="font-size:.52rem;color:' +
-                    ast.color +
-                    ';flex-shrink:0">' +
-                    pctLbl.trim() +
-                    '</span>';
-                html += '</div>';
-              });
-              if (daySess.length > 2)
-                html +=
-                  '<div class="more-sess">+' + (daySess.length - 2) + '</div>';
-              html += '</div>';
-            }
-            html += '</div></div>';
-            cur = addDays(cur, 7);
-          }
-
-          document.getElementById('cal-area').innerHTML =
-            html ||
-            '<div style="padding:2rem;text-align:center;color:var(--dim)">' +
-              _t('tp_no_sessions_period', 'Sin sesiones en el período') +
-              '</div>';
-          document.getElementById('cal-panel-title').textContent =
-            _t('tp_view_period', 'Período') +
-            ' · ' +
-            fmtDateLabel(iso(S.pStart)) +
-            ' – ' +
-            fmtDateLabel(iso(S.pEnd));
         }
 
         // ──────────────────────────────────────
@@ -3177,10 +2575,16 @@
               meta = ovMetaTxt(s.dur_min, s.dist_km, s.sport);
             }
           }
+          var dd =
+            s.source === 'local' && s.editable !== false
+              ? ' draggable="true" data-sess-id="' + _wsEsc(s.id) + '"'
+              : '';
           return (
             '<div class="tp-mini' +
             (done ? ' done' : '') +
-            '" role="button" tabindex="0" title="' +
+            '"' +
+            dd +
+            ' role="button" tabindex="0" title="' +
             _wsEsc(name) +
             '" onclick="' +
             oc +
@@ -3239,7 +2643,13 @@
                     })
                     .join('')
                 : '<div class="tp-rest">—</div>') +
-              '</div>';
+              '<button type="button" class="tp-day-add" title="' +
+              _wsEsc(_t('tp_add_session_day', 'Agregar sesión')) +
+              '" aria-label="' +
+              _wsEsc(_t('tp_add_session_day', 'Agregar sesión')) +
+              '" onclick="openModal(' +
+              jsArg(dIso) +
+              ')">+</button></div>';
           }
           return h + '</div>';
         }
@@ -3248,7 +2658,8 @@
           var container = document.getElementById('sess-cards');
           if (!container) return;
           var range = currentRange();
-          var isWeek = S.view === 'week';
+          var isWeek = true;
+          loadWeekSummary(range.start);
           var st = ovStats(range.start, range.end);
           var a = new Date(range.start + 'T12:00:00'),
             b = new Date(range.end + 'T12:00:00');
@@ -3492,31 +2903,9 @@
         // ──────────────────────────────────────
         function render() {
           renderConfigBar();
-          renderHeader();
-          if (S.view === 'week') renderWeekCal();
-          else if (S.view === 'month') renderMonthCal();
-          else renderPeriodCal();
           renderOverview();
           setupDragDrop();
         }
-
-        // ──────────────────────────────────────
-        // VIEW SWITCHER
-        // ──────────────────────────────────────
-        document.querySelectorAll('.vt').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            document.querySelectorAll('.vt').forEach(function (b) {
-              b.classList.remove('on');
-            });
-            btn.classList.add('on');
-            S.view = btn.dataset.view;
-            if (S.view === 'period') {
-              S.pStart = null;
-              S.pEnd = null; // reset → init in renderConfigBar
-            }
-            render();
-          });
-        });
 
         // ──────────────────────────────────────
         // DATE NAVIGATION
@@ -3524,55 +2913,38 @@
         document
           .getElementById('btn-prev')
           .addEventListener('click', function () {
-            if (S.view === 'week') S.ref = addDays(S.ref, -7);
-            else if (S.view === 'month') {
-              S.ref = new Date(S.ref.getFullYear(), S.ref.getMonth() - 1, 1);
-            }
+            S.ref = addDays(S.ref, -7);
+            S.monthSel = null;
             render();
           });
         document
           .getElementById('btn-next')
           .addEventListener('click', function () {
-            if (S.view === 'week') S.ref = addDays(S.ref, 7);
-            else if (S.view === 'month') {
-              S.ref = new Date(S.ref.getFullYear(), S.ref.getMonth() + 1, 1);
-            }
+            S.ref = addDays(S.ref, 7);
+            S.monthSel = null;
             render();
           });
-
-        window.applyPeriod = function () {
-          var ps = document.getElementById('p-start').value;
-          var pe = document.getElementById('p-end').value;
-          if (!ps || !pe) {
-            alert(
-              _t('tp_alert_dates_required', 'Selecciona fecha de inicio y fin'),
-            );
-            return;
-          }
-          if (ps > pe) {
-            alert(
-              _t(
-                'tp_alert_dates_order',
-                'La fecha de inicio debe ser anterior al fin',
-              ),
-            );
-            return;
-          }
-          S.pStart = new Date(ps + 'T12:00:00');
-          S.pEnd = new Date(pe + 'T12:00:00');
-          render();
-        };
-
-        // Live update period as user changes dates
         document
-          .getElementById('p-start')
-          .addEventListener('change', function () {
-            if (S.pEnd) applyPeriod();
+          .getElementById('btn-today')
+          .addEventListener('click', function () {
+            S.ref = new Date();
+            S.monthSel = null;
+            render();
           });
+        // "Ir a…": salta a la primera semana (lun-dom) que contiene el dia 1
         document
-          .getElementById('p-end')
+          .getElementById('nav-month')
           .addEventListener('change', function () {
-            applyPeriod();
+            var v = this.value; // YYYY-MM
+            if (!/^\d{4}-\d{2}$/.test(v)) return;
+            S.monthSel = v;
+            S.ref = new Date(
+              parseInt(v.slice(0, 4), 10),
+              parseInt(v.slice(5, 7), 10) - 1,
+              1,
+              12,
+            );
+            render();
           });
 
         // ──────────────────────────────────────
@@ -4044,7 +3416,7 @@
         // DRAG & DROP
         // ──────────────────────────────────────
         function setupDragDrop() {
-          var area = document.getElementById('cal-area');
+          var area = document.getElementById('sess-cards');
           if (!area || area._dd) return;
           area._dd = true;
 
@@ -4071,7 +3443,7 @@
           });
 
           area.addEventListener('dragover', function (e) {
-            var cell = e.target.closest('[data-date-iso]');
+            var cell = e.target.closest('.tp-day[data-date-iso]');
             if (!cell || !_dragId) return;
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';

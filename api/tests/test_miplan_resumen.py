@@ -27,12 +27,14 @@ def test_sin_bloque_de_cumplimiento_ni_metas_fijas():
     assert 'id="sum-grid"' not in HTML and 'id="list-tabs"' not in HTML
 
 
-def test_el_resumen_manda_y_el_more_conserva_lo_avanzado():
-    r = HTML[HTML.index("function render() {"):HTML.index("// VIEW SWITCHER")]
+def test_el_resumen_manda_y_no_hay_ver_mas():
+    r = HTML[HTML.index("function render() {"):HTML.index("// DATE NAVIGATION")]
     assert "renderOverview();" in r and "renderList" not in r
-    more = HTML[HTML.index('<details class="tp-more"'):HTML.index("</details>", HTML.index('<details class="tp-more"'))]
-    assert 'data-view="month"' in more and 'id="sport-filters"' in more
-    assert 'id="cal-area"' in more and 'id="s-compl"' not in more
+    # MIPLAN-SIN-VERMAS: ya no hay seccion plegada ni calendario grande
+    assert 'id="tp-more"' not in HTML and 'class="tp-more"' not in HTML
+    assert 'id="cal-area"' not in HTML and 'id="s-compl"' not in HTML
+    assert 'data-view="month"' not in HTML
+    assert 'id="sport-filters"' in HTML  # los filtros viven en el encabezado
 
 
 def test_franja_s3_sin_fila_de_tiempo_duplicada():
@@ -74,6 +76,7 @@ const run = new Function('cfg', 'document', 'window', '_t', `
   function weekMon(d) { var m = new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate() - (m.getDay() || 7) + 1); return m; }
   function currentRange() { var m = weekMon(new Date(cfg.today + 'T12:00:00')); return { start: iso(m), end: iso(addDays(m, 6)) }; }
   function applyFilter(a) { return a; }
+  function loadWeekSummary() {}
   function sessionsInRange(a, b) { return cfg.sessions.filter(s => s.date_iso >= a && s.date_iso <= b); }
   function pairPlanAndReal(arr) {
     var hp = {}, pa = {};
