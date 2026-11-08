@@ -89,3 +89,31 @@ def get_athletes_for_coach(coach_id: str, db: Session) -> list[str]:
         .all()
     }
     return list(from_relation | from_groups)
+
+
+def coach_athlete_ids(db: Session, coach, group_id: str | None = None) -> list[str]:
+    """
+    Universo único de atletas del coach: unión deduplicada de CoachAthlete
+    activo y miembros de grupos del coach. El grupo es solo organización:
+    un atleta sin grupo también es del coach. Sin bypass de admin (cada
+    admin ve su propio universo, igual que antes en los tableros).
+    Si se pasa group_id (debe ser un grupo del coach) se restringe a ese grupo.
+    """
+    coach_id = coach.id if hasattr(coach, "id") else coach
+    if group_id:
+        rows = db.query(GroupMember.athlete_id).join(
+            Group, Group.id == GroupMember.group_id
+        ).filter(Group.coach_id == coach_id, Group.id == group_id).all()
+        return sorted({r[0] for r in rows})
+    from_relation = {
+        r[0] for r in db.query(CoachAthlete.athlete_id).filter(
+            CoachAthlete.coach_id == coach_id, CoachAthlete.status == "active",
+        ).all()
+    }
+    from_groups = {
+        r[0] for r in db.query(GroupMember.athlete_id)
+        .join(Group, Group.id == GroupMember.group_id)
+        .filter(Group.coach_id == coach_id)
+        .all()
+    }
+    return sorted(from_relation | from_groups)

@@ -26,7 +26,7 @@ from ..schemas import (
 )
 from ..auth import require_role, hash_password
 from ..crypto import decrypt as _dec, encrypt_if_plain, is_encrypted
-from ..permissions import assert_coach_owns_athlete, assert_coach_owns_group
+from ..permissions import assert_coach_owns_athlete, assert_coach_owns_group, coach_athlete_ids
 
 router   = APIRouter(prefix="/coach", tags=["coach"])
 _coach   = require_role("coach", "admin")
@@ -64,15 +64,7 @@ def list_athletes(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     lista (y de cualquier selector que dependa de ella), aunque la
     relación coach-atleta ya estuviera activa.
     """
-    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
-    from_groups = db.query(User.id).join(
-        GroupMember, GroupMember.athlete_id == User.id
-    ).filter(GroupMember.group_id.in_(group_ids)) if group_ids else db.query(User.id).filter(False)
-    from_relation = db.query(User.id).join(
-        CoachAthlete, CoachAthlete.athlete_id == User.id
-    ).filter(CoachAthlete.coach_id == coach.id, CoachAthlete.status == "active")
-
-    athlete_ids = {r[0] for r in from_groups.all()} | {r[0] for r in from_relation.all()}
+    athlete_ids = coach_athlete_ids(db, coach)
     if not athlete_ids:
         return []
     members = db.query(User).filter(User.id.in_(athlete_ids), User.activo == True).all()
@@ -377,15 +369,9 @@ def assign_workout(body: AssignRequest,
             pass
         return assignments[0]
 
-    # Asignación individual — verificar que el atleta pertenece a un grupo del coach
-    athlete_in_group = db.query(GroupMember).join(
-        Group, Group.id == GroupMember.group_id
-    ).filter(
-        Group.coach_id == coach.id,
-        GroupMember.athlete_id == body.athlete_id,
-    ).first()
-    if not athlete_in_group:
-        raise HTTPException(403, "El atleta no pertenece a ningún grupo tuyo")
+    # Asignación individual — el atleta debe ser del coach (relación activa o grupo)
+    if body.athlete_id not in set(coach_athlete_ids(db, coach)):
+        raise HTTPException(403, "El atleta no pertenece a este coach")
 
     a = AssignedWorkout(
         template_id = body.template_id,
@@ -608,15 +594,9 @@ def move_assignment(
 
     a.date_iso = new_date
     if new_athlete:
-        # Verificar que el nuevo atleta pertenece a un grupo del coach
-        group_ids    = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
-        member_ids   = {
-            m.athlete_id
-            for gid in group_ids
-            for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
-        }
-        if new_athlete not in member_ids:
-            raise HTTPException(403, "Atleta no pertenece a tus grupos")
+        # Verificar que el nuevo atleta es del coach (relación activa o grupo)
+        if new_athlete not in set(coach_athlete_ids(db, coach)):
+            raise HTTPException(403, "Atleta no pertenece a este coach")
         a.athlete_id = new_athlete
 
     db.commit()
@@ -638,17 +618,10 @@ def get_status_board(
     from ..models import AIAthleteContext, AIInsight, GarminHealthDaily
     from datetime import date
 
-    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
     if group_id:
-        if group_id not in group_ids:
+        if not db.query(Group).filter(Group.id == group_id, Group.coach_id == coach.id).first():
             raise HTTPException(404, "Grupo no encontrado")
-        group_ids = [group_id]
-
-    athlete_ids = sorted({
-        m.athlete_id
-        for gid in group_ids
-        for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
-    })
+    athlete_ids = coach_athlete_ids(db, coach, group_id)
 
     if not athlete_ids:
         return []
@@ -691,8 +664,8 @@ def get_status_board(
             AssignedWorkout.date_iso   <= today_iso,
         ).count()
         completed_count = db.query(WL).filter(
-            WL.athlete_id == uid,
-            WL.logged_at  >= two_weeks_ago,
+            WL.user_id == uid,
+            WL.logged_at  >= datetime.fromisoformat(two_weeks_ago),
         ).count()
         compliance_pct = round(completed_count / assigned_count * 100) if assigned_count > 0 else None
 
@@ -758,18 +731,11 @@ def adherence(
     coach: User = Depends(_coach)
 ):
     """Cumplimiento por atleta para el período indicado."""
-    # Atletas del coach (filtrado opcional por grupo)
-    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
     if group_id:
-        if group_id not in group_ids:
+        if not db.query(Group).filter(Group.id == group_id, Group.coach_id == coach.id).first():
             raise HTTPException(404, "Grupo no encontrado")
-        group_ids = [group_id]
-
-    athlete_ids = list({
-        m.athlete_id
-        for gid in group_ids
-        for m in db.query(GroupMember).filter(GroupMember.group_id == gid).all()
-    })
+    # Atletas del coach (filtrado opcional por grupo)
+    athlete_ids = coach_athlete_ids(db, coach, group_id)
 
     template_ids = [t.id for t in db.query(WorkoutTemplate).filter(
         WorkoutTemplate.coach_id == coach.id
@@ -1378,13 +1344,9 @@ def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     cutoff_dt  = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).isoformat()
     cutoff_day = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).date().isoformat()
 
-    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
-    if not group_ids:
+    athlete_ids = coach_athlete_ids(db, coach)
+    if not athlete_ids:
         return {"alerts": [], "count": 0}
-    athlete_ids = [
-        m.athlete_id for m in
-        db.query(GroupMember).filter(GroupMember.group_id.in_(group_ids)).all()
-    ]
 
     alerts = []
 
@@ -1436,17 +1398,11 @@ def team_wellness(
     """Último registro de bienestar por atleta — para vista rápida en lista."""
     from datetime import date as _date, timedelta
 
-    group_ids = [g.id for g in db.query(Group).filter(Group.coach_id == coach.id).all()]
-    if not group_ids:
+    athlete_ids = coach_athlete_ids(db, coach)
+    if not athlete_ids:
         return []
 
-    athletes = (
-        db.query(User)
-        .join(GroupMember, GroupMember.athlete_id == User.id)
-        .filter(GroupMember.group_id.in_(group_ids), User.activo == True)
-        .distinct()
-        .all()
-    )
+    athletes = db.query(User).filter(User.id.in_(athlete_ids), User.activo == True).all()
 
     today = _date.today().isoformat()
     cutoff = (_date.today() - timedelta(days=7)).isoformat()
@@ -1516,6 +1472,7 @@ def assign_batch(
 
     created = []
     errors  = []
+    universe = set(coach_athlete_ids(db, coach))
 
     for idx, item in enumerate(body.assignments):
         if item.template_id not in coach_template_ids:
@@ -1550,6 +1507,9 @@ def assign_batch(
                     ))
                     created.append({"index": idx, "athlete_id": m.athlete_id, "date_iso": item.date_iso})
         else:
+            if item.athlete_id not in universe:
+                errors.append({"index": idx, "reason": "El atleta no pertenece a este coach"})
+                continue
             existing = db.query(AssignedWorkout).filter(
                 AssignedWorkout.template_id == item.template_id,
                 AssignedWorkout.athlete_id  == item.athlete_id,
