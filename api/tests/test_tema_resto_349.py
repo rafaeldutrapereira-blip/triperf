@@ -122,5 +122,6 @@ def test_variables_claras_definidas_solo_bajo_tema_claro():
 
 def test_build_349_y_precache():
     sw = _read("sw.js")
-    assert "BUILD_VERSION = '349'" in sw
+    m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
+    assert m and int(m.group(1)) >= 349
     assert "/theme-light.css?v=349" in sw

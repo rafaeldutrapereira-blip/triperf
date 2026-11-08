@@ -672,6 +672,18 @@
         font-size: 0.85rem;
         font-weight: 600;
       }
+    
+      /* RACEDAY-CAPAS (BUILD 350): niveles 1-2 solo con variables del sistema */
+      #dash-plan-card .chip-label { font-size: 0.95rem; }
+      .rd-fuel-title { font-size: 0.95rem; font-weight: 700; color: var(--sub); margin: 16px 0 8px; }
+      .rd-fuel { display: flex; gap: 10px; flex-wrap: wrap; }
+      .rd-fuel-item { flex: 1 1 140px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--r2); padding: 12px; }
+      .rd-fuel-v { font-size: 1.4rem; font-weight: 800; color: var(--text); }
+      .rd-fuel-l { font-size: 0.95rem; color: var(--sub); }
+      .rd-words { display: flex; flex-direction: column; gap: 8px; }
+      .rd-word { font-size: 1rem; line-height: 1.5; color: var(--text); padding: 10px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--r2); }
+      .rd-words-note { font-size: 0.95rem; color: var(--sub); margin-top: 6px; }
+      .rd-detail-sum { cursor: pointer; font-size: 1rem; font-weight: 700; color: var(--text); padding: 6px 0 12px; }
     </style>
       <link rel="stylesheet" href="theme-light.css?v=349" />
     <style id="lx-theme-light">
@@ -741,6 +753,8 @@
               </div>
 
               <div id="rd-race-section" style="display: none">
+                <!-- NIVEL 1: tu dia en una linea (RACEDAY-CAPAS) -->
+                <div id="rd-l1">
                 <!-- Cuenta regresiva -->
                 <div class="card" style="margin-bottom: 16px" id="countdown-card">
                   <div class="countdown-hero">
@@ -753,20 +767,129 @@
 
                 <!-- Tiempo predicho + 2 targets + boton unico -->
                 <div class="card" style="margin-bottom: 16px" id="dash-plan-card">
-                  <div class="card-title" data-i18n="rd_card_current_plan">Plan de Carrera Actual</div>
+                  <div class="card-title" data-i18n="rd_l1_title">Tu plan de carrera</div>
                   <div id="dash-plan-content"></div>
+                  <div id="rd-fuel" style="display: none"></div>
                   <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px">
-                    <button class="btn-primary" id="btn-auto-plan" onclick="generatePlan(false)" data-i18n="rd_btn_generate_update">
-                      Generar / Actualizar mi plan
+                    <button class="btn-primary" id="btn-auto-plan" onclick="generatePlan(false)" data-i18n="rd_btn_gen_my">
+                      Generar mi plan
                     </button>
                     <span id="plan-gen-msg" style="display: none; font-size: 0.85rem; color: var(--green)" data-i18n="rd_plan_generated">✓ Plan generado</span>
                     <span id="plan-method-badge" style="display: none; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.3rem 0.7rem; border-radius: 20px"></span>
                   </div>
                 </div>
 
+                </div>
+
+                <!-- NIVEL 2: el plan en palabras -->
+                <div id="rd-l2">
+                  <div class="card" style="margin-bottom: 16px" id="rd-words-card">
+                    <div class="card-title" data-i18n="rd_l2_title">El plan en palabras</div>
+                    <div id="rd-words" class="rd-words"><div class="empty-state" data-i18n="rd_words_none">Genera tu plan para ver aquí el detalle tramo a tramo.</div></div>
+                  </div>
+                  <details id="rd-plan-detail" class="rd-detail" style="margin-bottom: 16px">
+                    <summary class="rd-detail-sum" data-i18n="rd_l2_detail">Ver el detalle del plan</summary>
+                <!-- Detalle del plan generado -->
+                  <div id="plan-results" style="display: none">
+                    <div
+                      id="plan-confidence-row"
+                      style="display: none; margin-bottom: 16px"
+                    >
+                      <div class="card" style="text-align: center">
+                        <div
+                          style="
+                            font-size: 0.78rem;
+                            color: var(--sub);
+                            margin-bottom: 4px;
+                          "
+                        >
+                          <span data-i18n="rd_label_confidence">Confianza:</span>
+                          <strong id="plan-conf-pct" style="color: var(--acc)"
+                            >—</strong
+                          >
+                          &nbsp;·&nbsp;
+                          <span data-i18n="rd_label_estimated_range"
+                            >Rango estimado:</span
+                          >
+                          <strong id="plan-range" style="color: var(--text)"
+                            >—</strong
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      id="plan-goal-row"
+                      style="display: none; margin-bottom: 16px"
+                    >
+                      <div class="card">
+                        <div
+                          class="card-title"
+                          style="font-size: 0.85rem"
+                          data-i18n="rd_card_goal_vs_pred"
+                        >
+                          Meta vs Predicción
+                        </div>
+                        <div class="chips" style="margin-top: 8px">
+                          <div class="chip">
+                            <div
+                              class="chip-val"
+                              style="color: var(--green)"
+                              id="plan-goal-val"
+                            >
+                              —
+                            </div>
+                            <div class="chip-label" data-i18n="rd_chip_your_goal">
+                              Tu meta
+                            </div>
+                          </div>
+                          <div class="chip">
+                            <div class="chip-val" id="plan-goal-pred">—</div>
+                            <div class="chip-label" data-i18n="rd_chip_prediction">
+                              Predicción
+                            </div>
+                          </div>
+                          <div class="chip">
+                            <div class="chip-val" id="plan-goal-gap">—</div>
+                            <div class="chip-label" data-i18n="rd_chip_difference">
+                              Diferencia
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom: 16px">
+                      <!-- Splits -->
+                      <div class="card">
+                        <div class="card-title" data-i18n="rd_card_predicted_splits">
+                          Splits Predichos
+                        </div>
+                        <table class="splits-table" id="splits-table-plan"></table>
+                      </div>
+                      <!-- Pacing -->
+                      <div class="card">
+                        <div class="card-title" data-i18n="rd_card_pacing_targets">
+                          Targets de Pacing
+                        </div>
+                        <div id="pacing-targets-plan"></div>
+                      </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 16px">
+                      <div class="card-title" data-i18n="rd_card_prediction_basis">
+                        Base de la Predicción
+                      </div>
+                      <div id="plan-basis"></div>
+                    </div>
+                    <div class="card" style="margin-bottom: 16px; text-align: center">
+                      <a id="nutrition-link" class="btn-outline" style="display: inline-flex; text-decoration: none" href="nutrition.html" data-i18n="rd_link_nutrition_plan">Ver mi plan de nutrición</a>
+                    </div>
+                  </div>
+                  </details>
+                </div>
+
+                <!-- NIVEL 3: ajustes del generador (plegado) -->
                 <!-- Ajustes avanzados (plegado) -->
                 <details class="card" id="rd-advanced" style="margin-bottom: 16px">
-                  <summary class="card-title" style="cursor: pointer; margin-bottom: 0" data-i18n="rd_advanced">Ajustes avanzados</summary>
+                  <summary class="card-title" style="cursor: pointer; margin-bottom: 0" data-i18n="rd_advanced">Ajustes del generador</summary>
                   <p style="font-size: 0.85rem; color: var(--sub); margin: 12px 0 16px" data-i18n="rd_plan_desc">
                     El motor usa tu CTL, TSB y Recovery Score actuales para predecir
                     splits y generar targets de pacing. Opcionalmente ingresa tu FTP
@@ -1145,100 +1268,6 @@
                   </div>
                 </details>
 
-                <!-- Detalle del plan generado -->
-                  <div id="plan-results" style="display: none">
-                    <div
-                      id="plan-confidence-row"
-                      style="display: none; margin-bottom: 16px"
-                    >
-                      <div class="card" style="text-align: center">
-                        <div
-                          style="
-                            font-size: 0.78rem;
-                            color: var(--sub);
-                            margin-bottom: 4px;
-                          "
-                        >
-                          <span data-i18n="rd_label_confidence">Confianza:</span>
-                          <strong id="plan-conf-pct" style="color: var(--acc)"
-                            >—</strong
-                          >
-                          &nbsp;·&nbsp;
-                          <span data-i18n="rd_label_estimated_range"
-                            >Rango estimado:</span
-                          >
-                          <strong id="plan-range" style="color: var(--text)"
-                            >—</strong
-                          >
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      id="plan-goal-row"
-                      style="display: none; margin-bottom: 16px"
-                    >
-                      <div class="card">
-                        <div
-                          class="card-title"
-                          style="font-size: 0.85rem"
-                          data-i18n="rd_card_goal_vs_pred"
-                        >
-                          Meta vs Predicción
-                        </div>
-                        <div class="chips" style="margin-top: 8px">
-                          <div class="chip">
-                            <div
-                              class="chip-val"
-                              style="color: var(--green)"
-                              id="plan-goal-val"
-                            >
-                              —
-                            </div>
-                            <div class="chip-label" data-i18n="rd_chip_your_goal">
-                              Tu meta
-                            </div>
-                          </div>
-                          <div class="chip">
-                            <div class="chip-val" id="plan-goal-pred">—</div>
-                            <div class="chip-label" data-i18n="rd_chip_prediction">
-                              Predicción
-                            </div>
-                          </div>
-                          <div class="chip">
-                            <div class="chip-val" id="plan-goal-gap">—</div>
-                            <div class="chip-label" data-i18n="rd_chip_difference">
-                              Diferencia
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="grid-2" style="margin-bottom: 16px">
-                      <!-- Splits -->
-                      <div class="card">
-                        <div class="card-title" data-i18n="rd_card_predicted_splits">
-                          Splits Predichos
-                        </div>
-                        <table class="splits-table" id="splits-table-plan"></table>
-                      </div>
-                      <!-- Pacing -->
-                      <div class="card">
-                        <div class="card-title" data-i18n="rd_card_pacing_targets">
-                          Targets de Pacing
-                        </div>
-                        <div id="pacing-targets-plan"></div>
-                      </div>
-                    </div>
-                    <div class="card" style="margin-bottom: 16px">
-                      <div class="card-title" data-i18n="rd_card_prediction_basis">
-                        Base de la Predicción
-                      </div>
-                      <div id="plan-basis"></div>
-                    </div>
-                    <div class="card" style="margin-bottom: 16px; text-align: center">
-                      <a id="nutrition-link" class="btn-outline" style="display: inline-flex; text-decoration: none" href="nutrition.html" data-i18n="rd_link_nutrition_plan">Ver mi plan de nutrición</a>
-                    </div>
-                  </div>
               </div>
             </div>
           </div>
@@ -1868,6 +1897,64 @@
               });
           }
 
+
+          function renderPlanFuel(d, splits) {
+            var el = document.getElementById('rd-fuel');
+            var st = (d.nutrition || {}).strategy;
+            if (!el || !st || !st.carb_g_h) {
+              if (el) el.style.display = 'none';
+              return;
+            }
+            var hrs = (splits.total_s || 0) / 3600;
+            var fluidH = hrs > 0 && st.total_fluid_l ? Math.round((st.total_fluid_l / hrs) * 10) / 10 : null;
+            function item(v, l) {
+              return '<div class="rd-fuel-item"><div class="rd-fuel-v">' + escHtml(String(v)) +
+                '</div><div class="rd-fuel-l">' + escHtml(l) + '</div></div>';
+            }
+            el.innerHTML =
+              '<div class="rd-fuel-title">' + escHtml(_t('rd_fuel_title', 'Combustible por hora')) + '</div>' +
+              '<div class="rd-fuel">' +
+              item(st.carb_g_h + ' g/h', _t('rd_fuel_carb', 'Carbohidratos (CHO)')) +
+              (fluidH !== null ? item(fluidH + ' L/h', _t('rd_fuel_fluid', 'Líquido')) : '') +
+              (st.sodium_mg_h ? item(st.sodium_mg_h + ' mg/h', _t('rd_fuel_na', 'Sodio (Na)')) : '') +
+              '</div>';
+            el.style.display = 'block';
+          }
+
+          function renderPlanWords(d, splits, pacing) {
+            var el = document.getElementById('rd-words');
+            if (!el) return;
+            var rows = [];
+            function tpl(k, fb, m) {
+              var t = _t(k, fb);
+              Object.keys(m).forEach(function (n) { t = t.split('{' + n + '}').join(m[n]); });
+              return t;
+            }
+            function ok(v) { return v && v !== '—'; }
+            if (ok(splits.swim_fmt))
+              rows.push(tpl('rd_word_swim', '🏊 Nado (Natación): {t}.', { t: splits.swim_fmt }));
+            if (ok(splits.t1_fmt))
+              rows.push(tpl('rd_word_t1', '↔ Transición 1 (T1): {t}.', { t: splits.t1_fmt }));
+            if (ok(splits.bike_fmt))
+              rows.push(
+                pacing.bike_power
+                  ? tpl('rd_word_bike_w', '🚴 Bici: {t}, a {w} W de potencia media objetivo.', { t: splits.bike_fmt, w: pacing.bike_power })
+                  : tpl('rd_word_bike', '🚴 Bici: {t}.', { t: splits.bike_fmt }),
+              );
+            if (ok(splits.t2_fmt))
+              rows.push(tpl('rd_word_t2', '↔ Transición 2 (T2): {t}.', { t: splits.t2_fmt }));
+            if (ok(splits.run_fmt))
+              rows.push(
+                pacing.run_pace
+                  ? tpl('rd_word_run_p', '🏃 Carrera a pie: {t}, a un ritmo de {p}.', { t: splits.run_fmt, p: pacing.run_pace })
+                  : tpl('rd_word_run', '🏃 Carrera a pie: {t}.', { t: splits.run_fmt }),
+              );
+            if (!rows.length) return;
+            el.innerHTML =
+              rows.map(function (r) { return '<div class="rd-word">' + escHtml(r) + '</div>'; }).join('') +
+              '<div class="rd-words-note">' + escHtml(tpl('rd_word_total', 'Total estimado: {t}.', { t: splits.total_fmt || '—' })) + '</div>';
+          }
+
           function renderPlanResults(d) {
             document.getElementById('plan-results').style.display = 'block';
             var splits = d.splits || {};
@@ -1876,6 +1963,8 @@
               (d.pacing || {}).bike_power,
               (d.pacing || {}).run_pace,
             );
+            renderPlanFuel(d, splits);
+            renderPlanWords(d, splits, d.pacing || {});
             updateNutritionLink();
 
             // Confianza + rango (rescatado de race_predictor.html)
