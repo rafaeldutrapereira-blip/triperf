@@ -5,6 +5,30 @@
                                <div class="sb-overlay" id="sb-overlay"></div>    */
 (function(){
 
+  /* TEMA GLOBAL (DASHBOARD-EJECUTIVO): oscuro por defecto, selector en el menu.
+     La eleccion vive en localStorage `labx_theme`; un script inline temprano en
+     <head> (dashboard.html, shell.html) ya puso <html data-theme> antes del
+     primer pintado. Aqui se expone la API y se mantienen sincronizados los
+     iframes (shell) y las demas pestanas (evento storage). */
+  var LXTheme = window.LXTheme = (function(){
+    var KEY = 'labx_theme';
+    function norm(v){ return v === 'light' ? 'light' : 'dark'; }
+    function get(){ try{ return norm(localStorage.getItem(KEY)); }catch(e){ return 'dark'; } }
+    function paint(t){
+      try{ document.documentElement.setAttribute('data-theme', t); }catch(e){}
+      var bs = document.querySelectorAll('[data-theme-set]');
+      for(var i=0;i<bs.length;i++) bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute('data-theme-set') === t));
+      var fr = document.querySelectorAll('iframe');
+      for(var j=0;j<fr.length;j++){
+        try{ fr[j].contentDocument.documentElement.setAttribute('data-theme', t); }catch(e){}
+      }
+    }
+    function set(t){ t = norm(t); try{ localStorage.setItem(KEY, t); }catch(e){} paint(t); }
+    window.addEventListener('storage', function(e){ if(e.key === KEY) paint(norm(e.newValue)); });
+    paint(get());
+    return { get: get, set: set, apply: paint };
+  })();
+
   /* SHELL-1: dentro de la cascara (shell.html) la pagina corre en un iframe.
      body.lx-in-shell (nav.css) oculta el menu propio; el logout sale al top. */
   var _IN_SHELL = (window.self !== window.top);
@@ -212,6 +236,13 @@
         links +
       '</nav>' +
       '<div class="sb-sep"></div>' +
+      '<div class="sb-theme" role="group" aria-label="'+_escH(_nt('theme_label','Tema'))+'">' +
+        '<span class="sb-theme-lbl" data-i18n="theme_label">'+_escH(_nt('theme_label','Tema'))+'</span>' +
+        '<span class="sb-theme-seg">' +
+          '<button type="button" class="sb-theme-btn" data-theme-set="dark" aria-pressed="'+(LXTheme.get()==='dark')+'" onclick="LXTheme.set(\'dark\')" data-i18n="theme_dark">'+_escH(_nt('theme_dark','Oscuro'))+'</button>' +
+          '<button type="button" class="sb-theme-btn" data-theme-set="light" aria-pressed="'+(LXTheme.get()==='light')+'" onclick="LXTheme.set(\'light\')" data-i18n="theme_light">'+_escH(_nt('theme_light','Claro'))+'</button>' +
+        '</span>' +
+      '</div>' +
       '<div class="sb-foot">' +
         '<div class="sb-user">' +
           '<div class="sb-avatar" id="kl-sb-avatar">' + _escH(init) + '</div>' +

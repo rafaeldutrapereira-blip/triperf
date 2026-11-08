@@ -67,8 +67,8 @@ def test_login_redirige_a_shell_y_sw_precachea():
     assert int(re.search(r"BUILD_VERSION = '(\d+)'", sw).group(1)) >= 340
 
 
-NAV_CSS_V = "7"
-NAV_JS_V = "9"
+NAV_CSS_V = "8"
+NAV_JS_V = "10"
 
 
 def test_version_de_nav_uniforme_en_todas_las_paginas():

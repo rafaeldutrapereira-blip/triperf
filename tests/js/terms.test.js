@@ -146,7 +146,7 @@ test('render() usa un <button> accesible, no un div clickeable', () => {
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /aria-controls="lx-term-card-ctl"/);
   assert.doesNotMatch(html, /<div/, 'el disparador no debe ser un div');
-  assert.match(html, /Condición física/, 'debe mostrar el nombre simple');
+  assert.match(html, /lx-term-name">Forma</, 'debe mostrar el nombre simple (DASHBOARD-EJECUTIVO: Forma + sigla entre paréntesis por CSS)');
   assert.match(html, /<span class="lx-term-sigla">CTL<\/span>/, 'la sigla va como subtítulo');
 });
 

@@ -16,7 +16,7 @@ function injectCSS(){
   var s = document.createElement('style');
   s.id = 'lx-foot-css';
   s.textContent = [
-    '.lx-foot{background:linear-gradient(180deg,#060E1C 0%,var(--bg,#04080F) 100%);border-top:1px solid rgba(8,145,178,.1);padding:1.5rem 0;margin-top:1.5rem}',
+    '.lx-foot{background:var(--bg,#04080F);border-top:1px solid var(--border2,rgba(8,145,178,.1));padding:1.5rem 0;margin-top:1.5rem}',
     '.lx-foot-c{max-width:1280px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}',
     '.lx-foot-in{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}',
     '.lx-foot-brand{font-family:"Barlow Condensed",sans-serif;font-size:1.1rem;font-weight:900;display:flex;align-items:center;gap:.3rem;color:var(--text,#F0F9FF)}',

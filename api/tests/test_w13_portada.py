@@ -16,12 +16,13 @@ def _squash(s):
 # ── Dashboard ────────────────────────────────────────────────────────────────
 def test_dashboard_tres_piezas_en_orden():
     h = _read("dashboard.html")
-    i_phrase = h.index('id="w13-phrase"')
-    i_race = h.index('id="kc-race"')
-    i_today = h.index('id="w13-today"')
+    # DASHBOARD-EJECUTIVO (344): el orden ahora son tres bandas
+    # (hoy: insight + frase; carga: que toca hoy; destino: carrera)
     i_insight = h.index('id="insight-card"')
-    # frase, carrera y "que toca hoy" van antes del insight denso
-    assert i_phrase < i_race < i_today < i_insight
+    i_phrase = h.index('id="w13-phrase"')
+    i_today = h.index('id="w13-today"')
+    i_race = h.index('id="kc-race"')
+    assert i_insight < i_phrase < i_today < i_race
 
 
 def test_dashboard_frase_enlaza_a_estado_con_misma_fuente():
@@ -59,11 +60,10 @@ def test_dashboard_cuenta_a_la_carrera_en_dias_sin_segundos():
     assert "cd-s" not in m.group(0)
 
 
-def test_dashboard_tarjetas_densas_son_filas_plegables():
+def test_dashboard_tarjetas_densas_ya_no_son_plegables_344():
     h = _read("dashboard.html")
-    rows = re.findall(r'<details class="panel sr kpi-card w13-row">\s*<summary class="kpi-card-head">', h)
-    assert len(rows) == 3
-    # el resumen conserva titulo y pildora; el detalle sigue dentro
+    # 344: las bandas 1-3 se ven sin clics; ninguna tarjeta densa es un <details> cerrado
+    assert 'class="panel sr kpi-card w13-row"' not in h
     for pill in ("cluster-carga-pill", "cluster-hoy-pill", "cluster-objetivo-pill"):
         assert pill in h
 
