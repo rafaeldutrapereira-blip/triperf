@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -25,6 +25,7 @@ from ..schemas import (
     ApplyWeekTemplateRequest, CalendarDay, CalendarAthleteDay,
 )
 from ..auth import require_role, hash_password
+from ..volume_factor import apply_volume_factor, effective_template, validate_factor
 from ..crypto import decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..permissions import assert_coach_owns_athlete, assert_coach_owns_group, coach_athlete_ids
 
@@ -327,6 +328,7 @@ def assign_workout(body: AssignRequest,
                 date_iso    = body.date_iso,
                 notas       = body.notas,
             )
+            apply_volume_factor(a, tpl, body.volume_factor)
             db.add(a)
             assignments.append(a)
         db.commit()
@@ -380,6 +382,7 @@ def assign_workout(body: AssignRequest,
         date_iso    = body.date_iso,
         notas       = body.notas,
     )
+    apply_volume_factor(a, tpl, body.volume_factor)
     db.add(a); db.commit(); db.refresh(a)
     # Auto-entrega si es workout bici con bloques
     athlete = db.query(User).filter(User.id == body.athlete_id).first()
@@ -548,6 +551,10 @@ def copy_week(
             group_id    = a.group_id,
             date_iso    = new_date,
             notas       = a.notas,
+            volume_factor      = a.volume_factor,
+            dur_min_scaled     = a.dur_min_scaled,
+            dist_km_scaled     = a.dist_km_scaled,
+            blocks_json_scaled = a.blocks_json_scaled,
         )
         db.add(copy)
         created += 1
@@ -871,7 +878,7 @@ def sync_to_garmin(
     if not athlete.garmin_email or not athlete.garmin_password:
         raise HTTPException(400, f"El atleta {athlete.nombre} no tiene credenciales Garmin configuradas")
 
-    tpl = a.template
+    tpl = effective_template(a, a.template)   # COACH-VARIANTES
     session_dict = {
         "name":        tpl.nombre,
         "sport":       tpl.sport,
@@ -946,7 +953,7 @@ def sync_group_to_garmin(
             ))
             continue
         try:
-            tpl = a.template
+            tpl = effective_template(a, a.template)   # COACH-VARIANTES
             res = schedule_workout_for_athlete(
                 session          = {"name": tpl.nombre, "sport": tpl.sport,
                                     "dur_min": tpl.dur_min, "dist_km": tpl.dist_km,
@@ -1443,6 +1450,12 @@ class BatchAssignItem(BaseModel):
     group_id:    Optional[str] = None
     date_iso:    str
     notas:       Optional[str] = None
+    volume_factor: Optional[float] = None   # COACH-VARIANTES: 0.5-1.5 por destino (None = 1.0)
+
+    @field_validator("volume_factor")
+    @classmethod
+    def _vf(cls, v):
+        return validate_factor(v)
 
 
 class BatchAssignRequest(BaseModel):
@@ -1555,6 +1568,7 @@ def assign_batch(
                         date_iso    = item.date_iso,
                         notas       = item.notas,
                     )
+                    apply_volume_factor(row, coach_templates[item.template_id], item.volume_factor)
                     db.add(row); new_rows.append(row)
                     created.append({"index": idx, "athlete_id": m.athlete_id, "date_iso": item.date_iso})
         else:
@@ -1576,6 +1590,7 @@ def assign_batch(
                 date_iso    = item.date_iso,
                 notas       = item.notas,
             )
+            apply_volume_factor(row, coach_templates[item.template_id], item.volume_factor)
             db.add(row); new_rows.append(row)
             created.append({"index": idx, "athlete_id": item.athlete_id, "date_iso": item.date_iso,
                             "_row": row})

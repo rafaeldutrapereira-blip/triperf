@@ -243,6 +243,11 @@ def deliver_bike_workout(assignment, athlete: "User", tpl: "WorkoutTemplate") ->
     """
     result = {"email_sent": False, "garmin_ok": False, "garmin_skipped": False}
 
+    # COACH-VARIANTES: la entrega usa los valores ya escalados de la fila
+    # (con factor 1.0 devuelve la plantilla tal cual).
+    from .volume_factor import effective_template
+    tpl = effective_template(assignment, tpl)
+
     # 1. Zwift email — solo bici, el .zwo asume campos de potencia
     # (power/power_low/power_high) que los bloques de carrera no tienen
     # (usan pace/zone/dist_m). Sin este chequeo, asignar un template de

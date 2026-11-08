@@ -28,6 +28,7 @@ from ..schemas import (
     ApplyMacrocycleRequest,
 )
 from ..auth import require_role
+from ..volume_factor import apply_volume_factor, effective_template
 from ..permissions import assert_coach_owns_athlete, coach_athlete_ids
 from ..services.performance_analytics_service import build_plan_impact
 
@@ -67,8 +68,19 @@ def _assign_to_out(a: AssignedWorkout) -> AssignedWorkoutOut:
             dur_min=a.template.dur_min, dist_km=a.template.dist_km,
             tss=a.template.tss, notas=a.template.notas,
             created_at=a.template.created_at,
-        )
+        ),
+        volume_factor=a.volume_factor, dur_min_scaled=a.dur_min_scaled,
+        dist_km_scaled=a.dist_km_scaled, blocks_json_scaled=a.blocks_json_scaled,
     )
+
+
+def _factor_for(body, target_id):
+    """COACH-VARIANTES: factor del destino (por atleta si viene en volume_factors,
+    si no el general; None = 1.0)."""
+    per = getattr(body, "volume_factors", None) or {}
+    if target_id is not None and target_id in per:
+        return per[target_id]
+    return getattr(body, "volume_factor", None)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -286,6 +298,7 @@ def _sync_garmin_assigns(db, created_assigns):
             ).first()
             if not tpl:
                 continue
+            tpl = effective_template(a, tpl)   # COACH-VARIANTES: valores escalados de la fila
             athletes_to_sync = []
             if a.athlete_id:
                 ath = db.query(User).filter(User.id == a.athlete_id).first()
@@ -362,6 +375,7 @@ def apply_week_template(
                 date_iso    = target_date,
                 notas       = d.notas,
             )
+            apply_volume_factor(a, d.workout, _factor_for(body, tid if multi else body.athlete_id))
             db.add(a)
             created_assigns.append((a, d.workout_template_id, target_date))
             n += 1
@@ -589,6 +603,7 @@ def apply_macrocycle(mc_id: str, body: ApplyMacrocycleRequest, db: Session = Dep
                     group_id=None if multi else body.group_id,
                     date_iso=target_date, notas=day.notas,
                 )
+                apply_volume_factor(a, day.workout, _factor_for(body, tid if multi else body.athlete_id))
                 db.add(a); n += 1
         total_created += n
         if multi:

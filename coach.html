@@ -607,6 +607,15 @@
       .lx-dest .lx-dest-row small { color: var(--dim); margin-left: auto; font-size: 0.7rem; }
       .lx-dest-empty { padding: 0.6rem; font-size: 0.78rem; color: var(--dim); text-align: center; }
       .lx-dest-count { margin-top: 0.4rem; font-size: 0.78rem; font-weight: 600; }
+      .lx-vol { border: 1px solid var(--border2); border-radius: 8px; padding: 0.45rem 0.55rem; }
+      .lx-vol .lx-vol-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+      .lx-vol .lx-vol-bar .btn { padding: 0.2rem 0.6rem; font-size: 0.74rem; }
+      .lx-vol .lx-vol-bar .btn.on { background: var(--accent, #3b82f6); color: #fff; border-color: transparent; }
+      .lx-vol input[type='number'] { width: 5rem; padding: 0.2rem 0.4rem; font-size: 0.78rem; }
+      .lx-vol .lx-vol-hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+      .lx-vol .lx-vol-err { color: var(--danger, #ef4444); }
+      .lx-dest input.lx-vf-row { width: 4.2rem; margin-left: auto; padding: 0.1rem 0.3rem; font-size: 0.72rem; }
+      .lx-vol-badge { font-size: 0.68rem; font-weight: 600; margin-left: 0.4rem; padding: 0.05rem 0.35rem; border-radius: 999px; border: 1px solid var(--border2); color: var(--muted); }
       .lx-dest-sum { font-size: 0.74rem; color: var(--muted); margin-top: 0.15rem; word-break: break-word; }
       .lx-dest-report { margin-top: 0.6rem; font-size: 0.8rem; }
       .lx-dest-report .ok { color: var(--green); font-weight: 600; }
@@ -1121,6 +1130,10 @@
             <div class="field" id="asgn-athlete-field">
               <label><span data-i18n="coach_h024">Atleta</span></label>
               <div id="asgn-dest"></div>
+            </div>
+            <div class="field">
+              <label>Volumen</label>
+              <div id="asgn-vol"></div>
             </div>
             <div class="field" id="asgn-group-field" style="display: none">
               <label>Grupo</label>
@@ -2778,6 +2791,10 @@
           <label><span data-i18n="coach_h024">Atleta</span></label>
           <div id="wta-dest"></div>
         </div>
+        <div class="field">
+          <label>Volumen</label>
+          <div id="wta-vol"></div>
+        </div>
         <div id="wta-group-row" class="field" style="display: none">
           <label>Grupo</label
           ><select id="wta-group">
@@ -3017,6 +3034,10 @@
         <div id="mca-athlete-row" class="field">
           <label><span data-i18n="coach_h024">Atleta</span></label>
           <div id="mca-dest"></div>
+        </div>
+        <div class="field">
+          <label>Volumen</label>
+          <div id="mca-vol"></div>
         </div>
         <div id="mca-group-row" class="field" style="display: none">
           <label>Grupo</label
@@ -6121,7 +6142,7 @@
         var DEST_RENDER_MAX = 300;
         var _dest = {};
         function destState(pfx) {
-          return (_dest[pfx] = _dest[pfx] || { ids: [], q: '', group: '' });
+          return (_dest[pfx] = _dest[pfx] || { ids: [], q: '', group: '', vol: 1, vf: {} });
         }
         // Atletas del coach que pasan el buscador y el filtro de grupo (por id).
         function destFilter(list, f, groups) {
@@ -6190,9 +6211,41 @@
           } catch (x) {}
           return t.slice(0, 200);
         }
-        function destBatchItems(ids, tplId, date, notas) {
+        // COACH-VARIANTES: factor de volumen 0.5-1.5 (null = valor invalido).
+        var VOL_MIN = 0.5;
+        var VOL_MAX = 1.5;
+        function volParse(v) {
+          if (v === '' || v == null) return null;
+          var n = Number(String(v).replace(',', '.'));
+          if (!isFinite(n) || n < VOL_MIN || n > VOL_MAX) return null;
+          return Math.round(n * 100) / 100;
+        }
+        // Factor del atleta: su override valido, si no el general (1 = sin escala).
+        function volFactorFor(st, id) {
+          var o = st && st.vf && id != null ? volParse(st.vf[id]) : null;
+          if (o != null) return o;
+          var g = volParse(st && st.vol);
+          return g == null ? 1 : g;
+        }
+        // Overrides por atleta distintos del general, solo para ids seleccionados.
+        function volOverrides(st, ids) {
+          var out = {};
+          var g = volFactorFor({ vol: st.vol }, null);
+          ids.forEach(function (id) {
+            var o = st && st.vf ? volParse(st.vf[id]) : null;
+            if (o != null && o !== g) out[id] = o;
+          });
+          return out;
+        }
+        function volLabel(f) {
+          return 'Volumen ×' + Math.round(f * 100) / 100;
+        }
+        function destBatchItems(ids, tplId, date, notas, factorOf) {
           return ids.map(function (id) {
-            return { template_id: tplId, athlete_id: id, date_iso: date, notas: notas };
+            var it = { template_id: tplId, athlete_id: id, date_iso: date, notas: notas };
+            var f = factorOf ? factorOf(id) : 1;
+            if (f && f !== 1) it.volume_factor = f;
+            return it;
           });
         }
         // chunks: [{ids:[…], resp|error}] en el mismo orden en que se enviaron.
@@ -6290,10 +6343,82 @@
         window.destIds = function (pfx) {
           return destState(pfx).ids.slice();
         };
+        var VOL_PRESETS = [0.8, 1, 1.2];
+        function volMount(pfx) {
+          var box = document.getElementById(pfx + '-vol');
+          if (!box) return;
+          var st = destState(pfx);
+          var g = volParse(st.vol);
+          box.innerHTML =
+            '<div class="lx-vol"><div class="lx-vol-bar" role="group" aria-label="Factor de volumen">' +
+            VOL_PRESETS.map(function (p) {
+              return (
+                '<button type="button" class="btn btn-ghost btn-sm' + (g === p ? ' on' : '') +
+                '" data-vol="' + p + '" onclick="volSet(\'' + pfx + '\', ' + p + ')">×' + p.toFixed(1) + '</button>'
+              );
+            }).join('') +
+            '<input type="number" id="' + pfx + '-vol-custom" step="0.05" min="0.5" max="1.5" placeholder="×" aria-label="Factor personalizado" value="' +
+            (g != null && VOL_PRESETS.indexOf(g) < 0 ? g : '') +
+            '" oninput="volSet(\'' + pfx + '\', this.value, true)" />' +
+            '</div><div class="lx-vol-hint" id="' + pfx + '-vol-hint"></div></div>';
+          volHint(pfx);
+        }
+        function volHint(pfx) {
+          var el = document.getElementById(pfx + '-vol-hint');
+          if (!el) return;
+          var g = volParse(destState(pfx).vol);
+          if (g == null) {
+            el.className = 'lx-vol-hint lx-vol-err';
+            el.textContent = 'Factor inválido: usa un valor entre 0,5 y 1,5.';
+          } else {
+            el.className = 'lx-vol-hint';
+            el.textContent =
+              g === 1
+                ? 'Sin escala (×1.0): la sesión cae igual que el template.'
+                : 'Duración, distancia y bloques × ' + g + ' (la intensidad no cambia). Por atleta puedes fijar otro factor en la lista.';
+          }
+        }
+        window.volSet = function (pfx, v, custom) {
+          var st = destState(pfx);
+          st.vol = custom ? v : Number(v);
+          var box = document.getElementById(pfx + '-vol');
+          if (box) {
+            var g = volParse(st.vol);
+            box.querySelectorAll('button[data-vol]').forEach(function (b) {
+              b.classList.toggle('on', g === Number(b.getAttribute('data-vol')));
+            });
+            if (!custom) {
+              var c = document.getElementById(pfx + '-vol-custom');
+              if (c) c.value = '';
+            }
+          }
+          volHint(pfx);
+        };
+        window.volRowSet = function (pfx, id, v) {
+          var st = destState(pfx);
+          st.vf = st.vf || {};
+          if (v === '' || v == null) delete st.vf[id];
+          else st.vf[id] = v;
+          var inp = document.querySelector('#' + pfx + '-dest-list input.lx-vf-row[data-id="' + id + '"]');
+          if (inp) inp.style.outline = v !== '' && volParse(v) == null ? '1px solid var(--danger, #ef4444)' : '';
+        };
+        // true si hay un factor general u override invalido (bloquea el envio).
+        function volInvalid(pfx, ids) {
+          var st = destState(pfx);
+          if (volParse(st.vol) == null) return true;
+          return (ids || []).some(function (id) {
+            return st.vf && st.vf[id] != null && st.vf[id] !== '' && volParse(st.vf[id]) == null;
+          });
+        }
         function destMount(pfx, reset) {
           var box = document.getElementById(pfx + '-dest');
           if (!box) return;
           var st = destState(pfx);
+          if (reset) {
+            st.vol = 1;
+            st.vf = {};
+          }
+          volMount(pfx);
           var known = {};
           (_cache.athletes || []).forEach(function (a) {
             known[a.id] = true;
@@ -6358,7 +6483,12 @@
                     '<label class="lx-dest-row"><input type="checkbox" value="' + u.id + '"' +
                     (sel[u.id] ? ' checked' : '') +
                     ' onchange="destToggle(\'' + pfx + '\', this.value, this.checked)" />' +
-                    '<span>' + esc(u.nombre) + '</span><small>' + esc(u.email || '') + '</small></label>'
+                    '<span>' + esc(u.nombre) + '</span><small>' + esc(u.email || '') + '</small>' +
+                    (sel[u.id]
+                      ? '<input type="number" class="lx-vf-row" data-id="' + u.id + '" step="0.05" min="0.5" max="1.5" placeholder="×" title="Factor de volumen de este atleta (vacío = general)" aria-label="Factor de volumen" value="' +
+                        esc(st.vf && st.vf[u.id] != null ? st.vf[u.id] : '') + '" oninput="volRowSet(\'' + pfx + '\', \'' + u.id + '\', this.value)" onclick="event.stopPropagation()" />'
+                      : '') +
+                    '</label>'
                   );
                 })
                 .join('') +
@@ -6475,6 +6605,7 @@
           destClearReport('asgn');
           var ids = [];
           var body = { template_id: tpl, date_iso: date, notas: notes };
+          var _vst = destState('asgn');
           if (type === 'multi') {
             ids = destIds('asgn');
             if (!ids.length) {
@@ -6482,7 +6613,18 @@
               return;
             }
             if (ids.length === 1) body.athlete_id = ids[0]; // caso singular: /coach/assign
+            if (volInvalid('asgn', ids)) {
+              toast('Factor de volumen inválido (0,5 – 1,5)', 'err');
+              return;
+            }
+            var _f1 = volFactorFor(_vst, ids[0]);
+            if (ids.length === 1 && _f1 !== 1) body.volume_factor = _f1;
           } else {
+            if (volInvalid('asgn', [])) {
+              toast('Factor de volumen inválido (0,5 – 1,5)', 'err');
+              return;
+            }
+            if (volFactorFor(_vst, null) !== 1) body.volume_factor = volFactorFor(_vst, null);
             var gid = document.getElementById('asgn-group').value;
             if (!gid) {
               toast('Selecciona un grupo', 'err');
@@ -6548,7 +6690,10 @@
         // Sesión suelta a N atletas: /coach/assign/batch troceado en llamadas de
         // hasta DEST_BATCH_MAX ítems; el reporte sale por atleta.
         async function submitAssignMulti(ids, tpl, date, notes, syncGarmin) {
-          var items = destBatchItems(ids, tpl, date, notes);
+          var _vst2 = destState('asgn');
+          var items = destBatchItems(ids, tpl, date, notes, function (id) {
+            return volFactorFor(_vst2, id);
+          });
           var parts = destChunk(ids, DEST_BATCH_MAX);
           var chunks = [];
           var off = 0;
@@ -7044,6 +7189,11 @@
                     ? '<span style="color:var(--muted);font-size:.72rem;margin-left:.4rem">' +
                       a.template.dur_min +
                       ' min</span>'
+                    : '') +
+                  (a.volume_factor && a.volume_factor !== 1
+                    ? '<span class="lx-vol-badge" title="Factor de volumen aplicado al asignar">' +
+                      volLabel(a.volume_factor) +
+                      '</span>'
                     : '') +
                   (a.notas
                     ? '<div style="font-size:.7rem;color:var(--dim)">' +
@@ -8749,6 +8899,15 @@
 
         // Aplica semana tipo / macrociclo a N atletas: athlete_ids[] en trozos de
         // DEST_BATCH_MAX; el backend responde results[] por atleta.
+        // Agrega el factor general y los overrides por atleta (solo si difieren de 1.0).
+        function volExtra(pfx, ids, extra) {
+          var st = destState(pfx);
+          var g = volFactorFor({ vol: st.vol }, null);
+          if (g !== 1) extra.volume_factor = g;
+          var ov = volOverrides(st, ids);
+          if (Object.keys(ov).length) extra.volume_factors = ov;
+          return extra;
+        }
         async function applyMulti(path, ids, extra) {
           var chunks = [];
           var parts = destChunk(ids, DEST_BATCH_MAX);
@@ -8786,11 +8945,15 @@
             toast(_t('coach_s099', 'Selecciona atleta o grupo'), 'err');
             return;
           }
+          if (volInvalid('wta', ids)) {
+            toast('Factor de volumen inválido (0,5 – 1,5)', 'err');
+            return;
+          }
           destClearReport('wta');
           var path = '/coach/week-templates/' + wtId + '/apply';
           try {
             if (type === 'multi') {
-              var m = await applyMulti(path, ids, { start_date: start, sync_garmin: sync });
+              var m = await applyMulti(path, ids, volExtra('wta', ids, { start_date: start, sync_garmin: sync }));
               var made = m.rep.ok.reduce(function (n, o) { return n + (o.created || 0); }, 0);
               if (m.rep.failed.length) {
                 destShowReport('wta', m.rep, 'semana creada');
@@ -8810,6 +8973,7 @@
               athlete_id: null,
               group_id: grpId || null,
               sync_garmin: sync,
+              volume_factor: volFactorFor(destState('wta'), null) !== 1 ? volFactorFor(destState('wta'), null) : undefined,
             });
             closeModal('modal-wt-apply');
             toast(
@@ -9188,11 +9352,15 @@
             toast(_t('coach_s099', 'Selecciona atleta o grupo'), 'err');
             return;
           }
+          if (volInvalid('mca', ids)) {
+            toast('Factor de volumen inválido (0,5 – 1,5)', 'err');
+            return;
+          }
           destClearReport('mca');
           var path = '/coach/macrocycles/' + mcId + '/apply';
           try {
             if (type === 'multi') {
-              var m = await applyMulti(path, ids, { start_date: start, sync_garmin: sync });
+              var m = await applyMulti(path, ids, volExtra('mca', ids, { start_date: start, sync_garmin: sync }));
               var made = m.rep.ok.reduce(function (n, o) { return n + (o.created || 0); }, 0);
               if (m.rep.failed.length) {
                 destShowReport('mca', m.rep, 'macrociclo creado');
@@ -9212,6 +9380,7 @@
               athlete_id: null,
               group_id: grpId || null,
               sync_garmin: sync,
+              volume_factor: volFactorFor(destState('mca'), null) !== 1 ? volFactorFor(destState('mca'), null) : undefined,
             });
             closeModal('modal-mc-apply');
             toast(

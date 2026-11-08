@@ -4,9 +4,9 @@ Pydantic v2 schemas — request / response bodies
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 
 # ─────────────────────────────────────────────
@@ -208,6 +208,13 @@ class AssignRequest(BaseModel):
     athlete_id:  Optional[str] = None
     group_id:    Optional[str] = None
     notas:       Optional[str] = None
+    volume_factor: Optional[float] = None   # COACH-VARIANTES: 0.5-1.5 (None = 1.0)
+
+    @field_validator("volume_factor")
+    @classmethod
+    def validate_volume_factor(cls, v):
+        from .volume_factor import validate_factor
+        return validate_factor(v)
 
     @field_validator("date_iso")
     @classmethod
@@ -234,11 +241,28 @@ class AssignedWorkoutOut(BaseModel):
     garmin_push_status: Optional[str] = None
     garmin_push_error:  Optional[str] = None
     garmin_push_at:     Optional[datetime] = None
+    # COACH-VARIANTES: factor aplicado (None = 1.0). La plantilla ya viaja escalada.
+    volume_factor:      Optional[float] = None
+    dur_min_scaled:     Optional[int] = None
+    dist_km_scaled:     Optional[float] = None
+    blocks_json_scaled: Optional[str] = None
     # W17: origen de la sesion en el plan del dia ('labx' | 'garmin') y hecha con evidencia real.
     source:             str = "labx"
     done:               Optional[bool] = None
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def _apply_scaled_template(self):
+        # El atleta (y el coach) ven la plantilla con los valores ya escalados.
+        if self.volume_factor not in (None, 1.0) and self.template is not None:
+            if self.dur_min_scaled is not None:
+                self.template.dur_min = self.dur_min_scaled
+            if self.dist_km_scaled is not None:
+                self.template.dist_km = self.dist_km_scaled
+            if self.blocks_json_scaled is not None:
+                self.template.blocks_json = self.blocks_json_scaled
+        return self
 
 
 # ─────────────────────────────────────────────
@@ -432,6 +456,20 @@ class ApplyWeekTemplateRequest(BaseModel):
     group_id:     Optional[str] = None
     athlete_ids:  Optional[List[str]] = None   # destino múltiple (excluyente con athlete_id/group_id)
     sync_garmin:  bool = False
+    volume_factor:  Optional[float] = None            # COACH-VARIANTES: factor general 0.5-1.5
+    volume_factors: Optional[Dict[str, float]] = None  # factor por atleta (destino multiple); pisa al general
+
+    @field_validator("volume_factor")
+    @classmethod
+    def _vf(cls, v):
+        from .volume_factor import validate_factor
+        return validate_factor(v)
+
+    @field_validator("volume_factors")
+    @classmethod
+    def _vfs(cls, v):
+        from .volume_factor import validate_factor
+        return None if v is None else {k: validate_factor(x) for k, x in v.items()}
 
 # ─────────────────────────────────────────────
 # CALENDAR
@@ -492,6 +530,20 @@ class ApplyMacrocycleRequest(BaseModel):
     group_id:    Optional[str] = None
     athlete_ids: Optional[List[str]] = None   # destino múltiple (excluyente con athlete_id/group_id)
     sync_garmin: bool = False
+    volume_factor:  Optional[float] = None            # COACH-VARIANTES: factor general 0.5-1.5
+    volume_factors: Optional[Dict[str, float]] = None  # factor por atleta (destino multiple); pisa al general
+
+    @field_validator("volume_factor")
+    @classmethod
+    def _vf(cls, v):
+        from .volume_factor import validate_factor
+        return validate_factor(v)
+
+    @field_validator("volume_factors")
+    @classmethod
+    def _vfs(cls, v):
+        from .volume_factor import validate_factor
+        return None if v is None else {k: validate_factor(x) for k, x in v.items()}
 
 
 # ─────────────────────────────────────────────

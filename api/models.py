@@ -238,6 +238,14 @@ class AssignedWorkout(Base):
     garmin_push_error  = Column(Text,   nullable=True)    # detalle si failed
     garmin_push_at     = Column(DateTime, nullable=True)
 
+    # COACH-VARIANTES (BUILD 363): factor de volumen por destino (0.5-1.5).
+    # NULL = sin escala (1.0, fila identica a la historica). Con factor, la fila
+    # guarda los valores ya escalados de la plantilla (duracion, distancia, bloques).
+    volume_factor      = Column(Float,   nullable=True)
+    dur_min_scaled     = Column(Integer, nullable=True)
+    dist_km_scaled     = Column(Float,   nullable=True)
+    blocks_json_scaled = Column(Text,    nullable=True)
+
     template = relationship("WorkoutTemplate", back_populates="assigned")
     athlete  = relationship("User",  back_populates="assigned_workouts", foreign_keys=[athlete_id])
     group    = relationship("Group", back_populates="assigned_workouts", foreign_keys=[group_id])

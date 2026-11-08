@@ -3326,9 +3326,10 @@ def _bike_target_power_series(owner: User, act: GarminActivity, t_arr: list, db:
     )
     if not aw:
         return None
-    _, template = aw
+    _aw_row, template = aw
     try:
-        blocks = _json.loads(template.blocks_json)
+        # COACH-VARIANTES: bloques ya escalados de la fila si hubo factor de volumen
+        blocks = _json.loads(_aw_row.blocks_json_scaled or template.blocks_json)
     except Exception:
         return None
     if not blocks:
