@@ -20,8 +20,9 @@ HTML = _read("detalle.html")
 
 
 def _pmc_hero_block():
-    i = HTML.index("if (metric === 'pmc') {\r\n          // W5") if "\r\n" in HTML else HTML.index("if (metric === 'pmc') {\n          // W5")
-    j = HTML.index("heroPmcExtras(pAll);", i)
+    # DETALLE-CAPAS (372): el heroe de Carga y forma lidera con Equilibrio (TSB).
+    i = HTML.index("if (metric === 'pmc') {", HTML.index("function _renderCore"))
+    j = HTML.index("} else {", i)
     return HTML[i:j]
 
 
@@ -31,24 +32,26 @@ def test_heroe_muestra_titular_llano_y_una_sola_cifra():
     assert squash("Estás en forma para entrenar fuerte") in sq
     assert squash("Estás acumulando fatiga") in sq
     blk = squash(_pmc_hero_block())
-    # una sola cifra principal (condicion fisica) rotulada en llano, con variacion
+    # una sola cifra principal: el Equilibrio (TSB), con su nombre en el rotulo
     assert blk.count('getElementById("hero-val").textContent') == 1
-    assert squash("dtw_hero_fitness_label") in blk
-    assert squash("ctlDelta") in blk
+    assert squash("NM.tsb") in blk
+    # el titular llano y el estado en palabras viven en el Nivel 1
+    assert 'id="n1-status"' in HTML
+    assert squash("h.textContent = L.headline") in sq
 
 
 def test_siglas_no_aparecen_en_el_texto_principal_del_heroe():
-    blk = re.sub(r"//[^\n]*", "", _pmc_hero_block())
-    for sigla in ("CTL", "ATL", "TSB"):
-        assert sigla not in blk, sigla
-    # el unit del heroe ya no es ' CTL'
+    # los titulos son nombre + (sigla): nunca la sigla sola ni "CTL — Fitness"
     assert "' CTL'" not in HTML
-    # las siglas viven en la capa 2 (details "Ver detalle") con su nombre llano
-    assert 'id="hero-detail"' in HTML
-    assert squash("dtw_mc_atl_name") in squash(HTML[HTML.index("function heroPmcExtras"):])
-    # sin linea de promedio redundante en el heroe
+    assert "CTL — Fitness" not in HTML
+    assert "ATL — Fatiga" not in HTML
+    assert "TSB — Forma" not in HTML
+    assert "Performance Management Chart" not in HTML
+    assert "NM = {" in HTML and "Forma (CTL)" in HTML and "Equilibrio (TSB)" in HTML
+    # sin linea de promedio redundante en el heroe ni capa 2 vieja
     assert "heroAvgLine" not in HTML
     assert "hero-avg" not in HTML
+    assert "heroPmcExtras" not in HTML
 
 
 def test_comparar_ciclos_nace_plegado():
@@ -62,7 +65,7 @@ def test_comparar_ciclos_nace_plegado():
 
 
 def test_cuatro_botones_de_periodo_principales():
-    bar = HTML[HTML.index('class="period-tabs"'):HTML.index("<!-- CONTENT -->")]
+    bar = HTML[HTML.index('class="period-tabs"'):HTML.index("<!-- Chart -->")]
     # quitar la seccion secundaria "Mas" y el rango personalizado
     main = re.sub(r'<details class="period-more".*?</details>', "", bar, flags=re.S)
     ps = re.findall(r'<button[^>]*data-p="(\d+)"', main)
@@ -70,12 +73,17 @@ def test_cuatro_botones_de_periodo_principales():
     # Semana/Mes siguen soportados como opcion secundaria
     sec = re.search(r'<details class="period-more".*?</details>', bar, flags=re.S).group(0)
     assert 'data-p="7"' in sec and 'data-p="30"' in sec
+    # DETALLE-CAPAS: el selector vive dentro del Nivel 3 plegado
+    n3 = HTML.index('id="n3"')
+    assert n3 < HTML.index('class="period-tabs"')
 
 
-def test_pmc_sin_progreso_semanal_ni_otras_metricas():
-    assert squash("var WP_LOAD_METRICS = ['ctl', 'atl', 'tsb', 'tss', 'acwr']") in squash(HTML)
-    assert "'pmc'];" not in re.search(r"var WP_LOAD_METRICS.*", HTML).group(0)
-    assert squash("rw.style.display = metric === 'pmc' ? 'none' : ''") in squash(HTML)
+def test_detalle_sin_progreso_semanal_ni_otras_metricas():
+    # DETALLE-CAPAS (372): Progreso Semanal vuelve a Mi Plan como pliegue
+    assert "wp-panel" not in HTML and "renderWeeklyProgress" not in HTML
+    assert "related-wrap" not in HTML and "renderRelated" not in HTML
+    tp = _read("training_plan.html")
+    assert 'id="wp-fold"' in tp and "renderWeeklyProgress" in tp
 
 
 def test_insights_pmc_en_llano_y_sin_meta_generica():
