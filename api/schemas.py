@@ -159,6 +159,25 @@ class GroupOut(BaseModel):
 class AddMemberRequest(BaseModel):
     user_id: str
 
+# COACH-ALTAS (BUILD 364)
+class BulkInviteItem(BaseModel):
+    email:  str
+    nombre: Optional[str] = None
+
+class BulkInviteRequest(BaseModel):
+    items:      List[BulkInviteItem]
+    plan_nivel: str = "basico"
+    group_id:   Optional[str] = None
+
+class BulkMembersRequest(BaseModel):
+    user_ids: List[str]
+
+class GroupWithMembersCreate(BaseModel):
+    nombre:          str
+    competencia:     Optional[str] = None
+    parent_group_id: Optional[str] = None
+    user_ids:        List[str] = []
+
 
 # ─────────────────────────────────────────────
 # WORKOUT TEMPLATES

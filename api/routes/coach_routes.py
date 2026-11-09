@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import threading
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,6 +15,7 @@ from ..models import (
 )
 from ..schemas import (
     GroupCreate, GroupOut, AddMemberRequest,
+    BulkInviteRequest, BulkMembersRequest, GroupWithMembersCreate,
     WorkoutTemplateCreate, WorkoutTemplateUpdate, WorkoutTemplateOut,
     AssignRequest, AssignedWorkoutOut,
     AthleteAdherence, UserOut,
@@ -28,6 +30,8 @@ from ..auth import require_role, hash_password
 from ..volume_factor import apply_volume_factor, effective_template, validate_factor
 from ..crypto import decrypt as _dec, encrypt_if_plain, is_encrypted
 from ..permissions import assert_coach_owns_athlete, assert_coach_owns_group, coach_athlete_ids
+
+_EMAIL_RE = re.compile(r"^[^@\s,;]+@[^@\s,;]+\.[^@\s,;.]+$")
 
 router   = APIRouter(prefix="/coach", tags=["coach"])
 _coach   = require_role("coach", "admin")
@@ -190,6 +194,55 @@ def add_member(group_id: str, body: AddMemberRequest,
     m = GroupMember(group_id=group_id, athlete_id=body.user_id)
     db.add(m); db.commit()
     return {"ok": True}
+
+
+def _bulk_add(db: Session, coach: User, group_id: str, user_ids: List[str]):
+    """Alta en lote con resultado por atleta: added | already_member | not_yours."""
+    own = set(coach_athlete_ids(db, coach))
+    current = {m.athlete_id for m in db.query(GroupMember).filter(GroupMember.group_id == group_id).all()}
+    results, seen = [], set()
+    for uid in user_ids:
+        if uid in seen:
+            continue
+        seen.add(uid)
+        if uid not in own:
+            results.append({"user_id": uid, "status": "not_yours"})
+        elif uid in current:
+            results.append({"user_id": uid, "status": "already_member"})
+        else:
+            db.add(GroupMember(group_id=group_id, athlete_id=uid))
+            current.add(uid)
+            results.append({"user_id": uid, "status": "added"})
+    db.commit()
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return results, summary
+
+
+@router.post("/groups/with-members", status_code=201)
+def create_group_with_members(body: GroupWithMembersCreate,
+                              db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """COACH-ALTAS: crea un grupo/subgrupo y lo puebla con la seleccion."""
+    if body.parent_group_id:
+        assert_coach_owns_group(coach.id, body.parent_group_id, db)
+    nombre = (body.nombre or "").strip()
+    if not nombre:
+        raise HTTPException(422, "El nombre del grupo es obligatorio")
+    g = Group(nombre=nombre, competencia=body.competencia, coach_id=coach.id,
+              parent_group_id=body.parent_group_id)
+    db.add(g); db.commit(); db.refresh(g)
+    results, summary = _bulk_add(db, coach, g.id, body.user_ids)
+    return {"group_id": g.id, "nombre": g.nombre, "results": results, "summary": summary}
+
+
+@router.post("/groups/{group_id}/members/bulk")
+def add_members_bulk(group_id: str, body: BulkMembersRequest,
+                     db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """COACH-ALTAS: agrega varios atletas a un grupo propio (403 si es de otro coach)."""
+    assert_coach_owns_group(coach.id, group_id, db)
+    results, summary = _bulk_add(db, coach, group_id, body.user_ids)
+    return {"group_id": group_id, "results": results, "summary": summary}
 
 
 @router.delete("/groups/{group_id}/members/{user_id}", status_code=204)
@@ -818,7 +871,16 @@ def create_athlete(
       status='pending' — el atleta debe aceptarla desde su propio
       perfil (GET/POST /athlete/pending-coach-invites).
     """
-    email = body.email.lower().strip()
+    status, message = _invite_one(db, coach, body.email, body.nombre, body.plan_nivel, group_id)
+    return {"status": status, "message": message}
+
+
+def _invite_one(db: Session, coach: User, email_raw: str, nombre: str,
+                plan_nivel: Optional[str], group_id: Optional[str]):
+    """Logica de invitacion compartida por el alta singular y la masiva
+    (COACH-ALTAS): mismo correo, mismo estado resultante. Devuelve
+    (status, message) o lanza HTTPException (409) si no corresponde invitar."""
+    email = email_raw.lower().strip()
     existing = db.query(User).filter(User.email == email).first()
 
     if existing:
@@ -832,22 +894,63 @@ def create_athlete(
             raise HTTPException(409, f"Ya existe una relación con este atleta (estado: {dup.status})")
         ca = CoachAthlete(coach_id=coach.id, athlete_id=existing.id, group_id=group_id, status="pending")
         db.add(ca); db.commit()
-        return {"status": "pending_existing", "message": f"{existing.nombre} ya tiene cuenta en LabX — se le envió una invitación para aceptar desde su perfil."}
+        return "pending_existing", f"{existing.nombre} ya tiene cuenta en LabX — se le envió una invitación para aceptar desde su perfil."
 
     import secrets
     u = User(
         email          = email,
-        nombre         = body.nombre.strip(),
+        nombre         = nombre.strip(),
         password_hash  = hash_password(secrets.token_urlsafe(32)),  # inutilizable — nadie la conoce
         rol            = "atleta",
-        plan_nivel     = body.plan_nivel or "basico",
+        plan_nivel     = plan_nivel or "basico",
         activo         = False,
         pending_invite = True,
     )
     db.add(u); db.flush()
     ca = CoachAthlete(coach_id=coach.id, athlete_id=u.id, group_id=group_id, status="pending")
     db.add(ca); db.commit()
-    return {"status": "pending_new", "message": f"{u.nombre} quedó pendiente — se activa solo cuando se registre en LabX con {email}."}
+    return "pending_new", f"{u.nombre} quedó pendiente — se activa solo cuando se registre en LabX con {email}."
+
+
+BULK_INVITE_MAX = 200
+
+
+@router.post("/athletes/bulk")
+def bulk_invite_athletes(
+    body: BulkInviteRequest,
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """COACH-ALTAS: invitacion masiva con resultado por correo. Estados:
+    invited | already_athlete | duplicate_in_list | invalid | not_athlete_account."""
+    if len(body.items) > BULK_INVITE_MAX:
+        raise HTTPException(413, f"Máximo {BULK_INVITE_MAX} correos por llamada")
+    if body.group_id:
+        assert_coach_owns_group(coach.id, body.group_id, db)
+    seen = set()
+    results = []
+    for it in body.items:
+        raw = (it.email or "").strip()
+        email = raw.lower()
+        if not _EMAIL_RE.match(email) or len(email) > 254:
+            results.append({"email": raw, "status": "invalid", "message": "Formato de correo inválido"})
+            continue
+        if email in seen:
+            results.append({"email": email, "status": "duplicate_in_list", "message": "Repetido en la lista"})
+            continue
+        seen.add(email)
+        nombre = (it.nombre or "").strip() or email.split("@")[0]
+        try:
+            status, msg = _invite_one(db, coach, email, nombre, body.plan_nivel, body.group_id)
+            results.append({"email": email, "status": "invited", "detail": status, "message": msg})
+        except HTTPException as e:
+            db.rollback()
+            st = "not_athlete_account" if "no es de atleta" in str(e.detail) else "already_athlete"
+            results.append({"email": email, "status": st, "message": str(e.detail)})
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary}
 
 
 # ── Sync Garmin: enviar una asignación al Garmin del atleta ──

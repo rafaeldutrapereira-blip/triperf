@@ -963,6 +963,14 @@
           style="display: flex; justify-content: flex-end; margin-bottom: 1rem"
         >
           <button
+            class="btn btn-ghost"
+            id="btn-bulk-invite"
+            style="margin-right: 0.5rem"
+            onclick="openBulkInvite()"
+          >
+            Invitar en masa
+          </button>
+          <button
             class="btn btn-primary"
             onclick="openModal('modal-new-athlete')"
           >
@@ -1010,10 +1018,22 @@
             </select>
             <span id="roster-count" style="font-size: 0.78rem; color: var(--dim)"></span>
           </div>
+          <div
+            id="roster-selbar"
+            style="display: none; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2, rgba(127,127,127,.08))"
+          >
+            <strong id="roster-selcount" style="font-size: 0.82rem"></strong>
+            <button class="btn btn-ghost btn-sm" onclick="rosterSelectVisible()">Seleccionar visibles</button>
+            <button class="btn btn-ghost btn-sm" onclick="rosterSelClear()">Limpiar</button>
+            <button class="btn btn-primary btn-sm" id="roster-addgroup" onclick="openBulkGroup()">Agregar a grupo…</button>
+          </div>
           <div class="tbl-wrap">
             <table>
               <thead>
                 <tr>
+                  <th style="width: 28px">
+                    <input type="checkbox" id="roster-selpage" aria-label="Seleccionar página" onchange="rosterSelPage(this.checked)" />
+                  </th>
                   <th><span data-i18n="coach_h018">Nombre</span></th>
                   <th>Email</th>
                   <th>Plan</th>
@@ -1027,7 +1047,7 @@
               </thead>
               <tbody id="athletes-tbody">
                 <tr>
-                  <td colspan="9" style="text-align: center; color: var(--dim)">
+                  <td colspan="10" style="text-align: center; color: var(--dim)">
                     <span data-i18n="coach_h002">Cargando...</span>
                   </td>
                 </tr>
@@ -2279,6 +2299,78 @@
             <span data-i18n="coach_h052">Cancelar</span>
           </button>
           <button class="btn btn-primary" onclick="addMember()">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Invitación masiva (COACH-ALTAS) -->
+    <div class="modal-backdrop" id="modal-bulk-invite">
+      <div class="modal" style="max-width: 640px">
+        <button class="modal-close" onclick="closeModal('modal-bulk-invite')">✕</button>
+        <h2>Invitar en masa</h2>
+        <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.75rem">
+          Pega los correos (uno por línea o separados por coma). También sirve
+          una lista copiada de una planilla; con «email;nombre» se usa el nombre.
+          Máximo 200 por vez.
+        </p>
+        <div class="field">
+          <textarea id="bi-text" rows="7" placeholder="ana@ejemplo.com&#10;beto@ejemplo.com;Beto Díaz" oninput="bulkInvitePreview()" style="width: 100%"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field" style="margin: 0">
+            <label>Plan</label>
+            <select id="bi-plan">
+              <option value="basico">Básico</option>
+              <option value="agegroup">Agegroup</option>
+              <option value="elite">Élite</option>
+            </select>
+          </div>
+          <div class="field" style="margin: 0">
+            <label>Agregar a grupo (opcional)</label>
+            <select id="bi-group"><option value="">Sin grupo por ahora</option></select>
+          </div>
+        </div>
+        <div id="bi-summary" style="font-size: 0.8rem; margin-top: 0.75rem; color: var(--muted)"></div>
+        <div id="bi-results" style="max-height: 220px; overflow: auto; margin-top: 0.5rem; font-size: 0.78rem"></div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem">
+          <button class="btn btn-ghost" onclick="closeModal('modal-bulk-invite')">Cerrar</button>
+          <button class="btn btn-primary" id="bi-send" onclick="bulkInviteSend()">Enviar invitaciones</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Agregar selección a grupo (COACH-ALTAS) -->
+    <div class="modal-backdrop" id="modal-bulk-group">
+      <div class="modal" style="max-width: 520px">
+        <button class="modal-close" onclick="closeModal('modal-bulk-group')">✕</button>
+        <h2>Agregar a grupo</h2>
+        <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem">
+          <strong id="bg-count"></strong>
+        </p>
+        <div class="field">
+          <label>Destino</label>
+          <select id="bg-group" onchange="bulkGroupToggleNew()"></select>
+        </div>
+        <div id="bg-new" style="display: none">
+          <div class="field">
+            <label>Nombre del grupo nuevo</label>
+            <input type="text" id="bg-name" placeholder="Maratón de Buenos Aires" />
+          </div>
+          <div class="field-row">
+            <div class="field" style="margin: 0">
+              <label>Competencia (opcional)</label>
+              <input type="text" id="bg-comp" />
+            </div>
+            <div class="field" style="margin: 0">
+              <label>Dentro de (opcional)</label>
+              <select id="bg-parent"><option value="">Grupo principal</option></select>
+            </div>
+          </div>
+        </div>
+        <div id="bg-results" style="max-height: 200px; overflow: auto; margin-top: 0.75rem; font-size: 0.78rem"></div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem">
+          <button class="btn btn-ghost" onclick="closeModal('modal-bulk-group')">Cerrar</button>
+          <button class="btn btn-primary" id="bg-go" onclick="bulkGroupGo()">Agregar</button>
         </div>
       </div>
     </div>
@@ -3772,7 +3864,7 @@
           var tb = document.getElementById('athletes-tbody');
           tb.innerHTML = _t(
             'coach_s012',
-            '<tr><td colspan="9" style="text-align:center;color:var(--dim)"><span data-i18n="coach_h002">Cargando...</span></td></tr>',
+            '<tr><td colspan="10" style="text-align:center;color:var(--dim)"><span data-i18n="coach_h002">Cargando...</span></td></tr>',
           );
           try {
             var [ath, wellness] = await Promise.all([
@@ -3790,7 +3882,7 @@
               _roster.all = [];
               tb.innerHTML = _t(
                 'coach_s013',
-                '<tr><td colspan="9" style="text-align:center;color:var(--dim)">Sin atletas. Crea uno con "+ Nuevo Atleta".</td></tr>',
+                '<tr><td colspan="10" style="text-align:center;color:var(--dim)">Sin atletas. Crea uno con "+ Nuevo Atleta".</td></tr>',
               );
               return;
             }
@@ -3818,7 +3910,7 @@
             tb.innerHTML =
               _t(
                 'coach_s014',
-                '<tr><td colspan="9" style="color:var(--red)">Error: ',
+                '<tr><td colspan="10" style="color:var(--red)">Error: ',
               ) +
               esc(e.message) +
               '</td></tr>';
@@ -3835,6 +3927,13 @@
                     );
                 return (
                   '<tr>' +
+                  '<td><input type="checkbox" class="roster-chk" aria-label="Seleccionar ' +
+                  rosterH(u.nombre) +
+                  '" data-uid="' +
+                  rosterH(u.id) +
+                  '"' +
+                  ((_roster.sel || {})[u.id] ? ' checked' : '') +
+                  ' onchange="rosterToggle(this.getAttribute(\'data-uid\'),this.checked)" /></td>' +
                   '<td><strong>' +
                   esc(u.nombre) +
                   '</strong></td>' +
@@ -3907,7 +4006,7 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
         }
-        var _roster = { all: [], wellness: {}, page: 1 };
+        var _roster = { all: [], wellness: {}, page: 1, sel: {} };
         function rosterDays(dateStr, today) {
           if (!dateStr) return null;
           var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr));
@@ -3976,6 +4075,89 @@
           _roster.page += d;
           rosterRender();
         };
+        // ── COACH-ALTAS: invitación masiva y selección para grupo ─────
+        // Parsea el texto pegado: un correo por línea o separados por coma/;/tab.
+        // "email;nombre" (o "email<TAB>nombre") usa el nombre. Dedupe dentro de la lista y vs roster.
+        function bulkParseEmails(text, rosterEmails) {
+          var known = {};
+          (rosterEmails || []).forEach(function (e) {
+            known[String(e).toLowerCase()] = true;
+          });
+          var re = /^[^@\s,;]+@[^@\s,;]+\.[^@\s,;.]+$/;
+          var seen = {};
+          var out = [];
+          String(text || '')
+            .split(/\r?\n/)
+            .forEach(function (line) {
+              var parts;
+              if (/[;\t]/.test(line)) {
+                var cells = line.split(/[;\t]/).map(function (c) { return c.trim(); });
+                var emailCell = cells.filter(function (c) { return c.indexOf('@') >= 0; })[0];
+                var nameCell = cells.filter(function (c) { return c && c.indexOf('@') < 0; })[0];
+                parts = [{ email: emailCell || cells[0] || '', nombre: nameCell || '' }];
+                if (cells.filter(function (c) { return c.indexOf('@') >= 0; }).length > 1) {
+                  parts = cells.filter(Boolean).map(function (c) { return { email: c, nombre: '' }; });
+                }
+              } else {
+                parts = line.split(',').map(function (c) { return { email: c.trim(), nombre: '' }; });
+              }
+              parts.forEach(function (p) {
+                var e = p.email.trim();
+                if (!e) return;
+                var lower = e.toLowerCase();
+                var st = 'ok';
+                if (!re.test(lower) || lower.length > 254) st = 'invalid';
+                else if (seen[lower]) st = 'dup_list';
+                else if (known[lower]) st = 'dup_roster';
+                if (st !== 'invalid') seen[lower] = true;
+                out.push({ email: st === 'invalid' ? e : lower, nombre: p.nombre, status: st });
+              });
+            });
+          return out;
+        }
+        function rosterSelCount() {
+          return Object.keys(_roster.sel || {}).length;
+        }
+        function rosterSelUpdate() {
+          var n = rosterSelCount();
+          var bar = document.getElementById('roster-selbar');
+          if (bar) bar.style.display = n ? 'flex' : 'none';
+          var c = document.getElementById('roster-selcount');
+          if (c) c.textContent = n + (n === 1 ? ' seleccionado' : ' seleccionados');
+        }
+        function rosterCurrentList() {
+          return rosterFilter(_roster.all, {
+            q: document.getElementById('roster-q').value,
+            group: document.getElementById('roster-f-group').value,
+            garmin: document.getElementById('roster-f-garmin').value,
+            goal: document.getElementById('roster-f-goal').value,
+          });
+        }
+        window.rosterToggle = function (uid, on) {
+          if (!_roster.sel) _roster.sel = {};
+          if (on) _roster.sel[uid] = true;
+          else delete _roster.sel[uid];
+          rosterSelUpdate();
+        };
+        window.rosterSelectVisible = function () {
+          rosterCurrentList().forEach(function (u) {
+            _roster.sel[u.id] = true;
+          });
+          rosterRender();
+        };
+        window.rosterSelPage = function (on) {
+          var pg = rosterPage(rosterCurrentList(), _roster.page);
+          pg.rows.forEach(function (u) {
+            if (on) _roster.sel[u.id] = true;
+            else delete _roster.sel[u.id];
+          });
+          rosterRender();
+        };
+        window.rosterSelClear = function () {
+          _roster.sel = {};
+          rosterRender();
+        };
+
         function rosterRender() {
           var tb = document.getElementById('athletes-tbody');
           var f = {
@@ -3984,6 +4166,7 @@
             garmin: document.getElementById('roster-f-garmin').value,
             goal: document.getElementById('roster-f-goal').value,
           };
+          rosterSelUpdate();
           var list = rosterFilter(_roster.all, f);
           var pg = rosterPage(list, _roster.page);
           _roster.page = pg.page;
@@ -3997,10 +4180,15 @@
           document.getElementById('roster-next').disabled = pg.page >= pg.pages;
           if (!pg.rows.length) {
             tb.innerHTML =
-              '<tr><td colspan="9" style="text-align:center;color:var(--dim)">Ningún atleta coincide con la búsqueda.</td></tr>';
+              '<tr><td colspan="10" style="text-align:center;color:var(--dim)">Ningún atleta coincide con la búsqueda.</td></tr>';
             return;
           }
           tb.innerHTML = pg.rows.map(rosterRow).join('');
+          var allPage = document.getElementById('roster-selpage');
+          if (allPage)
+            allPage.checked = pg.rows.every(function (u) {
+              return _roster.sel[u.id];
+            });
         }
 
         // ── Groups ────────────────────────────────────────────────────
@@ -4345,6 +4533,168 @@
             loadGroups();
             loadOverview();
           } catch (e) {
+            toast(_t('coach_s019', 'Error: ') + e.message, 'err');
+          }
+        };
+
+        // ── COACH-ALTAS: handlers de los modales masivos ──────────────
+        var BI_LABEL = {
+          invited: 'Invitado',
+          already_athlete: 'Ya era atleta',
+          duplicate_in_list: 'Repetido en la lista',
+          invalid: 'Inválido',
+          not_athlete_account: 'Cuenta que no es de atleta',
+          ok: 'Se invitará',
+          dup_list: 'Repetido en la lista',
+          dup_roster: 'Ya está en tu roster',
+          added: 'Agregado',
+          already_member: 'Ya era miembro',
+          not_yours: 'No es tu atleta',
+        };
+        var BI_OK = { invited: 1, ok: 1, added: 1 };
+        function altasRows(rows) {
+          return (
+            '<table style="width:100%">' +
+            rows
+              .map(function (r) {
+                return (
+                  '<tr><td>' + rosterH(r.label) + '</td><td style="text-align:right;color:' +
+                  (BI_OK[r.status] ? 'var(--green)' : 'var(--amber, var(--dim))') + '">' +
+                  rosterH(BI_LABEL[r.status] || r.status) + '</td></tr>'
+                );
+              })
+              .join('') +
+            '</table>'
+          );
+        }
+        function groupOptions(sel, first) {
+          sel.innerHTML = first;
+          (_cache.groups || []).forEach(function (g) {
+            sel.innerHTML += '<option value="' + rosterH(g.id) + '">' + _groupOptLabel(g) + '</option>';
+          });
+        }
+        window.openBulkInvite = function () {
+          document.getElementById('bi-text').value = '';
+          document.getElementById('bi-results').innerHTML = '';
+          document.getElementById('bi-summary').textContent = '';
+          document.getElementById('bi-send').disabled = false;
+          groupOptions(document.getElementById('bi-group'), '<option value="">Sin grupo por ahora</option>');
+          openModal('modal-bulk-invite');
+        };
+        function biParsed() {
+          return bulkParseEmails(
+            document.getElementById('bi-text').value,
+            (_roster.all || []).map(function (u) { return u.email; }),
+          );
+        }
+        window.bulkInvitePreview = function () {
+          var items = biParsed();
+          var cnt = { ok: 0, invalid: 0, dup_list: 0, dup_roster: 0 };
+          items.forEach(function (i) { cnt[i.status]++; });
+          document.getElementById('bi-summary').textContent = items.length
+            ? cnt.ok + ' por invitar · ' + cnt.dup_roster + ' ya en el roster · ' +
+              cnt.dup_list + ' repetidos · ' + cnt.invalid + ' inválidos'
+            : '';
+          document.getElementById('bi-results').innerHTML = items.length
+            ? altasRows(items.map(function (i) { return { label: i.email, status: i.status }; }))
+            : '';
+        };
+        window.bulkInviteSend = async function () {
+          var items = biParsed().filter(function (i) { return i.status === 'ok'; });
+          if (!items.length) {
+            toast('No hay correos válidos para invitar', 'err');
+            return;
+          }
+          if (items.length > 200) {
+            toast('Máximo 200 correos por vez', 'err');
+            return;
+          }
+          var btn = document.getElementById('bi-send');
+          btn.disabled = true;
+          try {
+            var res = await apiPost('/coach/athletes/bulk', {
+              items: items.map(function (i) { return { email: i.email, nombre: i.nombre || null }; }),
+              plan_nivel: document.getElementById('bi-plan').value,
+              group_id: document.getElementById('bi-group').value || null,
+            });
+            var sm = res.summary || {};
+            document.getElementById('bi-summary').textContent =
+              (sm.invited || 0) + ' invitados · ' + (sm.already_athlete || 0) + ' ya eran atletas · ' +
+              (sm.invalid || 0) + ' inválidos';
+            document.getElementById('bi-results').innerHTML = altasRows(
+              res.results.map(function (r) { return { label: r.email, status: r.status }; }),
+            );
+            toast((sm.invited || 0) + ' invitaciones enviadas', 'ok');
+            loadPendingAthletes();
+            loadOverview();
+          } catch (e) {
+            btn.disabled = false;
+            toast(_t('coach_s019', 'Error: ') + e.message, 'err');
+          }
+        };
+        window.openBulkGroup = function () {
+          var n = rosterSelCount();
+          if (!n) {
+            toast('Selecciona al menos un atleta', 'err');
+            return;
+          }
+          document.getElementById('bg-count').textContent =
+            n + (n === 1 ? ' atleta seleccionado' : ' atletas seleccionados');
+          groupOptions(
+            document.getElementById('bg-group'),
+            '<option value="__new__">+ Crear grupo nuevo con la selección</option>',
+          );
+          groupOptions(document.getElementById('bg-parent'), '<option value="">Grupo principal</option>');
+          document.getElementById('bg-name').value = '';
+          document.getElementById('bg-comp').value = '';
+          document.getElementById('bg-results').innerHTML = '';
+          document.getElementById('bg-go').disabled = false;
+          bulkGroupToggleNew();
+          openModal('modal-bulk-group');
+        };
+        window.bulkGroupToggleNew = function () {
+          document.getElementById('bg-new').style.display =
+            document.getElementById('bg-group').value === '__new__' ? 'block' : 'none';
+        };
+        window.bulkGroupGo = async function () {
+          var ids = Object.keys(_roster.sel || {});
+          if (!ids.length) return;
+          var target = document.getElementById('bg-group').value;
+          var btn = document.getElementById('bg-go');
+          btn.disabled = true;
+          try {
+            var res;
+            if (target === '__new__') {
+              var nombre = document.getElementById('bg-name').value.trim();
+              if (!nombre) {
+                btn.disabled = false;
+                toast('Indica el nombre del grupo', 'err');
+                return;
+              }
+              res = await apiPost('/coach/groups/with-members', {
+                nombre: nombre,
+                competencia: document.getElementById('bg-comp').value.trim() || null,
+                parent_group_id: document.getElementById('bg-parent').value || null,
+                user_ids: ids,
+              });
+            } else {
+              res = await apiPost('/coach/groups/' + target + '/members/bulk', { user_ids: ids });
+            }
+            var byId = {};
+            (_roster.all || []).forEach(function (u) { byId[u.id] = u; });
+            document.getElementById('bg-results').innerHTML = altasRows(
+              res.results.map(function (r) {
+                var u = byId[r.user_id];
+                return { label: u ? u.nombre + ' (' + u.email + ')' : r.user_id, status: r.status };
+              }),
+            );
+            var added = (res.summary || {}).added || 0;
+            toast(added + ' atletas agregados al grupo', 'ok');
+            _roster.sel = {};
+            await loadGroups();
+            await loadAthletes();
+          } catch (e) {
+            btn.disabled = false;
             toast(_t('coach_s019', 'Error: ') + e.message, 'err');
           }
         };
