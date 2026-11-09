@@ -1,0 +1,76 @@
+name: Android AAB (LabX)
+
+# Produce el AAB de release firmado en cada tag `build-*` o a mano.
+# Requiere 4 secrets del repo (los carga Rafael; ver docs/tiendas-build.md):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Sin ellos el job igual compila y deja el AAB SIN firmar (artefacto de verificación).
+
+on:
+  push:
+    tags: ["build-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aab:
+    name: Compilar AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: BUILD vigente (sw.js)
+        run: |
+          B=$(grep -oE "BUILD_VERSION = '[0-9]+'" sw.js | grep -oE "[0-9]+")
+          test -n "$B" || { echo "::error::No se pudo leer BUILD_VERSION de sw.js"; exit 1; }
+          echo "LABX_BUILD=$B" >> "$GITHUB_ENV"
+          echo "BUILD empaquetado: $B"
+
+      - name: Instalar dependencias y generar www/
+        run: |
+          npm ci
+          python scripts/build_www.py
+          npx cap sync android
+
+      - name: Decodificar keystore (solo si hay secrets)
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          KS="$RUNNER_TEMP/labx-release.jks"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$KS"
+          echo "LABX_KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+          echo "LABX_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "LABX_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "LABX_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Compilar AAB de release
+        working-directory: android
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Verificar firma
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          jarsigner -verify -verbose:summary android/app/build/outputs/bundle/release/app-release.aab | tail -5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: labx-aab-${{ env.LABX_BUILD }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error

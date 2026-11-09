@@ -1,0 +1,59 @@
+name: iOS build (LabX)
+
+# Compila el proyecto iOS en macOS de nube SIN firma de distribución: sirve
+# para verificar que compila (simulador). Firma/TestFlight = paso pendiente
+# de la cuenta Apple de Rafael (ver docs/tiendas-build.md).
+
+on:
+  push:
+    tags: ["build-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Compilar iOS (simulador, sin firma)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias y generar www/
+        run: |
+          npm ci
+          python scripts/build_www.py
+          npx cap sync ios
+
+      - name: xcodebuild (simulador, sin firma)
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App \
+            -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Empaquetar App.app
+        run: |
+          APP=$(find ios/App/build/Build/Products -name "App.app" -maxdepth 3 | head -1)
+          test -n "$APP" || { echo "::error::No se generó App.app"; exit 1; }
+          ditto -c -k --keepParent "$APP" LabX-ios-simulator.zip
+          ls -lh LabX-ios-simulator.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: labx-ios-simulator
+          path: LabX-ios-simulator.zip
+          if-no-files-found: error

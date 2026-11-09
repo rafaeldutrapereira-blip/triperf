@@ -7,8 +7,10 @@ android {
         applicationId "com.labx.athlete"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // BUILD vigente del repo (sw.js BUILD_VERSION). El CI lo pasa por
+        // LABX_BUILD; en local el default es el BUILD de esta pila.
+        versionCode (System.getenv("LABX_BUILD") ?: "370").toInteger()
+        versionName "1.0." + (System.getenv("LABX_BUILD") ?: "370")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +18,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma de release SOLO por variables de entorno (nunca valores en el repo).
+    // Sin ellas el release queda sin firmar (assembleRelease/bundleRelease igual compilan).
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("LABX_KEYSTORE_PATH")
+            if (ksPath) {
+                storeFile file(ksPath)
+                storePassword System.getenv("LABX_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("LABX_KEY_ALIAS")
+                keyPassword System.getenv("LABX_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (System.getenv("LABX_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
