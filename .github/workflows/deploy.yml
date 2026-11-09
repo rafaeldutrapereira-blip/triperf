@@ -91,14 +91,15 @@ jobs:
           cd "$APP"
 
           echo "── Respaldo del código actual (rollback) ──"
-          tar czf "$REL/code-$TS.tar.gz" --exclude=./data --exclude=./venv --exclude=./.env \
+          tar czf "$REL/code-$TS.tar.gz" --exclude=./data --exclude=./venv --exclude=./.env --exclude=./backups \
             --exclude='*.log' --exclude='__pycache__' .
           ls -1t "$REL"/code-*.tar.gz | tail -n +6 | xargs -r rm --
 
-          echo "── Respaldo de la BD (sqlite backup API) ──"
+          echo "── Respaldo CIFRADO de la BD (backup.py: sqlite backup API + Fernet) ──"
           if [ -f data/labx_coach.db ]; then
-            venv/bin/python -c "import sqlite3; s=sqlite3.connect('data/labx_coach.db'); d=sqlite3.connect('$REL/db-$TS.db'); s.backup(d); d.close(); s.close()"
-            ls -1t "$REL"/db-*.db | tail -n +4 | xargs -r rm --
+            if [ -f backup.py ]; then
+              venv/bin/python backup.py || echo "::warning::backup.py falló (¿clave de cifrado?); se continúa sin respaldo previo"
+            fi
           fi
 
           rollback() {

@@ -599,6 +599,21 @@ def _daily_plan_matching() -> None:
         db.close()
 
 
+def _daily_encrypted_backup() -> None:
+    """SEGURIDAD-VERIFICADA: backup diario cifrado de la BD (backup.py), retención BACKUP_KEEP_DAYS."""
+    import importlib.util
+    from pathlib import Path
+    try:
+        path = Path(__file__).resolve().parent.parent / "backup.py"
+        spec = importlib.util.spec_from_file_location("labx_backup", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        out = mod.backup()
+        logger.info("Backup diario creado: %s", out.name)
+    except Exception as e:
+        logger.error("Backup diario FALLÓ: %s", e)
+
+
 def start_scheduler(database_url: str | None = None) -> None:
     global _scheduler
     if _scheduler and _scheduler.running:
@@ -706,6 +721,14 @@ def start_scheduler(database_url: str | None = None) -> None:
         _process_account_deletions,
         "cron", hour=4, minute=15,
         id="account_deletions", replace_existing=True,
+        misfire_grace_time=6 * 3600,
+    )
+
+    # SEGURIDAD-VERIFICADA: backup cifrado diario 03:30 (en la VM, donde vive la BD)
+    _scheduler.add_job(
+        _daily_encrypted_backup,
+        "cron", hour=3, minute=30,
+        id="daily_encrypted_backup", replace_existing=True,
         misfire_grace_time=6 * 3600,
     )
 

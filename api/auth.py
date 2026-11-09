@@ -41,8 +41,10 @@ def _token_hash(token: str) -> str:
 
 
 # ── Passwords ──────────────────────────────────────────────
+BCRYPT_ROUNDS = 12   # privacy.html: "bcrypt (factor 12)" — explícito, no depende del default de la librería
+
 def hash_password(plain: str) -> str:
-    return _bcrypt.hashpw(plain.encode(), _bcrypt.gensalt()).decode()
+    return _bcrypt.hashpw(plain.encode(), _bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode()
 
 def verify_password(plain: str, hashed: str) -> bool:
     try:
