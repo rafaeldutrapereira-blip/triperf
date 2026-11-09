@@ -53,6 +53,6 @@ test('pagina publica: correo, enlace al flujo con sesion, sin guard, precacheada
   assert.ok(html.includes('athlete_profile.html#zona-peligro'));
   assert.ok(!html.includes('auth.js') && !html.includes('routes.config.js'));
   const sw = read('sw.js');
-  assert.ok(sw.includes("'/eliminar-cuenta.html'") && sw.includes("'/lx-delete-account.js'"));
+  assert.ok(sw.includes("'/eliminar-cuenta.html'") && sw.includes("'/lx-delete-account.js?v=373'"));
   assert.ok(read('privacy.html').includes('href="eliminar-cuenta.html"'));
 });

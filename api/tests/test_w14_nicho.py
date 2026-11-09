@@ -137,7 +137,7 @@ def test_gear_bicicletas_basico_invitacion_no_403():
     assert "classList.contains('lx-free')" in m.group(1) and "return;" in m.group(1)
     assert "e.status === 403" in h
     assert "err.status = r.status;" in h
-    assert 'src="lx-upgrade.js"' in h
+    assert 'src="lx-upgrade.js?v=373"' in h
 
 
 def test_gear_servidor_sigue_exigiendo_plan_para_bicicletas():

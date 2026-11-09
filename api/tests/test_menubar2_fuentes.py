@@ -52,7 +52,7 @@ def test_paginas_enlazan_fonts_css_y_precargan_inter():
     for p in sorted(ROOT.glob("*.html")):
         t = p.read_text(encoding="utf-8")
         if "nav.css" in t:
-            assert 'href="fonts.css"' in t, p.name
+            assert 'href="fonts.css?v=373"' in t, p.name
             assert "vendor/fonts/inter-500.woff2" in t, p.name
             assert "vendor/fonts/inter-600.woff2" in t, p.name
 
@@ -63,6 +63,6 @@ def test_sw_build_335_y_precache_de_fuentes():
     assert m and int(m.group(1)) >= 335
     ini = sw.index("var PRECACHE")
     pre = sw[ini:sw.index("];", ini)]
-    assert "'/fonts.css'" in pre
+    assert "'/fonts.css?v=373'" in pre
     for nombre in FUENTES.values():
         assert "'/vendor/fonts/%s'" % nombre in pre, nombre

@@ -271,7 +271,7 @@ def test_i18n_script_tag_has_no_query_string():
         text = page.read_text(encoding="utf-8", errors="ignore")
         for m in re.finditer(r'<script[^>]+src="(i18n\.js[^"]*)"', text):
             src = m.group(1)
-            if src != "i18n.js":
+            if not re.fullmatch(r"i18n\.js\?v=\d+", src):  # 373 I18N-SELLO: ahora debe ir sellado
                 offenders.append(f"{page.name}: src=\"{src}\"")
 
     assert not offenders, (
@@ -302,7 +302,7 @@ def test_auth_js_script_tag_has_no_query_string():
             continue
         for m in re.finditer(r'<script[^>]+src="(auth\.js[^"]*)"', text):
             src = m.group(1)
-            if src != "auth.js":
+            if not re.fullmatch(r"auth\.js\?v=\d+", src):  # 373 I18N-SELLO: ahora debe ir sellado
                 offenders.append(f"{f.name}: src=\"{src}\"")
 
     assert not offenders, (
