@@ -5,7 +5,8 @@ import threading
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..database import get_db
 from ..models import (
@@ -24,7 +25,7 @@ from ..schemas import (
     PlanVsActualItem,
     AthleteReport, ReportSportRow, ReportWeek,
     WeekTemplateCreate, WeekTemplateDayCreate, WeekTemplateOut, WeekTemplateDayOut,
-    ApplyWeekTemplateRequest, CalendarDay, CalendarAthleteDay,
+    ApplyWeekTemplateRequest, CalendarDay, CalendarAthleteDay, TeamAssignments,
 )
 from ..auth import require_role, hash_password
 from ..volume_factor import apply_volume_factor, effective_template, validate_factor
@@ -56,6 +57,12 @@ def _read_garmin_pwd(user: "User", db: "Session") -> str | None:
         except Exception:
             db.rollback()
     return raw
+
+
+def _chunks(seq, size=500):
+    """Parte una lista de ids para IN(...) (límite de variables de SQLite)."""
+    for i in range(0, len(seq), size):
+        yield seq[i:i + size]
 
 
 # ── Athletes under this coach ───────────────────────────────
@@ -469,6 +476,49 @@ def assign_workout(body: AssignRequest,
     return a
 
 
+@router.get("/assignments/team", response_model=List[TeamAssignments])
+def list_assignments_for_team(
+    start: str = Query(..., description="YYYY-MM-DD"),
+    end:   str = Query(..., description="YYYY-MM-DD"),
+    group_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    """
+    COACH-TABLERO-PERF: asignaciones de TODO el equipo en una sola petición (Gantt).
+    Mismo universo que GET /coach/athletes (activos) y misma semántica que
+    /assignments/athlete/{id} (solo templates del coach, orden por fecha),
+    con logs incluidos. Atletas sin sesiones salen con lista vacía.
+    """
+    if group_id:
+        if not db.query(Group).filter(Group.id == group_id, Group.coach_id == coach.id).first():
+            raise HTTPException(404, "Grupo no encontrado")
+    athlete_ids = coach_athlete_ids(db, coach, group_id)
+    if not athlete_ids:
+        return []
+    athletes = db.query(User).filter(User.id.in_(athlete_ids), User.activo == True).all()
+    coach_tpl_ids = db.query(WorkoutTemplate.id).filter(WorkoutTemplate.coach_id == coach.id)
+    by_uid: dict = {}
+    for chunk in _chunks([a.id for a in athletes]):
+        for a in (
+            db.query(AssignedWorkout)
+            .options(joinedload(AssignedWorkout.template), selectinload(AssignedWorkout.logs))
+            .filter(
+                AssignedWorkout.athlete_id.in_(chunk),
+                AssignedWorkout.template_id.in_(coach_tpl_ids),
+                AssignedWorkout.date_iso >= start,
+                AssignedWorkout.date_iso <= end,
+            )
+            .order_by(AssignedWorkout.date_iso)
+            .all()
+        ):
+            by_uid.setdefault(a.athlete_id, []).append(a)
+    return [
+        TeamAssignments(athlete_id=u.id, nombre=u.nombre, assignments=by_uid.get(u.id, []))
+        for u in athletes
+    ]
+
+
 @router.get("/assignments/athlete/{athlete_id}", response_model=List[AssignedWorkoutOut])
 def list_assignments_for_athlete(
     athlete_id: str,
@@ -688,56 +738,67 @@ def get_status_board(
 
     athletes = db.query(User).filter(User.id.in_(athlete_ids)).all()
     today_iso = date.today().isoformat()
+    from datetime import datetime, timezone, timedelta
+    from ..models import WorkoutLog as WL
+    now_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+    two_weeks_ago = (date.today() - timedelta(days=14)).isoformat()
+
+    # COACH-TABLERO-PERF: precarga en bloque (queries independientes del nº de
+    # atletas; antes eran ~6 por atleta, con los template_ids recalculados en el loop).
+    ctx_by_uid, health_by_uid, insights_by_uid = {}, {}, {}
+    assigned_by_uid, completed_by_uid = {}, {}
+    uids = [a.id for a in athletes]
+    coach_tpl_ids = db.query(WorkoutTemplate.id).filter(WorkoutTemplate.coach_id == coach.id)
+    for chunk in _chunks(uids):
+        for c in db.query(AIAthleteContext).filter(AIAthleteContext.user_id.in_(chunk)).all():
+            ctx_by_uid.setdefault(c.user_id, c)
+        for h in db.query(GarminHealthDaily).filter(
+            GarminHealthDaily.user_id.in_(chunk),
+            GarminHealthDaily.date_iso == today_iso,
+        ).all():
+            health_by_uid.setdefault(h.user_id, h)
+        # Insights activos (no dismisseados, no expirados); top 3 por severidad
+        # (desempate por antigüedad: el orden entre severidades iguales no estaba definido).
+        for i in db.query(AIInsight).filter(
+            AIInsight.user_id.in_(chunk),
+            AIInsight.dismissed_at.is_(None),
+            (AIInsight.expires_at.is_(None)) | (AIInsight.expires_at > now_naive),
+        ).order_by(AIInsight.severity.desc(), AIInsight.created_at.asc()).all():
+            lst = insights_by_uid.setdefault(i.user_id, [])
+            if len(lst) < 3:
+                lst.append(i)
+        # Compliance últimas 2 semanas (agregado)
+        for uid_, n in db.query(AssignedWorkout.athlete_id, func.count(AssignedWorkout.id)).filter(
+            AssignedWorkout.athlete_id.in_(chunk),
+            AssignedWorkout.template_id.in_(coach_tpl_ids),
+            AssignedWorkout.date_iso >= two_weeks_ago,
+            AssignedWorkout.date_iso <= today_iso,
+        ).group_by(AssignedWorkout.athlete_id).all():
+            assigned_by_uid[uid_] = n
+        for uid_, n in db.query(WL.user_id, func.count(WL.id)).filter(
+            WL.user_id.in_(chunk),
+            WL.logged_at >= datetime.fromisoformat(two_weeks_ago),
+        ).group_by(WL.user_id).all():
+            completed_by_uid[uid_] = n
+
+    def _compute_status(readiness, acwr, injury_risk):
+        if readiness is None:
+            return "unknown"
+        if (injury_risk and injury_risk > 0.6) or (acwr and acwr > 1.5):
+            return "critical"
+        if readiness < 50 or (acwr and acwr > 1.3) or (injury_risk and injury_risk > 0.3):
+            return "caution"
+        return "optimal"
 
     result = []
     for athlete in athletes:
         uid = athlete.id
-
-        # Contexto IA (fuente principal de métricas)
-        ctx = db.query(AIAthleteContext).filter(AIAthleteContext.user_id == uid).first()
-
-        # Health daily de hoy para HRV del día
-        health = db.query(GarminHealthDaily).filter(
-            GarminHealthDaily.user_id  == uid,
-            GarminHealthDaily.date_iso == today_iso,
-        ).first()
-
-        # Insights activos (no dismisseados, no expirados)
-        from datetime import datetime, timezone
-        insights = db.query(AIInsight).filter(
-            AIInsight.user_id      == uid,
-            AIInsight.dismissed_at.is_(None),
-            (AIInsight.expires_at.is_(None)) | (AIInsight.expires_at > datetime.now(timezone.utc).replace(tzinfo=None)),
-        ).order_by(AIInsight.severity.desc()).limit(3).all()
-
-        # Compliance últimas 2 semanas
-        from datetime import timedelta
-        two_weeks_ago = (date.today() - timedelta(days=14)).isoformat()
-        from ..models import WorkoutLog as WL
-        template_ids = [t.id for t in db.query(WorkoutTemplate).filter(
-            WorkoutTemplate.coach_id == coach.id
-        ).all()]
-        assigned_count = db.query(AssignedWorkout).filter(
-            AssignedWorkout.athlete_id  == uid,
-            AssignedWorkout.template_id.in_(template_ids),
-            AssignedWorkout.date_iso   >= two_weeks_ago,
-            AssignedWorkout.date_iso   <= today_iso,
-        ).count()
-        completed_count = db.query(WL).filter(
-            WL.user_id == uid,
-            WL.logged_at  >= datetime.fromisoformat(two_weeks_ago),
-        ).count()
+        ctx = ctx_by_uid.get(uid)
+        health = health_by_uid.get(uid)
+        insights = insights_by_uid.get(uid, [])
+        assigned_count = assigned_by_uid.get(uid, 0)
+        completed_count = completed_by_uid.get(uid, 0)
         compliance_pct = round(completed_count / assigned_count * 100) if assigned_count > 0 else None
-
-        # Status global: verde / amarillo / rojo
-        def _compute_status(readiness, acwr, injury_risk):
-            if readiness is None:
-                return "unknown"
-            if (injury_risk and injury_risk > 0.6) or (acwr and acwr > 1.5):
-                return "critical"
-            if readiness < 50 or (acwr and acwr > 1.3) or (injury_risk and injury_risk > 0.3):
-                return "caution"
-            return "optimal"
 
         readiness   = ctx.current_readiness if ctx else None
         acwr        = ctx.current_acwr       if ctx else None
@@ -772,7 +833,7 @@ def get_status_board(
                 for i in insights
             ],
             "context_age_h": round(
-                (datetime.now(timezone.utc).replace(tzinfo=None) - ctx.context_built_at).total_seconds() / 3600, 1
+                (now_naive - ctx.context_built_at).total_seconds() / 3600, 1
             ) if ctx and ctx.context_built_at else None,
         })
 
@@ -797,22 +858,39 @@ def adherence(
     # Atletas del coach (filtrado opcional por grupo)
     athlete_ids = coach_athlete_ids(db, coach, group_id)
 
-    template_ids = [t.id for t in db.query(WorkoutTemplate).filter(
-        WorkoutTemplate.coach_id == coach.id
-    ).all()]
+    # COACH-TABLERO-PERF: precarga en bloque (antes: usuario + asignaciones + un
+    # log por asignación, por atleta).
+    users_by_id, assigns_by_uid = {}, {}
+    coach_tpl_ids = db.query(WorkoutTemplate.id).filter(WorkoutTemplate.coach_id == coach.id)
+    done_pairs = set()
+    for chunk in _chunks(list(athlete_ids)):
+        for u in db.query(User).filter(User.id.in_(chunk)).all():
+            users_by_id[u.id] = u
+        for a in db.query(AssignedWorkout).options(joinedload(AssignedWorkout.template)).filter(
+            AssignedWorkout.athlete_id.in_(chunk),
+            AssignedWorkout.template_id.in_(coach_tpl_ids),
+            AssignedWorkout.date_iso >= start,
+            AssignedWorkout.date_iso <= end,
+        ).all():
+            assigns_by_uid.setdefault(a.athlete_id, []).append(a)
+        for aid, luid in db.query(WorkoutLog.assignment_id, WorkoutLog.user_id).join(
+            AssignedWorkout, AssignedWorkout.id == WorkoutLog.assignment_id
+        ).filter(
+            AssignedWorkout.athlete_id.in_(chunk),
+            AssignedWorkout.template_id.in_(coach_tpl_ids),
+            AssignedWorkout.date_iso >= start,
+            AssignedWorkout.date_iso <= end,
+            WorkoutLog.completado == True,
+        ).all():
+            done_pairs.add((aid, luid))
 
     result = []
     for uid in athlete_ids:
-        user = db.query(User).filter(User.id == uid).first()
+        user = users_by_id.get(uid)
         if not user:
             continue
 
-        assignments = db.query(AssignedWorkout).filter(
-            AssignedWorkout.athlete_id == uid,
-            AssignedWorkout.template_id.in_(template_ids),
-            AssignedWorkout.date_iso >= start,
-            AssignedWorkout.date_iso <= end,
-        ).all()
+        assignments = assigns_by_uid.get(uid, [])
 
         by_sport: dict = {}
         done_total = 0
@@ -823,17 +901,12 @@ def adherence(
                 by_sport[sport] = {"total": 0, "done": 0, "pct": 0.0}
             by_sport[sport]["total"] += 1
 
-            log = db.query(WorkoutLog).filter(
-                WorkoutLog.assignment_id == a.id,
-                WorkoutLog.user_id == uid,
-                WorkoutLog.completado == True
-            ).first()
-            if log:
+            if (a.id, uid) in done_pairs:
                 by_sport[sport]["done"] += 1
                 done_total += 1
 
-        for s in by_sport.values():
-            s["pct"] = round(s["done"] / s["total"] * 100, 1) if s["total"] else 0.0
+        for s_ in by_sport.values():
+            s_["pct"] = round(s_["done"] / s_["total"] * 100, 1) if s_["total"] else 0.0
 
         total = len(assignments)
         result.append(AthleteAdherence(
@@ -1516,14 +1589,19 @@ def team_wellness(
 
     today = _date.today().isoformat()
     cutoff = (_date.today() - timedelta(days=7)).isoformat()
+    # COACH-TABLERO-PERF: último registro por atleta en bloque (antes 1 query por atleta).
+    latest_by_uid: dict = {}
+    for chunk in _chunks([u.id for u in athletes]):
+        for w in (
+            db.query(WellnessLog)
+            .filter(WellnessLog.user_id.in_(chunk), WellnessLog.date_iso >= cutoff)
+            .order_by(WellnessLog.date_iso.desc())
+            .all()
+        ):
+            latest_by_uid.setdefault(w.user_id, w)
     result = []
     for u in athletes:
-        latest = (
-            db.query(WellnessLog)
-            .filter(WellnessLog.user_id == u.id, WellnessLog.date_iso >= cutoff)
-            .order_by(WellnessLog.date_iso.desc())
-            .first()
-        )
+        latest = latest_by_uid.get(u.id)
         days_ago = None
         if latest:
             try:

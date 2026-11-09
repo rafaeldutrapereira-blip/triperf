@@ -10086,43 +10086,26 @@
           var endStr = end.toISOString().slice(0, 10);
 
           try {
-            var athletes = await fetch(API + '/coach/athletes', {
-              headers: { Authorization: 'Bearer ' + tok },
-            }).then(function (r) {
+            // COACH-TABLERO-PERF: UNA sola petición para todo el equipo (antes 1 + N por atleta).
+            var team = await fetch(
+              API + '/coach/assignments/team?start=' + mon + '&end=' + endStr,
+              { headers: { Authorization: 'Bearer ' + tok } },
+            ).then(function (r) {
               return r.ok ? r.json() : [];
             });
-            if (!athletes.length) {
+            if (!team.length) {
               el.innerHTML = _t(
                 'coach_s122',
                 '<p style="color:var(--dim);text-align:center;padding:2rem">Sin atletas en el equipo</p>',
               );
               return;
             }
-
-            // Parallel fetch of assignments per athlete
-            var allData = await Promise.all(
-              athletes.map(function (a) {
-                return fetch(
-                  API +
-                    '/coach/assignments/athlete/' +
-                    a.id +
-                    '?start=' +
-                    mon +
-                    '&end=' +
-                    endStr,
-                  { headers: { Authorization: 'Bearer ' + tok } },
-                )
-                  .then(function (r) {
-                    return r.ok ? r.json() : [];
-                  })
-                  .catch(function () {
-                    return [];
-                  })
-                  .then(function (assigns) {
-                    return { athlete: a, assigns: assigns };
-                  });
-              }),
-            );
+            var allData = team.map(function (t) {
+              return {
+                athlete: { id: t.athlete_id, nombre: t.nombre },
+                assigns: t.assignments || [],
+              };
+            });
 
             // Build day columns (Mon–Sun)
             var days = [];

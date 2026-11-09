@@ -311,6 +311,13 @@ class WorkoutLogOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TeamAssignments(BaseModel):
+    """COACH-TABLERO-PERF: asignaciones de un atleta dentro de la respuesta del Gantt de equipo."""
+    athlete_id:  str
+    nombre:      str
+    assignments: List[AssignedWorkoutOut] = []
+
+
 # ─────────────────────────────────────────────
 # ADHERENCE (cumplimiento)
 # ─────────────────────────────────────────────
