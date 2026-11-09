@@ -74,6 +74,10 @@ def has_feature(user: User, feature: str) -> bool:
         return True
     if feature in entitlement_features(user):
         return True
+    from .flow_client import flow_enabled
+    if flow_enabled():   # FLOW-INTEGRA: aplica vencimientos antes de leer el plan
+        from .flow_billing import reconcile_user
+        reconcile_user(user)
     plan = normalize_plan(user.plan_nivel)
     allowed = _PLAN_FEATURES.get(plan, _PLAN_FEATURES["basico"])
     # B12: con addons activos, Labs deja de venir en Elite (sale por gracia o por addon).

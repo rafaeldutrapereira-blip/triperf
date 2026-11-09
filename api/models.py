@@ -2356,6 +2356,43 @@ class Entitlement(Base):
     user = relationship("User", backref="entitlements")
 
 
+class FlowSubscription(Base):
+    """Suscripción de pago vía Flow (FLOW-INTEGRA). Una fila vigente por usuario.
+    status: pendiente | activa | fallida | cancelada. El plan del usuario cambia SOLO
+    cuando un webhook confirmado la pasa a 'activa'. Cancelar agenda el fin
+    (cancel_at_period_end) y el plan vuelve a basico al vencer period_end."""
+    __tablename__ = "flow_subscriptions"
+    __table_args__ = (Index("ix_flow_sub_user_status", "user_id", "status"),)
+
+    id                   = Column(String, primary_key=True, default=_uuid)
+    user_id              = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    product              = Column(String(20), nullable=False)          # esencial | completo
+    plan_nivel           = Column(String(20), nullable=False)          # plan LabX que otorga
+    status               = Column(String(20), nullable=False, default="pendiente")
+    flow_customer_id     = Column(String, nullable=True, index=True)
+    flow_subscription_id = Column(String, nullable=True, unique=True)
+    register_token       = Column(String, nullable=True, index=True)
+    period_start         = Column(DateTime, nullable=True)
+    period_end           = Column(DateTime, nullable=True)
+    cancel_at_period_end = Column(Boolean, nullable=False, default=False)
+    created_at           = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at           = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    user = relationship("User", backref="flow_subscriptions")
+
+
+class FlowPaymentEvent(Base):
+    """Pagos de Flow ya procesados por el webhook (idempotencia: un flow_order
+    se procesa una sola vez; los reintentos de Flow no duplican ni reactivan)."""
+    __tablename__ = "flow_payment_events"
+
+    id          = Column(String, primary_key=True, default=_uuid)
+    flow_order  = Column(String, nullable=False, unique=True)
+    pay_status  = Column(Integer, nullable=False)
+    user_id     = Column(String, nullable=True, index=True)
+    created_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class AiUsageDaily(Base):
     """Consultas de IA por usuario y día (cuota del Asistente IA en Elite / addon)."""
     __tablename__ = "ai_usage_daily"

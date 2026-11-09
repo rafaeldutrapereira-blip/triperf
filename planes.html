@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es" translate="no">
+  <head>
+    <script>/* labx_theme: tema antes del primer pintado (oscuro por defecto) */(function(){try{var v=localStorage.getItem("labx_theme");document.documentElement.setAttribute("data-theme",v==="light"?"light":"dark");}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <title>LabX — Planes</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="theme-vars.css" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+      main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+      h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+      .sub { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.92rem; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+      .plan { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 1.4rem; display: flex; flex-direction: column; gap: 0.6rem; }
+      .plan.soon { opacity: 0.8; }
+      .plan h2 { margin: 0; font-size: 1.15rem; }
+      .price { font-size: 1.9rem; font-weight: 700; }
+      .price small { font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+      .plan p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.45; }
+      .badge { align-self: flex-start; font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+      .btn { margin-top: auto; border: 0; border-radius: var(--radius-sm); padding: 0.7rem 1rem; font-weight: 600; font-size: 0.92rem; cursor: pointer; background: var(--accent); color: #fff; }
+      .btn:disabled { background: var(--surface2); color: var(--dim); cursor: not-allowed; }
+      .btn.sec { background: transparent; color: var(--text); border: 1px solid var(--border); }
+      .note { margin: 1rem 0; padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 0.9rem; }
+      .note.ok { border-color: var(--ok); }
+      .note.bad { border-color: var(--bad); }
+      .note.warn { border-color: var(--warn); }
+      [hidden] { display: none !important; }
+      .fine { color: var(--dim); font-size: 0.78rem; margin-top: 1.2rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Planes LabX</h1>
+      <p class="sub">Suscripción mensual en pesos chilenos, cobrada por Flow. Puedes cancelar cuando quieras: conservas el acceso hasta el fin del período pagado.</p>
+      <div id="msg" class="note" hidden></div>
+      <div id="current" class="note" hidden></div>
+      <div id="grid" class="grid"></div>
+      <p class="fine">Tu plan se activa cuando Flow confirma el pago, no al volver a esta página.</p>
+    </main>
+    <script>
+      (function () {
+        var $ = function (id) { return document.getElementById(id); };
+        var tok = localStorage.getItem('lx_co_token');
+        if (!tok) { location.replace('login.html'); return; }
+        var H = { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
+        var money = function (n) { return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+        var DESC = {
+          esencial: 'Todo LabX en tu app: plan de entrenamiento, análisis, recuperación, nutrición y comunidad.',
+          completo: 'Todo lo de Esencial más el dispositivo LabX. Llega en una próxima etapa.',
+        };
+        function note(el, cls, text) { el.className = 'note ' + cls; el.textContent = text; el.hidden = false; }
+
+        var q = new URLSearchParams(location.search).get('flow');
+        if (q === 'pending') note($('msg'), 'warn', 'Registramos tu tarjeta. Estamos esperando la confirmación del pago de Flow; tu plan se activará en cuanto llegue.');
+        else if (q === 'fail') note($('msg'), 'bad', 'No pudimos completar el registro o el pago. No se activó ningún plan ni se hizo ningún cobro desde LabX. Puedes intentarlo nuevamente.');
+
+        function api(path, opt) {
+          return fetch('/api/flow' + path, Object.assign({ headers: H, credentials: 'include' }, opt || {}))
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok, status: r.status, body: b }; }); });
+        }
+        function render(cfg, sub) {
+          var g = $('grid'); g.textContent = '';
+          cfg.products.forEach(function (p) {
+            var d = document.createElement('div');
+            d.className = 'plan' + (p.available ? '' : ' soon');
+            var h = document.createElement('h2'); h.textContent = p.name; d.appendChild(h);
+            if (!p.available) { var b = document.createElement('span'); b.className = 'badge'; b.textContent = 'Pronto'; d.appendChild(b); }
+            var pr = document.createElement('div'); pr.className = 'price';
+            pr.textContent = money(p.amount) + ' '; var s = document.createElement('small'); s.textContent = 'CLP / mes'; pr.appendChild(s); d.appendChild(pr);
+            var t = document.createElement('p'); t.textContent = DESC[p.id] || ''; d.appendChild(t);
+            var btn = document.createElement('button'); btn.className = 'btn';
+            if (!p.available) { btn.textContent = 'Pronto'; btn.disabled = true; }
+            else if (sub && (sub.status === 'activa')) { btn.textContent = 'Plan actual'; btn.disabled = true; }
+            else {
+              btn.textContent = 'Suscribirme';
+              btn.onclick = function () {
+                btn.disabled = true; btn.textContent = 'Redirigiendo a Flow…';
+                api('/checkout', { method: 'POST', body: JSON.stringify({ product: p.id }) }).then(function (r) {
+                  if (r.ok && r.body.checkout_url) { location.href = r.body.checkout_url; return; }
+                  btn.disabled = false; btn.textContent = 'Suscribirme';
+                  note($('msg'), 'bad', (r.body && r.body.detail) || 'No pudimos iniciar el pago. Intenta nuevamente.');
+                });
+              };
+            }
+            d.appendChild(btn); g.appendChild(d);
+          });
+        }
+        function renderCurrent(sub) {
+          var c = $('current');
+          if (!sub || sub.status === 'cancelada' || sub.status === 'fallida') { c.hidden = true; return; }
+          if (sub.status === 'pendiente') { note(c, 'warn', 'Tienes un pago pendiente de confirmación por Flow.'); return; }
+          var end = sub.period_end ? sub.period_end.slice(0, 10) : '';
+          c.hidden = false; c.className = 'note ok'; c.textContent = '';
+          var sp = document.createElement('span');
+          sp.textContent = sub.cancel_at_period_end ? 'Suscripción cancelada: tu acceso sigue hasta el ' + end + '. ' : 'Suscripción activa' + (end ? ', próxima renovación ' + end : '') + '. ';
+          c.appendChild(sp);
+          if (!sub.cancel_at_period_end) {
+            var b = document.createElement('button'); b.className = 'btn sec'; b.style.marginLeft = '.5rem'; b.textContent = 'Cancelar suscripción';
+            b.onclick = function () {
+              if (!confirm('¿Cancelar? Conservas el acceso hasta el fin del período pagado.')) return;
+              api('/cancel', { method: 'POST' }).then(function (r) { if (r.ok) location.reload(); else note($('msg'), 'bad', 'No pudimos cancelar. Intenta nuevamente.'); });
+            };
+            c.appendChild(b);
+          }
+        }
+        Promise.all([api('/config'), api('/status')]).then(function (rs) {
+          if (!rs[0].ok) { note($('msg'), 'warn', 'Los pagos todavía no están disponibles.'); return; }
+          var sub = rs[1].ok ? rs[1].body.subscription : null;
+          render(rs[0].body, sub); renderCurrent(sub);
+        }).catch(function () { note($('msg'), 'bad', 'No pudimos cargar los planes.'); });
+      })();
+    </script>
+  </body>
+</html>
