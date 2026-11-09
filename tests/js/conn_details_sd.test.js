@@ -73,7 +73,7 @@ test('ultima sync con error se rotula', () => {
 });
 test('cada tarjeta tiene su contenedor y el HTML no toca indoor', () => {
   for (const id of ['garmin-details', 'strava-details']) assert.ok(web.includes('id="' + id + '"'), id);
-  assert.ok(web.includes('connDetailsHtml(\n                p,'));
+  assert.ok(/connDetailsHtml\(\s*p,/.test(web));
   const indoor = fs.readFileSync(path.join(__dirname, '..', '..', 'indoor_workout.html'), 'utf8');
   assert.ok(!indoor.includes('connDetailsHtml'));
 });

@@ -7,7 +7,7 @@ import secrets
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from ..database import Base, get_db
@@ -277,65 +277,16 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db),
     return {"ok": True}
 
 
-def _purge_user_dependents(db: Session, user_id: str) -> dict:
-    """Borra o desvincula TODAS las filas que referencian a users.id.
-
-    Recorre el metadata de SQLAlchemy (no una lista fija), así cubre las ~77
-    columnas con FK a users. Hijos antes que padres.
-    - Columna NOT NULL: se borran las filas (son datos del propio usuario).
-    - Columna nullable (p. ej. actor_id de una notificación enviada a otro):
-      se pone NULL, para no borrar contenido de terceros.
-    Así no quedan filas huérfanas y el DELETE de users no falla por NOT NULL.
-    """
-    from sqlalchemy import delete, update
-
-    purged = {}
-    for table in reversed(Base.metadata.sorted_tables):
-        for fk in table.foreign_keys:
-            if fk.column.table.name != "users":
-                continue
-            col = fk.parent
-            if col.nullable:
-                stmt = update(table).where(col == user_id).values({col.name: None})
-            else:
-                stmt = delete(table).where(col == user_id)
-            n = db.execute(stmt).rowcount or 0
-            if n:
-                purged[f"{table.name}.{col.name}"] = n
-    return purged
-
-
 @router.delete("/account")
 def delete_account(
-    request: Request,
     response: Response,
+    body: dict = Body(default=None),
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    """Elimina la cuenta del usuario y todos sus datos (GDPR Art. 17)."""
-    from ..models import (
-        WorkoutLog, AssignedWorkout, GarminActivity,
-        GarminTrainingLoad, GarminSyncStatus
-    )
-    # Revocar token y limpiar cookie
-    token = _extract_token(request)
-    if token:
-        revoke_token(token, db=db)
-    response.delete_cookie("lx_access_token", path="/")
-
-    user_id = me.id
-    # Borrar datos relacionados
-    db.query(WorkoutLog).filter(WorkoutLog.user_id == user_id).delete()
-    db.query(AssignedWorkout).filter(AssignedWorkout.athlete_id == user_id).delete()
-    db.query(GarminActivity).filter(GarminActivity.user_id == user_id).delete()
-    db.query(GarminTrainingLoad).filter(GarminTrainingLoad.user_id == user_id).delete()
-    db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == user_id).delete()
-    purged = _purge_user_dependents(db, user_id)
-    logger.info("Dependientes limpiados user_id=%s: %s", user_id, purged)
-    db.delete(me)
-    db.commit()
-    logger.info("Cuenta eliminada user_id=%s", user_id)
-    return {"ok": True, "message": "Cuenta eliminada permanentemente"}
+    """CUENTA-BORRADO: alias del flujo unico (contrasena + desactivacion inmediata + purga agendada)."""
+    from .account_routes import confirm_and_request
+    return confirm_and_request(db, me, (body or {}).get("password", ""), response)
 
 
 @router.get("/sessions")

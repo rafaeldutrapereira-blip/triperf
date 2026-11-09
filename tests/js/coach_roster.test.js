@@ -78,7 +78,10 @@ test('los filtros combinan con el buscador', () => {
 });
 
 test('columna Objetivo: nombre con dato, guion sin dato', () => {
-  const withGoal = api.rosterRow(list[0]);
+  // rosterRow usa el dia real: la fecha se calcula relativa a hoy (antes dependia de 2026-11-08)
+  const in30 = new Date(Date.now() + 30 * 86400000);
+  const iso30 = in30.getFullYear() + '-' + String(in30.getMonth() + 1).padStart(2, '0') + '-' + String(in30.getDate()).padStart(2, '0');
+  const withGoal = api.rosterRow(Object.assign({}, list[0], { race_goal_date: iso30 }));
   assert.ok(withGoal.includes('Ironman 70.3'));
   assert.ok(withGoal.includes('30 d'));
   const noGoal = api.rosterRow(list[2]);

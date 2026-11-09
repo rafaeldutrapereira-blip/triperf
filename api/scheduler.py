@@ -113,6 +113,22 @@ def _gdpr_retention_cleanup() -> None:
         db.close()
 
 
+def _process_account_deletions() -> None:
+    """CUENTA-BORRADO: purga las cuentas cuyo periodo de gracia ya vencio (plazo maximo 30 dias)."""
+    from .database import SessionLocal
+    from .account_deletion import process_due_requests
+    db = SessionLocal()
+    try:
+        res = process_due_requests(db)
+        if res["purged"] or res["failed"]:
+            logger.info("Borrado de cuentas: %s", res)
+    except Exception as e:
+        db.rollback()
+        logger.error("Borrado de cuentas error: %s", type(e).__name__)
+    finally:
+        db.close()
+
+
 # ── S12/S14: Notificaciones periódicas ────────────────────────
 
 def _send_weekly_summaries() -> None:
@@ -683,6 +699,14 @@ def start_scheduler(database_url: str | None = None) -> None:
         "cron", hour=6, minute=45,
         id="plan_matching", replace_existing=True,
         misfire_grace_time=3600,
+    )
+
+    # CUENTA-BORRADO: purga diaria de cuentas con gracia vencida (reintenta las fallidas)
+    _scheduler.add_job(
+        _process_account_deletions,
+        "cron", hour=4, minute=15,
+        id="account_deletions", replace_existing=True,
+        misfire_grace_time=6 * 3600,
     )
 
     _scheduler.start()

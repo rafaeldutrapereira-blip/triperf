@@ -1931,7 +1931,7 @@
             </div>
 
             <!-- Zona de peligro -->
-            <div class="card danger-card">
+            <div class="card danger-card" id="zona-peligro">
               <div class="card-head">
                 <span class="card-title" data-i18n="prof_card_danger_zone">
                   <svg
@@ -2114,6 +2114,14 @@
           render2FAStatus();
         }
       }
+      /* CUENTA-BORRADO: eliminar-cuenta.html enlaza a #zona-peligro (pestaña Seguridad). */
+      window.addEventListener('load', function () {
+        if (location.hash === '#zona-peligro') {
+          switchTab('seguridad');
+          var z = document.getElementById('zona-peligro');
+          if (z) z.scrollIntoView();
+        }
+      });
       /* PERFIL-ORDEN: el índice abre la pestaña que contiene la sección y baja a ella. */
       var SEC_TAB = {
         datos: 'perfil',
@@ -4399,41 +4407,9 @@
           .catch(function () {});
       }
 
-      /* ── Delete account ───────────────────────────────────────────── */
+      /* ── Delete account (CUENTA-BORRADO) ──────────────────────────── */
       function deleteAccount() {
-        if (
-          !confirm(
-            _t(
-              'prof_confirm_delete_account',
-              '¿Eliminar tu cuenta permanentemente? Esta acción NO se puede deshacer.',
-            ),
-          )
-        )
-          return;
-        if (
-          prompt(
-            _t('prof_prompt_delete_confirm', 'Escribe DELETE para confirmar:'),
-          ) !== 'DELETE'
-        ) {
-          toast(_t('prof_toast_action_cancelled', 'Acción cancelada'), 'err');
-          return;
-        }
-        fetch(API + '/auth/account', {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: authH(false),
-        })
-          .then(function () {
-            localStorage.clear();
-            sessionStorage.clear();
-            location.href = 'landing.html';
-          })
-          .catch(function () {
-            toast(
-              _t('prof_toast_delete_account_err', 'Error al eliminar cuenta'),
-              'err',
-            );
-          });
+        if (window.LXDeleteAccount) LXDeleteAccount.open();
       }
 
       /* ── Invitaciones de coach pendientes de aceptar (un coach quiso
@@ -4553,6 +4529,7 @@
       });
     </script>
     <script src="lx-info.js"></script>
+    <script src="lx-delete-account.js"></script>
     <script src="nav.js?v=10"></script>
     <script src="footer.js"></script>
     <script src="dash-header.js"></script>

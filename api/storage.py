@@ -41,6 +41,10 @@ class StorageBackend(ABC):
     def delete(self, key: str) -> None:
         """Remove object at `key`. No-op if already absent."""
 
+    def delete_prefix(self, prefix: str) -> int:
+        """Remove every object under `prefix/` (borrado de cuenta). Returns how many."""
+        return 0
+
     @abstractmethod
     def url(self, key: str) -> str:
         """Return a URL that serves the object to the client."""
@@ -85,6 +89,15 @@ class LocalStorage(StorageBackend):
         if path.exists():
             path.unlink()
             logger.debug("LocalStorage.delete key=%s", key)
+
+    def delete_prefix(self, prefix: str) -> int:
+        import shutil
+        path = self._path(prefix.rstrip("/"))
+        if not path.is_dir():
+            return 0
+        n = sum(1 for f in path.rglob("*") if f.is_file())
+        shutil.rmtree(path, ignore_errors=True)
+        return n
 
     def url(self, key: str) -> str:
         app_url = get_app_url()
@@ -146,6 +159,16 @@ class S3Storage(StorageBackend):
     def delete(self, key: str) -> None:
         self._client.delete_object(Bucket=self._bucket, Key=key)
         logger.debug("S3Storage.delete bucket=%s key=%s", self._bucket, key)
+
+    def delete_prefix(self, prefix: str) -> int:
+        n = 0
+        paginator = self._client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix.rstrip("/") + "/"):
+            keys = [{"Key": o["Key"]} for o in page.get("Contents", [])]
+            if keys:
+                self._client.delete_objects(Bucket=self._bucket, Delete={"Objects": keys})
+                n += len(keys)
+        return n
 
     def url(self, key: str) -> str:
         if self._public_prefix:

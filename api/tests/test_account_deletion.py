@@ -56,12 +56,16 @@ def test_delete_account_with_snapshots_and_notifications_leaves_no_orphans(clien
 
     uid = athlete_user.id  # guardar antes: tras el borrado el objeto ya no es legible
     token = login(client, "athlete@test.com", "AthlPass123")
-    r = client.delete("/api/auth/account", headers=auth_headers(token))
-
+    r = client.request("DELETE", "/api/auth/account", json={"password": "AthlPass123"},
+                       headers=auth_headers(token))
     assert r.status_code == 200, r.text
+    # CUENTA-BORRADO: la purga corre en el job tras la gracia
+    from datetime import timedelta
+    from api import account_deletion as ad
+    ad.process_due_requests(db, now=now + timedelta(days=ad.GRACE_DAYS + 1))
     db.expire_all()  # la sesión del test tiene caché de identidad: releer desde la base
-    assert _count_refs(db, uid) == {}, "quedaron filas que apuntan al usuario borrado"
-    assert db.get(User, uid) is None
+    assert set(_count_refs(db, uid)) <= {k for k, v in ad.POLICY.items() if v in ("keep", "scrub")}
+    assert db.get(User, uid).activo is False
     kept = db.get(CommunityNotification, notif_id)
     assert kept is not None, "la notificación del coach no debe borrarse"
     assert kept.actor_id is None
@@ -71,7 +75,11 @@ def test_delete_account_with_snapshots_and_notifications_leaves_no_orphans(clien
 def test_delete_account_without_dependents_still_works(client, db, athlete_user):
     uid = athlete_user.id
     token = login(client, "athlete@test.com", "AthlPass123")
-    r = client.delete("/api/auth/account", headers=auth_headers(token))
+    r = client.request("DELETE", "/api/auth/account", json={"password": "AthlPass123"},
+                       headers=auth_headers(token))
     assert r.status_code == 200, r.text
+    from datetime import timedelta
+    from api import account_deletion as ad
+    ad.process_due_requests(db, now=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=ad.GRACE_DAYS + 1))
     db.expire_all()
-    assert db.get(User, uid) is None
+    assert db.get(User, uid).activo is False

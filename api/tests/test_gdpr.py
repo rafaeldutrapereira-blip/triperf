@@ -78,16 +78,39 @@ class TestGdprExport:
 # DELETE /athlete/me
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _del(client, token):
+    return client.request("DELETE", "/api/athlete/me", json={"password": "AthlPass123"},
+                          headers={"Authorization": f"Bearer {token}"})
+
+
+def _purge_now(db):
+    """CUENTA-BORRADO: la anonimizacion la hace el job tras la gracia; aqui se adelanta el reloj."""
+    from datetime import datetime, timedelta, timezone
+    from api import account_deletion as ad
+    ad.process_due_requests(db, now=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=ad.GRACE_DAYS + 1))
+
+
+@pytest.fixture(autouse=True)
+def _no_strava_network(monkeypatch):
+    from api import account_deletion as ad
+    monkeypatch.setattr(ad, "_strava_deauthorize", lambda tok: None)
+
+
 class TestGdprDelete:
     def test_delete_requires_auth(self, client):
         r = client.delete("/api/athlete/me")
         assert r.status_code == 401
 
+    def test_delete_requires_password(self, client, athlete_user):
+        token = login(client, "athlete@test.com", "AthlPass123")
+        client.cookies.clear()
+        r = client.delete("/api/athlete/me", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 400
+
     def test_delete_returns_200(self, client, athlete_user):
         token = login(client, "athlete@test.com", "AthlPass123")
         client.cookies.clear()
-        r = client.delete("/api/athlete/me",
-                          headers={"Authorization": f"Bearer {token}"})
+        r = _del(client, token)
         assert r.status_code == 200
         data = r.json()
         assert data["ok"] is True
@@ -96,18 +119,18 @@ class TestGdprDelete:
         from api.models import User
         token = login(client, "athlete@test.com", "AthlPass123")
         client.cookies.clear()
-        client.delete("/api/athlete/me",
-                      headers={"Authorization": f"Bearer {token}"})
+        _del(client, token)
+        _purge_now(db)
         u = db.query(User).filter(User.id == athlete_user.id).first()
         db.refresh(u)
-        assert u.nombre == "Deleted User"
+        assert u.nombre == "Cuenta eliminada"
 
     def test_delete_anonymizes_email(self, client, db, athlete_user):
         from api.models import User
         token = login(client, "athlete@test.com", "AthlPass123")
         client.cookies.clear()
-        client.delete("/api/athlete/me",
-                      headers={"Authorization": f"Bearer {token}"})
+        _del(client, token)
+        _purge_now(db)
         u = db.query(User).filter(User.id == athlete_user.id).first()
         db.refresh(u)
         assert "@deleted.invalid" in u.email
@@ -116,8 +139,8 @@ class TestGdprDelete:
         from api.models import User
         token = login(client, "athlete@test.com", "AthlPass123")
         client.cookies.clear()
-        client.delete("/api/athlete/me",
-                      headers={"Authorization": f"Bearer {token}"})
+        _del(client, token)
+        _purge_now(db)
         u = db.query(User).filter(User.id == athlete_user.id).first()
         db.refresh(u)
         assert u.activo is False
@@ -134,8 +157,8 @@ class TestGdprDelete:
         athlete_user.garmin_password = encrypt("secret123")
         db.commit()
 
-        client.delete("/api/athlete/me",
-                      headers={"Authorization": f"Bearer {token}"})
+        _del(client, token)
+        _purge_now(db)
         db.expire_all()
         u = db.query(User).filter(User.id == athlete_user.id).first()
         assert u.garmin_email is None
@@ -150,8 +173,8 @@ class TestGdprDelete:
         athlete_user.strava_refresh_token = "ref_abc"
         db.commit()
 
-        client.delete("/api/athlete/me",
-                      headers={"Authorization": f"Bearer {token}"})
+        _del(client, token)
+        _purge_now(db)
         db.expire_all()
         u = db.query(User).filter(User.id == athlete_user.id).first()
         assert u.strava_access_token is None
@@ -160,8 +183,7 @@ class TestGdprDelete:
     def test_delete_response_has_message(self, client, athlete_user):
         token = login(client, "athlete@test.com", "AthlPass123")
         client.cookies.clear()
-        r = client.delete("/api/athlete/me",
-                          headers={"Authorization": f"Bearer {token}"})
+        r = _del(client, token)
         assert "message" in r.json()
 
 

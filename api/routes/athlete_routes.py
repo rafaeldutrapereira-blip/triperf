@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import List, Optional
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, Request, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -2511,65 +2511,16 @@ def export_athlete_data(
 @router.delete("/account")
 def delete_account(
     body: dict,
-    request: Request,
     response: Response,
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
     """
-    I-14: GDPR Art.17 — Derecho al olvido. Borra permanentemente todos los datos del atleta.
-    Requiere contraseña actual como confirmación.
+    CUENTA-BORRADO: alias del flujo unico POST /account/deletion-request.
+    Exige la contrasena actual; desactiva la cuenta al instante y agenda la purga.
     """
-    from fastapi import Response
-    from ..auth import verify_password, _extract_token, revoke_token
-    from ..models import (WellnessLog, BloodLabExam, WorkoutLog, GarminActivity,
-                          GarminTrainingLoad, GarminSyncStatus, PersonalRecord,
-                          AssignedWorkout, AuditLog, Message)
-    from ..audit import audit, Action, ip_from_request
-
-    if not verify_password(body.get("password", ""), me.password_hash):
-        raise HTTPException(400, "Contraseña incorrecta — confirma tu identidad para eliminar la cuenta")
-
-    confirm = body.get("confirm_text", "")
-    if confirm.strip().lower() != "eliminar mi cuenta":
-        raise HTTPException(422, 'Escribe exactamente "eliminar mi cuenta" para confirmar')
-
-    user_id = me.id
-    ip      = ip_from_request(request)
-
-    # Registrar en audit ANTES de borrar (último registro)
-    audit(db, Action.ACCOUNT_DELETE if hasattr(Action, "ACCOUNT_DELETE") else "account.delete",
-          user_id=user_id, ip=ip, success=True,
-          detail={"reason": "user_requested_gdpr_deletion"})
-
-    # Revocar token actual
-    token = _extract_token(request)
-    if token:
-        revoke_token(token, db=db)
-
-    # Borrado en cascada (todas las tablas relacionadas)
-    for Model in [WellnessLog, BloodLabExam, WorkoutLog, GarminActivity,
-                  GarminTrainingLoad, GarminSyncStatus, PersonalRecord, AssignedWorkout]:
-        try:
-            db.query(Model).filter(
-                getattr(Model, "user_id", None) == user_id or
-                getattr(Model, "athlete_id", None) == user_id
-            ).delete(synchronize_session=False)
-        except Exception:
-            pass
-
-    # Mensajes (from y to)
-    db.query(Message).filter(
-        (Message.from_user_id == user_id) | (Message.to_user_id == user_id)
-    ).delete(synchronize_session=False)
-
-    # Finalmente borrar el usuario
-    db.delete(me)
-    db.commit()
-
-    response.delete_cookie("lx_access_token", path="/")
-    logger.info("Cuenta eliminada permanentemente user_id=%s ip=%s (GDPR)", user_id, ip)
-    return {"ok": True, "message": "Tu cuenta y todos tus datos han sido eliminados permanentemente."}
+    from .account_routes import confirm_and_request
+    return confirm_and_request(db, me, (body or {}).get("password", ""), response)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3700,25 +3651,11 @@ def gdpr_export_my_data(
 
 @router.delete("/me", status_code=200)
 def gdpr_delete_my_account(
+    response: Response,
+    body: dict = Body(default=None),
     db:  Session = Depends(get_db),
     me:  User    = Depends(get_current_user),
 ):
-    """GDPR Art. 17 — right to erasure. Anonymizes PII and deactivates the account."""
-    anon_id = f"deleted_{me.id[:8]}"
-
-    me.email          = f"{anon_id}@deleted.invalid"
-    me.nombre         = "Deleted User"
-    me.password_hash  = ""
-    me.garmin_email   = None
-    me.garmin_password = None
-    me.strava_access_token  = None
-    me.strava_refresh_token = None
-    me.strava_athlete_id    = None
-    me.totp_secret          = None
-    me.totp_backup_hash     = None
-    me.last_device_hash     = None
-    me.gdpr_consent_ip      = None
-    me.activo = False
-
-    db.commit()
-    return {"ok": True, "message": "Account anonymized and deactivated per GDPR Art. 17"}
+    """GDPR Art. 17 — CUENTA-BORRADO: alias del flujo unico (contrasena + purga agendada)."""
+    from .account_routes import confirm_and_request
+    return confirm_and_request(db, me, (body or {}).get("password", ""), response)

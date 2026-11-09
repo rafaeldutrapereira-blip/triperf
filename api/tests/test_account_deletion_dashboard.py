@@ -54,12 +54,18 @@ def test_usuario_con_dashboard_puede_borrar_su_cuenta(client, db):
     assert r_dash.status_code == 200, r_dash.text
 
     uid = user.id
-    r = client.delete("/api/auth/account", headers=auth_headers(token))
+    r = client.request("DELETE", "/api/auth/account", json={"password": "GdprDash123"},
+                       headers=auth_headers(token))
     assert r.status_code == 200, r.text
 
+    # CUENTA-BORRADO: desactivada ya; los datos se purgan en el job tras la gracia
+    from datetime import timedelta
+    from api import account_deletion as ad
+    assert ad.process_due_requests(db, now=now + timedelta(days=ad.GRACE_DAYS + 1))["purged"] == 1
     db.expire_all()
-    assert db.get(User, uid) is None
-    assert _count_refs(db, uid) == {}, "quedaron filas que apuntan al usuario borrado"
+    assert db.get(User, uid).activo is False      # queda la tumba anonima
+    left = set(_count_refs(db, uid))
+    assert left <= {k for k, v in ad.POLICY.items() if v in ("keep", "scrub")}, left
     # La notificación de otro usuario se conserva, desvinculada del actor borrado.
     notif = db.query(CommunityNotification).filter_by(user_id=other.id).one()
     assert notif.actor_id is None

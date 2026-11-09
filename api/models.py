@@ -2457,3 +2457,25 @@ class IndoorWorkout(Base):
     created_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
                           onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
+class AccountDeletionRequest(Base):
+    """Registro auditable de solicitudes de eliminacion de cuenta (CUENTA-BORRADO).
+
+    Sin datos personales: user_ref es un hash corto del id (no reversible). user_id
+    solo existe mientras la solicitud esta pendiente (el trabajo de purga lo necesita)
+    y se pone en NULL al completarla. summary_json guarda solo conteos por tabla."""
+    __tablename__ = "account_deletion_requests"
+
+    id           = Column(String, primary_key=True, default=_uuid)
+    user_ref     = Column(String(16), nullable=False, index=True)
+    user_id      = Column(String, nullable=True, index=True)
+    status       = Column(String(12), nullable=False, default="pendiente")  # pendiente | completada | error
+    requested_at = Column(DateTime, nullable=False,
+                          default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    purge_after  = Column(DateTime, nullable=False)   # desde cuando el job puede purgar
+    deadline_at  = Column(DateTime, nullable=False)   # plazo maximo declarado (30 dias)
+    completed_at = Column(DateTime, nullable=True)
+    attempts     = Column(Integer, nullable=False, default=0)
+    last_error   = Column(String(200), nullable=True)  # solo el tipo de error
+    summary_json = Column(Text, nullable=True)         # conteos por tabla, sin contenido

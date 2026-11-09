@@ -40,6 +40,7 @@ from .routes.week_template_routes   import router as week_template_router
 from .routes.personal_routes        import router as personal_router
 from .routes.stripe_routes          import router as stripe_router
 from .routes.flow_routes            import router as flow_router
+from .routes.account_routes         import router as account_router
 from .routes.ai_routes              import router as ai_router
 from .routes.report_routes          import router as report_router
 from .routes.import_routes          import router as import_router
@@ -528,6 +529,7 @@ def create_app() -> FastAPI:
     _app.include_router(personal_router,      prefix="/api")
     _app.include_router(stripe_router,        prefix="/api")
     _app.include_router(flow_router,          prefix="/api")  # FLOW-INTEGRA: 404 salvo FLOW_ENABLED=1
+    _app.include_router(account_router,       prefix="/api")  # CUENTA-BORRADO
     _app.include_router(ai_router,            prefix="/api")
     _app.include_router(report_router,        prefix="/api")
     _app.include_router(import_router,        prefix="/api")
