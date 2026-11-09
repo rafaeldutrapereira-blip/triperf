@@ -5801,6 +5801,50 @@
           );
         }
 
+        // CARGA-AL-DIA: fecha de corte de la carga (solo si no es hoy) y rótulo
+        // "estimado" cuando CTL/ATL/TSB se proyectaron por brecha de días.
+        (function () {
+          var tm = document.getElementById('tss-week-meta');
+          if (tm) {
+            var old = tm.querySelector('.lx-load-asof');
+            if (old) old.remove();
+            var ld = d.load_last_date;
+            if (ld && ld < new Date().toLocaleDateString('sv-SE')) {
+              var dt = new Date(ld + 'T12:00:00');
+              var ds = dt.toLocaleDateString(
+                (window.i18n &&
+                  { es: 'es-CL', pt: 'pt-BR', en: 'en-US' }[window.i18n.lang]) ||
+                  'es',
+                { day: 'numeric', month: 'short' },
+              );
+              var sp = document.createElement('span');
+              sp.className = 'lx-load-asof';
+              sp.textContent =
+                ' · ' + _fmt(_t('dash_load_asof', 'al {d}'), { d: ds });
+              tm.appendChild(sp);
+            }
+          }
+          ['ctl', 'atl', 'tsb'].forEach(function (k) {
+            var cell = document.querySelector('[data-kl="' + k + '"]');
+            var row = cell && cell.closest('.kcr');
+            var lab = row && row.querySelector('.kcr-label');
+            if (!lab) return;
+            var tag = lab.querySelector('.lx-load-est');
+            if (d.load_projected) {
+              if (!tag) {
+                tag = document.createElement('span');
+                tag.className = 'lx-load-est';
+                tag.style.cssText =
+                  'font-size:.7rem;opacity:.7;margin-left:6px;font-style:italic';
+                lab.appendChild(tag);
+              }
+              tag.textContent = _t('dash_estimated', 'estimado');
+            } else if (tag) {
+              tag.remove();
+            }
+          });
+        })();
+
         // Sueño y Fatiga muscular — filas de la card "¿Cómo estoy hoy?"
         // (movidas 2026-08-14 desde la ex-card "Estado del Atleta").
         var sleepVal = document.getElementById('w-sleep-val');

@@ -181,6 +181,16 @@ _HANDLERS = {
 }
 
 
+_ACTIVITY_TYPES = ("activities", "manuallyUpdatedActivities")
+
+
+def _recalc_load(db: Session, user_id: str) -> None:
+    """CARGA-AL-DIA: recalcula garmin_training_load del usuario tras ingerir actividades.
+    Best-effort: nunca frena el ingestor."""
+    from .intervals_sync_service import recalc_load_after_sync
+    recalc_load_after_sync(db, user_id)
+
+
 def _process_one(db: Session, row: GarminPushPayload, connected: dict) -> str:
     """Escribe los datos de un payload (sin commit). Devuelve una nota de resultado."""
     if not row.user_id:
@@ -218,6 +228,7 @@ def process_pending(db: Session, limit: int = BATCH_SIZE, retry_failed: bool = F
         GarminPushPayload.id).all()]
     stats = {"selected": len(ids), "processed": 0, "failed": 0, "written": 0}
     connected: dict = {}
+    load_users: set[str] = set()  # CARGA-AL-DIA: usuarios con actividades nuevas en el lote
     for pid in ids:
         try:
             row = db.get(GarminPushPayload, pid)
@@ -228,7 +239,10 @@ def process_pending(db: Session, limit: int = BATCH_SIZE, retry_failed: bool = F
             db.commit()
             stats["processed"] += 1
             if note.startswith("ok:"):
-                stats["written"] += int(note[3:].split("/")[0])
+                n_written = int(note[3:].split("/")[0])
+                stats["written"] += n_written
+                if n_written and row.payload_type in _ACTIVITY_TYPES and row.user_id:
+                    load_users.add(row.user_id)
         except Exception as exc:
             db.rollback()
             stats["failed"] += 1
@@ -240,6 +254,8 @@ def process_pending(db: Session, limit: int = BATCH_SIZE, retry_failed: bool = F
                     db.commit()
             except Exception:
                 db.rollback()
+    for uid in load_users:
+        _recalc_load(db, uid)
     log.info("ingest fase B: %s", stats)
     return stats
 

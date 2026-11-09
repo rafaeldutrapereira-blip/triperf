@@ -894,6 +894,9 @@ def athlete_dashboard(
     )
 
     latest_load = load_rows[-1] if load_rows else None
+    # CARGA-AL-DIA: fecha del ultimo dato de carga realmente usado y si CTL/ATL se proyectaron
+    load_last_date = latest_load.date_iso if latest_load else None
+    load_projected = bool(latest_load and latest_load.date_iso < today_iso)
     if latest_load:
         # Proyectar CTL/ATL forward con TSS=0 si hubo días sin sync (evita lag de fechas)
         _ctl_proj = latest_load.ctl
@@ -1049,7 +1052,7 @@ def athlete_dashboard(
 
     # ── Sync status ───────────────────────────────────────────────────────────
     sync_row = db.query(GarminSyncStatus).filter(GarminSyncStatus.user_id == me.id).first()
-    last_sync = str(sync_row.last_sync_at)[:16] if (sync_row and sync_row.last_sync_at) else None
+    last_sync = _latest_live_sync_str(db, me.id, sync_row)
 
     # ── Salud Garmin ─────────────────────────────────────────────────────────
     from ..models import GarminHealthDaily, GarminSleepSession, PlanSession
@@ -1291,6 +1294,8 @@ def athlete_dashboard(
         "source":       "api_db",
         "generated":    today_iso,
         "last_sync":    last_sync,
+        "load_last_date": load_last_date,
+        "load_projected": load_projected,
         "garmin_email": me.garmin_email,
         # KPI métricas
         "ctl":          ctl,
@@ -2090,6 +2095,28 @@ def garmin_sync_now(
     }
 
 
+def _latest_live_sync(db: Session, user_id: str, sync_row=None):
+    """CARGA-AL-DIA: sello de sincronizacion = el mas reciente entre las vias vivas.
+
+    intervals.icu no guarda un sello por usuario; el dato real mas cercano es
+    GarminActivity.synced_at (lo reescribe cada sync de intervals y cada ingesta oficial
+    de actividades), mas la fila de garmin_sync_status (via legacy). Gana el mayor."""
+    from sqlalchemy import func
+    cands = []
+    if sync_row is not None and sync_row.last_sync_at:
+        cands.append(sync_row.last_sync_at)
+    act = db.query(func.max(GarminActivity.synced_at)).filter(
+        GarminActivity.user_id == user_id).scalar()
+    if act:
+        cands.append(act)
+    return max(cands) if cands else None
+
+
+def _latest_live_sync_str(db: Session, user_id: str, sync_row=None):
+    ts = _latest_live_sync(db, user_id, sync_row)
+    return str(ts)[:16] if ts else None
+
+
 @router.get("/garmin/sync-status")
 def garmin_sync_status(
     db: Session = Depends(get_db),
@@ -2106,14 +2133,15 @@ def garmin_sync_status(
         "last_sync_at": row.last_sync_at.isoformat() if row and row.last_sync_at else None,
         "data_until": _garmin_data_until(db, me.id),
     }
+    live = _latest_live_sync_str(db, me.id, row)
     if not row:
-        return {"status": "never", "last_sync": None, "activities_total": 0,
+        return {"status": "never", "last_sync": live, "activities_total": 0,
                 "has_credentials": has_credentials, **flags, **extra}
     return {
         **flags,
         **extra,
         "status":           row.status,
-        "last_sync":        str(row.last_sync_at)[:16] if row.last_sync_at else None,
+        "last_sync":        live,
         "activities_total": row.activities_total,
         "error":            row.error,
         "has_credentials":  has_credentials,

@@ -308,6 +308,22 @@ async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) 
                 res["errors"] += 1
 
 
+def recalc_load_after_sync(db: Session, user_id: str) -> None:
+    """CARGA-AL-DIA: reconstruye garmin_training_load (idempotente, hasta hoy) tras un sync
+    exitoso. Best-effort: un fallo del recalculo no rompe el sync. Sin tocar formulas."""
+    try:
+        from .services.training_service import recalculate_training_load
+        recalculate_training_load(db, user_id)
+        try:
+            from .redis_client import cache_invalidate_prefix
+            cache_invalidate_prefix(f"dashboard:{user_id}")
+        except Exception:  # noqa: BLE001
+            pass
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.warning("recalculo de carga post-sync fallo user=%s: %s", user_id, type(exc).__name__)
+
+
 async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict:
     user = db.query(User).filter(User.id == user_id).first()
     if user is None or not user.intervals_access_token:
@@ -334,6 +350,8 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
         logger.warning("intervals sync commit fallo user=%s: %s", user_id, type(exc).__name__)
         res["errors"] += 1
         res["status"] = "error"
+    if res["status"] == "ok":
+        recalc_load_after_sync(db, user_id)
     res["ignored_fields"] = counters["ignored_fields"]
     return res
 
@@ -374,5 +392,7 @@ async def backfill_intervals_user(db: Session, user_id: str, floor_iso: str = "2
             res["errors"] += 1
         res["windows"] += 1
         newest = oldest - timedelta(days=1)
+    if res["imported"] or res["updated"] or res["merged"]:
+        recalc_load_after_sync(db, user_id)
     res["ignored_fields"] = counters["ignored_fields"]
     return res

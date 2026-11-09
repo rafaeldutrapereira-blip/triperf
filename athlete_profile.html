@@ -2156,7 +2156,7 @@
           name: 'Garmin',
           state: gReady ? (_gModel.connected ? 'on' : 'off') : 'wait',
           note: gReady && _gModel.legacyDown ? _t('garmin_legacy_down', 'Conexión anterior caída') : '',
-          date: gReady && _gModel.via === 'legacy' ? _glDate(_gLegacyData.last_sync) : '',
+          date: gReady && _gModel.via === 'legacy' ? _glDate(_gLegacyData.last_sync_at || _gLegacyData.last_sync) : '',
         });
         out.push({
           name: 'Strava',
@@ -2909,12 +2909,12 @@
             'garmin_data_until',
             'Datos guardados hasta el {date}',
           ).replace('{date}', _gLegacyData.data_until);
-        } else if (m.via === 'legacy' && _gLegacyData.last_sync) {
+        } else if (m.via === 'legacy' && (_gLegacyData.last_sync_at || _gLegacyData.last_sync)) {
           log.style.display = 'block';
           document.getElementById('garmin-log-txt').textContent =
             _t('prof_last_sync', 'Último sync:') +
             ' ' +
-            new Date(_gLegacyData.last_sync).toLocaleString('es-CL');
+            new Date(_gLegacyData.last_sync_at || _gLegacyData.last_sync).toLocaleString('es-CL');
         } else log.style.display = 'none';
         if (typeof connRenderGarmin === 'function') connRenderGarmin(); /* S-D */
         if (typeof histRender === 'function') histRender(); /* S-B */
@@ -3586,7 +3586,7 @@
         var host = document.getElementById('garmin-details');
         if (!host || !_gModel) return;
         var m = _gModel;
-        var legacyDate = m.via === 'legacy' ? (_gLegacyData || {}).last_sync || '' : undefined;
+        var legacyDate = m.via === 'legacy' ? (_gLegacyData || {}).last_sync_at || (_gLegacyData || {}).last_sync || '' : undefined;
         var cm = connDetailModel('garmin', {
           connected: m.connected,
           via: m.via,
