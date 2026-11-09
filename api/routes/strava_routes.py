@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_user
+from ..activity_dedupe import mark_new_activity
 from ..models import User, GarminActivity
 from ..services.gear_service import assign_gear
 
@@ -453,6 +454,7 @@ def _upsert_strava_activity(a: dict[str, Any], user: User, db: Session) -> tuple
     )
     db.add(row)
     db.flush()
+    mark_new_activity(db, row)  # PILA 374
     try:
         assign_gear(db, row)
     except Exception as _gear_err:

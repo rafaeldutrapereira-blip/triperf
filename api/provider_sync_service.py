@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from . import provider_oauth
+from .activity_dedupe import mark_new_activity
 from .models import GarminActivity, User
 from .providers import registry
 
@@ -137,6 +138,7 @@ def _upsert(db: Session, user_id: str, prefix: str, d: dict) -> str:
         elev_m=d.get("elev_m"), tss=d.get("tss"), **extra)
     db.add(row)
     db.flush()
+    mark_new_activity(db, row)  # PILA 374
     try:
         assign_gear(db, row)
     except Exception as exc:

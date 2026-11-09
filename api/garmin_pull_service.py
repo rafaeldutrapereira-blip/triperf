@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 
 from .crypto   import decrypt
 from .database import SessionLocal
+from .activity_dedupe import mark_new_activity
 from .models   import (
     GarminActivity, GarminSyncStatus, GarminTrainingLoad, User,
     GarminHealthDaily, GarminSleepSession,
@@ -1155,6 +1156,7 @@ class GarminPullService:
                 )
                 db.add(new_act)
                 db.flush()  # obtener ID antes de crear el post
+                mark_new_activity(db, new_act)  # PILA 374
 
                 # B-14 Community: auto-publicar actividad con visibilidad "followers"
                 # Solo actividades con duración mínima significativa (>= 10 min)

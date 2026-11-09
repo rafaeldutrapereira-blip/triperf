@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from .activity_dedupe import mark_new_activity
 from .models import (
     GarminActivity, GarminHealthDaily, GarminOAuthToken, GarminPushPayload, GarminSleepSession,
 )
@@ -99,9 +100,12 @@ def _upsert_activity(db: Session, user_id: str, it: dict) -> bool:
         row.synced_at = _now()
     else:
         # tss queda en su default (0.0): requiere umbrales del atleta; el sync legacy lo recalcula.
-        db.add(GarminActivity(user_id=user_id, activity_id=act_id,
-                              icon={"swim": "🏊", "bike": "🚴", "run": "🏃", "gym": "💪"}.get(sport, "🏅"),
-                              color=color, stroke=stroke, **fields))
+        new_row = GarminActivity(user_id=user_id, activity_id=act_id,
+                                 icon={"swim": "🏊", "bike": "🚴", "run": "🏃", "gym": "💪"}.get(sport, "🏅"),
+                                 color=color, stroke=stroke, **fields)
+        db.add(new_row)
+        db.flush()
+        mark_new_activity(db, new_row)  # PILA 374: misma sesion ya llegada por otra via
     return True
 
 

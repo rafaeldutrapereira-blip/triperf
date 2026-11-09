@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..activity_dedupe import mark_new_activity
 from ..models import User, GarminActivity
 from ..auth import get_current_user
 
@@ -167,6 +168,8 @@ async def import_activity(
         avg_hr      = data.get("avg_hr"),
     )
     db.add(activity)
+    db.flush()
+    mark_new_activity(db, activity)  # PILA 374
     db.commit()
     db.refresh(activity)
 

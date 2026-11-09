@@ -38,6 +38,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from . import intervals_connector as ic
+from .activity_dedupe import mark_new_activity
 from .models import GarminActivity, GarminHealthDaily, GarminSleepSession, User, WeightLog
 
 logger = logging.getLogger("labx.intervals_sync")
@@ -196,10 +197,12 @@ def _upsert_activity(db: Session, user_id: str, it: dict, counters: dict) -> str
     if clash is not None:
         return "merged"
 
-    db.add(GarminActivity(
+    new_row = GarminActivity(
         user_id=user_id, activity_id=act_id, icon=_ICONS.get(sport, "🏅"),
-        color=color, stroke=stroke, synced_at=_now(), **fields))
+        color=color, stroke=stroke, synced_at=_now(), **fields)
+    db.add(new_row)
     db.flush()
+    mark_new_activity(db, new_row)  # PILA 374
     return "imported"
 
 

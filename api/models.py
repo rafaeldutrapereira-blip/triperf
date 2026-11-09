@@ -819,6 +819,11 @@ class GarminActivity(Base):
     # actividad en vez de un flag global "todo público" — igual patrón que
     # un link de "compartir" de Google Docs, no un perfil público indexable.
     share_token = Column(String, nullable=True, unique=True, index=True)
+    # PILA 374 DEDUPE: la misma sesion real puede llegar por varias vias (Garmin oficial,
+    # intervals.icu, Strava). La fila "no canonica" apunta a la canonica y las lecturas ORM
+    # la excluyen (api/activity_dedupe.py). Nunca se borra; NULL = fila vigente.
+    duplicate_of_id  = Column(String, ForeignKey("garmin_activities.id"), nullable=True, index=True)
+    duplicate_reason = Column(String, nullable=True)
 
     user = relationship("User", backref="garmin_activities")
 
@@ -2479,3 +2484,8 @@ class AccountDeletionRequest(Base):
     attempts     = Column(Integer, nullable=False, default=0)
     last_error   = Column(String(200), nullable=True)  # solo el tipo de error
     summary_json = Column(Text, nullable=True)         # conteos por tabla, sin contenido
+
+
+# PILA 374: filtro central de lectura (excluye actividades marcadas como duplicadas).
+from .activity_dedupe import install_read_filter as _install_dedupe_filter  # noqa: E402
+_install_dedupe_filter()
