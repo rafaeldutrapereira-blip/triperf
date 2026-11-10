@@ -368,6 +368,31 @@ def _background_strava_sync_all() -> None:
         db.close()
 
 
+def _background_intervals_plan_sync_all() -> None:
+    """CALENDARIO-VIVO: refresca el plan (eventos WORKOUT de intervals.icu) de todos los
+    usuarios con intervals conectado. Solo con INTERVALS_READ_ENABLED; best-effort por usuario."""
+    import asyncio
+    from .database import SessionLocal
+    from .models import User
+    from .routes.intervals_routes import read_enabled
+    if not read_enabled():
+        return
+    from . import intervals_sync_service as iss
+    db = SessionLocal()
+    try:
+        ids = [u.id for u in db.query(User).filter(
+            User.intervals_access_token.isnot(None), User.activo == True).all()]  # noqa: E712
+        for uid in ids:
+            try:
+                asyncio.run(iss.sync_planned_user(db, uid))
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Plan intervals fallo user=%s: %s", uid, type(e).__name__)
+    except Exception as e:  # noqa: BLE001
+        logger.error("Plan intervals global error: %s", e)
+    finally:
+        db.close()
+
+
 # ── B-11: Proactive daily AI insights ──────────────────────────
 
 def _daily_proactive_insights() -> None:
@@ -730,6 +755,14 @@ def start_scheduler(database_url: str | None = None) -> None:
         "cron", hour=3, minute=30,
         id="daily_encrypted_backup", replace_existing=True,
         misfire_grace_time=6 * 3600,
+    )
+
+    # CALENDARIO-VIVO: plan de intervals.icu cada 3 horas
+    _scheduler.add_job(
+        _background_intervals_plan_sync_all,
+        "interval", hours=3,
+        id="intervals_plan_sync", replace_existing=True,
+        misfire_grace_time=3600,
     )
 
     _scheduler.start()

@@ -311,6 +311,121 @@ async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) 
                 res["errors"] += 1
 
 
+# ── Plan (eventos WORKOUT del calendario de intervals) ──────────────────────
+
+PLAN_PAST_DAYS = 7
+PLAN_FUTURE_DAYS = 28
+PLAN_SOURCE = "intervals"
+
+# Vocabulario de garmin_planned_workouts: swim/bike/run/strength/other (la UI de Mi Plan
+# traduce 'strength' -> 'str'; 'gym' solo existe en garmin_activities).
+_PLAN_SPORT_MAP = {
+    "ride": "bike", "virtualride": "bike", "mountainbikeride": "bike", "gravelride": "bike",
+    "ebikeride": "bike", "emountainbikeride": "bike",
+    "run": "run", "virtualrun": "run", "trailrun": "run",
+    "swim": "swim", "openwaterswim": "swim",
+    "weighttraining": "strength",
+}
+
+
+def _plan_sport(t) -> str:
+    return _PLAN_SPORT_MAP.get(str(t or "").strip().lower(), "other")
+
+
+def _event_duration_s(ev: dict):
+    for k in ("moving_time", "elapsed_time"):
+        v = _pos(ev.get(k))
+        if v:
+            return v
+    doc = ev.get("workout_doc")
+    return _pos(doc.get("duration")) if isinstance(doc, dict) else None
+
+
+def _upsert_planned_event(db: Session, user_id: str, ev: dict) -> str | None:
+    """Crea/actualiza la fila del evento. Devuelve su garmin_scheduled_id o None si se descarta."""
+    from .models import GarminPlannedWorkout
+    cat = str(ev.get("category") or "WORKOUT").upper()
+    ev_id, date_iso = ev.get("id"), str(ev.get("start_date_local") or "")[:10]
+    if cat != "WORKOUT" or ev_id in (None, "") or len(date_iso) != 10:
+        return None
+    sid = f"{PREFIX}{ev_id}"
+    dur_s, dist_m = _event_duration_s(ev), _pos(ev.get("distance"))
+    vals = {
+        "date_iso": date_iso,
+        "title": (ev.get("name") or None),
+        "sport": _plan_sport(ev.get("type")),
+        "dur_min": round(dur_s / 60, 1) if dur_s else None,
+        "dist_km": round(dist_m / 1000, 3) if dist_m else None,
+        # Sin inventar: si intervals no calcula la carga del evento queda NULL.
+        "tss_planned": _pos(ev.get("icu_training_load")),
+        "tss_planned_precise": None,
+        "source": PLAN_SOURCE,
+        "description": (ev.get("description") or None),
+    }
+    row = db.query(GarminPlannedWorkout).filter(
+        GarminPlannedWorkout.user_id == user_id,
+        GarminPlannedWorkout.garmin_scheduled_id == sid).first()
+    if row is None:
+        row = GarminPlannedWorkout(user_id=user_id, garmin_scheduled_id=sid)
+        db.add(row)
+    for k, v in vals.items():
+        setattr(row, k, v)
+    return sid
+
+
+async def sync_planned_user(db: Session, user_id: str) -> dict:
+    """Espeja los eventos WORKOUT de intervals (-7..+28 dias) en garmin_planned_workouts
+    (source='intervals', garmin_scheduled_id='intervals:<id>'). Idempotente. Un evento que
+    ya no esta en origen se ELIMINA si su fecha es hoy o futura; el pasado se conserva como
+    registro. Solo borra si la lectura fue exitosa. Best-effort: nunca lanza."""
+    res = {"planned_status": "ok", "planned_upserted": 0, "planned_removed": 0}
+    try:
+        from .models import GarminPlannedWorkout
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None or not user.intervals_access_token:
+            return {"planned_status": "not_connected", "planned_upserted": 0, "planned_removed": 0}
+        if not ic.has_scope(user, "CALENDAR:READ"):
+            res["planned_status"] = "sin_scope"
+            return res
+        token = ic.read_access_token(user)
+        if not token:
+            res["planned_status"] = "not_connected"
+            return res
+        today = _now().date()
+        oldest, newest = today - timedelta(days=PLAN_PAST_DAYS), today + timedelta(days=PLAN_FUTURE_DAYS)
+        try:
+            events = await ic.fetch_events(token, oldest.isoformat(), newest.isoformat())
+        except ic.IntervalsError as exc:
+            logger.warning("intervals plan user=%s: %s", user_id, exc)
+            res["planned_status"] = "error"
+            return res
+        seen = set()
+        for ev in events:
+            try:
+                with db.begin_nested():
+                    sid = _upsert_planned_event(db, user_id, ev)
+                if sid:
+                    seen.add(sid)
+                    res["planned_upserted"] += 1
+            except Exception as exc:  # noqa: BLE001 -- un evento malo no frena el resto
+                logger.warning("intervals evento omitido user=%s: %s", user_id, type(exc).__name__)
+        stale = db.query(GarminPlannedWorkout).filter(
+            GarminPlannedWorkout.user_id == user_id,
+            GarminPlannedWorkout.source == PLAN_SOURCE,
+            GarminPlannedWorkout.date_iso >= today.isoformat(),
+            GarminPlannedWorkout.date_iso <= newest.isoformat()).all()
+        for row in stale:
+            if row.garmin_scheduled_id not in seen:
+                db.delete(row)
+                res["planned_removed"] += 1
+        db.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.warning("intervals plan fallo user=%s: %s", user_id, type(exc).__name__)
+        res["planned_status"] = "error"
+    return res
+
+
 def recalc_load_after_sync(db: Session, user_id: str) -> None:
     """CARGA-AL-DIA: reconstruye garmin_training_load (idempotente, hasta hoy) tras un sync
     exitoso. Best-effort: un fallo del recalculo no rompe el sync. Sin tocar formulas."""
@@ -355,6 +470,7 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
         res["status"] = "error"
     if res["status"] == "ok":
         recalc_load_after_sync(db, user_id)
+        res.update(await sync_planned_user(db, user_id))
     res["ignored_fields"] = counters["ignored_fields"]
     return res
 

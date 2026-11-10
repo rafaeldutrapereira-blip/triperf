@@ -194,6 +194,13 @@ async def fetch_activities(token: str, oldest_iso: str, newest_iso: str) -> list
     return await _get_json("/athlete/0/activities", token, {"oldest": oldest_iso, "newest": newest_iso})
 
 
+async def fetch_events(token: str, oldest_iso: str, newest_iso: str) -> list[dict]:
+    """GET /athlete/0/events?oldest&newest&category=WORKOUT (scope CALENDAR:READ).
+    Eventos del calendario planificados por el atleta (workouts), no actividades hechas."""
+    return await _get_json("/athlete/0/events", token,
+                           {"oldest": oldest_iso, "newest": newest_iso, "category": "WORKOUT"})
+
+
 async def fetch_wellness(token: str, oldest_iso: str, newest_iso: str) -> list[dict]:
     """GET /athlete/0/wellness?oldest&newest (scope WELLNESS:READ)."""
     return await _get_json("/athlete/0/wellness", token, {"oldest": oldest_iso, "newest": newest_iso})

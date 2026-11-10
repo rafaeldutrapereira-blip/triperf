@@ -1,8 +1,8 @@
 """W17 - Plan del dia: suma las sesiones vengan de donde vengan.
 
 Fuentes hoy: asignaciones LabX (assigned_workouts, source 'labx') y plan
-descargado de Garmin (garmin_planned_workouts, source 'garmin'). Futuro:
-intervals.icu cuando el atleta lo conecte (misma normalizacion).
+descargado de Garmin / leido de intervals.icu (garmin_planned_workouts, source
+'garmin' | 'intervals'; CALENDARIO-VIVO).
 Solo lectura; no toca la sincronizacion Garmin.
 """
 from __future__ import annotations
@@ -40,6 +40,28 @@ def _similar(a: str, b: str) -> bool:
     return len(wa & wb) / len(wa | wb) >= 0.7
 
 
+DUR_TOL = 0.25  # CALENDARIO-VIVO: duracion "parecida" = dentro de +-25% de la sesion LabX
+
+
+def _dur_close(a, b) -> bool:
+    """True si ambas duraciones existen y |a-b| <= 25% de la sesion LabX (b)."""
+    try:
+        a, b = float(a), float(b)
+    except (TypeError, ValueError):
+        return False
+    return a > 0 and b > 0 and abs(a - b) <= DUR_TOL * b
+
+
+def _twin(sp, tt, dur, osp, ot, odur, from_intervals: bool) -> bool:
+    """Misma sesion: mismo deporte y titulo igual/parecido; las filas de intervals
+    ademas calzan por duracion +-25% (su titulo rara vez coincide con el de LabX)."""
+    if sp != osp:
+        return False
+    if _similar(ot, tt):
+        return True
+    return from_intervals and _dur_close(dur, odur)
+
+
 def garmin_planned_items(db: Session, user_id: str, start: Optional[str], end: Optional[str]) -> list:
     """Filas de garmin_planned_workouts del usuario, normalizadas al contrato de /athlete/plan."""
     q = db.query(GarminPlannedWorkout).filter(GarminPlannedWorkout.user_id == user_id)
@@ -75,7 +97,8 @@ def garmin_planned_items(db: Session, user_id: str, start: Optional[str], end: O
             },
             "logs": [],
             "created_at": created,
-            "source": "garmin",
+            "source": "garmin",  # contrato con la UI; el origen real va en `origin`
+            "origin": g.source,
             "done": False,
         })
     return items
@@ -94,7 +117,9 @@ def _dedupe(labx: list, garmin: list) -> list:
             t = a.template
             if t is None or _sport(t.sport) != gt["sport"]:
                 continue
-            if _similar(_norm_title(t.nombre), _norm_title(gt["nombre"])):
+            if _twin(gt["sport"], _norm_title(gt["nombre"]), gt["dur_min"],
+                     _sport(t.sport), _norm_title(t.nombre), t.dur_min,
+                     g.get("origin") == "intervals"):
                 dup = True
                 break
         if not dup:
@@ -114,16 +139,39 @@ def drop_own_plan_twins(db: Session, user_id: str, rows: list) -> list:
     own: dict = {}
     for s in db.query(OwnPlanSession).filter(
             OwnPlanSession.user_id == user_id, OwnPlanSession.date_iso.in_(dates)).all():
-        own.setdefault(s.date_iso, []).append((_sport(s.sport), _norm_title(s.name)))
+        own.setdefault(s.date_iso, []).append((_sport(s.sport), _norm_title(s.name), s.dur_min))
+    if any(r.get("source") == "intervals" for r in rows):
+        # Las filas de intervals tambien ceden ante una sesion asignada (coach) equivalente.
+        q = db.query(AssignedWorkout).filter(
+            AssignedWorkout.athlete_id == user_id, AssignedWorkout.deleted_at.is_(None),
+            AssignedWorkout.date_iso.in_(dates))
+        for a in q.all():
+            if a.template is not None:
+                own.setdefault(a.date_iso, []).append(
+                    (_sport(a.template.sport), _norm_title(a.template.nombre), a.template.dur_min))
     if not own:
         return rows
     out = []
     for r in rows:
         sp, tt = _sport(r.get("sport")), _norm_title(r.get("title"))
-        if any(osp == sp and _similar(ot, tt) for osp, ot in own.get(r["date_iso"], [])):
+        fi = r.get("source") == "intervals"
+        if any(_twin(sp, tt, r.get("dur_min"), osp, ot, od, fi)
+               for osp, ot, od in own.get(r["date_iso"], [])):
             continue
         out.append(r)
     return out
+
+
+def _drop_own_intervals(db: Session, user_id: str, garmin: list) -> list:
+    """Filas normalizadas de intervals cubiertas por una sesion del plan propio (vista)."""
+    cand = [g for g in garmin if g.get("origin") == "intervals"]
+    if not cand:
+        return garmin
+    flat = [{"date_iso": g["date_iso"], "sport": g["template"]["sport"],
+             "title": g["template"]["nombre"], "dur_min": g["template"]["dur_min"],
+             "source": "intervals", "_id": g["id"]} for g in cand]
+    keep = {r["_id"] for r in drop_own_plan_twins(db, user_id, flat)}
+    return [g for g in garmin if g.get("origin") != "intervals" or g["id"] in keep]
 
 
 def _mark_done(db: Session, user_id: str, garmin: list) -> None:
@@ -151,6 +199,7 @@ def build_plan(db: Session, user_id: str, start: Optional[str], end: Optional[st
     if not include_garmin:
         return labx
     garmin = _dedupe(labx, garmin_planned_items(db, user_id, start, end))
+    garmin = _drop_own_intervals(db, user_id, garmin)
     _mark_done(db, user_id, garmin)
     rows = list(labx) + garmin
     rows.sort(key=lambda x: x["date_iso"] if isinstance(x, dict) else x.date_iso)
