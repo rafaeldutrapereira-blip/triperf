@@ -341,7 +341,9 @@ def _background_strava_sync_all() -> None:
 
     db = SessionLocal()
     try:
-        from .routes.strava_routes import _sync_strava_activities, _strava_available
+        from .routes.strava_routes import _sync_strava_activities, _strava_available, ingest_enabled
+        if not ingest_enabled():
+            return  # FUENTE-UNICA: Strava es solo salida; la entrada vive en intervals.icu
         if not _strava_available():
             return
 

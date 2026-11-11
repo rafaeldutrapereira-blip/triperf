@@ -40,14 +40,14 @@ test('flag de lectura apagado: nunca se promete el importador', () => {
   const m2 = model({ garminOn: true, intervals: { connected: false, read_enabled: false, available: true }, strava: {}, state: {} });
   assert.strictEqual(m2.intervals, 'hidden');
 });
-test('Strava conectado ofrece su importador', () => {
-  const m = model({ intervals: IV_OFF, strava: { connected: true, available: true }, state: {} });
+test('Strava conectado ofrece su importador solo con la entrada encendida (FUENTE-UNICA 376)', () => {
+  const m = model({ intervals: IV_OFF, strava: { connected: true, available: true, ingest_enabled: true }, state: {} });
   assert.strictEqual(m.strava, 'import');
   assert.strictEqual(m.visible, true);
   assert.strictEqual(model({ intervals: IV_OFF, strava: { connected: true, available: false }, state: {} }).strava, 'hidden');
 });
 test('descartada o ya importada: oculta', () => {
-  const base = { intervals: IV_ON, strava: { connected: true, available: true } };
+  const base = { intervals: IV_ON, strava: { connected: true, available: true, ingest_enabled: true } };
   assert.strictEqual(model({ ...base, state: { dismissed: true } }).visible, false);
   assert.strictEqual(model({ ...base, state: { done: true } }).visible, false);
 });

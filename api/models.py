@@ -76,6 +76,8 @@ class User(Base):
     intervals_athlete_id   = Column(String,  nullable=True)  # id numerico del atleta en intervals.icu
     intervals_connected_at = Column(DateTime, nullable=True)
     intervals_scope        = Column(String,  nullable=True)  # scopes otorgados (p. ej. "ACTIVITY:READ,CALENDAR:WRITE")
+    intervals_invalid_at   = Column(DateTime, nullable=True)  # FUENTE-UNICA: intervals respondio 401/403 -> reconectar
+    intervals_last_sync_at = Column(DateTime, nullable=True)  # ultima sync completada sin errores
     # Stripe â€” S15: customer_id para portal de facturaciÃ³n
     stripe_customer_id      = Column(String,  nullable=True, index=True)
     stripe_subscription_id  = Column(String,  nullable=True, index=True)

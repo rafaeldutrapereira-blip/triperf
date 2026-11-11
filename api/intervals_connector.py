@@ -61,6 +61,10 @@ class IntervalsError(Exception):
     """Error de la API o de conexion -- nunca se traduce en un exito falso."""
 
 
+class IntervalsAuthError(IntervalsError):
+    """HTTP 401/403: el token fue revocado o perdio el permiso. Marca la conexion como invalida."""
+
+
 # ── Tokens cifrados (mismo patron que Strava, ver routes/strava_routes.py) ──
 
 def parse_scopes(scope: str | None) -> set[str]:
@@ -91,6 +95,9 @@ def save_tokens(user: "User", access_token: str, athlete_id: str | None, db,
     user.intervals_scope        = (scope or "").strip() or SCOPE
     from datetime import datetime, timezone
     user.intervals_connected_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Token nuevo: se parte limpio (ni "invalido" ni ultima sync de la cuenta anterior).
+    user.intervals_invalid_at   = None
+    user.intervals_last_sync_at = None
     db.commit()
 
 
@@ -107,7 +114,41 @@ def clear_tokens(user: "User", db) -> None:
     user.intervals_athlete_id   = None
     user.intervals_scope        = None
     user.intervals_connected_at = None
+    user.intervals_invalid_at   = None
+    user.intervals_last_sync_at = None
     db.commit()
+
+
+def is_invalid(user: "User") -> bool:
+    """Hay token guardado pero intervals.icu lo rechazo (401/403) -- hay que reconectar."""
+    return bool(user.intervals_access_token) and getattr(user, "intervals_invalid_at", None) is not None
+
+
+def _utcnow():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def mark_invalid(user: "User", db) -> None:
+    """Persistir que el token fue rechazado. Best-effort: nunca lanza."""
+    try:
+        if user.intervals_access_token and user.intervals_invalid_at is None:
+            user.intervals_invalid_at = _utcnow()
+            db.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.warning("No se pudo marcar intervals invalido user=%s: %s", getattr(user, "id", "?"), type(exc).__name__)
+
+
+def mark_synced(user: "User", db) -> None:
+    """Sync completada sin errores: sello real de ultima sincronizacion; limpia 'invalido'."""
+    try:
+        user.intervals_last_sync_at = _utcnow()
+        user.intervals_invalid_at = None
+        db.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.warning("No se pudo sellar la sync de intervals user=%s: %s", getattr(user, "id", "?"), type(exc).__name__)
 
 
 # ── OAuth2 ────────────────────────────────────────────────────────────────
@@ -176,7 +217,7 @@ async def _get_json(path: str, token: str, params: dict) -> list:
                 continue
             break
     if r.status_code in (401, 403):
-        raise IntervalsError("intervals.icu rechazo el token o el permiso -- reconecta")
+        raise IntervalsAuthError("intervals.icu rechazo el token o el permiso -- reconecta")
     if r.status_code >= 400:
         logger.warning("intervals.icu GET %s -> %s", path, r.status_code)
         raise IntervalsError(f"intervals.icu respondio {r.status_code}")
@@ -385,7 +426,7 @@ async def send_workout_event(user: "User", name: str, sport: str, blocks: list[d
             r = await _call("post", events_url)
 
         if r.status_code in (401, 403):
-            raise IntervalsError("intervals.icu rechazo el token -- reconecta tu reloj")
+            raise IntervalsAuthError("intervals.icu rechazo el token -- reconecta tu reloj")
         if r.status_code >= 400:
             raise IntervalsError(f"intervals.icu rechazo el workout ({r.status_code})")
 

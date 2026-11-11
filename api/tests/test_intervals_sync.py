@@ -33,6 +33,7 @@ def _patch(monkeypatch, acts=None, well=None):
     fa, fw = AsyncMock(return_value=acts or []), AsyncMock(return_value=well or [])
     monkeypatch.setattr(ic, "fetch_activities", fa)
     monkeypatch.setattr(ic, "fetch_wellness", fw)
+    monkeypatch.setattr(ic, "fetch_events", AsyncMock(return_value=[]))  # sin red real (376: un 401 marca invalido)
     return fa, fw
 
 

@@ -283,6 +283,8 @@ async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) 
     except ic.IntervalsError as exc:
         logger.warning("intervals sync actividades user=%s: %s", user_id, exc)
         acts, res["errors"] = [], res["errors"] + 1
+        if isinstance(exc, ic.IntervalsAuthError):
+            res["auth_failed"] = True
     for it in acts:
         try:
             with db.begin_nested():  # savepoint: una fila mala no descarta las anteriores
@@ -301,6 +303,8 @@ async def _sync_window(db, user_id, user, token, oldest, newest, res, counters) 
         except ic.IntervalsError as exc:
             logger.warning("intervals sync wellness user=%s: %s", user_id, exc)
             wellness, res["errors"] = [], res["errors"] + 1
+            if isinstance(exc, ic.IntervalsAuthError):
+                res["auth_failed"] = True
         for it in wellness:
             try:
                 with db.begin_nested():
@@ -384,6 +388,9 @@ async def sync_planned_user(db: Session, user_id: str) -> dict:
         user = db.query(User).filter(User.id == user_id).first()
         if user is None or not user.intervals_access_token:
             return {"planned_status": "not_connected", "planned_upserted": 0, "planned_removed": 0}
+        if ic.is_invalid(user):
+            res["planned_status"] = "needs_reconnect"
+            return res
         if not ic.has_scope(user, "CALENDAR:READ"):
             res["planned_status"] = "sin_scope"
             return res
@@ -398,6 +405,9 @@ async def sync_planned_user(db: Session, user_id: str) -> dict:
         except ic.IntervalsError as exc:
             logger.warning("intervals plan user=%s: %s", user_id, exc)
             res["planned_status"] = "error"
+            if isinstance(exc, ic.IntervalsAuthError):
+                res["planned_status"] = "needs_reconnect"
+                ic.mark_invalid(user, db)
             return res
         seen = set()
         for ev in events:
@@ -446,7 +456,7 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
     user = db.query(User).filter(User.id == user_id).first()
     if user is None or not user.intervals_access_token:
         return {"status": "not_connected"}
-    if not ic.has_scope(user, "ACTIVITY:READ"):
+    if not ic.has_scope(user, "ACTIVITY:READ") or ic.is_invalid(user):
         return {"status": "needs_reconnect"}
     token = ic.read_access_token(user)
     if not token:
@@ -468,7 +478,12 @@ async def sync_intervals_user(db: Session, user_id: str, days: int = 90) -> dict
         logger.warning("intervals sync commit fallo user=%s: %s", user_id, type(exc).__name__)
         res["errors"] += 1
         res["status"] = "error"
+    if res.pop("auth_failed", False):
+        ic.mark_invalid(user, db)
+        res["status"] = "needs_reconnect"
     if res["status"] == "ok":
+        if res["errors"] == 0:
+            ic.mark_synced(user, db)
         recalc_load_after_sync(db, user_id)
         res.update(await sync_planned_user(db, user_id))
     res["ignored_fields"] = counters["ignored_fields"]
@@ -484,7 +499,7 @@ async def backfill_intervals_user(db: Session, user_id: str, floor_iso: str = "2
     user = db.query(User).filter(User.id == user_id).first()
     if user is None or not user.intervals_access_token:
         return {"status": "not_connected"}
-    if not ic.has_scope(user, "ACTIVITY:READ"):
+    if not ic.has_scope(user, "ACTIVITY:READ") or ic.is_invalid(user):
         return {"status": "needs_reconnect"}
     token = ic.read_access_token(user)
     if not token:
@@ -510,7 +525,14 @@ async def backfill_intervals_user(db: Session, user_id: str, floor_iso: str = "2
                            oldest, newest, user_id, type(exc).__name__)
             res["errors"] += 1
         res["windows"] += 1
+        if res.get("auth_failed"):
+            break  # token rechazado: no tiene sentido recorrer las ventanas restantes
         newest = oldest - timedelta(days=1)
+    if res.pop("auth_failed", False):
+        ic.mark_invalid(user, db)
+        res["status"] = "needs_reconnect"
+    elif res["errors"] == 0:
+        ic.mark_synced(user, db)
     if res["imported"] or res["updated"] or res["merged"]:
         recalc_load_after_sync(db, user_id)
     res["ignored_fields"] = counters["ignored_fields"]

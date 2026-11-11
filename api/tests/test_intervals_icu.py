@@ -134,11 +134,12 @@ class TestStatusEndpoints:
         assert r.json()["connected"] is True
         assert r.json()["athlete_id"] == "42"
 
-    def test_disconnect_not_connected_400(self, client, db):
+    def test_disconnect_not_connected_idempotent(self, client, db):
+        # FUENTE-UNICA: desconectar es idempotente (antes respondia 400).
         _user(db, "s6discon@test.com")
         h = _h(client, "s6discon@test.com")
         r = client.delete("/api/integrations/intervals/disconnect", headers=h)
-        assert r.status_code == 400
+        assert r.status_code == 200 and r.json()["was_connected"] is False
 
     def test_disconnect_clears(self, client, db):
         u = _user(db, "s6discon2@test.com")

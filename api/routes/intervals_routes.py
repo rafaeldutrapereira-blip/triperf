@@ -39,16 +39,39 @@ def _require_available():
         raise HTTPException(503, "intervals.icu no esta configurado todavia")
 
 
+def _connection_state(me: User) -> str:
+    """not_connected | connected | invalid (token rechazado) | needs_reconnect (falta el permiso de lectura)."""
+    if not me.intervals_access_token:
+        return "not_connected"
+    if ic.is_invalid(me):
+        return "invalid"
+    if ic.needs_reconnect(me):
+        return "needs_reconnect"
+    return "connected"
+
+
+def _iso(dt):
+    return dt.isoformat() if dt else None
+
+
 @router.get("/status")
 def intervals_status(me: User = Depends(get_current_user)):
-    connected = bool(me.intervals_access_token)
+    """`connected` = token presente Y no marcado invalido (401/403 de intervals)."""
+    has_token = bool(me.intervals_access_token)
+    state = _connection_state(me)
+    connected = has_token and state != "invalid"
     return {
         "available":  ic.available(),
+        "state":      state,
+        "has_token":  has_token,
+        "invalid":    state == "invalid",
+        "last_sync":  _iso(me.intervals_last_sync_at) if has_token else None,
+        "connected_at": _iso(me.intervals_connected_at) if has_token else None,
         "connected":  connected,
-        "athlete_id": me.intervals_athlete_id if connected else None,
-        "scopes":     me.intervals_scope if connected else None,
+        "athlete_id": me.intervals_athlete_id if has_token else None,
+        "scopes":     me.intervals_scope if has_token else None,
         "read_enabled":    read_enabled(),
-        "needs_reconnect": ic.needs_reconnect(me),
+        "needs_reconnect": state in ("needs_reconnect", "invalid"),
     }
 
 
@@ -80,11 +103,36 @@ async def intervals_backfill(
     return await iss.backfill_intervals_user(db, me.id, floor)
 
 
+def _oauth_state(uid: str, ret: str | None) -> str:
+    payload = {"uid": uid}
+    if ret == "profile":  # solo se acepta un destino conocido (nada de URLs libres)
+        payload["ret"] = "profile"
+    return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+
+
+def _return_url(ret: str | None, outcome: str) -> str:
+    page = "athlete_profile.html" if ret == "profile" else "indoor_workout.html"
+    return f"{APP_URL}/{page}?intervals={outcome}"
+
+
 @router.get("/connect")
-def intervals_connect(me: User = Depends(require_feature("indoor_workout"))):
+def intervals_connect(ret: str | None = Query(None), me: User = Depends(require_feature("indoor_workout"))):
     _require_available()
-    state = base64.urlsafe_b64encode(json.dumps({"uid": me.id}).encode()).decode()
-    return RedirectResponse(ic.build_authorize_url(state))
+    return RedirectResponse(ic.build_authorize_url(_oauth_state(me.id, ret)))
+
+
+@router.post("/reconnect")
+def intervals_reconnect(
+    ret: str | None = Query(None),
+    me: User = Depends(require_feature("indoor_workout")),
+    db: Session = Depends(get_db),
+):
+    """RECONECTAR = soltar las credenciales guardadas + devolver la URL de un OAuth fresco.
+    No borra actividades, salud ni planificados. Si intervals no esta configurado, no toca nada."""
+    _require_available()
+    ic.clear_tokens(me, db)
+    logger.info("intervals.icu reconexion iniciada user=%s", me.id)
+    return {"ok": True, "authorize_url": ic.build_authorize_url(_oauth_state(me.id, ret))}
 
 
 @router.get("/callback")
@@ -95,13 +143,20 @@ async def intervals_callback(
     db: Session = Depends(get_db),
 ):
     _require_available()
+    ret = None
+    if state:  # el destino de retorno viaja en el state aunque el usuario haya negado el permiso
+        try:
+            ret = json.loads(base64.urlsafe_b64decode(state + "=" * (-len(state) % 4)).decode()).get("ret")
+        except Exception:
+            ret = None
     if error or not code or not state:
-        return RedirectResponse(f"{APP_URL}/indoor_workout.html?intervals=denied")
+        return RedirectResponse(_return_url(ret, "denied"))
 
     try:
         padded = state + "=" * (-len(state) % 4)
         payload = json.loads(base64.urlsafe_b64decode(padded).decode())
         user_id = payload["uid"]
+        ret = payload.get("ret")
     except Exception:
         raise HTTPException(400, "State OAuth invalido")
 
@@ -118,16 +173,18 @@ async def intervals_callback(
         ic.save_tokens(user, access_token, athlete_id, db, scope=tokens.get("scope"))
     except ic.IntervalsError as exc:
         logger.warning("intervals.icu callback fallo user=%s: %s", user_id, exc)
-        return RedirectResponse(f"{APP_URL}/indoor_workout.html?intervals=error")
+        return RedirectResponse(_return_url(ret, "error"))
 
     logger.info("intervals.icu conectado user=%s athlete_id=%s", user_id, user.intervals_athlete_id)
-    return RedirectResponse(f"{APP_URL}/indoor_workout.html?intervals=connected")
+    return RedirectResponse(_return_url(ret, "connected"))
 
 
 @router.delete("/disconnect")
 def intervals_disconnect(me: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not me.intervals_access_token:
-        raise HTTPException(400, "intervals.icu no esta conectado")
+    """Idempotente: sin conexion tambien responde ok. Solo borra credenciales y estado de
+    sync (token, athlete_id, scope, fechas); actividades, salud y planificados importados quedan."""
+    was_connected = bool(me.intervals_access_token)
     ic.clear_tokens(me, db)
-    logger.info("intervals.icu desconectado user=%s", me.id)
-    return {"ok": True}
+    if was_connected:
+        logger.info("intervals.icu desconectado user=%s", me.id)
+    return {"ok": True, "was_connected": was_connected}

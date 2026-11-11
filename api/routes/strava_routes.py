@@ -57,6 +57,13 @@ def _strava_available() -> bool:
     return bool(_CLIENT_ID and _CLIENT_SECRET)
 
 
+def ingest_enabled() -> bool:
+    """FUENTE-UNICA: Strava es solo SALIDA. La ENTRADA de actividades (sync manual, job
+    programado, historial) queda apagada salvo STRAVA_INGEST_ENABLED=1|true (mismo patron
+    de flag que INTERVALS_READ_ENABLED). La lectura de actividades es de intervals.icu."""
+    return os.getenv("STRAVA_INGEST_ENABLED", "").strip().lower() in ("1", "true")
+
+
 def _require_strava():
     if not _strava_available():
         raise HTTPException(503, "Strava no configurado — configura STRAVA_CLIENT_ID y STRAVA_CLIENT_SECRET")
@@ -203,6 +210,7 @@ def strava_status(
     connected = bool(me.strava_access_token)
     return {
         "available":    _strava_available(),
+        "ingest_enabled": ingest_enabled(),
         "connected":    connected,
         "athlete_id":   me.strava_athlete_id if connected else None,
         "token_expires": me.strava_token_expires_at.isoformat() if (connected and me.strava_token_expires_at) else None,
@@ -219,6 +227,8 @@ async def strava_sync(
     Importa actividades de Strava de los últimos `days` días.
     Crea/actualiza filas en garmin_activities (tabla compartida con Garmin).
     """
+    if not ingest_enabled():
+        raise HTTPException(404, "No encontrado")
     _require_strava()
     if days < 1 or days > 90:
         raise HTTPException(400, "days debe ser entre 1 y 90")
@@ -232,6 +242,10 @@ async def _sync_strava_activities(me: User, db: Session, days: int = 7) -> dict:
     su cuenta Strava, la sincronización queda automática (cada 2h, igual que
     Garmin) — no tiene que volver a apretar "Sincronizar" nunca más.
     """
+    if not ingest_enabled():
+        # Defensa en profundidad: cualquier llamador (scheduler, provider) queda sin efecto.
+        return {"ok": False, "disabled": True, "imported": 0, "updated": 0,
+                "duplicates": 0, "errors": 0, "days": days}
     token = await _get_valid_access_token(me, db)
 
     after_ts = int((datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).timestamp())

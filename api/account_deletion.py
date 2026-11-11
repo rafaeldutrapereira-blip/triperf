@@ -184,6 +184,8 @@ def _revoke_integrations(db: Session, user: User) -> list[str]:
     user.intervals_athlete_id = None
     user.intervals_scope = None
     user.intervals_connected_at = None
+    user.intervals_invalid_at = None
+    user.intervals_last_sync_at = None
     # Garmin (credenciales legacy y OAuth oficial), Polar, Wahoo
     if user.garmin_email or user.garmin_password:
         done.append("garmin_legacy")
@@ -301,6 +303,7 @@ _USER_SCRUB = dict(
     last_device_hash=None, strava_access_token=None, strava_refresh_token=None,
     strava_athlete_id=None, strava_token_expires_at=None, intervals_access_token=None,
     intervals_athlete_id=None, intervals_connected_at=None, intervals_scope=None,
+    intervals_invalid_at=None, intervals_last_sync_at=None,
     stripe_customer_id=None, stripe_subscription_id=None, trial_end_at=None, sports=None,
     onboarding_completed_at=None, gdpr_consent_at=None, gdpr_consent_ip=None,
     country_code=None, community_share_prefs=None, avatar_photo_path=None,

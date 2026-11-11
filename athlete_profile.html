@@ -1472,6 +1472,102 @@
             <!-- Sprint 56: Polar/Wahoo (solo si /providers/enabled los lista) -->
             <div id="wearable-oauth-cards"></div>
 
+            <!-- FUENTE-UNICA: intervals.icu = fuente unica de lectura. La tarjeta se
+                 pinta SIEMPRE (con o sin token); el estado sale de /integrations/intervals/status. -->
+            <div class="card" id="intervals-card">
+              <div class="card-head">
+                <span class="card-title">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="color: var(--lxt-0ea5e9,#0ea5e9)"
+                  >
+                    <path d="M3 12h4l3-8 4 16 3-8h4" />
+                  </svg>
+                  intervals.icu
+                </span>
+                <span
+                  id="intervals-badge"
+                  class="status-dot status-disconnected"
+                  data-i18n="ivl_state_off"
+                  >No conectado</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="conn-card">
+                  <div class="conn-left">
+                    <div>
+                      <div class="conn-name">intervals.icu</div>
+                      <div class="conn-desc" data-i18n="ivl_desc">
+                        Fuente única de tus actividades, tu salud y tu calendario
+                        planificado. Garmin, COROS, Suunto, Polar, Wahoo y Zwift
+                        llegan por aquí.
+                      </div>
+                      <div
+                        id="intervals-status"
+                        class="conn-desc"
+                        style="margin-top: 0.25rem; font-weight: 600"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="conn-actions">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      id="btn-intervals-con"
+                      onclick="intervalsConnect()"
+                      data-i18n="ivl_btn_connect"
+                    >
+                      Conectar intervals.icu
+                    </button>
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      id="btn-intervals-sync"
+                      onclick="intervalsSync()"
+                      style="display: none"
+                      data-i18n="ivl_btn_sync"
+                    >
+                      Sincronizar
+                    </button>
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      id="btn-intervals-re"
+                      onclick="intervalsReconnect()"
+                      style="display: none"
+                      data-i18n="ivl_btn_reconnect"
+                    >
+                      Reconectar
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      id="btn-intervals-dis"
+                      onclick="intervalsDisconnect()"
+                      style="display: none"
+                      data-i18n="prof_btn_disconnect"
+                    >
+                      Desconectar
+                    </button>
+                  </div>
+                </div>
+                <div id="intervals-meta" class="conn-desc" style="margin-top: 0.5rem"></div>
+                <div
+                  id="intervals-unavailable"
+                  style="
+                    display: none;
+                    margin-top: 0.75rem;
+                    font-size: 0.73rem;
+                    color: var(--dim);
+                    border-top: 1px solid var(--border2);
+                    padding-top: 0.75rem;
+                  "
+                  data-i18n="prof_strava_unavailable"
+                >
+                  No disponible en este servidor todavía.
+                </div>
+              </div>
+            </div>
+
             <!-- Strava -->
             <div class="card">
               <div class="card-head">
@@ -1502,8 +1598,8 @@
                     <div>
                       <div class="conn-name">Strava</div>
                       <div class="conn-desc" data-i18n="prof_strava_desc">
-                        Importa actividades de running, ciclismo y natación
-                        desde Strava
+                        Solo para compartir tus entrenamientos hacia Strava. LabX
+                        no importa actividades desde Strava.
                       </div>
                     </div>
                   </div>
@@ -2106,6 +2202,7 @@
           loadGarminOfficialStatus();
           loadWearableCards();
           loadStravaStatus();
+          loadIntervalsStatus();
           loadHistoryCard();
         }
         if (name === 'seguridad') {
@@ -3331,6 +3428,161 @@
           });
       }
 
+      /* ── FUENTE-UNICA: tarjeta de intervals.icu ───────────────────────
+         Siempre visible. «Conectado» = token presente y NO marcado invalido
+         (el servidor lo marca al recibir 401/403 de intervals). Nada de datos
+         inventados: sin athlete_id o sin sync real, la fila se omite / se avisa. */
+      function intervalsCardModel(st) {
+        st = st || {};
+        var state = st.state;
+        if (!state) {
+          /* servidor viejo sin `state`: se deduce del status clasico */
+          state = !st.connected ? 'not_connected' : st.needs_reconnect ? 'needs_reconnect' : 'connected';
+        }
+        var unavailable = st.available === false;
+        var has = state !== 'not_connected';
+        return {
+          state: state,
+          unavailable: unavailable,
+          connected: state === 'connected',
+          badgeOn: state === 'connected',
+          showConnect: !has && !unavailable,
+          showSync: state === 'connected' && st.read_enabled === true,
+          showReconnect: has && !unavailable,
+          showDisconnect: has,
+          athlete: has && st.athlete_id ? String(st.athlete_id) : '',
+          lastSync: has && st.last_sync ? st.last_sync : '',
+        };
+      }
+      function loadIntervalsStatus() {
+        return fetch(API + '/integrations/intervals/status', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            renderIntervalsCard(d);
+          })
+          .catch(function () {
+            renderIntervalsCard(null);
+          });
+      }
+      function renderIntervalsCard(d) {
+        var el = function (id) {
+          return document.getElementById(id);
+        };
+        if (!el('intervals-card')) return;
+        var badge = el('intervals-badge');
+        var stat = el('intervals-status');
+        var meta = el('intervals-meta');
+        if (!d) {
+          /* no se pudo consultar: ni conectado ni desconectado, se dice tal cual */
+          badge.className = 'status-dot status-disconnected';
+          badge.textContent = _t('wearable_err', 'No se pudo consultar el estado');
+          stat.textContent = '';
+          meta.textContent = '';
+          ['btn-intervals-con', 'btn-intervals-sync', 'btn-intervals-re', 'btn-intervals-dis'].forEach(
+            function (id) {
+              el(id).style.display = 'none';
+            },
+          );
+          return;
+        }
+        var m = intervalsCardModel(d);
+        var label =
+          m.state === 'connected'
+            ? _t('ivl_state_on', 'Conectado')
+            : m.state === 'invalid'
+              ? _t('ivl_state_invalid', 'Conexión inválida — reconecta')
+              : m.state === 'needs_reconnect'
+                ? _t('ivl_state_perm', 'Falta el permiso de lectura — reconecta')
+                : _t('ivl_state_off', 'No conectado');
+        badge.className = 'status-dot ' + (m.badgeOn ? 'status-connected' : 'status-disconnected');
+        badge.textContent = label;
+        stat.textContent = m.state === 'connected' || m.state === 'not_connected' ? '' : label;
+        var lines = [];
+        if (m.athlete) lines.push(_t('ivl_athlete', 'Atleta') + ': ' + m.athlete);
+        if (m.state !== 'not_connected') {
+          var f = connFmtDate(m.lastSync);
+          lines.push(
+            _t('cdet_last', 'Última sincronización') + ': ' + (f || _t('cdet_never', 'sin sincronizaciones aún')),
+          );
+        }
+        meta.textContent = lines.join(' · ');
+        el('btn-intervals-con').style.display = m.showConnect ? '' : 'none';
+        el('btn-intervals-sync').style.display = m.showSync ? '' : 'none';
+        el('btn-intervals-re').style.display = m.showReconnect ? '' : 'none';
+        el('btn-intervals-dis').style.display = m.showDisconnect ? '' : 'none';
+        el('intervals-unavailable').style.display = m.unavailable ? 'block' : 'none';
+      }
+      function intervalsConnect() {
+        _lxTopNav(API + '/integrations/intervals/connect?ret=profile');
+      }
+      function intervalsReconnect() {
+        /* desconecta credenciales + OAuth fresco; el callback guarda el token nuevo */
+        fetch(API + '/integrations/intervals/reconnect?ret=profile', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (d && d.authorize_url) return _lxTopNav(d.authorize_url);
+            toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+            loadIntervalsStatus();
+          })
+          .catch(function () {
+            toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+          });
+      }
+      function intervalsDisconnect() {
+        if (!confirm(_t('ivl_confirm_disconnect', '¿Desconectar intervals.icu? Tus actividades y datos ya importados se conservan.')))
+          return;
+        fetch(API + '/integrations/intervals/disconnect', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('http');
+            toast(_t('ivl_toast_disconnected', 'intervals.icu desconectado'));
+            loadIntervalsStatus();
+          })
+          .catch(function () {
+            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
+          });
+      }
+      function intervalsSync() {
+        var btn = document.getElementById('btn-intervals-sync');
+        btn.disabled = true;
+        toast(_t('ivl_toast_syncing', 'Sincronizando intervals.icu…'));
+        fetch(API + '/integrations/intervals/sync', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (d && d.status === 'ok') toast(_t('ivl_toast_synced', 'intervals.icu sincronizado ✓'));
+            else if (d && d.status === 'needs_reconnect')
+              toast(_t('ivl_state_invalid', 'Conexión inválida — reconecta'), 'err');
+            else toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+            loadIntervalsStatus();
+          })
+          .catch(function () {
+            toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+          })
+          .finally(function () {
+            btn.disabled = false;
+          });
+      }
+
       /* ── Strava ───────────────────────────────────────────────────── */
       function loadStravaStatus() {
         fetch(API + '/strava/status', {
@@ -3368,13 +3620,14 @@
             document.getElementById('btn-strava-con').style.display = on
               ? 'none'
               : '';
-            document.getElementById('btn-strava-sync').style.display = on
-              ? ''
-              : 'none';
+            /* FUENTE-UNICA: Strava es solo salida; «Sync» solo si el servidor
+               tiene la entrada encendida (STRAVA_INGEST_ENABLED). */
+            document.getElementById('btn-strava-sync').style.display =
+              on && d.ingest_enabled === true ? '' : 'none';
             document.getElementById('btn-strava-dis').style.display = on
               ? ''
               : 'none';
-            if (on && d.last_sync) {
+            if (on && d.last_sync && d.ingest_enabled === true) {
               var log = document.getElementById('strava-log');
               log.style.display = 'block';
               document.getElementById('strava-log-txt').textContent =
@@ -3595,6 +3848,16 @@
         var st = document.getElementById('garmin-status');
         host.innerHTML = connDetailsHtml('garmin', cm, st ? st.textContent : '');
       }
+      /* Strava es solo salida: sin entrada encendida no «recibe» nada y no hay
+         «Sincronizar ahora». */
+      function connStravaModel(d) {
+        var m = connDetailModel('strava', { connected: !!(d && d.connected) });
+        if (!(d && d.ingest_enabled === true)) {
+          m.recv = [];
+          m.showSync = false;
+        }
+        return m;
+      }
       function connRenderStrava(d) {
         var host = document.getElementById('strava-details');
         if (!host) return;
@@ -3610,7 +3873,7 @@
             ? ''
             : connDetailsHtml(
                 'strava',
-                connDetailModel('strava', { connected: !!d.connected }),
+                connStravaModel(d),
                 stTxt,
               );
       }
@@ -3692,7 +3955,7 @@
         } else if (!iv.connected && iv.available && iv.read_enabled) {
           m.intervals = 'connect';
         }
-        if (sv.connected && sv.available !== false) m.strava = 'import';
+        if (sv.connected && sv.available !== false && sv.ingest_enabled === true) m.strava = 'import';
         var anyConn = !!(s.garminOn || iv.connected || sv.connected);
         m.visible = anyConn && (m.intervals !== 'hidden' || m.strava !== 'hidden');
         return m;
@@ -4525,6 +4788,7 @@
           loadGarminOfficialStatus();
           loadWearableCards();
           loadStravaStatus();
+          loadIntervalsStatus();
         }
       });
     </script>
@@ -4534,7 +4798,7 @@
     <script src="footer.js?v=373"></script>
     <script src="dash-header.js?v=373"></script>
     <script src="lx-upgrade.js?v=373"></script>
-    <script src="i18n.js?v=373"></script>
+    <script src="i18n.js?v=376"></script>
     <script src="lx-audit.js?v=373"></script>
   </body>
 </html>
