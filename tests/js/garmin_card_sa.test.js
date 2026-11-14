@@ -163,9 +163,8 @@ for (const [label, src] of [['web', web], ['app', app]]) {
   });
 }
 
-test('web: Strava, intervals y checkout salen por la ventana superior', () => {
+test('web: intervals y checkout salen por la ventana superior', () => {
   assert.doesNotMatch(web, /window\.location\.href\s*=\s*API \+ '\/strava\/connect'/);
-  assert.match(web, /_lxTopNav\(API \+ '\/strava\/connect'\)/);
   assert.match(web, /lnk\.target = '_top'/);
   assert.match(web, /_lxTopNav\(d\.checkout_url\)/);
 });

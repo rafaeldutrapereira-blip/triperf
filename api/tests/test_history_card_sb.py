@@ -29,8 +29,9 @@ def test_tarjeta_oculta_por_defecto_y_dentro_de_conexiones():
     ini = WEB.index('id="tab-conexiones"')
     pos = WEB.index('id="hist-card"')
     assert pos > ini and 'id="hist-card" style="display: none"' in WEB
-    for fn in ("histRunIntervals()", "histRunStrava()", "histDismiss()"):
+    for fn in ("histRunIntervals()", "histDismiss()"):
         assert fn in WEB
+    assert "histRunStrava" not in WEB  # STRAVA-FUERA (381)
 
 
 def test_no_se_toca_backend():

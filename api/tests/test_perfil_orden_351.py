@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 H = (ROOT / "athlete_profile.html").read_text(encoding="utf-8")
 
-IDS_BASE = ['addons-list', 'b-css', 'b-fcmax', 'b-ftp', 'b-run', 'b-vo2', 'b-wpkg', 'be-css', 'be-fcmax', 'be-ftp', 'be-peso', 'be-run', 'be-vo2', 'bench-edit', 'btn-2fa-off', 'btn-2fa-on', 'btn-garmin-admin-dis', 'btn-garmin-dis', 'btn-garmin-off-con', 'btn-garmin-switch', 'btn-garmin-sync', 'btn-save-profile', 'btn-strava-con', 'btn-strava-dis', 'btn-strava-sync', 'fc-zones-wrap', 'fold-rendimiento', 'garmin-admin-legacy', 'garmin-admin-legacy-tpl', 'garmin-badge', 'garmin-card', 'garmin-details', 'garmin-log', 'garmin-log-txt', 'garmin-migrate-banner', 'garmin-status', 'hist-btn-intervals', 'hist-btn-strava', 'hist-card', 'hist-intervals-desc', 'hist-link-intervals', 'hist-msg', 'hist-row-intervals', 'hist-row-strava', 'lx-theme-light', 'main-content', 'modal-2fa', 'myplan-summary', 'myplan-toggle', 'notif-push', 'notif-weekly', 'notif-workout', 'p-altura', 'p-edad', 'p-email', 'p-nombre', 'p-peso', 'p-sexo', 'pending-coach-invites-wrap', 'pf-avatar-img', 'pow-zones-wrap', 'priv-details', 'priv-hr', 'priv-pace', 'priv-power', 'priv-route', 'priv-saved-msg', 'priv-sub', 'prof-toast', 'profile-meter', 'pw-new', 'pw-old', 'qr-container', 'races-card', 'races-form', 'races-list', 'rc-cancel', 'rc-date', 'rc-dist', 'rc-form-title', 'rc-loc', 'rc-name', 'rc-prio', 'rc-save', 'run-zones-wrap', 'sb-overlay', 'sessions-list', 'sidebar', 'strava-badge', 'strava-details', 'strava-log', 'strava-log-txt', 'strava-unavailable', 'tab-conexiones', 'tab-perfil', 'tab-rendimiento', 'tab-seguridad', 'totp-code', 'twofa-badge', 'wearable-oauth-cards']
-HANDLERS_BASE = ['acceptCoachInvite', 'buyAddon', 'changePassword', 'close2FAModal', 'deleteAccount', 'deleteAvatarPerfil', 'disable2FA', 'garminCardDisconnect', 'garminDisconnect', 'garminOfficialConnect', 'garminSync', 'gmigDismiss', 'histDismiss', 'histRunIntervals', 'histRunStrava', 'loadProfile', 'loadSessions', 'rejectCoachInvite', 'revokeAll', 'saveBenchmarks', 'savePrivacyPrefs', 'saveProfile', 'setup2FA', 'stravaConnect', 'stravaDisconnect', 'stravaSync', 'switchTab', 'toggleBenchEdit', 'toggleMyPlan', 'verify2FA', 'wearableConnect', 'wearableDisconnect', 'wearableSync']
+IDS_BASE = ['addons-list', 'b-css', 'b-fcmax', 'b-ftp', 'b-run', 'b-vo2', 'b-wpkg', 'be-css', 'be-fcmax', 'be-ftp', 'be-peso', 'be-run', 'be-vo2', 'bench-edit', 'btn-2fa-off', 'btn-2fa-on', 'btn-garmin-admin-dis', 'btn-garmin-dis', 'btn-garmin-off-con', 'btn-garmin-switch', 'btn-garmin-sync', 'btn-save-profile', 'fc-zones-wrap', 'fold-rendimiento', 'garmin-admin-legacy', 'garmin-admin-legacy-tpl', 'garmin-badge', 'garmin-card', 'garmin-details', 'garmin-log', 'garmin-log-txt', 'garmin-migrate-banner', 'garmin-status', 'hist-btn-intervals', 'hist-card', 'hist-intervals-desc', 'hist-link-intervals', 'hist-msg', 'hist-row-intervals', 'lx-theme-light', 'main-content', 'modal-2fa', 'myplan-summary', 'myplan-toggle', 'notif-push', 'notif-weekly', 'notif-workout', 'p-altura', 'p-edad', 'p-email', 'p-nombre', 'p-peso', 'p-sexo', 'pending-coach-invites-wrap', 'pf-avatar-img', 'pow-zones-wrap', 'priv-details', 'priv-hr', 'priv-pace', 'priv-power', 'priv-route', 'priv-saved-msg', 'priv-sub', 'prof-toast', 'profile-meter', 'pw-new', 'pw-old', 'qr-container', 'races-card', 'races-form', 'races-list', 'rc-cancel', 'rc-date', 'rc-dist', 'rc-form-title', 'rc-loc', 'rc-name', 'rc-prio', 'rc-save', 'run-zones-wrap', 'sb-overlay', 'sessions-list', 'sidebar', 'tab-conexiones', 'tab-perfil', 'tab-rendimiento', 'tab-seguridad', 'totp-code', 'twofa-badge', 'wearable-oauth-cards']
+HANDLERS_BASE = ['acceptCoachInvite', 'buyAddon', 'changePassword', 'close2FAModal', 'deleteAccount', 'deleteAvatarPerfil', 'disable2FA', 'garminCardDisconnect', 'garminDisconnect', 'garminOfficialConnect', 'garminSync', 'gmigDismiss', 'histDismiss', 'histRunIntervals', 'loadProfile', 'loadSessions', 'rejectCoachInvite', 'revokeAll', 'saveBenchmarks', 'savePrivacyPrefs', 'saveProfile', 'setup2FA', 'switchTab', 'toggleBenchEdit', 'toggleMyPlan', 'verify2FA', 'wearableConnect', 'wearableDisconnect', 'wearableSync']
 
 
 def test_ningun_id_desaparece():
@@ -41,13 +41,13 @@ def test_cabecera_e_indice():
         assert "profSecGo('%s')" % s in idx
     # el estado sale de las mismas fuentes que las tarjetas
     fn = H[H.index("function accountGlanceConns"):H.index("function renderAccountGlance")]
-    for src in ("_gModel.connected", "_stravaGlance", "_wearState", "_wearLast"):
+    for src in ("_gModel.connected", "_wearState", "_wearLast"):
         assert src in fn, src
 
 
 def test_cabecera_se_repinta_con_cada_fuente():
     for hook in ("renderAccountGlance();",):
-        assert H.count(hook) >= 6
+        assert H.count(hook) >= 5
 
 
 def test_i18n_trilingue_y_build():

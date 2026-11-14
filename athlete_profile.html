@@ -399,10 +399,6 @@
         background: rgba(14, 165, 233, 0.12);
         border: 1px solid rgba(14, 165, 233, 0.2);
       }
-      .conn-logo-strava {
-        background: rgba(255, 101, 53, 0.12);
-        border: 1px solid rgba(255, 101, 53, 0.2);
-      }
       .conn-name {
         font-family: 'Barlow Condensed', sans-serif;
         font-size: 1rem;
@@ -1297,26 +1293,6 @@
                     >
                   </div>
                 </div>
-                <div id="hist-row-strava" class="conn-card" style="display: none; margin-top: 0.6rem">
-                  <div class="conn-left">
-                    <div>
-                      <div class="conn-name">Strava</div>
-                      <div class="conn-desc" data-i18n="hist_strava_desc">
-                        Trae tus actividades de los últimos 90 días de Strava.
-                      </div>
-                    </div>
-                  </div>
-                  <div class="conn-actions">
-                    <button
-                      class="btn btn-primary btn-sm"
-                      id="hist-btn-strava"
-                      onclick="histRunStrava()"
-                      data-i18n="hist_btn_import"
-                    >
-                      Importar historial
-                    </button>
-                  </div>
-                </div>
                 <div
                   id="hist-msg"
                   role="status"
@@ -1578,111 +1554,6 @@
               </div>
             </div>
 
-            <!-- Strava -->
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    style="color: var(--lxt-ff6535,#ff6535)"
-                  >
-                    <path d="M13 7l5 5-5 5" />
-                    <path d="M6 12h12" />
-                  </svg>
-                  Strava
-                </span>
-                <span
-                  id="strava-badge"
-                  class="status-dot status-disconnected"
-                  data-i18n="prof_status_disconnected"
-                  >Sin conectar</span
-                >
-              </div>
-              <div class="card-body">
-                <div class="conn-card">
-                  <div class="conn-left">
-                    <div class="conn-logo conn-logo-strava">🏃</div>
-                    <div>
-                      <div class="conn-name">Strava</div>
-                      <div class="conn-desc" data-i18n="prof_strava_desc">
-                        Solo para compartir tus entrenamientos hacia Strava. LabX
-                        no importa actividades desde Strava.
-                      </div>
-                    </div>
-                  </div>
-                  <div class="conn-actions">
-                    <button
-                      class="btn btn-secondary btn-sm"
-                      id="btn-strava-sync"
-                      onclick="stravaSync()"
-                      style="display: none"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                        style="width: 12px; height: 12px"
-                      >
-                        <path d="M23 4v6h-6M1 20v-6h6" />
-                        <path
-                          d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
-                        />
-                      </svg>
-                      Sync
-                    </button>
-                    <button
-                      class="btn btn-danger btn-sm"
-                      id="btn-strava-dis"
-                      onclick="stravaDisconnect()"
-                      style="display: none"
-                      data-i18n="prof_btn_disconnect"
-                    >
-                      Desconectar
-                    </button>
-                    <button
-                      class="btn btn-primary btn-sm"
-                      id="btn-strava-con"
-                      onclick="stravaConnect()"
-                      data-i18n="prof_btn_connect_strava"
-                    >
-                      Conectar con Strava
-                    </button>
-                  </div>
-                </div>
-                <div id="strava-details"></div>
-                <div
-                  id="strava-unavailable"
-                  style="
-                    display: none;
-                    margin-top: 0.75rem;
-                    font-size: 0.73rem;
-                    color: var(--dim);
-                    border-top: 1px solid var(--border2);
-                    padding-top: 0.75rem;
-                  "
-                  data-i18n="prof_strava_unavailable"
-                >
-                  No disponible en este servidor todavía.
-                </div>
-                <div
-                  id="strava-log"
-                  style="
-                    display: none;
-                    margin-top: 0.75rem;
-                    font-size: 0.73rem;
-                    color: var(--muted);
-                    border-top: 1px solid var(--border2);
-                    padding-top: 0.75rem;
-                  "
-                >
-                  <span id="strava-log-txt"></span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- ════════════════════ TAB: CUENTA ═════════════════════ -->
@@ -2211,7 +2082,6 @@
           loadGarminStatus();
           loadGarminOfficialStatus();
           loadWearableCards();
-          loadStravaStatus();
           loadIntervalsStatus();
           loadHistoryCard();
         }
@@ -2247,9 +2117,8 @@
 
       /* PERFIL-ORDEN: «Tu cuenta en una mirada». Lee el MISMO estado que ya
          pintan las tarjetas (_gModel/_gLegacyData, _wearState/_wearLast,
-         _stravaGlance, _profile); no calcula cifras nuevas. «Conectado» solo
+         _profile); no calcula cifras nuevas. «Conectado» solo
          si hay sync vivo (regla del 339: garminCardModel.connected). */
-      var _stravaGlance = null;
       var _pendingInvites = 0;
       function _glDate(v) {
         if (!v) return '';
@@ -2264,12 +2133,6 @@
           state: gReady ? (_gModel.connected ? 'on' : 'off') : 'wait',
           note: gReady && _gModel.legacyDown ? _t('garmin_legacy_down', 'Conexión anterior caída') : '',
           date: gReady && _gModel.via === 'legacy' ? _glDate(_gLegacyData.last_sync_at || _gLegacyData.last_sync) : '',
-        });
-        out.push({
-          name: 'Strava',
-          state: !_stravaGlance ? 'wait' : _stravaGlance.on ? 'on' : 'off',
-          note: '',
-          date: _stravaGlance && _stravaGlance.on ? _glDate(_stravaGlance.last_sync) : '',
         });
         WEARABLE_OAUTH.forEach(function (p) {
           if (!(p in _wearState)) return;
@@ -3231,7 +3094,7 @@
           });
       }
       /* SHELL-CONECTA: la shell monta esta pagina en un marco y los proveedores
-         OAuth (Garmin, Strava, Polar, Wahoo, intervals) prohiben su login en
+         OAuth (Garmin, Polar, Wahoo, intervals) prohiben su login en
          marcos: toda conexion navega la ventana superior. */
       function _lxTopNav(url) {
         try {
@@ -3754,152 +3617,16 @@
           });
       }
 
-      /* ── Strava ───────────────────────────────────────────────────── */
-      function loadStravaStatus() {
-        fetch(API + '/strava/status', {
-          credentials: 'include',
-          headers: authH(false),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (d) {
-            var on = d.connected;
-            if (typeof _stravaGlance !== 'undefined')
-              _stravaGlance = { on: !!on, last_sync: d.last_sync || '' };
-            if (typeof renderAccountGlance === 'function') renderAccountGlance();
-            var badge = document.getElementById('strava-badge');
-            badge.className =
-              'status-dot ' + (on ? 'status-connected' : 'status-disconnected');
-            badge.textContent = on
-              ? _t('prof_status_connected', 'Conectado') +
-                (d.athlete_name ? ' — ' + d.athlete_name : '')
-              : _t('prof_status_disconnected', 'Sin conectar');
-
-            connRenderStrava(d); /* S-D */
-            if (d.available === false) {
-              // Strava no configurado en este servidor (falta STRAVA_CLIENT_ID/SECRET)
-              // — ocultar el botón en vez de dejar que el usuario tope con el 503.
-              document.getElementById('btn-strava-con').style.display = 'none';
-              document.getElementById('btn-strava-sync').style.display = 'none';
-              document.getElementById('btn-strava-dis').style.display = 'none';
-              document.getElementById('strava-unavailable').style.display =
-                'block';
-              return;
-            }
-
-            document.getElementById('btn-strava-con').style.display = on
-              ? 'none'
-              : '';
-            /* FUENTE-UNICA: Strava es solo salida; «Sync» solo si el servidor
-               tiene la entrada encendida (STRAVA_INGEST_ENABLED). */
-            document.getElementById('btn-strava-sync').style.display =
-              on && d.ingest_enabled === true ? '' : 'none';
-            document.getElementById('btn-strava-dis').style.display = on
-              ? ''
-              : 'none';
-            if (on && d.last_sync && d.ingest_enabled === true) {
-              var log = document.getElementById('strava-log');
-              log.style.display = 'block';
-              document.getElementById('strava-log-txt').textContent =
-                _t('prof_last_sync', 'Último sync:') +
-                ' ' +
-                new Date(d.last_sync).toLocaleString('es-CL');
-            }
-          })
-          .catch(function () {});
-      }
-      function stravaConnect() {
-        // GET directo navegaba de página completa y mostraba el JSON crudo del
-        // error 503 cuando Strava no está configurado en el servidor. Con
-        // redirect:'manual' podemos distinguir "hay que redirigir a Strava"
-        // (funciona) de "está devolviendo un error" (mostrar toast amigable).
-        fetch(API + '/strava/connect', {
-          credentials: 'include',
-          headers: authH(false),
-          redirect: 'manual',
-        })
-          .then(function (r) {
-            if (r.type === 'opaqueredirect' || r.status === 0) {
-              _lxTopNav(API + '/strava/connect');
-              return;
-            }
-            return r.json().then(function (d) {
-              var msg =
-                (d.errors && d.errors[0] && d.errors[0].message) ||
-                _t(
-                  'prof_strava_unavailable_msg',
-                  'Strava no está disponible en este momento.',
-                );
-              toast(msg, 'err');
-            });
-          })
-          .catch(function () {
-            toast(
-              _t(
-                'prof_toast_strava_no_connect',
-                'No se pudo conectar con Strava',
-              ),
-              'err',
-            );
-          });
-      }
-      function stravaDisconnect() {
-        if (
-          !confirm(_t('prof_confirm_strava_disconnect', '¿Desconectar Strava?'))
-        )
-          return;
-        fetch(API + '/strava/disconnect', {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: authH(false),
-        })
-          .then(function () {
-            toast(_t('prof_toast_strava_disconnected', 'Strava desconectado'));
-            loadStravaStatus();
-          })
-          .catch(function () {
-            toast(_t('prof_toast_generic_err_short', 'Error'), 'err');
-          });
-      }
-      function stravaSync() {
-        var btn = document.getElementById('btn-strava-sync');
-        btn.disabled = true;
-        toast(_t('prof_toast_syncing_strava', 'Sincronizando Strava…'));
-        fetch(API + '/strava/sync', {
-          method: 'POST',
-          credentials: 'include',
-          headers: authH(),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (d) {
-            toast(
-              d.message ||
-                _t('prof_toast_strava_sync_done', 'Sync Strava completado ✓'),
-            );
-            loadStravaStatus();
-          })
-          .catch(function () {
-            toast(_t('prof_toast_strava_sync_err', 'Error sync Strava'), 'err');
-          })
-          .finally(function () {
-            btn.disabled = false;
-          });
-      }
-
       /* ── S-D: "Ver detalles" por conexion ─────────────────────────────
          Solo presentacion sobre los status existentes. Lo que entra/sale esta
          declarado a mano (lo que el backend realmente ingiere/envia hoy);
          la ultima sync es SIEMPRE un dato del backend o "sin sincronizaciones
-         aun", jamas una fecha inventada. Huecos: Garmin oficial y Strava no
+         aun", jamas una fecha inventada. Huecos: Garmin oficial no
          exponen ultima sync (no se muestra); intervals.icu no tiene tarjeta aqui. */
       var CONN_RECV = {
         garmin: ['activities', 'sleep', 'daily'],
         polar: ['activities'],
         wahoo: ['activities'],
-        strava: ['activities'],
       };
       function connDetailModel(p, c) {
         c = c || {};
@@ -3930,7 +3657,6 @@
         garmin: { sync: 'garminSync()', reconnect: 'garminOfficialConnect()' },
         polar: { sync: "wearableSync('polar')", reconnect: "wearableConnect('polar')" },
         wahoo: { sync: "wearableSync('wahoo')", reconnect: "wearableConnect('wahoo')" },
-        strava: { sync: 'stravaSync()', reconnect: 'stravaConnect()' },
       };
       function connDetailsHtml(p, m, statusTxt) {
         var item = function (k) {
@@ -4019,36 +3745,6 @@
         var st = document.getElementById('garmin-status');
         host.innerHTML = connDetailsHtml('garmin', cm, st ? st.textContent : '');
       }
-      /* Strava es solo salida: sin entrada encendida no «recibe» nada y no hay
-         «Sincronizar ahora». */
-      function connStravaModel(d) {
-        var m = connDetailModel('strava', { connected: !!(d && d.connected) });
-        if (!(d && d.ingest_enabled === true)) {
-          m.recv = [];
-          m.showSync = false;
-        }
-        return m;
-      }
-      function connRenderStrava(d) {
-        var host = document.getElementById('strava-details');
-        if (!host) return;
-        d = d || {};
-        var stTxt =
-          d.available === false
-            ? _t('wearable_soon', 'Pronto — aún no disponible')
-            : d.connected
-              ? _t('wearable_on', 'Conectado')
-              : _t('wearable_off', 'No conectado');
-        host.innerHTML =
-          d.available === false
-            ? ''
-            : connDetailsHtml(
-                'strava',
-                connStravaModel(d),
-                stTxt,
-              );
-      }
-
       /* ── S-C: banner de migracion a Garmin oficial ────────────────────
          Visible SOLO con legacy conectado y oficial 'not_connected'
          (= garminCardModel.showSwitch). Descarte en localStorage por usuario
@@ -4118,17 +3814,15 @@
       function histCardModel(s) {
         var st = s.state || {};
         var iv = s.intervals || {};
-        var sv = s.strava || {};
-        var m = { visible: false, intervals: 'hidden', strava: 'hidden' };
+        var m = { visible: false, intervals: 'hidden' };
         if (st.dismissed || st.done) return m;
         if (iv.connected && iv.read_enabled) {
           m.intervals = iv.needs_reconnect ? 'reconnect' : 'import';
         } else if (!iv.connected && iv.available && iv.read_enabled) {
           m.intervals = 'connect';
         }
-        if (sv.connected && sv.available !== false && sv.ingest_enabled === true) m.strava = 'import';
-        var anyConn = !!(s.garminOn || iv.connected || sv.connected);
-        m.visible = anyConn && (m.intervals !== 'hidden' || m.strava !== 'hidden');
+        var anyConn = !!(s.garminOn || iv.connected);
+        m.visible = anyConn && m.intervals !== 'hidden';
         return m;
       }
       function histKey() {
@@ -4161,7 +3855,6 @@
         var m = histCardModel({
           garminOn: _gModel && _gModel.connected,
           intervals: _histData.intervals,
-          strava: _histData.strava,
           state: histState(),
         });
         var card = document.getElementById('hist-card');
@@ -4182,8 +3875,6 @@
             : m.intervals === 'reconnect'
               ? _t('hist_intervals_reconnect', 'Vuelve a conectar intervals.icu y acepta el permiso de lectura para importar tu historial.')
               : _t('hist_intervals_off', 'Conecta intervals.icu para traer tu historial desde ahí.');
-        document.getElementById('hist-row-strava').style.display =
-          m.strava === 'import' ? '' : 'none';
       }
       function loadHistoryCard() {
         var get = function (path) {
@@ -4195,10 +3886,10 @@
               return null;
             });
         };
-        Promise.all([get('/integrations/intervals/status'), get('/strava/status')]).then(
+        Promise.all([get('/integrations/intervals/status')]).then(
           function (r) {
             var keep = _histData && _histData.keep;
-            _histData = { intervals: r[0] || {}, strava: r[1] || {}, keep: keep };
+            _histData = { intervals: r[0] || {}, keep: keep };
             histRender();
           },
         );
@@ -4212,7 +3903,6 @@
       function histFinish(ok, text, isErr) {
         _histBusy = false;
         document.getElementById('hist-btn-intervals').disabled = false;
-        document.getElementById('hist-btn-strava').disabled = false;
         if (ok) {
           histSave({ done: true });
           _histData.keep = true; /* deja visible el resultado hasta recargar */
@@ -4258,36 +3948,6 @@
             if (d.errors > 0)
               txt += histFill(_t('hist_res_errors', ' Hubo {e} tramos con error; puedes reintentar, no se duplica nada.'), { e: d.errors });
             histFinish(!d.errors, txt, d.errors > 0);
-          })
-          .catch(function () {
-            histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
-          });
-      }
-      function histRunStrava() {
-        if (_histBusy) return;
-        _histBusy = true;
-        document.getElementById('hist-btn-strava').disabled = true;
-        histMsg(_t('hist_running', 'Importando… puede tardar varios minutos. No cierres esta pantalla.'));
-        /* Importador existente de Strava, sin cambios: tope 90 dias. */
-        fetch(API + '/strava/sync?days=90', {
-          method: 'POST',
-          credentials: 'include',
-          headers: authH(),
-        })
-          .then(function (r) {
-            return r.ok ? r.json() : null;
-          })
-          .then(function (d) {
-            if (!d || d.ok !== true)
-              return histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
-            var txt = histFill(
-              _t('hist_res_strava', 'Listo: {a} actividades importadas, {m} ya existían.'),
-              { a: d.imported, m: (d.updated || 0) + (d.duplicates || 0) },
-            );
-            if (d.errors > 0)
-              txt += histFill(_t('hist_res_errors', ' Hubo {e} tramos con error; puedes reintentar, no se duplica nada.'), { e: d.errors });
-            histFinish(!d.errors, txt, d.errors > 0);
-            loadStravaStatus();
           })
           .catch(function () {
             histFinish(false, _t('hist_err', 'No se pudo importar. Inténtalo de nuevo.'), true);
@@ -4958,7 +4618,6 @@
           loadGarminStatus();
           loadGarminOfficialStatus();
           loadWearableCards();
-          loadStravaStatus();
           loadIntervalsStatus();
         }
       });

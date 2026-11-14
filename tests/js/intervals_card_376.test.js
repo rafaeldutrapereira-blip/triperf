@@ -18,10 +18,6 @@ function extract(src, name) {
 const web = fs.readFileSync(path.join(__dirname, '..', '..', 'athlete_profile.html'), 'utf8');
 const card = new Function(extract(web, 'intervalsCardModel') + '; return intervalsCardModel;')();
 const hist = new Function(extract(web, 'histCardModel') + '; return histCardModel;')();
-const stravaModel = new Function(
-  extract(web, 'connDetailModel') + extract(web, 'connStravaModel') +
-    "; var CONN_RECV = {strava:['activities']}; return connStravaModel;",
-);
 
 test('sin token: No conectado + boton Conectar, nada mas', () => {
   const m = card({ available: true, state: 'not_connected', connected: false });
@@ -68,17 +64,13 @@ test('no inventa ultima sync', () => {
   assert.strictEqual(card({ state: 'connected', connected: true }).lastSync, '');
 });
 
-test('Strava: sin entrada encendida no recibe actividades ni ofrece sincronizar', () => {
-  const m = stravaModel()({ connected: true, ingest_enabled: false });
-  assert.deepStrictEqual(m.recv, []);
-  assert.strictEqual(m.showSync, false);
+test('Strava ya no tiene tarjeta ni modelo en Conexiones (STRAVA-FUERA 381)', () => {
+  assert.ok(!/connStravaModel|id="strava-/.test(web));
 });
 
-test('historial: Strava solo se ofrece con la entrada encendida', () => {
+test('historial: Strava no se ofrece nunca', () => {
   const base = { intervals: { connected: false }, state: {} };
-  assert.strictEqual(hist({ ...base, strava: { connected: true, ingest_enabled: false } }).strava, 'hidden');
-  assert.strictEqual(hist({ ...base, strava: { connected: true } }).strava, 'hidden');
-  assert.strictEqual(hist({ ...base, strava: { connected: true, ingest_enabled: true } }).strava, 'import');
+  assert.strictEqual(hist({ ...base, strava: { connected: true, ingest_enabled: true } }).strava, undefined);
 });
 
 test('la pagina deja el boton Reconectar apuntando al flujo OAuth del servidor', () => {

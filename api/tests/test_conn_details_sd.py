@@ -20,13 +20,13 @@ def test_i18n_claves_en_tres_idiomas():
 def test_contenedores_en_las_tarjetas():
     ini = WEB.index('id="tab-conexiones"')
     assert WEB.index('id="garmin-details"') > ini
-    assert WEB.index('id="strava-details"') > ini
+    assert 'id="strava-details"' not in WEB  # STRAVA-FUERA (381)
     assert "connDetailsHtml(" in WEB[WEB.index("function _wearCardHtml") :]
 
 
 def test_no_hay_endpoints_de_sync_nuevos():
     # Solo se reusan acciones existentes
-    for fn in ("garminSync()", "wearableSync(", "stravaSync()"):
+    for fn in ("garminSync()", "wearableSync("):
         assert fn in WEB
 
 

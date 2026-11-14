@@ -94,7 +94,7 @@ def test_garmin_y_strava_intactos():
     for src in FILES.values():
         assert "/integrations/garmin/status" in src
         assert "garminOfficialConnect" in src
-    assert "stravaConnect()" in FILES["web"]
+    assert "stravaConnect()" not in FILES["web"]  # STRAVA-FUERA (381): sin tarjeta Strava en la web
     assert "/strava/status" in FILES["app"]
 
 

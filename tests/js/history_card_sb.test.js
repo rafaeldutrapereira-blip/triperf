@@ -27,7 +27,6 @@ test('solo Garmin conectado: intervals aparece como "conectar", no como importad
   const m = model({ garminOn: true, intervals: IV_OFF, strava: { connected: false }, state: {} });
   assert.strictEqual(m.visible, true);
   assert.strictEqual(m.intervals, 'connect');
-  assert.strictEqual(m.strava, 'hidden');
 });
 test('intervals conectado con lectura -> importar; sin permiso -> reconectar', () => {
   assert.strictEqual(model({ intervals: IV_ON, strava: {}, state: {} }).intervals, 'import');
@@ -40,11 +39,10 @@ test('flag de lectura apagado: nunca se promete el importador', () => {
   const m2 = model({ garminOn: true, intervals: { connected: false, read_enabled: false, available: true }, strava: {}, state: {} });
   assert.strictEqual(m2.intervals, 'hidden');
 });
-test('Strava conectado ofrece su importador solo con la entrada encendida (FUENTE-UNICA 376)', () => {
+test('Strava ya no tiene importador en el historial (STRAVA-FUERA 381)', () => {
   const m = model({ intervals: IV_OFF, strava: { connected: true, available: true, ingest_enabled: true }, state: {} });
-  assert.strictEqual(m.strava, 'import');
-  assert.strictEqual(m.visible, true);
-  assert.strictEqual(model({ intervals: IV_OFF, strava: { connected: true, available: false }, state: {} }).strava, 'hidden');
+  assert.strictEqual(m.strava, undefined);
+  assert.strictEqual(m.visible, false);
 });
 test('descartada o ya importada: oculta', () => {
   const base = { intervals: IV_ON, strava: { connected: true, available: true, ingest_enabled: true } };
@@ -60,7 +58,7 @@ test('estado por usuario en localStorage', () => {
   assert.strictEqual(key, 'lx_history_step:u7');
   assert.deepStrictEqual(st, { dismissed: true });
 });
-test('el backfill se llama sin tocar el servicio y Strava con el tope de 90 dias', () => {
+test('el backfill se llama sin tocar el servicio y la pagina ya no llama a Strava', () => {
   assert.match(web, /\/integrations\/intervals\/backfill/);
-  assert.match(web, /\/strava\/sync\?days=90/);
+  assert.doesNotMatch(web, /\/strava\//);
 });

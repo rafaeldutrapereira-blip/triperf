@@ -38,8 +38,8 @@ test('Garmin legacy: sync ahora, envia workouts, ultima sync del backend', () =>
   assert.deepStrictEqual(m.send, ['workouts']);
   assert.strictEqual(m.lastSync, '2026-11-06 12:30');
 });
-test('Polar/Wahoo/Strava conectados: sync ahora + reconectar', () => {
-  for (const p of ['polar', 'wahoo', 'strava']) {
+test('Polar/Wahoo conectados: sync ahora + reconectar', () => {
+  for (const p of ['polar', 'wahoo']) {
     const m = model(p, { connected: true });
     assert.strictEqual(m.showSync, true, p);
     assert.strictEqual(m.showReconnect, true, p);
@@ -57,7 +57,7 @@ test('conectado sin sync registrada -> "sin sincronizaciones aun", jamas una fec
   assert.ok(!/\d{4}/.test(h.replace(/data-conn[^>]*>/, '')));
 });
 test('conectado con campo no expuesto (null) -> la fila no aparece', () => {
-  const h = html('strava', model('strava', { connected: true }), 'Conectado');
+  const h = html('polar', model('polar', { connected: true }), 'Conectado');
   assert.ok(!h.includes('Última sincronización'));
   assert.ok(!h.includes('sin sincronizaciones'));
 });
@@ -72,7 +72,8 @@ test('ultima sync con error se rotula', () => {
   assert.ok(h.includes('con error'));
 });
 test('cada tarjeta tiene su contenedor y el HTML no toca indoor', () => {
-  for (const id of ['garmin-details', 'strava-details']) assert.ok(web.includes('id="' + id + '"'), id);
+  for (const id of ['garmin-details']) assert.ok(web.includes('id="' + id + '"'), id);
+  assert.ok(!web.includes('id="strava-details"'));
   assert.ok(/connDetailsHtml\(\s*p,/.test(web));
   const indoor = fs.readFileSync(path.join(__dirname, '..', '..', 'indoor_workout.html'), 'utf8');
   assert.ok(!indoor.includes('connDetailsHtml'));
