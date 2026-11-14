@@ -27,6 +27,10 @@ logger = logging.getLogger("labx.garmin_official")
 AUTHORIZE_URL = "https://connect.garmin.com/oauth2Confirm"
 TOKEN_URL = "https://diauth.garmin.com/di-oauth2-service/oauth/token"
 GARMIN_USER_ID_URL = "https://apis.garmin.com/wellness-api/rest/user/id"
+# Activity API: pull por hora de subida (uploadStart/EndTimeInSeconds, ventana maxima 24 h).
+GARMIN_ACTIVITIES_URL = "https://apis.garmin.com/wellness-api/rest/activities"
+PULL_WINDOW_S = 86400
+PULL_MAX_DAYS = 7
 
 STATE_TTL = timedelta(minutes=10)
 REFRESH_MARGIN = timedelta(seconds=60)
@@ -204,3 +208,39 @@ def get_valid_access_token(db: Session, user_id: str) -> str | None:
         return None
     save_tokens(db, user_id, tokens)
     return tokens["access_token"]
+
+
+# -- Pull bajo demanda de actividades (SYNC-CONEXIONES) ----------------------
+
+def _get_activities_window(access_token: str, start_s: int, end_s: int) -> list:
+    """Una ventana (<=24 h) del pull de actividades. Unico punto de red del pull
+    (los tests lo parchean). Nunca incluye el token en mensajes de error."""
+    try:
+        r = httpx.get(GARMIN_ACTIVITIES_URL, timeout=20,
+                      params={"uploadStartTimeInSeconds": start_s, "uploadEndTimeInSeconds": end_s},
+                      headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"})
+    except httpx.HTTPError as exc:
+        raise GarminOfficialError(f"Garmin no respondio ({type(exc).__name__})") from None
+    if r.status_code in (401, 403):
+        raise GarminOfficialError(f"Garmin no autoriza el pull de actividades ({r.status_code})")
+    if r.status_code != 200:
+        raise GarminOfficialError(f"Garmin rechazo el pull de actividades ({r.status_code})")
+    try:
+        body = r.json()
+    except Exception:
+        raise GarminOfficialError("Respuesta de actividades invalida") from None
+    if not isinstance(body, list):
+        raise GarminOfficialError("Respuesta de actividades invalida")
+    return [it for it in body if isinstance(it, dict)]
+
+
+def fetch_recent_activities(access_token: str, days: int = PULL_MAX_DAYS) -> list:
+    """Actividades subidas en los ultimos `days` dias (ventanas de 24 h, maximo 7).
+    Solo actividades: la salud llega unicamente por push."""
+    days = max(1, min(int(days), PULL_MAX_DAYS))
+    end = int(_now().replace(tzinfo=timezone.utc).timestamp())
+    out: list = []
+    for i in range(days):
+        w_end = end - i * PULL_WINDOW_S
+        out.extend(_get_activities_window(access_token, w_end - PULL_WINDOW_S, w_end))
+    return out

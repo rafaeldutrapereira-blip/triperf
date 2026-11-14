@@ -1372,9 +1372,19 @@
                         class="conn-desc"
                         style="margin-top: 0.25rem; font-weight: 600"
                       ></div>
+                      <div id="garmin-push" class="conn-desc" style="display: none"></div>
                     </div>
                   </div>
                   <div class="conn-actions">
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      id="btn-garmin-off-sync"
+                      onclick="garminOfficialSync()"
+                      style="display: none"
+                      data-i18n="gsync_btn"
+                    >
+                      Sincronizar actividades
+                    </button>
                     <button
                       class="btn btn-secondary btn-sm"
                       id="btn-garmin-sync"
@@ -2923,6 +2933,7 @@
                 ? 'connected'
                 : offState || '',
           showSync: !offOn && legacyOn,
+          showOfficialSync: offOn,
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
           showConnect: !offOn && !legacyOn,
           showSwitch: !offOn && legacyOn && offState === 'not_connected',
@@ -2963,6 +2974,133 @@
           },
         );
       }
+
+      /* SYNC-CONEXIONES: mensaje honesto del sync manual de Garmin (solo
+         actividades; la salud llega por push y nunca se promete aqui). */
+      function garminSyncMessage(httpOk, d) {
+        d = d && typeof d === 'object' ? d : {};
+        if (httpOk && d.status === 'ok')
+          return {
+            ok: true,
+            text: _t('gsync_ok', 'Actividades al día ✓ ({n} recibidas)').replace(
+              '{n}',
+              String(d.saved == null ? 0 : d.saved),
+            ),
+          };
+        if (httpOk && d.status === 'syncing')
+          return {
+            ok: true,
+            text: _t('gsync_legacy', 'Sincronización iniciada; refresca en unos segundos'),
+          };
+        var key =
+          {
+            needs_reconnect: ['gsync_reconnect', 'La conexión con Garmin venció: reconecta Garmin'],
+            not_connected: ['gsync_not_connected', 'Garmin no está conectado'],
+            unavailable: ['gsync_unavailable', 'La integración de Garmin no está disponible ahora'],
+            pull_failed: [
+              'gsync_pull_failed',
+              'Garmin no permitió traer las actividades ahora; las nuevas llegan solas por el envío automático',
+            ],
+          }[d.status] || ['gsync_err', 'No se pudo sincronizar Garmin'];
+        return { ok: false, text: _t(key[0], key[1]) };
+      }
+      /* SYNC-CONEXIONES: vigilancia del push. null = no se pudo consultar (no se
+         afirma nada). warn = sin payloads en >48 h (el servidor decide `stale`). */
+      function garminPushView(p, fmt) {
+        if (!p || typeof p !== 'object') return null;
+        var f =
+          fmt ||
+          function (x) {
+            return String(x).slice(0, 16).replace('T', ' ');
+          };
+        var ref = p.reference_at || p.last_received_at || null;
+        var warn = p.stale === true;
+        var gap = p.last_gap && !warn
+          ? _t('gpush_gap', 'Hubo un corte del envío entre {from} y {to}.')
+              .replace('{from}', p.last_gap.from)
+              .replace('{to}', p.last_gap.to)
+          : '';
+        return {
+          line: ref
+            ? _t('gpush_last', 'Push: último {date}').replace('{date}', f(ref))
+            : _t('gpush_none', 'Push: sin envíos recibidos'),
+          warn: warn,
+          msg: !warn
+            ? ''
+            : ref
+              ? _t(
+                  'gpush_dead',
+                  'Atención: Garmin no envía datos desde {date}. Las actividades y la salud nuevas pueden no aparecer; usa Sincronizar actividades o reconecta Garmin.',
+                ).replace('{date}', f(ref))
+              : _t(
+                  'gpush_dead_none',
+                  'Atención: no se ha recibido ningún envío de Garmin. Usa Sincronizar actividades o reconecta Garmin.',
+                ),
+          gap: gap,
+        };
+      }
+      function _gPushFmt(iso) {
+        try {
+          var d = new Date(String(iso).replace(' ', 'T') + 'Z');
+          return isNaN(d.getTime()) ? String(iso).slice(0, 16) : d.toLocaleString('es-CL');
+        } catch (e) {
+          return String(iso).slice(0, 16);
+        }
+      }
+
+      var _gPush = null;
+      var _gSyncBusy = false;
+      function garminOfficialSync() {
+        if (_gSyncBusy) return;
+        _gSyncBusy = true;
+        var btn = document.getElementById('btn-garmin-off-sync');
+        if (btn) btn.disabled = true;
+        toast(_t('gsync_busy', 'Sincronizando actividades de Garmin…'));
+        fetch(API + '/integrations/garmin/sync', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r
+              .json()
+              .catch(function () {
+                return null;
+              })
+              .then(function (d) {
+                return { ok: r.ok, d: d };
+              });
+          })
+          .then(function (x) {
+            var m = garminSyncMessage(x.ok, x.d);
+            toast(m.text, m.ok ? undefined : 'err');
+          })
+          .catch(function () {
+            toast(_t('gsync_err', 'No se pudo sincronizar Garmin'), 'err');
+          })
+          .then(function () {
+            _gSyncBusy = false;
+            if (btn) btn.disabled = false;
+            loadGarminStatus();
+            loadGarminOfficialStatus();
+          });
+      }
+      function loadGarminPushStatus() {
+        fetch(API + '/integrations/garmin/push-status', {
+          credentials: 'include',
+          headers: authH(false),
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .catch(function () {
+            return null;
+          })
+          .then(function (d) {
+            _gPush = d;
+            renderGarminCard();
+          });
+      }
       function renderGarminCard() {
         var m = (_gModel = garminCardModel(
           _gLegacyOn,
@@ -2995,6 +3133,32 @@
           }[m.status] || '';
         st.style.color = m.connected ? 'var(--green, #22c55e)' : '';
         shown('btn-garmin-sync', m.showSync);
+        shown('btn-garmin-off-sync', m.showOfficialSync);
+        var pushEl = document.getElementById('garmin-push');
+        if (pushEl) {
+          var pv = m.via === 'official' ? garminPushView(_gPush, _gPushFmt) : null;
+          pushEl.style.display = pv ? '' : 'none';
+          pushEl.textContent = '';
+          if (pv) {
+            pushEl.setAttribute('data-warn', pv.warn ? '1' : '0');
+            var l1 = document.createElement('div');
+            l1.id = 'garmin-push-line';
+            l1.textContent = pv.line;
+            pushEl.appendChild(l1);
+            [pv.warn ? pv.msg : '', pv.gap].forEach(function (t, i) {
+              if (!t) return;
+              var d = document.createElement('div');
+              d.id = i === 0 ? 'garmin-push-warn' : 'garmin-push-gap';
+              if (i === 0) {
+                d.setAttribute('role', 'alert');
+                d.style.color = 'var(--warn, #f59e0b)';
+                d.style.fontWeight = '600';
+              }
+              d.textContent = t;
+              pushEl.appendChild(d);
+            });
+          }
+        }
         shown('btn-garmin-dis', !!m.disconnect);
         shown('btn-garmin-off-con', m.showConnect);
         shown('btn-garmin-switch', m.showSwitch);
@@ -3006,6 +3170,12 @@
             'garmin_data_until',
             'Datos guardados hasta el {date}',
           ).replace('{date}', _gLegacyData.data_until);
+        } else if (m.via === 'official' && _gLegacyData.last_sync) {
+          log.style.display = 'block';
+          document.getElementById('garmin-log-txt').textContent = _t(
+            'gsync_last',
+            'Última sync: {date}',
+          ).replace('{date}', _gLegacyData.last_sync);
         } else if (m.via === 'legacy' && (_gLegacyData.last_sync_at || _gLegacyData.last_sync)) {
           log.style.display = 'block';
           document.getElementById('garmin-log-txt').textContent =
@@ -3054,6 +3224,7 @@
           })
           .then(function (d) {
             setGarminOfficialUI(garminOfficialState(!!d, code, d));
+            if (d && d.connected === true) loadGarminPushStatus();
           })
           .catch(function () {
             setGarminOfficialUI('error');
@@ -4798,7 +4969,7 @@
     <script src="footer.js?v=373"></script>
     <script src="dash-header.js?v=373"></script>
     <script src="lx-upgrade.js?v=373"></script>
-    <script src="i18n.js?v=378"></script>
+    <script src="i18n.js?v=379"></script>
     <script src="lx-audit.js?v=373"></script>
   </body>
 </html>

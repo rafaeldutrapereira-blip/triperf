@@ -7,9 +7,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import garmin_official as go
@@ -84,6 +86,139 @@ def garmin_status(me: User = Depends(get_current_user), db: Session = Depends(ge
         "scope": row.scope if row else None,
         "updated_at": row.updated_at.isoformat() if row and row.updated_at else None,
     }
+
+
+PUSH_STALE_HOURS = 48
+_PUSH_WINDOW_DAYS = 7
+_GAP_LOOKBACK_DAYS = 30
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _iso(ts) -> str | None:
+    return ts.isoformat() if ts else None
+
+
+def _last_silent_gap(db: Session, now: datetime) -> dict | None:
+    """Ultimo hueco de >=2 dias SIN payloads dentro de los ultimos 30 dias (entre dias
+    con datos, o hasta hoy). Un push que murio y revivio no queda invisible."""
+    since = (now - timedelta(days=_GAP_LOOKBACK_DAYS)).date()
+    rows = db.query(func.date(GarminPushPayload.received_at)).filter(
+        GarminPushPayload.received_at >= datetime.combine(since, datetime.min.time())).distinct().all()
+    days = sorted({str(r[0])[:10] for r in rows if r[0]})
+    if not days:
+        return None
+    today = now.date()
+    marks = [datetime.strptime(d, "%Y-%m-%d").date() for d in days] + [today + timedelta(days=1)]
+    gap = None
+    for prev, nxt in zip(marks, marks[1:]):
+        missing = (nxt - prev).days - 1
+        if missing >= 2:
+            gap = {"from": (prev + timedelta(days=1)).isoformat(),
+                   "to": (nxt - timedelta(days=1)).isoformat(), "days": missing,
+                   "ongoing": nxt == today + timedelta(days=1)}
+    return gap
+
+
+@router.get("/push-status")
+def garmin_push_status(me: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Salud del push de Garmin (bandeja garmin_push_payloads). Solo fechas y conteos."""
+    now = _utcnow()
+    P = GarminPushPayload
+    week = now - timedelta(days=_PUSH_WINDOW_DAYS)
+    last_global = db.query(func.max(P.received_at)).scalar()
+    last_mine = db.query(func.max(P.received_at)).filter(P.user_id == me.id).scalar()
+    by_type = {}
+    for ptype, last in db.query(P.payload_type, func.max(P.received_at)).group_by(P.payload_type).all():
+        by_type[ptype] = {"last_received_at": _iso(last), "count_7d": 0}
+    for ptype, n in db.query(P.payload_type, func.count(P.id)).filter(
+            P.received_at >= week).group_by(P.payload_type).all():
+        by_type[ptype]["count_7d"] = n
+    pending = db.query(func.count(P.id)).filter(P.processed.is_(False), P.error.is_(None)).scalar() or 0
+    errors = db.query(func.count(P.id)).filter(P.processed.is_(False), P.error.isnot(None)).scalar() or 0
+    count_7d = db.query(func.count(P.id)).filter(P.received_at >= week).scalar() or 0
+    mine_7d = db.query(func.count(P.id)).filter(P.user_id == me.id, P.received_at >= week).scalar() or 0
+    # Referencia de la advertencia: lo del propio usuario si existe; si no, el push global.
+    ref = last_mine or last_global
+    hours = round((now - ref).total_seconds() / 3600, 1) if ref else None
+    stale = ref is None or hours > PUSH_STALE_HOURS
+    return {
+        "last_received_at": _iso(last_global),
+        "mine_last_received_at": _iso(last_mine),
+        "reference_at": _iso(ref),
+        "hours_since": hours,
+        "stale": stale,
+        "stale_after_hours": PUSH_STALE_HOURS,
+        "count_7d": count_7d,
+        "mine_count_7d": mine_7d,
+        "by_type": by_type,
+        "pending": pending,
+        "errors": errors,
+        "last_gap": _last_silent_gap(db, now),
+    }
+
+
+def _sync_fail(status_code: int, status: str, message: str, **extra) -> JSONResponse:
+    return JSONResponse({"ok": False, "status": status, "message": message,
+                         "errors": [{"message": message}], **extra}, status_code=status_code)
+
+
+@router.post("/sync")
+def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
+    """Sync manual de ACTIVIDADES por la API oficial (la salud llega solo por push y no se pide).
+    Via 1: pull oficial con el token del usuario. Via 2 (solo si el pull no es posible):
+    dispatch legacy con credenciales y el interruptor encendido. Sin via: error honesto."""
+    from .athlete_routes import _latest_live_sync_str
+    token_row = db.query(GarminOAuthToken).filter(GarminOAuthToken.user_id == me.id).first()
+    if not token_row:
+        return _sync_fail(409, "not_connected",
+                          "Garmin no está conectado por la vía oficial. Conéctalo primero.")
+    if not go.configured():
+        return _sync_fail(503, "unavailable", "La integración oficial de Garmin no está disponible.")
+    access = go.get_valid_access_token(db, me.id)
+    pull_error = None
+    if not access:
+        pull_error = "needs_reconnect"
+    else:
+        try:
+            items = go.fetch_recent_activities(access)
+        except go.GarminOfficialError as exc:
+            pull_error = "pull_failed"
+            logger.warning("Garmin sync manual: pull fallo user=%s: %s", me.id, exc)
+        else:
+            from ..garmin_ingest import _upsert_activity, _recalc_load
+            saved = 0
+            for it in items:
+                try:
+                    if _upsert_activity(db, me.id, it):
+                        saved += 1
+                except Exception as exc:
+                    db.rollback()
+                    logger.warning("Garmin sync manual: item omitido (%s)", type(exc).__name__)
+            db.commit()
+            if saved:
+                _recalc_load(db, me.id)
+            return {"ok": True, "status": "ok", "via": "official", "saved": saved,
+                    "health_included": False, "last_sync": _latest_live_sync_str(db, me.id),
+                    "message": f"Actividades al día ({saved} recibidas)."}
+
+    # El pull no fue posible: fallback legacy solo si hay credenciales y el interruptor lo permite.
+    from ..garmin_legacy_flags import legacy_sync_enabled
+    if me.garmin_email and legacy_sync_enabled():
+        dispatch_garmin_sync(me.id, background_tasks)
+        return {"ok": True, "status": "syncing", "via": "legacy", "saved": None,
+                "health_included": False, "last_sync": _latest_live_sync_str(db, me.id),
+                "message": "Sincronización iniciada por la vía anterior."}
+    if pull_error == "needs_reconnect":
+        return _sync_fail(409, "needs_reconnect",
+                          "La conexión con Garmin venció. Reconecta Garmin para sincronizar.",
+                          last_sync=_latest_live_sync_str(db, me.id))
+    return _sync_fail(502, "pull_failed",
+                      "Garmin no permitió traer las actividades ahora. Las nuevas llegan solas por el envío automático de Garmin.",
+                      last_sync=_latest_live_sync_str(db, me.id))
 
 
 @router.post("/disconnect")

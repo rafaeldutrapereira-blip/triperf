@@ -25,8 +25,8 @@
       rel="stylesheet"
       href="vendor/leaflet/leaflet.css"
     />
-    <script src="i18n.js?v=378"></script>
-    <script src="lx-backend-i18n.js?v=378"></script>
+    <script src="i18n.js?v=379"></script>
+    <script src="lx-backend-i18n.js?v=379"></script>
     <script src="lx-estado-ball.js?v=1"></script>
     <script src="routes.config.js?v=11"></script>
     <script src="community.js?v=3"></script>
@@ -5055,6 +5055,9 @@
         /* Retorno del OAuth de Polar/Wahoo: abre Perfil -> Conexiones */
         wearableReadReturn();
         if (_wearReturn) goScreen('screen-profile');
+        /* Retorno de Garmin oficial (SYNC-CONEXIONES): toast + Hoy / Perfil */
+        garminReturnRead();
+        if (_garminReturn) garminReturnConsume();
       }
 
       /* Cierra sesión — mismo criterio que KL.logout() en auth.js (llama al
@@ -5388,8 +5391,15 @@
             .catch(function () {
               return null;
             }),
+          apiFetch('/integrations/garmin/push-status')
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .catch(function () {
+              return null;
+            }),
         ]).then(function (res) {
-          renderProfileConnections(res[0], res[1], res[2], res[3]);
+          renderProfileConnections(res[0], res[1], res[2], res[3], res[4]);
         });
       }
 
@@ -5446,6 +5456,63 @@
           window.location.href = url;
         }
       }
+      /* SYNC-CONEXIONES: sync manual de actividades por la via oficial. */
+      var _gSyncBusy = false;
+      function garminOfficialSync() {
+        if (_gSyncBusy) return;
+        _gSyncBusy = true;
+        var btn = document.getElementById('pf-garmin-sync');
+        if (btn) btn.disabled = true;
+        toast(_t('gsync_busy', 'Sincronizando actividades de Garmin…'));
+        apiFetch('/integrations/garmin/sync', { method: 'POST' })
+          .then(function (r) {
+            return r
+              .json()
+              .catch(function () {
+                return null;
+              })
+              .then(function (d) {
+                return { ok: r.ok, d: d };
+              });
+          })
+          .then(function (x) {
+            var m = garminSyncMessage(x.ok, x.d);
+            toast(m.text, m.ok ? 'ok' : 'err');
+          })
+          .catch(function () {
+            toast(_t('gsync_err', 'No se pudo sincronizar Garmin'), 'err');
+          })
+          .then(function () {
+            _gSyncBusy = false;
+            loadProfileConnections();
+          });
+      }
+      /* SYNC-CONEXIONES: mismo sync que el boton de la web (athlete_profile). */
+      var _ivlSyncBusy = false;
+      function intervalsSyncApp() {
+        if (_ivlSyncBusy) return;
+        _ivlSyncBusy = true;
+        var btn = document.getElementById('pf-ivl-sync');
+        if (btn) btn.disabled = true;
+        toast(_t('ivl_toast_syncing', 'Sincronizando intervals.icu…'));
+        apiFetch('/integrations/intervals/sync', { method: 'POST' })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (d && d.status === 'ok') toast(_t('ivl_toast_synced', 'intervals.icu sincronizado ✓'), 'ok');
+            else if (d && d.status === 'needs_reconnect')
+              toast(_t('ivl_state_invalid', 'Conexión inválida — reconecta'), 'err');
+            else toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+          })
+          .catch(function () {
+            toast(_t('ivl_toast_err', 'No se pudo completar la operación con intervals.icu'), 'err');
+          })
+          .then(function () {
+            _ivlSyncBusy = false;
+            loadProfileConnections();
+          });
+      }
       function garminOfficialDisconnect() {
         apiFetch('/integrations/garmin/disconnect', { method: 'POST' })
           .then(function (r) {
@@ -5480,6 +5547,7 @@
                 ? 'connected'
                 : offState || '',
           showSync: !offOn && legacyOn,
+          showOfficialSync: offOn,
           disconnect: offOn ? 'official' : legacyOn ? 'legacy' : null,
           showConnect: !offOn && !legacyOn,
           showSwitch: !offOn && legacyOn && offState === 'not_connected',
@@ -5498,7 +5566,80 @@
           return false;
         }
       }
-      function _garminRow(garmin, gOn, offState, isAdmin) {
+
+      /* SYNC-CONEXIONES: mensaje honesto del sync manual de Garmin (solo
+         actividades; la salud llega por push y nunca se promete aqui). */
+      function garminSyncMessage(httpOk, d) {
+        d = d && typeof d === 'object' ? d : {};
+        if (httpOk && d.status === 'ok')
+          return {
+            ok: true,
+            text: _t('gsync_ok', 'Actividades al día ✓ ({n} recibidas)').replace(
+              '{n}',
+              String(d.saved == null ? 0 : d.saved),
+            ),
+          };
+        if (httpOk && d.status === 'syncing')
+          return {
+            ok: true,
+            text: _t('gsync_legacy', 'Sincronización iniciada; refresca en unos segundos'),
+          };
+        var key =
+          {
+            needs_reconnect: ['gsync_reconnect', 'La conexión con Garmin venció: reconecta Garmin'],
+            not_connected: ['gsync_not_connected', 'Garmin no está conectado'],
+            unavailable: ['gsync_unavailable', 'La integración de Garmin no está disponible ahora'],
+            pull_failed: [
+              'gsync_pull_failed',
+              'Garmin no permitió traer las actividades ahora; las nuevas llegan solas por el envío automático',
+            ],
+          }[d.status] || ['gsync_err', 'No se pudo sincronizar Garmin'];
+        return { ok: false, text: _t(key[0], key[1]) };
+      }
+      /* SYNC-CONEXIONES: vigilancia del push. null = no se pudo consultar (no se
+         afirma nada). warn = sin payloads en >48 h (el servidor decide `stale`). */
+      function garminPushView(p, fmt) {
+        if (!p || typeof p !== 'object') return null;
+        var f =
+          fmt ||
+          function (x) {
+            return String(x).slice(0, 16).replace('T', ' ');
+          };
+        var ref = p.reference_at || p.last_received_at || null;
+        var warn = p.stale === true;
+        var gap = p.last_gap && !warn
+          ? _t('gpush_gap', 'Hubo un corte del envío entre {from} y {to}.')
+              .replace('{from}', p.last_gap.from)
+              .replace('{to}', p.last_gap.to)
+          : '';
+        return {
+          line: ref
+            ? _t('gpush_last', 'Push: último {date}').replace('{date}', f(ref))
+            : _t('gpush_none', 'Push: sin envíos recibidos'),
+          warn: warn,
+          msg: !warn
+            ? ''
+            : ref
+              ? _t(
+                  'gpush_dead',
+                  'Atención: Garmin no envía datos desde {date}. Las actividades y la salud nuevas pueden no aparecer; usa Sincronizar actividades o reconecta Garmin.',
+                ).replace('{date}', f(ref))
+              : _t(
+                  'gpush_dead_none',
+                  'Atención: no se ha recibido ningún envío de Garmin. Usa Sincronizar actividades o reconecta Garmin.',
+                ),
+          gap: gap,
+        };
+      }
+      function _gPushFmt(iso) {
+        try {
+          var d = new Date(String(iso).replace(' ', 'T') + 'Z');
+          return isNaN(d.getTime()) ? String(iso).slice(0, 16) : d.toLocaleString('es-CL');
+        } catch (e) {
+          return String(iso).slice(0, 16);
+        }
+      }
+      function _garminRow(garmin, gOn, offState, isAdmin, push) {
         var m = garminCardModel(gOn, offState, isAdmin, garmin && garmin.sync_state);
         var meta =
           m.via === 'legacy' && m.legacyDown
@@ -5526,7 +5667,19 @@
               }[m.status || 'error'] || '';
         if (m.via === 'none' && garmin && garmin.has_credentials)
           meta = _t('app_sync_error', 'Error de sincronización');
+        if (m.via === 'official' && garmin && garmin.last_sync)
+          meta +=
+            ' · ' +
+            _t('gsync_last', 'Última sync: {date}').replace('{date}', _escCm(garmin.last_sync));
+        var pv = m.via === 'official' ? garminPushView(push, _gPushFmt) : null;
         var btn = '';
+        if (m.showOfficialSync)
+          btn +=
+            '<button class="pf-conn-sync-btn" id="pf-garmin-sync" title="' +
+            _escCm(_t('gsync_only_act', 'Solo actividades; la salud llega sola')) +
+            '" onclick="garminOfficialSync()">' +
+            _t('gsync_btn', 'Sincronizar actividades') +
+            '</button>';
         if (m.showSync)
           btn +=
             '<button class="pf-conn-sync-btn" onclick="refreshGarminSync()">' +
@@ -5553,6 +5706,19 @@
           '"></span>Garmin</div><div class="pf-conn-meta">' +
           meta +
           '</div>' +
+          (pv
+            ? '<div class="pf-conn-meta" id="pf-garmin-push" data-warn="' +
+              (pv.warn ? '1' : '0') +
+              '">' +
+              _escCm(pv.line) +
+              '</div>' +
+              (pv.warn
+                ? '<div class="pf-conn-meta" id="pf-garmin-push-warn" role="alert" style="color:var(--warn,#f59e0b)">' +
+                  _escCm(pv.msg) +
+                  '</div>'
+                : '') +
+              (pv.gap ? '<div class="pf-conn-meta" id="pf-garmin-push-gap">' + _escCm(pv.gap) + '</div>' : '')
+            : '') +
           (m.showSwitch
             ? '<div class="pf-conn-meta"><a href="#" id="pf-garmin-switch" onclick="garminOfficialConnect();return false">' +
               _t('garmin_switch', 'Cambiar a la conexión oficial') +
@@ -5576,7 +5742,7 @@
         return html;
       }
 
-      function renderProfileConnections(garmin, strava, garminOff, intervals) {
+      function renderProfileConnections(garmin, strava, garminOff, intervals, push) {
         var box = document.getElementById('pf-connections');
         var gOn = !!(
           garmin &&
@@ -5588,7 +5754,7 @@
         );
         var sOn = !!(strava && strava.connected);
 
-        var html = _garminRow(garmin, gOn, garminOff, garminIsAdmin());
+        var html = _garminRow(garmin, gOn, garminOff, garminIsAdmin(), push);
 
         html +=
           '<div class="pf-conn-row">' +
@@ -5624,13 +5790,23 @@
           error: _t('wearable_err', 'No se pudo consultar el estado'),
         }[ivState];
         if (ivState === 'connected' && iv.last_sync)
-          ivMeta += ' · ' + _t('cdet_last', 'Última sincronización') + ' ' + _escCm(String(iv.last_sync).slice(0, 10));
+          ivMeta +=
+            ' · ' +
+            _t('cdet_last', 'Última sincronización') +
+            ' ' +
+            _escCm(String(iv.last_sync).slice(0, 16).replace('T', ' '));
         html +=
           '<div class="pf-conn-row"><div><div class="pf-conn-name"><span class="pf-conn-dot ' +
           (ivState === 'connected' ? 'on' : 'off') +
           '"></span>intervals.icu</div><div class="pf-conn-meta">' +
           ivMeta +
-          '</div></div></div>';
+          '</div></div>' +
+          (ivState === 'connected'
+            ? '<button class="pf-conn-sync-btn" id="pf-ivl-sync" onclick="intervalsSyncApp()">' +
+              _t('ivl_btn_sync', 'Sincronizar') +
+              '</button>'
+            : '') +
+          '</div>';
 
         html += '<div id="wearable-oauth-cards"></div>';
 
@@ -5649,6 +5825,52 @@
       /* Tarjetas solo para marcas que GET /providers/enabled lista en true.
          Si ese fetch falla o la marca no viene, no se agrega tarjeta. Solo
          actividades: no se promete nada mas para estas marcas. */
+
+      /* SYNC-CONEXIONES: retorno del OAuth oficial de Garmin (?garmin=connected|
+         denied|error|error_state). Va APARTE de WEARABLE_OAUTH: esa lista pinta una
+         tarjeta por marca y la de Garmin ya existe (_garminRow). */
+      var _garminReturn = null;
+      function garminReturnAction(v, inFrame) {
+        if (v === 'connected')
+          return { key: 'garmin_ret_ok', fb: 'Garmin conectado ✓', ok: true, nav: inFrame ? 'top-dashboard' : 'today' };
+        if (v === 'denied') return { key: 'garmin_ret_denied', fb: 'Garmin: autorización denegada', ok: false, nav: 'profile' };
+        if (v === 'error' || v === 'error_state')
+          return { key: 'garmin_ret_err', fb: 'Garmin: error al conectar', ok: false, nav: 'profile' };
+        return null;
+      }
+      function garminReturnRead() {
+        var q;
+        try {
+          q = new URLSearchParams(window.location.search);
+        } catch (e) {
+          return;
+        }
+        var v = q.get('garmin');
+        if (!v) return;
+        _garminReturn = v;
+        q.delete('garmin');
+        try {
+          var qs = q.toString();
+          history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+        } catch (e) {}
+      }
+      function garminReturnConsume() {
+        var v = _garminReturn;
+        _garminReturn = null;
+        var inFrame = false;
+        try {
+          inFrame = window.top !== window;
+        } catch (e) {
+          inFrame = true;
+        }
+        var act = garminReturnAction(v, inFrame);
+        if (!act) return false;
+        toast(_t(act.key, act.fb), act.ok ? 'ok' : 'err');
+        if (act.nav === 'top-dashboard') setTimeout(function () { _lxTopNav('dashboard.html'); }, 1200);
+        else if (act.nav === 'today') goScreen('screen-today');
+        else goScreen('screen-profile');
+        return true;
+      }
       var WEARABLE_OAUTH = ['polar', 'wahoo'];
       var WEARABLE_NAMES = { polar: 'Polar', wahoo: 'Wahoo' };
       var _wearState = {};

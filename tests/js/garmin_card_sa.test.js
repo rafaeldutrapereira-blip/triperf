@@ -106,7 +106,7 @@ test('web: RETIRO-1 sin formulario ni boton de conexion por credenciales', () =>
 });
 
 test('app: fila unica, sin "(oficial)" y con enlace de cambio', () => {
-  const code = 'var _t=function(k,f){return f;};var _escCm=function(x){return x;};' +
+  const code = 'var _t=function(k,f){return f;};var _escCm=function(x){return x;};var garminPushView=function(){return null;};var _gPushFmt=function(x){return x;};' +
     extract(app, 'garminCardModel') + extract(app, '_garminRow') + '; return _garminRow;';
   const row = new Function(code)();
   const none = row(null, false, 'not_connected', false);
@@ -123,7 +123,7 @@ test('app: fila unica, sin "(oficial)" y con enlace de cambio', () => {
 });
 
 test('app: la fila muestra Conectar en error/unavailable', () => {
-  const code = 'var _t=function(k,f){return f;};var _escCm=function(x){return x;};' +
+  const code = 'var _t=function(k,f){return f;};var _escCm=function(x){return x;};var garminPushView=function(){return null;};var _gPushFmt=function(x){return x;};' +
     extract(app, 'garminCardModel') + extract(app, '_garminRow') + '; return _garminRow;';
   const row = new Function(code)();
   for (const st of ['error', 'unavailable', 'not_connected']) {

@@ -43,9 +43,9 @@ test('web: setGarminOfficialUI muestra Conectar siempre que no haya conexion (GA
   };
   const sess = { getItem: () => null };
   const code =
-    'var _gLegacyOn=false,_gLegacyData={},_gOffState=null,_gModel=null;' +
+    'var _gLegacyOn=false,_gLegacyData={},_gOffState=null,_gModel=null,_gPush=null;' +
     'var sessionStorage=S,localStorage=S;' +
-    ['garminCardModel', 'garminIsAdmin', '_garminMountAdmin', 'renderGarminCard', 'setGarminOfficialUI']
+    ['garminCardModel', 'garminIsAdmin', '_garminMountAdmin', 'garminPushView', '_gPushFmt', 'renderGarminCard', 'setGarminOfficialUI']
       .map((n) => extract(web, n)).join(';') +
     '; return setGarminOfficialUI;';
   const fn = new Function('document', '_t', 'S', code)(doc, (k, f) => f, sess);
