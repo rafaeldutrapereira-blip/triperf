@@ -251,6 +251,7 @@ def test_i18n_tres_idiomas(k):
 
 
 def test_build_379_y_sello():
-    assert re.search(r"var BUILD_VERSION = '379';", SW)
+    # BUILD >= 379 (sube en cada pila); el sello de i18n.js no cambia con el BUILD
+    assert int(re.search(r"var BUILD_VERSION = '(\d+)';", SW).group(1)) >= 379
     assert "'/i18n.js?v=379'" in SW
     assert "i18n.js?v=379" in APP and "i18n.js?v=379" in WEB

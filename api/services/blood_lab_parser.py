@@ -29,6 +29,12 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024   # limite de imagen de la API
 class ParseUnavailable(Exception):
     """La IA no esta disponible (sin clave o error del proveedor)."""
 
+    reason = "unavailable"  # "billing" cuando la cuenta de Anthropic no tiene saldo
+
+
+def _is_billing_error(exc: Exception) -> bool:
+    return "credit balance is too low" in str(exc).lower()
+
 
 class ParseBadFile(Exception):
     """Archivo no soportado o ilegible."""
@@ -232,6 +238,12 @@ def _call_model(media_type: str, data: bytes, prompt: str) -> str:
         )
         return resp.content[0].text if resp.content else ""
     except Exception as e:  # noqa: BLE001
+        if _is_billing_error(e):
+            logger.error("Blood lab parse AI error [BILLING]: la cuenta de Anthropic "
+                         "no tiene credito (%s); recargar en Plans & Billing", type(e).__name__)
+            err = ParseUnavailable("Sin credito en la cuenta de Anthropic")
+            err.reason = "billing"
+            raise err
         logger.error("Blood lab parse AI error: %s", e)
         raise ParseUnavailable(str(e))
 

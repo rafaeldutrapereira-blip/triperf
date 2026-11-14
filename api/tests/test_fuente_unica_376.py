@@ -346,9 +346,10 @@ def test_textos_i18n_de_la_tarjeta_en_tres_idiomas():
 
 def test_sello_y_build_376():
     sw = _read("sw.js")
-    assert "var BUILD_VERSION = '376';" in sw
-    assert "'/i18n.js?v=376'" in sw
-    assert "i18n.js?v=376" in _read("athlete_profile.html")
+    assert int(re.search(r"var BUILD_VERSION = '(\d+)';", sw).group(1)) >= 376
+    m = re.search(r"'/i18n\.js\?v=(\d+)'", sw)
+    assert m and int(m.group(1)) >= 376
+    assert f"i18n.js?v={m.group(1)}" in _read("athlete_profile.html")
 
 
 def test_politica_de_borrado_de_cuenta_cubre_las_columnas_nuevas():
