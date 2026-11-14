@@ -6928,7 +6928,10 @@
         var _asgnTplCache = {};
         window.asgnTemplateChange = function (tplId) {
           var tpl = _asgnTplCache[tplId];
-          var isAuto = tpl && tpl.sport === 'bike' && tpl.blocks_json;
+          // PUSH-INTERVALS (378): ya no hay entrega automatica directa a Garmin;
+          // el camino automatico es intervals.icu, asi que el checkbox manual
+          // queda siempre disponible (sin riesgo de doble envio).
+          var isAuto = false;
           document.getElementById('asgn-auto-delivery').style.display = isAuto
             ? ''
             : 'none';
@@ -6944,7 +6947,7 @@
           var notes =
             document.getElementById('asgn-notes').value.trim() || null;
           var tplObj = _asgnTplCache[tpl] || {};
-          var isAutoDelivery = tplObj.sport === 'bike' && tplObj.blocks_json;
+          var isAutoDelivery = false; // PUSH-INTERVALS: sin auto-Garmin (ver asgnTemplateChange)
           var syncGarmin =
             !isAutoDelivery &&
             document.getElementById('asgn-sync-garmin').checked;
@@ -6996,7 +6999,13 @@
                 'ok',
               );
             } else {
-              toast(_t('coach_s061', 'Entrenamiento asignado'));
+              toast(
+                _t('coach_s061', 'Entrenamiento asignado') +
+                  _t(
+                    'coach_pi_toast',
+                    ' — enviándose a intervals.icu del atleta',
+                  ),
+              );
             }
             document.getElementById('asgn-notes').value = '';
 
@@ -7481,6 +7490,40 @@
           );
         }
 
+        // PUSH-INTERVALS (378): estado del envio a intervals.icu por asignacion
+        // (texto + fecha del ultimo intento). null = aun sin intento.
+        function intervalsPushBadge(a) {
+          var st = a.intervals_push_status;
+          if (!st) return '';
+          var map = {
+            ok: ['var(--green)', _t('coach_pi_ok', 'intervals.icu: enviado')],
+            pending: [
+              'var(--dim)',
+              _t('coach_pi_pending', 'intervals.icu: pendiente (atleta sin conexión)'),
+            ],
+            failed: ['var(--red)', _t('coach_pi_failed', 'intervals.icu: error')],
+            skipped: [
+              'var(--dim)',
+              _t('coach_pi_skipped', 'intervals.icu: sin estructura'),
+            ],
+          };
+          var cfg = map[st];
+          if (!cfg) return '';
+          var when = a.intervals_push_at
+            ? ' · ' + String(a.intervals_push_at).replace('T', ' ').slice(0, 16)
+            : '';
+          var tip = a.intervals_push_error || '';
+          return (
+            '<span title="' +
+            esc(tip) +
+            '" style="font-size:.7rem;color:' +
+            cfg[0] +
+            ';margin-right:.4rem;white-space:nowrap">' +
+            esc(cfg[1] + when) +
+            '</span>'
+          );
+        }
+
         window.loadAthletePlan = async function () {
           if (!_apAthleteId) return;
           var start = document.getElementById('ap-start').value;
@@ -7551,6 +7594,7 @@
                       '</div>'
                     : '') +
                   '</div>' +
+                  intervalsPushBadge(a) +
                   garminPushBadge(a) +
                   '<button class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="deleteAssignFromPlan(\'' +
                   a.id +
@@ -10351,7 +10395,7 @@
     <script src="vendor/chart.umd.min.js"></script>
     <script src="auth.js?v=373"></script>
     <script src="nav.js?v=10"></script>
-    <script src="i18n.js?v=377"></script>
+    <script src="i18n.js?v=378"></script>
     <script src="lx-info.js?v=373"></script>
     <script>
       /* Boton ⓘ inline (solo-boton) para HTML armado por JS. */

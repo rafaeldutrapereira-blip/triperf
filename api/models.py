@@ -240,6 +240,14 @@ class AssignedWorkout(Base):
     garmin_push_error  = Column(Text,   nullable=True)    # detalle si failed
     garmin_push_at     = Column(DateTime, nullable=True)
 
+    # PUSH-INTERVALS (BUILD 378): estado del envio del entreno al calendario de
+    # intervals.icu del atleta (camino automatico unico). 'ok' | 'failed' |
+    # 'pending' (atleta sin intervals conectado) | 'skipped' (sin estructura).
+    intervals_push_status   = Column(String,   nullable=True)
+    intervals_push_error    = Column(Text,     nullable=True)
+    intervals_push_at       = Column(DateTime, nullable=True)
+    intervals_push_event_id = Column(String,   nullable=True)
+
     # COACH-VARIANTES (BUILD 363): factor de volumen por destino (0.5-1.5).
     # NULL = sin escala (1.0, fila identica a la historica). Con factor, la fila
     # guarda los valores ya escalados de la plantilla (duracion, distancia, bloques).

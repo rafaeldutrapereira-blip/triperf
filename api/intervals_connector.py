@@ -401,7 +401,7 @@ async def send_workout_event(user: "User", name: str, sport: str, blocks: list[d
     payload = {
         "category":         "WORKOUT",
         "start_date_local":  f"{date_iso}T00:00:00",
-        "type":              {"run": "Run", "swim": "Swim"}.get(sport, "Ride"),
+        "type":              {"run": "Run", "swim": "Swim", "str": "WeightTraining"}.get(sport, "Ride"),
         "name":              name[:120] or "Workout LabX",
         "description":       body_desc,
     }

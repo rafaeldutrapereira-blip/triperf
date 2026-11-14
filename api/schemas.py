@@ -260,6 +260,10 @@ class AssignedWorkoutOut(BaseModel):
     garmin_push_status: Optional[str] = None
     garmin_push_error:  Optional[str] = None
     garmin_push_at:     Optional[datetime] = None
+    # PUSH-INTERVALS: estado del envio a intervals.icu (ok|failed|pending|skipped)
+    intervals_push_status: Optional[str] = None
+    intervals_push_error:  Optional[str] = None
+    intervals_push_at:     Optional[datetime] = None
     # COACH-VARIANTES: factor aplicado (None = 1.0). La plantilla ya viaja escalada.
     volume_factor:      Optional[float] = None
     dur_min_scaled:     Optional[int] = None

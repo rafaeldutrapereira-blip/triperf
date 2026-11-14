@@ -354,6 +354,16 @@ def delete_template(template_id: str,
 
 
 # ── Assign ──────────────────────────────────────────────────
+def _start_intervals_push(assignment_ids):
+    """PUSH-INTERVALS: lanza el envio a intervals.icu en un hilo de fondo (la
+    asignacion ya esta commiteada; un fallo nunca la revierte)."""
+    if not assignment_ids:
+        return
+    from ..coach_intervals_push import push_assignments_background
+    threading.Thread(target=push_assignments_background,
+                     args=(list(assignment_ids),), daemon=True).start()
+
+
 @router.post("/assign", response_model=AssignedWorkoutOut, status_code=201)
 def assign_workout(body: AssignRequest,
                    db: Session = Depends(get_db), coach: User = Depends(_coach)):
@@ -394,19 +404,8 @@ def assign_workout(body: AssignRequest,
         db.commit()
         if not assignments:
             raise HTTPException(400, "El grupo no tiene miembros")
-        # Auto-entrega para cada miembro si es workout bici con bloques
-        if tpl.sport in ("bike", "run") and tpl.blocks_json:
-            from ..workout_delivery import deliver_bike_workout
-            for a in assignments:
-                db.refresh(a)
-                athlete = db.query(User).filter(User.id == a.athlete_id).first()
-                if athlete:
-                    _a, _ath, _tpl = a, athlete, tpl
-                    threading.Thread(
-                        target=deliver_bike_workout,
-                        args=(_a, _ath, _tpl),
-                        daemon=True,
-                    ).start()
+        # PUSH-INTERVALS: un evento por miembro en el intervals.icu del atleta
+        _start_intervals_push([a.id for a in assignments])
         db.refresh(assignments[0])
         # SSE + Push a todos los miembros del grupo
         _evt_data = {"workout_name": tpl.nombre, "date_iso": body.date_iso}
@@ -444,15 +443,8 @@ def assign_workout(body: AssignRequest,
     )
     apply_volume_factor(a, tpl, body.volume_factor)
     db.add(a); db.commit(); db.refresh(a)
-    # Auto-entrega si es workout bici con bloques
-    athlete = db.query(User).filter(User.id == body.athlete_id).first()
-    if tpl.sport in ("bike", "run") and tpl.blocks_json and athlete:
-        from ..workout_delivery import deliver_bike_workout
-        threading.Thread(
-            target=deliver_bike_workout,
-            args=(a, athlete, tpl),
-            daemon=True,
-        ).start()
+    # PUSH-INTERVALS: el entreno se escribe en el intervals.icu del atleta
+    _start_intervals_push([a.id])
     # SSE + Push notification al atleta
     try:
         from ..sse_broker import publish_nowait
@@ -1647,8 +1639,7 @@ BATCH_ASSIGN_MAX = 500
 
 
 def _notify_batch_created(db, rows, templates):
-    """Mismo aviso que /assign individual (SSE + push + entrega bici/run con
-    bloques) para cada asignación creada por el batch. Best-effort: nunca
+    """Mismo aviso que /assign individual (SSE + push + escritura en intervals.icu) para cada asignación creada por el batch. Best-effort: nunca
     rompe la respuesta. Un solo hilo de fondo recorre las filas (no un hilo
     por atleta: con 500 ítems saturaría)."""
     jobs = []
@@ -1658,23 +1649,17 @@ def _notify_batch_created(db, rows, templates):
             if not tpl:
                 continue
             db.refresh(a)
-            athlete = None
-            if tpl.sport in ("bike", "run") and tpl.blocks_json:
-                athlete = db.query(User).filter(User.id == a.athlete_id).first()
-            jobs.append((a, tpl, athlete))
+            jobs.append((a, tpl))
         except Exception:
             pass
     if not jobs:
         return
 
+    # PUSH-INTERVALS: hilo propio (las llamadas HTTP a intervals no demoran el aviso)
+    _start_intervals_push([a.id for a, _t in jobs])
+
     def _run():
-        for a, tpl, athlete in jobs:
-            try:
-                if athlete:
-                    from ..workout_delivery import deliver_bike_workout
-                    deliver_bike_workout(a, athlete, tpl)
-            except Exception:
-                pass
+        for a, tpl in jobs:
             try:
                 from ..sse_broker import publish_nowait
                 from .notification_routes import send_push_to_user
