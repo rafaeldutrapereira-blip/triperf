@@ -52,7 +52,7 @@ POLICY: dict[str, str] = {
     "garmin_oauth_tokens.user_id": "delete", "garmin_planned_workouts.user_id": "delete",
     "garmin_sleep_sessions.user_id": "delete", "garmin_sync_status.user_id": "delete",
     "garmin_training_load.user_id": "delete", "hydration_logs.user_id": "delete",
-    "indoor_workouts.user_id": "delete", "injury_risk_snapshots.user_id": "delete",
+    "coach_alert_rules.coach_id": "delete", "indoor_workouts.user_id": "delete", "injury_risk_snapshots.user_id": "delete",
     "kudos.user_id": "delete", "mental_checkins.user_id": "delete",
     "mental_fatigue_scores.user_id": "delete", "mental_protocol_sessions.user_id": "delete",
     "messages.to_user_id": "delete", "messages.from_user_id": "delete",

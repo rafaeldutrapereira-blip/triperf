@@ -1512,12 +1512,62 @@ def athlete_report(
 
 
 # ── Alertas coach — P6 ──────────────────────────────────────
+ALERT_RULE_DEFAULTS = {"fatigue": 4, "soreness": 4, "rpe": 8, "window_hours": 48}
+ALERT_RULE_RANGES = {"fatigue": (1, 5), "soreness": (1, 5), "rpe": (1, 10), "window_hours": (12, 168)}
+
+
+def _alert_rules_for(db: Session, coach_id: str) -> dict:
+    """Reglas del coach; sin fila = defaults (4/4/8/48 h)."""
+    from ..models import CoachAlertRule
+    row = db.query(CoachAlertRule).filter(CoachAlertRule.coach_id == coach_id).first()
+    if not row:
+        return dict(ALERT_RULE_DEFAULTS)
+    return {k: (getattr(row, k) if getattr(row, k) is not None else d)
+            for k, d in ALERT_RULE_DEFAULTS.items()}
+
+
+class AlertRulesIn(BaseModel):
+    fatigue: int
+    soreness: int
+    rpe: int
+    window_hours: int
+
+
+@router.get("/alert-rules")
+def get_alert_rules(db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """Umbrales de alerta del coach (defaults 4/4/8/48 h si nunca los editó)."""
+    return {**_alert_rules_for(db, coach.id), "defaults": dict(ALERT_RULE_DEFAULTS),
+            "ranges": {k: list(v) for k, v in ALERT_RULE_RANGES.items()}}
+
+
+@router.put("/alert-rules")
+def put_alert_rules(body: AlertRulesIn, db: Session = Depends(get_db),
+                    coach: User = Depends(_coach)):
+    from ..models import CoachAlertRule
+    vals = body.model_dump()
+    for k, (lo, hi) in ALERT_RULE_RANGES.items():
+        if not (lo <= vals[k] <= hi):
+            raise HTTPException(422, f"{k} debe estar entre {lo} y {hi}")
+    row = db.query(CoachAlertRule).filter(CoachAlertRule.coach_id == coach.id).first()
+    if not row:
+        row = CoachAlertRule(coach_id=coach.id)
+        db.add(row)
+    for k, v in vals.items():
+        setattr(row, k, v)
+    db.commit()
+    return {**vals, "defaults": dict(ALERT_RULE_DEFAULTS),
+            "ranges": {k: list(v) for k, v in ALERT_RULE_RANGES.items()}}
+
+
 @router.get("/alerts")
 def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
     """Atletas con fatigue>=4 o RPE>=8 en últimas 48h. Badge en coach.html."""
     from datetime import datetime, timedelta as _td, timezone
-    cutoff_dt  = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).isoformat()
-    cutoff_day = (datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=48)).date().isoformat()
+    rules = _alert_rules_for(db, coach.id)
+    th_fat, th_sor, th_rpe = rules["fatigue"], rules["soreness"], rules["rpe"]
+    _cut = datetime.now(timezone.utc).replace(tzinfo=None) - _td(hours=rules["window_hours"])
+    cutoff_dt  = _cut.isoformat()
+    cutoff_day = _cut.date().isoformat()
 
     athlete_ids = coach_athlete_ids(db, coach)
     if not athlete_ids:
@@ -1531,13 +1581,13 @@ def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
         .filter(
             WellnessLog.user_id.in_(athlete_ids),
             WellnessLog.date_iso >= cutoff_day,
-            (WellnessLog.fatigue >= 4) | (WellnessLog.soreness >= 4),
+            (WellnessLog.fatigue >= th_fat) | (WellnessLog.soreness >= th_sor),
         ).all()
     )
     for w, u in wellness_rows:
         parts = []
-        if w.fatigue  and w.fatigue  >= 4: parts.append(f"Fatiga {w.fatigue}/5")
-        if w.soreness and w.soreness >= 4: parts.append(f"Dolor {w.soreness}/5")
+        if w.fatigue  and w.fatigue  >= th_fat: parts.append(f"Fatiga {w.fatigue}/5")
+        if w.soreness and w.soreness >= th_sor: parts.append(f"Dolor {w.soreness}/5")
         alerts.append({
             "type": "wellness", "athlete_id": u.id, "athlete_name": u.nombre,
             "date": w.date_iso, "detail": " · ".join(parts),
@@ -1550,7 +1600,7 @@ def get_alerts(db: Session = Depends(get_db), coach: User = Depends(_coach)):
         .join(User, User.id == WorkoutLog.user_id)
         .filter(
             WorkoutLog.user_id.in_(athlete_ids),
-            WorkoutLog.rpe >= 8,
+            WorkoutLog.rpe >= th_rpe,
             WorkoutLog.logged_at >= cutoff_dt,
         ).all()
     )

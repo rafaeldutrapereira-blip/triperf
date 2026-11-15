@@ -2474,6 +2474,20 @@ class IndoorWorkout(Base):
                           onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class CoachAlertRule(Base):
+    """COACH-TABLERO: umbrales de alerta del coach (una fila por coach).
+    Sin fila = defaults (fatiga 4, dolor 4, RPE 8, ventana 48 h)."""
+    __tablename__ = "coach_alert_rules"
+
+    coach_id    = Column(String, ForeignKey("users.id"), primary_key=True)
+    fatigue     = Column(Integer, nullable=False, default=4)
+    soreness    = Column(Integer, nullable=False, default=4)
+    rpe         = Column(Integer, nullable=False, default=8)
+    window_hours = Column(Integer, nullable=False, default=48)
+    updated_at  = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                         onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class AccountDeletionRequest(Base):
     """Registro auditable de solicitudes de eliminacion de cuenta (CUENTA-BORRADO).
 

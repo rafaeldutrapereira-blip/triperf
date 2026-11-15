@@ -693,6 +693,25 @@
       >
         <span data-i18n="coach_h002">Cargando...</span>
       </div>
+      <details id="alert-rules" style="padding: 0.5rem 0.75rem; border-top: 1px solid var(--border2); font-size: 0.78rem">
+        <summary style="cursor: pointer; color: var(--muted)" data-i18n="tbl_rules_title">Reglas de alertas</summary>
+        <p style="color: var(--dim); margin: 0.4rem 0" data-i18n="tbl_rules_hint">
+          Avisa cuando un atleta reporta fatiga o dolor igual o mayor al umbral, o un esfuerzo percibido (RPE) igual o mayor, dentro de la ventana.
+        </p>
+        <label style="display: block; margin: 0.3rem 0"><span data-i18n="tbl_rule_fatigue">Fatiga desde (1–5)</span>
+          <input type="number" id="ar-fatigue" min="1" max="5" step="1" style="width: 4rem; float: right" /></label>
+        <label style="display: block; margin: 0.3rem 0"><span data-i18n="tbl_rule_soreness">Dolor desde (1–5)</span>
+          <input type="number" id="ar-soreness" min="1" max="5" step="1" style="width: 4rem; float: right" /></label>
+        <label style="display: block; margin: 0.3rem 0"><span data-i18n="tbl_rule_rpe">Esfuerzo percibido (RPE) desde (1–10)</span>
+          <input type="number" id="ar-rpe" min="1" max="10" step="1" style="width: 4rem; float: right" /></label>
+        <label style="display: block; margin: 0.3rem 0"><span data-i18n="tbl_rule_window">Ventana en horas (12–168)</span>
+          <input type="number" id="ar-window" min="12" max="168" step="1" style="width: 4rem; float: right" /></label>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; clear: both; flex-wrap: wrap">
+          <button class="btn btn-primary" onclick="saveAlertRules(false)" data-i18n="tbl_rule_save">Guardar reglas</button>
+          <button class="btn" onclick="saveAlertRules(true)" data-i18n="tbl_rule_reset">Restaurar valores por defecto</button>
+        </div>
+        <div id="ar-msg" style="margin-top: 0.4rem; color: var(--muted)"></div>
+      </details>
     </div>
     <div class="sb-overlay" id="sb-overlay"></div>
 
@@ -843,6 +862,14 @@
           data-i18n="coach_tab_recovery"
         >
           ❤️ Recuperación de atletas
+        </button>
+        <button
+          class="coach-tab"
+          data-tab="tablero"
+          onclick="switchTab('tablero')"
+          data-i18n="tab_tablero"
+        >
+          Tablero
         </button>
       </div>
 
@@ -1573,6 +1600,36 @@
             background: transparent;
           "
         ></iframe>
+      </div>
+      <!-- TAB: TABLERO (COACH-TABLERO) -->
+      <div class="tab-panel" id="tab-tablero">
+        <div class="card" style="margin-bottom: 1rem">
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap">
+            <div style="flex: 1; min-width: 200px">
+              <div style="font-weight: 600" data-i18n="tbl_title">Tablero del equipo</div>
+              <div style="font-size: 0.78rem; color: var(--muted)" data-i18n="tbl_sub">
+                Estado de cada atleta de un vistazo. Haz clic en una fila para ver su vista 360°.
+              </div>
+            </div>
+            <label style="font-size: 0.8rem; color: var(--muted)" for="tb-group" data-i18n="tbl_group_lbl">Grupo</label>
+            <select id="tb-group" onchange="tbLoad()" style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.6rem; color: var(--text)">
+              <option value="" data-i18n="tbl_group_all">Todos los atletas</option>
+            </select>
+            <button class="btn" onclick="tbLoad()" data-i18n="tbl_refresh">Actualizar</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom: 1rem">
+          <div id="tb-summary" style="font-size: 0.85rem; margin-bottom: 0.5rem"></div>
+          <div id="tb-board" style="overflow-x: auto"></div>
+        </div>
+        <div class="card" style="margin-bottom: 1rem">
+          <div style="font-weight: 600" data-i18n="tbl_squad_title">Equipo ordenado por riesgo</div>
+          <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem" data-i18n="tbl_squad_why">
+            Orden que calcula el servidor: primero quien más necesita atención.
+          </div>
+          <div id="tb-squad"></div>
+        </div>
+        <div class="card" id="tb-drill" style="display: none"></div>
       </div>
       <div class="tab-panel" id="tab-rec-coach">
         <iframe
@@ -9944,7 +10001,10 @@
         _alertPanelOpen = !_alertPanelOpen;
         var panel = document.getElementById('alert-panel');
         if (panel) panel.style.display = _alertPanelOpen ? 'block' : 'none';
-        if (_alertPanelOpen) loadAlerts();
+        if (_alertPanelOpen) {
+          loadAlerts();
+          if (window.loadAlertRules) loadAlertRules();
+        }
       }
 
       async function loadAlerts() {
@@ -10395,13 +10455,274 @@
     <script src="vendor/chart.umd.min.js"></script>
     <script src="auth.js?v=373"></script>
     <script src="nav.js?v=10"></script>
-    <script src="i18n.js?v=379"></script>
+    <script src="i18n.js?v=382"></script>
     <script src="lx-info.js?v=373"></script>
     <script>
       /* Boton ⓘ inline (solo-boton) para HTML armado por JS. */
       function _lxIb(id) {
         return '<button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open(\'' + id + '\', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>';
       }
+    </script>
+    <script>
+      /* COACH-TABLERO: tablero del coach (status-board + squad-overview + 360°) y
+         reglas de alertas. Cero cifras inventadas: null/undefined => "Sin datos"
+         (el 0 es un valor real y se muestra). */
+      function tbFmt(s, o) {
+        return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+          return o && o[k] != null ? o[k] : m;
+        });
+      }
+      function tbNum(v, suffix) {
+        if (v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v)))
+          return _t('tbl_nodata', 'Sin datos');
+        return String(v) + (suffix || '');
+      }
+      function tbStatus(st) {
+        var m = {
+          optimal: ['tbl_st_optimal', 'Bien', 'var(--green, #10B981)'],
+          caution: ['tbl_st_caution', 'Atención', 'var(--gold, #F0A500)'],
+          critical: ['tbl_st_critical', 'Cuidado', 'var(--red, #EF4444)'],
+        };
+        var x = m[st] || ['tbl_st_unknown', 'Sin datos', 'var(--dim, #7FB3CC)'];
+        return { label: _t(x[0], x[1]), color: x[2] };
+      }
+      function tbRisk(r) {
+        var m = {
+          critical: ['tbl_risk_critical', 'Cuidado', 'var(--red, #EF4444)'],
+          warning: ['tbl_risk_warning', 'Atención', 'var(--gold, #F0A500)'],
+          ok: ['tbl_risk_ok', 'Bien', 'var(--green, #10B981)'],
+        };
+        var x = m[r] || ['tbl_risk_unknown', 'Sin datos', 'var(--dim, #7FB3CC)'];
+        return { label: _t(x[0], x[1]), color: x[2] };
+      }
+      function tbPill(p) {
+        return (
+          '<span style="font-size:.72rem;font-weight:600;color:' + p.color +
+          ';border:1px solid ' + p.color + ';border-radius:4px;padding:0 .35rem">' +
+          esc(p.label) + '</span>'
+        );
+      }
+      function tbPct(v) {
+        return v === null || v === undefined ? tbNum(null) : Math.round(v * 100) + '%';
+      }
+      function tbAlertsCell(a) {
+        if (!a.alerts || !a.alerts.length) return '—';
+        return a.alerts.map(function (x) { return esc(x.title); }).join('<br>');
+      }
+      function tbRow(a, tech) {
+        var open = 'onclick="tbOpen(\'' + esc(a.athlete_id) + '\')" style="cursor:pointer"';
+        var td = function (h) { return '<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border2)">' + h + '</td>'; };
+        var name = '<strong>' + esc(a.nombre || a.email) + '</strong>';
+        if (tech) {
+          return (
+            '<tr ' + open + '>' + td(name) + td(tbNum(a.ctl)) + td(tbNum(a.atl)) + td(tbNum(a.tsb)) +
+            td(tbNum(a.acwr)) + td(tbNum(a.hrv)) + td(tbNum(a.body_battery)) + td(tbPct(a.injury_risk)) + '</tr>'
+          );
+        }
+        return (
+          '<tr ' + open + '>' + td(name) + td(tbPill(tbStatus(a.status))) + td(tbNum(a.readiness)) +
+          td(tbAlertsCell(a)) + td(tbNum(a.days_to_race)) + td(tbNum(a.compliance_pct, '%')) + '</tr>'
+        );
+      }
+      function tbHead(keys) {
+        return (
+          '<thead><tr>' +
+          keys.map(function (k) {
+            return '<th style="text-align:left;padding:.4rem .5rem;font-size:.72rem;color:var(--muted);border-bottom:1px solid var(--border)">' +
+              esc(_t(k[0], k[1])) + '</th>';
+          }).join('') + '</tr></thead>'
+        );
+      }
+      function tbBoard(rows) {
+        if (!rows || !rows.length)
+          return '<p style="color:var(--dim)">' + esc(_t('tbl_empty', 'Sin atletas todavía.')) + '</p>';
+        var main = [
+          ['tbl_c_athlete', 'Atleta'], ['tbl_c_state', 'Estado'], ['tbl_c_readiness', 'Disponibilidad (readiness)'],
+          ['tbl_c_alerts', 'Alertas'], ['tbl_c_race', 'Días a la carrera'], ['tbl_c_comp', 'Cumplimiento 14 d'],
+        ];
+        var tech = [
+          ['tbl_c_athlete', 'Atleta'], ['tbl_c_ctl', 'Fitness (CTL)'], ['tbl_c_atl', 'Fatiga (ATL)'],
+          ['tbl_c_tsb', 'Forma (TSB)'], ['tbl_c_acwr', 'Carga aguda/crónica (ACWR)'],
+          ['tbl_c_hrv', 'Variabilidad cardíaca (HRV)'], ['Body Battery', 'Body Battery'], ['tbl_c_risk', 'Riesgo de lesión'],
+        ];
+        return (
+          '<table style="width:100%;border-collapse:collapse;font-size:.82rem">' + tbHead(main) +
+          '<tbody>' + rows.map(function (a) { return tbRow(a, false); }).join('') + '</tbody></table>' +
+          '<details style="margin-top:.75rem"><summary style="cursor:pointer;color:var(--muted);font-size:.8rem">' +
+          esc(_t('tbl_detail', 'Ver el detalle técnico')) + '</summary>' +
+          '<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.5rem">' + tbHead(tech) +
+          '<tbody>' + rows.map(function (a) { return tbRow(a, true); }).join('') + '</tbody></table></details>'
+        );
+      }
+      function tbSummary(rows) {
+        if (!rows || !rows.length) return '';
+        var c = { critical: 0, caution: 0, optimal: 0, unknown: 0 };
+        rows.forEach(function (a) { c[c.hasOwnProperty(a.status) ? a.status : 'unknown']++; });
+        return esc(tbFmt(
+          _t('tbl_summary', '{n} atletas: {c} en Cuidado, {w} en Atención, {o} Bien, {u} Sin datos.'),
+          { n: rows.length, c: c.critical, w: c.caution, o: c.optimal, u: c.unknown },
+        ));
+      }
+      function tbSquad(data) {
+        var list = (data && data.athletes) || [];
+        if (!list.length) return '<p style="color:var(--dim)">' + esc(_t('tbl_empty', 'Sin atletas todavía.')) + '</p>';
+        return list.map(function (s) {
+          var bits = [];
+          var add = function (k, fb, v, suf) { bits.push(esc(_t(k, fb)) + ': <strong>' + esc(tbNum(v, suf)) + '</strong>'); };
+          add('tbl_c_ctl', 'Fitness (CTL)', s.ctl);
+          add('tbl_c_acwr', 'Carga aguda/crónica (ACWR)', s.acwr);
+          add('tbl_sq_recovery', 'Recuperación', s.recovery_score);
+          add('tbl_sq_mental', 'Estado mental', s.mental_score);
+          add('tbl_c_comp', 'Cumplimiento 14 d', s.compliance_pct, '%');
+          add('tbl_c_race', 'Días a la carrera', s.days_to_race);
+          if (s.blood_critical) bits.push(esc(_t('tbl_sq_blood', 'Laboratorio con valores críticos')));
+          if (s.rx_missed) bits.push(esc(_t('tbl_sq_rx', 'Prescripciones sin cumplir')) + ': <strong>' + esc(s.rx_missed) + '</strong>');
+          return (
+            '<div onclick="tbOpen(\'' + esc(s.athlete_id) + '\')" style="cursor:pointer;padding:.5rem 0;border-bottom:1px solid var(--border2)">' +
+            '<div style="display:flex;gap:.5rem;align-items:center"><strong>' + esc(s.name || s.email) + '</strong>' +
+            tbPill(tbRisk(s.risk)) + '</div>' +
+            '<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">' + bits.join(' · ') + '</div></div>'
+          );
+        }).join('');
+      }
+      function tbIntel(d) {
+        var t = d.training || {}, r = d.recovery || {}, m = d.mental || {}, b = d.blood_labs || {}, p = d.prescriptions || {};
+        var L = function (k, fb, v, suf) { return '<div>' + esc(_t(k, fb)) + ': <strong>' + esc(tbNum(v, suf)) + '</strong></div>'; };
+        var sec = function (k, fb, body) {
+          return '<div style="margin:.6rem 0"><div style="font-weight:600;font-size:.82rem;margin-bottom:.2rem">' +
+            esc(_t(k, fb)) + '</div><div style="font-size:.8rem;color:var(--muted)">' + body + '</div></div>';
+        };
+        var blood = b.has_labs
+          ? L('tbl_dd_days_exam', 'Días desde el último examen', b.days_since_exam) +
+            L('tbl_dd_crit', 'Marcadores críticos', (b.critical_markers || []).length) +
+            L('tbl_dd_warn', 'Marcadores en atención', (b.warning_markers || []).length)
+          : esc(_t('tbl_dd_nolabs', 'Sin exámenes cargados.'));
+        var alerts = (d.alerts && d.alerts.length)
+          ? d.alerts.map(function (a) { return '<div>' + esc(a.message) + '</div>'; }).join('')
+          : esc(_t('tbl_dd_noalerts', 'Sin alertas.'));
+        return (
+          '<div style="display:flex;justify-content:space-between;align-items:center"><strong>' +
+          esc(tbFmt(_t('tbl_dd_title', 'Vista 360° de {name}'), { name: d.athlete_name })) + '</strong>' +
+          '<button class="btn" onclick="tbCloseDrill()">' + esc(_t('tbl_close', 'Cerrar')) + '</button></div>' +
+          sec('tbl_dd_alerts', 'Alertas del atleta', alerts) +
+          sec('tbl_dd_training', 'Entrenamiento',
+            L('tbl_c_ctl', 'Fitness (CTL)', t.ctl) + L('tbl_c_atl', 'Fatiga (ATL)', t.atl) + L('tbl_c_tsb', 'Forma (TSB)', t.tsb) +
+            L('tbl_c_acwr', 'Carga aguda/crónica (ACWR)', t.acwr) + L('tbl_dd_load7', 'Carga 7 d (TSS)', t.tss_7d) +
+            L('tbl_dd_load28', 'Carga 28 d (TSS)', t.tss_28d)) +
+          sec('tbl_dd_recovery', 'Recuperación', L('tbl_dd_score', 'Último puntaje', r.latest_score) + L('tbl_dd_avg7', 'Promedio 7 d', r.avg_7d)) +
+          sec('tbl_dd_mental', 'Estado mental', L('tbl_dd_score', 'Último puntaje', m.latest_score) + L('tbl_dd_avg7', 'Promedio 7 d', m.avg_7d)) +
+          sec('tbl_dd_blood', 'Laboratorio (Blood Labs)', blood) +
+          sec('tbl_dd_rx', 'Prescripciones',
+            L('tbl_dd_pending', 'Pendientes', p.pending_count) + L('tbl_dd_done30', 'Cumplidas 30 d', p.completed_30d) +
+            L('tbl_dd_skipped30', 'Omitidas 30 d', p.skipped_30d) + L('tbl_c_comp', 'Cumplimiento 14 d', p.compliance_pct, '%'))
+        );
+      }
+
+      var _tbGroupsLoaded = false;
+      function tbGet(path) {
+        return fetch(API + path, {
+          headers: { Authorization: 'Bearer ' + (localStorage.getItem('lx_co_token') || '') },
+        }).then(function (r) {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json();
+        });
+      }
+      async function tbLoadGroups() {
+        if (_tbGroupsLoaded) return;
+        try {
+          var gs = await tbGet('/coach/groups');
+          var sel = document.getElementById('tb-group');
+          (gs || []).forEach(function (g) {
+            var o = document.createElement('option');
+            o.value = g.id;
+            o.textContent = g.nombre;
+            sel.appendChild(o);
+          });
+          _tbGroupsLoaded = true;
+        } catch (e) {}
+      }
+      async function tbLoad() {
+        var board = document.getElementById('tb-board');
+        var squad = document.getElementById('tb-squad');
+        var sum = document.getElementById('tb-summary');
+        if (!board) return;
+        var gid = (document.getElementById('tb-group') || {}).value || '';
+        board.innerHTML = squad.innerHTML = '<p style="color:var(--dim)">' + esc(_t('tbl_loading', 'Cargando…')) + '</p>';
+        await tbLoadGroups();
+        try {
+          var rows = await tbGet('/coach/status-board' + (gid ? '?group_id=' + encodeURIComponent(gid) : ''));
+          sum.innerHTML = tbSummary(rows);
+          board.innerHTML = tbBoard(rows);
+          var ids = {};
+          rows.forEach(function (a) { ids[a.athlete_id] = 1; });
+          var sq = await tbGet('/coach/squad-overview');
+          if (gid) sq = { athletes: (sq.athletes || []).filter(function (s) { return ids[s.athlete_id]; }) };
+          squad.innerHTML = tbSquad(sq);
+        } catch (e) {
+          var msg = '<p style="color:var(--dim)">' + esc(_t('tbl_error', 'No se pudo cargar el tablero.')) + '</p>';
+          board.innerHTML = squad.innerHTML = msg;
+        }
+      }
+      async function tbOpen(id) {
+        var el = document.getElementById('tb-drill');
+        if (!el) return;
+        el.style.display = 'block';
+        el.innerHTML = '<p style="color:var(--dim)">' + esc(_t('tbl_loading', 'Cargando…')) + '</p>';
+        try {
+          el.innerHTML = tbIntel(await tbGet('/coach/athletes/' + encodeURIComponent(id) + '/intelligence'));
+          el.scrollIntoView && el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+          el.innerHTML = '<p style="color:var(--dim)">' + esc(_t('tbl_error', 'No se pudo cargar el tablero.')) + '</p>';
+        }
+      }
+      function tbCloseDrill() {
+        var el = document.getElementById('tb-drill');
+        if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+      }
+
+      /* Reglas de alertas (dentro del panel de alertas existente) */
+      var _AR_FIELDS = { fatigue: 'ar-fatigue', soreness: 'ar-soreness', rpe: 'ar-rpe', window_hours: 'ar-window' };
+      async function loadAlertRules() {
+        try {
+          var r = await tbGet('/coach/alert-rules');
+          Object.keys(_AR_FIELDS).forEach(function (k) {
+            var i = document.getElementById(_AR_FIELDS[k]);
+            if (i) i.value = r[k];
+          });
+        } catch (e) {}
+      }
+      async function saveAlertRules(reset) {
+        var msg = document.getElementById('ar-msg');
+        var body = {};
+        try {
+          if (reset) {
+            var cur = await tbGet('/coach/alert-rules');
+            body = cur.defaults;
+          } else {
+            Object.keys(_AR_FIELDS).forEach(function (k) {
+              body[k] = parseInt(document.getElementById(_AR_FIELDS[k]).value, 10);
+            });
+          }
+          var res = await fetch(API + '/coach/alert-rules', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (localStorage.getItem('lx_co_token') || '') },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          await loadAlertRules();
+          await loadAlerts(); /* refresca lista y badge con las reglas nuevas */
+          if (msg) msg.textContent = _t('tbl_rule_saved', 'Reglas guardadas');
+        } catch (e) {
+          if (msg) msg.textContent = _t('tbl_rule_err', 'No se pudieron guardar las reglas (revisa los rangos).');
+        }
+      }
+      (function () {
+        var prev = window.switchTab;
+        window.switchTab = function (name) {
+          if (prev) prev(name);
+          if (name === 'tablero') tbLoad();
+        };
+      })();
     </script>
     <script src="lx-audit.js?v=373"></script>
     <script>
