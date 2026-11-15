@@ -321,11 +321,10 @@ class TestIsoHelper:
 # ── assign_template_to_athlete ────────────────────────────────────────────────
 
 def _with_mock_orm(fn, *args, **kwargs):
-    """Run fn with WorkoutPrescription + TrainingPhase patched to avoid ORM mapper collision."""
-    mock_rx  = MagicMock(return_value=MagicMock())
-    mock_tp  = MagicMock(return_value=MagicMock())
-    with patch("api.services.template_service.WorkoutPrescription", mock_rx), \
-         patch("api.services.template_service.TrainingPhase", mock_tp):
+    """Run fn with AssignedWorkout + WorkoutTemplate + TrainingPhase patched to avoid ORM mapper collision."""
+    with patch("api.services.template_service.AssignedWorkout", MagicMock(return_value=MagicMock())), \
+         patch("api.services.template_service.WorkoutTemplate", MagicMock(return_value=MagicMock())), \
+         patch("api.services.template_service.TrainingPhase", MagicMock(return_value=MagicMock())):
         return fn(*args, **kwargs)
 
 
@@ -338,7 +337,7 @@ class TestAssignTemplate:
             coach_id="coach-1", start_date="2026-08-03", db=db,
         )
         assert result["weeks"] == 8
-        assert result["prescriptions_created"] > 0
+        assert result["assigned_created"] > 0
         assert result["phases_created"] > 0
         assert db.commit.called
 
@@ -351,14 +350,14 @@ class TestAssignTemplate:
         )
         assert result.get("error") == "template_not_found"
 
-    def test_ironman_20w_creates_many_prescriptions(self):
+    def test_ironman_20w_creates_many_assignments(self):
         db = MagicMock()
         result = _with_mock_orm(
             assign_template_to_athlete,
             template_id="builtin-ironman-20w", athlete_id="ath-1",
             coach_id="coach-1", start_date="2026-09-07", db=db,
         )
-        assert result["prescriptions_created"] >= 60  # 20 weeks × ≥3 sessions each
+        assert result["assigned_created"] >= 60  # 20 weeks × ≥3 sessions each
 
     def test_start_and_end_date_span(self):
         db = MagicMock()

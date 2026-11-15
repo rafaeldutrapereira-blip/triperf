@@ -3,7 +3,7 @@
 Provides:
   - 3 built-in multi-week triathlon templates (Ironman 20w, 70.3 12w, Sprint 8w)
   - CRUD helpers for coach-authored templates
-  - assign_template_to_athlete(): bulk-creates WorkoutPrescriptions + TrainingPhases
+  - assign_template_to_athlete(): bulk-creates AssignedWorkouts (one WorkoutTemplate each) + TrainingPhases
   - compliance_trend(): weekly adherence % for the last N weeks
 """
 from __future__ import annotations
@@ -18,7 +18,8 @@ from sqlalchemy.orm import Session
 from ..models import (
     PlanTemplate,
     PlanTemplateWeek,
-    WorkoutPrescription,
+    AssignedWorkout,
+    WorkoutTemplate,
     TrainingPhase,
     User,
 )
@@ -288,93 +289,196 @@ def delete_template(template_id: str, coach_id: str, db: Session) -> bool:
 
 
 # ── Assignment engine ─────────────────────────────────────────────────────────
+# PROGRAMAS (BUILD 383): el assign escribe en el sistema VIVO (AssignedWorkout +
+# WorkoutTemplate por sesión) y deja TrainingPhase por bloque de fase. Ya NO crea
+# WorkoutPrescription (ninguna pantalla las lee). Las prescripciones que ya existan
+# se conservan; compliance_trend() sigue contándolas sin cambios.
 
 def _iso(d: date) -> str:
     return d.strftime("%Y-%m-%d")
+
+
+PROGRAM_MARK = "[programa:"          # prefijo de WorkoutTemplate.notas de las sesiones de un programa
+_DAY_OFFSETS = [0, 2, 4, 5]          # Lun / Mié / Vie / Sáb dentro de cada semana
+_ASSIGN_SPORTS = {"swim", "bike", "run", "str"}
+
+# Intensidad por zona para sintetizar UN bloque estable (misma forma que /assign):
+# bici = fracción de FTP; correr = fracción de FC máx (modo "hr", no requiere ritmo umbral).
+_ZONE_BIKE_POWER = {1: 0.55, 2: 0.65, 3: 0.83, 4: 0.98, 5: 1.10}
+_ZONE_RUN_HR     = {1: 0.65, 2: 0.72, 3: 0.80, 4: 0.88, 5: 0.95}
+_ZONE_TIPO       = {1: "recuperacion", 2: "endurance", 3: "tempo", 4: "umbral", 5: "vo2max"}
+
+
+def _zone_num(zone) -> Optional[int]:
+    import re
+    m = re.search(r"(\d)", str(zone or ""))
+    n = int(m.group(1)) if m else 0
+    return n if 1 <= n <= 5 else None
+
+
+def _session_sport(stub: dict) -> str:
+    """Deporte de la sesión en el vocabulario de WorkoutTemplate. 'brick' (bici+carrera)
+    no existe allí: se registra como bici y la nota lo dice (no se inventa el reparto)."""
+    sp = str(stub.get("sport") or "run").lower()
+    if sp == "brick":
+        return "bike"
+    return sp if sp in _ASSIGN_SPORTS else "run"
+
+
+def synthesize_blocks(stub: dict) -> Optional[list]:
+    """Un bloque estable con la duración y la zona del stub. Sin zona o sin duración
+    NO se inventa estructura (None → el push queda 'skipped'). Natación necesita
+    distancia por serie, que el stub no trae: tampoco se inventa (None)."""
+    sport = _session_sport(stub)
+    zn = _zone_num(stub.get("zone"))
+    try:
+        dur = int(stub.get("duration_min") or 0)
+    except (TypeError, ValueError):
+        dur = 0
+    if sport not in ("bike", "run") or zn is None or dur <= 0:
+        return None
+    block = {"id": str(uuid.uuid4())[:8], "type": "steady", "duration": dur * 60}
+    if sport == "bike":
+        block["power"] = _ZONE_BIKE_POWER[zn]
+    else:
+        block["mode"] = "hr"
+        block["val"] = _ZONE_RUN_HR[zn]
+    return [block]
+
+
+def _resolve_weeks(template_id: str, coach_id: str, db: Session) -> Optional[list[dict]]:
+    for bt in BUILTIN_TEMPLATES:
+        if bt["id"] == template_id:
+            return [{
+                "week_num":   w["week_num"],
+                "phase_type": w.get("phase_type"),
+                "label":      w.get("label"),
+                "tss_target": w.get("tss_target"),
+                "sessions":   w.get("sessions_json", []),
+            } for w in bt["plan_weeks"]]
+    t = db.query(PlanTemplate).filter(
+        PlanTemplate.id == template_id,
+        PlanTemplate.coach_id == coach_id,
+    ).first()
+    if not t:
+        return None
+    return [{
+        "week_num":   w.week_num,
+        "phase_type": w.phase_type,
+        "label":      w.label,
+        "tss_target": w.tss_target,
+        "sessions":   json.loads(w.sessions_json) if w.sessions_json else [],
+    } for w in sorted(t.plan_weeks, key=lambda x: x.week_num)]
 
 
 def assign_template_to_athlete(
     template_id: str,
     athlete_id: str,
     coach_id: str,
-    start_date: str,      # YYYY-MM-DD — Monday of week 1
+    start_date: str,      # YYYY-MM-DD — lunes de la semana 1
     db: Session,
 ) -> dict:
-    """Expand a template into WorkoutPrescriptions (one per session per day) and TrainingPhases.
+    """Expande un programa en AssignedWorkout (una fila por sesión) + TrainingPhase.
 
-    Week 1 starts on start_date. Each week = 7 days.
-    Sessions within a week are spread Mon/Wed/Fri/(Sat for bricks).
-    Returns summary dict.
+    Semana 1 empieza en start_date (debe ser lunes). Las sesiones de cada semana se
+    reparten Lun/Mié/Vie/Sáb. Cada sesión crea su propio WorkoutTemplate (blocks_json
+    sintetizado desde duración+zona; sin ambos, sin bloques → el push dice 'skipped').
+
+    Solape (decisión documentada): si el atleta YA tiene, en alguna de las fechas que
+    el programa ocuparía, una sesión de ESTE mismo programa (marca [programa:<id>]),
+    se rechaza TODO el assign con {"error": "overlap", "overlap_dates": [...]}; no se
+    escribe nada (sin duplicados ni asignación a medias). Sesiones de otro origen en la
+    misma fecha no cuentan como solape. La UniqueConstraint no se relaja.
+
+    Devuelve el resumen; las filas quedan commiteadas y sus ids en "assignment_ids"
+    (la ruta dispara el push a intervals.icu con ellos).
     """
-    # Resolve template weeks
-    tpl_weeks: list[dict] = []
-    for bt in BUILTIN_TEMPLATES:
-        if bt["id"] == template_id:
-            for w in bt["plan_weeks"]:
-                tpl_weeks.append({
-                    "week_num":   w["week_num"],
-                    "phase_type": w.get("phase_type"),
-                    "label":      w.get("label"),
-                    "tss_target": w.get("tss_target"),
-                    "sessions":   w.get("sessions_json", []),
-                })
-            break
-    else:
-        t = db.query(PlanTemplate).filter(
-            PlanTemplate.id == template_id,
-            PlanTemplate.coach_id == coach_id,
-        ).first()
-        if not t:
-            return {"error": "template_not_found"}
-        for w in t.plan_weeks:
-            tpl_weeks.append({
-                "week_num":   w.week_num,
-                "phase_type": w.phase_type,
-                "label":      w.label,
-                "tss_target": w.tss_target,
-                "sessions":   json.loads(w.sessions_json) if w.sessions_json else [],
-            })
+    weeks = _resolve_weeks(template_id, coach_id, db)
+    if weeks is None:
+        return {"error": "template_not_found"}
 
-    start = date.fromisoformat(start_date)
-    # Session day offsets within each week (Mon=0, Wed=2, Fri=4, Sat=5)
-    day_offsets = [0, 2, 4, 5]
+    try:
+        start = date.fromisoformat(start_date)
+    except (TypeError, ValueError):
+        return {"error": "invalid_start_date"}
+    if start.weekday() != 0:
+        return {"error": "start_not_monday"}
 
-    prescriptions_created = 0
-    phases_created = 0
-    phase_tracker: dict[str, dict] = {}   # phase_type → {start, end, label, tss}
-
-    for wk in tpl_weeks:
+    # 1) Plan de fechas (sin escribir nada todavía)
+    plan: list[tuple[dict, dict, date]] = []
+    for wk in weeks:
         week_start = start + timedelta(weeks=wk["week_num"] - 1)
-        sessions = wk["sessions"]
+        for i, sess in enumerate(wk["sessions"]):
+            plan.append((wk, sess, week_start + timedelta(days=_DAY_OFFSETS[i % len(_DAY_OFFSETS)])))
 
-        # Create WorkoutPrescription for each session
-        for i, sess in enumerate(sessions):
-            day_offset = day_offsets[i % len(day_offsets)]
-            session_date = week_start + timedelta(days=day_offset)
-            rx = WorkoutPrescription(
-                id          = str(uuid.uuid4()),
-                coach_id    = coach_id,
-                athlete_id  = athlete_id,
-                title       = sess.get("title", f"Semana {wk['week_num']} · {sess.get('sport','')}"),
-                description = f"[Plantilla] {wk.get('label', '')} — {sess.get('zone', '')}",
-                sport       = sess.get("sport", "run"),
-                date_iso    = _iso(session_date),
-                duration_min = sess.get("duration_min"),
-                tss_target   = sess.get("tss"),
-                structure_json = json.dumps({"zone": sess.get("zone"), "template_id": template_id}),
-                status      = "pending",
+    # 2) Solape con una asignación previa del mismo programa
+    mark = f"{PROGRAM_MARK}{template_id}]"
+    dates = sorted({_iso(d) for _, _, d in plan})
+    overlap: list[str] = []
+    if dates:
+        rows = (
+            db.query(AssignedWorkout.date_iso)
+            .join(WorkoutTemplate, WorkoutTemplate.id == AssignedWorkout.template_id)
+            .filter(
+                AssignedWorkout.athlete_id == athlete_id,
+                AssignedWorkout.deleted_at.is_(None),
+                AssignedWorkout.date_iso.in_(dates),
+                WorkoutTemplate.notas.like(mark + "%"),
             )
-            db.add(rx)
-            prescriptions_created += 1
+            .distinct()
+            .all()
+        )
+        overlap = sorted(r[0] for r in rows if isinstance(r[0], str))
+    if overlap:
+        return {"error": "overlap", "overlap_dates": overlap}
 
-        # Accumulate phase boundaries
-        pt = wk.get("phase_type") or "base"
+    # 3) Escritura
+    created_ids: list[str] = []
+    with_structure = 0
+    phases_created = 0
+    phase_tracker: dict[str, dict] = {}
+
+    for wk, sess, day in plan:
+        sport = _session_sport(sess)
+        blocks = synthesize_blocks(sess)
+        zn = _zone_num(sess.get("zone"))
+        note = f"{mark} S{wk['week_num']}" + (f" · {wk['label']}" if wk.get("label") else "")
+        if str(sess.get("sport")).lower() == "brick":
+            note += " · brick (bici + carrera): registrado como sesión de bici"
+        tss = sess.get("tss")
+        wt = WorkoutTemplate(
+            id          = str(uuid.uuid4()),
+            coach_id    = coach_id,
+            sport       = sport,
+            tipo        = _ZONE_TIPO.get(zn),
+            nombre      = sess.get("title") or f"Semana {wk['week_num']} · {sport}",
+            dur_min     = sess.get("duration_min"),
+            tss         = int(round(tss)) if tss is not None else None,
+            notas       = note,
+            blocks_json = json.dumps(blocks) if blocks else None,
+        )
+        db.add(wt)
+        aw = AssignedWorkout(
+            id          = str(uuid.uuid4()),
+            template_id = wt.id,
+            athlete_id  = athlete_id,
+            group_id    = None,
+            date_iso    = _iso(day),
+        )
+        db.add(aw)
+        created_ids.append(aw.id)
+        if blocks:
+            with_structure += 1
+
+    for wk in weeks:
+        week_start = start + timedelta(weeks=wk["week_num"] - 1)
         week_end = week_start + timedelta(days=6)
+        pt = wk.get("phase_type") or "base"
         if pt not in phase_tracker:
             phase_tracker[pt] = {
                 "start": week_start,
                 "end":   week_end,
-                "label": wk.get("label", pt.capitalize()),
+                "label": wk.get("label") or pt.capitalize(),
                 "tss":   wk.get("tss_target") or 0,
             }
         else:
@@ -382,7 +486,6 @@ def assign_template_to_athlete(
             if wk.get("tss_target"):
                 phase_tracker[pt]["tss"] = max(phase_tracker[pt]["tss"], wk["tss_target"])
 
-    # Create one TrainingPhase per phase block
     for pt, info in phase_tracker.items():
         db.add(TrainingPhase(
             id               = str(uuid.uuid4()),
@@ -398,15 +501,18 @@ def assign_template_to_athlete(
 
     db.commit()
 
-    end_date = start + timedelta(weeks=len(tpl_weeks)) - timedelta(days=1)
+    end_date = start + timedelta(weeks=len(weeks)) - timedelta(days=1)
     return {
-        "template_id":            template_id,
-        "athlete_id":             athlete_id,
-        "start_date":             start_date,
-        "end_date":               _iso(end_date),
-        "weeks":                  len(tpl_weeks),
-        "prescriptions_created":  prescriptions_created,
-        "phases_created":         phases_created,
+        "template_id":        template_id,
+        "athlete_id":         athlete_id,
+        "start_date":         start_date,
+        "end_date":           _iso(end_date),
+        "weeks":              len(weeks),
+        "assigned_created":   len(created_ids),
+        "with_structure":     with_structure,
+        "without_structure":  len(created_ids) - with_structure,
+        "phases_created":     phases_created,
+        "assignment_ids":     created_ids,
     }
 
 

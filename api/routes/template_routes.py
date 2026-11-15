@@ -166,7 +166,12 @@ def coach_assign_template(
     db: Session = Depends(get_db),
     coach: User = Depends(_coach),
 ):
-    """Expand template into WorkoutPrescriptions + TrainingPhases for an athlete."""
+    """PROGRAMAS (383): expande el programa en AssignedWorkout (una fila por sesion) +
+    TrainingPhase para UN atleta del coach. Ya no crea WorkoutPrescription.
+
+    409 si el atleta ya tiene sesiones de este mismo programa en alguna de las fechas
+    (no se escribe nada); 422 si start_date no es una fecha lunes valida.
+    Tras commitear dispara el envio a intervals.icu (igual que /assign)."""
     assert_coach_owns_athlete(coach.id, body.athlete_id, db)
     result = assign_template_to_athlete(
         template_id  = template_id,
@@ -175,8 +180,23 @@ def coach_assign_template(
         start_date   = body.start_date,
         db           = db,
     )
-    if result.get("error") == "template_not_found":
+    err = result.get("error")
+    if err == "template_not_found":
         raise HTTPException(404, "Plantilla no encontrada")
+    if err == "invalid_start_date":
+        raise HTTPException(422, "start_date invalida: usa YYYY-MM-DD")
+    if err == "start_not_monday":
+        raise HTTPException(422, "start_date debe ser un lunes (semana 1 del programa)")
+    if err == "overlap":
+        dates = result.get("overlap_dates") or []
+        shown = ", ".join(dates[:5]) + ("..." if len(dates) > 5 else "")
+        raise HTTPException(409, {
+            "code": "program_overlap",
+            "message": f"El atleta ya tiene sesiones de este programa en {len(dates)} de esas fechas ({shown}). No se asigno nada.",
+        })
+    # PUSH-INTERVALS (378): un evento por sesion, en hilo de fondo (el estado queda por asignacion)
+    from .coach_routes import _start_intervals_push
+    _start_intervals_push(result.get("assignment_ids") or [])
     return result
 
 

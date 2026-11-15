@@ -871,6 +871,14 @@
         >
           Tablero
         </button>
+        <button
+          class="coach-tab"
+          data-tab="programas"
+          onclick="switchTab('programas')"
+          data-i18n="tab_programas"
+        >
+          Programas
+        </button>
       </div>
 
       <!-- TAB: OVERVIEW -->
@@ -1630,6 +1638,40 @@
           <div id="tb-squad"></div>
         </div>
         <div class="card" id="tb-drill" style="display: none"></div>
+      </div>
+      <!-- TAB: PROGRAMAS (PROGRAMAS, BUILD 383) -->
+      <div class="tab-panel" id="tab-programas">
+        <div class="card" style="margin-bottom: 1rem">
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap">
+            <div style="flex: 1; min-width: 200px">
+              <div style="font-weight: 600" data-i18n="prog_title">Programas de entrenamiento</div>
+              <div style="font-size: 0.78rem; color: var(--muted)" data-i18n="prog_sub">
+                Planes de varias semanas listos para asignar a un atleta. Cada sesión llega a su calendario como una asignación más.
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="pgOpenEditor(null)" data-i18n="prog_new">Nuevo programa</button>
+            <button class="btn" onclick="pgLoad()" data-i18n="prog_refresh">Actualizar</button>
+          </div>
+        </div>
+        <div class="card" id="pg-list-card" style="margin-bottom: 1rem; overflow-x: auto">
+          <div id="pg-list"></div>
+        </div>
+        <div class="card" id="pg-detail" style="display: none; margin-bottom: 1rem">
+          <button class="btn btn-ghost btn-sm" onclick="pgClose()" data-i18n="prog_det_back">← Volver a la lista</button>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0">
+            <div style="flex: 1; min-width: 200px">
+              <div id="pg-d-name" style="font-weight: 700; font-size: 1.05rem"></div>
+              <div id="pg-d-meta" style="font-size: 0.8rem; color: var(--muted)"></div>
+              <div id="pg-d-desc" style="font-size: 0.8rem; margin-top: 0.3rem"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="pgOpenAssign()" data-i18n="prog_btn_assign">Asignar a un atleta</button>
+            <button class="btn btn-ghost btn-sm" onclick="pgDuplicate()" data-i18n="prog_btn_dup">Duplicar como propio</button>
+            <button class="btn btn-ghost btn-sm" id="pg-d-edit" onclick="pgOpenEditor(_pgCur.id)" data-i18n="prog_btn_edit">Editar</button>
+            <button class="btn btn-ghost btn-sm" id="pg-d-delete" onclick="pgDelete()" data-i18n="prog_btn_delete">Eliminar</button>
+          </div>
+          <div style="font-weight: 600; margin-bottom: 0.4rem" data-i18n="prog_det_weeks">Semanas del programa</div>
+          <div id="pg-d-weeks" style="overflow-x: auto"></div>
+        </div>
       </div>
       <div class="tab-panel" id="tab-rec-coach">
         <iframe
@@ -3228,6 +3270,77 @@
           <button class="btn btn-primary" onclick="applyMacrocycle()">
             Aplicar macrociclo →
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRAMAS: asignar a un atleta -->
+    <div class="modal-backdrop" id="modal-pg-assign">
+      <div class="modal" style="max-width: 520px">
+        <button class="modal-close" onclick="closeModal('modal-pg-assign')">✕</button>
+        <h2 data-i18n="prog_as_title">Asignar programa</h2>
+        <div class="field">
+          <label data-i18n="prog_as_athlete">Atleta</label>
+          <select id="pg-as-athlete"></select>
+        </div>
+        <div class="field">
+          <label data-i18n="prog_as_start">Inicio (lunes de la semana 1)</label>
+          <input type="date" id="pg-as-start" />
+        </div>
+        <p style="font-size: 0.78rem; color: var(--muted)" data-i18n="prog_as_hint">
+          Las sesiones se reparten lunes, miércoles, viernes y sábado. Se envían al intervals.icu del atleta si lo tiene conectado.
+        </p>
+        <div id="pg-as-result" role="status" style="font-size: 0.85rem; margin: 0.6rem 0"></div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+          <button class="btn btn-ghost" onclick="closeModal('modal-pg-assign')" data-i18n="prog_as_cancel">Cancelar</button>
+          <button class="btn btn-primary" id="pg-as-go" onclick="pgSubmitAssign()" data-i18n="prog_as_go">Asignar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRAMAS: crear / editar -->
+    <div class="modal-backdrop" id="modal-pg-edit">
+      <div class="modal" style="max-width: 760px">
+        <button class="modal-close" onclick="closeModal('modal-pg-edit')">✕</button>
+        <h2 id="pg-ed-title">Nuevo programa</h2>
+        <div class="field">
+          <label data-i18n="prog_ed_name">Nombre</label>
+          <input type="text" id="pg-ed-name" maxlength="120" />
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem">
+          <div class="field">
+            <label data-i18n="prog_ed_sport">Deporte</label>
+            <select id="pg-ed-sport"></select>
+          </div>
+          <div class="field">
+            <label data-i18n="prog_ed_dist">Distancia</label>
+            <select id="pg-ed-dist"></select>
+          </div>
+          <div class="field">
+            <label data-i18n="prog_ed_diff">Dificultad</label>
+            <select id="pg-ed-diff"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label data-i18n="prog_ed_desc">Descripción</label>
+          <textarea id="pg-ed-desc" rows="2"></textarea>
+        </div>
+        <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 0.6rem">
+          <input type="checkbox" id="pg-ed-public" />
+          <span data-i18n="prog_ed_public">Marcar como compartible</span>
+        </label>
+        <div id="pg-ed-weeks-wrap">
+          <div style="font-weight: 600; margin-bottom: 0.4rem" data-i18n="prog_ed_weeks">Semanas</div>
+          <div id="pg-ed-weeks"></div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="pgAddWeek()" data-i18n="prog_ed_add_week">+ Agregar semana</button>
+        </div>
+        <p id="pg-ed-locked" style="display: none; font-size: 0.78rem; color: var(--muted)" data-i18n="prog_ed_weeks_locked">
+          Las semanas de un programa guardado no se editan aquí; duplícalo para armar una variante.
+        </p>
+        <div id="pg-ed-msg" role="status" style="color: var(--red); font-size: 0.82rem; min-height: 1.2em; margin: 0.4rem 0"></div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+          <button class="btn btn-ghost" onclick="closeModal('modal-pg-edit')" data-i18n="prog_as_cancel">Cancelar</button>
+          <button class="btn btn-primary" onclick="pgSave()" data-i18n="prog_save">Guardar</button>
         </div>
       </div>
     </div>
@@ -10455,7 +10568,7 @@
     <script src="vendor/chart.umd.min.js"></script>
     <script src="auth.js?v=373"></script>
     <script src="nav.js?v=10"></script>
-    <script src="i18n.js?v=382"></script>
+    <script src="i18n.js?v=383"></script>
     <script src="lx-info.js?v=373"></script>
     <script>
       /* Boton ⓘ inline (solo-boton) para HTML armado por JS. */
@@ -10721,6 +10834,477 @@
         window.switchTab = function (name) {
           if (prev) prev(name);
           if (name === 'tablero') tbLoad();
+        };
+      })();
+    </script>
+    <script>
+      /* PROGRAMAS (383): PlanTemplate expuesto como "Programas". Lista (integrados + propios),
+         detalle por semanas, crear/editar/eliminar propios y asignar a UN atleta. El assign
+         escribe AssignedWorkout (sistema vivo); el estado de envio a intervals.icu se ve en
+         la vista "Plan del atleta" que ya existe (no se duplica). */
+      var _pgList = [];
+      var _pgCur = null;
+      var _pgAssignId = null;
+      var _pgEditId = null;
+      var _pgSports = ['triathlon', 'swim', 'bike', 'run'];
+      var _pgSessSports = ['swim', 'bike', 'run', 'str', 'brick'];
+      var _pgPhases = ['base', 'build', 'peak', 'taper', 'recovery', 'transition'];
+      var _pgDiffs = ['beginner', 'intermediate', 'advanced'];
+      var _pgDists = ['ironman', '70.3', 'sprint', 'olympic', 'marathon', 'half-marathon', 'other'];
+
+      function pgToast(msg, type) {
+        var el = document.getElementById('co-toast');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'show ' + (type || 'ok');
+        setTimeout(function () {
+          el.className = '';
+        }, 3500);
+      }
+      function pgFmt(s, o) {
+        return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+          return o && o[k] != null ? o[k] : m;
+        });
+      }
+      function pgSport(k) {
+        return k ? _t('prog_sp_' + k, k) : '—';
+      }
+      function pgPhase(k) {
+        return k ? _t('prog_ph_' + k, k) : '—';
+      }
+      function pgDiff(k) {
+        return k ? _t('prog_df_' + k, k) : '—';
+      }
+      function pgDist(k) {
+        if (!k) return '—';
+        return k === 'other' ? _t('prog_dist_other', 'Otra') : k;
+      }
+      function pgNum(v) {
+        return v === null || v === undefined || v === '' ? '—' : String(v);
+      }
+      async function pgReq(method, path, body) {
+        var opt = {
+          method: method,
+          headers: { Authorization: 'Bearer ' + (localStorage.getItem('lx_co_token') || '') },
+        };
+        if (body !== undefined) {
+          opt.headers['Content-Type'] = 'application/json';
+          opt.body = JSON.stringify(body);
+        }
+        var r = await fetch(API + path, opt);
+        if (r.status === 204) return null;
+        var j = null;
+        try {
+          j = await r.json();
+        } catch (e) {}
+        if (!r.ok) {
+          var er = new Error(
+            j && j.errors && j.errors[0] && j.errors[0].message ? j.errors[0].message : String(r.status),
+          );
+          er.status = r.status;
+          er.code = j && j.errors && j.errors[0] ? j.errors[0].code : null;
+          throw er;
+        }
+        return j;
+      }
+      /* "deporte | titulo | min | TSS | zona", una sesion por linea. Devuelve {sessions, bad}. */
+      function pgParseSessions(text) {
+        var out = [];
+        var bad = null;
+        String(text || '')
+          .split('\n')
+          .forEach(function (line) {
+            if (bad || !line.trim()) return;
+            var p = line.split('|').map(function (x) {
+              return x.trim();
+            });
+            var sp = (p[0] || '').toLowerCase();
+            if (_pgSessSports.indexOf(sp) < 0 || !p[1]) {
+              bad = line.trim();
+              return;
+            }
+            var dur = p[2] ? parseInt(p[2], 10) : null;
+            var tss = p[3] ? parseFloat(p[3]) : null;
+            if ((p[2] && !(dur > 0)) || (p[3] && isNaN(tss))) {
+              bad = line.trim();
+              return;
+            }
+            var s = { sport: sp, title: p[1] };
+            if (dur) s.duration_min = dur;
+            if (tss !== null) s.tss = tss;
+            if (p[4]) s.zone = p[4].toUpperCase();
+            out.push(s);
+          });
+        return { sessions: out, bad: bad };
+      }
+      function pgSessionsToText(list) {
+        return (list || [])
+          .map(function (s) {
+            return [s.sport, s.title, s.duration_min || '', s.tss != null ? s.tss : '', s.zone || ''].join(' | ');
+          })
+          .join('\n');
+      }
+      function pgSessionLine(s) {
+        var bits = [pgSport(s.sport), esc(s.title)];
+        if (s.duration_min) bits.push(s.duration_min + ' ' + _t('prog_min', 'min'));
+        if (s.zone) bits.push(esc(s.zone));
+        if (s.tss != null) bits.push('TSS ' + esc(s.tss));
+        return bits.join(' · ');
+      }
+      function pgRenderList(list) {
+        if (!list || !list.length) return '<p style="color:var(--dim)">' + esc(_t('prog_error', 'No se pudieron cargar los programas.')) + '</p>';
+        var th = function (k, fb) {
+          return '<th style="text-align:left;padding:.4rem .5rem;font-size:.75rem;color:var(--muted)">' + esc(_t(k, fb)) + '</th>';
+        };
+        var td = function (h) {
+          return '<td style="padding:.45rem .5rem;border-bottom:1px solid var(--border2)">' + h + '</td>';
+        };
+        var rows = list
+          .map(function (t) {
+            return (
+              '<tr class="pg-row" data-id="' + esc(t.id) + '" onclick="pgOpen(\'' + esc(t.id) + '\')" style="cursor:pointer">' +
+              td('<strong>' + esc(t.name) + '</strong>') +
+              td(esc(pgSport(t.sport))) +
+              td(esc(pgDist(t.distance_type))) +
+              td(esc(pgNum(t.weeks))) +
+              td(esc(pgDiff(t.difficulty))) +
+              td(t.is_public ? esc(_t('prog_yes', 'Sí')) : esc(_t('prog_no', 'No'))) +
+              td(t.is_builtin ? esc(_t('prog_builtin', 'Integrado')) : esc(_t('prog_own', 'Propio'))) +
+              '</tr>'
+            );
+          })
+          .join('');
+        return (
+          '<table style="width:100%;border-collapse:collapse"><thead><tr>' +
+          th('prog_col_name', 'Programa') + th('prog_col_sport', 'Deporte') + th('prog_col_dist', 'Distancia') +
+          th('prog_col_weeks', 'Semanas') + th('prog_col_diff', 'Dificultad') + th('prog_col_shared', 'Compartido') +
+          th('prog_col_origin', 'Origen') +
+          '</tr></thead><tbody>' + rows + '</tbody></table>'
+        );
+      }
+      function pgRenderDetail(t) {
+        var weeks = (t.plan_weeks || [])
+          .map(function (w) {
+            var sess = (w.sessions || []).length
+              ? (w.sessions || [])
+                  .map(function (s) {
+                    return '<div style="font-size:.78rem">' + pgSessionLine(s) + '</div>';
+                  })
+                  .join('')
+              : '<span style="color:var(--dim);font-size:.78rem">' + esc(_t('prog_wk_nosessions', 'Sin sesiones')) + '</span>';
+            var td = function (h) {
+              return '<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border2);vertical-align:top">' + h + '</td>';
+            };
+            return (
+              '<tr>' + td('<strong>' + esc(w.week_num) + '</strong>') +
+              td(esc(pgPhase(w.phase_type)) + (w.label ? '<div style="font-size:.74rem;color:var(--muted)">' + esc(w.label) + '</div>' : '')) +
+              td(esc(pgNum(w.tss_target))) + td(esc(pgNum(w.hours_target))) + td(sess) + '</tr>'
+            );
+          })
+          .join('');
+        var th = function (k, fb) {
+          return '<th style="text-align:left;padding:.4rem .5rem;font-size:.75rem;color:var(--muted)">' + esc(_t(k, fb)) + '</th>';
+        };
+        return (
+          '<table style="width:100%;border-collapse:collapse"><thead><tr>' +
+          th('prog_wk_col_week', 'Semana') + th('prog_wk_col_phase', 'Fase') +
+          th('prog_wk_col_tss', 'Carga objetivo (TSS)') + th('prog_wk_col_hours', 'Horas') +
+          th('prog_wk_col_sessions', 'Sesiones') +
+          '</tr></thead><tbody>' + weeks + '</tbody></table>'
+        );
+      }
+      async function pgLoad() {
+        var el = document.getElementById('pg-list');
+        if (!el) return;
+        el.innerHTML = '<p style="color:var(--dim)">' + esc(_t('prog_loading', 'Cargando…')) + '</p>';
+        try {
+          _pgList = await pgReq('GET', '/coach/templates');
+          var own = _pgList.filter(function (t) {
+            return !t.is_builtin;
+          });
+          el.innerHTML =
+            pgRenderList(_pgList) +
+            (own.length ? '' : '<p style="color:var(--muted);font-size:.8rem;margin-top:.6rem">' + esc(_t('prog_empty_own', 'Aún no tienes programas propios. Crea uno o duplica uno integrado.')) + '</p>');
+        } catch (e) {
+          el.innerHTML = '<p style="color:var(--dim)">' + esc(_t('prog_error', 'No se pudieron cargar los programas.')) + '</p>';
+        }
+      }
+      async function pgOpen(id) {
+        try {
+          _pgCur = await pgReq('GET', '/coach/templates/' + encodeURIComponent(id));
+        } catch (e) {
+          pgToast(_t('prog_error', 'No se pudieron cargar los programas.'), 'err');
+          return;
+        }
+        var t = _pgCur;
+        document.getElementById('pg-d-name').textContent = t.name;
+        document.getElementById('pg-d-meta').textContent = [
+          pgSport(t.sport), pgDist(t.distance_type), pgNum(t.weeks) + ' ' + _t('prog_col_weeks', 'Semanas').toLowerCase(),
+          pgDiff(t.difficulty),
+        ].join(' · ');
+        document.getElementById('pg-d-desc').textContent = t.description || '';
+        document.getElementById('pg-d-edit').style.display = t.is_builtin ? 'none' : '';
+        document.getElementById('pg-d-delete').style.display = t.is_builtin ? 'none' : '';
+        document.getElementById('pg-d-weeks').innerHTML = pgRenderDetail(t);
+        document.getElementById('pg-list-card').style.display = 'none';
+        document.getElementById('pg-detail').style.display = '';
+      }
+      function pgClose() {
+        _pgCur = null;
+        document.getElementById('pg-detail').style.display = 'none';
+        document.getElementById('pg-list-card').style.display = '';
+      }
+      /* Proximo lunes (>= hoy) en ISO. */
+      function pgNextMonday(iso) {
+        var d = new Date(iso + 'T00:00:00');
+        var add = (8 - d.getDay()) % 7;
+        d.setDate(d.getDate() + add);
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + m + '-' + dd;
+      }
+      function pgIsMonday(iso) {
+        return /^\d{4}-\d{2}-\d{2}$/.test(iso || '') && new Date(iso + 'T00:00:00').getDay() === 1;
+      }
+      async function pgOpenAssign(id) {
+        _pgAssignId = id || (_pgCur && _pgCur.id);
+        if (!_pgAssignId) return;
+        var sel = document.getElementById('pg-as-athlete');
+        sel.innerHTML = '<option value="">' + esc(_t('prog_as_pick', 'Seleccionar…')) + '</option>';
+        try {
+          var ath = await pgReq('GET', '/coach/athletes');
+          (ath || []).forEach(function (u) {
+            var o = document.createElement('option');
+            o.value = u.id;
+            o.textContent = u.nombre || u.email;
+            sel.appendChild(o);
+          });
+        } catch (e) {}
+        document.getElementById('pg-as-start').value = pgNextMonday(new Date().toISOString().slice(0, 10));
+        document.getElementById('pg-as-result').innerHTML = '';
+        document.getElementById('pg-as-go').disabled = false;
+        openModal('modal-pg-assign');
+      }
+      function pgAssignSummary(r) {
+        return (
+          '<div>' + esc(pgFmt(_t('prog_as_done', '{n} sesiones asignadas en {w} semanas ({start} → {end}) y {p} fases de entrenamiento.'),
+            { n: r.assigned_created, w: r.weeks, start: r.start_date, end: r.end_date, p: r.phases_created })) + '</div>' +
+          '<div style="color:var(--muted);margin-top:.3rem">' + esc(pgFmt(_t('prog_as_struct', '{a} con estructura (se envían a intervals.icu) y {b} sin estructura (no se envían).'),
+            { a: r.with_structure, b: r.without_structure })) + '</div>'
+        );
+      }
+      async function pgSubmitAssign() {
+        var uid = document.getElementById('pg-as-athlete').value;
+        var start = document.getElementById('pg-as-start').value;
+        var out = document.getElementById('pg-as-result');
+        if (!uid || !start) {
+          out.textContent = _t('prog_as_need', 'Elige un atleta y una fecha de inicio.');
+          return;
+        }
+        if (!pgIsMonday(start)) {
+          out.textContent = _t('prog_as_notmonday', 'La fecha de inicio debe ser un lunes.');
+          return;
+        }
+        var btn = document.getElementById('pg-as-go');
+        btn.disabled = true;
+        try {
+          var r = await pgReq('POST', '/coach/templates/' + encodeURIComponent(_pgAssignId) + '/assign', {
+            athlete_id: uid,
+            start_date: start,
+          });
+          var name = document.getElementById('pg-as-athlete').selectedOptions[0].textContent;
+          out.innerHTML =
+            pgAssignSummary(r) +
+            '<div style="margin-top:.4rem;color:var(--muted);font-size:.78rem">' + esc(_t('prog_as_why', 'El cumplimiento se mide con la pestaña de cumplimiento y el plan contra lo realizado.')) + '</div>' +
+            '<div style="display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap">' +
+            '<button class="btn btn-primary btn-sm" id="pg-as-view">' + esc(_t('prog_as_view', 'Ver plan y estado de envío')) + '</button>' +
+            '<button class="btn btn-ghost btn-sm" id="pg-as-adh">' + esc(_t('prog_as_adh', 'Ver cumplimiento (Adherencia)')) + '</button></div>';
+          document.getElementById('pg-as-view').onclick = function () {
+            closeModal('modal-pg-assign');
+            window.openAthletePlan(uid, name);
+            document.getElementById('ap-start').value = r.start_date;
+            document.getElementById('ap-end').value = r.end_date;
+            window.loadAthletePlan();
+          };
+          document.getElementById('pg-as-adh').onclick = function () {
+            closeModal('modal-pg-assign');
+            switchTab('adherence');
+          };
+        } catch (e) {
+          out.textContent =
+            e.code === 'program_overlap'
+              ? _t('prog_as_overlap', 'Este atleta ya tiene sesiones de este programa en esas fechas. No se asignó nada; elige otra fecha de inicio.')
+              : e.message;
+          btn.disabled = false;
+        }
+      }
+      /* ── Crear / editar ── */
+      function pgFillSelect(id, values, labelFn, withNone) {
+        var sel = document.getElementById(id);
+        sel.innerHTML = '';
+        if (withNone) {
+          var n = document.createElement('option');
+          n.value = '';
+          n.textContent = _t('prog_opt_none', 'Sin definir');
+          sel.appendChild(n);
+        }
+        values.forEach(function (v) {
+          var o = document.createElement('option');
+          o.value = v;
+          o.textContent = labelFn(v);
+          sel.appendChild(o);
+        });
+      }
+      function pgWeekRowHtml(n) {
+        var opts = _pgPhases
+          .map(function (p) {
+            return '<option value="' + p + '">' + esc(pgPhase(p)) + '</option>';
+          })
+          .join('');
+        var inp = 'style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.3rem .5rem;color:var(--text);font-size:.8rem"';
+        return (
+          '<div class="pg-wk" style="border:1px solid var(--border2);border-radius:var(--radius-sm);padding:.5rem;margin-bottom:.5rem">' +
+          '<div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-bottom:.4rem">' +
+          '<strong class="pg-wk-n">' + esc(_t('prog_wk_col_week', 'Semana')) + ' ' + n + '</strong>' +
+          '<select class="pg-wk-phase" ' + inp + '>' + opts + '</select>' +
+          '<input class="pg-wk-label" ' + inp + ' placeholder="' + esc(_t('prog_ed_week_label', 'Etiqueta')) + '" />' +
+          '<input class="pg-wk-tss" type="number" min="0" ' + inp + ' style="width:90px" placeholder="TSS" />' +
+          '<input class="pg-wk-hours" type="number" min="0" step="0.5" ' + inp + ' style="width:90px" placeholder="' + esc(_t('prog_wk_col_hours', 'Horas')) + '" />' +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="pgRemoveWeek(this)">' + esc(_t('prog_ed_rm_week', 'Quitar')) + '</button></div>' +
+          '<textarea class="pg-wk-sess" rows="3" ' + inp + ' style="width:100%" placeholder="' + esc(_t('prog_ed_sessions_ph', 'Una sesión por línea: deporte | título | minutos | TSS | zona (ej. bike | Rodaje | 90 | 55 | Z2)')) + '"></textarea></div>'
+        );
+      }
+      function pgRenumber() {
+        var rows = document.querySelectorAll('#pg-ed-weeks .pg-wk');
+        rows.forEach(function (r, i) {
+          r.querySelector('.pg-wk-n').textContent = _t('prog_wk_col_week', 'Semana') + ' ' + (i + 1);
+        });
+      }
+      function pgAddWeek() {
+        var box = document.getElementById('pg-ed-weeks');
+        var div = document.createElement('div');
+        div.innerHTML = pgWeekRowHtml(box.querySelectorAll('.pg-wk').length + 1);
+        box.appendChild(div.firstChild);
+      }
+      function pgRemoveWeek(btn) {
+        var row = btn.closest('.pg-wk');
+        if (row) row.remove();
+        pgRenumber();
+      }
+      function pgOpenEditor(id, seed) {
+        _pgEditId = id || null;
+        var t = seed || (id && _pgCur && _pgCur.id === id ? _pgCur : null);
+        pgFillSelect('pg-ed-sport', _pgSports, pgSport, false);
+        pgFillSelect('pg-ed-dist', _pgDists, pgDist, true);
+        pgFillSelect('pg-ed-diff', _pgDiffs, pgDiff, true);
+        document.getElementById('pg-ed-title').textContent = id
+          ? _t('prog_ed_title_edit', 'Editar programa')
+          : _t('prog_ed_title_new', 'Nuevo programa');
+        document.getElementById('pg-ed-name').value = t ? t.name || '' : '';
+        document.getElementById('pg-ed-sport').value = t && t.sport ? t.sport : 'triathlon';
+        document.getElementById('pg-ed-dist').value = t && t.distance_type ? t.distance_type : '';
+        document.getElementById('pg-ed-diff').value = t && t.difficulty ? t.difficulty : '';
+        document.getElementById('pg-ed-desc').value = t ? t.description || '' : '';
+        document.getElementById('pg-ed-public').checked = !!(t && t.is_public);
+        document.getElementById('pg-ed-msg').textContent = '';
+        var box = document.getElementById('pg-ed-weeks');
+        box.innerHTML = '';
+        var editing = !!id;
+        document.getElementById('pg-ed-weeks-wrap').style.display = editing ? 'none' : '';
+        document.getElementById('pg-ed-locked').style.display = editing ? '' : 'none';
+        if (!editing) {
+          var wks = seed && seed.plan_weeks && seed.plan_weeks.length ? seed.plan_weeks : [{}];
+          wks.forEach(function (w) {
+            pgAddWeek();
+            var r = box.lastChild;
+            r.querySelector('.pg-wk-phase').value = w.phase_type || 'base';
+            r.querySelector('.pg-wk-label').value = w.label || '';
+            r.querySelector('.pg-wk-tss').value = w.tss_target != null ? w.tss_target : '';
+            r.querySelector('.pg-wk-hours').value = w.hours_target != null ? w.hours_target : '';
+            r.querySelector('.pg-wk-sess').value = pgSessionsToText(w.sessions);
+          });
+        }
+        openModal('modal-pg-edit');
+      }
+      /* Lee el formulario. Devuelve {body} o {error}. */
+      function pgCollect(editing) {
+        var name = document.getElementById('pg-ed-name').value.trim();
+        if (!name) return { error: _t('prog_ed_need_name', 'Escribe un nombre.') };
+        var body = {
+          name: name,
+          sport: document.getElementById('pg-ed-sport').value,
+          is_public: document.getElementById('pg-ed-public').checked,
+        };
+        var dist = document.getElementById('pg-ed-dist').value;
+        var diff = document.getElementById('pg-ed-diff').value;
+        var desc = document.getElementById('pg-ed-desc').value.trim();
+        if (dist) body.distance_type = dist;
+        if (diff) body.difficulty = diff;
+        if (desc || editing) body.description = desc;
+        if (editing) return { body: body };
+        var rows = document.querySelectorAll('#pg-ed-weeks .pg-wk');
+        if (!rows.length) return { error: _t('prog_ed_need_week', 'Agrega al menos una semana.') };
+        body.plan_weeks = [];
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var ps = pgParseSessions(r.querySelector('.pg-wk-sess').value);
+          if (ps.bad) return { error: pgFmt(_t('prog_ed_bad_line', 'Línea de sesión inválida: {l}'), { l: ps.bad }) };
+          var w = { week_num: i + 1, phase_type: r.querySelector('.pg-wk-phase').value, sessions: ps.sessions };
+          var lab = r.querySelector('.pg-wk-label').value.trim();
+          var tss = r.querySelector('.pg-wk-tss').value;
+          var hrs = r.querySelector('.pg-wk-hours').value;
+          if (lab) w.label = lab;
+          if (tss !== '') w.tss_target = parseFloat(tss);
+          if (hrs !== '') w.hours_target = parseFloat(hrs);
+          body.plan_weeks.push(w);
+        }
+        return { body: body };
+      }
+      async function pgSave() {
+        var editing = !!_pgEditId;
+        var c = pgCollect(editing);
+        var msg = document.getElementById('pg-ed-msg');
+        if (c.error) {
+          msg.textContent = c.error;
+          return;
+        }
+        try {
+          var saved = editing
+            ? await pgReq('PUT', '/coach/templates/' + encodeURIComponent(_pgEditId), c.body)
+            : await pgReq('POST', '/coach/templates', c.body);
+          closeModal('modal-pg-edit');
+          pgToast(_t('prog_saved', 'Programa guardado'));
+          await pgLoad();
+          if (editing) pgOpen(saved.id);
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      }
+      async function pgDelete() {
+        if (!_pgCur || _pgCur.is_builtin) return;
+        if (!window.confirm(_t('prog_confirm_delete', '¿Eliminar este programa? Las sesiones ya asignadas a atletas no se tocan.'))) return;
+        try {
+          await pgReq('DELETE', '/coach/templates/' + encodeURIComponent(_pgCur.id));
+          pgToast(_t('prog_deleted', 'Programa eliminado'));
+          pgClose();
+          pgLoad();
+        } catch (e) {
+          pgToast(e.message, 'err');
+        }
+      }
+      /* Duplica un programa (tipicamente un integrado) como propio, para poder editarlo. */
+      function pgDuplicate() {
+        if (!_pgCur) return;
+        var seed = JSON.parse(JSON.stringify(_pgCur));
+        seed.name = seed.name + ' (' + _t('prog_copy', 'copia') + ')';
+        seed.is_public = false;
+        pgOpenEditor(null, seed);
+      }
+      (function () {
+        var prev = window.switchTab;
+        window.switchTab = function (name) {
+          if (prev) prev(name);
+          if (name === 'programas') pgLoad();
         };
       })();
     </script>
