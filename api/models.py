@@ -2488,6 +2488,20 @@ class CoachAlertRule(Base):
                          onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+class AthleteReportShare(Base):
+    """DRAGDROP-INFORME: enlace de solo lectura al informe de un atleta (patron M4).
+    El token codifica atleta + periodo; revocar = borrar la fila."""
+    __tablename__ = "athlete_report_shares"
+
+    id           = Column(String, primary_key=True, default=_uuid)
+    coach_id     = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    athlete_id   = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    token        = Column(String, nullable=False, unique=True, index=True)
+    period_start = Column(String, nullable=False)
+    period_end   = Column(String, nullable=False)
+    created_at   = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+
 class AccountDeletionRequest(Base):
     """Registro auditable de solicitudes de eliminacion de cuenta (CUENTA-BORRADO).
 

@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import GarminActivity, TrainingPlan, User
+from ..models import AthleteReportShare, GarminActivity, TrainingPlan, User
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -101,3 +101,24 @@ def get_public_plan(token: str, db: Session = Depends(get_db)):
         },
         "owner": {"name": (owner.nombre or owner.email.split("@")[0]) if owner else "LabX"},
     }
+
+
+@router.get("/reports/{token}")
+def get_public_report(token: str, db: Session = Depends(get_db)):
+    """DRAGDROP-INFORME: informe de atleta de solo lectura. Mismos datos que ve el
+    coach (sin ids internos). Revocado/inexistente o coach sin vinculo => 404."""
+    from .coach_routes import build_athlete_report
+    sh = db.query(AthleteReportShare).filter(AthleteReportShare.token == token).first()
+    gone = "Este link no existe o fue revocado por su dueño"
+    if not sh:
+        raise HTTPException(404, gone)
+    try:
+        rep = build_athlete_report(db, sh.coach_id, sh.athlete_id, sh.period_start, sh.period_end)
+    except HTTPException:
+        raise HTTPException(404, gone)
+    out = rep.model_dump()
+    out.pop("athlete_id", None)
+    out.pop("has_garmin", None)
+    coach = db.query(User).filter(User.id == sh.coach_id).first()
+    out["coach_name"] = (coach.nombre or coach.email.split("@")[0]) if coach else "LabX"
+    return out

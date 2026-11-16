@@ -109,3 +109,44 @@ def push_assignments_background(assignment_ids: list) -> None:
             push_assignment_to_intervals(db, a, athlete, tpl)
     finally:
         db.close()
+
+
+def resync_after_move(db, assignment, old_athlete_id, tpl) -> str | None:
+    """DRAGDROP-INFORME: tras mover una asignacion (fecha y/o atleta) mantiene
+    intervals.icu al dia. Devuelve el estado resultante o None si no habia envio
+    'ok' (pending|skipped|failed|sin estado: no se reintenta nada). No lanza.
+
+    - Mismo atleta: se re-envia con el MISMO intervals_push_event_id (actualiza).
+    - Otro atleta: el evento vive en el calendario del atleta anterior, asi que se
+      borra alli (best-effort) y se crea uno nuevo en el calendario del nuevo.
+    """
+    from .models import User
+    from . import intervals_connector as ic
+    try:
+        if assignment.intervals_push_status != "ok":
+            return None
+        athlete = db.query(User).filter(User.id == assignment.athlete_id).first()
+        if athlete is None:
+            _set(assignment, "failed", "Atleta destino no encontrado")
+            db.commit()
+            return "failed"
+        if old_athlete_id and old_athlete_id != assignment.athlete_id:
+            old_event = assignment.intervals_push_event_id
+            old_user = db.query(User).filter(User.id == old_athlete_id).first()
+            assignment.intervals_push_event_id = None
+            if old_event and old_user is not None:
+                try:
+                    asyncio.run(ic.delete_workout_event(old_user, old_event))
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("borrado evento previo fallo: %s", exc)
+            db.commit()
+        return push_assignment_to_intervals(db, assignment, athlete, tpl)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("resync tras mover fallo: %s", exc)
+        try:
+            db.rollback()
+            _set(assignment, "failed", str(exc)[:300])
+            db.commit()
+        except Exception:  # noqa: BLE001
+            pass
+        return "failed"

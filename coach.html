@@ -8205,6 +8205,89 @@
           );
         };
 
+        // ── DRAGDROP-INFORME: PDF real (servidor, reportlab) y enlace ──
+        window.exportReportPdf = async function () {
+          var c = window._repCtx;
+          if (!c) return;
+          var r = c.r;
+          try {
+            var resp = await fetch(
+              API + '/coach/report/athlete/' + r.athlete_id + '/pdf?start=' +
+                r.period_start + '&end=' + r.period_end,
+              { headers: { Authorization: 'Bearer ' + getToken() } },
+            );
+            if (!resp.ok) throw new Error(resp.status + '');
+            var blob = await resp.blob();
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'informe_' + r.period_start + '_' + r.period_end + '.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+            toast(
+              _t('dd_pdf_ok', 'PDF descargado') +
+                (c.partial.length
+                  ? ' · ' + _t('dd_pdf_partial', 'El PDF no incluye estas secciones: ') + c.partial.join(', ')
+                  : ''),
+              'ok',
+            );
+          } catch (e) {
+            toast(_t('dd_pdf_err', 'No se pudo generar el PDF: ') + e.message, 'err');
+          }
+        };
+
+        function _repShareBox(sh) {
+          var box = document.getElementById('rep-share-box');
+          if (!box) return;
+          if (!sh) { box.innerHTML = ''; return; }
+          var full = window.location.origin + '/' + String(sh.share_url).replace(/^\//, '');
+          box.innerHTML =
+            '<div style="padding:.6rem .8rem;border-radius:var(--radius-sm);border:1px solid var(--border2);font-size:.78rem">' +
+            esc(_t('dd_share_label', 'Enlace de solo lectura (sin login):')) +
+            ' <input id="rep-share-url" readonly value="' + esc(full) + '" style="width:100%;margin:.35rem 0;font-size:.75rem" />' +
+            '<button class="btn btn-ghost btn-sm" onclick="copyReportLink()">' + esc(_t('dd_share_copy', 'Copiar')) + '</button> ' +
+            '<button class="btn btn-ghost btn-sm" onclick="revokeReportLink(\'' + esc(sh.id) + '\')">' + esc(_t('dd_share_revoke', 'Revocar enlace')) + '</button>' +
+            '</div>';
+        }
+
+        window.shareReportLink = async function () {
+          var c = window._repCtx;
+          if (!c) return;
+          try {
+            var sh = await apiPost('/coach/report/athlete/' + c.r.athlete_id + '/share', {
+              start: c.r.period_start, end: c.r.period_end,
+            });
+            _repShareBox(sh);
+          } catch (e) {
+            toast(_t('dd_share_err', 'No se pudo gestionar el enlace: ') + e.message, 'err');
+          }
+        };
+
+        window.copyReportLink = function () {
+          var inp = document.getElementById('rep-share-url');
+          if (!inp) return;
+          inp.select();
+          try {
+            if (navigator.clipboard) navigator.clipboard.writeText(inp.value);
+            else document.execCommand('copy');
+            toast(_t('dd_share_copied', 'Enlace copiado'), 'ok');
+          } catch (e) {
+            toast(_t('dd_share_err', 'No se pudo gestionar el enlace: ') + e.message, 'err');
+          }
+        };
+
+        window.revokeReportLink = async function (id) {
+          try {
+            await apiDelete('/coach/report/shares/' + id);
+            _repShareBox(null);
+            toast(_t('dd_share_revoked', 'Enlace revocado: ya no abre el informe'), 'ok');
+          } catch (e) {
+            toast(_t('dd_share_err', 'No se pudo gestionar el enlace: ') + e.message, 'err');
+          }
+        };
+
         window.loadReport = async function () {
           var uid = document.getElementById('rep-athlete').value;
           var start = document.getElementById('rep-start').value;
@@ -8909,9 +8992,16 @@
               '</div></div>';
           }
 
-          // ── Botón imprimir PDF (P8) ────────────────────────────────────
+          // ── Botón imprimir PDF (P8) + Exportar PDF / Compartir enlace ──
+          window._repCtx = { r: r, partial: partialErrors || [] };
           var pdfBtn =
-            '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">' +
+            '<div style="display:flex;justify-content:flex-end;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">' +
+            '<button id="rep-export-pdf" onclick="exportReportPdf()" class="btn btn-ghost btn-sm">' +
+            esc(_t('dd_pdf_btn', 'Exportar PDF')) +
+            '</button>' +
+            '<button id="rep-share" onclick="shareReportLink()" class="btn btn-ghost btn-sm">' +
+            esc(_t('dd_share_btn', 'Compartir enlace')) +
+            '</button>' +
             '<button onclick="window.print()" class="btn btn-ghost btn-sm" style="gap:.35rem">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>' +
             'Imprimir / PDF</button></div>';
@@ -8927,6 +9017,7 @@
 
           el.innerHTML =
             pdfBtn +
+            '<div id="rep-share-box" style="margin-bottom:.75rem"></div>' +
             '<div style="margin-bottom:.75rem;font-size:.82rem;color:var(--muted)">Reporte de <strong style="color:var(--text)">' +
             esc(r.athlete_nombre) +
             '</strong> &nbsp;·&nbsp; ' +
@@ -8979,6 +9070,101 @@
           _calStart = addDays(_calStart || _calMonday(todayISO()), days);
           loadCalendar();
         };
+
+        // ── DRAGDROP-INFORME: arrastrar sesiones del calendario ──────
+        // Solo mouse (HTML5 DnD). En tactil no hay arrastre simulado.
+        var _calDrag = null;
+
+        function calMoveMessage(status, raw) {
+          var k = { 403: 'dd_move_403', 404: 'dd_move_404', 422: 'dd_move_422', 400: 'dd_move_400' }[status];
+          var fb = {
+            403: 'No puedes mover esta sesión a ese atleta o desde esa plantilla',
+            404: 'La sesión ya no existe; se recarga el calendario',
+            422: 'Faltan datos para mover la sesión',
+            400: 'Fecha inválida: nada se movió',
+          }[status];
+          return k ? _t(k, fb) : _t('dd_move_err', 'No se pudo mover la sesión; quedó en su lugar');
+        }
+
+        async function calMoveAssignment(assignmentId, newDate, newAthleteId) {
+          var body = { assignment_id: assignmentId, new_date_iso: newDate };
+          if (newAthleteId) body.new_athlete_id = newAthleteId;
+          var r = await fetch(API + '/coach/calendar/move', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + getToken(),
+            },
+            body: JSON.stringify(body),
+          });
+          var data = null;
+          try { data = await r.json(); } catch (e0) { data = null; }
+          return { ok: r.ok, status: r.status, data: data };
+        }
+
+        // Soltar: UI optimista (el chip se pasa a la celda) con reversion ante error.
+        async function calDrop(chip, cell) {
+          var aid = chip.getAttribute('data-assignment-id');
+          var oldCell = chip.parentNode;
+          var newDate = cell.getAttribute('data-date');
+          var newAth = cell.getAttribute('data-athlete-id');
+          var sameAth = newAth === chip.getAttribute('data-athlete-id');
+          if (cell === oldCell) return;
+          var nextSibling = chip.nextSibling;
+          cell.appendChild(chip);
+          chip.style.opacity = '.6';
+          var res;
+          try {
+            res = await calMoveAssignment(aid, newDate, sameAth ? null : newAth);
+          } catch (e) {
+            res = { ok: false, status: 0, data: null };
+          }
+          if (!res.ok) {
+            oldCell.insertBefore(chip, nextSibling);
+            chip.style.opacity = '';
+            toast(calMoveMessage(res.status), 'err');
+            if (res.status === 404) loadCalendar();
+            return;
+          }
+          var st = res.data && res.data.intervals_push_status;
+          if (st === 'failed') {
+            toast(_t('dd_move_push_failed', 'Sesión movida, pero falló el reenvío a intervals.icu: ') + (res.data.intervals_push_error || ''), 'err');
+          } else {
+            toast(_t('dd_move_ok', 'Sesión movida'), 'ok');
+          }
+          loadCalendar();
+        }
+
+        function calBindDnD(root) {
+          root.querySelectorAll('.cal-chip[draggable="true"]').forEach(function (chip) {
+            chip.addEventListener('dragstart', function (ev) {
+              _calDrag = chip;
+              try {
+                ev.dataTransfer.effectAllowed = 'move';
+                ev.dataTransfer.setData('text/plain', chip.getAttribute('data-assignment-id'));
+              } catch (e0) {}
+            });
+            chip.addEventListener('dragend', function () {
+              _calDrag = null;
+              root.querySelectorAll('.cal-cell').forEach(function (c) { c.style.outline = ''; });
+            });
+          });
+          root.querySelectorAll('.cal-cell').forEach(function (cell) {
+            cell.addEventListener('dragover', function (ev) {
+              if (!_calDrag) return;
+              ev.preventDefault();
+              cell.style.outline = '2px dashed var(--orange)';
+            });
+            cell.addEventListener('dragleave', function () { cell.style.outline = ''; });
+            cell.addEventListener('drop', function (ev) {
+              ev.preventDefault();
+              cell.style.outline = '';
+              var chip = _calDrag;
+              _calDrag = null;
+              if (chip) calDrop(chip, cell);
+            });
+          });
+        }
 
         window.loadCalendar = async function () {
           if (!_calStart) _calStart = _calMonday(todayISO());
@@ -9107,11 +9293,21 @@
                 });
                 var assigns = dayAth ? dayAth.assignments : [];
                 html +=
-                  '<td style="padding:.3rem .4rem;border-bottom:1px solid var(--border2);border-left:1px solid var(--border2);vertical-align:top">';
+                  '<td class="cal-cell" data-date="' +
+                  esc(d.date_iso) +
+                  '" data-athlete-id="' +
+                  esc(uid) +
+                  '" style="padding:.3rem .4rem;border-bottom:1px solid var(--border2);border-left:1px solid var(--border2);vertical-align:top">';
                 if (assigns.length) {
                   assigns.forEach(function (a) {
                     html +=
-                      '<div style="margin:.1rem 0">' +
+                      '<div class="cal-chip" draggable="true" data-assignment-id="' +
+                      esc(a.id) +
+                      '" data-athlete-id="' +
+                      esc(uid) +
+                      '" data-date="' +
+                      esc(d.date_iso) +
+                      '" style="margin:.1rem 0;cursor:grab">' +
                       '<span class="sport-chip ' +
                       sportCls(a.template.sport) +
                       '" title="' +
@@ -9136,6 +9332,7 @@
 
             html += '</tbody></table>';
             el.innerHTML = html;
+            calBindDnD(el);
           } catch (e) {
             el.innerHTML =
               _t(
@@ -10568,7 +10765,7 @@
     <script src="vendor/chart.umd.min.js"></script>
     <script src="auth.js?v=373"></script>
     <script src="nav.js?v=10"></script>
-    <script src="i18n.js?v=383"></script>
+    <script src="i18n.js?v=384"></script>
     <script src="lx-info.js?v=373"></script>
     <script>
       /* Boton ⓘ inline (solo-boton) para HTML armado por JS. */

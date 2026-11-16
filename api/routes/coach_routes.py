@@ -694,6 +694,7 @@ def move_assignment(
     except ValueError:
         raise HTTPException(400, "Fecha inválida")
 
+    old_athlete_id = a.athlete_id
     a.date_iso = new_date
     if new_athlete:
         # Verificar que el nuevo atleta es del coach (relación activa o grupo)
@@ -702,7 +703,13 @@ def move_assignment(
         a.athlete_id = new_athlete
 
     db.commit()
-    return {"ok": True, "assignment_id": assignment_id, "new_date": new_date}
+    # DRAGDROP-INFORME: el reloj no debe conservar la fecha vieja. Solo si ya
+    # habia un envio 'ok'; nunca lanza (un fallo queda en intervals_push_*).
+    from ..coach_intervals_push import resync_after_move
+    intervals = resync_after_move(db, a, old_athlete_id, t)
+    return {"ok": True, "assignment_id": assignment_id, "new_date": new_date,
+            "intervals_push_status": intervals,
+            "intervals_push_error": a.intervals_push_error if intervals == "failed" else None}
 
 
 # ── Adherence / cumplimiento ────────────────────────────────
@@ -1320,6 +1327,12 @@ def athlete_report(
     db: Session = Depends(get_db),
     coach: User = Depends(_coach)
 ):
+    return build_athlete_report(db, coach.id, athlete_id, start, end)
+
+
+def build_athlete_report(db: Session, coach_id: str, athlete_id: str, start: str, end: str) -> AthleteReport:
+    # DRAGDROP-INFORME: cuerpo extraido tal cual para reusarlo en el PDF y en el
+    # enlace publico; el calculo no cambia.
     """
     Reporte completo del atleta para el período:
     - Totales planificado vs ejecutado
@@ -1335,7 +1348,7 @@ def athlete_report(
     """
     from datetime import date as _date, timedelta, datetime
 
-    athlete = assert_coach_owns_athlete(coach.id, athlete_id, db)
+    athlete = assert_coach_owns_athlete(coach_id, athlete_id, db)
 
     # ── Asignaciones del período ──────────────────────────────
     assignments = (
@@ -1509,6 +1522,92 @@ def athlete_report(
         race_goal_name  = athlete.race_goal_name,
         race_goal_date  = athlete.race_goal_date,
     )
+
+
+# ── DRAGDROP-INFORME: PDF y enlace del informe ────────────────
+def _valid_period(start: str, end: str) -> None:
+    from datetime import date as _d
+    try:
+        a, b = _d.fromisoformat(start), _d.fromisoformat(end)
+    except (ValueError, TypeError):
+        raise HTTPException(400, "Período inválido (YYYY-MM-DD)")
+    if a > b:
+        raise HTTPException(400, "El inicio del período es posterior al fin")
+
+
+@router.get("/report/athlete/{athlete_id}/pdf")
+def athlete_report_pdf(
+    athlete_id: str,
+    start: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    end:   Optional[str] = Query(None, description="YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    coach: User = Depends(_coach),
+):
+    from fastapi.responses import Response
+    from ..report_pdf import build_report_pdf
+    assert_coach_owns_athlete(coach.id, athlete_id, db)  # 403 antes que validar el periodo
+    if not start or not end:
+        raise HTTPException(422, "start y end requeridos")
+    _valid_period(start, end)
+    rep = build_athlete_report(db, coach.id, athlete_id, start, end)
+    pdf = build_report_pdf(rep)
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="informe_{start}_{end}.pdf"'})
+
+
+class ReportShareIn(BaseModel):
+    start: str
+    end: str
+
+
+def _share_out(sh) -> dict:
+    return {"id": sh.id, "share_token": sh.token, "share_url": f"/shared_report.html?t={sh.token}",
+            "period_start": sh.period_start, "period_end": sh.period_end}
+
+
+@router.post("/report/athlete/{athlete_id}/share")
+def share_athlete_report(athlete_id: str, body: ReportShareIn,
+                         db: Session = Depends(get_db), coach: User = Depends(_coach)):
+    """Genera (o devuelve el vigente) el enlace de solo lectura atleta + período."""
+    import secrets
+    from ..models import AthleteReportShare
+    assert_coach_owns_athlete(coach.id, athlete_id, db)
+    _valid_period(body.start, body.end)
+    sh = db.query(AthleteReportShare).filter(
+        AthleteReportShare.coach_id == coach.id, AthleteReportShare.athlete_id == athlete_id,
+        AthleteReportShare.period_start == body.start, AthleteReportShare.period_end == body.end).first()
+    if not sh:
+        sh = AthleteReportShare(coach_id=coach.id, athlete_id=athlete_id, token=secrets.token_urlsafe(16),
+                                period_start=body.start, period_end=body.end)
+        db.add(sh)
+        db.commit()
+        db.refresh(sh)
+    return {"ok": True, **_share_out(sh)}
+
+
+@router.get("/report/athlete/{athlete_id}/shares")
+def list_athlete_report_shares(athlete_id: str, db: Session = Depends(get_db),
+                               coach: User = Depends(_coach)):
+    from ..models import AthleteReportShare
+    assert_coach_owns_athlete(coach.id, athlete_id, db)
+    rows = (db.query(AthleteReportShare)
+            .filter(AthleteReportShare.coach_id == coach.id, AthleteReportShare.athlete_id == athlete_id)
+            .order_by(AthleteReportShare.created_at.desc()).all())
+    return [_share_out(x) for x in rows]
+
+
+@router.delete("/report/shares/{share_id}")
+def revoke_athlete_report_share(share_id: str, db: Session = Depends(get_db),
+                                coach: User = Depends(_coach)):
+    """Revoca el enlace: el token deja de abrir el informe."""
+    from ..models import AthleteReportShare
+    sh = db.query(AthleteReportShare).filter(
+        AthleteReportShare.id == share_id, AthleteReportShare.coach_id == coach.id).first()
+    if not sh:
+        raise HTTPException(404, "Enlace no encontrado")
+    db.delete(sh)
+    db.commit()
+    return {"ok": True}
 
 
 # ── Alertas coach — P6 ──────────────────────────────────────

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es" translate="no">
+  <head>
+    <script>/* labx_theme: tema antes del primer pintado (oscuro por defecto) */(function(){try{var v=localStorage.getItem("labx_theme");document.documentElement.setAttribute("data-theme",v==="light"?"light":"dark");}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LabX — Informe del atleta</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="theme-vars.css?v=373" />
+    <script src="i18n.js?v=384"></script>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.5; }
+      a { color: inherit; text-decoration: none; }
+      .wrap { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+      .logo { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0.05em; display: inline-block; margin-bottom: 2rem; }
+      .logo span { color: var(--orange, #ff6b1a); }
+      h1 { font-family: 'Oswald', sans-serif; font-size: 1.6rem; margin-bottom: 0.25rem; }
+      h2 { font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+      .sub { color: var(--muted); font-size: 0.85rem; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+      th, td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border2, #333); text-align: right; }
+      th:first-child, td:first-child { text-align: left; }
+      th { color: var(--muted); font-weight: 600; }
+      .empty { text-align: center; padding: 3rem 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <a class="logo" href="landing.html">LAB<span>X</span></a>
+      <div id="content"><div class="empty"><span data-i18n="status_loading">Cargando...</span></div></div>
+    </div>
+    <script>
+      (function () {
+        'use strict';
+        var API = window.location.protocol === 'file:' ? 'http://localhost:8000/api' : window.location.origin + '/api';
+        var token = new URLSearchParams(window.location.search).get('t');
+        var content = document.getElementById('content');
+        function _t(key, fb) {
+          var v = window.i18n ? window.i18n.t(key) : null;
+          return v && v !== key ? v : fb;
+        }
+        function esc(v) {
+          return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+          });
+        }
+        function nd(v, suffix) {
+          return v == null ? _t('dd_pub_nodata', 'sin dato') : esc(v) + (suffix || '');
+        }
+        function empty(msg) {
+          content.innerHTML = '<div class="empty">🔒<br>' + esc(msg) + '</div>';
+        }
+        function table(head, rows) {
+          return '<table><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') +
+            '</tr></thead><tbody>' + rows.map(function (r) {
+              return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+            }).join('') + '</tbody></table>';
+        }
+        function render(r) {
+          var h = '<h1>' + esc(r.athlete_nombre) + '</h1>' +
+            '<div class="sub">' + esc(r.period_start) + ' → ' + esc(r.period_end) + ' · ' +
+            esc(_t('dd_pub_readonly', 'Informe de solo lectura compartido por ')) + esc(r.coach_name) + '</div>';
+          if (r.race_goal_name || r.race_goal_date) {
+            h += '<h2>' + esc(_t('dd_pub_goal', 'Objetivo de carrera')) + '</h2><div>' + nd(r.race_goal_name) + ' · ' + nd(r.race_goal_date) + '</div>';
+          }
+          h += '<h2>' + esc(_t('dd_pub_totals', 'Totales: planificado vs ejecutado')) + '</h2>' +
+            table(['Sesiones plan.', 'Sesiones hechas', 'Cumplimiento', 'TSS plan.', 'TSS real', 'Dist. km', 'Dur. min'],
+              [[nd(r.sessions_total), nd(r.sessions_done), nd(r.compliance_pct, '%'), nd(r.tss_planned), nd(r.tss_actual), nd(r.dist_total_km), nd(r.dur_total_min)]]);
+          h += '<h2>' + esc(_t('dd_pub_load', 'Forma y carga')) + '</h2>' +
+            table(['Fitness (CTL)', 'Fatiga (ATL)', 'Balance (TSB)', 'Carga aguda/crónica (ACWR)'],
+              [[nd(r.ctl), nd(r.atl), nd(r.tsb), nd(r.acwr)]]);
+          h += '<h2>' + esc(_t('dd_pub_sport', 'Por deporte')) + '</h2>' +
+            table(['Deporte', 'Ses. plan.', 'Ses. hechas', 'Dist. real km', 'Dur. real min', 'TSS plan.', 'TSS real'],
+              (r.by_sport || []).map(function (s) {
+                return [esc(s.sport), nd(s.sessions_planned), nd(s.sessions_done), nd(s.dist_actual_km), nd(s.dur_actual_min), nd(s.tss_planned), nd(s.tss_actual)];
+              }));
+          h += '<h2>' + esc(_t('dd_pub_week', 'Por semana')) + '</h2>' +
+            table(['Semana (lunes)', 'Ses. plan.', 'Ses. hechas', 'TSS plan.', 'TSS real', 'Dist. real km'],
+              (r.weeks || []).map(function (w) {
+                return [esc(w.week_start), nd(w.sessions_planned), nd(w.sessions_done), nd(w.tss_planned), nd(w.tss_actual), nd(w.dist_actual_km)];
+              }));
+          content.innerHTML = h;
+        }
+        if (!token) { empty(_t('dd_pub_no_token', 'Este enlace no incluye un informe válido.')); return; }
+        fetch(API + '/public/reports/' + encodeURIComponent(token))
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d) { empty(_t('dd_pub_gone', 'Este enlace no existe o fue revocado por su dueño.')); return; }
+            render(d);
+          })
+          .catch(function () { empty(_t('dd_pub_gone', 'Este enlace no existe o fue revocado por su dueño.')); });
+      })();
+    </script>
+  </body>
+</html>
