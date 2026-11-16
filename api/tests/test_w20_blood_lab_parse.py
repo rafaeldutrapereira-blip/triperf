@@ -1,6 +1,6 @@
 """W20 — Blood Labs: lectura IA de informes (PDF/foto) -> borrador -> confirmacion.
 
-La IA se mockea (api.services.blood_lab_parser._call_model).
+La IA se mockea (api.services.blood_lab_parser._call_provider).
 """
 import json
 
@@ -37,7 +37,7 @@ def _mock(monkeypatch, payload):
         calls.append((media_type, len(data)))
         return payload if isinstance(payload, str) else "Aqui va:\n" + json.dumps(payload)
 
-    monkeypatch.setattr(bp, "_call_model", fake)
+    monkeypatch.setattr(bp, "_call_provider", fake)
     return calls
 
 

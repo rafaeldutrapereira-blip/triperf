@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 
 AI_MODEL = "claude-sonnet-4-6"  # mismo modelo que POST /labs/exams/{id}/analyze
 
+# GEMINI-GRATIS (388): proveedor por defecto = Google Gemini (free tier, sin gastar).
+# LAB_PARSER_PROVIDER = "gemini" (default) | "anthropic" (fallback, camino intacto).
+# El modelo se puede cambiar sin deploy con GEMINI_MODEL (los IDs se deprecan).
+GEMINI_MODEL = "gemini-3.5-flash"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_TIMEOUT = 90
+
 MAX_PDF_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_BYTES = 5 * 1024 * 1024   # limite de imagen de la API
 
@@ -29,7 +36,8 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024   # limite de imagen de la API
 class ParseUnavailable(Exception):
     """La IA no esta disponible (sin clave o error del proveedor)."""
 
-    reason = "unavailable"  # "billing" cuando la cuenta de Anthropic no tiene saldo
+    # "billing": la cuenta de Anthropic no tiene saldo; "quota": Gemini 429 / cuota del free tier
+    reason = "unavailable"
 
 
 def _is_billing_error(exc: Exception) -> bool:
@@ -248,6 +256,67 @@ def _call_model(media_type: str, data: bytes, prompt: str) -> str:
         raise ParseUnavailable(str(e))
 
 
+def _gemini_post(url: str, key: str, payload: dict) -> dict:
+    """POST a la API de Gemini (aislado para mockear). Lanza urllib.error.HTTPError en != 2xx."""
+    import urllib.request
+    req = urllib.request.Request(
+        url, data=json.dumps(payload).encode("utf-8"), method="POST",
+        headers={"Content-Type": "application/json", "x-goog-api-key": key})
+    with urllib.request.urlopen(req, timeout=GEMINI_TIMEOUT) as r:  # noqa: S310
+        return json.loads(r.read().decode("utf-8"))
+
+
+def _call_gemini(media_type: str, data: bytes, prompt: str) -> str:
+    """Llama a Gemini con el archivo como inlineData. Devuelve el texto. Nunca loguea la clave."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise ParseUnavailable("GEMINI_API_KEY no configurada")
+    model = os.getenv("GEMINI_MODEL", "").strip() or GEMINI_MODEL
+    payload = {
+        "contents": [{"role": "user", "parts": [
+            {"inlineData": {"mimeType": media_type,
+                            "data": base64.b64encode(data).decode()}},
+            {"text": prompt},
+        ]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 4096,
+                             "responseMimeType": "application/json"},
+    }
+    try:
+        resp = _gemini_post(GEMINI_URL.format(model=model), key, payload)
+    except Exception as e:  # noqa: BLE001
+        code = getattr(e, "code", None)
+        body = ""
+        try:
+            body = e.read().decode("utf-8", "ignore")[:400] if hasattr(e, "read") else ""
+        except Exception:  # noqa: BLE001
+            body = ""
+        if code == 429 or "RESOURCE_EXHAUSTED" in body or "quota" in body.lower():
+            logger.error("Blood lab parse AI error [QUOTA]: cuota del free tier de Gemini "
+                         "agotada o limite de tasa (modelo=%s, HTTP %s)", model, code)
+            err = ParseUnavailable("Cuota de Gemini agotada")
+            err.reason = "quota"
+            raise err
+        logger.error("Blood lab parse AI error [GEMINI]: %s (modelo=%s, HTTP %s)",
+                     type(e).__name__, model, code)
+        raise ParseUnavailable("Error del proveedor Gemini")
+    try:
+        parts = resp["candidates"][0]["content"]["parts"]
+        return "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+    except (KeyError, IndexError, TypeError):
+        logger.error("Blood lab parse AI error [GEMINI]: respuesta sin candidatos "
+                     "(modelo=%s, promptFeedback=%s)", model,
+                     (resp or {}).get("promptFeedback") if isinstance(resp, dict) else None)
+        raise ParseUnavailable("Gemini no devolvio contenido")
+
+
+def _call_provider(media_type: str, data: bytes, prompt: str) -> str:
+    """Despacho por LAB_PARSER_PROVIDER (default gemini; anthropic = fallback)."""
+    provider = os.getenv("LAB_PARSER_PROVIDER", "gemini").strip().lower() or "gemini"
+    if provider == "anthropic":
+        return _call_model(media_type, data, prompt)
+    return _call_gemini(media_type, data, prompt)
+
+
 def _extract_json(text: str) -> dict:
     i, j = text.find("{"), text.rfind("}")
     if i < 0 or j <= i:
@@ -274,7 +343,7 @@ def parse_report(data: bytes) -> dict:
     """Archivo -> borrador. No toca la BD."""
     from ..routes.blood_lab_routes import MARKERS
     media_type, ext = sniff_file(data)
-    raw = _call_model(media_type, data, _build_prompt(MARKERS))
+    raw = _call_provider(media_type, data, _build_prompt(MARKERS))
     try:
         obj = _extract_json(raw)
     except (ValueError, json.JSONDecodeError):

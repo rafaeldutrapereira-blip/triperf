@@ -68,7 +68,7 @@ def test_other_errors_keep_generic_reason(monkeypatch):
 
 def test_parse_report_modulab_14_markers(monkeypatch):
     import json
-    monkeypatch.setattr(bp, "_call_model", lambda *a: json.dumps(MODULAB))
+    monkeypatch.setattr(bp, "_call_provider", lambda *a: json.dumps(MODULAB))
     out = bp.parse_report(b"%PDF-1.4\nfake")
     assert out["exam_date"] == "2026-05-30"
     assert out["lab_name"] == "Clínica Alemana"
