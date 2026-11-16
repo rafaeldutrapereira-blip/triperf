@@ -41,8 +41,8 @@ def test_orden_de_capas():
     i1 = h.index('id="bl-l1-title"')
     i2 = h.index('id="bl-systems"')
     i3 = h.index('<details class="bl-all')
-    assert i1 < h.index('id="bl-plain"') < h.index('id="alerts-container"') < i2 < i3
-    # nivel 2 fuera del plegable; tabla completa dentro
+    assert i1 < h.index('id="bl-plain"') < h.index('id="alerts-container"') < i3 < i2
+    # BLOODLABS-SIMPLE: sistemas y tabla completa dentro del unico plegable
     assert h.index('id="bm-table-container"') > i3
 
 

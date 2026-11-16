@@ -18,12 +18,12 @@ def test_blood_labs_abre_con_resumen_llano_y_alertas_antes_de_ver_todo():
     h = _read("blood_labs.html")
     i_plain = h.index('id="bl-plain"')
     i_alerts = h.index('id="alerts-container"')
-    i_impact = h.index('id="clinical-summary"')
     i_all = h.index('<details class="bl-all')
-    assert i_plain < i_alerts < i_impact < i_all
-    # TRS, radar y tabla completa quedan dentro de "Ver todo"
+    assert i_plain < i_alerts < i_all
+    # BLOODLABS-SIMPLE: impacto clinico, sistemas, KPIs, radar y tabla quedan dentro de "Ver detalle"
     i_end = h.index("</details>", i_all)
-    for marker in ('id="kpi-trs"', 'id="ch-radar"', 'id="bm-table-container"'):
+    for marker in ('id="clinical-summary"', 'id="bl-systems"', 'id="kpi-trs"',
+                   'id="ch-radar"', 'id="bm-table-container"'):
         assert i_all < h.index(marker) < i_end
 
 
