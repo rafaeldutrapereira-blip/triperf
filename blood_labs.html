@@ -25,8 +25,8 @@
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-500.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-600.woff2" crossorigin />
     <link rel="stylesheet" href="theme-vars.css?v=373" />
-    <script src="i18n.js?v=388"></script>
-    <script src="lx-backend-i18n.js?v=388"></script>
+    <script src="i18n.js?v=389"></script>
+    <script src="lx-backend-i18n.js?v=389"></script>
     <style>
       *,
       *::before,
@@ -204,6 +204,35 @@
         font-size: 0.82rem;
         color: var(--muted);
         margin-top: 0.3rem;
+      }
+      .bl-l1-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.7rem;
+      }
+      .bl-l1-chips .chip {
+        font-size: 0.72rem;
+      }
+      .bl-empty {
+        font-size: 0.8rem;
+        color: var(--dim);
+        line-height: 1.6;
+        padding: 0.6rem 0;
+      }
+      .bl-alert-src {
+        display: inline-block;
+        font-size: 0.68rem;
+        color: var(--dim);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0 0.35rem;
+        margin-left: 0.4rem;
+        white-space: nowrap;
+      }
+      .bl-ai-state {
+        font-weight: 600;
+        color: var(--text);
       }
       .bl-lvl {
         font-family: 'Oswald', sans-serif;
@@ -971,6 +1000,7 @@
             vs
             <select id="sel-comp" onchange="switchExam()"></select>
           </span>
+          <span class="exam-meta" id="exam-count-lbl" role="status"></span>
           <span class="exam-ctx" id="exam-ctx-lbl"></span>
           <button
             class="btn btn-g btn-sm"
@@ -1007,7 +1037,7 @@
             <div class="ph-chips" id="ph-chips">
               <span class="chip chip-g"
                 ><span data-i18n="bl_chip_trs">TRS:</span>
-                <strong id="chip-score">—</strong></span
+                <strong id="chip-score" data-i18n="bl_chip_nodata">Sin datos</strong></span
               >
               <span class="chip chip-a" id="chip-alerts" style="display: none"
                 ><span data-i18n="bl_chip_alerts">Alertas:</span>
@@ -1015,7 +1045,7 @@
               >
               <span class="chip"
                 ><span data-i18n="bl_chip_exams">Exámenes:</span>
-                <strong id="chip-exams">—</strong></span
+                <strong id="chip-exams">0</strong></span
               >
             </div>
             <p class="bl-disclaimer" id="bl-disclaimer" role="note">
@@ -1064,7 +1094,14 @@
         <!-- ══ TAB 1: RESUMEN CLÍNICO ══ -->
         <div class="tab-pane on" id="tab-resumen">
           <div id="resumen-empty-state" style="display: none">
-            <p style="color: var(--dim); padding: 2rem" data-i18n="bl_no_exams">
+            <p
+              id="bl-empty-account"
+              style="color: var(--text); padding: 2rem 2rem 0.4rem; font-weight: 600"
+              data-i18n="bl_empty_account"
+            >
+              Esta cuenta no tiene exámenes de sangre registrados.
+            </p>
+            <p style="color: var(--dim); padding: 0 2rem 2rem" data-i18n="bl_no_exams">
               No hay exámenes registrados. Usa la pestaña Registrar Examen para
               agregar el primero.
             </p>
@@ -1074,8 +1111,9 @@
             <!-- W14: primera vista en lenguaje llano -->
             <div class="bl-lvl" id="bl-l1-title" data-i18n="bl_l1_title">¿Cómo está mi sangre?</div>
             <div class="bl-plain sr" id="bl-plain" aria-live="polite">
-              <div class="bl-plain-h" id="bl-plain-h">—</div>
+              <div class="bl-plain-h" id="bl-plain-h" data-i18n="bl_l1_loading">Revisando tus exámenes…</div>
               <div class="bl-plain-s" id="bl-plain-s"></div>
+              <div class="bl-l1-chips" id="bl-l1-chips"></div>
             </div>
             <div class="sr mt2" id="bl-first">
               <div>
@@ -1084,6 +1122,14 @@
                   <span id="alerts-date-label"></span>
                 </div>
                 <div id="alerts-container"></div>
+                <div class="sec-h mt2" data-i18n="bl_trs_read_title">
+                  Puntaje de restricción de entrenamiento (TRS)
+                </div>
+                <div id="bl-trs-read" class="bl-empty" style="padding-top: 0"></div>
+                <div class="sec-h mt2" data-i18n="bl_var_title">
+                  Variaciones notables entre exámenes
+                </div>
+                <div id="bl-variations" class="bl-empty" style="padding-top: 0"></div>
                 <div class="sec-h mt2" data-i18n="bl_clinical_interpretation">
                   Impacto en Entrenamiento
                 </div>
@@ -1154,6 +1200,7 @@
                 <div class="ch-sub" data-i18n="bl_radar_sub">
                   Puntaje 0-100 por categoría vs referencia deportiva
                 </div>
+                <div class="bl-empty" id="radar-empty" style="display: none"></div>
                 <div class="ch-inner"><canvas id="ch-radar"></canvas></div>
               </div>
             </div>
@@ -1189,7 +1236,7 @@
                     white-space: pre-wrap;
                   "
                 >
-                  —
+                  Aún no generada
                 </div>
               </div>
             </div>
@@ -1209,6 +1256,7 @@
         <div class="tab-pane" id="tab-trends">
           <div class="stabs-bar" id="trends-stabs-bar"></div>
           <div id="trend-content"></div>
+          <div id="trend-single" class="bl-empty"></div>
         </div>
 
         <!-- ══ TAB 3: CORRELACIÓN GARMIN ══ -->
@@ -1228,8 +1276,9 @@
                 >Carga de Entrenamiento (CTL/ATL/TSB) en cada examen</span
               ><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('ctl', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('atl', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button><button type="button" class="lx-term-info" aria-label="Info" onclick="event.stopPropagation(); LXTerm.open('tsb', this)"><svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="5" cy="5" r="4.25" stroke="currentColor" stroke-width="1.25"/><rect x="4.35" y="4.35" width="1.3" height="3.2" rx=".55" fill="currentColor"/><circle cx="5" cy="2.85" r=".65" fill="currentColor"/></svg></button>
             </div>
+            <div class="bl-empty" id="garmin-empty" style="display: none"></div>
             <div class="ch-box">
-              <div class="ch-title">CTL / ATL / TSB — por fecha de examen</div>
+              <div class="ch-title" data-i18n="bl_ctl_overlay_title">Carga crónica (CTL), carga aguda (ATL) y balance (TSB) — por fecha de examen</div>
               <div class="ch-sub" data-i18n="bl_ctl_overlay_sub">
                 Útil para ver si un examen se tomó en una semana de carga alta o
                 de descanso
@@ -1417,6 +1466,24 @@
         'renal',
         'hepatico',
       ];
+      // BLOODLABS-EJECUTIVA: fecha legible (dd/mm/aaaa) y plantilla con {llaves}
+      function fmtDate(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+        return m ? m[3] + '/' + m[2] + '/' + m[1] : iso || '';
+      }
+      function tpl(key, def, vars) {
+        var t = _t(key, def);
+        Object.keys(vars || {}).forEach(function (k) {
+          t = t.split('{' + k + '}').join(vars[k]);
+        });
+        return t;
+      }
+      function curExam() {
+        return CUR_EXAM_ID && EXAM_DETAIL[CUR_EXAM_ID]
+          ? EXAM_DETAIL[CUR_EXAM_ID]
+          : null;
+      }
+
       function catMeta() {
         return {
           hematologico: {
@@ -1621,7 +1688,7 @@
           });
       }
       function loadTimeline() {
-        return apiGet('/labs/timeline')
+        return apiGet('/labs/timeline?all=1')
           .then(function (d) {
             TIMELINE = d;
           })
@@ -1630,7 +1697,7 @@
           });
       }
       function loadCorrelationOverlay() {
-        return apiGet('/labs/correlation')
+        return apiGet('/labs/correlation?all=1')
           .then(function (d) {
             CORR = d || [];
           })
@@ -1669,10 +1736,17 @@
         cmp.innerHTML =
           '<option value="">' + _t('bl_none', 'Ninguno') + '</option>';
         EXAMS.forEach(function (e) {
-          var o = '<option value="' + e.id + '">' + e.date_iso + '</option>';
+          var o =
+            '<option value="' + e.id + '">' + esc(examOptionLabel(e)) + '</option>';
           sel.innerHTML += o;
           cmp.innerHTML += o;
         });
+        if (!EXAMS.length)
+          sel.innerHTML =
+            '<option value="">' +
+            _t('bl_sel_none', 'Sin exámenes') +
+            '</option>';
+        renderExamCount();
         if (CUR_EXAM_ID) sel.value = CUR_EXAM_ID;
         if (CUR_COMP_ID) {
           document.getElementById('comp-label').style.display = 'flex';
@@ -1683,6 +1757,29 @@
         document.getElementById('btn-delete-exam').style.display = EXAMS.length
           ? ''
           : 'none';
+      }
+
+      // fecha + laboratorio + cantidad de marcadores (selector siempre legible)
+      function examOptionLabel(e) {
+        return (
+          fmtDate(e.date_iso) +
+          (e.lab_name ? ' · ' + _lxBe(e.lab_name) : '') +
+          ' · ' +
+          tpl('bl_sel_markers', '{n} marcadores', { n: e.markers })
+        );
+      }
+      function renderExamCount() {
+        var el = document.getElementById('exam-count-lbl');
+        if (!el) return;
+        el.textContent = EXAMS.length
+          ? tpl(
+              EXAMS.length === 1 ? 'bl_sel_count_one' : 'bl_sel_count_many',
+              EXAMS.length === 1
+                ? '{n} examen · último {date}'
+                : '{n} exámenes · último {date}',
+              { n: EXAMS.length, date: fmtDate(EXAMS[0].date_iso) },
+            )
+          : _t('bl_sel_count_none', 'Sin exámenes registrados');
       }
 
       function switchExam() {
@@ -1743,6 +1840,7 @@
           return;
         }
         if (!EXAMS.length) {
+          renderSummaryChips();
           emptyState.style.display = '';
           content.style.display = 'none';
           return;
@@ -1778,7 +1876,11 @@
             ? TRAINING_IMPACT.trs
             : null;
         document.getElementById('chip-score').textContent =
-          trs != null ? trs + '/100' : '—';
+          trs != null
+            ? trs + '/100'
+            : EXAMS.length && sexMissing()
+              ? _t('bl_chip_needs_sex', 'Falta el sexo en tu Perfil')
+              : _t('bl_chip_nodata', 'Sin datos');
         document.getElementById('chip-alerts').style.display = ALERTS.length &&
           !sexMissing()
           ? 'inline-flex'
@@ -1792,7 +1894,15 @@
       function renderAlertsPanel() {
         var el = document.getElementById('alerts-container');
         if (sexMissing()) {
-          el.innerHTML = '';
+          el.innerHTML =
+            '<div class="bl-empty">' +
+            esc(
+              _t(
+                'bl_alerts_sex_missing',
+                'No se pueden calcular alertas hasta que declares tu sexo en tu Perfil.',
+              ),
+            ) +
+            '</div>';
           return;
         }
         if (!ALERTS.length) {
@@ -1821,6 +1931,12 @@
                   '<span><strong>' +
                   esc(_lxBe(a.title)) +
                   '</strong>' +
+                  alertSrcTag(a) +
+                  (a.body
+                    ? '<br><span style="color:var(--muted)">' +
+                      esc(_lxBe(a.body)) +
+                      '</span>'
+                    : '') +
                   (a.correlation_note
                     ? '<br><span style="color:var(--dim)">' +
                       esc(_lxBe(a.correlation_note)) +
@@ -1842,6 +1958,23 @@
             '🔴 ' + _t('bl_needs_attention', 'Requiere atención'),
           ) + group(warning, '🟡 ' + _t('bl_grade_monitor', 'Monitorear'));
       }
+      // de qué examen viene cada alerta (corrige la inconsistencia del 14/11:
+      // las alertas son de todos los exámenes, no solo del seleccionado)
+      function alertSrcTag(a) {
+        if (!a.exam_date) return '';
+        var same = CUR_EXAM_ID && a.exam_id === CUR_EXAM_ID;
+        return (
+          '<span class="bl-alert-src">' +
+          esc(
+            tpl(
+              same ? 'bl_alert_src_cur' : 'bl_alert_src_other',
+              same ? 'de este examen ({date})' : 'del examen del {date}',
+              { date: fmtDate(a.exam_date) },
+            ),
+          ) +
+          '</span>'
+        );
+      }
       function dismissAlertRow(id) {
         apiPatch('/labs/alerts/' + id + '/dismiss', {}).then(function () {
           ALERTS = ALERTS.filter(function (a) {
@@ -1849,6 +1982,7 @@
           });
           renderAlertsPanel();
           renderSummaryChips();
+          if (curExam()) renderPlainSummary(curExam());
         });
       }
 
@@ -1905,9 +2039,9 @@
         var ti = TRAINING_IMPACT,
           sm = SUMMARY;
         if (!ti || !ti.has_labs) {
-          setKpi('trs', '—');
-          setKpi('markers', '—');
-          setKpi('next', '—');
+          setKpi('trs', _t('bl_chip_nodata', 'Sin datos'));
+          setKpi('markers', _t('bl_chip_nodata', 'Sin datos'));
+          setKpi('next', _t('bl_chip_nodata', 'Sin datos'));
           document.getElementById('clinical-summary').innerHTML =
             '<span style="color:var(--dim)">' +
             _t(
@@ -1918,9 +2052,9 @@
           return;
         }
         if (ti.sex_missing) {
-          setKpi('trs', '—');
-          setKpi('markers', sm && sm.total_markers ? sm.total_markers : '—');
-          setKpi('next', '—');
+          setKpi('trs', _t('bl_chip_nodata', 'Sin datos'));
+          setKpi('markers', sm && sm.total_markers ? sm.total_markers : _t('bl_chip_nodata', 'Sin datos'));
+          setKpi('next', _t('bl_chip_nodata', 'Sin datos'));
           document.getElementById('clinical-summary').innerHTML =
             '<span style="color:var(--dim)">' +
             esc(
@@ -1948,7 +2082,7 @@
           totalN = sm ? sm.total_markers : 0;
         setKpi(
           'markers',
-          totalN || '—',
+          totalN || _t('bl_chip_nodata', 'Sin datos'),
           sm
             ? sm.markers_critical +
                 ' ' +
@@ -1970,7 +2104,7 @@
         var overdue = nextDays != null && nextDays <= 0;
         setKpi(
           'next',
-          nextDays != null ? nextDays + 'd' : '—',
+          nextDays != null ? nextDays + 'd' : _t('bl_chip_nodata', 'Sin datos'),
           overdue ? _t('bl_overdue', 'Vencido') : _t('bl_on_track', 'En plazo'),
           overdue ? 'var(--red)' : 'var(--green)',
           nextDays != null
@@ -2046,23 +2180,61 @@
           var cur = results[0],
             comp = results[1] || null;
           document.getElementById('exam-ctx-lbl').textContent =
-            (_lxBe(cur.lab_name) || '') + ' · ' + (cur.context || '');
-          var aiBox = document.getElementById('ai-interpretation-box');
-          aiBox.textContent =
-            cur.ai_interpretation && cur.ai_interpretation.text
-              ? cur.ai_interpretation.text
-              : '—';
+            [_lxBe(cur.lab_name), cur.context].filter(Boolean).join(' · ');
+          renderAiBox(cur);
           renderPlainSummary(cur);
+          renderTrsRead();
+          renderVariations(cur, comp);
+          renderAlertsPanel();
           renderSystemGroups(cur);
           renderRadar(cur);
           renderBMTable(cur, comp);
         });
       }
 
+      // Caja de la IA: siempre dice en qué estado está (nunca un guion mudo)
+      function renderAiBox(cur) {
+        var box = document.getElementById('ai-interpretation-box');
+        if (!box) return;
+        if (cur.ai_interpretation && cur.ai_interpretation.text) {
+          box.textContent = cur.ai_interpretation.text;
+          return;
+        }
+        box.innerHTML =
+          '<span class="bl-ai-state">' +
+          esc(_t('bl_ai_state_none', 'Aún no generada')) +
+          '</span><br>' +
+          esc(
+            sexMissing()
+              ? _t(
+                  'bl_ai_state_sex',
+                  'Para generarla necesitas declarar tu sexo en tu Perfil: la interpretación usa los rangos de referencia.',
+                )
+              : _t(
+                  'bl_ai_state_hint',
+                  'Este examen todavía no tiene interpretación. Pulsa «Generar interpretación» para crearla; se guarda y queda disponible la próxima vez.',
+                ),
+          );
+      }
+
       function renderRadar(exam) {
-        if (exam.sex_missing) {
+        var note = document.getElementById('radar-empty');
+        function noRadar(msg) {
           if (CH.radar) CH.radar.destroy();
           CH.radar = null;
+          if (note) {
+            note.textContent = msg;
+            note.style.display = '';
+          }
+        }
+        if (note) note.style.display = 'none';
+        if (exam.sex_missing) {
+          noRadar(
+            _t(
+              'bl_radar_sex',
+              'El radar no se dibuja porque falta tu sexo en el Perfil: los puntajes dependen de los rangos de referencia.',
+            ),
+          );
           return;
         }
         var cm = catMeta();
@@ -2072,8 +2244,8 @@
         });
         Object.keys(exam.markers || {}).forEach(function (k) {
           var m = exam.markers[k];
-          if (m.cat && byCat[m.cat])
-            byCat[m.cat].push(m.pct != null ? m.pct : 50);
+          // sin puntaje calculado el marcador no entra al radar (no se inventa un 50)
+          if (m.cat && byCat[m.cat] && m.pct != null) byCat[m.cat].push(m.pct);
         });
         var labels = [],
           data = [];
@@ -2089,7 +2261,16 @@
           );
         });
         if (CH.radar) CH.radar.destroy();
-        if (!labels.length) return;
+        CH.radar = null;
+        if (!labels.length) {
+          noRadar(
+            _t(
+              'bl_radar_none',
+              'Este examen no tiene marcadores con puntaje para dibujar el radar.',
+            ),
+          );
+          return;
+        }
         CH.radar = new Chart(document.getElementById('ch-radar'), {
           type: 'radar',
           data: {
@@ -2137,19 +2318,38 @@
         });
       }
 
-      // W14: primera vista en lenguaje llano. N = valores del examen actual
-      // con estado distinto de "ok" (warning/critical); sin sexo declarado no
-      // se cuenta nada (gate de W11).
-      function plainReviewCount(cur) {
+      // BLOODLABS-EJECUTIVA nivel 1: una frase en llano + chips. Cuenta sobre el
+      // examen SELECCIONADO; las alertas de otros exámenes se dicen aparte.
+      function plainEvaluated(cur) {
         var ms = (cur && cur.markers) || {};
         return Object.keys(ms).filter(function (k) {
-          return ms[k].status === 'warning' || ms[k].status === 'critical';
-        }).length;
+          return ['ok', 'warning', 'critical'].indexOf(ms[k].status) >= 0;
+        });
+      }
+      function plainChip(label, value) {
+        return (
+          '<span class="chip"><span>' + esc(label) + '</span> <strong>' +
+          esc(value) + '</strong></span>'
+        );
+      }
+      function nextControlText(sm) {
+        var nd = _t('bl_chip_nodata', 'Sin datos');
+        if (!sm || !sm.latest_date || sm.next_recommended_in_days == null) return nd;
+        var d = new Date(sm.latest_date + 'T00:00:00');
+        d.setDate(d.getDate() + 90);
+        var iso =
+          d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+          ('0' + d.getDate()).slice(-2);
+        return sm.next_recommended_in_days <= 0
+          ? _t('bl_overdue', 'Vencido') + ' (' + fmtDate(iso) + ')'
+          : fmtDate(iso);
       }
       function renderPlainSummary(cur) {
         var h = document.getElementById('bl-plain-h');
         var sub = document.getElementById('bl-plain-s');
+        var chips = document.getElementById('bl-l1-chips');
         if (!h) return;
+        var date = fmtDate(cur && cur.date_iso);
         if (sexMissing()) {
           h.textContent = _t(
             'bl_plain_sex_missing',
@@ -2159,27 +2359,192 @@
             'bl_sex_missing_msg',
             'Declara tu sexo en tu Perfil: los rangos de referencia dependen de él.',
           );
+          if (chips)
+            chips.innerHTML = plainChip(_t('bl_l1_last', 'Último examen:'), date);
           return;
         }
-        var n = plainReviewCount(cur);
-        var total = Object.keys((cur && cur.markers) || {}).length;
-        if (n === 0) {
-          h.textContent = _t(
-            'bl_plain_none',
-            'Todos tus valores están dentro de rango',
+        var ev = plainEvaluated(cur);
+        var total = ev.length;
+        var all = Object.keys((cur && cur.markers) || {}).length;
+        var bad = ev.filter(function (k) {
+          return cur.markers[k].status !== 'ok';
+        });
+        var alertsHere = ((cur && cur.alerts) || []).filter(function (a) {
+          return !a.dismissed;
+        }).length;
+        var alertsOther = Math.max(0, ALERTS.length - alertsHere);
+        if (!total) {
+          h.textContent = tpl(
+            'bl_l1_noeval',
+            'Este examen (del {date}) no tiene marcadores con rango de referencia para evaluar.',
+            { date: date },
+          );
+        } else if (!bad.length) {
+          h.textContent = tpl(
+            alertsHere ? 'bl_l1_ok_alerts' : 'bl_l1_ok',
+            alertsHere
+              ? 'Tu sangre está bien: {ok} de {total} marcadores en rango. Último examen {date}.'
+              : 'Tu sangre está bien: {ok} de {total} marcadores en rango, sin alertas activas. Último examen {date}.',
+            { ok: total, total: total, date: date },
           );
         } else {
-          h.textContent = _t(
-            n === 1 ? 'bl_plain_n_one' : 'bl_plain_n_many',
-            n === 1
-              ? 'Tienes {n} valor para revisar'
-              : 'Tienes {n} valores para revisar',
-          ).replace('{n}', n);
+          var names = bad.slice(0, 3).map(function (k) {
+            return (
+              _lxBe(cur.markers[k].name) + ' (' +
+              zoneWords(cur.markers[k]).toLowerCase() + ')'
+            );
+          });
+          h.textContent = tpl(
+            bad.length === 1 ? 'bl_l1_bad_one' : 'bl_l1_bad_many',
+            bad.length === 1
+              ? 'Hay 1 cosa a mirar: {list}. Examen del {date}.'
+              : 'Hay {n} cosas a mirar: {list}{more}. Examen del {date}.',
+            {
+              n: bad.length,
+              list: names.join(', '),
+              more: bad.length > 3 ? ' ' + _t('bl_l1_and_more', 'y otras') : '',
+              date: date,
+            },
+          );
         }
-        sub.textContent = _t(
-          'bl_plain_sub',
-          'De {total} valores del examen. Abajo, las alertas y cómo afectan a tu entrenamiento.',
-        ).replace('{total}', total);
+        var parts = [];
+        if (all > total)
+          parts.push(
+            tpl(
+              'bl_l1_noref',
+              '{n} valores de este examen no tienen rango de referencia y no se evalúan.',
+              { n: all - total },
+            ),
+          );
+        if (alertsOther)
+          parts.push(
+            tpl(
+              alertsOther === 1 ? 'bl_l1_other_one' : 'bl_l1_other_many',
+              alertsOther === 1
+                ? 'Hay 1 alerta activa de un examen anterior (más abajo dice de cuál).'
+                : 'Hay {n} alertas activas de exámenes anteriores (más abajo dice de cuáles).',
+              { n: alertsOther },
+            ),
+          );
+        parts.push(
+          _t('bl_plain_tail', 'Abajo, las alertas y cómo afectan a tu entrenamiento.'),
+        );
+        sub.textContent = parts.join(' ');
+        if (!chips) return;
+        var ti = TRAINING_IMPACT && TRAINING_IMPACT.has_labs ? TRAINING_IMPACT : null;
+        var trsTxt =
+          ti && ti.trs != null ? ti.trs + '/100' : _t('bl_chip_nodata', 'Sin datos');
+        var sm = SUMMARY && SUMMARY.has_labs ? SUMMARY : null;
+        chips.innerHTML =
+          plainChip(_t('bl_l1_trs', 'Restricción de entrenamiento (TRS):'), trsTxt) +
+          plainChip(_t('bl_chip_alerts', 'Alertas:'), String(ALERTS.length)) +
+          plainChip(
+            _t('bl_l1_last', 'Último examen:'),
+            fmtDate(sm && sm.latest_date ? sm.latest_date : cur.date_iso),
+          ) +
+          plainChip(_t('bl_l1_next', 'Próximo control:'), nextControlText(sm));
+      }
+
+      // L2: lectura del puntaje de restricción (TRS) — solo lo que calcula el servidor
+      function renderTrsRead() {
+        var el = document.getElementById('bl-trs-read');
+        if (!el) return;
+        var ti = TRAINING_IMPACT;
+        if (!ti || !ti.has_labs) {
+          el.textContent = _t(
+            'bl_trs_none',
+            'Aún no hay un examen con el que calcular el puntaje de restricción.',
+          );
+          return;
+        }
+        if (ti.sex_missing || ti.trs == null) {
+          el.textContent = _t(
+            'bl_trs_sex',
+            'El puntaje de restricción (TRS) no se calcula hasta que declares tu sexo en tu Perfil.',
+          );
+          return;
+        }
+        var blocked = (ti.disciplines || []).filter(function (d) {
+          return !d.allowed;
+        });
+        var lim =
+          ti.primary_limiters && ti.primary_limiters.length
+            ? _lxBeList(ti.primary_limiters).join(', ')
+            : '';
+        var txt = ti.trs + '/100 · ';
+        if (!blocked.length && !lim)
+          txt += _t('bl_trs_free', 'sin restricciones para entrenar.');
+        else {
+          if (blocked.length)
+            txt +=
+              _t('bl_trs_blocked', 'Limita:') + ' ' +
+              blocked.map(function (d) { return discLabel(d.discipline); }).join(', ') + '. ';
+          if (lim) txt += _t('bl_trs_because', 'Por:') + ' ' + lim + '.';
+        }
+        txt +=
+          ' ' +
+          tpl('bl_trs_from', '(calculado con el examen del {date})', {
+            date: fmtDate(ti.exam_date),
+          });
+        el.textContent = txt;
+      }
+
+      // L2: variaciones notables del examen seleccionado frente al de comparación,
+      // siempre diciendo de qué dos exámenes salen
+      function renderVariations(cur, comp) {
+        var el = document.getElementById('bl-variations');
+        if (!el) return;
+        if (!comp) {
+          el.textContent = _t(
+            'bl_var_nocomp',
+            'Sin examen de comparación: elige uno en «vs» arriba (o registra otro examen) para ver qué cambió.',
+          );
+          return;
+        }
+        if (cur.id === comp.id) {
+          el.textContent = _t(
+            'bl_var_same',
+            'Estás comparando un examen consigo mismo: elige otro en «vs».',
+          );
+          return;
+        }
+        var cm = cur.markers || {},
+          pm = comp.markers || {};
+        var rows = Object.keys(cm)
+          .map(function (k) {
+            var a = cm[k],
+              b = pm[k];
+            if (!b || a.value == null || b.value == null || !b.value) return null;
+            var dp = ((a.value - b.value) / Math.abs(b.value)) * 100;
+            return { name: _lxBe(a.name), unit: a.unit || '', a: a.value, b: b.value, dp: dp };
+          })
+          .filter(function (r) {
+            return r && Math.abs(r.dp) >= 15;
+          });
+        rows.sort(function (x, y) {
+          return Math.abs(y.dp) - Math.abs(x.dp);
+        });
+        var head = tpl('bl_var_head', 'Examen del {a} frente al del {b}:', {
+          a: fmtDate(cur.date_iso),
+          b: fmtDate(comp.date_iso),
+        });
+        if (!rows.length) {
+          el.textContent =
+            head + ' ' + _t('bl_var_none', 'ningún marcador cambió más de 15 %.');
+          return;
+        }
+        el.innerHTML =
+          '<div>' + esc(head) + '</div>' +
+          rows
+            .slice(0, 5)
+            .map(function (r) {
+              return (
+                '<div style="color:var(--muted)">• <strong>' + esc(r.name) +
+                '</strong>: ' + esc(r.b) + ' → ' + esc(r.a) + ' ' + esc(r.unit) +
+                ' (' + (r.dp > 0 ? '▲ ' : '▼ ') + Math.abs(r.dp).toFixed(0) + ' %)</div>'
+              );
+            })
+            .join('');
       }
 
       // LABS-CAPAS nivel 2: marcadores agrupados por sistema a partir de la
@@ -2382,16 +2747,27 @@
         );
         apiPost('/labs/exams/' + CUR_EXAM_ID + '/analyze', {})
           .then(function (d) {
-            box.textContent = d.interpretation || '—';
+            box.textContent =
+              d.interpretation ||
+              _t(
+                'bl_ai_empty',
+                'El proveedor respondió sin texto. Vuelve a intentarlo en unos minutos.',
+              );
+            // se guardó en el servidor: el cache local se refresca al cambiar de examen
             delete EXAM_DETAIL[CUR_EXAM_ID];
           })
           .catch(function (err) {
+            var msg = err && err.errors && err.errors[0] && err.errors[0].message;
             box.textContent =
               '⚠️ ' +
               _t('bl_ai_failed', 'No se pudo generar la interpretación.') +
-              (err && err.errors && err.errors[0]
-                ? ' ' + err.errors[0].message
-                : '');
+              ' ' +
+              (msg
+                ? msg
+                : _t(
+                    'bl_ai_failed_net',
+                    'No hubo respuesta del servidor; revisa tu conexión e inténtalo de nuevo.',
+                  ));
           })
           .then(function () {
             btn.disabled = false;
@@ -2425,41 +2801,61 @@
             delete CH[k];
           });
 
-        if (tl.length < 2) {
+        var single = document.getElementById('trend-single');
+        if (single) single.innerHTML = '';
+        if (!tl.length) {
           info.innerHTML = '';
           container.innerHTML =
-            '<p style="font-size:.8rem;color:var(--dim)">' +
-            _t(
-              'bl_no_data_category',
-              'Sin suficientes exámenes para ver tendencias (mínimo 2).',
-            ) +
+            '<p class="bl-empty">' +
+            esc(_t('bl_tr_none', 'Aún no hay exámenes con los que armar tendencias. Registra un examen en la pestaña «Registrar Examen».')) +
             '</p>';
           return;
         }
         var dr = TIMELINE.date_range || {};
         info.innerHTML =
           '<span style="font-size:.72rem;color:var(--dim);padding:.3rem .6rem">' +
-          tl.length +
-          ' ' +
-          _t('bl_exams_label', 'exámenes') +
-          ' · ' +
-          (dr.from || '') +
-          ' → ' +
-          (dr.to || '') +
+          tl.length + ' ' + _t('bl_exams_label', 'exámenes') + ' · ' +
+          fmtDate(dr.from) + ' → ' + fmtDate(dr.to) + ' · ' +
+          _t('bl_tr_full', 'historial completo') +
           '</span>';
 
         var dates = tl.map(function (t) {
           return t.exam_date;
         });
-        var available = Object.keys(TIMELINE_MARKERS).filter(function (k) {
-          return tl.some(function (t) {
+        function pointsOf(k) {
+          return tl.filter(function (t) {
             return t[k] != null;
-          });
+          }).length;
+        }
+        // una tendencia necesita >= 2 puntos del mismo marcador; con 1 solo se dice
+        var available = Object.keys(TIMELINE_MARKERS).filter(function (k) {
+          return pointsOf(k) >= 2;
         });
+        var onlyOne = Object.keys(TIMELINE_MARKERS).filter(function (k) {
+          return pointsOf(k) === 1;
+        });
+        if (single) {
+          var lines = [];
+          onlyOne.forEach(function (k) {
+            var t = tl.filter(function (x) { return x[k] != null; })[0];
+            lines.push(
+              esc(TIMELINE_MARKERS[k].label) + ': ' + esc(t[k]) + ' ' +
+              esc(TIMELINE_MARKERS[k].unit) + ' (' + esc(fmtDate(t.exam_date)) + ')',
+            );
+          });
+          if (lines.length)
+            single.innerHTML =
+              '<strong>' + esc(_t('bl_tr_single_h', 'Con un solo examen no hay tendencia:')) +
+              '</strong><br>' + lines.join('<br>');
+        }
         if (!available.length) {
           container.innerHTML =
-            '<p style="font-size:.8rem;color:var(--dim)">' +
-            _t('bl_no_data_category', 'Sin datos para graficar.') +
+            '<p class="bl-empty">' +
+            esc(
+              tl.length < 2
+                ? _t('bl_tr_one_exam', 'Hay un solo examen registrado: se necesitan al menos 2 con el mismo marcador para dibujar una tendencia.')
+                : _t('bl_tr_no_common', 'Ningún marcador de seguimiento (ferritina, hemoglobina, cortisol, vitamina D, CK, HbA1c, urea) aparece en 2 o más exámenes, por eso no hay línea que dibujar.'),
+            ) +
             '</p>';
           return;
         }
@@ -2485,6 +2881,9 @@
         available.forEach(function (k) {
           var vals = tl.map(function (t) {
             return t[k] != null ? t[k] : null;
+          });
+          dates = tl.map(function (t) {
+            return fmtDate(t.exam_date);
           });
           var canvas = document.getElementById('trend-' + k);
           if (!canvas) return;
@@ -2546,14 +2945,30 @@
           CH.ctlOverlay = null;
         }
         var canvas = document.getElementById('ch-ctl-overlay');
-        if (!rows.length) {
+        var gEmpty = document.getElementById('garmin-empty');
+        var withLoad = rows.filter(function (r) {
+          return r.ctl != null || r.atl != null || r.tsb != null;
+        });
+        if (gEmpty) {
+          gEmpty.style.display = !rows.length || !withLoad.length ? '' : 'none';
+          gEmpty.textContent = !rows.length
+            ? _t('bl_gr_none', 'Aún no hay exámenes para cruzar con tu carga de entrenamiento.')
+            : !withLoad.length
+              ? _t('bl_gr_noload', 'Tus exámenes no tienen carga de entrenamiento calculada en esas fechas (hace falta actividad sincronizada de Garmin o intervals.icu); por eso el gráfico no se dibuja.')
+              : '';
+        }
+        if (gEmpty && rows.length && withLoad.length && rows.length > withLoad.length) {
+          gEmpty.style.display = '';
+          gEmpty.textContent = tpl('bl_gr_partial', '{n} de {total} exámenes no tienen carga calculada en su fecha y quedan fuera del gráfico.', { n: rows.length - withLoad.length, total: rows.length });
+        }
+        if (!withLoad.length) {
           if (canvas)
             canvas
               .getContext('2d')
               .clearRect(0, 0, canvas.width, canvas.height);
         } else if (canvas) {
           var dates = rows.map(function (r) {
-            return r.date_iso;
+            return fmtDate(r.date_iso);
           });
           CH.ctlOverlay = new Chart(canvas, {
             type: 'line',
@@ -2626,6 +3041,13 @@
           });
         }
 
+        function na() {
+          return (
+            '<span style="color:var(--dim);font-size:.72rem">' +
+            esc(_t('bl_na_short', 'sin dato')) +
+            '</span>'
+          );
+        }
         var allKeys = {};
         rows.forEach(function (r) {
           Object.keys(r.values || {}).forEach(function (k) {
@@ -2646,23 +3068,25 @@
               );
             })
             .join('') +
-          '<th>CTL</th>';
+          '<th>' + esc(_t('bl_th_ctl', 'Carga crónica (CTL)')) + '</th>' +
+          '<th>' + esc(_t('bl_th_atl', 'Carga aguda (ATL)')) + '</th>' +
+          '<th>' + esc(_t('bl_th_tsb', 'Balance de forma (TSB)')) + '</th>';
         document.getElementById('corr-tbody').innerHTML = rows.length
           ? rows
               .map(function (r) {
                 return (
                   '<tr><td class="corr-bm">' +
-                  r.date_iso +
+                  fmtDate(r.date_iso) +
                   '</td>' +
                   keys
                     .map(function (k) {
                       var v = (r.values || {})[k];
-                      return '<td>' + (v != null ? v : '—') + '</td>';
+                      return '<td>' + (v != null ? v : na()) + '</td>';
                     })
                     .join('') +
-                  '<td>' +
-                  (r.ctl != null ? r.ctl : '—') +
-                  '</td></tr>'
+                  '<td>' + (r.ctl != null ? r.ctl : na()) + '</td>' +
+                  '<td>' + (r.atl != null ? r.atl : na()) + '</td>' +
+                  '<td>' + (r.tsb != null ? r.tsb : na()) + '</td></tr>'
                 );
               })
               .join('')
@@ -2686,7 +3110,7 @@
               ? esc(_lxBe(sc.message))
               : _t(
                   'bl_no_data_category',
-                  'Sin suficientes exámenes para calcular correlaciones (mínimo 3).',
+                  'Sin suficientes exámenes para calcular correlaciones estadísticas: hacen falta al menos 3 exámenes con el mismo marcador y datos de entrenamiento en esas fechas.',
                 )) +
             '</p>';
           return;
@@ -2757,7 +3181,9 @@
           _t('bl_ai_run', 'Generar interpretación') +
           '</button></div>' +
           '<div class="panel"><div class="panel-body" id="stat-ai-box" style="font-size:.82rem;color:var(--muted);line-height:1.7;white-space:pre-wrap">' +
-          (sc.ai_narrative ? esc(sc.ai_narrative) : '—') +
+          (sc.ai_narrative
+            ? esc(sc.ai_narrative)
+            : esc(_t('bl_ai_state_none', 'Aún no generada'))) +
           '</div></div>';
 
         el.innerHTML = html;
@@ -2776,7 +3202,8 @@
         apiPost('/labs/correlations/ai-interpretation', {})
           .then(function (d) {
             STAT_CORR = d;
-            box.textContent = d.ai_narrative || '—';
+            box.textContent =
+              d.ai_narrative || _t('bl_ai_state_none', 'Aún no generada');
           })
           .catch(function () {
             box.textContent =
@@ -3151,6 +3578,14 @@
         document.getElementById('tab-' + id).classList.add('on');
       }
 
+      (function () {
+        var d = document.getElementById('bl-ver-todo');
+        if (d)
+          d.addEventListener('toggle', function () {
+            if (d.open && curExam()) renderRadar(curExam());
+          });
+      })();
+
       var io = new IntersectionObserver(
         function (e) {
           e.forEach(function (x) {
@@ -3191,6 +3626,12 @@
           })
           .catch(function (e) {
             console.error('blood_labs init error', e);
+            var h0 = document.getElementById('bl-plain-h');
+            if (h0)
+              h0.textContent = _t(
+                'bl_err_network',
+                'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.',
+              );
           });
       })();
     </script>

@@ -893,7 +893,7 @@ def dismiss_alert(
 
 @router.get("/correlation")
 def get_labs_correlation(
-    days: int = Query(120, ge=30, le=365),
+    days: Optional[int] = Query(None, ge=30, le=36500),
     db:   Session = Depends(get_db),
     me:   User    = Depends(require_feature("blood_labs")),
 ):
@@ -902,17 +902,13 @@ def get_labs_correlation(
     Para cada examen, retorna el CTL/ATL/TSB del día del examen.
     Útil para el gráfico superpuesto Labs + carga.
     """
-    since = (date.today() - timedelta(days=days)).isoformat()
-
-    exams = (
-        db.query(BloodLabExam)
-        .filter(
-            BloodLabExam.user_id == me.id,
-            BloodLabExam.date_iso >= since,
-        )
-        .order_by(BloodLabExam.date_iso)
-        .all()
-    )
+    # BLOODLABS-EJECUTIVA: sin `days` se devuelve TODO el historial (el tope
+    # de 120 días dejaba fuera los exámenes anteriores).
+    q = db.query(BloodLabExam).filter(BloodLabExam.user_id == me.id)
+    if days:
+        since = (date.today() - timedelta(days=days)).isoformat()
+        q = q.filter(BloodLabExam.date_iso >= since)
+    exams = q.order_by(BloodLabExam.date_iso).all()
 
     # Carga de entrenamiento en las fechas de los exámenes
     exam_dates = {e.date_iso for e in exams}
@@ -1093,7 +1089,7 @@ async def get_labs_ai_interpretation(
 
 @router.get("/timeline")
 def get_labs_timeline(
-    months: int = 12,
+    months: Optional[int] = None,
     db: Session = Depends(get_db),
     me: User    = Depends(require_feature("blood_labs")),
 ):
@@ -1102,10 +1098,11 @@ def get_labs_timeline(
     alineado con métricas de rendimiento (CTL, TSS, HRV).
     Útil para visualizar cómo cambian los labs a lo largo del ciclo de entrenamiento.
     """
-    if months < 1 or months > 36:
-        months = 12
+    # BLOODLABS-EJECUTIVA: sin `months` (o fuera de rango) = todo el historial.
+    if months is not None and (months < 1 or months > 600):
+        months = None
     from ..services.blood_labs_correlation_service import compute_correlations
-    data = compute_correlations(me.id, db)
+    data = compute_correlations(me.id, db, months=months)
     return {
         "timeline":     data.get("timeline", []),
         "date_range":   data.get("date_range", {}),

@@ -126,7 +126,7 @@ def _get_perf_window(user_id: str, center_date: str, window_days: int, db: Sessi
     }
 
 
-def compute_correlations(user_id: str, db: Session) -> dict:
+def compute_correlations(user_id: str, db: Session, months: Optional[int] = None) -> dict:
     """
     Calcula correlaciones entre todos los marcadores de labs disponibles
     y las métricas de rendimiento del atleta.
@@ -137,17 +137,14 @@ def compute_correlations(user_id: str, db: Session) -> dict:
       - insights: lista de insights IA sobre los patrones detectados
       - markers_status: estado actual de cada marcador disponible
     """
-    # ── 1. Obtener todos los exámenes de labs del año ──────────────────────
-    cutoff = (date.today() - timedelta(days=365)).isoformat()
-    exams  = (
-        db.query(BloodLabExam)
-        .filter(
-            BloodLabExam.user_id   == user_id,
-            BloodLabExam.date_iso >= cutoff,
-        )
-        .order_by(BloodLabExam.date_iso)
-        .all()
-    )
+    # ── 1. Obtener los exámenes de labs ────────────────────────────────────
+    # BLOODLABS-EJECUTIVA: sin `months` se usa TODO el historial (antes había
+    # un tope silencioso de 365 días que dejaba fuera los exámenes viejos).
+    q = db.query(BloodLabExam).filter(BloodLabExam.user_id == user_id)
+    if months:
+        cutoff = (date.today() - timedelta(days=int(months) * 31)).isoformat()
+        q = q.filter(BloodLabExam.date_iso >= cutoff)
+    exams = q.order_by(BloodLabExam.date_iso).all()
 
     if not exams:
         return {
@@ -155,7 +152,7 @@ def compute_correlations(user_id: str, db: Session) -> dict:
             "timeline":        [],
             "insights":        [],
             "markers_status":  {},
-            "message":         "Sin exámenes de labs en los últimos 12 meses.",
+            "message":         "Sin exámenes de labs registrados en este período.",
         }
 
     # ── 2. Alinear labs con métricas de rendimiento (±30 días) ────────────

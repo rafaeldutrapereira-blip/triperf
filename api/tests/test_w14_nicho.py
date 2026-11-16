@@ -29,12 +29,13 @@ def test_blood_labs_abre_con_resumen_llano_y_alertas_antes_de_ver_todo():
 
 def test_blood_labs_resumen_cuenta_valores_reales():
     h = _squash(_read("blood_labs.html"))
-    assert "function plainReviewCount(cur)" in h
-    assert "ms[k].status === 'warning' || ms[k].status === 'critical'" in h
-    assert ".replace('{n}', n)" in h
+    # BLOODLABS-EJECUTIVA: la frase en llano cuenta los valores reales del examen
+    assert "function plainEvaluated(cur)" in h
+    assert "['ok', 'warning', 'critical'].indexOf(ms[k].status)" in h
+    assert "cur.markers[k].status !== 'ok'" in h
     assert "renderPlainSummary(cur);" in h
     i = _read("i18n.js")
-    assert "Tienes {n} valores para revisar" in i
+    assert "Hay {n} cosas a mirar" in i
 
 
 def test_blood_labs_descargo_fijo_y_visible():

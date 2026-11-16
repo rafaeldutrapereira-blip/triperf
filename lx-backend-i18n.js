@@ -592,7 +592,7 @@ var LX_BE_ENTRIES = [
   "be_206"
  ],
  [
-  "Sin exámenes de labs en los últimos 12 meses.",
+  "Sin exámenes de labs registrados en este período.",
   "be_207"
  ],
  [
