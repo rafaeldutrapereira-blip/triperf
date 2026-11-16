@@ -260,4 +260,4 @@ def test_reportlab_declarado_y_i18n_trilingue():
     src = (ROOT / "i18n.js").read_text(encoding="utf8")
     for k in ("dd_move_ok", "dd_pdf_btn", "dd_share_btn", "dd_share_revoke", "dd_pub_gone"):
         assert len(re.findall(r"\b%s:" % k, src)) == 3, k
-    assert "BUILD_VERSION = '384'" in (ROOT / "sw.js").read_text(encoding="utf8")
+    assert int(re.search(r"var BUILD_VERSION = '(\d+)';", (ROOT / "sw.js").read_text(encoding="utf8")).group(1)) >= 384

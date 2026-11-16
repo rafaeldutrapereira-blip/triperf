@@ -395,6 +395,36 @@ def _background_intervals_plan_sync_all() -> None:
         db.close()
 
 
+def _background_intervals_data_sync_all() -> None:
+    """SALUD-AL-DIA: actividades + wellness (HRV, pulso, pasos, sueno) de intervals.icu de
+    todos los usuarios con intervals conectado, sin depender del pull legacy de Garmin ni de
+    un boton. Ventana de INTERVALS_FILL_DAYS (14) dias; best-effort por usuario. Solo con
+    INTERVALS_READ_ENABLED. sync_intervals_user sella intervals_last_sync_at si no hubo errores
+    y tambien refresca el plan (sync_planned_user), asi que no pisa el job del plan."""
+    import asyncio
+    from .database import SessionLocal
+    from .models import User
+    from .routes.intervals_routes import read_enabled
+    if not read_enabled():
+        return
+    from . import intervals_sync_service as iss
+    from .garmin_pull_service import INTERVALS_FILL_DAYS
+    db = SessionLocal()
+    try:
+        ids = [u.id for u in db.query(User).filter(
+            User.intervals_access_token.isnot(None), User.activo == True).all()]  # noqa: E712
+        for uid in ids:
+            try:
+                asyncio.run(iss.sync_intervals_user(db, uid, days=INTERVALS_FILL_DAYS))
+            except Exception as e:  # noqa: BLE001
+                db.rollback()
+                logger.warning("Datos intervals fallo user=%s: %s", uid, type(e).__name__)
+    except Exception as e:  # noqa: BLE001
+        logger.error("Datos intervals global error: %s", e)
+    finally:
+        db.close()
+
+
 # ── B-11: Proactive daily AI insights ──────────────────────────
 
 def _daily_proactive_insights() -> None:
@@ -764,6 +794,14 @@ def start_scheduler(database_url: str | None = None) -> None:
         _background_intervals_plan_sync_all,
         "interval", hours=3,
         id="intervals_plan_sync", replace_existing=True,
+        misfire_grace_time=3600,
+    )
+
+    # SALUD-AL-DIA: actividades + salud (HRV, pulso, pasos, sueno) de intervals.icu cada 3 h
+    _scheduler.add_job(
+        _background_intervals_data_sync_all,
+        "interval", hours=3, minutes=7,
+        id="intervals_data_sync", replace_existing=True,
         misfire_grace_time=3600,
     )
 
