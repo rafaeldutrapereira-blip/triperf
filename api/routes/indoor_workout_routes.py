@@ -12,9 +12,11 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from .. import intervals_connector as ic
+from .. import fit_export
 from ..auth import get_current_user
 from ..database import get_db
 from ..models import IndoorWorkout, User
@@ -259,3 +261,42 @@ async def send_workout_to_watch(workout_id: str, body: dict | None = None,
         w.intervals_event_id = str(new_id)
         db.commit()
     return {"ok": True, "event_id": result.get("event_id")}
+
+
+@router.get("/{workout_id}/export-fit")
+def export_workout_fit(workout_id: str, db: Session = Depends(get_db),
+                       me: User = Depends(get_current_user)):
+    """EXPORT-FIT: descarga el workout como archivo .fit (file_id + workout +
+    workout_step). Bici: %FTP -> vatios con el FTP guardado (sin FTP, objetivo
+    abierto); run: ritmo o FC segun `mode`; nado: distancia + descanso. Lo que
+    no se puede expresar fielmente queda ABIERTO y se informa en cabeceras
+    (`X-LabX-Fit-Open-Steps`, `X-LabX-Fit-Missing-FTP`...), nunca aproximado."""
+    w = _owned(db, me, workout_id)
+    try:
+        blocks = json.loads(w.blocks_json or "[]")
+    except ValueError:
+        blocks = []
+    if not isinstance(blocks, list) or not blocks:
+        raise HTTPException(400, "El workout no tiene bloques para exportar")
+    from .athlete_routes import effective_indoor_ftp  # import tardio: evita ciclo
+    try:
+        res = fit_export.build_workout_fit(
+            w.name, w.sport, blocks,
+            ftp=effective_indoor_ftp(me) if w.sport == "bike" else None,
+            fcmax=me.fcmax if w.sport == "run" else None,
+        )
+    except fit_export.FitExportError as exc:
+        raise HTTPException(400, str(exc))
+    fname = fit_export.safe_filename(w.name, w.planned_date)
+    open_info = ",".join(f"{o['step']}:{o['reason']}" for o in res.open_steps)
+    headers = {
+        "Content-Disposition": f'attachment; filename="{fname}"',
+        "Cache-Control": "no-store",
+        "X-LabX-Fit-Open-Steps": open_info,
+        "X-LabX-Fit-Missing-FTP": "1" if res.missing_ftp else "0",
+        "X-LabX-Fit-Missing-FCmax": "1" if res.missing_fcmax else "0",
+        "X-LabX-Fit-Skipped-Blocks": str(res.skipped_blocks),
+        "Access-Control-Expose-Headers": "Content-Disposition, X-LabX-Fit-Open-Steps, "
+        "X-LabX-Fit-Missing-FTP, X-LabX-Fit-Missing-FCmax, X-LabX-Fit-Skipped-Blocks",
+    }
+    return Response(content=res.data, media_type="application/octet-stream", headers=headers)

@@ -1193,7 +1193,7 @@
     <script src="footer.js?v=373"></script>
     <script src="dash-header.js?v=373"></script>
     <script src="lx-upgrade.js?v=373"></script>
-    <script src="i18n.js?v=384"></script>
+    <script src="i18n.js?v=387"></script>
     <script src="workout-blocks.js?v=4"></script>
     <script>
       (function () {
@@ -3017,16 +3017,21 @@
             toast(_t('iw_toast_no_blocks_export', 'Sin bloques para exportar'), false);
             return;
           }
-          if (wo.sport === 'swim') {
-            toast(_t('iw_swim_no_export', 'La natación llega a tu reloj vía intervals.icu (no hay archivo para exportar)'), true);
-            return;
-          }
+          var swim = wo.sport === 'swim';
           var run = wo.sport === 'run';
           var items = [
-            { fmt: 'zwo', name: 'Zwift · .ZWO', fn: 'exportZWO', ok: !run },
-            { fmt: 'erg', name: 'TrainerRoad / Wahoo · .ERG', fn: 'exportERG', ok: !run },
-            { fmt: 'mrc', name: 'MRC · Garmin / CycleOps', fn: 'exportMRC', ok: !run },
+            { fmt: 'zwo', name: 'Zwift · .ZWO', fn: 'exportZWO', ok: !run && !swim },
+            { fmt: 'erg', name: 'TrainerRoad / Wahoo · .ERG', fn: 'exportERG', ok: !run && !swim },
+            { fmt: 'mrc', name: 'MRC · Garmin / CycleOps', fn: 'exportMRC', ok: !run && !swim },
             { fmt: 'tcx', name: 'Garmin Connect · .TCX', fn: 'exportTCX', ok: run },
+            /* EXPORT-FIT: archivo .fit para el reloj; necesita el workout guardado (id del servidor) */
+            {
+              fmt: 'fit',
+              name: _t('iw_exp_fit', 'Exportar FIT') + ' · .FIT',
+              fn: 'exportFIT',
+              ok: !!id,
+              why: _t('iw_exp_fit_save_first', 'Guarda el workout para exportar el FIT'),
+            },
           ];
           var pop = document.createElement('div');
           pop.id = 'iw-exp-pop';
@@ -3034,7 +3039,13 @@
           pop._for = btn;
           pop.innerHTML = items
             .map(function (it) {
-              var why = run ? _t('iw_exp_only_bike', 'Solo para ciclismo') : _t('iw_exp_only_run', 'Solo para running');
+              var why =
+                it.why ||
+                (swim
+                  ? _t('iw_exp_not_swim', 'No disponible en natación')
+                  : run
+                    ? _t('iw_exp_only_bike', 'Solo para ciclismo')
+                    : _t('iw_exp_only_run', 'Solo para running'));
               return (
                 '<button type="button" role="menuitem" data-fmt="' + it.fmt + '"' + (it.ok ? '' : ' disabled') + '>' +
                 esc(it.name) + (it.ok ? '' : '<span class="s">' + esc(why) + '</span>') + '</button>'
@@ -3082,6 +3093,72 @@
         }
 
         /* S5: TCX de entrenamiento para running (Sport="Running"). */
+        /* EXPORT-FIT: descarga el .fit generado por el servidor (GET .../export-fit).
+           Las cabeceras X-LabX-Fit-* dicen qué pasos quedaron con objetivo abierto. */
+        window.exportFIT = function (id) {
+          if (!id) {
+            toast(_t('iw_exp_fit_save_first', 'Guarda el workout para exportar el FIT'), false);
+            return;
+          }
+          fetch(_iwApiBase() + '/athlete/indoor-workouts/' + encodeURIComponent(id) + '/export-fit', {
+            credentials: 'include',
+            headers: { Authorization: 'Bearer ' + _iwApiToken() },
+          })
+            .then(function (r) {
+              if (!r.ok)
+                return r.json().then(
+                  function (j) {
+                    return Promise.reject(j);
+                  },
+                  function () {
+                    return Promise.reject({});
+                  },
+                );
+              var cd = r.headers.get('Content-Disposition') || '';
+              var m = /filename="([^"]+)"/.exec(cd);
+              var info = {
+                name: m ? m[1] : 'workout.fit',
+                open: r.headers.get('X-LabX-Fit-Open-Steps') || '',
+                noFtp: r.headers.get('X-LabX-Fit-Missing-FTP') === '1',
+                noFc: r.headers.get('X-LabX-Fit-Missing-FCmax') === '1',
+                skipped: parseInt(r.headers.get('X-LabX-Fit-Skipped-Blocks') || '0', 10) || 0,
+              };
+              return r.blob().then(function (blob) {
+                download(info.name, blob, 'application/octet-stream');
+                return info;
+              });
+            })
+            .then(function (info) {
+              var msgs = [_t('iw_toast_downloaded_fit', '✓ Descargado .FIT — cópialo a tu reloj')];
+              if (info.noFtp)
+                msgs.push(
+                  _t('iw_fit_no_ftp', 'Sin FTP guardado: los pasos de potencia quedaron con objetivo abierto. Define tu FTP en el perfil.'),
+                );
+              if (info.noFc)
+                msgs.push(
+                  _t('iw_fit_no_fcmax', 'Sin FC máxima guardada: los pasos por FC quedaron con objetivo abierto. Define tu FC máx en el perfil.'),
+                );
+              var steps = info.open
+                .split(',')
+                .filter(Boolean)
+                .map(function (x) {
+                  return x.split(':')[0];
+                })
+                .filter(function (v, i, arr) {
+                  return arr.indexOf(v) === i;
+                });
+              if (steps.length)
+                msgs.push(
+                  _t('iw_fit_open_steps', 'Pasos con objetivo abierto (no se aproximan; FIT no tiene rampas):') + ' ' + steps.join(', '),
+                );
+              if (info.skipped) msgs.push(_t('iw_fit_skipped', 'Bloques omitidos por no ser válidos:') + ' ' + info.skipped);
+              toast(msgs.join(' · '), msgs.length === 1);
+            })
+            .catch(function (e) {
+              toast(_iwErrMsg(e, _t('iw_fit_err', 'No se pudo generar el archivo FIT')), false);
+            });
+        };
+
         window.exportTCX = function (id) {
           var wo = getWorkoutData(id || null);
           if (!wo || !wo.blocks.length || wo.sport !== 'run') {
