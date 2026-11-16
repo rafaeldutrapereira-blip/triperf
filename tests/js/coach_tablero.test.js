@@ -174,3 +174,22 @@ test('UI aditiva: pestanas previas intactas y reglas dentro del panel de alertas
   assert.ok(panel.includes('id="alert-list"') && panel.includes('id="alert-rules"') && panel.includes('saveAlertRules'));
   assert.ok(src.includes("'/coach/alert-rules'") && src.includes('/coach/alerts'));
 });
+
+test('ALERT-BOTON: boton Alertas FUERA del panel abre toggleAlertPanel y existe #alert-badge', () => {
+  const start = src.indexOf('id="alert-panel"');
+  const end = src.indexOf('id="sb-overlay"');
+  assert.ok(start > 0 && end > start);
+  const outside = src.slice(0, start) + src.slice(end);
+  const m = /<button[^>]*onclick="toggleAlertPanel\(\)"[^>]*>/.exec(outside);
+  assert.ok(m, 'no hay boton fuera del panel que llame a toggleAlertPanel()');
+  assert.ok(!/display:\s*none/.test(m[0]), 'el boton no debe nacer oculto');
+  assert.ok(m[0].includes('id="alert-btn"'));
+  assert.ok(/id="alert-badge"/.test(outside), '#alert-badge debe existir en el markup');
+  assert.ok(!/id="alert-badge"/.test(src.slice(start, end)), 'el badge no debe vivir dentro del panel oculto');
+  // texto por i18n, sin colores fijos en el boton
+  const btn = outside.slice(m.index, outside.indexOf('</button>', m.index));
+  assert.ok(btn.includes('data-i18n="coach_alert_btn"'));
+  assert.ok(!/#[0-9a-fA-F]{3,6}\b|rgb\(/.test(btn), 'sin colores fijos');
+  const i18n = fs.readFileSync(path.join(__dirname, '..', '..', 'i18n.js'), 'utf8');
+  assert.strictEqual(i18n.split('coach_alert_btn:').length - 1, 3, 'clave en ES/PT/EN');
+});
