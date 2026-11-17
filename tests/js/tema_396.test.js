@@ -68,7 +68,7 @@ test('el contexto 2D intercepta fillStyle/strokeStyle y los gradientes', () => {
   assert.deepStrictEqual(calls, ['#4b5b71']);
 });
 
-test('BUILD 396 y sello i18n.js?v=397', () => {
-  assert.match(SW, /var BUILD_VERSION = '397'/);
-  assert.ok(SW.includes("'/i18n.js?v=397'"));
+test('BUILD 396 y sello i18n.js?v=398', () => {
+  assert.match(SW, /var BUILD_VERSION = '398'/);
+  assert.ok(SW.includes("'/i18n.js?v=398'"));
 });

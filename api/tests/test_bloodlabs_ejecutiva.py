@@ -307,9 +307,9 @@ def test_i18n_nuevas_claves_en_tres_idiomas():
 def test_build_389_y_sellos():
     m = re.search(r"BUILD_VERSION = '(\d+)'", _read("sw.js"))
     assert m and int(m.group(1)) >= 389
-    assert "i18n.js?v=397" in _read("blood_labs.html")
-    assert "'/i18n.js?v=397'" in _read("sw.js")
-    assert "i18n.js?v=397" in _read("athlete-app.html")
+    assert "i18n.js?v=398" in _read("blood_labs.html")
+    assert "'/i18n.js?v=398'" in _read("sw.js")
+    assert "i18n.js?v=398" in _read("athlete-app.html")
 
 
 def test_no_se_toco_el_parser_ni_el_proveedor():
