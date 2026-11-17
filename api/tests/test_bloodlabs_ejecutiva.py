@@ -307,9 +307,9 @@ def test_i18n_nuevas_claves_en_tres_idiomas():
 def test_build_389_y_sellos():
     m = re.search(r"BUILD_VERSION = '(\d+)'", _read("sw.js"))
     assert m and int(m.group(1)) >= 389
-    assert "i18n.js?v=392" in _read("blood_labs.html")
-    assert "'/i18n.js?v=392'" in _read("sw.js")
-    assert "i18n.js?v=392" in _read("athlete-app.html")
+    assert "i18n.js?v=393" in _read("blood_labs.html")
+    assert "'/i18n.js?v=393'" in _read("sw.js")
+    assert "i18n.js?v=393" in _read("athlete-app.html")
 
 
 def test_no_se_toco_el_parser_ni_el_proveedor():
@@ -317,3 +317,20 @@ def test_no_se_toco_el_parser_ni_el_proveedor():
     src = _read("api/services/blood_lab_parser.py")
     assert "LAB_PARSER_PROVIDER" in src
     assert "bl_up_provider" in _read("blood_labs.html")
+
+
+def test_timeline_con_actividades_en_ventana_no_da_500(client, db, coach_user, coach5):
+    """TENDENCIAS-BLOODLABS (393): con actividades Garmin cerca de un examen el
+    timeline leia GarminActivity.training_stress_score (columna inexistente) y
+    daba 500; la pestana Tendencias mostraba el vacio. La columna real es `tss`."""
+    from ..models import GarminActivity
+    for i, (d, _lab, _vals) in enumerate(EXAMS_5):
+        db.add(GarminActivity(user_id=coach_user.id, activity_id="a%d" % i, date_iso=d,
+                              sport="run", tss=50.0 + i))
+    db.commit()
+    r = client.get("/api/labs/timeline?all=1", headers=coach5)
+    assert r.status_code == 200, r.text
+    t = r.json()
+    assert t["exam_count"] == 5 and len(t["timeline"]) == 5
+    assert all(x["tss_weekly"] is not None for x in t["timeline"])
+    assert sum(1 for x in t["timeline"] if x["hemoglobin"] is not None) == 5

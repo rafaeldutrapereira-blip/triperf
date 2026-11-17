@@ -1,4 +1,4 @@
-// BLOODLABS-TABLA (BUILD 392): comparacion de Blood Labs como tabla clinica.
+// BLOODLABS-TABLA (BUILD 393): comparacion de Blood Labs como tabla clinica.
 // Ejecutar: node --test tests/js/bloodlabs_tabla_392.test.js
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -113,8 +113,8 @@ test('textos por i18n ES/PT/EN y estilo por variables', () => {
   assert.ok(css.includes('var(--green)') && css.includes('var(--red)'));
 });
 
-test('BUILD 392 y sello i18n.js?v=392', () => {
-  assert.match(SW, /var BUILD_VERSION = '392'/);
-  assert.ok(SW.includes("'/i18n.js?v=392'"));
-  assert.ok(HTML.includes('i18n.js?v=392'));
+test('BUILD 393 y sello i18n.js?v=393', () => {
+  assert.match(SW, /var BUILD_VERSION = '393'/);
+  assert.ok(SW.includes("'/i18n.js?v=393'"));
+  assert.ok(HTML.includes('i18n.js?v=393'));
 });

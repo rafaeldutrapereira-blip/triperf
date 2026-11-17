@@ -102,7 +102,8 @@ def _get_perf_window(user_id: str, center_date: str, window_days: int, db: Sessi
         )
         .all()
     )
-    tss_vals = [a.training_stress_score for a in acts if a.training_stress_score is not None]
+    # TENDENCIAS-BLOODLABS: la columna real es `tss` (no existe `training_stress_score`).
+    tss_vals = [a.tss for a in acts if a.tss is not None]
     tss_weekly = sum(tss_vals) / max(1, len(tss_vals) / 7) if tss_vals else None
 
     # HRV: GarminHealthDaily
