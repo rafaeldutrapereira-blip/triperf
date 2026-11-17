@@ -28,7 +28,7 @@ def test_build_394_y_sello():
     from pathlib import Path
     root = Path(__file__).resolve().parents[2]
     sw = (root / "sw.js").read_text(encoding="utf8")
-    assert "var BUILD_VERSION = '398'" in sw and "'/i18n.js?v=398'" in sw
-    assert "i18n.js?v=398" in (root / "recovery.html").read_text(encoding="utf8")
+    assert "var BUILD_VERSION = '400'" in sw and "'/i18n.js?v=400'" in sw
+    assert "i18n.js?v=400" in (root / "recovery.html").read_text(encoding="utf8")
     i18n = (root / "i18n.js").read_text(encoding="utf8")
     assert len(re.findall(r"rcw_load_error:", i18n)) == 3
