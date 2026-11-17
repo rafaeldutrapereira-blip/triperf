@@ -33,8 +33,8 @@
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-500.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-600.woff2" crossorigin />
     <link rel="stylesheet" href="theme-vars.css?v=373" />
-    <script src="i18n.js?v=393"></script>
-    <script src="lx-backend-i18n.js?v=393"></script>
+    <script src="i18n.js?v=394"></script>
+    <script src="lx-backend-i18n.js?v=394"></script>
     <script src="lx-info.js?v=373"></script>
     <style>
       *,
@@ -888,7 +888,7 @@
         function loadCoachView() {
           fetch(API + '/recovery/coach-view', { headers: hdrs })
             .then(function (r) {
-              if (r.status === 403) return null;
+              if (!r.ok) throw new Error('coach-view ' + r.status);
               return r.json();
             })
             .then(function (d) {
@@ -976,7 +976,17 @@
               });
               el.innerHTML = html;
             })
-            .catch(function () {});
+            .catch(function () {
+              var el = document.getElementById('coach-view-content');
+              if (!el) return;
+              el.innerHTML =
+                '<div style="color:var(--dim);font-size:.82rem">' +
+                _t(
+                  'rcw_load_error',
+                  'No se pudo cargar la vista de atletas. Intenta de nuevo.',
+                ) +
+                '</div>';
+            });
         }
 
         /* Vista de coach (atletas): se abre embebida desde Coach con ?view=coach. */

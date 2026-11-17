@@ -1330,7 +1330,7 @@ def coach_recovery_view(
     Semáforo rojo/amarillo/verde instantáneo.
     Requiere rol de coach.
     """
-    if getattr(me, "role", None) not in ("coach", "admin"):
+    if getattr(me, "rol", None) not in ("coach", "admin"):
         raise HTTPException(403, "Solo coaches pueden acceder a esta vista.")
 
     # Atletas del coach

@@ -2570,6 +2570,7 @@ var DICT = {
     rcw_th_date: 'Fecha', rcw_th_sport: 'Deporte',
     rcw_estimated_duration: 'Duración estimada:', rcw_your_score_today: 'Tu Recovery Score hoy:',
     rcw_no_active_athletes: 'No tienes atletas activos.', rcw_need_attention: 'Necesitan atención:', rcw_doing_well: 'Bien:',
+    rcw_load_error: "No se pudo cargar la vista de atletas. Intenta de nuevo.",
     /* blood_labs.html (Sprint 5f) — solo estructura UI; contenido clínico narrativo queda en español (decisión pendiente, ver memoria) */
     bl_current_exam: 'Examen actual:', bl_register_exam: 'Registrar Examen',
     bl_chip_score: 'Performance Score:', bl_chip_alerts: 'Alertas:', bl_chip_exams: 'Exámenes:',
@@ -6627,6 +6628,7 @@ var DICT = {
     rcw_th_date: 'Data', rcw_th_sport: 'Esporte',
     rcw_estimated_duration: 'Duração estimada:', rcw_your_score_today: 'Seu Recovery Score hoje:',
     rcw_no_active_athletes: 'Você não tem atletas ativos.', rcw_need_attention: 'Precisam de atenção:', rcw_doing_well: 'Bem:',
+    rcw_load_error: "Não foi possível carregar a vista de atletas. Tente novamente.",
     /* blood_labs.html (Sprint 5f) — apenas estrutura UI */
     bl_current_exam: 'Exame atual:', bl_register_exam: 'Registrar Exame',
     bl_chip_score: 'Performance Score:', bl_chip_alerts: 'Alertas:', bl_chip_exams: 'Exames:',
@@ -10683,6 +10685,7 @@ var DICT = {
     rcw_th_date: 'Date', rcw_th_sport: 'Sport',
     rcw_estimated_duration: 'Estimated duration:', rcw_your_score_today: 'Your Recovery Score today:',
     rcw_no_active_athletes: "You don't have active athletes.", rcw_need_attention: 'Need attention:', rcw_doing_well: 'Doing well:',
+    rcw_load_error: "Could not load the athletes view. Please try again.",
     /* blood_labs.html (Sprint 5f) — UI structure only */
     bl_current_exam: 'Current exam:', bl_register_exam: 'Register Exam',
     bl_chip_score: 'Performance Score:', bl_chip_alerts: 'Alerts:', bl_chip_exams: 'Exams:',
