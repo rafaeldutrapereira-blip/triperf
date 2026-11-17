@@ -25,8 +25,8 @@
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-500.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/inter-600.woff2" crossorigin />
     <link rel="stylesheet" href="theme-vars.css?v=373" />
-    <script src="i18n.js?v=391"></script>
-    <script src="lx-backend-i18n.js?v=391"></script>
+    <script src="i18n.js?v=392"></script>
+    <script src="lx-backend-i18n.js?v=392"></script>
     <style>
       *,
       *::before,
@@ -205,6 +205,73 @@
         color: var(--muted);
         margin-top: 0.3rem;
       }
+      .bl-cmp-note {
+        font-size: 0.74rem;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
+      }
+      .bl-cmp-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .bl-cmp {
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        min-width: 100%;
+      }
+      .bl-cmp th,
+      .bl-cmp td {
+        padding: 0.45rem 0.7rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        white-space: nowrap;
+        vertical-align: top;
+      }
+      .bl-cmp thead th {
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.64rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        background: var(--surface2);
+      }
+      .bl-cmp tbody th {
+        position: sticky;
+        left: 0;
+        background: var(--surface);
+        font-weight: 600;
+        color: var(--text);
+      }
+      .bl-cmp thead th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+      }
+      .bl-cmp-unit {
+        display: block;
+        font-weight: 400;
+        font-size: 0.64rem;
+        color: var(--dim);
+      }
+      .bl-cmp-cat th {
+        background: var(--surface2);
+        color: var(--dim);
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .bl-cmp-v {
+        font-weight: 700;
+      }
+      .bl-cmp-ref {
+        display: block;
+        font-size: 0.64rem;
+        color: var(--dim);
+      }
+      .bl-cmp-ok .bl-cmp-v { color: var(--green); }
+      .bl-cmp-warn .bl-cmp-v { color: var(--amber); }
+      .bl-cmp-bad .bl-cmp-v { color: var(--red); }
       .bl-l1-chips {
         display: flex;
         flex-wrap: wrap;
@@ -1126,6 +1193,13 @@
                   Puntaje de restricción de entrenamiento (TRS)
                 </div>
                 <div id="bl-trs-read" class="bl-empty" style="padding-top: 0"></div>
+                <div class="sec-h mt2" data-i18n="bl_tbl_title">
+                  Comparación de exámenes
+                </div>
+                <div class="bl-cmp-note" data-i18n="bl_tbl_note">
+                  Cada valor se compara con el estándar de referencia de LabX; la línea bajo el valor dice dónde cae respecto de ese estándar. Los exámenes van de más antiguo a más reciente.
+                </div>
+                <div class="bl-cmp-wrap" id="bl-cmp-table"></div>
                 <div class="sec-h mt2" data-i18n="bl_var_title">
                   Variaciones notables entre exámenes
                 </div>
@@ -2187,6 +2261,7 @@
           renderPlainSummary(cur);
           renderTrsRead();
           renderVariations(cur, comp);
+          renderCompareTable();
           renderAlertsPanel();
           renderSystemGroups(cur);
           renderRadar(cur);
@@ -2489,6 +2564,67 @@
             date: fmtDate(ti.exam_date),
           });
         el.textContent = txt;
+      }
+
+      // BLOODLABS-TABLA: filas = marcadores, columnas = TODOS los examenes (de
+      // mas antiguo a mas reciente). La referencia es el veredicto del servidor
+      // contra su estandar (zone/status); el detalle no trae rangos numericos.
+      function renderCompareTable() {
+        var el = document.getElementById('bl-cmp-table');
+        if (!el) return Promise.resolve();
+        if (!EXAMS.length) {
+          el.innerHTML = '<p class="bl-empty">' + esc(_t('bl_tbl_empty', 'Sin exámenes para comparar.')) + '</p>';
+          return Promise.resolve();
+        }
+        el.innerHTML = '<p class="bl-empty">' + esc(_t('bl_tbl_loading', 'Cargando todos los exámenes…')) + '</p>';
+        return Promise.all(EXAMS.map(function (e) { return loadExamDetail(e.id); }))
+          .then(function (details) {
+            var cols = details.slice().sort(function (a, b) {
+              return a.date_iso < b.date_iso ? -1 : a.date_iso > b.date_iso ? 1 : 0;
+            });
+            var meta = {};
+            cols.forEach(function (ex) {
+              Object.keys(ex.markers || {}).forEach(function (k) {
+                if (!meta[k]) meta[k] = ex.markers[k];
+              });
+            });
+            var cm = catMeta();
+            var head = '<th>' + esc(_t('bl_tbl_marker', 'Marcador')) + '</th>' +
+              cols.map(function (ex) {
+                return '<th>' + esc(fmtDate(ex.date_iso)) +
+                  (ex.lab_name ? '<span class="bl-cmp-unit">' + esc(_lxBe(ex.lab_name)) + '</span>' : '') + '</th>';
+              }).join('');
+            var body = '';
+            var order = CAT_ORDER.concat(Object.keys(meta).map(function (k) { return meta[k].cat; })
+              .filter(function (c) { return CAT_ORDER.indexOf(c) < 0; }));
+            var seen = {};
+            order.forEach(function (cat) {
+              if (seen[cat]) return;
+              seen[cat] = true;
+              var keys = Object.keys(meta).filter(function (k) { return meta[k].cat === cat; });
+              if (!keys.length) return;
+              var c = cm[cat] || { icon: '', label: cat };
+              body += '<tr class="bl-cmp-cat"><th colspan="' + (cols.length + 1) + '">' +
+                esc(c.icon + ' ' + c.label) + '</th></tr>';
+              keys.forEach(function (k) {
+                var m = meta[k];
+                body += '<tr data-marker="' + esc(k) + '"><th scope="row">' + esc(_lxBe(m.name)) +
+                  '<span class="bl-cmp-unit">' + esc(m.unit || '') + '</span></th>';
+                cols.forEach(function (ex) {
+                  var v = (ex.markers || {})[k];
+                  if (!v || v.value == null) { body += '<td data-exam="' + esc(ex.id) + '">—</td>'; return; }
+                  var cls = v.status === 'ok' ? 'bl-cmp-ok' : v.status === 'warning' ? 'bl-cmp-warn' : v.status === 'critical' ? 'bl-cmp-bad' : '';
+                  body += '<td class="' + cls + '" data-exam="' + esc(ex.id) + '"><span class="bl-cmp-v">' + esc(v.value) +
+                    '</span><span class="bl-cmp-ref">' + esc(zoneWords(v)) + '</span></td>';
+                });
+                body += '</tr>';
+              });
+            });
+            el.innerHTML = '<table class="bl-cmp" id="bl-cmp"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+          })
+          .catch(function () {
+            el.innerHTML = '<p class="bl-empty">' + esc(_t('bl_tbl_error', 'No se pudo cargar la comparación. Revisa tu conexión e inténtalo de nuevo.')) + '</p>';
+          });
       }
 
       // L2: variaciones notables del examen seleccionado frente al de comparación,
