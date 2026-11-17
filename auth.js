@@ -228,15 +228,15 @@
       '<div style="display:flex;align-items:center;gap:.75rem">' +
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0A500" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
         '<div>' +
-          '<div style="font-family:Oswald,sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.08em;color:#F0F9FF">Módulo no incluido en plan ' + currentPlan + '</div>' +
-          '<div style="font-size:.75rem;color:#7FB3CC;margin-top:.1rem">Actualiza tu plan para acceder.</div>' +
+          '<div style="font-family:Oswald,sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.08em;color:var(--lxt-f0f9ff,#F0F9FF)">Módulo no incluido en plan ' + currentPlan + '</div>' +
+          '<div style="font-size:.75rem;color:var(--lxt-7fb3cc,#7FB3CC);margin-top:.1rem">Actualiza tu plan para acceder.</div>' +
         '</div>' +
         '<a href="landing.html#plans" style="margin-left:auto;font-family:Oswald,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#FF6535;white-space:nowrap">Ver Planes ›</a>' +
       '</div>';
     Object.assign(t.style, {
       position:'fixed', bottom:'1.5rem', left:'50%',
       transform:'translateX(-50%) translateY(20px)',
-      background:'#08121E', border:'1px solid rgba(240,165,0,.35)',
+      background:'var(--lxb-08121e,#08121E)', border:'1px solid rgba(240,165,0,.35)',
       borderRadius:'10px', padding:'1rem 1.25rem', zIndex:'9999',
       minWidth:'320px', maxWidth:'460px',
       boxShadow:'0 8px 32px rgba(0,0,0,.5)',

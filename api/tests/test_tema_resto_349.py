@@ -56,7 +56,7 @@ def test_cada_pagina_aplica_tema_antes_del_primer_pintado():
         head = h[: h.index("</head>")]
         assert 'localStorage.getItem("labx_theme")' in head, p
         assert 'setAttribute("data-theme"' in head, p
-        assert "theme-light.css?v=349" in head, p
+        assert "theme-light.css?v=396" in head, p
         assert 'id="lx-theme-light"' in head, p
 
 
@@ -124,4 +124,4 @@ def test_build_349_y_precache():
     sw = _read("sw.js")
     m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
     assert m and int(m.group(1)) >= 349
-    assert "/theme-light.css?v=349" in sw
+    assert "/theme-light.css?v=396" in sw

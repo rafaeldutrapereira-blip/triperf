@@ -89,7 +89,7 @@ function injectCSS(){
     '.dhx-bell-wrap{position:relative}',
     '.dhx-bell-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;position:relative}',
     '.dhx-bell-btn:hover{border-color:var(--orange);color:var(--orange)}',
-    '.dhx-bell-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--orange);color:var(--lxt-fff,#fff);font-family:"Oswald",sans-serif;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}',
+    '.dhx-bell-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--orange);color:var(--on-accent,#fff);font-family:"Oswald",sans-serif;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}',
     '.dhx-bell-badge.on{display:flex}',
     '.dhx-bell-panel{position:absolute;top:calc(100% + .6rem);right:0;width:320px;max-width:90vw;max-height:420px;overflow-y:auto;background:var(--lxb-0a1626,#0A1626);border:1px solid var(--border2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.4);z-index:60;display:none}',
     '.dhx-bell-panel.on{display:block}',

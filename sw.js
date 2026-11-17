@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '395';  // GARMIN-OAUTH-RETURN el retorno OAuth de Garmin (?garmin=connected) mostraba el aviso y volvia a Hoy pero nunca disparaba el sync de actividades (la 379 consumio el parametro sin llamar a POST /integrations/garmin/sync); ahora el retorno conectado dispara el sync y, dentro de la shell, vuelve al dashboard al terminar; sin claves i18n nuevas (garmin_ret_* y gsync_* ya existian ES/PT/EN); i18n.js?v=395 en las paginas
+var BUILD_VERSION = '396';  // MIGRACION-TEMA el tema claro dejaba partes oscuras en componentes compartidos y graficos: el muro de plan (nav.css), los toasts, el widget IA y los estados de carga (nav.js, auth.js) y el modal de upgrade del dashboard tenian fondos y textos oscuros fijos, y los canvas (Chart.js y dibujo a mano de Analitica/Detalle/Nutricion/Coach) pintaban ejes, grillas y tooltips con colores pensados para fondo oscuro; ahora esos colores vienen de variables de tema con fallback oscuro, nav.js traduce los colores de canvas al tema activo (LXCanvasTheme) y repinta al cambiar de tema, y el texto sobre botones de acento queda blanco; sin claves i18n nuevas; nav.js?v=11, nav.css?v=9, auth.js?v=374, theme-light.css?v=396 e i18n.js?v=396 en las paginas
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -16,7 +16,7 @@ var PRECACHE = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/nav.js?v=10',
+  '/nav.js?v=11',
   '/fonts.css?v=373',
   '/vendor/fonts/inter-400.woff2',
   '/vendor/fonts/inter-500.woff2',
@@ -30,10 +30,10 @@ var PRECACHE = [
   '/shell.html',
   '/analytics.html',
   '/training_plan.html',
-  '/auth.js?v=373',
-  '/i18n.js?v=395',
+  '/auth.js?v=374',
+  '/i18n.js?v=396',
   '/community.js?v=3',
-  '/theme-light.css?v=349',
+  '/theme-light.css?v=396',
   '/community.html',
   '/recovery.html',
   '/nutrition.html',

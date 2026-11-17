@@ -119,7 +119,7 @@ def test_build_344_en_sw_y_sellos_de_la_capa_compartida():
     assert re.search(r"var BUILD_VERSION = '(34[4-9]|3[5-9]\d|[4-9]\d\d)';", sw)
     for page in ("dashboard.html", "shell.html"):
         h = _r(page)
-        assert "nav.css?v=8" in h and "nav.js?v=10" in h, page
+        assert "nav.css?v=9" in h and "nav.js?v=11" in h, page
 
 
 # ---------------------------------------------------------------- tema global

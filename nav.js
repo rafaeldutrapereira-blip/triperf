@@ -10,11 +10,72 @@
      <head> (dashboard.html, shell.html) ya puso <html data-theme> antes del
      primer pintado. Aqui se expone la API y se mantienen sincronizados los
      iframes (shell) y las demas pestanas (evento storage). */
+  /* MIGRACION-TEMA (BUILD 396): los graficos de canvas (Chart.js y dibujo a mano) fijan
+     colores como cadenas ('#7FB3CC', 'rgba(255,255,255,.05)'...) pensadas para fondo
+     oscuro. En tema claro quedaban ilegibles. Este adaptador intercepta fillStyle /
+     strokeStyle / shadowColor / addColorStop y traduce SOLO esos colores del tema
+     oscuro a su par del tema claro (mismos valores que las variables --lxt-* de
+     theme-light.css). En tema oscuro no hace nada. Fondos de tooltip oscuros (#04141F, #07111D) pasan a blanco para no quedar texto oscuro sobre fondo oscuro. Colores de datos (verde, naranja,
+     azul de series) y '#fff' no se tocan. */
+  var LXCanvasTheme = window.LXCanvasTheme = (function(){
+    var HEX = { '7fb3cc':'#346a83', '94a3b8':'#4b5b71', '9ca3af':'#545c68', 'd1d5db':'#2a2e35',
+                '3d6880':'#4f6b7d', '4a7a96':'#3f6580', 'e8f4f8':'#12212f', 'f0f9ff':'#0a131a',
+                'f9fafb':'#0e1215', '04141f':'#ffffff', '07111d':'#ffffff', 'fca5a5':'#b20606', '6ee7b7':'#047857', 'fcd34d':'#92610a' };
+    var RGB = { '255,255,255':'10,37,64', '148,163,184':'75,91,113', '127,179,204':'52,106,131',
+                '232,244,248':'18,33,47', '240,249,255':'10,19,26' };
+    function isLight(){ try{ return document.documentElement.getAttribute('data-theme') === 'light'; }catch(e){ return false; } }
+    function map(v){
+      if(typeof v !== 'string' || !isLight()) return v;
+      var t = v.replace(/\s+/g,'').toLowerCase(), m;
+      if((m = /^#([0-9a-f]{6})$/.exec(t))) return HEX[m[1]] || v;
+      if((m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(t))){
+        var h6 = m[1]+m[1]+m[2]+m[2]+m[3]+m[3]; return HEX[h6] || v;
+      }
+      if((m = /^rgba\((\d+,\d+,\d+),([\d.]+)\)$/.exec(t))){
+        if(RGB[m[1]] && parseFloat(m[2]) < 1) return 'rgba(' + RGB[m[1]] + ',' + m[2] + ')';
+      }
+      return v;
+    }
+    function wrapProp(proto, name){
+      var d = Object.getOwnPropertyDescriptor(proto, name);
+      if(!d || !d.set || d.set.__lxTheme) return;
+      var set = function(v){ d.set.call(this, map(v)); };
+      set.__lxTheme = true;
+      Object.defineProperty(proto, name, { configurable:true, enumerable:d.enumerable, get:d.get, set:set });
+    }
+    try{
+      if(window.CanvasRenderingContext2D){
+        var P = CanvasRenderingContext2D.prototype;
+        wrapProp(P, 'fillStyle'); wrapProp(P, 'strokeStyle'); wrapProp(P, 'shadowColor');
+      }
+      if(window.CanvasGradient && !CanvasGradient.prototype.addColorStop.__lxTheme){
+        var _acs = CanvasGradient.prototype.addColorStop;
+        var acs = function(o, c){ return _acs.call(this, o, map(c)); };
+        acs.__lxTheme = true;
+        CanvasGradient.prototype.addColorStop = acs;
+      }
+    }catch(e){}
+    /* Al cambiar de tema: Chart.js se re-pinta solo; el dibujo a mano se re-pinta con el
+       evento resize (las paginas ya lo escuchan) y con 'lxthemechange'. */
+    function refresh(theme){
+      try{
+        if(window.Chart && Chart.instances){
+          Object.keys(Chart.instances).forEach(function(k){ try{ Chart.instances[k].update('none'); }catch(e){} });
+        }
+        window.dispatchEvent(new CustomEvent('lxthemechange', { detail:{ theme:theme } }));
+        if(document.querySelector('canvas')) window.dispatchEvent(new Event('resize'));
+      }catch(e){}
+    }
+    return { map: map, refresh: refresh };
+  })();
+
   var LXTheme = window.LXTheme = (function(){
     var KEY = 'labx_theme';
     function norm(v){ return v === 'light' ? 'light' : 'dark'; }
     function get(){ try{ return norm(localStorage.getItem(KEY)); }catch(e){ return 'dark'; } }
+    var _last = null;
     function paint(t){
+      var _changed = _last !== null && _last !== t; _last = t;
       try{ document.documentElement.setAttribute('data-theme', t); }catch(e){}
       var bs = document.querySelectorAll('[data-theme-set]');
       for(var i=0;i<bs.length;i++) bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute('data-theme-set') === t));
@@ -22,6 +83,7 @@
       for(var j=0;j<fr.length;j++){
         try{ fr[j].contentDocument.documentElement.setAttribute('data-theme', t); }catch(e){}
       }
+      if(_changed && typeof LXCanvasTheme !== 'undefined') LXCanvasTheme.refresh(t);
     }
     function set(t){ t = norm(t); try{ localStorage.setItem(KEY, t); }catch(e){} paint(t); }
     window.addEventListener('storage', function(e){ if(e.key === KEY) paint(norm(e.newValue)); });
@@ -349,20 +411,20 @@
     function ensure(){
       if(el) return el;
       el=document.createElement('div'); el.id='lx-toast';
-      el.style.cssText='position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(8px);z-index:99999;min-width:280px;max-width:480px;display:flex;align-items:center;gap:.65rem;padding:.7rem 1rem .7rem .85rem;border-radius:8px;border:1px solid var(--border);font-family:"Inter",sans-serif;font-size:.8rem;line-height:1.4;background:#08121E;color:#F0F9FF;box-shadow:0 6px 32px rgba(0,0,0,.6);opacity:0;transition:opacity .22s ease,transform .22s ease;pointer-events:none';
+      el.style.cssText='position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(8px);z-index:99999;min-width:280px;max-width:480px;display:flex;align-items:center;gap:.65rem;padding:.7rem 1rem .7rem .85rem;border-radius:8px;border:1px solid var(--border);font-family:"Inter",sans-serif;font-size:.8rem;line-height:1.4;background:var(--lxb-08121e,#08121E);color:var(--lxt-f0f9ff,#F0F9FF);box-shadow:0 6px 32px rgba(0,0,0,.6);opacity:0;transition:opacity .22s ease,transform .22s ease;pointer-events:none';
       document.body.appendChild(el); return el;
     }
     function show(msg, type, dur){
       var t=ensure();
-      var C={error:{border:'rgba(239,68,68,.35)',icon:'⚠',color:'#FCA5A5'},
-             success:{border:'rgba(16,185,129,.35)',icon:'✓',color:'#6EE7B7'},
-             info:{border:'rgba(14,165,233,.35)',icon:'ℹ',color:'#7FB3CC'},
-             warn:{border:'rgba(240,165,0,.35)',icon:'⚡',color:'#FCD34D'}};
+      var C={error:{border:'rgba(239,68,68,.35)',icon:'⚠',color:'var(--lxt-fca5a5,#FCA5A5)'},
+             success:{border:'rgba(16,185,129,.35)',icon:'✓',color:'var(--lxt-6ee7b7,#6EE7B7)'},
+             info:{border:'rgba(14,165,233,.35)',icon:'ℹ',color:'var(--lxt-7fb3cc,#7FB3CC)'},
+             warn:{border:'rgba(240,165,0,.35)',icon:'⚡',color:'var(--lxt-fcd34d,#FCD34D)'}};
       var c=C[type]||C.info;
       t.style.borderColor=c.border;
       t.innerHTML='<span style="color:'+c.color+';font-size:1rem;flex-shrink:0">'+c.icon+'</span>'+
         '<span style="flex:1">'+_escH(msg)+'</span>'+
-        '<button onclick="lxToast.hide()" style="background:none;border:none;cursor:pointer;color:#3D6880;font-size:.85rem;padding:.1rem .2rem;flex-shrink:0;line-height:1">✕</button>';
+        '<button onclick="lxToast.hide()" style="background:none;border:none;cursor:pointer;color:var(--lxt-3d6880,#3D6880);font-size:.85rem;padding:.1rem .2rem;flex-shrink:0;line-height:1">✕</button>';
       t.style.pointerEvents='auto'; t.style.transform='translateX(-50%) translateY(0)'; t.style.opacity='1';
       if(timer) clearTimeout(timer);
       timer=setTimeout(hide, dur||(type==='error'?5000:3000));
@@ -382,7 +444,7 @@
     function injectStyles(){
       if(document.getElementById('lx-ai-style')) return;
       var s=document.createElement('style'); s.id='lx-ai-style';
-      s.textContent='#lx-ai-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9990;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#FF6535,#E8490A);box-shadow:0 4px 20px rgba(255,101,53,.45);display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s;}#lx-ai-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(255,101,53,.6);}#lx-ai-panel{position:fixed;bottom:4.8rem;right:1.5rem;z-index:9991;width:340px;max-width:calc(100vw - 2rem);background:#08121E;border:1px solid rgba(8,116,174,.28);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.75);display:none;flex-direction:column;overflow:hidden;}#lx-ai-panel.open{display:flex;}#lx-ai-head{padding:.7rem 1rem;border-bottom:1px solid rgba(8,116,174,.18);display:flex;align-items:center;justify-content:space-between;background:rgba(255,101,53,.06);}.lx-ai-title{font-family:"Oswald",sans-serif;font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#FF6535;}.lx-ai-close{background:none;border:none;cursor:pointer;color:#4A7A96;font-size:1rem;line-height:1;padding:.1rem .3rem;}#lx-ai-msgs{flex:1;max-height:340px;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.55rem;}.lx-ai-msg{padding:.55rem .75rem;border-radius:8px;font-size:.78rem;line-height:1.5;max-width:94%;}.lx-ai-msg.user{background:rgba(255,101,53,.12);border:1px solid rgba(255,101,53,.2);align-self:flex-end;color:#E8F4F8;}.lx-ai-msg.ai{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.18);align-self:flex-start;color:rgba(232,244,248,.88);}.lx-ai-msg.loading{color:#4A7A96;font-style:italic;}#lx-ai-form{padding:.65rem;border-top:1px solid rgba(8,116,174,.18);display:flex;gap:.4rem;background:#06101A;}#lx-ai-inp{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(8,116,174,.2);border-radius:7px;padding:.45rem .65rem;color:#E8F4F8;font-size:.78rem;font-family:"Inter",sans-serif;outline:none;resize:none;}#lx-ai-inp:focus{border-color:rgba(255,101,53,.4);}#lx-ai-send{background:#FF6535;border:none;cursor:pointer;border-radius:7px;padding:.45rem .7rem;color:#fff;font-size:.8rem;font-weight:600;transition:background .15s;}#lx-ai-send:hover{background:#E8490A;}#lx-ai-send:disabled{background:#444;cursor:not-allowed;}';
+      s.textContent='#lx-ai-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9990;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#FF6535,#E8490A);box-shadow:0 4px 20px rgba(255,101,53,.45);display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s;}#lx-ai-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(255,101,53,.6);}#lx-ai-panel{position:fixed;bottom:4.8rem;right:1.5rem;z-index:9991;width:340px;max-width:calc(100vw - 2rem);background:var(--lxb-08121e,#08121E);border:1px solid rgba(8,116,174,.28);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.75);display:none;flex-direction:column;overflow:hidden;}#lx-ai-panel.open{display:flex;}#lx-ai-head{padding:.7rem 1rem;border-bottom:1px solid rgba(8,116,174,.18);display:flex;align-items:center;justify-content:space-between;background:rgba(255,101,53,.06);}.lx-ai-title{font-family:"Oswald",sans-serif;font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#FF6535;}.lx-ai-close{background:none;border:none;cursor:pointer;color:var(--lxt-4a7a96,#4A7A96);font-size:1rem;line-height:1;padding:.1rem .3rem;}#lx-ai-msgs{flex:1;max-height:340px;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.55rem;}.lx-ai-msg{padding:.55rem .75rem;border-radius:8px;font-size:.78rem;line-height:1.5;max-width:94%;}.lx-ai-msg.user{background:rgba(255,101,53,.12);border:1px solid rgba(255,101,53,.2);align-self:flex-end;color:var(--lxt-e8f4f8,#E8F4F8);}.lx-ai-msg.ai{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.18);align-self:flex-start;color:var(--lxt-rgba_232_244_248_p88,rgba(232,244,248,.88));}.lx-ai-msg.loading{color:var(--lxt-4a7a96,#4A7A96);font-style:italic;}#lx-ai-form{padding:.65rem;border-top:1px solid rgba(8,116,174,.18);display:flex;gap:.4rem;background:var(--lxb-06101a,#06101A);}#lx-ai-inp{flex:1;background:var(--lxd-rgba_255_255_255_p04,rgba(255,255,255,.04));border:1px solid rgba(8,116,174,.2);border-radius:7px;padding:.45rem .65rem;color:var(--lxt-e8f4f8,#E8F4F8);font-size:.78rem;font-family:"Inter",sans-serif;outline:none;resize:none;}#lx-ai-inp:focus{border-color:rgba(255,101,53,.4);}#lx-ai-send{background:#FF6535;border:none;cursor:pointer;border-radius:7px;padding:.45rem .7rem;color:#fff;font-size:.8rem;font-weight:600;transition:background .15s;}#lx-ai-send:hover{background:#E8490A;}#lx-ai-send:disabled{background:#444;cursor:not-allowed;}';
       document.head.appendChild(s);
     }
 
@@ -413,7 +475,7 @@
       fetch(API+'/ai/coach-suggest',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},t?{'Authorization':'Bearer '+t}:{}),credentials:'include',body:JSON.stringify({message:msg,history:hist})})
         .then(function(r){return r.json();})
         .then(function(d){ loading.remove(); var aDiv=document.createElement('div'); aDiv.className='lx-ai-msg ai'; aDiv.textContent=d.answer||d.detail||_nt('shell_ai_no_answer','Sin respuesta.'); msgs.appendChild(aDiv); msgs.scrollTop=msgs.scrollHeight; hist.push({role:'user',content:msg}); hist.push({role:'assistant',content:d.answer||''}); if(hist.length>20)hist=hist.slice(-20); })
-        .catch(function(){ loading.textContent=_nt('shell_ai_conn_error','Error de conexi\xf3n. Intenta de nuevo.'); loading.style.color='#FCA5A5'; })
+        .catch(function(){ loading.textContent=_nt('shell_ai_conn_error','Error de conexi\xf3n. Intenta de nuevo.'); loading.style.color='var(--lxt-fca5a5,#FCA5A5)'; })
         .finally(function(){ btn.disabled=false; inp.focus(); });
     };
     /* S1: el widget solo se inyecta si el usuario puede acceder a ai_coach
@@ -447,7 +509,7 @@
   ═══════════════════════════════════════════════════════════════ */
   window.lxUI=(function(){
     var SP='<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="rgba(8,116,174,.25)" stroke-width="3"/><path d="M16 4a12 12 0 0 1 12 12" stroke="#0EA5E9" stroke-width="3" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur=".8s" repeatCount="indefinite"/></path></svg>';
-    function wrap(content){ return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;color:#7FB3CC;font-size:.85rem">'+content+'</div>'; }
+    function wrap(content){ return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;color:var(--lxt-7fb3cc,#7FB3CC);font-size:.85rem">'+content+'</div>'; }
     function setLoading(el,msg){ if(el) el.innerHTML=wrap(SP+'<span>'+_escH(msg||_nt('shell_loading','Cargando…'))+'</span>'); }
     function setError(el,msg,retry){
       if(!el) return;
