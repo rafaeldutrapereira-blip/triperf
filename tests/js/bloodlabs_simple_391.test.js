@@ -83,8 +83,8 @@ test('el radar se redibuja al abrir el detalle (canvas medido solo abierto)', ()
   assert.match(HTML, /getElementById\('bl-ver-todo'\)[\s\S]{0,200}addEventListener\('toggle'/);
 });
 
-test('BUILD 394 y sello i18n.js?v=394', () => {
-  assert.match(SW, /var BUILD_VERSION = '394'/);
-  assert.ok(SW.includes("'/i18n.js?v=394'"));
-  assert.ok(HTML.includes('i18n.js?v=394'));
+test('BUILD 395 y sello i18n.js?v=395', () => {
+  assert.match(SW, /var BUILD_VERSION = '395'/);
+  assert.ok(SW.includes("'/i18n.js?v=395'"));
+  assert.ok(HTML.includes('i18n.js?v=395'));
 });
