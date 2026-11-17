@@ -684,6 +684,10 @@
       .rd-word { font-size: 1rem; line-height: 1.5; color: var(--text); padding: 10px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--r2); }
       .rd-words-note { font-size: 0.95rem; color: var(--sub); margin-top: 6px; }
       .rd-detail-sum { cursor: pointer; font-size: 1rem; font-weight: 700; color: var(--text); padding: 6px 0 12px; }
+      /* RACE-DAY (BUILD 397): respuesta en palabras + pestaña Mis carreras en capas, solo variables de tema */
+      .rd-answer { font-size: 1.05rem; line-height: 1.55; color: var(--text); font-weight: 600; }
+      .rd-answer-sub { font-size: 0.95rem; color: var(--sub); font-weight: 400; margin-top: 4px; }
+      .rd-hist-why { font-size: 1rem; line-height: 1.5; color: var(--sub); margin-bottom: 12px; }
     </style>
       <link rel="stylesheet" href="theme-light.css?v=396" />
     <style id="lx-theme-light">
@@ -753,6 +757,10 @@
               </div>
 
               <div id="rd-race-section" style="display: none">
+                <!-- CAPA 1 (RACE-DAY): la respuesta en palabras -->
+                <div class="card" style="margin-bottom: 16px" id="rd-answer-card">
+                  <div class="rd-answer" id="rd-answer" aria-live="polite"></div>
+                </div>
                 <!-- NIVEL 1: tu dia en una linea (RACEDAY-CAPAS) -->
                 <div id="rd-l1">
                 <!-- Cuenta regresiva -->
@@ -1274,7 +1282,13 @@
 
           <!-- TAB 2: MIS CARRERAS (historial + resultado) -->
           <div class="tab-panel" id="tab-races">
+            <!-- CAPA 1 (RACE-DAY): la respuesta primero -->
+            <div class="card" style="margin-bottom: 16px" id="rd-hist-answer-card">
+              <div class="rd-answer" id="rd-hist-answer" aria-live="polite"></div>
+            </div>
+            <!-- CAPA 2: el porque (historial de carreras) -->
             <div class="card">
+              <div class="rd-hist-why" id="rd-hist-why" data-i18n="rd_hist_why">Cada carrera se compara con su plan: el puntaje de ejecución dice qué tan parejo fue tu ritmo.</div>
               <div class="card-title" data-i18n="rd_card_race_history">
                 Historial de Carreras
               </div>
@@ -1283,6 +1297,9 @@
               </div>
             </div>
             <div style="height:16px"></div>
+            <!-- CAPA 3: registrar resultado (formulario tecnico, plegado) -->
+            <details id="rd-result-detail" class="rd-detail" style="margin-bottom: 16px">
+              <summary class="rd-detail-sum" data-i18n="rd_l3_record">Registrar el resultado de una carrera</summary>
             <div class="card">
               <div class="card-title" data-i18n="rd_card_record_result">
                 Registrar Resultado de Carrera
@@ -1450,6 +1467,7 @@
                 <span id="res-saved-msg" style="display: none"></span>
               </div>
             </div>
+            </details>
             <div id="res-analysis-box" style="display: none; margin-top: 16px">
               <div class="card">
                 <div class="card-title" data-i18n="rd_card_analysis_result">
@@ -1547,7 +1565,33 @@
 
           var VALID_RACE_TYPES = ['sprint', 'olympic', '703', 'full', '21k', '42k'];
 
+          // RACE-DAY capa 1: la respuesta en palabras, solo con datos ya cargados.
+          function rdTpl(k, fb, m) {
+            var t = _t(k, fb);
+            Object.keys(m).forEach(function (n) { t = t.split('{' + n + '}').join(m[n]); });
+            return t;
+          }
+          function renderAnswer(totalFmt, bikePower, runPace) {
+            var el = document.getElementById('rd-answer');
+            if (!el) return;
+            var days = document.getElementById('dash-days').textContent;
+            var name = document.getElementById('dash-race-name').textContent;
+            var head = /^\d+$/.test(days)
+              ? rdTpl('rd_ans_days', 'Faltan {d} días para {n}.', { d: days, n: name })
+              : rdTpl('rd_ans_race', 'Tu carrera objetivo es {n}.', { n: name });
+            var tail;
+            if (!totalFmt) {
+              tail = _t('rd_ans_noplan', 'Aún no generaste tu plan: genéralo para saber a qué ritmo salir.');
+            } else {
+              tail = rdTpl('rd_ans_plan', 'Con tu plan, tu tiempo estimado es {t}.', { t: totalFmt });
+              if (bikePower) tail += ' ' + rdTpl('rd_ans_bike', 'En bici, apunta a {w} W.', { w: bikePower });
+              if (runPace) tail += ' ' + rdTpl('rd_ans_run', 'Al correr, sal a {p} por kilómetro.', { p: runPace });
+            }
+            el.textContent = head + ' ' + tail;
+          }
+
           function renderPlanSummary(totalFmt, bikePower, runPace) {
+            renderAnswer(totalFmt, bikePower, runPace);
             var pc = document.getElementById('dash-plan-content');
             if (!totalFmt) {
               pc.innerHTML =
@@ -2253,6 +2297,8 @@
                 var box = document.getElementById('res-analysis-box');
                 var content = document.getElementById('res-analysis-content');
                 box.style.display = 'block';
+                var rdd = document.getElementById('rd-result-detail');
+                if (rdd) rdd.open = true;
                 content.innerHTML =
                   '<div class="chips">' +
                   '<div class="chip"><div class="chip-val" style="color:var(--acc)">' +
@@ -2307,6 +2353,8 @@
                 renderHistory(d.races || d || []);
               })
               .catch(function (err) {
+                var ha = document.getElementById('rd-hist-answer');
+                if (ha) ha.textContent = '';
                 container.innerHTML =
                   '<div class="empty-state">' +
                   escHtml(
@@ -2320,7 +2368,34 @@
               });
           }
 
+          // RACE-DAY capa 1 de Mis carreras: ultima carrera con puntaje real.
+          function renderHistoryAnswer(races) {
+            var el = document.getElementById('rd-hist-answer');
+            if (!el) return;
+            var last = null;
+            races.forEach(function (r) {
+              var dt = r.race_date || r.date || '';
+              if (r.pacing_score && (!last || dt > (last.race_date || last.date || ''))) last = r;
+            });
+            if (!last) {
+              el.textContent = _t('rd_hist_none', 'Aún no registras el resultado de ninguna carrera.');
+              return;
+            }
+            var sc = last.pacing_score;
+            var verdict = sc >= 80
+              ? _t('rd_hist_v_hi', 'ejecutaste muy bien tu plan')
+              : sc >= 60
+                ? _t('rd_hist_v_mid', 'ejecutaste de forma aceptable')
+                : _t('rd_hist_v_lo', 'hay margen para ejecutar mejor');
+            el.textContent = rdTpl(
+              'rd_hist_last',
+              'En tu última carrera con resultado, {n} ({f}), {v}. Puntaje de ejecución (Pacing Score): {s} de 100.',
+              { n: last.race_name || last.name || '—', f: last.race_date || last.date || '—', v: verdict, s: sc }
+            );
+          }
+
           function renderHistory(races) {
+            renderHistoryAnswer(races);
             var container = document.getElementById('history-list');
             if (!races.length) {
               container.innerHTML =
@@ -2397,7 +2472,7 @@
         <script src="footer.js?v=373"></script>
         <script src="dash-header.js?v=373"></script>
         <script src="lx-upgrade.js?v=373"></script>
-        <script src="i18n.js?v=396"></script>
+        <script src="i18n.js?v=397"></script>
         <script src="lx-info.js?v=373"></script>
       </main>
     </div>

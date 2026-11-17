@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '396';  // MIGRACION-TEMA el tema claro dejaba partes oscuras en componentes compartidos y graficos: el muro de plan (nav.css), los toasts, el widget IA y los estados de carga (nav.js, auth.js) y el modal de upgrade del dashboard tenian fondos y textos oscuros fijos, y los canvas (Chart.js y dibujo a mano de Analitica/Detalle/Nutricion/Coach) pintaban ejes, grillas y tooltips con colores pensados para fondo oscuro; ahora esos colores vienen de variables de tema con fallback oscuro, nav.js traduce los colores de canvas al tema activo (LXCanvasTheme) y repinta al cambiar de tema, y el texto sobre botones de acento queda blanco; sin claves i18n nuevas; nav.js?v=11, nav.css?v=9, auth.js?v=374, theme-light.css?v=396 e i18n.js?v=396 en las paginas
+var BUILD_VERSION = '397';  // RACE-DAY la pagina de Race Day solo tenia capas en Mi carrera: ahora arriba va la respuesta en palabras (dias que faltan, tiempo estimado, vatios y ritmo del plan) y Mis carreras abre con la ultima carrera con resultado y su puntaje de ejecucion, luego el historial y, plegado, el formulario para registrar el resultado; nada se elimino ni cambio de fuente; 12 claves i18n nuevas (rd_ans_*, rd_hist_*, rd_l3_record); i18n.js?v=397 en las paginas
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -31,7 +31,7 @@ var PRECACHE = [
   '/analytics.html',
   '/training_plan.html',
   '/auth.js?v=374',
-  '/i18n.js?v=396',
+  '/i18n.js?v=397',
   '/community.js?v=3',
   '/theme-light.css?v=396',
   '/community.html',

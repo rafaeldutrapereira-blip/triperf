@@ -78,8 +78,8 @@ test('la tabla de comparacion de la 392 sigue presente y la carga usa all=1', ()
   assert.ok(HTML.includes("/labs/timeline?all=1"));
 });
 
-test('BUILD 395 y sello i18n.js?v=396', () => {
-  assert.match(SW, /var BUILD_VERSION = '396'/);
-  assert.ok(SW.includes("'/i18n.js?v=396'"));
-  assert.ok(HTML.includes('i18n.js?v=396'));
+test('BUILD 395 y sello i18n.js?v=397', () => {
+  assert.match(SW, /var BUILD_VERSION = '397'/);
+  assert.ok(SW.includes("'/i18n.js?v=397'"));
+  assert.ok(HTML.includes('i18n.js?v=397'));
 });
