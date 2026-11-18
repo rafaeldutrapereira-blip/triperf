@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '400';  // GEAR la pagina de Gear ya tenia arriba la respuesta (que necesita atencion) y el porque (km restantes o % de vida util por equipo), pero zapatillas, bicicletas, componentes y acciones estaban siempre abiertos: ahora van plegados en un <details> que se abre solo si no hay nada que avisar o falla el resumen; nada se elimino ni cambio de fuente; 1 clave i18n nueva (gear_l3_detail); i18n.js?v=400 en las paginas
+var BUILD_VERSION = '402';  // TSS-LATENTE el plan builder (cumplimiento semanal y panel del coach) y el emparejamiento de sesiones con actividades leian a.training_stress_score, campo que no existe en GarminActivity (lanzaba AttributeError); ahora usan la columna real tss; sin cambios de UI ni i18n; i18n.js?v=402 en las paginas
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -31,7 +31,7 @@ var PRECACHE = [
   '/analytics.html',
   '/training_plan.html',
   '/auth.js?v=374',
-  '/i18n.js?v=400',
+  '/i18n.js?v=402',
   '/community.js?v=3',
   '/theme-light.css?v=396',
   '/community.html',

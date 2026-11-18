@@ -51,7 +51,7 @@ test('i18n ES/PT/EN con los mismos marcadores', () => {
 });
 
 test('sellos de version', () => {
-  assert.match(SW, /var BUILD_VERSION = '400'/);
-  assert.ok(SW.includes("'/i18n.js?v=400'"));
-  assert.ok(HTML.includes('i18n.js?v=400'));
+  assert.match(SW, /var BUILD_VERSION = '402'/);
+  assert.ok(SW.includes("'/i18n.js?v=402'"));
+  assert.ok(HTML.includes('i18n.js?v=402'));
 });

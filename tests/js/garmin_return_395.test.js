@@ -87,8 +87,8 @@ test('Polar/Wahoo siguen en WEARABLE_OAUTH y garmin no (tarjeta unica)', () => {
   assert.ok(m && m[1].includes('polar') && m[1].includes('wahoo') && !m[1].includes('garmin'));
 });
 
-test('BUILD 395 y sello i18n.js?v=400', () => {
-  assert.match(sw, /var BUILD_VERSION = '400'/);
-  assert.ok(sw.includes("'/i18n.js?v=400'"));
-  assert.ok(app.includes('i18n.js?v=400'));
+test('BUILD 395 y sello i18n.js?v=402', () => {
+  assert.match(sw, /var BUILD_VERSION = '402'/);
+  assert.ok(sw.includes("'/i18n.js?v=402'"));
+  assert.ok(app.includes('i18n.js?v=402'));
 });

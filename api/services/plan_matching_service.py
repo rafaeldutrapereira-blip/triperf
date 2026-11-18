@@ -151,13 +151,14 @@ def match_sessions_for_user(
             continue
 
         # Seleccionar la actividad con TSS más cercano al planificado
+        # TSS-LATENTE: la columna real es `tss` (no existe `training_stress_score`).
         tss_planned = session.tss_planned or 50.0
         best = min(
             compatible,
-            key=lambda a: abs((a.training_stress_score or 0) - tss_planned),
+            key=lambda a: abs((a.tss or 0) - tss_planned),
         )
 
-        tss_actual    = best.training_stress_score or 0
+        tss_actual    = best.tss or 0
         dur_actual    = best.moving_time_seconds   // 60 if best.moving_time_seconds else None
         dist_actual   = round(best.distance_meters / 1000, 2) if best.distance_meters else None
         compliance    = round(tss_actual / tss_planned * 100, 1) if tss_planned > 0 else None

@@ -491,7 +491,8 @@ def plan_vs_actual(
             )
             .all()
         )
-        tss_actual = round(sum(a.training_stress_score or 0 for a in garmin_acts), 1)
+        # TSS-LATENTE: la columna real es `tss` (no existe `training_stress_score`).
+        tss_actual = round(sum(a.tss or 0 for a in garmin_acts), 1)
 
         compliance = round(tss_actual / tss_planned * 100, 1) if tss_planned > 0 else None
 
@@ -838,7 +839,8 @@ def coach_compliance_panel(
                 GarminActivity.date_iso >= ws.isoformat(),
                 GarminActivity.date_iso <= we.isoformat(),
             ).all()
-            tss_a = sum(a.training_stress_score or 0 for a in acts)
+            # TSS-LATENTE: la columna real es `tss`.
+            tss_a = sum(a.tss or 0 for a in acts)
             comp  = round(tss_a / tss_p * 100, 1) if tss_p > 0 else None
             weekly_compliance.append({
                 "week": wn, "tss_planned": round(tss_p, 1), "tss_actual": round(tss_a, 1),

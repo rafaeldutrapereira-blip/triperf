@@ -113,8 +113,8 @@ test('textos por i18n ES/PT/EN y estilo por variables', () => {
   assert.ok(css.includes('var(--green)') && css.includes('var(--red)'));
 });
 
-test('BUILD 395 y sello i18n.js?v=400', () => {
-  assert.match(SW, /var BUILD_VERSION = '400'/);
-  assert.ok(SW.includes("'/i18n.js?v=400'"));
-  assert.ok(HTML.includes('i18n.js?v=400'));
+test('BUILD 395 y sello i18n.js?v=402', () => {
+  assert.match(SW, /var BUILD_VERSION = '402'/);
+  assert.ok(SW.includes("'/i18n.js?v=402'"));
+  assert.ok(HTML.includes('i18n.js?v=402'));
 });
