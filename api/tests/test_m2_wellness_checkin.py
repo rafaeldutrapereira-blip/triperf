@@ -126,10 +126,11 @@ def test_migracion_aditiva():
 def test_ui_e_i18n():
     html = (ROOT / "dashboard.html").read_text(encoding="utf-8")
     i18n = (ROOT / "i18n.js").read_text(encoding="utf-8")
-    assert 'id="lx-checkin"' in html and "/athlete/health/checkin" in html
-    for k in ("ckin_title", "ckin_energy", "ckin_mood", "ckin_soreness", "ckin_stress",
-              "ckin_save", "ckin_saved", "ckin_saved_prev", "ckin_pick", "ckin_error"):
-        assert len(re.findall(r"(?<![A-Za-z_])%s:" % k, i18n)) == 3, k
+    # UNIFICAR-CHECKIN (404): el dashboard ya no captura; el endpoint y las columnas se conservan.
+    assert 'id="lx-checkin"' not in html and "saveCheckin" not in html
+    assert "/athlete/health/checkin" not in html
+    for k in ("ckin_title", "ckin_energy", "ckin_save"):
+        assert len(re.findall(r"(?<![A-Za-z_])%s:" % k, i18n)) == 0, k
     sw = (ROOT / "sw.js").read_text(encoding="utf-8")
     m = re.search(r"BUILD_VERSION = '(\d+)'", sw)
     assert m and int(m.group(1)) >= 329

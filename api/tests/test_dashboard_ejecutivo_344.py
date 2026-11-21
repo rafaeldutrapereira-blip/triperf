@@ -40,7 +40,7 @@ INVENTARIO_IDS = [
     # hoy
     "cluster-hoy-pill", "hrv-7d-val", "spark-hrv", "badge-hrv", "kc-rhr", "rhr-7d-val", "spark-rhr",
     "kc-rhr-val", "badge-rhr", "kc-bb", "spark-bb", "kc-bb-val", "badge-bb", "kc-tr", "spark-tr",
-    "kc-tr-val", "badge-tr", "lx-checkin", "lx-checkin-rows", "lx-checkin-save", "lx-checkin-msg",
+    "kc-tr-val", "badge-tr", "lx-checkin-status", "lx-ck-state", "lx-ck-summary", "lx-ck-link",
     "kc-mental", "spark-mental", "kc-mental-val", "badge-mental", "spark-sleep", "w-sleep-val",
     "kc-nap", "w-nap-val", "spark-fatmusc", "w-fat-val",
     # esta semana / objetivo
@@ -81,7 +81,7 @@ def test_tres_bandas_con_titulos_i18n_en_orden_y_sin_details_cerrado():
     assert c < h.index('id="kc-race"')
     assert c < h.index('id="kc-ctlproj"')
     # estado de hoy (HRV, sueno, check-in) en banda 1
-    for ident in ("spark-hrv", "lx-checkin", "w-sleep-val", "w13-phrase"):
+    for ident in ("spark-hrv", "lx-checkin-status", "w-sleep-val", "w13-phrase"):
         assert a < h.index('id="%s"' % ident) < b, ident
 
 

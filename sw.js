@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '403';  // MATCHING el emparejamiento de sesiones con actividades leia moving_time_seconds/distance_meters/started_at, campos que no existen en GarminActivity (AttributeError silencioso, sin adherencia plan-vs-real); ahora usa dur_min, dist_km y date_iso; sin cambios de UI ni i18n
+var BUILD_VERSION = '404';  // UNIFICAR-CHECKIN el dashboard tenia su propia encuesta diaria de 4 campos (POST /athlete/health/checkin) que no alimentaba ningun score, ademas del check-in de Estado que si alimenta Recuperacion, Mental y readiness; ahora la tarjeta Como te sientes muestra el estado del unico check-in (hecho/pendiente + resumen + enlace a estado.html#est-reg) leyendo los GET existentes; endpoint y columnas historicas intactos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
@@ -31,7 +31,7 @@ var PRECACHE = [
   '/analytics.html',
   '/training_plan.html',
   '/auth.js?v=374',
-  '/i18n.js?v=402',
+  '/i18n.js?v=404',
   '/community.js?v=3',
   '/theme-light.css?v=396',
   '/community.html',

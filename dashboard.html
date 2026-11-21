@@ -2961,16 +2961,16 @@
           </div>
           <div class="panel sr kpi-card">
             <div class="kpi-card-head"><h3 class="kpi-card-q"><span data-i18n="dash_x_feel">Cómo te sientes</span></h3></div>
-            <!-- M2: check-in subjetivo (energia, animo, dolor muscular, estres; 1-5).
-             Solo captura y muestra: no entra en ningun score. -->
-            <div id="lx-checkin" class="kcr" style="display: block; cursor: default">
+            <!-- UNIFICAR-CHECKIN (BUILD 404): un solo check-in, el de Estado (S28). Esta tarjeta
+             solo muestra su estado de hoy (GET /recovery/wellness/{fecha} y GET /mental/dashboard)
+             y lleva a estado.html#est-reg para completarlo o editarlo. -->
+            <div id="lx-checkin-status" class="kcr" data-state="loading" style="display: block; cursor: default">
               <div class="kcr-label" style="margin-bottom: 6px">
-                <span data-i18n="ckin_title">¿Cómo te sientes hoy?</span>
+                <span id="lx-ck-state" data-i18n="est_checkin_pending">Check-in de hoy: pendiente</span>
               </div>
-              <div id="lx-checkin-rows" style="display: grid; gap: 6px"></div>
-              <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px">
-                <button type="button" id="lx-checkin-save" class="btn btn-sm" onclick="saveCheckin()" data-i18n="ckin_save">Guardar</button>
-                <span id="lx-checkin-msg" style="font-size: 12px; opacity: 0.8"></span>
+              <div id="lx-ck-summary" class="kcr-sub" style="display: none"></div>
+              <div style="margin-top: 8px">
+                <a id="lx-ck-link" class="btn btn-sm" href="estado.html#est-reg" data-i18n="dash_ck_cta">Completar check-in</a>
               </div>
             </div>
             <!-- Fatiga Mental lleva a estado.html (grupo Mental; S13 2026-11-01, antes mental.html) (no a detalle.html
@@ -6321,84 +6321,65 @@
       }
       patchData();
 
-      /* ── M2: check-in subjetivo (GET/POST /athlete/health/checkin) ── */
-      var _CK = [
-        ['energia', 'ckin_energy', 'Energía'],
-        ['animo', 'ckin_mood', 'Ánimo'],
-        ['dolor_muscular', 'ckin_soreness', 'Dolor muscular'],
-        ['estres', 'ckin_stress', 'Estrés'],
-      ];
-      var _ckVals = {};
-      function _ckRender() {
-        var box = document.getElementById('lx-checkin-rows');
+      /* ── UNIFICAR-CHECKIN (BUILD 404): estado del check-in unico de Estado ──
+         Lee los mismos GET que estado.html; no escribe nada. */
+      function _ckLocalISO() {
+        var d = new Date();
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+      function paintCheckinStatus(well, men) {
+        var box = document.getElementById('lx-checkin-status');
         if (!box) return;
-        box.innerHTML = '';
-        _CK.forEach(function (c) {
-          var row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-          var lab = document.createElement('span');
-          lab.style.cssText = 'min-width:110px;font-size:13px';
-          lab.textContent = _t(c[1], c[2]);
-          row.appendChild(lab);
-          for (var i = 1; i <= 5; i++) {
-            (function (n) {
-              var b = document.createElement('button');
-              b.type = 'button';
-              b.textContent = n;
-              b.setAttribute('data-ck', c[0]);
-              b.setAttribute('data-n', n);
-              var on = _ckVals[c[0]] === n;
-              b.style.cssText =
-                'width:30px;height:30px;border-radius:50%;border:1px solid #64748b;cursor:pointer;' +
-                (on ? 'background:#0EA5E9;color:#fff;border-color:#0EA5E9' : 'background:transparent;color:inherit');
-              b.onclick = function () {
-                _ckVals[c[0]] = n;
-                _ckRender();
-              };
-              row.appendChild(b);
-            })(i);
-          }
-          box.appendChild(row);
-        });
+        var logged = !!(well && well.logged);
+        var menDone = !!(men && men.today && men.today.has_checkin);
+        var done = logged || menDone;
+        var st = document.getElementById('lx-ck-state');
+        var sum = document.getElementById('lx-ck-summary');
+        var link = document.getElementById('lx-ck-link');
+        box.setAttribute('data-state', done ? 'done' : 'pending');
+        var key = done ? 'est_checkin_done' : 'est_checkin_pending';
+        st.setAttribute('data-i18n', key);
+        st.textContent = _t(key, done ? 'Check-in de hoy: hecho' : 'Check-in de hoy: pendiente');
+        var parts = [];
+        if (logged) {
+          [
+            ['energy', 'rcw_energy_short', 'Energía'],
+            ['mood', 'rcw_mood_short', 'Ánimo'],
+            ['soreness', 'rcw_legs_short', 'Piernas'],
+          ].forEach(function (c) {
+            if (well[c[0]] != null) parts.push(_t(c[1], c[2]) + ' ' + well[c[0]] + '/5');
+          });
+        }
+        sum.textContent = parts.join(' · ');
+        sum.style.display = parts.length ? '' : 'none';
+        var lk = done ? 'est_checkin_edit' : 'dash_ck_cta';
+        link.setAttribute('data-i18n', lk);
+        link.textContent = _t(lk, done ? 'Editar' : 'Completar check-in');
       }
       function loadCheckin(tok, API) {
-        _ckRender();
-        fetch(API + '/athlete/health/checkin', {
-          headers: { Authorization: 'Bearer ' + tok },
-          cache: 'no-store',
-        })
-          .then(function (r) {
-            return r.ok ? r.json() : null;
-          })
-          .then(function (d) {
-            if (!d) return;
-            _CK.forEach(function (c) {
-              if (d[c[0]] != null) _ckVals[c[0]] = d[c[0]];
+        var day = _ckLocalISO();
+        var H = { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' };
+        function get(u) {
+          return fetch(API + u, H)
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .catch(function () {
+              return null;
             });
-            _ckRender();
-            var m = document.getElementById('lx-checkin-msg');
-            if (m && d.saved) m.textContent = _t('ckin_saved_prev', 'Guardado hoy');
-          })
-          .catch(function () {});
-      }
-      function saveCheckin() {
-        var tok = localStorage.getItem('lx_co_token');
-        var m = document.getElementById('lx-checkin-msg');
-        if (!Object.keys(_ckVals).length) {
-          if (m) m.textContent = _t('ckin_pick', 'Elige al menos una escala');
-          return;
         }
-        fetch((location.protocol === 'file:' ? 'http://localhost:8000/api' : location.origin + '/api') + '/athlete/health/checkin', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify(_ckVals),
-        })
-          .then(function (r) {
-            if (m) m.textContent = r.ok ? _t('ckin_saved', '✓ Guardado') : _t('ckin_error', 'No se pudo guardar');
-          })
-          .catch(function () {
-            if (m) m.textContent = _t('ckin_error', 'No se pudo guardar');
-          });
+        Promise.all([
+          get('/recovery/wellness/' + day),
+          get('/mental/dashboard?date_iso=' + day),
+        ]).then(function (r) {
+          paintCheckinStatus(r[0], r[1]);
+        });
       }
 
       /* ── Panel de Salud 360° (Fase 2 Sprint D, 2026-08-11) ──────────
@@ -8668,8 +8649,8 @@
     <script src="nav.js?v=11"></script>
     <script src="footer.js?v=373"></script>
 
-    <script src="i18n.js?v=402"></script>
-    <script src="lx-backend-i18n.js?v=402"></script>
+    <script src="i18n.js?v=404"></script>
+    <script src="lx-backend-i18n.js?v=404"></script>
     <script>
       (function () {
         function _ti() {

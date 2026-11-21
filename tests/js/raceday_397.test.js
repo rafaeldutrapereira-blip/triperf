@@ -56,7 +56,7 @@ test('sin color oscuro fijo en lo nuevo, BUILD 397 y sello i18n', () => {
   const css = HTML.slice(HTML.indexOf('RACE-DAY (BUILD 397)'));
   const blk = css.slice(0, css.indexOf('</style>'));
   assert.doesNotMatch(blk, /#[0-9a-fA-F]{3,8}\b|rgb/);
-  assert.match(SW, /var BUILD_VERSION = '402'/);
-  assert.ok(HTML.includes('i18n.js?v=402'));
-  assert.ok(SW.includes("'/i18n.js?v=402'"));
+  assert.match(SW, /var BUILD_VERSION = '404'/);
+  assert.ok(HTML.includes('i18n.js?v=404'));
+  assert.ok(SW.includes("'/i18n.js?v=404'"));
 });
