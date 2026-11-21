@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '404';  // UNIFICAR-CHECKIN el dashboard tenia su propia encuesta diaria de 4 campos (POST /athlete/health/checkin) que no alimentaba ningun score, ademas del check-in de Estado que si alimenta Recuperacion, Mental y readiness; ahora la tarjeta Como te sientes muestra el estado del unico check-in (hecho/pendiente + resumen + enlace a estado.html#est-reg) leyendo los GET existentes; endpoint y columnas historicas intactos
+var BUILD_VERSION = '405';  // SIMULACION-MARCAS validacion virtual de Wahoo y Polar: servidor mock local (api/tests/mock_vendors.py) que sirve verbatim los fixtures oficiales + corredor automatico de un comando (python -m api.tests.mock_vendors_runner) que hace OAuth, sync generico y verifica normalizacion contra una BD temporal; URLs base de wahoo.py/polar.py configurables por env (default = URL real, produccion sin cambios); flags WAHOO_ENABLED/POLAR_ENABLED intactos, el handshake con el vendor real sigue pendiente de 1 cuenta real
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

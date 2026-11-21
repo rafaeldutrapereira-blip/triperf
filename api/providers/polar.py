@@ -39,6 +39,7 @@ el sync trae datos correctos. Ver docs/plan-multi-brand-wearables.md.
 """
 from __future__ import annotations
 
+import os
 import re
 from typing import Any
 
@@ -50,6 +51,23 @@ from . import WearableProvider
 _AUTH_URL  = "https://flow.polar.com/oauth2/authorization"
 _TOKEN_URL = "https://polarremote.com/v2/oauth2/token"
 _API_BASE  = "https://www.polaraccesslink.com/v3"
+
+
+def _env_url(name: str, default: str) -> str:
+    """Override por env solo para el mock local (BUILD 405); sin env = URL real."""
+    return ((os.getenv(name) or "").strip() or default).rstrip("/")
+
+
+def _auth_url() -> str:
+    return _env_url("POLAR_AUTH_URL", _AUTH_URL)
+
+
+def _token_url() -> str:
+    return _env_url("POLAR_TOKEN_URL", _TOKEN_URL)
+
+
+def _api_base() -> str:
+    return _env_url("POLAR_API_BASE_URL", _API_BASE)
 
 _DURATION_RE = re.compile(r"^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$")
 
@@ -141,7 +159,7 @@ class PolarProvider(WearableProvider):
         client_secret = credentials.get("client_secret", "")
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.post(
-                _TOKEN_URL,
+                _token_url(),
                 data={
                     "grant_type": "authorization_code",
                     "code": credentials["code"],
@@ -155,7 +173,7 @@ class PolarProvider(WearableProvider):
             access_token = token_data["access_token"]
 
             reg = await client.post(
-                f"{_API_BASE}/users",
+                f"{_api_base()}/users",
                 json={"member-id": credentials["member_id"]},
                 headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
             )
@@ -170,7 +188,7 @@ class PolarProvider(WearableProvider):
         """GET /v3/exercises (lista de transacción de exercises nuevos)."""
         async with httpx.AsyncClient(timeout=20) as http:
             r = await http.get(
-                f"{_API_BASE}/exercises",
+                f"{_api_base()}/exercises",
                 headers={"Authorization": f"Bearer {client}", "Accept": "application/json"},
             )
             r.raise_for_status()
@@ -192,7 +210,7 @@ class PolarProvider(WearableProvider):
             return
         async with httpx.AsyncClient(timeout=20) as http:
             r = await http.get(
-                f"{_API_BASE}/exercises/{activity_id}/gpx",
+                f"{_api_base()}/exercises/{activity_id}/gpx",
                 headers={"Authorization": f"Bearer {client}"},
             )
             if r.status_code != 200:

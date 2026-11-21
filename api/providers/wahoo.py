@@ -38,6 +38,15 @@ from . import WearableProvider
 _TOKEN_URL = "https://api.wahooligan.com/oauth/token"
 _API_BASE = "https://api.wahooligan.com/v1"
 
+
+def _token_url() -> str:
+    """URL del token. Override solo para el mock local (BUILD 405); sin env = URL real."""
+    return (os.getenv("WAHOO_TOKEN_URL") or "").strip() or _TOKEN_URL
+
+
+def _api_base() -> str:
+    return ((os.getenv("WAHOO_API_BASE_URL") or "").strip() or _API_BASE).rstrip("/")
+
 # workout_type_id -> sport interno de LabX. Mapeo tomado literalmente de
 # la tabla de "Workout Type IDs" de la documentación oficial (no todos
 # los ~71 tipos están cubiertos, solo los relevantes para triatlón; el
@@ -135,7 +144,7 @@ class WahooProvider(WearableProvider):
                 redirect_uri=credentials["redirect_uri"],
             )
         async with httpx.AsyncClient(timeout=20) as client:
-            r = await client.post(_TOKEN_URL, params=params)
+            r = await client.post(_token_url(), params=params)
             r.raise_for_status()
             body = r.json()
             access_token = body["access_token"]
@@ -146,7 +155,7 @@ class WahooProvider(WearableProvider):
         """GET /v1/workouts (paginado, documentado)."""
         async with httpx.AsyncClient(timeout=20) as http:
             r = await http.get(
-                f"{_API_BASE}/workouts",
+                f"{_api_base()}/workouts",
                 headers={"Authorization": f"Bearer {client}"},
                 params={"page": page, "per_page": per_page},
             )
