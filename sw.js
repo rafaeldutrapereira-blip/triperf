@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '402';  // TSS-LATENTE el plan builder (cumplimiento semanal y panel del coach) y el emparejamiento de sesiones con actividades leian a.training_stress_score, campo que no existe en GarminActivity (lanzaba AttributeError); ahora usan la columna real tss; sin cambios de UI ni i18n; i18n.js?v=402 en las paginas
+var BUILD_VERSION = '403';  // MATCHING el emparejamiento de sesiones con actividades leia moving_time_seconds/distance_meters/started_at, campos que no existen en GarminActivity (AttributeError silencioso, sin adherencia plan-vs-real); ahora usa dur_min, dist_km y date_iso; sin cambios de UI ni i18n
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

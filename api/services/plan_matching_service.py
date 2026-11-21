@@ -21,7 +21,7 @@ Mapping de deportes Garmin → deportes del plan:
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -159,8 +159,9 @@ def match_sessions_for_user(
         )
 
         tss_actual    = best.tss or 0
-        dur_actual    = best.moving_time_seconds   // 60 if best.moving_time_seconds else None
-        dist_actual   = round(best.distance_meters / 1000, 2) if best.distance_meters else None
+        # MATCHING (403): columnas reales de GarminActivity: dur_min, dist_km, date_iso.
+        dur_actual    = best.dur_min if best.dur_min else None
+        dist_actual   = round(best.dist_km, 2) if best.dist_km else None
         compliance    = round(tss_actual / tss_planned * 100, 1) if tss_planned > 0 else None
 
         session.garmin_activity_id  = best.id
@@ -168,7 +169,14 @@ def match_sessions_for_user(
         session.duration_actual_min = dur_actual
         session.distance_actual_km  = dist_actual
         session.compliance_pct      = compliance
-        session.completed_at        = best.started_at
+        # GarminActivity no guarda hora de inicio: solo la fecha (date_iso). Otras
+        # pantallas usan completed_at no nulo como "sesion completada", asi que se
+        # sella con la FECHA de la actividad (medianoche = solo fecha, sin hora real).
+        try:
+            session.completed_at = datetime.combine(
+                date.fromisoformat(str(best.date_iso)[:10]), datetime.min.time())
+        except (TypeError, ValueError):
+            session.completed_at = None
 
         used_activity_ids.add(best.id)
         matched_count += 1

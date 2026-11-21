@@ -74,7 +74,7 @@ def test_texto_sobre_boton_de_acento_no_depende_del_tema():
 
 def test_sellos_de_version():
     sw = _r("sw.js")
-    assert "var BUILD_VERSION = '402'" in sw
+    assert "var BUILD_VERSION = '403'" in sw
     for s in ("'/i18n.js?v=402'", "'/theme-light.css?v=396'", "'/nav.js?v=11'", "'/auth.js?v=374'"):
         assert s in sw, s
     for p in ("analytics", "detalle", "nutrition"):

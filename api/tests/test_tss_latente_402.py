@@ -65,11 +65,7 @@ def test_coach_compliance_usa_tss_real(client, db, coach_user, athlete_user):
 
 
 def test_matching_elige_actividad_con_tss_mas_cercano(db, coach_user, athlete_user, monkeypatch):
-    # Hallazgo aparte (no corregido en esta pila): GarminActivity tampoco tiene
-    # moving_time_seconds / distance_meters / started_at, que el matching lee
-    # despues de elegir. Se definen como None solo para aislar la seleccion por TSS.
-    for n in ("moving_time_seconds", "distance_meters", "started_at"):
-        monkeypatch.setattr(GarminActivity, n, None, raising=False)
+    # (BUILD 403: el matching ya usa dur_min/dist_km/date_iso; sin monkeypatch.)
     d = date.today() - timedelta(days=1)
     p = _plan(db, coach_user, athlete_user, d - timedelta(days=1))
     s = db.query(PlanSession).filter_by(plan_id=p.id).one()
