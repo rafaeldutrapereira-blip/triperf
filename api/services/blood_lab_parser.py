@@ -25,9 +25,22 @@ AI_MODEL = "claude-sonnet-4-6"  # mismo modelo que POST /labs/exams/{id}/analyze
 # GEMINI-GRATIS (388): proveedor por defecto = Google Gemini (free tier, sin gastar).
 # LAB_PARSER_PROVIDER = "gemini" (default) | "anthropic" (fallback, camino intacto).
 # El modelo se puede cambiar sin deploy con GEMINI_MODEL (los IDs se deprecan).
-GEMINI_MODEL = "gemini-3.5-flash"
+# GEMINI (406): gemini-3.8-flash es el unico modelo verificado con la clave actual
+# (gemini-2.5-flash da 404 "no longer available to new users" en generateContent).
+GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-GEMINI_TIMEOUT = 90
+# GEMINI (406): la lectura real de un PDF tardo ~270 s en el smoke test del 15/11
+# (14 marcadores de MODULAB_02147223.pdf); con 90 s el servidor se rendia antes.
+# Sobreescribible por env GEMINI_TIMEOUT (segundos).
+GEMINI_TIMEOUT = 300
+
+
+def _gemini_timeout() -> float:
+    try:
+        v = float(os.getenv("GEMINI_TIMEOUT", "").strip() or GEMINI_TIMEOUT)
+    except ValueError:
+        return float(GEMINI_TIMEOUT)
+    return v if v > 0 else float(GEMINI_TIMEOUT)
 
 MAX_PDF_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_BYTES = 5 * 1024 * 1024   # limite de imagen de la API
@@ -262,7 +275,7 @@ def _gemini_post(url: str, key: str, payload: dict) -> dict:
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode("utf-8"), method="POST",
         headers={"Content-Type": "application/json", "x-goog-api-key": key})
-    with urllib.request.urlopen(req, timeout=GEMINI_TIMEOUT) as r:  # noqa: S310
+    with urllib.request.urlopen(req, timeout=_gemini_timeout()) as r:  # noqa: S310
         return json.loads(r.read().decode("utf-8"))
 
 

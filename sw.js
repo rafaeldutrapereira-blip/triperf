@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '405';  // SIMULACION-MARCAS validacion virtual de Wahoo y Polar: servidor mock local (api/tests/mock_vendors.py) que sirve verbatim los fixtures oficiales + corredor automatico de un comando (python -m api.tests.mock_vendors_runner) que hace OAuth, sync generico y verifica normalizacion contra una BD temporal; URLs base de wahoo.py/polar.py configurables por env (default = URL real, produccion sin cambios); flags WAHOO_ENABLED/POLAR_ENABLED intactos, el handshake con el vendor real sigue pendiente de 1 cuenta real
+var BUILD_VERSION = '406';  // GEMINI lectura automatica de Blood Labs: GEMINI_TIMEOUT 90 -> 300 s (override por env; la lectura real tardo ~270 s en el smoke test) y modelo por defecto gemini-3.8-flash (unico verificado con la clave actual; override por env GEMINI_MODEL); clave, despacho por LAB_PARSER_PROVIDER y fallback Anthropic intactos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
