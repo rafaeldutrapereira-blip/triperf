@@ -2915,6 +2915,8 @@
               'gsync_pull_failed',
               'Garmin no permitió traer las actividades ahora; las nuevas llegan solas por el envío automático',
             ],
+            pull_timeout: ['gsync_timeout', 'Garmin tardó demasiado en responder; reintenta en unos minutos'],
+            garmin_error: ['gsync_garmin_error', 'Garmin devolvió un error; reintenta más tarde'],
           }[d.status] || ['gsync_err', 'No se pudo sincronizar Garmin'];
         return { ok: false, text: _t(key[0], key[1]) };
       }
@@ -2990,7 +2992,8 @@
             toast(m.text, m.ok ? undefined : 'err');
           })
           .catch(function () {
-            toast(_t('gsync_err', 'No se pudo sincronizar Garmin'), 'err');
+            /* corte de red o respuesta cortada (p. ej. proxy a ~100 s): no es un fallo de Garmin */
+            toast(_t('gsync_network', 'Se cortó la conexión con LabX antes de terminar; reintenta'), 'err');
           })
           .then(function () {
             _gSyncBusy = false;

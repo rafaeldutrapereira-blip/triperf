@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '409';  // GEMINI-MODELO el modelo Gemini por defecto de la lectura automatica de examenes pasa de gemini-3.8-flash (503 por alta demanda) a gemini-3.5-flash; timeout, proveedor y fallback Anthropic intactos
+var BUILD_VERSION = '411';  // SYNC-ERROR-REAL el sync manual de Garmin deja rastro [GARMIN-SYNC] en el log y falla con la causa real (timeout, error de Garmin, reconexion) en vez del aviso generico; el ingest del push ignora duplicados (misma actividad/sueno) sin IntegrityError; pull, OAuth y tokens intactos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

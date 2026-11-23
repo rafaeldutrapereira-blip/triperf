@@ -7,6 +7,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
+import time
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -178,28 +180,59 @@ def _sync_fail(status_code: int, status: str, message: str, **extra) -> JSONResp
                          "errors": [{"message": message}], **extra}, status_code=status_code)
 
 
+def _classify_pull_error(exc: Exception) -> str:
+    """SYNC-ERROR-REAL: causa honesta del fallo del pull, leida del mensaje de GarminOfficialError
+    (sin tocar el pull): timeout de red, error 5xx/sin respuesta de Garmin, o rechazo/otro."""
+    msg = str(exc)
+    if "Timeout" in msg:
+        return "pull_timeout"
+    if "no respondio" in msg or re.search(r"\(5\d\d\)", msg):
+        return "garmin_error"
+    return "pull_failed"
+
+
+_PULL_MESSAGES = {
+    "pull_timeout": "Garmin tardó demasiado en responder. Reintenta en unos minutos.",
+    "garmin_error": "Garmin devolvió un error. Reintenta más tarde.",
+    "pull_failed": "Garmin no permitió traer las actividades ahora. Las nuevas llegan solas por el envío automático de Garmin.",
+}
+
+
 @router.post("/sync")
 def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_current_user),
                 db: Session = Depends(get_db)):
     """Sync manual de ACTIVIDADES por la API oficial (la salud llega solo por push y no se pide).
     Via 1: pull oficial con el token del usuario. Via 2 (solo si el pull no es posible):
-    dispatch legacy con credenciales y el interruptor encendido. Sin via: error honesto."""
+    dispatch legacy con credenciales y el interruptor encendido. Sin via: error honesto.
+    SYNC-ERROR-REAL: cada intento deja una linea `[GARMIN-SYNC]` (inicio, resultado, duracion)."""
+    t0 = time.monotonic()
+    logger.info("[GARMIN-SYNC] inicio user=%s", me.id)
+
+    def _done(result: str, detail: str = "", level: int = logging.INFO) -> None:
+        logger.log(level, "[GARMIN-SYNC] fin user=%s result=%s dur_s=%.1f%s", me.id, result,
+                   time.monotonic() - t0, f" detail={detail}" if detail else "")
+
     from .athlete_routes import _latest_live_sync_str
     token_row = db.query(GarminOAuthToken).filter(GarminOAuthToken.user_id == me.id).first()
     if not token_row:
+        _done("not_connected")
         return _sync_fail(409, "not_connected",
                           "Garmin no está conectado por la vía oficial. Conéctalo primero.")
     if not go.configured():
+        _done("unavailable")
         return _sync_fail(503, "unavailable", "La integración oficial de Garmin no está disponible.")
     access = go.get_valid_access_token(db, me.id)
     pull_error = None
+    pull_detail = ""
     if not access:
         pull_error = "needs_reconnect"
+        pull_detail = "sin token valido (refresh no posible)"
     else:
         try:
             items = go.fetch_recent_activities(access)
         except go.GarminOfficialError as exc:
-            pull_error = "pull_failed"
+            pull_error = _classify_pull_error(exc)
+            pull_detail = str(exc)
             logger.warning("Garmin sync manual: pull fallo user=%s: %s", me.id, exc)
         else:
             from ..garmin_ingest import _upsert_activity, _recalc_load
@@ -214,6 +247,7 @@ def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_curren
             db.commit()
             if saved:
                 _recalc_load(db, me.id)
+            _done("ok", f"saved={saved} items={len(items)}")
             return {"ok": True, "status": "ok", "via": "official", "saved": saved,
                     "health_included": False, "last_sync": _latest_live_sync_str(db, me.id),
                     "message": f"Actividades al día ({saved} recibidas)."}
@@ -222,15 +256,16 @@ def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_curren
     from ..garmin_legacy_flags import legacy_sync_enabled
     if me.garmin_email and legacy_sync_enabled():
         dispatch_garmin_sync(me.id, background_tasks)
+        _done("legacy_dispatch", f"{pull_error}: {pull_detail}", logging.WARNING)
         return {"ok": True, "status": "syncing", "via": "legacy", "saved": None,
                 "health_included": False, "last_sync": _latest_live_sync_str(db, me.id),
                 "message": "Sincronización iniciada por la vía anterior."}
+    _done(pull_error, pull_detail, logging.WARNING)
     if pull_error == "needs_reconnect":
         return _sync_fail(409, "needs_reconnect",
                           "La conexión con Garmin venció. Reconecta Garmin para sincronizar.",
                           last_sync=_latest_live_sync_str(db, me.id))
-    return _sync_fail(502, "pull_failed",
-                      "Garmin no permitió traer las actividades ahora. Las nuevas llegan solas por el envío automático de Garmin.",
+    return _sync_fail(502, pull_error, _PULL_MESSAGES[pull_error],
                       last_sync=_latest_live_sync_str(db, me.id))
 
 

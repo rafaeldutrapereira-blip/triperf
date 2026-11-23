@@ -15,6 +15,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .activity_dedupe import mark_new_activity
@@ -53,6 +54,19 @@ def _mins(seconds):
 
 
 # ── Actividades ───────────────────────────────────────────────────────────────
+
+def _insert_ignoring_duplicate(db: Session, row) -> bool:
+    """SYNC-ERROR-REAL: inserta `row` dentro de un SAVEPOINT. Si otra via (push concurrente,
+    sync manual) ya inserto la misma clave unica, el duplicado se ignora en silencio: el dato
+    ya existe, no se pierde nada y el resto de la transaccion queda intacto. True = insertada."""
+    try:
+        with db.begin_nested():
+            db.add(row)
+            db.flush()
+    except IntegrityError:
+        return False
+    return True
+
 
 def _upsert_activity(db: Session, user_id: str, it: dict) -> bool:
     from .garmin_pull_service import _SPORT_COLOR, _format_pace, _format_swim_pace, _norm_sport
@@ -103,8 +117,8 @@ def _upsert_activity(db: Session, user_id: str, it: dict) -> bool:
         new_row = GarminActivity(user_id=user_id, activity_id=act_id,
                                  icon={"swim": "🏊", "bike": "🚴", "run": "🏃", "gym": "💪"}.get(sport, "🏅"),
                                  color=color, stroke=stroke, **fields)
-        db.add(new_row)
-        db.flush()
+        if not _insert_ignoring_duplicate(db, new_row):
+            return False  # carrera: la actividad ya existe (misma user_id + activity_id)
         mark_new_activity(db, new_row)  # PILA 374: misma sesion ya llegada por otra via
     return True
 
@@ -138,7 +152,9 @@ def _upsert_daily(db: Session, user_id: str, it: dict) -> bool:
             setattr(row, k, v)
         row.synced_at = _now()
     else:
-        db.add(GarminHealthDaily(user_id=user_id, date_iso=date_iso, synced_at=_now(), **vals))
+        if not _insert_ignoring_duplicate(
+                db, GarminHealthDaily(user_id=user_id, date_iso=date_iso, synced_at=_now(), **vals)):
+            return False  # carrera: ya hay diario para esa fecha
     return True
 
 
@@ -173,7 +189,9 @@ def _upsert_sleep(db: Session, user_id: str, it: dict) -> bool:
             setattr(row, k, v)
         row.synced_at = _now()
     else:
-        db.add(GarminSleepSession(user_id=user_id, date_iso=date_iso, synced_at=_now(), **vals))
+        if not _insert_ignoring_duplicate(
+                db, GarminSleepSession(user_id=user_id, date_iso=date_iso, synced_at=_now(), **vals)):
+            return False  # carrera: ya hay sueno para esa fecha
     return True
 
 
