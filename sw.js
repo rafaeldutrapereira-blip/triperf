@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '406';  // GEMINI lectura automatica de Blood Labs: GEMINI_TIMEOUT 90 -> 300 s (override por env; la lectura real tardo ~270 s en el smoke test) y modelo por defecto gemini-3.8-flash (unico verificado con la clave actual; override por env GEMINI_MODEL); clave, despacho por LAB_PARSER_PROVIDER y fallback Anthropic intactos
+var BUILD_VERSION = '407';  // ASISTENTE-CLARO modo claro del panel del Asistente IA (variables --lxb/--lxt/--lxd acotadas a #lx-ai-panel en theme-vars.css, que es lo unico que enlazan dashboard.html y shell.html) y de las tarjetas de la pestana Mental de estado.html (.men-scope fijaba su paleta oscura); modo oscuro intacto (capturas identicas)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
