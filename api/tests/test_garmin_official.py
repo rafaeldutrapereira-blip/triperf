@@ -280,3 +280,68 @@ def test_secret_never_in_logs(client, db, athlete_user, configured, caplog):
     with patch.object(go, "_post_token", side_effect=go.GarminOfficialError("boom")):
         client.get(f"{BASE}/callback?code=abc&state={q['state'][0]}", follow_redirects=False)
     assert FAKE_SECRET not in caplog.text
+
+
+# ── GARMIN-RETORNO-WEB (BUILD 408): destino del retorno segun rol ──────────────
+_PW = {"coach@test.com": "CoachPass123", "athlete@test.com": "AthlPass123"}
+
+
+def _start_as(client, user):
+    t = login(client, user.email, _PW[user.email])
+    client.cookies.clear()
+    r = client.get(f"{BASE}/connect", headers=auth_headers(t), follow_redirects=False)
+    assert r.status_code == 302
+    return None, parse_qs(urlparse(r.headers["location"]).query)
+
+
+def _callback_location(client, db, user, **extra):
+    _, q = _start_as(client, user)
+    qs = f"error=access_denied&state={q['state'][0]}" if extra.get("denied") else f"code=abc&state={q['state'][0]}"
+    if extra.get("ok"):
+        with patch.object(go, "_post_token", return_value=TOKENS), \
+             patch.object(go, "_fetch_garmin_user_id", return_value="G-9"):
+            return client.get(f"{BASE}/callback?{qs}", follow_redirects=False).headers["location"]
+    return client.get(f"{BASE}/callback?{qs}", follow_redirects=False).headers["location"]
+
+
+def test_retorno_coach_va_al_dashboard(client, db, coach_user, configured):
+    loc = _callback_location(client, db, coach_user, ok=True)
+    assert "/dashboard.html?garmin=connected" in loc and "athlete-app" not in loc
+
+
+def test_retorno_atleta_sigue_en_athlete_app(client, db, athlete_user, configured):
+    loc = _callback_location(client, db, athlete_user, ok=True)
+    assert "/athlete-app.html?garmin=connected" in loc and "dashboard.html" not in loc
+
+
+def test_retorno_denied_y_error_segun_rol(client, db, coach_user, athlete_user, configured):
+    assert "/dashboard.html?garmin=denied" in _callback_location(client, db, coach_user, denied=True)
+    assert "/athlete-app.html?garmin=denied" in _callback_location(client, db, athlete_user, denied=True)
+    _, q = _start_as(client, coach_user)
+    with patch.object(go, "_post_token", side_effect=go.GarminOfficialError("x")):
+        r = client.get(f"{BASE}/callback?code=abc&state={q['state'][0]}", follow_redirects=False)
+    assert "/dashboard.html?garmin=error" in r.headers["location"]
+
+
+def test_retorno_sin_state_valido_va_a_la_app(client, configured):
+    r = client.get(f"{BASE}/callback?code=abc", follow_redirects=False)
+    assert "/athlete-app.html?garmin=error_state" in r.headers["location"]
+
+
+def test_retorno_coach_no_duplica_tarjeta(client, db, coach_user, configured):
+    from api.models import GarminOAuthToken
+    _callback_location(client, db, coach_user, ok=True)
+    _callback_location(client, db, coach_user, ok=True)
+    assert db.query(GarminOAuthToken).filter(GarminOAuthToken.user_id == coach_user.id).count() == 1
+
+
+def test_dashboard_consume_garmin_param():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[2] / "dashboard.html").read_text(encoding="utf-8")
+    assert "garminReturnConsume" in html and "q.get('garmin')" in html
+    for v in ("'connected'", "'denied'", "'error_state'"):
+        assert v in html
+    for k in ("garmin_ret_ok", "garmin_ret_denied", "garmin_ret_err"):
+        assert k in html
+        assert html.count(k) >= 1
+    assert "q.delete('garmin')" in html

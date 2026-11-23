@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '407';  // ASISTENTE-CLARO modo claro del panel del Asistente IA (variables --lxb/--lxt/--lxd acotadas a #lx-ai-panel en theme-vars.css, que es lo unico que enlazan dashboard.html y shell.html) y de las tarjetas de la pestana Mental de estado.html (.men-scope fijaba su paleta oscura); modo oscuro intacto (capturas identicas)
+var BUILD_VERSION = '408';  // GARMIN-RETORNO-WEB el retorno OAuth de Garmin vuelve al dashboard web para coach/admin (/dashboard.html?garmin=...) y sigue en athlete-app.html para atletas; dashboard.html consume ?garmin= y muestra el aviso; flujo OAuth, tokens y sync intactos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

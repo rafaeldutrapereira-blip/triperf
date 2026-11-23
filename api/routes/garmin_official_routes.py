@@ -25,6 +25,9 @@ ingest_log = logging.getLogger("garmin_official_ingest")
 router = APIRouter(prefix="/integrations/garmin", tags=["garmin-official"])
 
 PROFILE_PAGE = "/athlete-app.html"
+# GARMIN-RETORNO-WEB: coach/admin vuelven al dashboard web; el atleta sigue en la app.
+WEB_RETURN_PAGE = "/dashboard.html"
+WEB_RETURN_ROLES = ("coach", "admin")
 # Claves de lista del payload push de Garmin (Activity + Health APIs)
 _PUSH_KEYS_MAX = 50
 
@@ -34,8 +37,18 @@ def _require_configured():
         raise HTTPException(503, "garmin no configurado")
 
 
-def _redirect(result: str) -> RedirectResponse:
-    return RedirectResponse(f"{get_app_url()}{PROFILE_PAGE}?garmin={result}", status_code=302)
+def _return_page(db: Session | None, user_id: str | None) -> str:
+    """Destino del retorno segun el rol del usuario del state (sin state valido: app)."""
+    if db is not None and user_id:
+        row = db.query(User.rol).filter(User.id == user_id).first()
+        if row and (row[0] or "").lower() in WEB_RETURN_ROLES:
+            return WEB_RETURN_PAGE
+    return PROFILE_PAGE
+
+
+def _redirect(result: str, db: Session | None = None, user_id: str | None = None) -> RedirectResponse:
+    page = _return_page(db, user_id)
+    return RedirectResponse(f"{get_app_url()}{page}?garmin={result}", status_code=302)
 
 
 def dispatch_garmin_sync(user_id: str, background_tasks) -> str:
@@ -65,16 +78,16 @@ def garmin_callback(
         return _redirect("error_state")
     user_id, verifier = consumed
     if error or not code:
-        return _redirect("denied")
+        return _redirect("denied", db, user_id)
     try:
         tokens = go.exchange_code(code, verifier)
         garmin_uid = go._fetch_garmin_user_id(tokens["access_token"])
         go.save_tokens(db, user_id, tokens, garmin_uid)
     except go.GarminOfficialError as exc:
         logger.warning("Garmin callback fallo user=%s: %s", user_id, exc)
-        return _redirect("error")
+        return _redirect("error", db, user_id)
     logger.info("Garmin oficial conectado user=%s", user_id)
-    return _redirect("connected")
+    return _redirect("connected", db, user_id)
 
 
 @router.get("/status")

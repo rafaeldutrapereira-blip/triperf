@@ -8332,6 +8332,25 @@
             }
           }
         }
+        // GARMIN-RETORNO-WEB: retorno del OAuth oficial (?garmin=connected|denied|error|error_state)
+        window.garminReturnConsume = function () {
+          var q = new URLSearchParams(window.location.search);
+          var v = q.get('garmin');
+          if (!v) return false;
+          var key = null, fb = '', ok = false;
+          if (v === 'connected') { key = 'garmin_ret_ok'; fb = 'Garmin conectado ✓'; ok = true; }
+          else if (v === 'denied') { key = 'garmin_ret_denied'; fb = 'Garmin: autorización denegada'; }
+          else if (v === 'error' || v === 'error_state') { key = 'garmin_ret_err'; fb = 'Garmin: error al conectar'; }
+          if (!key) return false;
+          showToast(_t(key, fb), ok ? 'ok' : 'err');
+          q.delete('garmin');
+          try {
+            var qs = q.toString();
+            history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+          } catch (e) {}
+          return true;
+        };
+        window.garminReturnConsume();
         // Si llegó con ?upgraded=1, mostrar toast
         var p = new URLSearchParams(window.location.search);
         if (p.get('upgraded') === '1') {

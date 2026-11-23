@@ -36,4 +36,4 @@ def test_estado_men_scope_claro():
 
 def test_build_407():
     sw = _read("sw.js")
-    assert "var BUILD_VERSION = '407';" in sw
+    assert "var BUILD_VERSION = '408';" in sw
