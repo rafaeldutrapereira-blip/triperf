@@ -43,7 +43,7 @@ def _env(monkeypatch):
 
 def test_defaults_300_and_model():
     assert bp.GEMINI_TIMEOUT == 300
-    assert bp.GEMINI_MODEL == "gemini-3.8-flash"
+    assert bp.GEMINI_MODEL == "gemini-3.5-flash"
 
 
 def test_timeout_applied_is_300_and_env_overrides(monkeypatch):
@@ -69,7 +69,7 @@ def test_url_carries_model_and_env_override(monkeypatch):
     bp._call_gemini("application/pdf", b"%PDF", "p")
     monkeypatch.setenv("GEMINI_MODEL", "otro-modelo")
     bp._call_gemini("application/pdf", b"%PDF", "p")
-    assert "/models/gemini-3.8-flash:generateContent" in urls[0]
+    assert "/models/gemini-3.5-flash:generateContent" in urls[0]
     assert "/models/otro-modelo:generateContent" in urls[1]
 
 

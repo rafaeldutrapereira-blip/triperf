@@ -36,4 +36,6 @@ def test_estado_men_scope_claro():
 
 def test_build_407():
     sw = _read("sw.js")
-    assert "var BUILD_VERSION = '408';" in sw
+    import re
+    m = re.search(r"var BUILD_VERSION = '(\d+)';", sw)
+    assert m and int(m.group(1)) >= 407

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '408';  // GARMIN-RETORNO-WEB el retorno OAuth de Garmin vuelve al dashboard web para coach/admin (/dashboard.html?garmin=...) y sigue en athlete-app.html para atletas; dashboard.html consume ?garmin= y muestra el aviso; flujo OAuth, tokens y sync intactos
+var BUILD_VERSION = '409';  // GEMINI-MODELO el modelo Gemini por defecto de la lectura automatica de examenes pasa de gemini-3.8-flash (503 por alta demanda) a gemini-3.5-flash; timeout, proveedor y fallback Anthropic intactos
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

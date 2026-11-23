@@ -25,9 +25,10 @@ AI_MODEL = "claude-sonnet-4-6"  # mismo modelo que POST /labs/exams/{id}/analyze
 # GEMINI-GRATIS (388): proveedor por defecto = Google Gemini (free tier, sin gastar).
 # LAB_PARSER_PROVIDER = "gemini" (default) | "anthropic" (fallback, camino intacto).
 # El modelo se puede cambiar sin deploy con GEMINI_MODEL (los IDs se deprecan).
-# GEMINI (406): gemini-3.8-flash es el unico modelo verificado con la clave actual
-# (gemini-2.5-flash da 404 "no longer available to new users" en generateContent).
-GEMINI_MODEL = "gemini-3.8-flash"
+# GEMINI-MODELO (409): gemini-3.5-flash es el que responde con la clave actual
+# (23/11: gemini-3.8-flash daba HTTP 503 "high demand"; gemini-2.5-flash da 404
+# "no longer available to new users"). Override por env GEMINI_MODEL.
+GEMINI_MODEL = "gemini-3.5-flash"
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 # GEMINI (406): la lectura real de un PDF tardo ~270 s en el smoke test del 15/11
 # (14 marcadores de MODULAB_02147223.pdf); con 90 s el servidor se rendia antes.
