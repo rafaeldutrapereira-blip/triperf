@@ -477,6 +477,9 @@ class TestCoachComplianceTrend:
 
         gm = GroupMember(id=str(uuid.uuid4()), group_id=g.id, athlete_id=athlete.id)
         db.add(gm)
+        # A1: la membresia sola no da acceso; se exige relacion activa.
+        from api.models import CoachAthlete
+        db.add(CoachAthlete(coach_id=coach.id, athlete_id=athlete.id, status="active"))
         db.commit()
 
         return coach_tok, ath_tok, coach, athlete, g

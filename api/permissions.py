@@ -33,16 +33,8 @@ def assert_coach_owns_athlete(coach_id: str, athlete_id: str, db: Session) -> Us
         CoachAthlete.athlete_id == athlete_id,
         CoachAthlete.status == "active",
     ).first()
-    membership = (
-        db.query(GroupMember)
-        .join(Group, Group.id == GroupMember.group_id)
-        .filter(
-            Group.coach_id == coach_id,
-            GroupMember.athlete_id == athlete_id,
-        )
-        .first()
-    )
-    if not has_relation and not membership:
+    # A1: la sola membresia de grupo ya no prueba relacion; se exige la activa.
+    if not has_relation:
         raise HTTPException(
             status_code=403,
             detail="Acceso denegado: este atleta no pertenece a tus grupos",

@@ -100,13 +100,12 @@ def _verify_coach_access(coach: User, athlete_id: str, db: Session) -> None:
     """Verifica que el coach (o admin) tiene acceso al atleta dado."""
     if coach.rol == "admin":
         return  # admin puede ver todo
-    # Verifica que el atleta está en al menos un grupo del coach
-    in_group = (
-        db.query(GroupMember)
-        .join(Group, Group.id == GroupMember.group_id)
-        .filter(Group.coach_id == coach.id, GroupMember.athlete_id == athlete_id)
-        .first()
-    )
+    # A1: exige relacion coach-atleta ACTIVA; la membresia de grupo sola no basta.
+    in_group = db.query(CoachAthlete).filter(
+        CoachAthlete.coach_id == coach.id,
+        CoachAthlete.athlete_id == athlete_id,
+        CoachAthlete.status == "active",
+    ).first()
     if not in_group:
         raise HTTPException(403, "No tienes acceso a los datos de este atleta.")
 

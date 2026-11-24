@@ -16,6 +16,10 @@ def group_with_athlete(db, coach_user, athlete_user):
     db.flush()
     m = GroupMember(group_id=g.id, athlete_id=athlete_user.id)
     db.add(m)
+    # A1: la membresia sola no da acceso; el coach necesita relacion activa.
+    from api.models import CoachAthlete
+    if not db.query(CoachAthlete).filter_by(coach_id=coach_user.id, athlete_id=athlete_user.id).first():
+        db.add(CoachAthlete(coach_id=coach_user.id, athlete_id=athlete_user.id, status="active"))
     db.commit()
     db.refresh(g)
     return g
@@ -64,11 +68,41 @@ class TestGroups:
         assert r.status_code == 201
         group_id = r.json()["id"]
 
-        # Agregar miembro
+        # Agregar miembro (A1: requiere relacion coach-atleta activa)
+        from api.models import CoachAthlete
+        db.add(CoachAthlete(coach_id=coach_user.id, athlete_id=athlete_user.id, status="active"))
+        db.commit()
         r2 = client.post(f"/api/coach/groups/{group_id}/members",
             json={"user_id": athlete_user.id},
             headers=auth_headers(token))
         assert r2.status_code in (200, 201)
+
+    def test_add_member_sin_relacion_activa_403(self, client, db, coach_user, athlete_user):
+        """A1: sin CoachAthlete o con status pending, no se puede agregar ni leer datos."""
+        from api.models import CoachAthlete, GroupMember
+        token = login(client, "coach@test.com", "CoachPass123")
+        gid = client.post("/api/coach/groups", json={"nombre": "G A1"},
+                          headers=auth_headers(token)).json()["id"]
+        r = client.post(f"/api/coach/groups/{gid}/members",
+                        json={"user_id": athlete_user.id}, headers=auth_headers(token))
+        assert r.status_code == 403
+        db.add(CoachAthlete(coach_id=coach_user.id, athlete_id=athlete_user.id, status="pending"))
+        db.commit()
+        r = client.post(f"/api/coach/groups/{gid}/members",
+                        json={"user_id": athlete_user.id}, headers=auth_headers(token))
+        assert r.status_code == 403
+        assert db.query(GroupMember).filter(GroupMember.group_id == gid).count() == 0
+
+    def test_membresia_de_grupo_sola_no_da_acceso(self, db, coach_user, athlete_user):
+        """A1: assert_coach_owns_athlete ya no acepta solo GroupMember."""
+        from fastapi import HTTPException
+        from api.permissions import assert_coach_owns_athlete
+        g = Group(nombre="G", coach_id=coach_user.id)
+        db.add(g); db.commit()
+        db.add(GroupMember(group_id=g.id, athlete_id=athlete_user.id)); db.commit()
+        with pytest.raises(HTTPException) as e:
+            assert_coach_owns_athlete(coach_user.id, athlete_user.id, db)
+        assert e.value.status_code == 403
 
     def test_athlete_cannot_create_group(self, client, athlete_user):
         token = login(client, "athlete@test.com", "AthlPass123")

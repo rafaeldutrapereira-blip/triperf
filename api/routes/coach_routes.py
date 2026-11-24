@@ -191,8 +191,18 @@ def add_member(group_id: str, body: AddMemberRequest,
     g = db.query(Group).filter(Group.id == group_id, Group.coach_id == coach.id).first()
     if not g:
         raise HTTPException(404, "Grupo no encontrado")
-    if not db.query(User).filter(User.id == body.user_id).first():
+    target = db.query(User).filter(User.id == body.user_id).first()
+    if not target:
         raise HTTPException(404, "Usuario no encontrado")
+    # A1: solo atletas con relacion coach-atleta ACTIVA; la membresia de grupo
+    # no crea relacion (evita agregar usuarios ajenos para leer sus datos).
+    active_rel = db.query(CoachAthlete).filter(
+        CoachAthlete.coach_id == coach.id,
+        CoachAthlete.athlete_id == body.user_id,
+        CoachAthlete.status == "active",
+    ).first()
+    if target.rol not in ("atleta", "athlete") or not active_rel:
+        raise HTTPException(403, "Solo puedes agregar atletas con relación activa contigo")
     exists = db.query(GroupMember).filter(
         GroupMember.group_id == group_id, GroupMember.athlete_id == body.user_id
     ).first()
