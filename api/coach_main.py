@@ -80,6 +80,48 @@ from .routes.week_summary_routes       import router as week_summary_router
 from .routes.gear_routes                import coach_router as gear_coach_router
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent
+
+# ── Guard de la raiz estatica ─────────────────────────────────────
+# La app sirve el frontend desde la raiz del proyecto, que tambien contiene .env,
+# .git, data/, *.db, codigo, logs y respaldos. Solo se sirve lo que es frontend.
+_STATIC_ALLOWED_EXT = {
+    ".html", ".htm", ".js", ".mjs", ".css", ".json", ".webmanifest", ".xml",
+    ".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".avif",
+    ".woff", ".woff2", ".ttf", ".otf", ".map", ".mp3", ".mp4", ".pdf",
+}
+_STATIC_BLOCKED_TOPDIRS = {
+    "data", "backups", "logs", "api", "alembic", "deploy", "scripts", "tests", "utils",
+    "models", "node_modules", "audits", "nginx", "docs", "e2e", "android", "ios",
+    "www", "store-assets", "assets_onepager", "__pycache__",
+}
+
+
+def _static_path_allowed(path: str) -> bool:
+    import posixpath
+    from urllib.parse import unquote
+    parts = [x for x in unquote(path).replace("\\", "/").split("/") if x]
+    if any(x.startswith(".") or x in ("..",) for x in parts):
+        return False
+    if parts and parts[0].lower() in _STATIC_BLOCKED_TOPDIRS:
+        return False
+    if not parts:
+        return True
+    last = parts[-1]
+    ext = posixpath.splitext(last)[1].lower()
+    if last.lower() in ("robots.txt", "security.txt"):
+        return True
+    if ext == "":
+        return True  # directorio (html=True resuelve index.html)
+    return ext in _STATIC_ALLOWED_EXT
+
+
+class _PublicStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        from starlette.exceptions import HTTPException as _HTTPException
+        if not _static_path_allowed(path):
+            raise _HTTPException(status_code=404)
+        return await super().get_response(path, scope)
+
 _IS_PROD  = os.getenv("APP_ENV", "development") == "production"
 
 # ── Observability: trace_id + metrics ─────────────────────────────────────────
@@ -654,7 +696,7 @@ def create_app() -> FastAPI:
         async def root():
             return FileResponse(str(_ROOT_DIR / "landing.html"))
 
-        _app.mount("/", StaticFiles(directory=str(_ROOT_DIR), html=True), name="frontend")
+        _app.mount("/", _PublicStaticFiles(directory=str(_ROOT_DIR), html=True), name="frontend")
 
     return _app
 
