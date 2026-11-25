@@ -512,6 +512,7 @@ def coach_athlete_gear(athlete_id: str, db: Session = Depends(get_db), me: User 
     de las vistas de coach sobre atletas)."""
     rel = db.query(CoachAthlete).filter(
         CoachAthlete.coach_id == me.id, CoachAthlete.athlete_id == athlete_id, CoachAthlete.activo == True,  # noqa: E712
+        CoachAthlete.status == "active",  # A3: invitacion pendiente no da acceso
     ).first()
     if not rel:
         raise HTTPException(403, "No tenés una relación de coach activa con este atleta")

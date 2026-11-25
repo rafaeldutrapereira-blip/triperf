@@ -607,7 +607,8 @@ def api_coach_copilot(
         raise HTTPException(403, "Acceso solo para coaches")
 
     links = db.query(CoachAthlete).filter(
-        CoachAthlete.coach_id == me.id, CoachAthlete.active.is_(True)
+        CoachAthlete.coach_id == me.id, CoachAthlete.activo.is_(True),
+        CoachAthlete.status == "active",  # A3: invitacion pendiente no da acceso
     ).all()
 
     athletes_data = []
@@ -617,7 +618,7 @@ def api_coach_copilot(
         if not u:
             continue
         athletes_data.append({
-            "user_id": link.athlete_id, "name": u.name or u.email,
+            "user_id": link.athlete_id, "name": u.nombre or u.email,
             "ctl": getattr(ctx, "current_ctl", None), "atl": getattr(ctx, "current_atl", None),
             "tsb": getattr(ctx, "current_tsb", None),
             "recovery_score": getattr(ctx, "current_readiness", None),

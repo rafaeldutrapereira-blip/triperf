@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '413';  // H7-SESIONES cambiar/resetear la contrasena sube token_gen (revoca sesiones); PATCH /athlete/profile exige old_password
+var BUILD_VERSION = '414';  // A3-LABS-TEAM /labs/team, gear y /ai/coach-copilot exigen CoachAthlete.status=='active' (invitacion pendiente no da acceso)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

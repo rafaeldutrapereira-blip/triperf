@@ -1231,7 +1231,8 @@ def get_team_labs_status(
     # Obtener atletas asignados al coach
     assignments = (
         db.query(CoachAthlete)
-        .filter(CoachAthlete.coach_id == me.id, CoachAthlete.activo == True)
+        .filter(CoachAthlete.coach_id == me.id, CoachAthlete.activo == True,
+                CoachAthlete.status == "active")  # A3: invitacion pendiente no da acceso
         .all()
     )
     athlete_ids = [a.athlete_id for a in assignments]
