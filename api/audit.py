@@ -65,8 +65,22 @@ def audit(
 
 
 def ip_from_request(request) -> str | None:
-    """Extrae IP real del cliente, respetando X-Forwarded-For de proxies."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """IP del cliente para limites de intentos y auditoria (H3-H2-LIMITES).
+
+    Regla conservadora: se confia en `CF-Connecting-IP` (Cloudflare lo fija
+    siempre con la IP real de la conexion que llega al borde, sobrescribiendo
+    cualquier valor enviado por el cliente) y, si no existe, en la IP de la
+    conexion directa. NUNCA se usa `X-Forwarded-For`: el cliente controla su
+    primer valor, asi que indexar limites por el daba un bucket nuevo por
+    peticion y permitia agotar el cupo de la IP de otra persona.
+    El codigo no puede distinguir un proxy de confianza de un cliente directo:
+    la suposicion es que el origen solo es alcanzable via Cloudflare Tunnel.
+    """
+    import ipaddress
+    cf = (request.headers.get("CF-Connecting-IP") or "").strip()
+    if cf:
+        try:
+            return str(ipaddress.ip_address(cf))
+        except ValueError:
+            pass  # valor basura: caer a la conexion directa
     return getattr(request.client, "host", None) if request.client else None

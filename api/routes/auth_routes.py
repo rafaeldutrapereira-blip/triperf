@@ -94,6 +94,34 @@ def _clear_attempts(ip: str, db: Session) -> None:
     redis_delete(f"rl:login:{ip}")
 
 
+def _user_bucket(user_id: str) -> str:
+    # Reusa la tabla login_attempts (sin migracion): la "ip" lleva "user:<id>".
+    return f"user:{user_id}"
+
+
+def _check_user_limit(user_id: str, db: Session) -> None:
+    """H2: tope por usuario para fallos de segundo factor (solo capa DB, la viva en prod)."""
+    from ..models import LoginAttempt
+    bucket = _user_bucket(user_id)
+    window_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=_WINDOW_SECONDS)
+    n = db.query(LoginAttempt).filter(
+        LoginAttempt.ip == bucket, LoginAttempt.attempted_at >= window_start,
+    ).count()
+    if n >= _MAX_ATTEMPTS:
+        logger.warning("Rate limit por usuario excedido user_id=%s count=%d", user_id, n)
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "rate_limited", "message": "Demasiados intentos. Espera 1 hora antes de reintentar."},
+            headers={"Retry-After": str(_WINDOW_SECONDS)},
+        )
+
+
+def _clear_user_attempts(user_id: str, db: Session) -> None:
+    from ..models import LoginAttempt
+    db.query(LoginAttempt).filter(LoginAttempt.ip == _user_bucket(user_id)).delete()
+    db.commit()
+
+
 def _prt_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -140,10 +168,13 @@ def login(
               detail={"reason": "account_inactive"})
         raise HTTPException(status_code=403, detail={"code": "account_inactive", "message": "Cuenta desactivada. Contacta al soporte."})
 
-    _clear_attempts(ip, db)
+    # H2: los contadores NO se borran aqui; solo tras pasar ambos factores.
+    has_2fa = bool(user.totp_enabled and user.totp_secret)
+    if has_2fa:
+        _check_user_limit(user.id, db)
 
     # Si tiene 2FA activo, NO emitir token — pedir código TOTP primero
-    if user.totp_enabled and user.totp_secret:
+    if has_2fa:
         totp_code = (body.totp_code if hasattr(body, 'totp_code') else None) or body.__dict__.get('totp_code')
         if not totp_code:
             return TokenResponse(
@@ -177,10 +208,16 @@ def login(
 
             if not totp_ok:
                 _record_failed(ip, db)
+                _record_failed(_user_bucket(user.id), db)
                 raise HTTPException(401, {"code": "twofa_wrong_code", "message": "Código 2FA incorrecto"})
         except ImportError:
             logger.critical("pyotp no instalado — 2FA DESACTIVADO. Instalar: pip install pyotp")
             raise HTTPException(503, {"code": "twofa_unavailable", "message": "Servicio 2FA no disponible — contacta soporte"})
+
+    # Login completo (contraseña + segundo factor si aplica): recién ahora se limpian.
+    _clear_attempts(ip, db)
+    if has_2fa:
+        _clear_user_attempts(user.id, db)
 
     # I-04: Detectar dispositivo nuevo -- cookie persistente por navegador,
     # NO por IP+user-agent. La IP sola cambia todo el tiempo en redes

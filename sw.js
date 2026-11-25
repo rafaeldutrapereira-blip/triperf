@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '414';  // A3-LABS-TEAM /labs/team, gear y /ai/coach-copilot exigen CoachAthlete.status=='active' (invitacion pendiente no da acceso)
+var BUILD_VERSION = '415';  // H3-H2-LIMITES IP confiable (CF-Connecting-IP, sin XFF) y contador 2FA solo se borra tras ambos factores + limite por usuario; antes 414: A3-LABS-TEAM /labs/team, gear y /ai/coach-copilot exigen CoachAthlete.status=='active' (invitacion pendiente no da acceso)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
