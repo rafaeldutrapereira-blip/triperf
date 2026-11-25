@@ -496,12 +496,27 @@ def effective_indoor_ftp(user) -> Optional[int]:
 @router.patch("/profile", response_model=dict)
 def update_profile(
     body: AthleteProfileUpdate,
+    response: Response,
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user)
 ):
+    _new_access_token = None
+    if body.password:
+        # H7: cambiar la clave desde el perfil exige la actual y la misma politica que /auth/change-password
+        from ..auth import verify_password, create_token, TOKEN_HOURS, IS_PROD
+        from .auth_routes import _validate_password_strength
+        if not body.old_password or not verify_password(body.old_password, me.password_hash):
+            raise HTTPException(400, "Contraseña actual incorrecta")
+        _validate_password_strength(body.password)
     if body.nombre     is not None and body.nombre.strip(): me.nombre    = clean_display_name(body.nombre)
     if body.password:
         me.password_hash = hash_password(body.password)
+        me.token_gen = (me.token_gen or 1) + 1   # H7: igual que /auth/revoke-all
+        _new_access_token = create_token(me.id, me.rol, me.nombre, me.token_gen)
+        response.set_cookie(
+            key="lx_access_token", value=_new_access_token, httponly=True,
+            secure=IS_PROD, samesite="lax", max_age=TOKEN_HOURS * 3600, path="/"
+        )
     if body.race_goal_name is not None:
         me.race_goal_name = body.race_goal_name or None
     if body.race_goal_date is not None:
@@ -539,6 +554,8 @@ def update_profile(
         if not me.onboarding_completed_at:
             me.onboarding_completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
+    if _new_access_token:
+        return {"ok": True, "access_token": _new_access_token}
     return {"ok": True}
 
 

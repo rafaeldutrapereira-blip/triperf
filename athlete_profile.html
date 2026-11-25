@@ -4314,7 +4314,11 @@
             if (!r.ok) throw r;
             return r.json();
           })
-          .then(function () {
+          .then(function (d) {
+            /* H7: el servidor revoca las sesiones previas y emite un token nuevo */
+            if (d && d.access_token) {
+              try { localStorage.setItem('lx_co_token', d.access_token); } catch (e) {}
+            }
             toast(_t('prof_toast_pw_updated', 'Contraseña actualizada ✓'));
             document.getElementById('pw-old').value = '';
             document.getElementById('pw-new').value = '';

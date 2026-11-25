@@ -341,6 +341,7 @@ class AthleteAdherence(BaseModel):
 class AthleteProfileUpdate(BaseModel):
     nombre:         Optional[str]   = None
     password:       Optional[str]   = None
+    old_password:   Optional[str]   = None
     race_goal_name: Optional[str]   = None
     race_goal_date: Optional[str]   = None
     race_goal_dist: Optional[str]   = None

@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '412';  // H1-XSS public_activity.html escapa nombre del dueno y de la actividad; el servidor rechaza '<' y '>' en nombre (perfil y registro/claim de invitacion)
+var BUILD_VERSION = '413';  // H7-SESIONES cambiar/resetear la contrasena sube token_gen (revoca sesiones); PATCH /athlete/profile exige old_password
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [

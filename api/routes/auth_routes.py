@@ -338,6 +338,7 @@ def revoke_all_sessions(
 def change_password(
     body: dict,
     request: Request,
+    response: Response,
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
@@ -349,9 +350,17 @@ def change_password(
         raise HTTPException(400, "Contraseña actual incorrecta")
     _validate_password_strength(new_pw)
     me.password_hash = hash_password(new_pw)
+    # H7: mismo mecanismo que /auth/revoke-all — invalida toda sesion previa
+    me.token_gen = (me.token_gen or 1) + 1
     db.commit()
-    logger.info("Password cambiada user_id=%s", me.id)
-    return {"ok": True}
+    # La sesion actual tambien queda invalida: emitir un token nuevo para quien cambia la clave
+    new_token = create_token(me.id, me.rol, me.nombre, me.token_gen)
+    response.set_cookie(
+        key="lx_access_token", value=new_token, httponly=True,
+        secure=IS_PROD, samesite="lax", max_age=TOKEN_HOURS * 3600, path="/"
+    )
+    logger.info("Password cambiada user_id=%s; sesiones revocadas gen=%s", me.id, me.token_gen)
+    return {"ok": True, "access_token": new_token}
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
@@ -651,6 +660,8 @@ def reset_password(body: dict, db: Session = Depends(get_db)):
         raise HTTPException(404, "Usuario no encontrado")
 
     user.password_hash = hash_password(password)
+    # H7: mismo mecanismo que /auth/revoke-all — un reset expulsa cualquier sesion previa
+    user.token_gen = (user.token_gen or 1) + 1
     entry.used_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
     logger.info("Password reseteada user_id=%s", user.id)
