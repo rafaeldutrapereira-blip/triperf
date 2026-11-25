@@ -15,7 +15,7 @@ from ..models import User, CoachAthlete, GroupMember
 from ..schemas import LoginRequest, TokenResponse, UserCreate, UserOut
 from ..auth import (
     hash_password, verify_password, create_token, get_current_user,
-    revoke_token, _extract_token, TOKEN_HOURS, IS_PROD
+    revoke_token, _extract_token, TOKEN_HOURS, IS_PROD, clean_display_name
 )
 
 from ..mailer import send_welcome, send_login_alert
@@ -376,12 +376,13 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
         _record_failed(ip, db)
         raise HTTPException(status_code=409, detail={"code": "email_already_registered", "message": "Este email ya está registrado."})
     _validate_password_strength(body.password)
+    safe_nombre = clean_display_name(body.nombre)
 
     if existing:
         # Reclamar invitación pendiente: la cuenta ya existe (la creó un
         # coach), acá el atleta fija su propia contraseña por primera vez.
         user = existing
-        user.nombre         = body.nombre.strip() or user.nombre
+        user.nombre         = safe_nombre or user.nombre
         user.password_hash  = hash_password(body.password)
         user.activo         = True
         user.pending_invite = False
@@ -403,7 +404,7 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
     else:
         user = User(
             email         = email,
-            nombre        = body.nombre.strip(),
+            nombre        = safe_nombre,
             password_hash = hash_password(body.password),
             rol           = "atleta",
             plan_nivel    = "basico",

@@ -222,10 +222,22 @@
           gym: '💪',
         };
 
+        function esc(v) {
+          return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+            }[c];
+          });
+        }
+
         function empty(msg) {
           content.innerHTML =
             '<div class="empty"><div class="empty-icon">🔒</div>' +
-            msg +
+            esc(msg) +
             '</div>';
         }
 
@@ -292,7 +304,7 @@
 
             var avatarHtml = d.owner.avatar_url
               ? '<img src="' + d.owner.avatar_url + '" alt="">'
-              : (d.owner.name || '?')[0].toUpperCase();
+              : esc((d.owner.name || '?')[0].toUpperCase());
 
             var mapHtml =
               d.route_preview && d.route_preview.length >= 2
@@ -306,19 +318,21 @@
               avatarHtml +
               '</div>' +
               '<div><div class="owner-name">' +
-              (d.owner.name || _t('pa_athlete_fallback', 'Atleta LabX')) +
+              esc(d.owner.name || _t('pa_athlete_fallback', 'Atleta LabX')) +
               '</div>' +
               '<div class="owner-sub">' +
-              (d.date_iso || '') +
+              esc(d.date_iso || '') +
               '</div></div>' +
               '</div>' +
               '<div class="card-body">' +
               '<div class="act-title">' +
               (SPORT_EMOJI[d.sport] || '⚡') +
               ' ' +
-              (d.name ||
-                SPORT_LABEL()[d.sport] ||
-                _t('pa_activity_fallback', 'Actividad')) +
+              esc(
+                d.name ||
+                  SPORT_LABEL()[d.sport] ||
+                  _t('pa_activity_fallback', 'Actividad'),
+              ) +
               '</div>' +
               mapHtml +
               '<div class="stats">' +
@@ -326,9 +340,9 @@
                 .map(function (s) {
                   return (
                     '<div class="stat"><div class="stat-v">' +
-                    s.v +
+                    esc(s.v) +
                     '</div><div class="stat-l">' +
-                    s.l +
+                    esc(s.l) +
                     '</div></div>'
                   );
                 })

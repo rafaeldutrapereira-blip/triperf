@@ -21,7 +21,7 @@ from ..schemas import (
 )
 from pydantic import BaseModel, field_validator
 from datetime import date as _date
-from ..auth import get_current_user, hash_password, require_role
+from ..auth import get_current_user, hash_password, require_role, clean_display_name
 from ..plan_features import require_feature
 from ..free_limits import applies_to as _free_applies, clip_range as _free_clip_range, clip_history as _free_clip_history
 from ..crypto import encrypt as _enc, decrypt as _dec, encrypt_if_plain, is_encrypted
@@ -499,7 +499,7 @@ def update_profile(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user)
 ):
-    if body.nombre     is not None and body.nombre.strip(): me.nombre    = body.nombre.strip()
+    if body.nombre     is not None and body.nombre.strip(): me.nombre    = clean_display_name(body.nombre)
     if body.password:
         me.password_hash = hash_password(body.password)
     if body.race_goal_name is not None:

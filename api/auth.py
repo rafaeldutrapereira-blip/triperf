@@ -36,6 +36,24 @@ _AUDIENCE   = os.getenv("JWT_AUDIENCE", "labx-app")   # S2/QW-08: audience claim
 _revoked_hashes: set[str] = set()
 
 
+def clean_display_name(raw: str) -> str:
+    """Valida/normaliza un nombre visible (H1-XSS). Unico punto reutilizable.
+
+    Devuelve el nombre con strip(). Rechaza (HTTP 422) si contiene '<' o '>'
+    o caracteres de control. Acentos, espacios, apostrofes, guiones, '&' y
+    puntos siguen permitidos. Cadena vacia se devuelve vacia (el llamador
+    decide si la ignora).
+    """
+    name = (raw or "").strip()
+    if any(c in name for c in "<>") or any(ord(c) < 32 or ord(c) == 127 for c in name):
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_name",
+                    "message": "El nombre no puede contener los caracteres < o > ni caracteres de control."},
+        )
+    return name
+
+
 def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
