@@ -13,12 +13,12 @@ class LoginPage:
         self.base_url = base_url
 
         # Locators
-        self.username_input  = page.locator("#username")
+        self.username_input  = page.locator("#email")
         self.password_input  = page.locator("#password")
         self.remember_check  = page.locator("#remember")
         self.submit_btn      = page.locator("#btn-login, button[type='submit']").first
         self.error_msg       = page.locator("[class*='error'], [class*='alert-danger'], #login-error")
-        self.pw_toggle       = page.locator("#pw-toggle")
+        self.pw_toggle       = page.locator(".pw-toggle")
         self.forgot_link     = page.locator("a[href*='reset']")
 
     def navigate(self):

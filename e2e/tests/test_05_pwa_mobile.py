@@ -34,6 +34,7 @@ def _inject_auth(page: Page, token: str):
         localStorage.setItem('lx_co_rol', 'atleta');
         localStorage.setItem('lx_ath_token', '{token}');
         localStorage.setItem('lx_co_nombre', 'Athlete E2E');
+        localStorage.setItem('lx_onboarding_done', '1');
     }}""")
 
 

@@ -307,12 +307,29 @@ def api() -> APIClient:
 # Test user fixtures
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _upgrade_plan_for_gate(email: str) -> None:
+    """Solo con E2E_GATE=1 (lo fija scripts/labx_e2e_gate.py, que corre contra una BD
+    temporal): las cuentas registradas nacen en plan basico y el gating de plan (B1)
+    responde 403 a los modulos de pago. Se eleva el plan directo en la BD temporal para
+    que el E2E pruebe los flujos y no el gating (que ya cubre test_plan_gating_b1.py)."""
+    if os.getenv("E2E_GATE") != "1":
+        return
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from api.database import engine
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        conn.execute(text("UPDATE users SET plan_nivel='elite' WHERE email=:e"), {"e": email})
+        conn.commit()
+
+
 @pytest.fixture(scope="session")
 def athlete_api(api) -> APIClient:
     """API client logged in as test athlete."""
     api.register(**TEST_ATHLETE)
     client = APIClient()
     client.login(TEST_ATHLETE["email"], TEST_ATHLETE["password"])
+    _upgrade_plan_for_gate(TEST_ATHLETE["email"])
     return client
 
 
@@ -322,6 +339,7 @@ def athlete2_api(api) -> APIClient:
     api.register(**TEST_ATHLETE2)
     client = APIClient()
     client.login(TEST_ATHLETE2["email"], TEST_ATHLETE2["password"])
+    _upgrade_plan_for_gate(TEST_ATHLETE2["email"])
     return client
 
 
@@ -379,6 +397,7 @@ def logged_in_page(page, athlete_api):
         localStorage.setItem('lx_co_rol', 'atleta');
         localStorage.setItem('lx_co_nombre', 'Athlete E2E');
         localStorage.setItem('lx_ath_token', '{athlete_api._token}');
+        localStorage.setItem('lx_onboarding_done', '1');
     }}""")
     return page
 
@@ -392,6 +411,7 @@ def coach_page(page, coach_api):
         localStorage.setItem('lx_co_token', '{coach_api._token}');
         localStorage.setItem('lx_co_rol', 'coach');
         localStorage.setItem('lx_co_nombre', 'Coach E2E');
+        localStorage.setItem('lx_onboarding_done', '1');
     }}""")
     return page
 

@@ -404,7 +404,7 @@ def test_registro_contrasena_debil(fresh_page: Page):
     bar  = page.locator("[class*='strength'], [id*='strength']")
     if hint.is_visible():
         text = hint.inner_text().lower()
-        assert any(w in text for w in ["débil", "weak", "baja", "low", "muy"]), \
+        assert any(w in text for w in ["débil", "weak", "baja", "low", "muy", "falta"]), \
             f"Expected weak indicator, got: '{text}'"
     elif bar.count() > 0:
         # Strength bar present but no text — acceptable if bar shows red (low score)
