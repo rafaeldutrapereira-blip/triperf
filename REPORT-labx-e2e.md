@@ -72,7 +72,7 @@ Dura ~4 min. Usa el puerto 8001 (no choca con el backend de 8000) y no toca `dat
 - Gate en el código actual: **VERDE**, 3 de 3 corridas consecutivas: `102 passed, 8 skipped, 41 deselected` (~4 min), exit 0; BD temporal y servidor limpiados.
 - Corrida completa previa (`--full`/subconjunto sin deselecciones, antes de arreglar setup): 53 fallos; tras arreglar el setup quedaron los 41 listados + 1 intermitente ya corregido.
 - **Prueba negativa**: `login.html` con `id="email"`→`id="emailx"` (sin commitear, revertido con `git checkout`): el gate sale **FAIL** (`2 failed`, exit 1). `git status` limpio para `login.html`.
-- Guardrail y suites: ver resultado final en `labx-e2e-gate.log`.
+- Guardrail (`--base 32d8be5 --allow scripts/labx_e2e_gate.py --allow scripts/test_labx_e2e_gate.py --allow 'e2e/*'`): **PASS** en los 7 chequeos (lint, tests, build, report, scope, migrations, secrets). La primera pasada falló `secrets` por la contraseña literal del coach del gate; ahora se genera por corrida (`secrets.token_hex`).
 
 ## 7. Bugs reales encontrados
 
