@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import shutil
 import socket
 import sqlite3
@@ -92,7 +93,7 @@ KNOWN_UNCOVERED = {
 }
 
 GATE_COACH_EMAIL = "e2e_gate_coach@labx-test.com"
-GATE_COACH_PASSWORD = "E2eGateCoach_2026!"
+GATE_COACH_PASS = "E2eGate_" + secrets.token_hex(8) + "Aa1!"  # distinta en cada corrida
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "[::1]"}
 
 
@@ -141,7 +142,7 @@ def server_env(db_path: Path, port: int) -> dict:
         "E2E_BASE_URL": f"http://localhost:{port}",
         "E2E_GATE": "1",
         "E2E_COACH_EMAIL": GATE_COACH_EMAIL,
-        "E2E_COACH_PASSWORD": GATE_COACH_PASSWORD,
+        "E2E_COACH_PASSWORD": GATE_COACH_PASS,
         # nada de pasarelas ni ingestas externas aunque el .env local las tenga
         "FLOW_ENABLED": "0",
         "STRAVA_INGEST_ENABLED": "0",
@@ -173,10 +174,10 @@ def seed_coach(env: dict):
         f"email = {GATE_COACH_EMAIL!r}\n"
         "u = db.query(models.User).filter(models.User.email == email).first()\n"
         "if u is None:\n"
-        f"    u = models.User(email=email, nombre='Coach Gate', rol='coach', plan_nivel='elite', activo=True, password_hash=hash_password({GATE_COACH_PASSWORD!r}))\n"
+        f"    u = models.User(email=email, nombre='Coach Gate', rol='coach', plan_nivel='elite', activo=True, password_hash=hash_password({GATE_COACH_PASS!r}))\n"
         "    db.add(u)\n"
         "else:\n"
-        f"    u.password_hash = hash_password({GATE_COACH_PASSWORD!r}); u.activo = True\n"
+        f"    u.password_hash = hash_password({GATE_COACH_PASS!r}); u.activo = True\n"
         "db.commit(); db.close()\n"
         "print('coach de prueba listo')\n"
     )
