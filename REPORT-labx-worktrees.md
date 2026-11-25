@@ -45,3 +45,5 @@ Patron con worktree:
 6. **Push**: lo hace Pocoyo por SSH con el ok de Rafael. Los scripts nunca empujan.
 
 Cambia: aislamiento de arbol por pila (2-3 simultaneas), rama por pila, merge verificado por SHA. No cambia: guardrail, E2E gate, convencion de commit, regla de no-push.
+
+Commit de la pila: `93e1fe6` (scripts + este reporte).
