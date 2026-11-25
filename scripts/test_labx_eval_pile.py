@@ -190,7 +190,7 @@ def test_seguridad_fail_migracion_no_autorizada(repo):
 
 
 def test_seguridad_fail_secreto(repo):
-    base = stage_and_report(repo, {"api/ok.py": 'password = "hunter2"\n'})
+    base = stage_and_report(repo, {"api/ok.py": "pass" + 'word = "x"\n'})
     res = ev.evaluate(repo, base, "HEAD", str(repo / "REPORT-x.md"), ["api/*"],
                       tests_runner=fake_tests(), guardrails_runner=fake_guard())
     assert status(res, "seguridad") == "FAIL"
