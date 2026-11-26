@@ -8,6 +8,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..database import Base, get_db
@@ -409,8 +410,8 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
     en vez de rechazar por "email ya registrado" se RECLAMA: el atleta fija
     su propia contraseña acá, la cuenta se activa, y las relaciones
     CoachAthlete asociadas pasan de 'pending' a 'active' automáticamente
-    (sin correo, sin token de invitación — la coincidencia de email + este
-    registro normal es la "aceptación").
+    H5: solo con verificación por correo — sin `claim_token` válido se envía un
+    enlace de un solo uso al email invitado (202) y no se modifica la cuenta.
     """
     ip = ip_from_request(request)
     _check_rate_limit(ip, db, max_attempts=_MAX_REGISTER_PER_IP)
@@ -425,6 +426,15 @@ def register(body: UserCreate, request: Request, db: Session = Depends(get_db)):
     safe_nombre = clean_display_name(body.nombre)
 
     if existing:
+        # H5: reclamar una invitacion exige probar el control del email (enlace de un
+        # solo uso enviado al correo invitado). Sin token valido NO se toca la cuenta.
+        if not _consume_claim_token(db, existing.id, body.claim_token):
+            _send_invite_claim_email(db, existing, ip)
+            _record_failed(ip, db)
+            return JSONResponse(status_code=202, content={
+                "ok": False, "code": "invite_verification_sent",
+                "message": "Te enviamos un enlace al correo invitado. Ábrelo para completar el registro.",
+            })
         # Reclamar invitación pendiente: la cuenta ya existe (la creó un
         # coach), acá el atleta fija su propia contraseña por primera vez.
         user = existing
@@ -774,6 +784,65 @@ def update_notification_prefs(
 
 def _get_app_url() -> str:
     return get_app_url()
+
+
+_CLAIM_TTL = timedelta(hours=24)
+_CLAIM_RESEND_MIN = timedelta(minutes=1)
+
+
+def _consume_claim_token(db: Session, user_id: str, raw_token: str | None) -> bool:
+    """H5: valida y quema (un solo uso) el token de reclamo de invitacion del usuario."""
+    from ..models import PasswordResetToken
+    raw = (raw_token or "").strip()
+    if not raw:
+        return False
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    entry = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == _prt_hash(raw),
+        PasswordResetToken.user_id == user_id,
+        PasswordResetToken.used_at == None,
+        PasswordResetToken.expires_at > now,
+    ).first()
+    if not entry:
+        return False
+    entry.used_at = now
+    db.commit()
+    return True
+
+
+def _send_invite_claim_email(db: Session, user: User, ip: str) -> None:
+    """Envia al email invitado el enlace de un solo uso. No reenvia si hay uno de hace <1 min."""
+    from ..models import PasswordResetToken
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    last = db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used_at == None,
+        PasswordResetToken.created_at > now - _CLAIM_RESEND_MIN,
+    ).first()
+    if last:
+        return
+    raw_token = secrets.token_urlsafe(32)
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id, PasswordResetToken.used_at == None,
+    ).delete()
+    db.add(PasswordResetToken(token_hash=_prt_hash(raw_token), user_id=user.id,
+                              expires_at=now + _CLAIM_TTL))
+    db.commit()
+    from urllib.parse import quote
+    from ..mailer import send_email
+    link = f"{_get_app_url()}/registro.html?claim={quote(raw_token)}&email={quote(user.email)}"
+    html = f"""
+    <div style="font-family:Inter,sans-serif;background:#04080F;color:#F0F9FF;padding:40px 24px;max-width:560px;margin:0 auto;border-radius:16px">
+      <h2>Tienes una invitación en LabX</h2>
+      <p style="color:#7FB3CC;margin:16px 0">Confirma que este correo es tuyo para completar tu registro.</p>
+      <div style="text-align:center;margin:28px 0">
+        <a href="{link}" style="display:inline-block;background:linear-gradient(135deg,#0EA5E9,#0284C7);color:#fff;font-weight:800;text-decoration:none;padding:14px 32px;border-radius:10px">Completar registro →</a>
+      </div>
+      <p style="color:#3D6880;font-size:.8rem">Este enlace expira en 24 horas y sirve una sola vez. Si no esperabas esta invitación, ignora este correo.</p>
+    </div>
+    """
+    if not send_email(user.email, "LabX — Confirma tu invitación", html):
+        logger.info("Claim link (dev, email no enviado) user=%s ip=%s", user.id, ip)
 
 
 def _send_reset_email(email: str, nombre: str, token: str) -> None:

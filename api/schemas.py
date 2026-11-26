@@ -72,6 +72,7 @@ class UserCreate(BaseModel):
     rol:        str = "atleta"
     plan_nivel: str = "basico"
     lang:       Optional[str] = None  # "es"|"pt"|"en" — idioma elegido en registro.html al momento de crear la cuenta
+    claim_token: Optional[str] = None  # H5: token del correo de invitacion; sin el no se reclama una invitacion pendiente
 
 class AthleteInvite(BaseModel):
     """Coach invita a un atleta — sin contraseña: el coach nunca la define

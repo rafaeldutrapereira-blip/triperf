@@ -200,10 +200,20 @@ def test_token_de_otra_cuenta_se_puede_descartar_y_reconectar(client, db, me):
 # ── Reconectar / OAuth ──────────────────────────────────────────────────────
 
 def _state_of(url):
-    st = re.search(r"state=([^&]+)", url).group(1)
+    """H4: el state es aleatorio y vive en BD; se resuelve (y consume) con consume_state."""
     from urllib.parse import unquote
-    st = unquote(st)
-    return json.loads(base64.urlsafe_b64decode(st + "=" * (-len(st) % 4)).decode())
+    from api import provider_oauth
+    from .conftest import TestingSessionLocal
+    st = unquote(re.search(r"state=([^&]+)", url).group(1))
+    db = TestingSessionLocal()
+    try:
+        for prov, ret in (("intervals", None), ("intervals_profile", "profile")):
+            uid = provider_oauth.consume_state(db, st, prov)
+            if uid:
+                return {"uid": uid, "ret": ret} if ret else {"uid": uid}
+    finally:
+        db.close()
+    return None
 
 
 def test_reconectar_suelta_credenciales_e_inicia_oauth_fresco(client, db, me):
@@ -245,7 +255,8 @@ def test_callback_guarda_token_nuevo_limpia_invalido_y_vuelve_al_perfil(client, 
     ic.clear_tokens(me, db)  # lo que hizo /reconnect
     monkeypatch.setattr(ic, "exchange_code", AsyncMock(return_value={"access_token": "nuevo", "scope": SCOPE}))
     monkeypatch.setattr(ic, "fetch_athlete_id", AsyncMock(return_value="i794934"))
-    state = base64.urlsafe_b64encode(json.dumps({"uid": me.id, "ret": "profile"}).encode()).decode()
+    from api import provider_oauth
+    state = provider_oauth.create_state(db, me.id, "intervals_profile")
     r = client.get(f"/api/integrations/intervals/callback?code=abc&state={state}", follow_redirects=False)
     assert r.status_code in (302, 307)
     assert r.headers["location"].endswith("/athlete_profile.html?intervals=connected")
@@ -253,8 +264,9 @@ def test_callback_guarda_token_nuevo_limpia_invalido_y_vuelve_al_perfil(client, 
     assert d["state"] == "connected" and d["athlete_id"] == "i794934"
 
 
-def test_callback_sin_ret_mantiene_el_destino_historico(client, me):
-    state = base64.urlsafe_b64encode(json.dumps({"uid": me.id}).encode()).decode()
+def test_callback_sin_ret_mantiene_el_destino_historico(client, db, me):
+    from api import provider_oauth
+    state = provider_oauth.create_state(db, me.id, "intervals")
     r = client.get(f"/api/integrations/intervals/callback?error=access_denied&state={state}",
                    follow_redirects=False)
     assert r.headers["location"].endswith("/indoor_workout.html?intervals=denied")

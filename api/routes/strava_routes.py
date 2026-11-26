@@ -138,12 +138,13 @@ async def _get_valid_access_token(user: User, db: Session) -> str:
 def strava_connect(
     request: Request,
     me: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Inicia el flujo OAuth: redirige al usuario a Strava."""
     _require_strava()
-    # Guardar user_id en state para recuperarlo en callback
-    import base64, json
-    state = base64.urlsafe_b64encode(json.dumps({"uid": me.id}).encode()).decode()
+    # H4: state aleatorio de un solo uso en BD (patron de provider_oauth.py)
+    from .. import provider_oauth
+    state = provider_oauth.create_state(db, me.id, "strava")
     url = (
         f"{_STRAVA_AUTH}"
         f"?client_id={_CLIENT_ID}"
@@ -169,14 +170,10 @@ async def strava_callback(
     if error or not code:
         return RedirectResponse("/athlete_profile.html?strava=denied")
 
-    # Recuperar user_id del state — BP-15: padding correcto para base64 variable
-    import base64, json
-    try:
-        # Padding dinámico: añadir solo los = necesarios
-        padded = state + "=" * (-len(state) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(padded).decode())
-        user_id = payload["uid"]
-    except Exception:
+    # H4: el state debe existir en BD, no estar usado ni expirado; se borra al consumirlo
+    from .. import provider_oauth
+    user_id = provider_oauth.consume_state(db, state or "", "strava")
+    if not user_id:
         raise HTTPException(400, "State OAuth inválido")
 
     user = db.query(User).filter(User.id == user_id).first()

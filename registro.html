@@ -1592,9 +1592,24 @@
                   return 'es';
                 }
               })(),
+              claim_token:
+                new URLSearchParams(location.search).get('claim') || undefined,
             }),
           });
           var data = await res.json();
+          if (res.status === 202) {
+            // H5: invitacion pendiente -> se envio un enlace al correo invitado
+            btn.classList.remove('loading');
+            btn.querySelector('.btn-text').textContent = _t(
+              'btn_register',
+              'Crear cuenta',
+            );
+            okMsg.textContent =
+              data.message ||
+              'Te enviamos un enlace al correo invitado para completar el registro.';
+            okBox.classList.add('show');
+            return;
+          }
           if (!res.ok)
             throw new Error(
               _errMsg(data, _t('reg_err_default', 'Error al crear la cuenta.')),
@@ -1664,6 +1679,14 @@
           );
         }
       }
+    
+      // H5: el enlace del correo de invitacion trae ?claim=...&email=...
+      (function () {
+        var q = new URLSearchParams(location.search);
+        var em = q.get('email');
+        var f = document.getElementById('email');
+        if (q.get('claim') && em && f) f.value = em;
+      })();
     </script>
   </body>
 </html>

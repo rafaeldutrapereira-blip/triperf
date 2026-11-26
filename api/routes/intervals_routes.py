@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from .. import intervals_connector as ic
 from .. import intervals_sync_service as iss
+from .. import provider_oauth
 from ..app_url import get_app_url
 from ..auth import get_current_user
 from ..database import get_db
@@ -103,11 +104,21 @@ async def intervals_backfill(
     return await iss.backfill_intervals_user(db, me.id, floor)
 
 
-def _oauth_state(uid: str, ret: str | None) -> str:
-    payload = {"uid": uid}
-    if ret == "profile":  # solo se acepta un destino conocido (nada de URLs libres)
-        payload["ret"] = "profile"
-    return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+def _oauth_state(db: Session, uid: str, ret: str | None) -> str:
+    """H4: state aleatorio de un solo uso en BD (patron de provider_oauth.py).
+    El destino de retorno viaja en el nombre de proveedor ('intervals' | 'intervals_profile');
+    solo se acepta un destino conocido (nada de URLs libres)."""
+    provider = "intervals_profile" if ret == "profile" else "intervals"
+    return provider_oauth.create_state(db, uid, provider)
+
+
+def _consume_oauth_state(db: Session, state: str | None) -> tuple[str | None, str | None]:
+    """-> (user_id, ret). user_id None si el state es desconocido, reutilizado o expirado."""
+    for provider, ret in (("intervals", None), ("intervals_profile", "profile")):
+        uid = provider_oauth.consume_state(db, state or "", provider)
+        if uid:
+            return uid, ret
+    return None, None
 
 
 def _return_url(ret: str | None, outcome: str) -> str:
@@ -116,9 +127,13 @@ def _return_url(ret: str | None, outcome: str) -> str:
 
 
 @router.get("/connect")
-def intervals_connect(ret: str | None = Query(None), me: User = Depends(require_feature("indoor_workout"))):
+def intervals_connect(
+    ret: str | None = Query(None),
+    me: User = Depends(require_feature("indoor_workout")),
+    db: Session = Depends(get_db),
+):
     _require_available()
-    return RedirectResponse(ic.build_authorize_url(_oauth_state(me.id, ret)))
+    return RedirectResponse(ic.build_authorize_url(_oauth_state(db, me.id, ret)))
 
 
 @router.post("/reconnect")
@@ -132,7 +147,7 @@ def intervals_reconnect(
     _require_available()
     ic.clear_tokens(me, db)
     logger.info("intervals.icu reconexion iniciada user=%s", me.id)
-    return {"ok": True, "authorize_url": ic.build_authorize_url(_oauth_state(me.id, ret))}
+    return {"ok": True, "authorize_url": ic.build_authorize_url(_oauth_state(db, me.id, ret))}
 
 
 @router.get("/callback")
@@ -143,21 +158,14 @@ async def intervals_callback(
     db: Session = Depends(get_db),
 ):
     _require_available()
-    ret = None
-    if state:  # el destino de retorno viaja en el state aunque el usuario haya negado el permiso
-        try:
-            ret = json.loads(base64.urlsafe_b64decode(state + "=" * (-len(state) % 4)).decode()).get("ret")
-        except Exception:
-            ret = None
     if error or not code or not state:
+        # Sin state valido no hay destino de retorno confiable: se usa el historico.
+        # Si el state existe se consume igual (un solo uso) para conservar el destino.
+        _uid, ret = _consume_oauth_state(db, state) if state else (None, None)
         return RedirectResponse(_return_url(ret, "denied"))
 
-    try:
-        padded = state + "=" * (-len(state) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(padded).decode())
-        user_id = payload["uid"]
-        ret = payload.get("ret")
-    except Exception:
+    user_id, ret = _consume_oauth_state(db, state)
+    if not user_id:
         raise HTTPException(400, "State OAuth invalido")
 
     user = db.query(User).filter(User.id == user_id).first()
