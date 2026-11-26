@@ -231,15 +231,17 @@ def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_curren
         pull_error = "needs_reconnect"
         pull_detail = "sin token valido (refresh no posible)"
     else:
-        try:
-            items = go.fetch_recent_activities(access)
-        except go.GarminOfficialError as exc:
+        items, win_errors, timings = go.fetch_recent_activities_detailed(access)
+        logger.info("[GARMIN-SYNC] ventanas user=%s dur_s=%s fallidas=%d", me.id, timings, len(win_errors))
+        if win_errors:
+            exc = win_errors[0][1]
             pull_error = _classify_pull_error(exc)
             pull_detail = str(exc)
-            logger.warning("Garmin sync manual: pull fallo user=%s: %s", me.id, exc)
-        else:
+            logger.warning("Garmin sync manual: pull fallo user=%s (%d ventana(s)): %s",
+                           me.id, len(win_errors), exc)
+        saved = 0
+        if items:
             from ..garmin_ingest import _upsert_activity, _recalc_load
-            saved = 0
             for it in items:
                 try:
                     if _upsert_activity(db, me.id, it):
@@ -250,10 +252,13 @@ def garmin_sync(background_tasks: BackgroundTasks, me: User = Depends(get_curren
             db.commit()
             if saved:
                 _recalc_load(db, me.id)
+        if not pull_error:
             _done("ok", f"saved={saved} items={len(items)}")
             return {"ok": True, "status": "ok", "via": "official", "saved": saved,
                     "health_included": False, "last_sync": _latest_live_sync_str(db, me.id),
                     "message": f"Actividades al día ({saved} recibidas)."}
+        if saved:
+            pull_detail += f" (parcial: {saved} actividades guardadas de las ventanas que respondieron)"
 
     # El pull no fue posible: fallback legacy solo si hay credenciales y el interruptor lo permite.
     from ..garmin_legacy_flags import legacy_sync_enabled

@@ -13,6 +13,8 @@ import hmac
 import logging
 import os
 import secrets
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
@@ -31,6 +33,7 @@ GARMIN_USER_ID_URL = "https://apis.garmin.com/wellness-api/rest/user/id"
 GARMIN_ACTIVITIES_URL = "https://apis.garmin.com/wellness-api/rest/activities"
 PULL_WINDOW_S = 86400
 PULL_MAX_DAYS = 7
+PULL_WORKERS = 4  # ventanas en paralelo: peor caso 2 rondas x 20 s = 40 s (antes 7 x 20 = 140 s)
 
 STATE_TTL = timedelta(minutes=10)
 REFRESH_MARGIN = timedelta(seconds=60)
@@ -234,13 +237,39 @@ def _get_activities_window(access_token: str, start_s: int, end_s: int) -> list:
     return [it for it in body if isinstance(it, dict)]
 
 
-def fetch_recent_activities(access_token: str, days: int = PULL_MAX_DAYS) -> list:
-    """Actividades subidas en los ultimos `days` dias (ventanas de 24 h, maximo 7).
-    Solo actividades: la salud llega unicamente por push."""
+def _timed_window(access_token: str, start_s: int, end_s: int) -> tuple:
+    """Una ventana con su duracion. Devuelve (items, error, segundos); nunca lanza GarminOfficialError."""
+    t0 = time.monotonic()
+    try:
+        return _get_activities_window(access_token, start_s, end_s), None, time.monotonic() - t0
+    except GarminOfficialError as exc:
+        return [], exc, time.monotonic() - t0
+
+
+def fetch_recent_activities_detailed(access_token: str, days: int = PULL_MAX_DAYS) -> tuple:
+    """Pull de las ventanas de 24 h en paralelo (pool acotado a PULL_WORKERS, timeout por ventana
+    intacto). Devuelve (items, errors, timings): items en orden de ventana (la mas reciente primero,
+    igual que el secuencial), errors = [(indice_ventana, GarminOfficialError)] y timings = segundos
+    por ventana. Una ventana fallida NO descarta las demas."""
     days = max(1, min(int(days), PULL_MAX_DAYS))
     end = int(_now().replace(tzinfo=timezone.utc).timestamp())
-    out: list = []
-    for i in range(days):
-        w_end = end - i * PULL_WINDOW_S
-        out.extend(_get_activities_window(access_token, w_end - PULL_WINDOW_S, w_end))
-    return out
+    bounds = [(end - i * PULL_WINDOW_S - PULL_WINDOW_S, end - i * PULL_WINDOW_S) for i in range(days)]
+    with ThreadPoolExecutor(max_workers=min(PULL_WORKERS, days)) as pool:
+        results = list(pool.map(lambda b: _timed_window(access_token, b[0], b[1]), bounds))
+    items: list = []
+    errors: list = []
+    for idx, (win_items, err, _dur) in enumerate(results):
+        items.extend(win_items)
+        if err is not None:
+            errors.append((idx, err))
+    return items, errors, [round(r[2], 2) for r in results]
+
+
+def fetch_recent_activities(access_token: str, days: int = PULL_MAX_DAYS) -> list:
+    """Actividades subidas en los ultimos `days` dias (ventanas de 24 h, maximo 7).
+    Solo actividades: la salud llega unicamente por push. Lanza el error de la primera
+    ventana fallida (contrato anterior); el sync manual usa la variante _detailed."""
+    items, errors, _ = fetch_recent_activities_detailed(access_token, days)
+    if errors:
+        raise errors[0][1]
+    return items
