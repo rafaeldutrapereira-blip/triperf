@@ -8,6 +8,7 @@ Arrancar:
 """
 from __future__ import annotations
 
+import hmac
 import os
 import logging
 from pathlib import Path
@@ -625,9 +626,7 @@ def create_app() -> FastAPI:
         return {
             "status": "ok" if db_ok else "degraded",
             "service": "labx-coach-api",
-            "version": _app.version,
             "db": "ok" if db_ok else "error",
-            "env": os.getenv("APP_ENV", "development"),
         }
 
     @_app.get("/metrics", tags=["infra"], include_in_schema=False)
@@ -649,7 +648,16 @@ def create_app() -> FastAPI:
         return _Resp(content=body, media_type=content_type)
 
     @_app.get("/api/metrics", tags=["infra"])
-    def metrics():
+    def metrics(request: Request):
+        # A5: mismo control que /metrics (loopback o Bearer METRICS_SECRET)
+        client_ip = request.client.host if request.client else ""
+        secret = os.getenv("METRICS_SECRET", "")
+        if client_ip not in _METRICS_ALLOWED_IPS:
+            if not secret:
+                return JSONResponse({"detail": "metrics not available"}, status_code=404)
+            if not hmac.compare_digest(request.headers.get("Authorization", "").encode(),
+                                       f"Bearer {secret}".encode()):
+                return JSONResponse({"detail": "unauthorized"}, status_code=401)
         import time
         from .database import engine
         from sqlalchemy import text as _text

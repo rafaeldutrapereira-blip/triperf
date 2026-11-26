@@ -578,4 +578,4 @@ class TestHealthEndpoint:
         data = r.json()
         assert data["status"] in ("ok", "degraded")
         assert "service" in data
-        assert "version" in data
+        assert "version" not in data and "env" not in data  # A5: salud recortada

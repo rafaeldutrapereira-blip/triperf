@@ -49,7 +49,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "[ Infrastructure ]"
 check "Health endpoint"           GET  /health              200
-check "Metrics endpoint"          GET  /api/metrics         200
+check "Metrics endpoint (protegido)" GET  /api/metrics         "401|404"
 check "OpenAPI schema"            GET  /api/openapi.json    "200|404"
 
 # ── Auth ─────────────────────────────────────────────────────────────────────

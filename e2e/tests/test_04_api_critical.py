@@ -37,14 +37,14 @@ def test_health_endpoint():
     """
     Acceptance:
       Status 200
-      JSON has: status, service, version, db
+      JSON has: status, service, db (sin version ni env: A5)
       db = 'ok'
     """
     r = requests.get(f"{BASE_URL}/health", timeout=5)
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") in ("ok", "degraded"), f"Bad status: {data}"
-    assert "version" in data
+    assert "version" not in data and "env" not in data  # A5
     assert "db" in data
     assert data["db"] == "ok", f"DB not ok: {data}"
 

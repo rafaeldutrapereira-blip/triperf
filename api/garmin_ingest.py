@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -239,6 +239,20 @@ def _process_one(db: Session, row: GarminPushPayload, connected: dict) -> str:
     return f"ok:{written}/{len(items)}"
 
 
+ORPHAN_RETENTION_DAYS = 7
+
+
+def purge_unattributed(db: Session, days: int = ORPHAN_RETENTION_DAYS) -> int:
+    """H6: borra las filas sin usuario atribuible (procesadas o no) con mas de `days` dias.
+    Sin esto se acumulan para siempre (las marca `sin_usuario` y nadie las limpia)."""
+    cutoff = _now() - timedelta(days=days)
+    n = db.query(GarminPushPayload).filter(
+        GarminPushPayload.user_id.is_(None), GarminPushPayload.received_at < cutoff
+    ).delete(synchronize_session=False)
+    db.commit()
+    return n
+
+
 def process_pending(db: Session, limit: int = BATCH_SIZE, retry_failed: bool = False) -> dict:
     """Procesa hasta `limit` payloads pendientes (received_at asc). Cada payload en su propia
     transaccion: un fallo queda con processed=False + error y no frena al resto. Los fallidos
@@ -278,6 +292,11 @@ def process_pending(db: Session, limit: int = BATCH_SIZE, retry_failed: bool = F
                 db.rollback()
     for uid in load_users:
         _recalc_load(db, uid)
+    try:
+        purge_unattributed(db)
+    except Exception as exc:
+        db.rollback()
+        log.warning("purga de filas sin usuario fallo: %s", type(exc).__name__)
     log.info("ingest fase B: %s", stats)
     return stats
 

@@ -22,9 +22,11 @@ Estándar visual de los correos (2026-08-22, pedido explícito del usuario):
 """
 from __future__ import annotations
 import base64
+import ipaddress
 import logging
 import os
 import re
+from html import escape as _esc
 from pathlib import Path
 
 from .app_url import get_app_url
@@ -211,7 +213,7 @@ def send_welcome(email: str, nombre: str, app_url: str = "", lang: str = "es") -
     app_url = app_url or get_app_url()
     t = _WELCOME_TXT.get(lang, _WELCOME_TXT["es"])
     inner = f"""
-      <p style="margin:0 0 16px">{t['greeting']} <strong>{nombre}</strong>,</p>
+      <p style="margin:0 0 16px">{t['greeting']} <strong>{_esc(nombre)}</strong>,</p>
       <p style="color:#7FB3CC;margin:0 0 16px">{t['intro1']}</p>
       <p style="color:#7FB3CC;margin:0 0 20px">{t['intro2']}</p>
 
@@ -280,7 +282,7 @@ def send_day3_drip(email: str, nombre: str, app_url: str = "", lang: str = "es")
     app_url = app_url or get_app_url()
     t = _DAY3_TXT.get(lang, _DAY3_TXT["es"])
     inner = f"""
-      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
+      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=_esc(nombre))}</h1>
       <p style="color:#7FB3CC;margin:0 0 16px">{t['intro']}</p>
       <ul style="padding-left:20px;color:#7FB3CC;margin:0 0 20px">
         <li style="margin-bottom:8px">{t['f1']}</li>
@@ -329,7 +331,7 @@ def send_day7_drip(email: str, nombre: str, app_url: str = "", lang: str = "es")
     app_url = app_url or get_app_url()
     t = _DAY7_TXT.get(lang, _DAY7_TXT["es"])
     inner = f"""
-      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=nombre)}</h1>
+      <h1 style="font-size:17px;margin:0 0 8px">{t['title_fmt'].format(nombre=_esc(nombre))}</h1>
       <p style="color:#7FB3CC;margin:0 0 16px">{t['intro1']}</p>
       <p style="color:#7FB3CC;margin:0 0 20px">{t['intro2']}</p>
       <div style="text-align:center;margin-bottom:8px">
@@ -392,6 +394,11 @@ def _geolocate_ip(ip: str) -> str | None:
     (127.0.0.1, 192.168.x.x, etc., que devuelven None a propósito, nunca
     una ubicación inventada)."""
     if not ip or ip.startswith(("127.", "192.168.", "10.", "::1")):
+        return None
+    try:
+        # A6: solo una IP literal valida se concatena en la URL (sin rutas, '?' ni '#')
+        ip = str(ipaddress.ip_address(str(ip).strip()))
+    except ValueError:
         return None
     try:
         import httpx
@@ -458,6 +465,7 @@ def send_login_alert(email: str, nombre: str, ip: str, ua: str, lang: str = "es"
     when = _dt.now().strftime("%d/%m/%Y %H:%M")
     device = _parse_device(ua)
     location = _geolocate_ip(ip) or t["no_data"]
+    ip_html, device_html, location_html = _esc(str(ip or "")), _esc(device), _esc(location)
     # Los valores interpolados (when/device/ip) pueden traer espacios y
     # acentos -- deben ir URL-encoded o el body del mailto se corta/rompe
     # en varios clientes de correo apenas encuentran el primer espacio sin codificar.
@@ -468,14 +476,14 @@ def send_login_alert(email: str, nombre: str, ip: str, ua: str, lang: str = "es"
         f"&body={report_body}"
     )
     inner = f"""
-      <p style="margin:0 0 16px">{t['greeting']} <strong>{nombre}</strong>,</p>
+      <p style="margin:0 0 16px">{t['greeting']} <strong>{_esc(nombre)}</strong>,</p>
       <p style="color:#7FB3CC;margin:0 0 16px">{t['intro']}</p>
 
       <table style="width:100%;border-collapse:collapse;font-size:11pt;color:#7FB3CC;margin:0 0 20px;background:#060E1C;border-radius:8px;overflow:hidden">
         <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_datetime']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{when}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_device']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{device}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_ip']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{ip}</td></tr>
-        <tr><td style="padding:10px 14px;color:#F0F9FF">{t['row_location']}</td><td style="padding:10px 14px">{location}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_device']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{device_html}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF;border-bottom:1px solid rgba(8,145,178,.15)">{t['row_ip']}</td><td style="padding:10px 14px;border-bottom:1px solid rgba(8,145,178,.15)">{ip_html}</td></tr>
+        <tr><td style="padding:10px 14px;color:#F0F9FF">{t['row_location']}</td><td style="padding:10px 14px">{location_html}</td></tr>
       </table>
 
       <p style="color:#7FB3CC;margin:0 0 16px">{t['was_you']}</p>
@@ -536,9 +544,10 @@ def send_gear_alert(email: str, nombre: str, gear_label: str, gear_kind: str,
         color = "#F0A500"
         title = t["title_pct"].format(icon=icon, label=gear_label, pct=life_pct)
         message = t["msg_pct"]
+    title_html = t["title_100"].format(icon=icon, label=_esc(gear_label)) if threshold >= 100         else t["title_pct"].format(icon=icon, label=_esc(gear_label), pct=life_pct)
     inner = f"""
-      <h1 style="font-size:16px;margin:0 0 8px;color:{color}">{title}</h1>
-      <p style="color:#7FB3CC;margin:0 0 20px">{t['greeting_fmt'].format(nombre=nombre)} {message}</p>
+      <h1 style="font-size:16px;margin:0 0 8px;color:{color}">{title_html}</h1>
+      <p style="color:#7FB3CC;margin:0 0 20px">{t['greeting_fmt'].format(nombre=_esc(nombre))} {message}</p>
       <a href="{app_url}/gear.html" style="display:inline-block;background:{color};color:#fff;font-weight:800;font-size:12pt;text-decoration:none;padding:12px 28px;border-radius:10px">
         {t['cta']}
       </a>

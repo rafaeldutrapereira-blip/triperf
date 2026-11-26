@@ -189,6 +189,13 @@ def test_refresh_not_needed_or_failure(db, athlete_user, configured):
 
 # ── webhook ─────────────────────────────────────────────────────────────────
 
+@pytest.fixture(autouse=True)
+def _notify_auth(client, monkeypatch):
+    """H6: /notify exige secreto; los tests existentes lo mandan por cabecera."""
+    monkeypatch.setenv("GARMIN_NOTIFY_SECRET", "test-notify-secret")
+    client.headers["X-Garmin-Notify-Secret"] = "test-notify-secret"
+
+
 def test_notify_valid_known_user_queues_sync(client, db, athlete_user):
     go.save_tokens(db, athlete_user.id, TOKENS, "G-777")
     with patch.object(gr, "dispatch_garmin_sync", return_value="background") as d:

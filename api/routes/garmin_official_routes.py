@@ -5,7 +5,10 @@ oficial, que no se toca. Ver api/garmin_official.py.
 from __future__ import annotations
 
 import hashlib
+import hmac
+import ipaddress
 import json
+import os
 import logging
 import re
 import time
@@ -300,12 +303,22 @@ def _record_push(db: Session, payload: dict, uid_map: dict) -> None:
                          for it in items[:500] if isinstance(it, dict) and it.get("userId")})
         ingest_log.info("push shape=%s users=%s", json.dumps(shape, default=str)[:2000], hashed[:20])
 
+        # H6: tope de filas. Excedido => se descarta (200 a Garmin, con log), sin crecer sin limite.
+        total = db.query(func.count(GarminPushPayload.id)).scalar() or 0
+        orphans = db.query(func.count(GarminPushPayload.id)).filter(
+            GarminPushPayload.user_id.is_(None)).scalar() or 0
         saved = False
         for key, items in payload.items():
             if not isinstance(items, list) or not _has_data(items):
                 continue
             ids = [str(it["userId"]) for it in items if isinstance(it, dict) and it.get("userId")]
             resolved = next((uid_map[i] for i in ids if i in uid_map), None)
+            if total >= _push_max_rows() or (resolved is None and orphans >= _push_max_orphan_rows()):
+                logger.warning("Garmin push descartado: tope de filas alcanzado (total=%d, sin_usuario=%d)",
+                               total, orphans)
+                continue
+            total += 1
+            orphans += 1 if resolved is None else 0
             db.add(GarminPushPayload(payload_type=str(key)[:100], user_id=resolved,
                                      payload_json=json.dumps({key: items}, default=str), processed=False))
             saved = True
@@ -321,11 +334,78 @@ def _ingest_pending() -> None:
     process_pending_background()
 
 
-@router.post("/notify")
-async def garmin_notify(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Webhook push de Garmin. Nunca 500: payload no resoluble => 200 y log."""
+# H6: autenticacion del webhook. El secreto SOLO viene del entorno (nunca del codigo).
+NOTIFY_SECRET_ENV = "GARMIN_NOTIFY_SECRET"             # obligatorio: sin el, el endpoint rechaza
+NOTIFY_ALLOWED_IPS_ENV = "GARMIN_NOTIFY_ALLOWED_IPS"   # opcional: IPs/CIDR de Garmin separados por coma
+NOTIFY_SECRET_HEADER = "X-Garmin-Notify-Secret"
+_PUSH_MAX_BODY = 1_000_000
+
+
+def _push_max_rows() -> int:
     try:
-        payload = await request.json()
+        return max(1, int(os.getenv("GARMIN_PUSH_MAX_ROWS", "50000")))
+    except ValueError:
+        return 50000
+
+
+def _push_max_orphan_rows() -> int:
+    try:
+        return max(1, int(os.getenv("GARMIN_PUSH_MAX_ORPHAN_ROWS", "2000")))
+    except ValueError:
+        return 2000
+
+
+def _ip_allowed(request: Request) -> bool:
+    """True si no hay lista configurada o la IP de origen (CF-Connecting-IP) esta en ella."""
+    raw = os.getenv(NOTIFY_ALLOWED_IPS_ENV, "").strip()
+    if not raw:
+        return True
+    from ..audit import ip_from_request
+    try:
+        client = ipaddress.ip_address(ip_from_request(request) or "")
+    except ValueError:
+        return False
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            if client in ipaddress.ip_network(part, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _check_notify_auth(request: Request, path_secret: str | None) -> JSONResponse | None:
+    """None si autorizado; si no, la respuesta de rechazo. Fail-closed sin secreto configurado."""
+    expected = os.getenv(NOTIFY_SECRET_ENV, "").strip()
+    if not expected:
+        logger.warning("Garmin notify rechazado: %s no configurada", NOTIFY_SECRET_ENV)
+        return JSONResponse({"ok": False, "error": "not available"}, status_code=404)
+    given = path_secret or request.headers.get(NOTIFY_SECRET_HEADER, "")
+    if not hmac.compare_digest(given.encode(), expected.encode()):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    if not _ip_allowed(request):
+        logger.warning("Garmin notify rechazado: IP fuera de la lista permitida")
+        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
+    return None
+
+
+@router.post("/notify")
+@router.post("/notify/{secret}")
+async def garmin_notify(request: Request, background_tasks: BackgroundTasks,
+                        secret: str | None = None, db: Session = Depends(get_db)):
+    """Webhook push de Garmin. Nunca 500: payload no resoluble => 200 y log.
+    Exige secreto (ruta /notify/<secreto> o cabecera X-Garmin-Notify-Secret)."""
+    denied = _check_notify_auth(request, secret)
+    if denied is not None:
+        return denied
+    try:
+        raw = await request.body()
+        if len(raw) > _PUSH_MAX_BODY:
+            return JSONResponse({"ok": False, "error": "payload demasiado grande"}, status_code=413)
+        payload = json.loads(raw)
     except Exception:
         return JSONResponse({"ok": False, "error": "payload invalido"}, status_code=400)
     if not isinstance(payload, dict):

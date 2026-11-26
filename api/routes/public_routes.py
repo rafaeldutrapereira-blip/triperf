@@ -36,6 +36,8 @@ def get_public_activity(token: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Este link no existe o fue revocado por su dueño")
 
     owner = db.query(User).filter(User.id == act.user_id).first()
+    if owner is not None and owner.activo is False:  # A4: dueno desactivado/en borrado
+        raise HTTPException(404, "Este link no existe o fue revocado por su dueño")
     prefs = _get_share_prefs(owner) if owner else {}
 
     return {
@@ -72,6 +74,8 @@ def get_public_plan(token: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Este link no existe o fue revocado por su dueño")
 
     owner = db.query(User).filter(User.id == plan.coach_id).first()
+    if owner is not None and owner.activo is False:  # A4: dueno desactivado/en borrado
+        raise HTTPException(404, "Este link no existe o fue revocado por su dueño")
     weeks: dict = {}
     for s in plan.sessions:
         wn = s.week_number or 1

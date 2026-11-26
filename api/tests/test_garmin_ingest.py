@@ -87,7 +87,10 @@ def test_unknown_type_marked_processed(db, athlete_user):
 
 def test_user_none_writes_nothing(db, athlete_user):
     _connect(db, athlete_user)
-    _push(db, "activities", [ACTIVITY], None)
+    pid = _push(db, "activities", [ACTIVITY], None)
+    # H6: las filas sin usuario se purgan tras 7 dias; aqui debe ser reciente para observar el processed
+    db.get(GarminPushPayload, pid).received_at = gi._now()
+    db.commit()
     s = gi.process_pending(db)
     assert s["processed"] == 1
     assert db.query(GarminActivity).count() == 0

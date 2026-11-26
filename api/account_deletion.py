@@ -256,6 +256,10 @@ def request_deletion(db: Session, user: User) -> AccountDeletionRequest:
     ca = _table("coach_athletes")
     db.execute(update(ca).where((ca.c.athlete_id == user.id) | (ca.c.coach_id == user.id))
                .values(activo=False, status="ended"))
+    # A4: los enlaces publicos (plan del coach / actividad del atleta) dejan de servir ya
+    for tname, col in (("training_plans", "coach_id"), ("garmin_activities", "user_id")):
+        t = _table(tname)
+        db.execute(update(t).where(t.c[col] == user.id).values(share_token=None))
     req = AccountDeletionRequest(
         user_ref=user_ref(user.id), user_id=user.id, status="pendiente",
         requested_at=now, purge_after=now + timedelta(days=GRACE_DAYS),
