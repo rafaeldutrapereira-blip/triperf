@@ -508,6 +508,39 @@ def get_public_feed(
     }
 
 
+
+def _is_group_member(db: Session, group_id: str, user_id: str) -> bool:
+    return db.query(CommunityGroupMember.id).filter(
+        CommunityGroupMember.group_id == group_id,
+        CommunityGroupMember.user_id  == user_id,
+    ).first() is not None
+
+
+def _require_group_access(db: Session, g, me: User) -> None:
+    """A2: grupo privado solo para miembros (mismo criterio que group_feed)."""
+    if g.is_private and not _is_group_member(db, g.id, me.id):
+        raise HTTPException(403, "Grupo privado")
+
+
+def _can_view_post(db: Session, post, me: User) -> bool:
+    if post.user_id == me.id:
+        return True
+    vis = post.visibility
+    if vis == "public":
+        return True
+    if vis == "followers":
+        return db.query(Follow.id).filter(
+            Follow.follower_id == me.id, Follow.followed_id == post.user_id
+        ).first() is not None
+    if vis == "coach_only":
+        from ..models import TrainingPlan
+        return db.query(TrainingPlan.id).filter(
+            TrainingPlan.athlete_id == post.user_id,
+            TrainingPlan.coach_id   == me.id,
+        ).first() is not None
+    return False
+
+
 @router.get("/posts/{post_id}")
 def get_post(
     post_id: str,
@@ -518,18 +551,8 @@ def get_post(
     if not post:
         raise HTTPException(404, "Post no encontrado")
 
-    # Verificar visibilidad
-    if post.visibility == "private" and post.user_id != me.id:
-        raise HTTPException(403, "Post privado")
-    if post.visibility == "coach_only" and post.user_id != me.id:
-        # Verificar si soy el coach del atleta
-        from ..models import TrainingPlan
-        is_coach = db.query(TrainingPlan).filter(
-            TrainingPlan.athlete_id == post.user_id,
-            TrainingPlan.coach_id   == me.id,
-        ).first() is not None
-        if not is_coach:
-            raise HTTPException(403, "Solo visible al coach")
+    if not _can_view_post(db, post, me):
+        raise HTTPException(403, "Post no disponible")
 
     return _serialize_post(post, me.id)
 
@@ -669,6 +692,11 @@ def list_comments(
     db:      Session = Depends(get_db),
     me:      User    = Depends(get_current_user),
 ):
+    post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+    if not post:
+        raise HTTPException(404, "Post no encontrado")
+    if not _can_view_post(db, post, me):
+        raise HTTPException(403, "Post no disponible")
     comments = (
         db.query(Comment)
         .filter(Comment.post_id == post_id)
@@ -786,6 +814,7 @@ def get_group(
     g = db.query(CommunityGroup).filter(CommunityGroup.id == group_id).first()
     if not g:
         raise HTTPException(404, "Grupo no encontrado")
+    _require_group_access(db, g, me)
     return _serialize_group(g, me.id, db)
 
 
@@ -842,6 +871,7 @@ def list_members(
     g = db.query(CommunityGroup).filter(CommunityGroup.id == group_id).first()
     if not g:
         raise HTTPException(404, "Grupo no encontrado")
+    _require_group_access(db, g, me)
 
     members = db.query(CommunityGroupMember).filter(CommunityGroupMember.group_id == group_id).all()
     return [
@@ -1030,6 +1060,10 @@ def list_challenges(
     db:       Session = Depends(get_db),
     me:       User    = Depends(get_current_user),
 ):
+    g = db.query(CommunityGroup).filter(CommunityGroup.id == group_id).first()
+    if not g:
+        raise HTTPException(404, "Grupo no encontrado")
+    _require_group_access(db, g, me)
     chs = db.query(Challenge).filter(Challenge.group_id == group_id).order_by(desc(Challenge.created_at)).all()
     result = []
     for ch in chs:
@@ -1063,6 +1097,9 @@ def challenge_leaderboard(
     ch = db.query(Challenge).filter(Challenge.id == challenge_id).first()
     if not ch:
         raise HTTPException(404, "Reto no encontrado")
+    g = db.query(CommunityGroup).filter(CommunityGroup.id == ch.group_id).first()
+    if g is not None:
+        _require_group_access(db, g, me)
 
     from ..models import GarminActivity
 
@@ -1219,6 +1256,19 @@ def public_profile(
         .all()
     )
 
+    # A2: las stats anuales respetan community_share_prefs (share_details).
+    from .athlete_routes import _get_share_prefs
+    shares_stats = (target_id == me.id) or _get_share_prefs(user)["share_details"]
+    if not shares_stats and me.rol in ("coach", "admin"):
+        from ..permissions import get_athletes_for_coach
+        shares_stats = target_id in set(get_athletes_for_coach(me.id, db))
+    season_stats = {
+        "activities": len(year_acts),
+        "km":         round(sum(a.dist_km or 0 for a in year_acts), 1),
+        "hours":      round(sum(a.dur_min or 0 for a in year_acts) / 60, 1),
+        "tss":        round(sum(a.tss or 0 for a in year_acts), 1),
+    } if shares_stats else None
+
     country = getattr(user, "country_code", None)
     return {
         "user": {
@@ -1233,12 +1283,8 @@ def public_profile(
         "follower_count":   n_followers,
         "following_count":  n_following,
         "is_following":      is_following,
-        "season_stats": {
-            "activities": len(year_acts),
-            "km":         round(sum(a.dist_km or 0 for a in year_acts), 1),
-            "hours":      round(sum(a.dur_min or 0 for a in year_acts) / 60, 1),
-            "tss":        round(sum(a.tss or 0 for a in year_acts), 1),
-        },
+        "season_stats":     season_stats,
+        "stats_shared":     shares_stats,
         "recent_posts": [_serialize_post(p, me.id) for p in posts],
     }
 
@@ -1868,35 +1914,43 @@ def search_athletes_s17(
     db:    Session = Depends(get_db),
     me:    User    = Depends(get_current_user),
 ):
+    # A2: solo por nombre (nunca por email: sin oraculo de existencia de
+    # correos), solo usuarios activos, sin exponer el prefijo del email.
     term = f"%{q.strip()}%"
     candidates = db.query(User).filter(
-        (User.nombre.ilike(term)) | (User.email.ilike(term))
+        User.activo == True,
+        User.nombre.isnot(None),
+        User.nombre.ilike(term),
     ).limit(limit + 1).all()
 
     following_ids = {
         f.followed_id for f in
         db.query(Follow).filter_by(follower_id=me.id).all()
     }
+    from .athlete_routes import _get_share_prefs
     results = []
     for u in candidates:
         if u.id == me.id:
             continue
         country = getattr(u, "country_code", None)
-        tl = (
-            db.query(GarminTrainingLoad)
-            .filter_by(user_id=u.id)
-            .order_by(GarminTrainingLoad.date_iso.desc())
-            .first()
-        )
+        ctl = None
+        if _get_share_prefs(u)["share_details"]:
+            tl = (
+                db.query(GarminTrainingLoad)
+                .filter_by(user_id=u.id)
+                .order_by(GarminTrainingLoad.date_iso.desc())
+                .first()
+            )
+            ctl = round(tl.ctl, 1) if tl and tl.ctl else None
         results.append({
             "id":             u.id,
-            "name":           u.nombre or u.email.split("@")[0],
-            "avatar_initial": _avatar_initials(u.nombre or u.email),
+            "name":           u.nombre,
+            "avatar_initial": _avatar_initials(u.nombre),
             "avatar_url":     _avatar_url(u),
             "country_code":   country,
             "country_flag":   COUNTRY_FLAG.get(country or "", ""),
             "is_following":   u.id in following_ids,
-            "ctl":            round(tl.ctl, 1) if tl and tl.ctl else None,
+            "ctl":            ctl,
         })
         if len(results) >= limit:
             break

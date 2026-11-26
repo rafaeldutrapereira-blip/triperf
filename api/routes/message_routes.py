@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_user
-from ..models import Message, User
+from ..models import Message, User, CoachAthlete, Group, GroupMember
+from sqlalchemy import or_, and_
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -59,6 +60,35 @@ def _msg_out(m: Message) -> dict:
     }
 
 
+def _has_relation(db: Session, me: User, other: User) -> bool:
+    """A2: se puede escribir solo con relacion: coach-atleta activa (cualquier
+    direccion, directa o por grupo del coach), hilo previo entre ambos, o
+    remitente admin (soporte)."""
+    if me.rol == "admin":
+        return True
+    if db.query(CoachAthlete.id).filter(
+        CoachAthlete.status == "active",
+        or_(
+            and_(CoachAthlete.coach_id == me.id, CoachAthlete.athlete_id == other.id),
+            and_(CoachAthlete.coach_id == other.id, CoachAthlete.athlete_id == me.id),
+        ),
+    ).first():
+        return True
+    if db.query(GroupMember.id).join(Group, Group.id == GroupMember.group_id).filter(
+        or_(
+            and_(Group.coach_id == me.id, GroupMember.athlete_id == other.id),
+            and_(Group.coach_id == other.id, GroupMember.athlete_id == me.id),
+        ),
+    ).first():
+        return True
+    return db.query(Message.id).filter(
+        or_(
+            and_(Message.from_user_id == me.id, Message.to_user_id == other.id),
+            and_(Message.from_user_id == other.id, Message.to_user_id == me.id),
+        )
+    ).first() is not None
+
+
 @router.post("", status_code=201)
 def send_message(
     body: MessageIn,
@@ -71,6 +101,9 @@ def send_message(
         raise HTTPException(404, "Destinatario no encontrado")
     if recipient.id == me.id:
         raise HTTPException(400, "No puedes enviarte un mensaje a ti mismo")
+    if not _has_relation(db, me, recipient):
+        # Mismo 404 que "no existe": no revela si el uuid corresponde a un usuario.
+        raise HTTPException(404, "Destinatario no encontrado")
 
     msg = Message(
         from_user_id=me.id,

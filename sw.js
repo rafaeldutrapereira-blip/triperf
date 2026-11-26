@@ -3,7 +3,7 @@
  * IMPORTANTE: Incrementar BUILD_VERSION en cada deploy para forzar
  * que los usuarios reciban la versiÃ³n actualizada (invalida cache viejo).
  */
-var BUILD_VERSION = '416';  // H5-H4-INVITACION-OAUTH reclamar invitacion de coach exige enlace de un solo uso enviado al correo invitado (202 sin token) y state OAuth de intervals.icu/Strava aleatorio de un solo uso en BD (provider_oauth); antes 415: H3-H2-LIMITES IP confiable (CF-Connecting-IP, sin XFF) y contador 2FA solo se borra tras ambos factores + limite por usuario; antes 414: A3-LABS-TEAM /labs/team, gear y /ai/coach-copilot exigen CoachAthlete.status=='active' (invitacion pendiente no da acceso)
+var BUILD_VERSION = '417';  // A2-COMUNIDAD busqueda sin oraculo de emails (solo nombre, activos, CTL solo si comparte), perfil respeta community_share_prefs, post followers y comentarios segun visibilidad del post, grupos privados exigen miembro, POST /messages exige relacion coach-atleta activa o hilo previo; antes 416: H5-H4-INVITACION-OAUTH reclamar invitacion de coach exige enlace de un solo uso enviado al correo invitado (202 sin token) y state OAuth de intervals.icu/Strava aleatorio de un solo uso en BD (provider_oauth); antes 415: H3-H2-LIMITES IP confiable (CF-Connecting-IP, sin XFF) y contador 2FA solo se borra tras ambos factores + limite por usuario; antes 414: A3-LABS-TEAM /labs/team, gear y /ai/coach-copilot exigen CoachAthlete.status=='active' (invitacion pendiente no da acceso)
 var CACHE_NAME = 'lxapp-v' + BUILD_VERSION;
 
 var PRECACHE = [
